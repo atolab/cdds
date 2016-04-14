@@ -9,10 +9,20 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>libvdds.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
 		<key>0378C7B81CBF8C2F005C2BD1</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>0378C9831CBF8CD9005C2BD1</key>
 		<dict>
 			<key>primary</key>
 			<true/>

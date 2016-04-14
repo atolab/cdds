@@ -1,0 +1,7 @@
+#ifndef PROBES_CONSTANTS_H
+#define PROBES_CONSTANTS_H
+#define DROP_QUEUE_FULL 1
+#define DROP_TOO_OLD 2
+#define DROP_REORDER_FULL 3
+#define DROP_DUPLICATE 4
+#endif
