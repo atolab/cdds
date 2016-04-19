@@ -1858,6 +1858,153 @@ static int dds_rhc_take_w_qminv
   return n;
 }
 
+static int dds_rhc_takecdr_w_qminv
+(
+ struct rhc *rhc, bool lock, struct serdata ** values, dds_sample_info_t *info_seq,
+ uint32_t max_samples, unsigned qminv, dds_instance_handle_t handle, dds_readcond *cond
+ )
+{
+  bool trigger_waitsets = false;
+  uint64_t iid;
+  uint32_t n = 0;
+
+  if (lock)
+  {
+    os_mutexLock (&rhc->lock);
+  }
+
+  TRACE (("take_w_qminv(%p,%p,%p,%d,%x) - inst %u nonempty %u disp %u nowr %u new %u samples %u+%u read %u+%u\n",
+          (void*) rhc, (void*) values, (void*) info_seq, max_samples, qminv,
+          rhc->n_instances, rhc->n_nonempty_instances, rhc->n_not_alive_disposed,
+          rhc->n_not_alive_no_writers, rhc->n_new, rhc->n_vsamples,
+          rhc->n_invsamples, rhc->n_vread, rhc->n_invread));
+
+  if (rhc->nonempty_instances)
+  {
+    struct rhc_instance *inst = rhc->nonempty_instances->next;
+    unsigned n_insts = rhc->n_nonempty_instances;
+    while (n_insts-- > 0 && n < max_samples)
+    {
+      struct rhc_instance * const inst1 = inst->next;
+      iid = inst->iid;
+      if (handle == DDS_HANDLE_NIL || iid == handle)
+      {
+        if (!INST_IS_EMPTY (inst) && (qmask_of_inst (inst) & qminv) == 0)
+        {
+          struct trigger_info pre, post;
+          unsigned nvsamples = inst->nvsamples;
+          const uint32_t n_first = n;
+          get_trigger_info (&pre, inst, true);
+
+          if (inst->latest)
+          {
+            struct rhc_sample * psample = inst->latest;
+            struct rhc_sample * sample = psample->next;
+            while (nvsamples--)
+            {
+              struct rhc_sample * const sample1 = sample->next;
+
+              if ((QMASK_OF_SAMPLE (sample) & qminv) != 0)
+              {
+                psample = sample;
+              }
+              else
+              {
+                set_sample_info (info_seq + n, inst, sample);
+                values[n] = ddsi_serdata_ref(sample->sample);
+                rhc->n_vsamples--;
+                if (sample->isread)
+                {
+                  inst->nvread--;
+                  rhc->n_vread--;
+                }
+                free_sample (inst, sample);
+
+                if (--inst->nvsamples > 0)
+                {
+                  psample->next = sample1;
+                }
+                else
+                {
+                  inst->latest = NULL;
+                }
+
+                if (++n == max_samples)
+                {
+                  break;
+                }
+              }
+              sample = sample1;
+            }
+          }
+
+          if (inst->inv_exists && n < max_samples && (QMASK_OF_INVSAMPLE (inst) & qminv) == 0)
+          {
+            set_sample_info_invsample (info_seq + n, inst);
+            values[n] = ddsi_serdata_ref(inst->tk->m_sample);
+            inst_clear_invsample (rhc, inst);
+            ++n;
+          }
+
+          if (n > n_first && inst->isnew)
+          {
+            inst->isnew = false;
+            rhc->n_new--;
+          }
+
+          if (n > n_first)
+          {
+            /* if nsamples = 0, it won't match anything, so no need to do
+             anything here for drop_instance_noupdate_no_writers */
+            get_trigger_info (&post, inst, false);
+            if (update_conditions_locked (rhc, &pre, &post, NULL))
+            {
+              trigger_waitsets = true;
+            }
+          }
+
+          if (INST_IS_EMPTY (inst))
+          {
+            remove_inst_from_nonempty_list (rhc, inst);
+
+            if (inst->isdisposed)
+            {
+              rhc->n_not_alive_disposed--;
+            }
+            if (inst->wrcount == 0)
+            {
+              TRACE (("take: iid %"PRIx64" #0,empty,drop\n", iid));
+              if (!inst->isdisposed)
+              {
+                /* disposed has priority over no writers (why not just 2 bits?) */
+                rhc->n_not_alive_no_writers--;
+              }
+              drop_instance_noupdate_no_writers (rhc, inst);
+            }
+          }
+
+          patch_generations (info_seq + n_first, n - n_first - 1);
+        }
+        if (iid == handle)
+        {
+          break;
+        }
+      }
+      inst = inst1;
+    }
+  }
+  TRACE (("take: returning %d\n", n));
+  assert (rhc_check_counts_locked (rhc, true));
+  os_mutexUnlock (&rhc->lock);
+  
+  if (trigger_waitsets)
+  {
+    signal_conditions (rhc);
+  }
+  
+  return n;
+}
+
 /*************************
  ******   WAITSET   ******
  *************************/
@@ -2132,6 +2279,15 @@ int dds_rhc_take_w_condition
 {
   dds_readcond *cond = (dds_readcond *) gcond;
   return dds_rhc_take_w_qminv (rhc, lock, values, info_seq, max_samples, cond->m_qminv, handle, cond);
+}
+
+int dds_rhc_takecdr
+(
+ struct rhc *rhc, bool lock, struct serdata ** values, dds_sample_info_t *info_seq, uint32_t max_samples,
+ unsigned sample_states, unsigned view_states, unsigned instance_states, dds_instance_handle_t handle)
+{
+  unsigned qminv = qmask_from_dcpsquery (sample_states, view_states, instance_states);
+  return dds_rhc_takecdr_w_qminv (rhc, lock, values, info_seq, max_samples, qminv, handle, NULL);
 }
 
 /*************************

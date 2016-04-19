@@ -240,6 +240,8 @@ struct writer
   uint32_t rexmit_count;
   uint32_t rexmit_lost_count;
   struct xeventq *evq;
+
+  nn_guid_t local_reader_guid[16];
 };
 
 struct reader

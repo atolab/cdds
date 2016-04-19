@@ -79,7 +79,7 @@ uint32_t serdata_hash (const struct serdata *a)
   /* Compare by hash */
   kh = (const uint32_t *) a->v.keyhash.m_hash;
   return (uint32_t) (((((uint32_t) kh[0] + c[0]) * ((uint32_t) kh[1] + c[1])) +
-                      (((uint32_t) kh[2] + c[2]) * ((uint32_t) kh  + c[3])))
+                      (((uint32_t) kh[2] + c[2]) * ((uint32_t) kh[3] + c[3])))
                      >> 32);
 }
 

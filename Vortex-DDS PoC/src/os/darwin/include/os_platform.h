@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <machine/endian.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #define PRIdSIZE "zd"
 #define PRIuSIZE "zu"

@@ -371,11 +371,10 @@ void dds_stream_read_sample (dds_stream_t * is, void * data, const struct sertop
 {
   const struct dds_topic_descriptor * desc = (const struct dds_topic_descriptor *) topic->type;
 
-  if (DDS_IS_OK (is, desc->m_size))
   {
     /* Check if can copy directly from stream buffer */
 
-    if (topic->opt_size && (is->m_endian == DDS_ENDIAN))
+    if (topic->opt_size && DDS_IS_OK (is, desc->m_size) && (is->m_endian == DDS_ENDIAN))
     {
       DDS_IS_GET_BYTES (is, data, desc->m_size);
     }

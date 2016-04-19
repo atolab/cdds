@@ -26,6 +26,13 @@ int dds_write_impl
   dds_time_t tstamp, dds_write_action action
 );
 
+int dds_writecdr_impl
+(
+ dds_entity_t wr, const void * cdr, size_t sz,
+ dds_time_t tstamp, dds_write_action action
+);
+
+
 #if defined (__cplusplus)
 }
 #endif

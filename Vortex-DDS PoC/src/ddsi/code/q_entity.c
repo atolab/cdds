@@ -2446,6 +2446,9 @@ static struct writer * new_writer_guid
   wr->status_cb_entity = status_entity;
 #endif
 
+  memset(wr->local_reader_guid, 0, sizeof(wr->local_reader_guid));
+  wr->local_reader_guid[0].entityid.u = NN_ENTITYID_KIND_READER_WITH_KEY;
+
   /* Copy QoS, merging in defaults */
 
   wr->xqos = os_malloc (sizeof (*wr->xqos));
@@ -2654,6 +2657,26 @@ static struct writer * new_writer_guid
     nn_mtime_t tsched = { 0 };
     resched_xevent_if_earlier (pp->pmd_update_xevent, tsched);
   }
+
+  if (!is_builtin_entityid (wr->e.guid.entityid, ownvendorid))
+  {
+    struct ephash_enum_reader est;
+    struct reader *rd;
+    size_t n = 0;
+    ephash_enum_reader_init (&est);
+    while (n < sizeof(wr->local_reader_guid)/sizeof(wr->local_reader_guid[0]) &&
+           (rd = ephash_enum_reader_next (&est)) != NULL)
+    {
+      int reason;
+      if (is_builtin_entityid (rd->e.guid.entityid, ownvendorid))
+        continue;
+      reason = qos_match_p (rd->xqos, wr->xqos);
+      if (reason == -1)
+        wr->local_reader_guid[n++] = rd->e.guid;
+    }
+    ephash_enum_reader_fini (&est);
+  }
+
   return wr;
 }
 

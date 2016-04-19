@@ -12,14 +12,14 @@
 /* Sub components */
 
 #include "os_public.h"
-#include "dds/ddsp_stream.h"
-#include "dds/ddsp_impl.h"
-#include "dds/ddsp_alloc.h"
-#include "dds/ddsp_time.h"
-#include "dds/ddsp_qos.h"
-#include "dds/ddsp_error.h"
-#include "dds/ddsp_status.h"
-#include "dds/ddsp_log.h"
+#include "dds/dds_public_stream.h"
+#include "dds/dds_public_impl.h"
+#include "dds/dds_public_alloc.h"
+#include "dds/dds_public_time.h"
+#include "dds/dds_public_qos.h"
+#include "dds/dds_public_error.h"
+#include "dds/dds_public_status.h"
+#include "dds/dds_public_log.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -669,6 +669,7 @@ DDS_EXPORT int dds_instance_dispose_ts (dds_entity_t wr, const void *data, dds_t
  *   -# Returns 0 on success, or non-zero value to indicate an error
  */
 DDS_EXPORT int dds_write (dds_entity_t wr, const void *data);
+DDS_EXPORT int dds_writecdr (dds_entity_t wr, const void *cdr, size_t size);
 
 /**
  * Description : Write the value of a data instance along with the source timestamp passed.
@@ -1025,6 +1026,13 @@ DDS_EXPORT int dds_take
   dds_sample_info_t * si,
   uint32_t mask
 );
+
+struct serdata;
+int dds_takecdr
+(
+ dds_entity_t rd, struct serdata ** buf, uint32_t maxs,
+ dds_sample_info_t * si, uint32_t mask
+ );
 
 /**
  * Description : Implements the same functionality as dds_take, except that only data

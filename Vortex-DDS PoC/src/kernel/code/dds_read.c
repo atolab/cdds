@@ -128,6 +128,70 @@ static int dds_read_impl
   return ret;
 }
 
+static int dds_readcdr_impl
+(
+ bool take, dds_entity_t reader, struct serdata ** buf,
+ uint32_t maxs, dds_sample_info_t * si, uint32_t mask,
+ dds_condition_t cond, dds_instance_handle_t hand
+ )
+{
+  int ret = DDS_RETCODE_OK;
+  struct dds_reader * rd = (dds_reader*) reader;
+  struct thread_state1 * const thr = lookup_thread_state ();
+  const bool asleep = !vtime_awake_p (thr->vtime);
+  const bool lock = maxs != 0;
+
+  assert (take);
+  assert (reader);
+  assert (reader->m_kind == DDS_TYPE_READER);
+  assert (buf);
+  assert (si);
+  assert (cond == NULL);
+  assert (hand == DDS_HANDLE_NIL);
+  assert (maxs > 0);
+
+#ifndef NDEBUG
+  if (cond)
+  {
+    assert (cond->m_kind & DDS_TYPE_COND_READ);
+  }
+#endif
+
+  if (asleep)
+  {
+    thread_state_awake (thr);
+  }
+  os_mutexLock (&reader->m_mutex);
+
+  ret = dds_rhc_takecdr
+    (
+     rd->m_rd->rhc, lock, buf, si, maxs,
+     mask & DDS_ANY_SAMPLE_STATE,
+     mask & DDS_ANY_VIEW_STATE,
+     mask & DDS_ANY_INSTANCE_STATE,
+     hand
+     );
+
+  /* read/take resets data available status */
+  reader->m_scond->m_trigger &= ~DDS_DATA_AVAILABLE_STATUS;
+
+  /* reset DATA_ON_READERS status on subscriber after successful read/take */
+
+  if (reader->m_parent->m_kind == DDS_TYPE_SUBSCRIBER)
+  {
+    dds_subscriber * sub = (dds_subscriber*) reader->m_parent;
+    sub->m_entity.m_scond->m_trigger &= ~DDS_DATA_ON_READERS_STATUS;
+  }
+  os_mutexUnlock (&reader->m_mutex);
+
+  if (asleep)
+  {
+    thread_state_asleep (thr);
+  }
+
+  return ret;
+}
+
 int dds_read
 (
   dds_entity_t rd, void ** buf, uint32_t maxs,
@@ -170,6 +234,15 @@ int dds_take
 )
 {
   return dds_read_impl (true, rd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
+}
+
+int dds_takecdr
+(
+ dds_entity_t rd, struct serdata ** buf, uint32_t maxs,
+ dds_sample_info_t * si, uint32_t mask
+ )
+{
+  return dds_readcdr_impl (true, rd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
 int dds_take_instance

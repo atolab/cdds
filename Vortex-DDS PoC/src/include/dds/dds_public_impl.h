@@ -1,8 +1,8 @@
 #ifndef DDS_IMPL_H
 #define DDS_IMPL_H
 
-#include "ddsp_alloc.h"
-#include "ddsp_stream.h"
+#include "dds_public_alloc.h"
+#include "dds_public_stream.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -40,6 +40,7 @@ typedef struct dds_topic_descriptor
   const uint32_t m_nkeys;              /* Number of keys (can be 0) */
   const char * m_typename;             /* Type name */
   const dds_key_descriptor_t * m_keys; /* Key descriptors (NULL iff m_nkeys 0) */
+  const uint32_t m_nops;               /* Number of ops in m_ops */
   const uint32_t * m_ops;              /* Marshalling meta data */
   const char * m_meta;                 /* XML topic description meta data */
 }

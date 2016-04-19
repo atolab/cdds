@@ -1,6 +1,8 @@
 #ifndef OS_PUBLIC_H
 #define OS_PUBLIC_H
 
+#include <stddef.h>
+
 #if __linux__ == 1
 #include "../linux/include/os_platform_public.h"
 #elif __vxworks == 1

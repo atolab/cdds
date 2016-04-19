@@ -36,4 +36,5 @@ os_threadAttrInit (
     assert (threadAttr != NULL);
     threadAttr->schedClass = OS_SCHED_DEFAULT;
     threadAttr->schedPriority = 0;
+    threadAttr->stackSize = 0;
 }

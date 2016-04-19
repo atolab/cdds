@@ -15,8 +15,92 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "0378C9831CBF8CD9005C2BD1"
-               BuildableName = "liblibvdds.dylib"
-               BlueprintName = "libvdds"
+               BuildableName = "libvdds.dylib"
+               BlueprintName = "vdds"
+               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "0345192D1CBFD5B100B9D2FD"
+               BuildableName = "publisher"
+               BlueprintName = "publisher"
+               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "0345193B1CBFD66200B9D2FD"
+               BuildableName = "subscriber"
+               BlueprintName = "subscriber"
+               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "034519521CC0BF9300B9D2FD"
+               BuildableName = "vdss-server"
+               BlueprintName = "vdss-server"
+               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "03E422D01CC0D5610065CDB6"
+               BuildableName = "libvdds-stubs.dylib"
+               BlueprintName = "vdds-stubs"
+               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "03E422D91CC0D5920065CDB6"
+               BuildableName = "rpc-publisher"
+               BlueprintName = "rpc-publisher"
+               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "03E4230A1CC4EB340065CDB6"
+               BuildableName = "rpc-subscriber"
+               BlueprintName = "rpc-subscriber"
                ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -29,6 +113,15 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
       </Testables>
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "0378C9831CBF8CD9005C2BD1"
+            BuildableName = "libvdds.dylib"
+            BlueprintName = "vdds"
+            ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </TestAction>
@@ -46,8 +139,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "0378C9831CBF8CD9005C2BD1"
-            BuildableName = "liblibvdds.dylib"
-            BlueprintName = "libvdds"
+            BuildableName = "libvdds.dylib"
+            BlueprintName = "vdds"
             ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -64,8 +157,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "0378C9831CBF8CD9005C2BD1"
-            BuildableName = "liblibvdds.dylib"
-            BlueprintName = "libvdds"
+            BuildableName = "libvdds.dylib"
+            BlueprintName = "vdds"
             ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
          </BuildableReference>
       </MacroExpansion>

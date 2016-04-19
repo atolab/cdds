@@ -572,7 +572,7 @@ static const struct cfgelem discovery_cfgelems[] = {
   { LEAF ("GenerateBuiltinTopics"), 1, "true", ABSOFF (generate_builtin_topics), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("AdvertiseBuiltinTopicWriters"), 1, "true", ABSOFF (advertise_builtin_topic_writers), 0, uf_boolean, 0, pf_boolean },
   { GROUP ("Peers", discovery_peers_cfgelems) },
-  { LEAF ("ParticipantIndex"), 1, "auto", ABSOFF (participantIndex), 0, uf_participantIndex, 0, pf_participantIndex },
+  { LEAF ("ParticipantIndex"), 1, "none", ABSOFF (participantIndex), 0, uf_participantIndex, 0, pf_participantIndex },
   { LEAF ("MaxAutoParticipantIndex"), 1, "9", ABSOFF (maxAutoParticipantIndex), 0, uf_natint, 0, pf_int },
   { LEAF ("SPDPMulticastAddress"), 1, "239.255.0.1", ABSOFF (spdpMulticastAddressString), 0, uf_ipv4, ff_free, pf_string },
   { LEAF ("SPDPInterval"), 1, "30 s", ABSOFF (spdp_interval), 0, uf_duration_ms_1hr, 0, pf_duration },

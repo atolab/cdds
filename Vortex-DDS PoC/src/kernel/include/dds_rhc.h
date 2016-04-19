@@ -64,6 +64,14 @@ void dds_rhc_remove_readcondition (dds_readcond * cond);
 bool dds_rhc_add_waitset (dds_readcond * cond, dds_waitset * waitset, dds_attach_t x);
 int dds_rhc_remove_waitset (dds_readcond * cond, dds_waitset * waitset);
 
+int dds_rhc_takecdr
+(
+  struct rhc *rhc, bool lock, struct serdata **values, dds_sample_info_t *info_seq,
+  uint32_t max_samples, unsigned sample_states,
+  unsigned view_states, unsigned instance_states,
+  dds_instance_handle_t handle
+);
+
 #if defined (__cplusplus)
 }
 #endif
