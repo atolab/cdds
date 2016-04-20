@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:Vortex-DDS PoC.xcodeproj">
+      location = "self:/Users/erik/PrismTech/Vortex-DDS PoC/vdds.xcodeproj">
    </FileRef>
 </Workspace>

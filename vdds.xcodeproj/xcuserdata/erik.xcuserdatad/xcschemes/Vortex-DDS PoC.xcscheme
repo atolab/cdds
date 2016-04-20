@@ -17,7 +17,7 @@
                BlueprintIdentifier = "0378C9831CBF8CD9005C2BD1"
                BuildableName = "libvdds.dylib"
                BlueprintName = "vdds"
-               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+               ReferencedContainer = "container:vdds.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -31,7 +31,7 @@
                BlueprintIdentifier = "0345192D1CBFD5B100B9D2FD"
                BuildableName = "publisher"
                BlueprintName = "publisher"
-               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+               ReferencedContainer = "container:vdds.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -45,7 +45,7 @@
                BlueprintIdentifier = "0345193B1CBFD66200B9D2FD"
                BuildableName = "subscriber"
                BlueprintName = "subscriber"
-               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+               ReferencedContainer = "container:vdds.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -59,7 +59,7 @@
                BlueprintIdentifier = "034519521CC0BF9300B9D2FD"
                BuildableName = "vdss-server"
                BlueprintName = "vdss-server"
-               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+               ReferencedContainer = "container:vdds.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -73,7 +73,7 @@
                BlueprintIdentifier = "03E422D01CC0D5610065CDB6"
                BuildableName = "libvdds-stubs.dylib"
                BlueprintName = "vdds-stubs"
-               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+               ReferencedContainer = "container:vdds.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -87,7 +87,7 @@
                BlueprintIdentifier = "03E422D91CC0D5920065CDB6"
                BuildableName = "rpc-publisher"
                BlueprintName = "rpc-publisher"
-               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+               ReferencedContainer = "container:vdds.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -101,7 +101,7 @@
                BlueprintIdentifier = "03E4230A1CC4EB340065CDB6"
                BuildableName = "rpc-subscriber"
                BlueprintName = "rpc-subscriber"
-               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+               ReferencedContainer = "container:vdds.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -115,7 +115,7 @@
                BlueprintIdentifier = "03E4231F1CC7AB420065CDB6"
                BuildableName = "ping"
                BlueprintName = "ping"
-               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+               ReferencedContainer = "container:vdds.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -129,7 +129,7 @@
                BlueprintIdentifier = "03E4232C1CC7AB4A0065CDB6"
                BuildableName = "pong"
                BlueprintName = "pong"
-               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+               ReferencedContainer = "container:vdds.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -143,7 +143,7 @@
                BlueprintIdentifier = "03E4233D1CC7AB6E0065CDB6"
                BuildableName = "rpc-ping"
                BlueprintName = "rpc-ping"
-               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+               ReferencedContainer = "container:vdds.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -157,7 +157,7 @@
                BlueprintIdentifier = "03E4234C1CC7AB820065CDB6"
                BuildableName = "rpc-pong"
                BlueprintName = "rpc-pong"
-               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+               ReferencedContainer = "container:vdds.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -175,7 +175,7 @@
             BlueprintIdentifier = "0378C9831CBF8CD9005C2BD1"
             BuildableName = "libvdds.dylib"
             BlueprintName = "vdds"
-            ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+            ReferencedContainer = "container:vdds.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -197,7 +197,7 @@
             BlueprintIdentifier = "0378C9831CBF8CD9005C2BD1"
             BuildableName = "libvdds.dylib"
             BlueprintName = "vdds"
-            ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+            ReferencedContainer = "container:vdds.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -215,7 +215,7 @@
             BlueprintIdentifier = "0378C9831CBF8CD9005C2BD1"
             BuildableName = "libvdds.dylib"
             BlueprintName = "vdds"
-            ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+            ReferencedContainer = "container:vdds.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>

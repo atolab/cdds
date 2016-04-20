@@ -708,7 +708,7 @@
 		0378C7B01CBF8C2F005C2BD1 = {
 			isa = PBXGroup;
 			children = (
-				0378C7BB1CBF8C2F005C2BD1 /* Vortex-DDS PoC */,
+				0378C7BB1CBF8C2F005C2BD1 /* vdds */,
 				0378C7BA1CBF8C2F005C2BD1 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -731,7 +731,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		0378C7BB1CBF8C2F005C2BD1 /* Vortex-DDS PoC */ = {
+		0378C7BB1CBF8C2F005C2BD1 /* vdds */ = {
 			isa = PBXGroup;
 			children = (
 				0378C7C31CBF8C6C005C2BD1 /* src */,
@@ -739,7 +739,7 @@
 				0345190B1CBFD55200B9D2FD /* examples */,
 				03E422BF1CC0D4AC0065CDB6 /* rpc-examples */,
 			);
-			path = "Vortex-DDS PoC";
+			path = vdds;
 			sourceTree = "<group>";
 		};
 		0378C7C31CBF8C6C005C2BD1 /* src */ = {
@@ -1387,7 +1387,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 0378C7B41CBF8C2F005C2BD1 /* Build configuration list for PBXProject "Vortex-DDS PoC" */;
+			buildConfigurationList = 0378C7B41CBF8C2F005C2BD1 /* Build configuration list for PBXProject "vdds" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -2011,7 +2011,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0378C7B41CBF8C2F005C2BD1 /* Build configuration list for PBXProject "Vortex-DDS PoC" */ = {
+		0378C7B41CBF8C2F005C2BD1 /* Build configuration list for PBXProject "vdds" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0378C7BE1CBF8C2F005C2BD1 /* Debug */,
@@ -2036,6 +2036,7 @@
 				03E422D41CC0D5610065CDB6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E422DE1CC0D5920065CDB6 /* Build configuration list for PBXNativeTarget "rpc-publisher" */ = {
 			isa = XCConfigurationList;
@@ -2044,6 +2045,7 @@
 				03E422E01CC0D5920065CDB6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E423131CC4EB340065CDB6 /* Build configuration list for PBXNativeTarget "rpc-subscriber" */ = {
 			isa = XCConfigurationList;
