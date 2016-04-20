@@ -14,10 +14,30 @@
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
+		<key>ping.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>8</integer>
+		</dict>
+		<key>pong.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>9</integer>
+		</dict>
 		<key>publisher.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>2</integer>
+		</dict>
+		<key>rpc-ping.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>10</integer>
+		</dict>
+		<key>rpc-pong.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>11</integer>
 		</dict>
 		<key>rpc-publisher.xcscheme</key>
 		<dict>
@@ -83,6 +103,26 @@
 			<true/>
 		</dict>
 		<key>03E4230A1CC4EB340065CDB6</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>03E4231F1CC7AB420065CDB6</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>03E4232C1CC7AB4A0065CDB6</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>03E4233D1CC7AB6E0065CDB6</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>03E4234C1CC7AB820065CDB6</key>
 		<dict>
 			<key>primary</key>
 			<true/>

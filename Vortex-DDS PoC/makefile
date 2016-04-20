@@ -6,7 +6,7 @@ LD = clang
 CFLAGS = -c -DLITE=1 $(OPT) -g -I"$(PWD)/src/include" -I"$(PWD)/src/include/dds" -I"$(PWD)/src/ddsi/include" -I"$(PWD)/src/kernel/include" -I"$(PWD)/src/os/include" -I"$(PWD)/src/util/include" -I"$(PWD)/src/os/darwin/include" -I"$(PWD)/examples/generated"
 LDFLAGS = -g -Wall -L"$(PWD)/gen" -rpath "$(PWD)/gen"
 
-all: gen/libvdds.dylib gen/libvdds-stubs.dylib gen/vdds-server gen/publisher gen/subscriber gen/rpc-publisher gen/rpc-subscriber
+all: gen/libvdds.dylib gen/libvdds-stubs.dylib gen/vdds-server gen/publisher gen/subscriber gen/rpc-publisher gen/rpc-subscriber gen/ping gen/pong gen/rpc-ping gen/rpc-pong
 clean: ; rm -rf gen/*
 
 LIBVDDS_DIRS := src/ddsi/code src/kernel/code src/os/code src/os/darwin/code src/util/code
@@ -38,5 +38,24 @@ gen/rpc-publisher: gen/rpc-publisher.o gen/Throughput.o | gen/libvdds-stubs.dyli
 gen/rpc-subscriber: gen/rpc-subscriber.o gen/Throughput.o | gen/libvdds-stubs.dylib
 	$(LD) $(LDFLAGS) $^ -o $@ -lvdds-stubs
 
+gen/ping: gen/ping.o gen/RoundTrip.o | gen/libvdds.dylib
+	$(LD) $(LDFLAGS) $^ -o $@ -lvdds
+
+gen/pong: gen/pong.o gen/RoundTrip.o | gen/libvdds.dylib
+	$(LD) $(LDFLAGS) $^ -o $@ -lvdds
+
+gen/rpc-ping: gen/rpc-ping.o gen/RoundTrip.o | gen/libvdds-stubs.dylib
+	$(LD) $(LDFLAGS) $^ -o $@ -lvdds-stubs
+
+gen/rpc-pong: gen/rpc-pong.o gen/RoundTrip.o | gen/libvdds-stubs.dylib
+	$(LD) $(LDFLAGS) $^ -o $@ -lvdds-stubs
+
 gen/%.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
+
+gen/%.d: %.c
+	$(CC) -M $(CFLAGS) $< -o $@
+
+ifneq ($(MAKECMDGOALS),clean)
+  -include $(LIBVDDS:%=gen/%.d) $(LIBVDDS_STUBS:%=gen/%.d) gen/server.d gen/publisher.d gen/Throuhgput.d gen/subscriber.d gen/rpc-publisher.d gen/rpc-subscriber.d gen/ping.d gen/RoundTrip.d gen/pong.d gen/rpc-ping.d gen/rpc-pong.d
+endif

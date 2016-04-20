@@ -881,6 +881,7 @@ DDS_EXPORT int dds_waitset_detach (dds_waitset_t ws, dds_condition_t e);
  *   -# Returns 0 on timeout, else number of signaled waitset conditions
  */
 DDS_EXPORT int dds_waitset_wait (dds_waitset_t ws, dds_attach_t *xs, size_t nxs, dds_duration_t reltimeout);
+DDS_EXPORT int dds_waitset_wait_async (dds_waitset_t ws, size_t nxs, dds_time_t reltimeout, int trp_fd);
 
 
 /**

@@ -120,6 +120,7 @@ typedef struct dds_ws_cond_link
 }
 dds_ws_cond_link;
 
+#define DDS_WAITSET_MAX 64
 typedef struct dds_waitset
 {
   os_mutex conds_lock;
@@ -128,6 +129,18 @@ typedef struct dds_waitset
   uint32_t timeout_counter;
   uint32_t m_nconds;
   dds_ws_cond_link * m_conds;
+
+  /* hack for RPC server */
+  int trp_fd;
+  size_t trp_nxs;
+  dds_time_t trp_abstimeout;
+  /* memory layout of trp_hdr + trp_xs assumed to match excepted reply in client */ 
+  struct {
+    int code; /* = 5, see server.h */
+    int status;
+    void *pad; /* entity pointer */
+  } trp_hdr;
+  dds_attach_t trp_xs[DDS_WAITSET_MAX];
 }
 dds_waitset;
 

@@ -26,10 +26,92 @@
 
 #define LOCKFILE_NAME "/tmp/vdds-server-lock"
 
+#define IOBUF_SIZE 4096
+struct iobuf1 {
+    size_t rp, wp;
+    char buf[4096];
+};
+
+struct iobuf {
+    int fd;
+    struct iobuf1 r, w;
+};
+
+int ibread(struct iobuf *b, void *dst, size_t n)
+{
+    size_t av = b->r.wp - b->r.rp;
+    if (av == 0) {
+        ssize_t nrd;
+        if ((nrd = read(b->fd, b->r.buf, sizeof(b->r.buf))) <= 0) {
+            return -1;
+        }
+        b->r.rp = 0;
+        b->r.wp = (size_t)nrd;
+        av = b->r.wp - b->r.rp;
+    }
+    if (n <= av) {
+        memcpy(dst, b->r.buf + b->r.rp, n);
+        b->r.rp += n;
+        return 1;
+    } else {
+        memcpy(dst, b->r.buf + b->r.rp, av);
+        b->r.rp += av;
+        return ibread(b, (char *)dst + av, n - av);
+    }
+}
+
+int ibavail(const struct iobuf *b)
+{
+    return b->r.rp < b->r.wp;
+}
+
+int ibwrite(struct iobuf *b, const void *src, size_t n)
+{
+    size_t av = sizeof(b->w.buf) - b->w.wp;
+    if (av == 0) {
+        ssize_t nwr;
+        if ((nwr = write(b->fd, b->w.buf + b->w.rp, b->w.wp - b->w.rp)) <= 0) {
+            return -1;
+        }
+        b->w.rp += (size_t)nwr;
+        if (b->w.rp < b->w.wp) {
+            memmove(b->w.buf, b->w.buf + b->w.rp, b->w.wp - b->w.rp);
+            b->w.wp -= b->w.rp;
+            b->w.rp = 0;
+        } else {
+            b->w.rp = b->w.wp = 0;
+        }
+        av = sizeof(b->w.buf) - b->w.wp;
+    }
+    if (n <= av) {
+        memcpy(b->w.buf + b->w.wp, src, n);
+        b->w.wp += n;
+        return 1;
+    } else {
+        memcpy(b->w.buf + b->w.wp, src, av);
+        b->w.wp += av;
+        return ibwrite(b, (const char *)src + av, n - av);
+    }
+}
+
+int ibflush(struct iobuf *b)
+{
+    while (b->w.rp < b->w.wp) {
+        ssize_t nwr;
+        if ((nwr = write(b->fd, b->w.buf + b->w.rp, b->w.wp - b->w.rp)) <= 0) {
+            return -1;
+        }
+        b->w.rp += (size_t)nwr;
+    }
+    b->w.rp = b->w.wp = 0;
+    return 1;
+}
+
 struct client {
-    FILE *fp;
+    struct iobuf ib;
     pid_t pid;
     dds_entity_t ppant;
+    int (*dispatch) (struct client *cl, const struct reqhdr *req);
     struct thread_state1 *server_tid;
     struct client *next;
 };
@@ -149,7 +231,7 @@ err_mkstemp:
 
 int reply(struct client *cl, const struct rephdr *rep)
 {
-    return fwrite(rep, sizeof(*rep), 1, cl->fp) == 1 ? 1 : -1;
+    return ibwrite(&cl->ib, rep, sizeof(*rep));
 }
 
 static int protocol_error(int rc)
@@ -157,47 +239,46 @@ static int protocol_error(int rc)
     return rc;
 }
 
-int dispatch_unbound(struct client *cl, FILE *fp, const struct reqhdr *req)
+int dispatch_unbound(struct client *cl, const struct reqhdr *req)
 {
-    (void)fp;
     if (req->code == VDDSREQ_HELLO) {
         /* should use credential-passing instead, I know ... */
         if (req->u.hello.pid <= 0) {
             return -1;
         }
         cl->pid = req->u.hello.pid;
-        printf("sock%d: pid %d\n", fileno(cl->fp), (int)cl->pid);
+        printf("sock%d: pid %d\n", cl->ib.fd, (int)cl->pid);
         return 0;
     } else {
         return -1;
     }
 }
 
-int frd_blob(FILE *fp, size_t *sz, void **blob)
+int rd_blob(struct client *cl, size_t *sz, void **blob)
 {
-    if (fread(sz, sizeof(*sz), 1, fp) != 1) {
+    if (ibread(&cl->ib, sz, sizeof(*sz)) < 0) {
         return -1;
     }
     *blob = os_malloc(*sz);
-    if (fread(*blob, *sz, 1, fp) != 1) {
+    if (ibread(&cl->ib, *blob, *sz) < 0) {
         os_free(*blob);
         return -1;
     }
     return 0;
 }
 
-int frd_string(FILE *fp, char **str)
+int rd_string(struct client *cl, char **str)
 {
     size_t sz;
     void *blob;
-    if (frd_blob(fp, &sz, &blob) < 0) {
+    if (rd_blob(cl, &sz, &blob) < 0) {
         return -1;
     }
     *str = blob;
     return 0;
 }
 
-int db_entity_delete(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_entity_delete(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
     dds_entity_delete(req->u.entity_delete.entity);
@@ -206,7 +287,7 @@ int db_entity_delete(struct client *cl, FILE *fp, const struct reqhdr *req)
     return reply(cl, &rep);
 }
 
-int db_participant_create(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_participant_create(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
     rep.code = VDDSREP_ENTITY;
@@ -214,7 +295,7 @@ int db_participant_create(struct client *cl, FILE *fp, const struct reqhdr *req)
     return reply(cl, &rep);
 }
 
-int db_topic_create(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_topic_create(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
     dds_topic_descriptor_t *desc;
@@ -222,32 +303,34 @@ int db_topic_create(struct client *cl, FILE *fp, const struct reqhdr *req)
     char *name;
     void *blob;
     int rc;
-    if ((rc = frd_blob(fp, &sz, &blob)) < 0) {
+    if ((rc = rd_blob(cl, &sz, &blob)) < 0) {
         return protocol_error(rc);
     }
     desc = blob;
-    if ((rc = frd_string(fp, (char **)&desc->m_typename)) < 0) {
+    if ((rc = rd_string(cl, (char **)&desc->m_typename)) < 0) {
         return protocol_error(rc);
     }
-    if ((rc = frd_blob(fp, &sz, &blob)) < 0) {
+    if ((rc = rd_blob(cl, &sz, &blob)) < 0) {
         return protocol_error(rc);
     }
     desc->m_ops = blob;
-    if ((rc = frd_string(fp, (char **)&desc->m_meta)) < 0) {
+    if ((rc = rd_string(cl, (char **)&desc->m_meta)) < 0) {
         return protocol_error(rc);
     }
-    if ((rc = frd_string(fp, &name)) < 0) {
+    if ((rc = rd_string(cl, &name)) < 0) {
         return protocol_error(rc);
     }
     rep.code = VDDSREP_ENTITY;
-    if ((rep.u.entity.e = dds_topic_find(req->u.topic_create.pp, name)) == DDS_HANDLE_NIL) {
-        rep.status = dds_topic_create(req->u.topic_create.pp, &rep.u.entity.e, desc, name, NULL, NULL);
+    if ((rep.status = dds_topic_create(req->u.topic_create.pp, &rep.u.entity.e, desc, name, NULL, NULL)) != DDS_RETCODE_OK) {
+        if ((rep.u.entity.e = dds_topic_find(req->u.topic_create.pp, name)) != DDS_HANDLE_NIL) {
+            rep.status = DDS_RETCODE_OK;
+        }
     }
     os_free(name);
     return reply(cl, &rep);
 }
 
-int db_write_set_batch(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_write_set_batch(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
     dds_write_set_batch(req->u.write_set_batch.enable);
@@ -256,7 +339,7 @@ int db_write_set_batch(struct client *cl, FILE *fp, const struct reqhdr *req)
     return reply(cl, &rep);
 }
 
-int db_write_flush(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_write_flush(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
     dds_write_flush(req->u.write_flush.wr);
@@ -265,14 +348,14 @@ int db_write_flush(struct client *cl, FILE *fp, const struct reqhdr *req)
     return reply(cl, &rep);
 }
 
-int db_publisher_subscriber_create(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_publisher_subscriber_create(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
     char *partname;
     const char *parts[1];
     int rc;
     dds_qos_t *qos;
-    if ((rc = frd_string(fp, &partname)) < 0) {
+    if ((rc = rd_string(cl, &partname)) < 0) {
         return protocol_error(rc);
     }
     qos = dds_qos_create ();
@@ -290,13 +373,13 @@ int db_publisher_subscriber_create(struct client *cl, FILE *fp, const struct req
     return reply(cl, &rep);
 }
 
-int db_writer_reader_create(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_writer_reader_create(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
     size_t sz;
     void *blob;
     int rc;
-    if ((rc = frd_blob(fp, &sz, &blob)) < 0) {
+    if ((rc = rd_blob(cl, &sz, &blob)) < 0) {
         return protocol_error(rc);
     }
     rep.code = VDDSREP_ENTITY;
@@ -310,14 +393,14 @@ int db_writer_reader_create(struct client *cl, FILE *fp, const struct reqhdr *re
     return reply(cl, &rep);
 }
 
-int db_write_maybe_async(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_write_maybe_async(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
     size_t sz;
     void *blob;
     int rc;
     /* if blob entirely contained in rawbuf, can do without the malloc */
-    if ((rc = frd_blob(fp, &sz, &blob)) < 0) {
+    if ((rc = rd_blob(cl, &sz, &blob)) < 0) {
         return protocol_error(rc);
     }
     rep.code = VDDSREP_NOTHING;
@@ -331,7 +414,7 @@ int db_write_maybe_async(struct client *cl, FILE *fp, const struct reqhdr *req)
     }
 }
 
-int db_take(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_take(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
     struct serdata **buf = os_malloc(req->u.take.maxs * sizeof(*buf));
@@ -344,12 +427,12 @@ int db_take(struct client *cl, FILE *fp, const struct reqhdr *req)
         goto out;
     }
     if (rep.status > 0) {
-        if (fwrite(si, sizeof(*si) * rep.status, 1, fp) != 1) {
+        if (ibwrite(&cl->ib, si, sizeof(*si) * rep.status) < 0) {
             goto out;
         }
         while (i < rep.status) {
             size_t sz = ddsi_serdata_size(buf[i]);
-            if (fwrite(&sz, sizeof(sz), 1, fp) != 1 || fwrite(&buf[i]->hdr, sz, 1, fp) != 1) {
+            if (ibwrite(&cl->ib, &sz, sizeof(sz)) < 0 || ibwrite(&cl->ib, &buf[i]->hdr, sz) < 0) {
                 goto out;
             }
             ddsi_serdata_unref(buf[i]);
@@ -366,7 +449,7 @@ out:
     return rc;
 }
 
-int db_waitset_create(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_waitset_create(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
     rep.code = VDDSREP_WAITSET;
@@ -375,7 +458,7 @@ int db_waitset_create(struct client *cl, FILE *fp, const struct reqhdr *req)
     return reply(cl, &rep);
 }
 
-int db_waitset_delete(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_waitset_delete(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
     rep.code = VDDSREP_NOTHING;
@@ -383,7 +466,7 @@ int db_waitset_delete(struct client *cl, FILE *fp, const struct reqhdr *req)
     return reply(cl, &rep);
 }
 
-int db_waitset_attach(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_waitset_attach(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
     rep.code = VDDSREP_NOTHING;
@@ -391,22 +474,13 @@ int db_waitset_attach(struct client *cl, FILE *fp, const struct reqhdr *req)
     return reply(cl, &rep);
 }
 
-int db_waitset_wait(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_waitset_wait(struct client *cl, const struct reqhdr *req)
 {
-    struct xrep {
-        struct rephdr rep;
-        dds_attach_t xs[64];
-    } xrep;
-    size_t sz;
-    assert(req->u.wait.nxs <= sizeof(xrep.xs) / sizeof(xrep.xs[0]));
-    assert(offsetof(struct xrep, xs) == sizeof(struct rephdr));
-    xrep.rep.code = VDDSREP_WAITRESULT;
-    xrep.rep.status = dds_waitset_wait(req->u.wait.ws, xrep.xs, req->u.wait.nxs, req->u.wait.reltimeout);
-    sz = offsetof(struct xrep, xs) + (xrep.rep.status > 0 ? xrep.rep.status : 0) * sizeof(xrep.xs[0]);
-    return (fwrite(&xrep, sz, 1, fp) == 1) ? 1 : -1;
+    dds_waitset_wait_async(req->u.wait.ws, req->u.wait.nxs, req->u.wait.reltimeout, cl->ib.fd);
+    return 1;
 }
 
-int db_readcondition_create(struct client *cl, FILE *fp, const struct reqhdr *req)
+int db_readcondition_create(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
     rep.code = VDDSREP_CONDITION;
@@ -415,7 +489,7 @@ int db_readcondition_create(struct client *cl, FILE *fp, const struct reqhdr *re
     return reply(cl, &rep);
 }
 
-int dispatch_bound(struct client *cl, FILE *fp, const struct reqhdr *req)
+int dispatch_bound(struct client *cl, const struct reqhdr *req)
 {
     //printf("%d\n", (int)req->code);
     switch (req->code) {
@@ -425,60 +499,58 @@ int dispatch_bound(struct client *cl, FILE *fp, const struct reqhdr *req)
             cl->pid = -1;
             return 0;
         case VDDSREQ_ENTITY_DELETE:
-            return db_entity_delete(cl, fp, req);
+            return db_entity_delete(cl, req);
         case VDDSREQ_PARTICIPANT_CREATE:
-            return db_participant_create(cl, fp, req);
+            return db_participant_create(cl, req);
         case VDDSREQ_TOPIC_CREATE:
-            return db_topic_create(cl, fp, req);
+            return db_topic_create(cl, req);
         case VDDSREQ_WRITE_SET_BATCH:
-            return db_write_set_batch(cl, fp, req);
+            return db_write_set_batch(cl, req);
         case VDDSREQ_WRITE_FLUSH:
-            return db_write_flush(cl, fp, req);
+            return db_write_flush(cl, req);
         case VDDSREQ_PUBLISHER_CREATE:
         case VDDSREQ_SUBSCRIBER_CREATE:
-            return db_publisher_subscriber_create(cl, fp, req);
+            return db_publisher_subscriber_create(cl, req);
         case VDDSREQ_WRITER_CREATE:
         case VDDSREQ_READER_CREATE:
-            return db_writer_reader_create(cl, fp, req);
+            return db_writer_reader_create(cl, req);
         case VDDSREQ_WRITE:
         case VDDSREQ_WRITE_ASYNC:
-            return db_write_maybe_async(cl, fp, req);
+            return db_write_maybe_async(cl, req);
         case VDDSREQ_TAKE:
-            return db_take(cl, fp, req);
+            return db_take(cl, req);
         case VDDSREQ_WAITSET_CREATE:
-            return db_waitset_create(cl, fp, req);
+            return db_waitset_create(cl, req);
         case VDDSREQ_WAITSET_DELETE:
-            return db_waitset_delete(cl, fp, req);
+            return db_waitset_delete(cl, req);
         case VDDSREQ_WAITSET_ATTACH:
-            return db_waitset_attach(cl, fp, req);
+            return db_waitset_attach(cl, req);
         case VDDSREQ_WAIT:
-            return db_waitset_wait(cl, fp, req);
+            return db_waitset_wait(cl, req);
         case VDDSREQ_READCONDITION_CREATE:
-            return db_readcondition_create(cl, fp, req);
+            return db_readcondition_create(cl, req);
     }
     return protocol_error(-1);
 }
 
-void *server(void *vclient)
+int serve_one(struct client *cl)
 {
-    struct client *cl = vclient;
-    int (*dispatch_fn) (struct client *cl, FILE *fp, const struct reqhdr *req);
     struct reqhdr req;
-    dispatch_fn = dispatch_unbound;
-    while (!terminate && fread(&req, sizeof(req), 1, cl->fp) == 1) {
+    if (ibread(&cl->ib, &req, sizeof(req)) > 0) {
         int rc;
-        if ((rc = dispatch_fn(cl, cl->fp, &req)) <= 0) {
+        if ((rc = cl->dispatch(cl, &req)) <= 0) {
             if (rc < 0) {
-                printf("sock%d: protocol error\n", fileno(cl->fp));
+                printf("sock%d: protocol error\n", cl->ib.fd);
                 goto error;
             } else if (rc == 0) {
-                dispatch_fn = (cl->pid == -1) ? dispatch_unbound : dispatch_bound;
+                cl->dispatch = (cl->pid == -1) ? dispatch_unbound : dispatch_bound;
             }
         }
-        fflush(cl->fp);
+        ibflush(&cl->ib);
     }
+    return 1;
 error:
-    printf("sock%d: disconnect\n", fileno(cl->fp));
+    printf("sock%d: disconnect\n", cl->ib.fd);
     if (cl->ppant != DDS_HANDLE_NIL) {
         dds_entity_delete(cl->ppant);
     }
@@ -493,13 +565,21 @@ error:
         dead_clients = cl;
         os_mutexUnlock(&clients_lock);
     }
+    return -1;
+}
+
+void *server(void *vclient)
+{
+    struct client *cl = vclient;
+    while (!terminate && serve_one(cl) > 0)
+        ;
     return NULL;
 }
 
 void reap_dead_client(struct client *cl)
 {
     (void)join_thread(cl->server_tid, NULL);
-    fclose(cl->fp);
+    close(cl->ib.fd);
     os_free(cl);
 }
 
@@ -519,14 +599,23 @@ void reap_dead_clients(void)
     os_mutexUnlock(&clients_lock);
 }
 
+#define MAX_CLIENTS 16
+
 int main(int argc, char **argv)
 {
     struct sockaddr_un addr;
     int sock, opt;
-    struct pollfd pollfd;
+    struct pollfd pollfd[1 + MAX_CLIENTS];
+    int single = 0;
+    int ncl = 0;
+    int pending = 0;
+    struct client *ix2cl[1 + MAX_CLIENTS];
 
-    while ((opt = getopt(argc, argv, "")) != EOF) {
+    while ((opt = getopt(argc, argv, "1")) != EOF) {
         switch (opt) {
+            case '1':
+                single = 1;
+                break;
             default:
                 fprintf(stderr, "usage: %s\n", argv[0]);
                 return 1;
@@ -559,14 +648,14 @@ int main(int argc, char **argv)
     os_mutexInit(&clients_lock, NULL);
     os_condInit(&clients_cond, &clients_lock, NULL);
 
-    pollfd.fd = sock;
-    pollfd.events = POLLIN;
+    pollfd[0].fd = sock;
+    pollfd[0].events = POLLIN;
     printf("listening ...\n");
     fflush(stdout);
     while (!terminate) {
         int res;
         reap_dead_clients();
-        if ((res = poll(&pollfd, 1, -1)) == -1) {
+        if ((res = poll(pollfd, 1 + ncl, pending ? 0 : -1)) == -1) {
             if (errno == EINTR) {
                 continue;
             } else {
@@ -575,7 +664,7 @@ int main(int argc, char **argv)
             }
         }
 
-        if (pollfd.revents & POLLIN) {
+        if (pollfd[0].revents & POLLIN) {
             struct sockaddr_un addr;
             socklen_t addrlen;
             char tname[32];
@@ -590,14 +679,44 @@ int main(int argc, char **argv)
             cl = os_malloc(sizeof(*cl));
             cl->pid = -1;
             cl->ppant = DDS_HANDLE_NIL;
-            cl->fp = fdopen(s, "a+b");
+            cl->dispatch = dispatch_unbound;
+            cl->ib.fd = s;
+            cl->ib.r.rp = cl->ib.r.wp = 0;
+            cl->ib.w.rp = cl->ib.w.wp = 0;
             os_mutexLock(&clients_lock);
             cl->next = clients;
             clients = cl;
             os_mutexUnlock(&clients_lock);
 
             printf("%s: accepted client %p\n", tname, cl);
-            cl->server_tid = create_thread(tname, server, cl);
+            if (!single) {
+                cl->server_tid = create_thread(tname, server, cl);
+            } else {
+                ++ncl;
+                pollfd[ncl].fd = s;
+                pollfd[ncl].events = POLLIN | POLLHUP;
+                ix2cl[ncl] = cl;
+            }
+        }
+
+        if (single)
+        {
+            int i = 1;
+            pending = 0;
+            while (i <= ncl) {
+                if (!(pollfd[i].revents & (POLLIN | POLLHUP)) && !ibavail(&ix2cl[i]->ib)) {
+                    ++i;
+                } else if (serve_one(ix2cl[i]) >= 0) {
+                    pending += ibavail(&ix2cl[i]->ib);
+                    ++i;
+                } else {
+                    if (i < ncl) {
+                        ix2cl[i] = ix2cl[ncl];
+                        pollfd[i] = pollfd[ncl];
+                    }
+                    --ncl;
+                }
+            }
         }
     }
 

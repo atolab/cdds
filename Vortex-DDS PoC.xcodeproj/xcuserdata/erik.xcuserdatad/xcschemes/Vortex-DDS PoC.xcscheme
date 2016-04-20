@@ -104,6 +104,62 @@
                ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "03E4231F1CC7AB420065CDB6"
+               BuildableName = "ping"
+               BlueprintName = "ping"
+               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "03E4232C1CC7AB4A0065CDB6"
+               BuildableName = "pong"
+               BlueprintName = "pong"
+               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "03E4233D1CC7AB6E0065CDB6"
+               BuildableName = "rpc-ping"
+               BlueprintName = "rpc-ping"
+               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "03E4234C1CC7AB820065CDB6"
+               BuildableName = "rpc-pong"
+               BlueprintName = "rpc-pong"
+               ReferencedContainer = "container:Vortex-DDS PoC.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

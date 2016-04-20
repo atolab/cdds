@@ -31,7 +31,7 @@ enum repcode {
     VDDSREP_WAITSET,
     VDDSREP_CONDITION,
     VDDSREP_SAMPLES, /* samples returned by read/take */
-    VDDSREP_WAITRESULT
+    VDDSREP_WAITRESULT /* = 5, hard-coded in dds_waitset.c */
 };
 
 struct reqhdr {

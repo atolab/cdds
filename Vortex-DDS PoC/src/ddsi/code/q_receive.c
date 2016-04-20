@@ -2569,7 +2569,7 @@ retry:
         while (rd && ! (ddsi_plugin.rhc_store_fn) (rd->rhc, sampleinfo, payload, tk) && !pwr->deleting)
         {
           if (pwr_locked) os_mutexUnlock (&pwr->e.lock);
-          dds_sleepfor (DDS_MSECS (10));
+          dds_sleepfor (DDS_MSECS (1));
           if (pwr_locked) os_mutexLock (&pwr->e.lock);
         }
       }

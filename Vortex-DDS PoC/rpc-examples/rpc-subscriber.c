@@ -189,6 +189,8 @@ int main (int argc, char **argv)
   dds_time_t deltaTv;
   dds_time_t printT = 0;
 
+  setvbuf (stdout, (char *) NULL, _IOLBF, 0);
+
   status = dds_init (argc, argv);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
@@ -335,6 +337,7 @@ int main (int argc, char **argv)
     printf ("Out of order: %llu samples\n", outOfOrder);
     printf ("Average transfer rate: %.2lf samples/s, ", total_samples / deltaTime);
     printf ("%.2lf Mbit/s\n", (total_bytes / BYTES_PER_SEC_TO_MEGABITS_PER_SEC) / deltaTime);
+    fflush(stdout);
 
     HandleMap__free (imap);
   }

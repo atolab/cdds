@@ -210,6 +210,9 @@ int main (int argc, char **argv)
   unsigned long long prev_samples = 0;
   unsigned long long prev_bytes = 0;
   dds_time_t deltaTv;
+  dds_time_t printT = use_waitset ? 0 : 1;
+
+  setvbuf (stdout, (char *) NULL, _IOLBF, 0);
 
   status = dds_init (argc, argv);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
@@ -354,22 +357,27 @@ int main (int argc, char **argv)
           }
         }
       }
-#if 1
-      printf
-      (
-       "Payload size: %lu | Total received: %llu samples, %llu bytes | Out of order: %llu samples "
-       "Transfer rate: %.2lf samples/s, %.2lf Mbit/s | nreads %d\n",
-       payloadSize, total_samples, total_bytes, outOfOrder,
-       (total_samples - prev_samples) / deltaTime,
-       ((total_bytes - prev_bytes) / BYTES_PER_SEC_TO_MEGABITS_PER_SEC) / deltaTime,
-       nreads);
-#endif
-      cycles++;
 
-      /* Update the previous values for next iteration */
+      time_now = dds_time();
+      if (!use_waitset || time_now > printT) {
+        if (printT) {
+          printf
+          (
+           "Payload size: %lu | Total received: %llu samples, %llu bytes | Out of order: %llu samples "
+           "Transfer rate: %.2lf samples/s, %.2lf Mbit/s | nreads %d\n",
+           payloadSize, total_samples, total_bytes, outOfOrder,
+           (total_samples - prev_samples) / deltaTime,
+           ((total_bytes - prev_bytes) / BYTES_PER_SEC_TO_MEGABITS_PER_SEC) / deltaTime,
+           nreads);
+          cycles++;
 
-      prev_bytes = total_bytes;
-      prev_samples = total_samples;
+          /* Update the previous values for next iteration */
+
+          prev_bytes = total_bytes;
+          prev_samples = total_samples;
+        }
+        printT = time_now + DDS_SECS(1);
+      }
     }
 
     /* Disable callbacks */
