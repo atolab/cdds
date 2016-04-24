@@ -1032,9 +1032,6 @@ int ddsi_tcp_init (void)
     ddsi_tcp_base_init (&ddsi_tcp_conn_client);
 
 #ifdef DDSI_INCLUDE_SSL
-#if !LITE
-    ddsi_ssl_plugin ();
-#endif
     if (ddsi_tcp_ssl_plugin.config)
     {
       (ddsi_tcp_ssl_plugin.config) ();

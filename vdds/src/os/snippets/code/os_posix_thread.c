@@ -291,11 +291,6 @@ os_startRoutineWrapper (
 
     os_threadCBs.stopCb(id, os_threadCBs.stopArg);
 
-#if !LITE
-    os_report_stack_free();
-    os_reportClearApiInfo();
-#endif
-
     /* Free the thread context resources, arguments is responsibility */
     /* for the caller of os_procCreate                                */
     os_free (context->threadName);

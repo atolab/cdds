@@ -127,11 +127,7 @@ struct cdrstring {
 #define NN_VENDORID_EPROSIMA          {{ 0x01, 0x0f }}
 #define NN_VENDORID_PRISMTECH_CLOUD   {{ 0x01, 0x20 }}
 
-#if LITE
 #define MY_VENDOR_ID NN_VENDORID_PRISMTECH_LITE
-#else
-#define MY_VENDOR_ID NN_VENDORID_PRISMTECH_OSPL
-#endif
 
 /* Only one specific version is grokked */
 #define RTPS_MAJOR 2
@@ -424,9 +420,6 @@ typedef struct ParticipantMessageData {
 #define PID_RELIABILITY_OFFERED                 0x19u
 
 #define PID_PRISMTECH_BUILTIN_ENDPOINT_SET      (PID_VENDORSPECIFIC_FLAG | 0x0u)
-#if !LITE
-#define PID_PRISMTECH_WRITER_INFO               (PID_VENDORSPECIFIC_FLAG | 0x1u)
-#endif
 
 /* parameter ids for READER_DATA_LIFECYCLE & WRITER_DATA_LIFECYCLE are
    undefined, but let's publish them anyway */
@@ -456,9 +449,6 @@ typedef struct ParticipantMessageData {
 #define PID_PRISMTECH_LISTENER_SCHEDULING       (PID_VENDORSPECIFIC_FLAG | 0xeu)
 #define PID_PRISMTECH_SUBSCRIPTION_KEYS         (PID_VENDORSPECIFIC_FLAG | 0xfu)
 #define PID_PRISMTECH_READER_LIFESPAN           (PID_VENDORSPECIFIC_FLAG | 0x10u)
-#if !LITE
-#define PID_PRISMTECH_SHARE                     (PID_VENDORSPECIFIC_FLAG | 0x11u)
-#endif
 #define PID_PRISMTECH_TYPE_DESCRIPTION          (PID_VENDORSPECIFIC_FLAG | 0x12u)
 #define PID_PRISMTECH_LAN                       (PID_VENDORSPECIFIC_FLAG | 0x13u)
 #define PID_PRISMTECH_ENDPOINT_GID              (PID_VENDORSPECIFIC_FLAG | 0x14u)

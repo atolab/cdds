@@ -15,11 +15,6 @@
 
 #include "os/os.h"
 
-#if !LITE
-#include "v_partition.h"
-#include "v_entity.h"
-#include "v_groupSet.h"
-#endif
 
 #include "ddsi/q_entity.h"
 #include "ddsi/q_config.h"
@@ -32,9 +27,6 @@
 #include "ddsi/q_lease.h"
 #include "kernel/q_osplser.h"
 #include "ddsi/q_qosmatch.h"
-#if !LITE
-#include "q_groupset.h"
-#endif
 #include "ddsi/q_ephash.h"
 #include "ddsi/q_globals.h"
 #include "ddsi/q_addrset.h"
@@ -44,9 +36,6 @@
 #include "ddsi/q_radmin.h"
 #include "ddsi/q_protocol.h" /* NN_ENTITYID_... */
 #include "ddsi/q_unused.h"
-#if !LITE
-#include "q_fill_msg_qos.h"
-#endif
 #include "ddsi/q_error.h"
 #include "ddsi/q_builtin_topic.h"
 #include "ddsi/ddsi_ser.h"
@@ -97,14 +86,8 @@ static struct writer * new_writer_guid
   struct participant *pp,
   const struct sertopic *topic,
   const struct nn_xqos *xqos,
-#if LITE
   status_cb_t status_cb,
   void *status_cbarg
-#else
-  const struct v_gid_s *gid,
-  const struct v_gid_s *group_gid,
-  const char *endpoint_name
-#endif
 );
 static struct reader * new_reader_guid
 (
@@ -113,15 +96,9 @@ static struct reader * new_reader_guid
   struct participant *pp,
   const struct sertopic *topic,
   const struct nn_xqos *xqos,
-#if LITE
   struct rhc *rhc,
   status_cb_t status_cb,
   void *status_cbarg
-#else
-  const struct v_gid_s *gid,
-  const struct v_gid_s *group_gid,
-  const char *endpoint_name
-#endif
 );
 static struct participant *ref_participant (struct participant *pp, const struct nn_guid *guid_of_refing_entity);
 static void unref_participant (struct participant *pp, const struct nn_guid *guid_of_refing_entity);
@@ -195,9 +172,7 @@ static void entity_common_init (struct entity_common *e, const struct nn_guid *g
   e->guid = *guid;
   e->kind = kind;
   e->name = os_strdup (name ? name : "");
-#if LITE
   e->iid = (ddsi_plugin.iidgen_fn) ();
-#endif
   os_mutexInit (&e->lock, NULL);
 }
 
@@ -297,80 +272,6 @@ static void remove_deleted_participant_guid (const struct nn_guid *guid, unsigne
   os_mutexUnlock (&deleted_participants_lock);
 }
 
-#if !LITE
-/* DYNAMIC GROUP CREATION FOR WILDCARD ENDPOINTS -------------------- */
-static void add_group_to_readers_and_proxy_writers_locked (const struct sertopic *topic, const char *name, v_group group)
-{
-  nn_xqos_t dummy_part_xqos;
-  struct ephash_enum_reader est_rd;
-  struct ephash_enum_proxy_writer est_pwr;
-  struct proxy_writer *pwr;
-  struct reader *rd;
-
-  TRACE (("add_group_to_readers_and_proxy_writers_locked: %s.%s group %p scanning all readers/writers\n", name, topic->name, (void *) group));
-
-  nn_xqos_init_empty (&dummy_part_xqos);
-  dummy_part_xqos.present = QP_PARTITION;
-  dummy_part_xqos.partition.n = 1;
-  dummy_part_xqos.partition.strs = (char **) &name;
-
-  ephash_enum_reader_init (&est_rd);
-  while ((rd = ephash_enum_reader_next (&est_rd)) != NULL)
-  {
-    if (rd->topic == topic && partitions_match_p (rd->xqos, &dummy_part_xqos))
-    {
-      TRACE (("  add to rd %x:%x:%x:%x\n", PGUID (rd->e.guid)));
-      nn_groupset_add_group (rd->matching_groups, group);
-    }
-  }
-  ephash_enum_reader_fini (&est_rd);
-  ephash_enum_proxy_writer_init (&est_pwr);
-  while ((pwr = ephash_enum_proxy_writer_next (&est_pwr)) != NULL)
-  {
-    if (pwr->c.topic == topic && partitions_match_p (pwr->c.xqos, &dummy_part_xqos))
-    {
-      TRACE (("  add to pwr %x:%x:%x:%x\n", PGUID (pwr->e.guid)));
-      nn_groupset_add_group (pwr->groups, group);
-    }
-  }
-  ephash_enum_proxy_writer_fini (&est_pwr);
-
-  /* Do NOT call nn_xqos_fini: even if (aliased & QP_PARTITION), it still frees "str". Here we know there are no resources to be freed. */
-}
-
-void add_group_to_readers_and_proxy_writers (const struct sertopic *topic, const char *name, v_group group)
-{
-  os_rwlockRead (&gv.qoslock);
-  add_group_to_readers_and_proxy_writers_locked(topic, name, group);
-  os_rwlockUnlock (&gv.qoslock);
-}
-
-static void create_a_group (const char *name, const struct sertopic *topic)
-{
-  v_partitionQos pqos;
-  v_partition part;
-  v_group group;
-
-  ASSERT_RDLOCK_HELD (&gv.qoslock);
-
-  /* any non-wildcard one will do */
-  /* create it -- partitions require a v_partitionQos parameter, but
-   that (thankfully!) isn't used by it ... phew! */
-  TRACE (("create_a_group: %s.%s\n", name, topic->name));
-  memset (&pqos, 0, sizeof (pqos));
-  part = v_partitionNew (gv.ospl_kernel, name, pqos);
-  group = v_groupSetCreate (gv.ospl_kernel->groupSet, part, topic_ospl_topic (topic));
-  /* Assuming the kernel will send a group creation event to all
-   interested parties, which includes our own local discovery -- so
-   that'll then notify the kernel we are interested in it.
-
-   Nonetheless, there are the local readers' "matching_groups" to be
-   updated, and, consequently, the local proxy-writers' "groups",
-   too. Eventually all this will have to be cleaned up, it'll be
-   really too messy and time consuming once qos changes are allowed. */
-  add_group_to_readers_and_proxy_writers_locked (topic, name, group);
-}
-#endif
 
 /* PARTICIPANT ------------------------------------------------------ */
 
@@ -471,11 +372,7 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
   subguid.prefix = pp->e.guid.prefix;
   memset (&group_guid, 0, sizeof (group_guid));
   /* SPDP writer */
-#if LITE
 #define LAST_WR_PARAMS NULL, NULL
-#else
-#define LAST_WR_PARAMS NULL, NULL, NULL
-#endif
 
 #if 0 /* SPDP writer incurs no cost */
   /* Note: skip SEDP <=> skip SPDP because of the way ddsi_discovery.c does things
@@ -531,9 +428,6 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
     pp->prismtech_bes |= NN_DISC_BUILTIN_ENDPOINT_CM_SUBSCRIBER_WRITER;
   }
 
-#if !LITE
-  if (flags & RTPS_PF_PRIVILEGED_PP)
-#endif
   {
     /* TODO: make this one configurable, we don't want all participants to publish all topics (or even just those that they use themselves) */
     subguid.entityid = to_entityid (NN_ENTITYID_SEDP_BUILTIN_TOPIC_WRITER);
@@ -582,15 +476,6 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
     new_reader_guid (&subguid, &group_guid, pp, NULL, &gv.builtin_endpoint_xqos_rd, NULL, NULL, NULL);
     pp->prismtech_bes |= NN_DISC_BUILTIN_ENDPOINT_CM_SUBSCRIBER_READER;
 
-#if ! LITE
-    if (config.generate_builtin_topics)
-    {
-      /* No point in having a reader for topic discovery if we won't be generating the corresponding DCPSTopic, since that is the only thing it is currently being used for */
-      subguid.entityid = to_entityid (NN_ENTITYID_SEDP_BUILTIN_TOPIC_READER);
-      new_reader_guid (&subguid, &group_guid, pp, NULL, &gv.builtin_endpoint_xqos_rd, NULL, NULL, NULL);
-      pp->bes |= NN_DISC_BUILTIN_ENDPOINT_TOPIC_DETECTOR;
-    }
-#endif
   }
 #undef LAST_WR_PARAMS
 
@@ -659,7 +544,6 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
   return 0;
 }
 
-#if LITE
 int new_participant (nn_guid_t *p_ppguid, unsigned flags, const nn_plist_t *plist)
 {
   nn_guid_t ppguid;
@@ -676,7 +560,6 @@ int new_participant (nn_guid_t *p_ppguid, unsigned flags, const nn_plist_t *plis
 
   return new_participant_guid (p_ppguid, flags, plist);
 }
-#endif
 
 static void delete_builtin_endpoint (const struct nn_guid *ppguid, unsigned entityid)
 {
@@ -1047,109 +930,6 @@ static void rebuild_writer_addrset (struct writer *wr)
   TRACE (("\n"));
 }
 
-#if !LITE
-#include "v_public.h"
-#include "v_reader.h"
-
-static void notify_wait_for_historical_data_impl (const nn_guid_t *rd_guid)
-{
-  struct reader *rd;
-  v_public kr;
-
-  if ((rd = ephash_lookup_reader_guid(rd_guid)) == NULL)
-  {
-    TRACE(("wfh(%x:%x:%x:%x ddsi2-reader-gone)\n", PGUID(*rd_guid)));
-    return;
-  }
-  if (v_gidIsNil(rd->c.gid))
-  {
-    return;
-  }
-  TRACE(("wfh(%x:%x:%x:%x gid %x:%x:%x ", PGUID(*rd_guid), rd->c.gid.systemId, rd->c.gid.localId, rd->c.gid.serial));
-  if (rd->c.gid.systemId != gv.ospl_kernel->GID.systemId)
-  {
-    /* bridging mode can mean proxying remote entities, no possibility to do anything for those */
-    TRACE(("bridged-remote-reader)\n"));
-    return;
-  }
-
-  /* Must not actually notify the reader until in sync with all matching proxy writers. Maintaining that state in the reader is hard because of all the asynchronous events and the attendant risk of deadlocks (though not impossible), but checking it here, from the delivery queue thread is "easy". */
-  {
-    struct rd_pwr_match *rdm;
-    int all_complete = 1;
-    os_mutexLock (&rd->e.lock);
-    rdm = ut_avlFindMin (&rd_writers_treedef, &rd->writers);
-    while (rdm != NULL && all_complete)
-    {
-      nn_guid_t pwr_guid = rdm->pwr_guid;
-      struct proxy_writer *pwr;
-      if ((pwr = ephash_lookup_proxy_writer_guid (&pwr_guid)) != NULL)
-      {
-        struct pwr_rd_match *pwrm;
-        os_mutexUnlock (&rd->e.lock);
-        os_mutexLock (&pwr->e.lock);
-        if ((pwrm = ut_avlLookup (&pwr_readers_treedef, &pwr->readers, rd_guid)) != NULL && pwrm->in_sync != PRMSS_SYNC)
-        {
-          TRACE(("pwr %x:%x:%x:%x incomplete)\n", PGUID(pwr_guid)));
-          all_complete = 0;
-        }
-        os_mutexUnlock (&pwr->e.lock);
-        os_mutexLock (&rd->e.lock);
-      }
-      rdm = ut_avlLookupSucc (&rd_writers_treedef, &rd->writers, &pwr_guid);
-    }
-    os_mutexUnlock (&rd->e.lock);
-    if (!all_complete)
-    {
-      return;
-    }
-  }
-
-  if (v_gidClaimChecked (rd->c.gid, gv.ospl_kernel, &kr) != V_HANDLE_OK)
-  {
-    TRACE(("kernel-reader-gone)\n"));
-    return;
-  }
-
-  if (c_instanceOf(kr, "v_reader"))
-  {
-    TRACE(("notifying)\n"));
-    v_readerNotifyHistoricalDataAvailable(v_reader(kr));
-  }
-  else
-  {
-    TRACE(("kernel-object-not-a-reader)\n"));
-  }
-
-  v_gidRelease (rd->c.gid, gv.ospl_kernel);
-}
-
-struct notify_wait_for_historical_data_cb_arg {
-  nn_guid_t rd_guid;
-};
-
-static void notify_wait_for_historical_data_cb (void *varg)
-{
-  struct notify_wait_for_historical_data_cb_arg *arg = varg;
-  notify_wait_for_historical_data_impl (&arg->rd_guid);
-  os_free(arg);
-}
-
-void notify_wait_for_historical_data (struct proxy_writer *pwr, const nn_guid_t *rd_guid)
-{
-  /* always trigger asynchronously via the delivery queue: data received in "out-of-sync" mode is
-   delivered asynchronously, and the overhead of the asynchronous notification is negligible */
-  nn_vendorid_t vendorid = MY_VENDOR_ID;
-  if (!is_builtin_entityid(rd_guid->entityid, vendorid))
-  {
-    struct notify_wait_for_historical_data_cb_arg *arg;
-    TRACE (("msr_in_sync(%x:%x:%x:%x queue-wfh)\n", PGUID (*rd_guid)));
-    arg = os_malloc(sizeof(*arg));
-    arg->rd_guid = *rd_guid;
-    nn_dqueue_enqueue_callback(pwr ? pwr->dqueue : gv.builtins_dqueue, notify_wait_for_historical_data_cb, arg);
-  }
-}
-#endif
 
 static void free_wr_prd_match (struct wr_prd_match *m)
 {
@@ -1206,7 +986,6 @@ static void writer_drop_connection (const struct nn_guid * wr_guid, const struct
       rebuild_writer_addrset (wr);
       remove_acked_messages (wr);
       wr->num_reliable_readers -= m->is_reliable;
-#if LITE
       if (wr->status_cb)
       {
         status_cb_data_t data;
@@ -1215,7 +994,6 @@ static void writer_drop_connection (const struct nn_guid * wr_guid, const struct
         data.handle = prd->e.iid;
         (wr->status_cb) (wr->status_cb_entity, &data);
       }
-#endif
     }
     os_mutexUnlock (&wr->e.lock);
     free_wr_prd_match (m);
@@ -1234,7 +1012,6 @@ static void reader_drop_connection (const struct nn_guid *rd_guid, const struct 
     os_mutexUnlock (&rd->e.lock);
     free_rd_pwr_match (m);
 
-#if LITE
     if (rd->rhc)
     {
       struct proxy_writer_info pwr_info;
@@ -1258,7 +1035,6 @@ static void reader_drop_connection (const struct nn_guid *rd_guid, const struct 
       data.status = DDS_SUBSCRIPTION_MATCHED_STATUS;
       (rd->status_cb) (rd->status_cb_entity, &data);
     }
-#endif
   }
 }
 
@@ -1299,9 +1075,6 @@ static void proxy_writer_drop_connection (const struct nn_guid *pwr_guid, struct
       if (m->in_sync != PRMSS_SYNC)
       {
         pwr->n_readers_out_of_sync--;
-#if ! LITE
-        notify_wait_for_historical_data (pwr, &rd->e.guid);
-#endif
       }
     }
     if (rd->reliable)
@@ -1309,7 +1082,6 @@ static void proxy_writer_drop_connection (const struct nn_guid *pwr_guid, struct
       pwr->n_reliable_readers--;
     }
 
-#if LITE
     {
       int i;
       os_mutexLock (&pwr->rdary_lock);
@@ -1326,7 +1098,6 @@ static void proxy_writer_drop_connection (const struct nn_guid *pwr_guid, struct
       pwr->rdary = os_realloc (pwr->rdary, (pwr->n_readers + 1) * sizeof (*pwr->rdary));
       os_mutexUnlock (&pwr->rdary_lock);
     }
-#endif
 
     os_mutexUnlock (&pwr->e.lock);
     if (m != NULL)
@@ -1414,7 +1185,6 @@ static void writer_add_connection (struct writer *wr, struct proxy_reader *prd)
     wr->num_reliable_readers += m->is_reliable;
     os_mutexUnlock (&wr->e.lock);
 
-#if LITE
     if (wr->status_cb)
     {
       status_cb_data_t data;
@@ -1423,21 +1193,6 @@ static void writer_add_connection (struct writer *wr, struct proxy_reader *prd)
       data.handle = prd->e.iid;
       (wr->status_cb) (wr->status_cb_entity, &data);
     }
-#else
-    /* for proxy readers using a non-wildcard partition matching a
-     wildcard partition at the writer (and only a wildcard partition),
-     ensure that a matching non-wildcard partition exists */
-    if (!is_builtin_entityid (wr->e.guid.entityid, ownvendorid))
-    {
-      const char *realname = NULL;
-      ASSERT_RDLOCK_HELD (&qoslock);
-      if (partition_match_based_on_wildcard_in_left_operand (wr->xqos, prd->c.xqos, &realname))
-      {
-        assert (realname != NULL);
-        create_a_group (realname, wr->topic);
-      }
-    }
-#endif
 
     /* If reliable and/or transient-local, we may have data available
        in the WHC, but if all has been acknowledged by the previously
@@ -1519,7 +1274,6 @@ static void reader_add_connection (struct reader *rd, struct proxy_writer *pwr, 
   }
 #endif
 
-#if LITE
     if (rd->status_cb)
     {
       status_cb_data_t data;
@@ -1528,48 +1282,9 @@ static void reader_add_connection (struct reader *rd, struct proxy_writer *pwr, 
       data.handle = pwr->e.iid;
       (rd->status_cb) (rd->status_cb_entity, &data);
     }
-#endif
   }
 }
 
-#if !LITE
-static int add_matching_groups_helper (v_group g, void *varg)
-{
-  /* Damn. Didn't think it through all the way, so now I need to check
-   partition matching *again* :-( Eventually, a real solution will
-   be implemented. */
-  struct proxy_writer *pwr = varg;
-  const char *pname = v_partitionName (g->partition);
-  nn_xqos_t tmp;
-  ASSERT_MUTEX_HELD (&pwr->e.lock);
-  tmp.present = QP_PARTITION;
-  tmp.partition.n = 1;
-  tmp.partition.strs = (char **) &pname;
-  if (!partitions_match_p (pwr->c.xqos, &tmp))
-    return 0;
-  else if (nn_groupset_add_group (pwr->groups, g) >= 0)
-    return 1;
-  else
-    return 0;
-}
-
-static const char *any_nonwildcard_partition (const nn_partition_qospolicy_t *ps)
-{
-  unsigned i;
-  if (ps->n == 0)
-  {
-    /* The default partition is a valid non-wildcard partition, but
-     one way of specifying it is an empty set of partitions.  That
-     means no early exit from the loop, and that means we return a
-     null pointer. */
-    return "";
-  }
-  for (i = 0; i < ps->n; i++)
-    if (!is_wildcard_partition (ps->strs[i]))
-      return ps->strs[i];
-  return NULL;
-}
-#endif
 
 static void proxy_writer_add_connection (struct proxy_writer *pwr, struct reader *rd, nn_mtime_t tnow /* monotonic */, nn_count_t init_count)
 {
@@ -1581,47 +1296,14 @@ static void proxy_writer_add_connection (struct proxy_writer *pwr, struct reader
   if (ut_avlLookupIPath (&pwr_readers_treedef, &pwr->readers, &rd->e.guid, &path))
     goto already_matched;
 
-#if LITE
   if (pwr->c.topic == NULL && rd->topic)
     pwr->c.topic = rd->topic;
-#else
-  if (pwr->c.topic == NULL)
-    pwr->c.topic = rd->topic;
-#endif
 
   TRACE (("  proxy_writer_add_connection(pwr %x:%x:%x:%x rd %x:%x:%x:%x)",
           PGUID (pwr->e.guid), PGUID (rd->e.guid)));
   m->rd_guid = rd->e.guid;
   m->tcreate = now_mt ();
 
-#if !LITE
-  {
-    int ngroups;
-
-    /* Add the groups of RD to PWR; again: it is a set, and we don't
-       mind if there are any groups in PWR for which currently no
-       readers exist. */
-    ngroups = nn_groupset_foreach (rd->matching_groups, add_matching_groups_helper, pwr);
-
-    /* We know there's a QoS match, but it may be because PWR uses a
-       real partition and RD uses a wildcard and still has a no
-       matching groups groupset. If that's the case, pick any real
-       partition from PWR and add it to RD. It doesn't matter if we
-       attempt adding the same one twice (it is a set, after all), or
-       indeed add two different ones. The test for an empty groupset
-       is mere optimisation. Creating a group adds the new group to
-       all groupsets. */
-    if (!is_builtin_entityid (rd->e.guid.entityid, ownvendorid) && ngroups == 0)
-    {
-      const char *name;
-      assert (pwr->c.xqos->present & QP_PARTITION);
-      name = any_nonwildcard_partition (&pwr->c.xqos->partition);
-      assert (name != NULL);
-      create_a_group (name, rd->topic);
-      assert (!nn_groupset_empty (rd->matching_groups));
-    }
-  }
-#endif
 
   /* We track the last heartbeat count value per reader--proxy-writer
      pair, so that we can correctly handle directed heartbeats. The
@@ -1692,21 +1374,18 @@ static void proxy_writer_add_connection (struct proxy_writer *pwr, struct reader
 
   ut_avlInsertIPath (&pwr_readers_treedef, &pwr->readers, m, &path);
 
-#if LITE
   os_mutexLock (&pwr->rdary_lock);
   pwr->n_readers++;
   pwr->rdary = os_realloc (pwr->rdary, (pwr->n_readers + 1) * sizeof (*pwr->rdary));
   pwr->rdary[pwr->n_readers - 1] = rd;
   pwr->rdary[pwr->n_readers] = NULL;
   os_mutexUnlock (&pwr->rdary_lock);
-#endif
 
   os_mutexUnlock (&pwr->e.lock);
   qxev_pwr_entityid (pwr, &rd->e.guid.prefix);
 
   TRACE (("\n"));
 
-#if LITE
   if (rd->status_cb)
   {
     status_cb_data_t data;
@@ -1715,7 +1394,6 @@ static void proxy_writer_add_connection (struct proxy_writer *pwr, struct reader
     data.handle = pwr->e.iid;
     (rd->status_cb) (rd->status_cb_entity, &data);
   }
-#endif
 
   return;
 
@@ -1820,7 +1498,6 @@ static nn_entityid_t builtin_entityid_match (nn_entityid_t x)
   return res;
 }
 
-#if LITE
 static void writer_qos_missmatch (struct writer * wr, int32_t reason)
 {
   if (reason == DDS_INVALID_QOS_POLICY_ID)
@@ -1843,7 +1520,6 @@ static void writer_qos_missmatch (struct writer * wr, int32_t reason)
     }
   }
 }
-#endif
 
 static void match_writer_with_proxy_readers (struct writer *wr, UNUSED_ARG (nn_mtime_t tnow))
 {
@@ -1875,12 +1551,10 @@ static void match_writer_with_proxy_readers (struct writer *wr, UNUSED_ARG (nn_m
         writer_add_connection (wr, prd);
         proxy_reader_add_connection (prd, wr);
       }
-#if LITE
       else
       {
         writer_qos_missmatch (wr, reason);
       }
-#endif
     }
     os_rwlockUnlock (&gv.qoslock);
     ephash_enum_proxy_reader_fini (&est);
@@ -1911,7 +1585,6 @@ static void match_writer_with_proxy_readers (struct writer *wr, UNUSED_ARG (nn_m
   }
 }
 
-#if LITE
 static void reader_qos_missmatch (struct reader * rd, int32_t reason)
 {
   if (reason == DDS_INVALID_QOS_POLICY_ID)
@@ -1934,7 +1607,6 @@ static void reader_qos_missmatch (struct reader * rd, int32_t reason)
     }
   }
 }
-#endif
 
 static void match_reader_with_proxy_writers (struct reader *rd, nn_mtime_t tnow /* monotonic */)
 {
@@ -1959,12 +1631,10 @@ static void match_reader_with_proxy_writers (struct reader *rd, nn_mtime_t tnow 
         reader_add_connection (rd, pwr, &init_count);
         proxy_writer_add_connection (pwr, rd, tnow /* monotonic */, init_count);
       }
-#if LITE
       else
       {
         reader_qos_missmatch (rd, reason);
       }
-#endif
     }
     os_rwlockUnlock (&gv.qoslock);
     ephash_enum_proxy_writer_fini (&est);
@@ -2021,12 +1691,10 @@ static void match_proxy_writer_with_readers (struct proxy_writer *pwr, nn_mtime_
         reader_add_connection (rd, pwr, &init_count);
         proxy_writer_add_connection (pwr, rd, tnow /* monotonic */, init_count);
       }
-#if LITE
       else
       {
         reader_qos_missmatch (rd, reason);
       }
-#endif
     }
     os_rwlockUnlock (&gv.qoslock);
     ephash_enum_reader_fini (&est);
@@ -2079,12 +1747,10 @@ static void match_proxy_reader_with_writers (struct proxy_reader *prd, UNUSED_AR
         proxy_reader_add_connection (prd, wr);
         writer_add_connection (wr, prd);
       }
-#if LITE
       else
       {
         writer_qos_missmatch (wr, reason);
       }
-#endif
     }
     os_rwlockUnlock (&gv.qoslock);
     ephash_enum_writer_fini (&est);
@@ -2150,31 +1816,9 @@ static void endpoint_common_init
   const struct nn_guid *guid,
   const struct nn_guid *group_guid,
   struct participant *pp
-#if ! LITE
-  ,const struct v_gid_s *gid,
-  const struct v_gid_s *group_gid,
-  const char *endpoint_name
-#endif
 )
 {
-#if LITE
   entity_common_init (e, guid, NULL, kind);
-#else
-  entity_common_init (e, guid, endpoint_name, kind);
-#endif
-#if ! LITE
-  if (gid)
-  {
-    assert (group_gid != NULL);
-    c->gid = *gid;
-    c->group_gid = *group_gid;
-  }
-  else
-  {
-    memset (&c->gid, 0, sizeof (c->gid));
-    memset (&c->group_gid, 0, sizeof (c->group_gid));
-  }
-#endif
   c->pp = ref_participant (pp, &e->guid);
   if (group_guid)
   {
@@ -2384,21 +2028,11 @@ static struct writer * new_writer_guid
   struct participant *pp,
   const struct sertopic *topic,
   const struct nn_xqos *xqos,
-#if LITE
   status_cb_t status_cb,
   void * status_entity
-#else
-  const struct v_gid_s *gid,
-  const struct v_gid_s *group_gid,
-  const char *endpoint_name
-#endif
 )
 {
-#if LITE
   const size_t sample_overhead = 80; /* INFO_TS + DATA (approximate figure) + inline QoS */
-#else
-  const size_t sample_overhead = 120; /* INFO_TS + DATA (approximate figure) + inline QoS */
-#endif
   struct writer *wr;
   nn_mtime_t tnow = now_mt ();
 
@@ -2413,11 +2047,7 @@ static struct writer * new_writer_guid
      delete_participant won't interfere with our ability to address
      the participant */
 
-#if LITE
   endpoint_common_init (&wr->e, &wr->c, EK_WRITER, guid, group_guid, pp);
-#else
-  endpoint_common_init (&wr->e, &wr->c, EK_WRITER, guid, group_guid, pp, gid, group_gid, endpoint_name);
-#endif
 
   os_condInit (&wr->throttle_cond, &wr->e.lock, NULL);
   wr->seq = 0;
@@ -2441,10 +2071,8 @@ static struct writer * new_writer_guid
   wr->rexmit_count = 0;
   wr->rexmit_lost_count = 0;
 
-#if LITE
   wr->status_cb = status_cb;
   wr->status_cb_entity = status_entity;
-#endif
 
   memset(wr->local_reader_guid, 0, sizeof(wr->local_reader_guid));
   for (size_t i = 0; i < sizeof(wr->local_reader_guid)/sizeof(wr->local_reader_guid[0]); i++)
@@ -2500,12 +2128,10 @@ static struct writer * new_writer_guid
       (wr->xqos->durability.kind == NN_VOLATILE_DURABILITY_QOS &&
        wr->xqos->reliability.kind != NN_BEST_EFFORT_RELIABILITY_QOS);
   }
-#if LITE
   if (topic)
   {
     os_atomic_inc32 (&((struct sertopic *)topic)->refcount);
   }
-#endif
   wr->topic = topic;
   wr->as = new_addrset ();
   wr->as_group = NULL;
@@ -2691,14 +2317,8 @@ struct writer * new_writer
   const struct nn_guid *ppguid,
   const struct sertopic *topic,
   const struct nn_xqos *xqos,
-#if LITE
   status_cb_t status_cb,
   void * status_cb_arg
-#else
-  const struct v_gid_s *gid,
-  const struct v_gid_s *group_gid,
-  const char *endpoint_name
-#endif
 )
 {
   struct participant *pp;
@@ -2717,11 +2337,7 @@ struct writer * new_writer
   wrguid->prefix = pp->e.guid.prefix;
   if (pp_allocate_entityid (&wrguid->entityid, entity_kind, pp) < 0)
     return NULL;
-#if LITE
   wr = new_writer_guid (wrguid, group_guid, pp, topic, xqos, status_cb, status_cb_arg);
-#else
-  wr = new_writer_guid (wrguid, group_guid, pp, topic, xqos, gid, group_gid, endpoint_name);
-#endif
   return wr;
 }
 
@@ -2751,12 +2367,10 @@ static void gc_delete_writer (struct gcreq *gcreq)
   /* Do last gasp on SEDP and free writer. */
   if (!is_builtin_entityid (wr->e.guid.entityid, ownvendorid))
     sedp_dispose_unregister_writer (wr);
-#if LITE
   if (wr->status_cb)
   {
     (wr->status_cb) (wr->status_cb_entity, NULL);
   }
-#endif
 
   whc_free (wr->whc);
 #ifdef DDSI_INCLUDE_SSM
@@ -2768,9 +2382,7 @@ static void gc_delete_writer (struct gcreq *gcreq)
   os_free (wr->xqos);
   os_condDestroy (&wr->throttle_cond);
 
-#if LITE
   sertopic_free ((struct sertopic *) wr->topic);
-#endif
   endpoint_common_fini (&wr->e, &wr->c);
   os_free (wr);
 }
@@ -2928,15 +2540,9 @@ static struct reader * new_reader_guid
   struct participant *pp,
   const struct sertopic *topic,
   const struct nn_xqos *xqos,
-#if LITE
   struct rhc *rhc,
   status_cb_t status_cb,
   void * status_entity
-#else
-  const struct v_gid_s *gid,
-  const struct v_gid_s *group_gid,
-  const char *endpoint_name
-#endif
 )
 {
   /* see new_writer_guid for commenets */
@@ -2951,11 +2557,7 @@ static struct reader * new_reader_guid
   new_reader_writer_common (guid, topic, xqos);
   rd = os_malloc (sizeof (*rd));
 
-#if LITE
   endpoint_common_init (&rd->e, &rd->c, EK_READER, guid, group_guid, pp);
-#else
-  endpoint_common_init (&rd->e, &rd->c, EK_READER, guid, group_guid, pp, gid, group_gid, endpoint_name);
-#endif
 
   /* Copy QoS, merging in defaults */
   rd->xqos = os_malloc (sizeof (*rd->xqos));
@@ -2974,18 +2576,15 @@ static struct reader * new_reader_guid
   rd->reliable = (rd->xqos->reliability.kind != NN_BEST_EFFORT_RELIABILITY_QOS);
   assert (rd->xqos->present & QP_DURABILITY);
   rd->handle_as_transient_local = (rd->xqos->durability.kind == NN_TRANSIENT_LOCAL_DURABILITY_QOS);
-#if LITE
   if (topic)
   {
     os_atomic_inc32 (&((struct sertopic *)topic)->refcount);
   }
-#endif
   rd->topic = topic;
   rd->init_acknack_count = 0;
 #ifdef DDSI_INCLUDE_SSM
   rd->favours_ssm = 0;
 #endif
-#if LITE
   if (topic == NULL)
   {
     assert (is_builtin_entityid (rd->e.guid.entityid, ownvendorid));
@@ -2998,11 +2597,6 @@ static struct reader * new_reader_guid
   {
     (ddsi_plugin.rhc_set_qos_fn) (rd->rhc, rd->xqos);
   }
-#else
-  rd->matching_groups = nn_groupset_new ();
-  if (!is_builtin_entityid (rd->e.guid.entityid, ownvendorid))
-    nn_groupset_fromqos (rd->matching_groups, gv.ospl_kernel, rd->xqos);
-#endif
   assert (rd->xqos->present & QP_LIVELINESS);
   if (rd->xqos->liveliness.kind != NN_AUTOMATIC_LIVELINESS_QOS ||
       nn_from_ddsi_duration (rd->xqos->liveliness.lease_duration) != T_NEVER)
@@ -3068,12 +2662,6 @@ static struct reader * new_reader_guid
   ephash_insert_reader_guid (rd);
   match_reader_with_proxy_writers (rd, tnow);
   sedp_write_reader (rd);
-#if !LITE
-  /* If no writers matched, must notify a wait_for_historical_data in OSPL. In Lite,
-     I would argue that wait_for_historical_data should look at the state in DDSI ...
-     but that coupling is problematic in OSPL. */
-  notify_wait_for_historical_data (NULL, &rd->e.guid);
-#endif
   return rd;
 }
 
@@ -3084,15 +2672,9 @@ struct reader * new_reader
   const struct nn_guid *ppguid,
   const struct sertopic *topic,
   const struct nn_xqos *xqos,
-#if LITE
   struct rhc * rhc,
   status_cb_t status_cb,
   void * status_cbarg
-#else
-  const struct v_gid_s *gid,
-  const struct v_gid_s *group_gid,
-  const char *endpoint_name
-#endif
 )
 {
   struct participant * pp;
@@ -3108,11 +2690,7 @@ struct reader * new_reader
   rdguid->prefix = pp->e.guid.prefix;
   if (pp_allocate_entityid (&rdguid->entityid, entity_kind, pp) < 0)
     return NULL;
-#if LITE
   rd = new_reader_guid (rdguid, group_guid, pp, topic, xqos, rhc, status_cb, status_cbarg);
-#else
-  rd = new_reader_guid (rdguid, group_guid, pp, topic, xqos, gid, group_gid, endpoint_name);
-#endif
   return rd;
 }
 
@@ -3136,7 +2714,6 @@ static void gc_delete_reader (struct gcreq *gcreq)
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
   addrset_forall (rd->as, leave_mcast_helper, gv.data_conn_mc);
 #endif
-#if LITE
   if (rd->rhc)
   {
     (ddsi_plugin.rhc_free_fn) (rd->rhc);
@@ -3146,9 +2723,6 @@ static void gc_delete_reader (struct gcreq *gcreq)
     (rd->status_cb) (rd->status_cb_entity, NULL);
   }
   sertopic_free ((struct sertopic *) rd->topic);
-#else
-  nn_groupset_free (rd->matching_groups);
-#endif
 
   nn_xqos_fini (rd->xqos);
   os_free (rd->xqos);
@@ -3169,12 +2743,10 @@ int delete_reader (const struct nn_guid *guid)
     nn_log (LC_DISCOVERY, "delete_reader_guid(guid %x:%x:%x:%x) - unknown guid\n", PGUID (*guid));
     return ERR_UNKNOWN_ENTITY;
   }
-#if LITE
   if (rd->rhc)
   {
     (ddsi_plugin.rhc_fini_fn) (rd->rhc);
   }
-#endif
   nn_log (LC_DISCOVERY, "delete_reader_guid(guid %x:%x:%x:%x) ...\n", PGUID (*guid));
   ephash_remove_reader_guid (rd);
   gcreq_reader (rd);
@@ -3234,29 +2806,6 @@ void new_proxy_participant
   proxypp->plist = nn_plist_dup (plist);
   ut_avlInit (&proxypp_groups_treedef, &proxypp->groups);
 
-#if !LITE
-  /* - the proxypp gid only matters when generate_builtin_topics is set
-     - with generate_builtin_topics set:
-       - proxy gids are faked unless ENDPOINT_GID present, from 6.4.1
-       - DISCOVERY_INCLUDES_GID is present from 6.4.1p1
-     - 6.5.0p11 fixed the fake GID generation, but missed the proxypp GID
-       (the foreign keys in the built-in topics are correct, though)
-     so a test for DISCOVERY_INCLUDES_GID means we do the right thing for
-     all other implementations and for all OpenSplice versions other than
-     6.4.1 ... but the 6.4.1 already has the version info internals. */
-  if ((plist->present & PP_PRISMTECH_PARTICIPANT_VERSION_INFO) &&
-      ((plist->prismtech_participant_version_info.flags & NN_PRISMTECH_FL_DISCOVERY_INCLUDES_GID) ||
-       version_info_is_6_4_1 (plist->prismtech_participant_version_info.internals)))
-  {
-    proxypp->gid.systemId = ppguid->prefix.u[0];
-    proxypp->gid.localId = ppguid->prefix.u[1];
-    proxypp->gid.serial = ppguid->prefix.u[2];
-  }
-  else
-  {
-    nn_guid_to_ospl_gid (&proxypp->gid, ppguid, vendor_is_opensplice (vendor));
-  }
-#endif
 
   if (custom_flags & CF_INC_KERNEL_SEQUENCE_NUMBERS)
     proxypp->kernel_sequence_numbers = 1;
@@ -3345,19 +2894,6 @@ void new_proxy_participant
 
   lease_register (proxypp->lease);
 
-#if ! LITE
-  if (config.generate_builtin_topics)
-  {
-    os_mutexLock ((os_mutex *) &proxypp->e.lock);
-    write_builtin_topic_proxy_participant (proxypp);
-    /* Non-PrismTech doesn't implement the PT extensions and therefore won't generate
-       a CMParticipant; if a PT peer does not implement a CMParticipant writer, then it
-       presumably also is a handicapped implementation (perhaps simply an old one) */
-    if (!vendor_is_prismtech(proxypp->vendor) || !(proxypp->prismtech_bes & NN_DISC_BUILTIN_ENDPOINT_CM_PARTICIPANT_WRITER))
-      write_builtin_topic_proxy_participant_cm (proxypp);
-    os_mutexUnlock ((os_mutex *) &proxypp->e.lock);
-  }
-#endif
 }
 
 int update_proxy_participant_plist (struct proxy_participant *proxypp, const struct nn_plist *datap)
@@ -3381,14 +2917,6 @@ int update_proxy_participant_plist (struct proxy_participant *proxypp, const str
   proxypp->plist = new_plist;
   os_mutexUnlock (&proxypp->e.lock);
 
-#if ! LITE
-  if (config.generate_builtin_topics)
-  {
-    os_mutexLock ((os_mutex *) &proxypp->e.lock);
-    write_builtin_topic_proxy_participant_cm (proxypp);
-    os_mutexUnlock ((os_mutex *) &proxypp->e.lock);
-  }
-#endif
   return 0;
 }
 
@@ -3431,12 +2959,6 @@ static void unref_proxy_participant (struct proxy_participant *proxypp, struct p
     os_mutexUnlock (&proxypp->e.lock);
     TRACE (("unref_proxy_participant(%x:%x:%x:%x): refc=0, freeing\n", PGUID (proxypp->e.guid)));
 
-#if ! LITE
-    if (config.generate_builtin_topics)
-    {
-      dispose_builtin_topic_proxy_participant (proxypp, proxypp->lease_expired);
-    }
-#endif
 
     unref_addrset (proxypp->as_default);
     unref_addrset (proxypp->as_meta);
@@ -3637,16 +3159,6 @@ int new_proxy_group (const struct nn_guid *guid, const struct v_gid_s *gid, cons
       TRACE (("new_proxy_group(%x:%x:%x:%x): new\n", PGUID (*guid)));
       pgroup = os_malloc (sizeof (*pgroup));
       pgroup->guid = *guid;
-#if ! LITE
-      if (gid)
-      {
-        pgroup->gid = *gid;
-      }
-      else
-      {
-        nn_guid_to_ospl_gid (&pgroup->gid, guid, vendor_is_opensplice (proxypp->vendor));
-      }
-#endif
       pgroup->proxypp = proxypp;
       pgroup->name = NULL;
       pgroup->xqos = NULL;
@@ -3659,10 +3171,6 @@ int new_proxy_group (const struct nn_guid *guid, const struct v_gid_s *gid, cons
       pgroup->name = os_strdup (name);
       pgroup->xqos = nn_xqos_dup (xqos);
       nn_xqos_mergein_missing (pgroup->xqos, is_sub ? &gv.default_xqos_sub : &gv.default_xqos_pub);
-#if ! LITE
-      if (config.generate_builtin_topics)
-        write_builtin_topic_proxy_group (pgroup);
-#endif
     }
   out:
     os_mutexUnlock (&proxypp->e.lock);
@@ -3684,10 +3192,6 @@ static void delete_proxy_group_locked (struct proxy_group *pgroup, int isimplici
      generation */
   if (pgroup->name)
   {
-#if ! LITE
-    if (config.generate_builtin_topics)
-      dispose_builtin_topic_proxy_group (pgroup, isimplicit);
-#endif
     nn_xqos_fini (pgroup->xqos);
     os_free (pgroup->xqos);
     os_free (pgroup->name);
@@ -3738,25 +3242,7 @@ static void proxy_endpoint_common_init
     c->group_guid = plist->group_guid;
   else
     memset (&c->group_guid, 0, sizeof (c->group_guid));
-#if ! LITE
-  if (plist->present & PP_PRISMTECH_GROUP_GID)
-    c->group_gid = plist->group_gid;
-  else if (plist->present & PP_GROUP_GUID)
-    nn_guid_to_ospl_gid (&c->group_gid, &c->group_guid, vendor_is_opensplice (proxypp->vendor));
-  else
-    memset (&c->group_gid, 0, sizeof (c->group_gid));
-#endif
 
-#if ! LITE
-  if (is_builtin_endpoint (guid->entityid, proxypp->vendor))
-    memset (&c->gid, 0, sizeof (c->gid));
-  else if (plist->present & PP_PRISMTECH_ENDPOINT_GID)
-    c->gid = plist->endpoint_gid;
-  else if (!config.generate_builtin_topics)
-    memset (&c->gid, 0, sizeof (c->gid)); /* done lazily */
-  else
-    nn_guid_to_ospl_gid (&c->gid, guid, vendor_is_opensplice (proxypp->vendor));
-#endif
 
   ref_proxy_participant (proxypp, c);
 }
@@ -3794,13 +3280,6 @@ int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, 
   proxy_endpoint_common_init (&pwr->e, &pwr->c, EK_PROXY_WRITER, guid, proxypp, as, plist);
 
   ut_avlInit (&pwr_readers_treedef, &pwr->readers);
-#if !LITE
-  pwr->groups = nn_groupset_new ();
-  pwr->v_message_qos = new_v_message_qos (pwr->c.xqos);
-  pwr->seq_offset = 0;
-  pwr->transaction_id = 0;
-  pwr->cs_seq = 0;
-#endif
   pwr->n_reliable_readers = 0;
   pwr->n_readers_out_of_sync = 0;
   pwr->last_seq = 0;
@@ -3824,9 +3303,7 @@ int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, 
 #ifdef DDSI_INCLUDE_SSM
   pwr->supports_ssm = (addrset_contains_ssm (as) && config.allowMulticast & AMC_SSM) ? 1 : 0;
 #endif
-#if LITE
   pwr->deleting = 0;
-#endif
   isreliable = (pwr->c.xqos->reliability.kind != NN_BEST_EFFORT_RELIABILITY_QOS);
 
   /* Only assert PP lease on receipt of data if enabled (duh) and the proxy participant is a
@@ -3860,21 +3337,13 @@ int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, 
   pwr->dqueue = dqueue;
   pwr->evq = evq;
 
-#if LITE
   os_mutexInit (&pwr->rdary_lock, NULL);
   pwr->n_readers = 0;
   pwr->rdary = os_malloc (sizeof (*pwr->rdary));
   pwr->rdary[0] = NULL;
-#endif
 
   ephash_insert_proxy_writer_guid (pwr);
   match_proxy_writer_with_readers (pwr, tnow);
-#if ! LITE
-  if (!is_builtin_entityid (pwr->e.guid.entityid, pwr->c.vendor) && config.generate_builtin_topics)
-  {
-    write_builtin_topic_proxy_writer (pwr);
-  }
-#endif
 
   return 0;
 }
@@ -3977,15 +3446,9 @@ static void gc_delete_proxy_writer (struct gcreq *gcreq)
     free_pwr_rd_match (m);
   }
 
-#if LITE
   os_free (pwr->rdary);
   os_mutexDestroy (&pwr->rdary_lock);
-#endif
   proxy_endpoint_common_fini (&pwr->e, &pwr->c);
-#if !LITE
-  nn_groupset_free (pwr->groups);
-  c_free (pwr->v_message_qos);
-#endif
   nn_defrag_free (pwr->defrag);
   nn_reorder_free (pwr->reorder);
   os_free (pwr);
@@ -4002,7 +3465,6 @@ int delete_proxy_writer (const struct nn_guid *guid, int isimplicit)
     TRACE (("- unknown\n"));
     return ERR_UNKNOWN_ENTITY;
   }
-#if LITE
   /* Set "deleting" flag in particular for Lite, to signal to the receive path it can't
      trust rdary[] anymore, which is because removing the proxy writer from the hash
      table will prevent the readers from looking up the proxy writer, and consequently
@@ -4010,16 +3472,9 @@ int delete_proxy_writer (const struct nn_guid *guid, int isimplicit)
   os_mutexLock (&pwr->rdary_lock);
   pwr->deleting = 1;
   os_mutexUnlock (&pwr->rdary_lock);
-#endif
   TRACE (("- deleting\n"));
   ephash_remove_proxy_writer_guid (pwr);
   os_mutexUnlock (&gv.lock);
-#if ! LITE
-  if (!is_builtin_entityid (pwr->e.guid.entityid, pwr->c.vendor) && config.generate_builtin_topics)
-  {
-    dispose_builtin_topic_proxy_writer (pwr, isimplicit);
-  }
-#endif
   gcreq_proxy_writer (pwr);
   return 0;
 }
@@ -4056,28 +3511,10 @@ int new_proxy_reader (const struct nn_guid *ppguid, const struct nn_guid *guid, 
   /* Only assert PP lease on receipt of data if enabled (duh) and the proxy participant is a
      "real" participant, rather than the thing we use for endpoints discovered via the DS */
   prd->assert_pp_lease = (unsigned) !!config.arrival_of_data_asserts_pp_and_ep_liveliness;
-#if ! LITE
-  if (!is_builtin_entityid (guid->entityid, prd->c.vendor) &&
-      (proxypp->plist->present & PP_PRISMTECH_PARTICIPANT_VERSION_INFO) &&
-      (proxypp->plist->prismtech_participant_version_info.flags & NN_PRISMTECH_FL_DISCOVERY_INCLUDES_GID) &&
-      !((plist->present & PP_PRISMTECH_ENDPOINT_GID) &&
-        (plist->endpoint_gid.systemId != 0 || plist->endpoint_gid.localId != 0 ||
-         plist->endpoint_gid.serial != 0)))
-  {
-    TRACE (("proxy_reader(%x:%x:%x:%x): no GID, considering fictitious transient data reader\n", PGUID (*guid)));
-    prd->is_fict_trans_reader = 1;
-  }
-#endif
 
   ut_avlInit (&prd_writers_treedef, &prd->writers);
   ephash_insert_proxy_reader_guid (prd);
   match_proxy_reader_with_writers (prd, tnow);
-#if ! LITE
-  if (!is_builtin_entityid (prd->e.guid.entityid, prd->c.vendor) && !prd->is_fict_trans_reader && config.generate_builtin_topics)
-  {
-    write_builtin_topic_proxy_reader (prd);
-  }
-#endif
   return 0;
 }
 
@@ -4164,12 +3601,6 @@ int delete_proxy_reader (const struct nn_guid *guid, int isimplicit)
      do its work. */
   proxy_reader_set_delete_and_ack_all_messages (prd);
 
-#if ! LITE
-  if (!is_builtin_entityid (prd->e.guid.entityid, prd->c.vendor) && !prd->is_fict_trans_reader && config.generate_builtin_topics)
-  {
-    dispose_builtin_topic_proxy_reader (prd, isimplicit);
-  }
-#endif
   gcreq_proxy_reader (prd);
   return 0;
 }

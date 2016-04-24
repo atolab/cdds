@@ -17,13 +17,6 @@
 
 #include "os/os.h"
 
-#if ! LITE
-#include "v_group.h"
-#include "v_state.h"
-#include "v_message.h"
-#include "v_public.h"
-#include "v_reader.h"
-#endif
 
 #include "ddsi/q_md5.h"
 #include "util/ut_avl.h"
@@ -35,9 +28,6 @@
 #include "ddsi/q_log.h"
 #include "ddsi/q_plist.h"
 #include "ddsi/q_unused.h"
-#if ! LITE
-#include "q_groupset.h"
-#endif
 #include "ddsi/q_bswap.h"
 #include "ddsi/q_lat_estim.h"
 #include "ddsi/q_bitset.h"
@@ -92,9 +82,6 @@ static void maybe_set_reader_in_sync (struct proxy_writer *pwr, struct pwr_rd_ma
       {
         wn->in_sync = PRMSS_SYNC;
         pwr->n_readers_out_of_sync--;
-#if !LITE
-        notify_wait_for_historical_data (pwr, &wn->rd_guid);
-#endif
       }
       break;
     case PRMSS_OUT_OF_SYNC:
@@ -332,7 +319,6 @@ static void set_sampleinfo_proxy_writer (struct nn_rsample_info *sampleinfo, nn_
 {
   struct proxy_writer * pwr = ephash_lookup_proxy_writer_guid (pwr_guid);
   sampleinfo->pwr = pwr;
-#if LITE
   if (pwr)
   {
     sampleinfo->pwr_info.guid = pwr->e.guid;
@@ -340,7 +326,6 @@ static void set_sampleinfo_proxy_writer (struct nn_rsample_info *sampleinfo, nn_
     sampleinfo->pwr_info.auto_dispose = pwr->c.xqos->writer_data_lifecycle.autodispose_unregistered_instances;
     sampleinfo->pwr_info.iid = pwr->e.iid;
   }
-#endif
 }
 
 static int valid_Data (const struct receiver_state *rst, struct nn_rmsg *rmsg, Data_t *msg, size_t size, int byteswap, struct nn_rsample_info *sampleinfo, unsigned char **payloadp)
@@ -1735,7 +1720,6 @@ static int handle_Gap (struct receiver_state *rst, nn_wctime_t tnow, struct nn_r
   return 1;
 }
 
-#if LITE
 static serstate_t make_raw_serstate
 (
   struct sertopic const * const topic,
@@ -1861,227 +1845,6 @@ static serdata_t extract_sample_from_data
   }
   return sample;
 }
-#else
-static int defragment (unsigned char **datap, const struct nn_rdata *fragchain, uint32_t sz)
-{
-  if (fragchain->nextfrag == NULL)
-  {
-    *datap = NN_RMSG_PAYLOADOFF (fragchain->rmsg, NN_RDATA_PAYLOAD_OFF (fragchain));
-    return 0;
-  }
-  else
-  {
-    unsigned char *buf;
-    uint32_t off = 0;
-    buf = os_malloc (sz);
-    while (fragchain)
-    {
-      assert (fragchain->min <= off);
-      assert (fragchain->maxp1 <= sz);
-      if (fragchain->maxp1 > off)
-      {
-        /* only copy if this fragment adds data */
-        const unsigned char *payload = NN_RMSG_PAYLOADOFF (fragchain->rmsg, NN_RDATA_PAYLOAD_OFF (fragchain));
-        memcpy (buf + off, payload + off - fragchain->min, fragchain->maxp1 - off);
-        off = fragchain->maxp1;
-      }
-      fragchain = fragchain->nextfrag;
-    }
-    *datap = buf;
-    return 1;
-  }
-}
-
-static v_message extract_vmsg_from_data
-(
-  const struct nn_rsample_info *sampleinfo, unsigned char data_smhdr_flags,
-  const nn_plist_t *qos, const struct nn_rdata *fragchain, unsigned statusinfo,
-  struct sertopic const * const topic
-)
-{
-  static const nn_guid_t null_guid;
-  const char *failmsg = NULL;
-  v_message vmsg = NULL;
-
-  if (statusinfo == 0)
-  {
-    /* normal write */
-    unsigned char *datap;
-    int needs_free;
-    if (!(data_smhdr_flags & DATA_FLAG_DATAFLAG) || sampleinfo->size == 0)
-    {
-      const struct proxy_writer *pwr = sampleinfo->pwr;
-      /* not normal (at least for OpenSplice) unless it is a commit */
-      if (pwr == NULL || pwr->cs_seq == 0)
-      {
-        nn_guid_t guid = pwr ? pwr->e.guid : null_guid;
-        TRACE (("data(application, vendor %d.%d): %x:%x:%x:%x #%"PA_PRId64": write without proper payload (data_smhdr_flags 0x%x size %u)\n",
-                sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
-                PGUID (guid), sampleinfo->seq,
-                data_smhdr_flags, sampleinfo->size));
-      }
-      return NULL;
-    }
-    failmsg = "data";
-    /* FIXME: defragment should be integrated into deserialize */
-    needs_free = defragment (&datap, fragchain, sampleinfo->size);
-    vmsg = deserialize (topic, datap, sampleinfo->size);
-    if (needs_free) os_free (datap);
-  }
-  else if (sampleinfo->size)
-  {
-    /* dispose or unregister with included serialized key or data
-     (data is a PrismTech extension) -- i.e., dispose or unregister
-     as one would expect to receive */
-    unsigned char *datap;
-    int needs_free;
-    needs_free = defragment (&datap, fragchain, sampleinfo->size);
-    if (data_smhdr_flags & DATA_FLAG_KEYFLAG)
-    {
-      failmsg = "key";
-      vmsg = deserialize_from_key (topic, datap, sampleinfo->size);
-    }
-    else
-    {
-      failmsg = "data";
-      assert (data_smhdr_flags & DATA_FLAG_DATAFLAG);
-      vmsg = deserialize (topic, datap, sampleinfo->size);
-    }
-    if (needs_free) os_free (datap);
-  }
-  else if (data_smhdr_flags & DATA_FLAG_INLINE_QOS)
-  {
-    /* RTI always tries to make us survive on the keyhash. RTI must
-     mend its ways. */
-    if (NN_STRICT_P)
-      failmsg = "no content";
-    else if (!(qos->present & PP_KEYHASH))
-      failmsg = "qos present but without keyhash";
-    else
-    {
-      failmsg = "keyhash";
-      vmsg = deserialize_from_keyhash (topic, qos->keyhash.value, sizeof (qos->keyhash));
-    }
-  }
-  else
-  {
-    failmsg = "no content whatsoever";
-  }
-  if (vmsg == NULL)
-  {
-    /* No message => error out */
-    const struct proxy_writer *pwr = sampleinfo->pwr;
-    nn_guid_t guid = pwr ? pwr->e.guid : null_guid; /* can't be null _yet_, but that might change some day */
-    NN_WARNING7 ("data(application, vendor %d.%d): %x:%x:%x:%x #%"PA_PRId64": deserialization %s/%s failed (%s)\n",
-                 sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
-                 PGUID (guid), sampleinfo->seq,
-                 topic->name, topic->typename,
-                 failmsg ? failmsg : "for reasons unknown");
-  }
-  return vmsg;
-}
-
-struct do_groupwrite_arg {
-  v_message msg;
-  int reliable;
-};
-
-static int do_groupwrite (v_group g, void *varg)
-{
-  /* Note that do_groupwrite is called by nn_groupset_foreach, which
-   accumulates the non-negative return values and aborts the foreach
-   on a negative one.  We return 0 on success and 1 on a reject:
-   that means a positive result from nn_groupset_foreach indicates a
-   rejection on some group.  There is little value in knowing which
-   group: even if we knew, we still don't know for which reader in
-   the group.
-
-   Native networking retries with resendScope = V_RESEND_NONE all
-   the time, whereas we let v_groupWrite modify it. That at least
-   potentially avoids some superfluous reader updates. */
-  int r;
-  v_resendScope resendScope = V_RESEND_NONE;
-  struct do_groupwrite_arg *arg = varg;
-  v_groupInstance inst = NULL;
-  v_writeResult rc;
-  rc = v_groupWriteCheckSampleLost (g, arg->msg, &inst, gv.myNetworkId, &resendScope);
-  if (rc != V_WRITE_SUCCESS)
-    TRACE (("write-fail-%d-%x\n", (int) rc, (unsigned) resendScope));
-  if (rc != V_WRITE_REJECTED || !(arg->reliable || config.retry_on_reject_besteffort))
-    r = 0;
-  else if (config.retry_on_reject_duration.value == 0)
-    r = 1;
-  else
-  {
-    /* 1kHz repeat rate taken from native networking; "until" is
-     clearly not respective as a hard deadline */
-    const os_time sleep = { 0, 1 * T_MILLISECOND };
-    nn_mtime_t until = add_duration_to_mtime (now_mt (), config.retry_on_reject_duration.value);
-    TRACE (("reject-retrying\n"));
-    do {
-      os_nanoSleep (sleep);
-      rc = v_groupResend (g, arg->msg, &inst, &resendScope, gv.myNetworkId);
-    } while (rc == V_WRITE_REJECTED && now_mt ().v < until.v && !gv.terminate);
-    r = (rc == V_WRITE_REJECTED) ? 1 : 0;
-  }
-  c_free(inst);
-  return r;
-}
-
-static void set_vmsg_header (const struct proxy_writer *pwr, v_message vmsg, const struct nn_prismtech_writer_info *wri, nn_ddsi_time_t timestamp, int64_t seq, unsigned statusinfo, int have_data)
-{
-  nn_wctime_t tstamp;
-
-  /* NOTE: pwr need not be locked if pwr->transaction_id is constant
-     (it should be for non-coherent writers, so only coherent ones
-     must have it locked), and provided a QoS change is handled with
-     sufficient care ... we don't do QoS changes yet, so we're fine
-
-     FIXME: Eventually, QoS changes will need to be supported, and I
-     can imagine that the practical way of doing that would be to
-     store "c_keep(pwr->v_message_qos)" in a sampleinfo, and to do
-     c_free()+c_new() in the QoS change code.  That would require a
-     proper finalisation step for sampleinfo (not so great).  But it
-     would then also be an option to allocate a v_message at the time
-     the sampleinfo springs to life (which is somewhere deep down in
-     the defrag code [nn_defrag_rsample_new()], so beware). */
-  if (valid_ddsi_timestamp (timestamp))
-    tstamp = nn_wctime_from_ddsi_time (timestamp);
-  else
-    tstamp.v = 0;
-
-  vmsg->writeTime.seconds = (int32_t) (tstamp.v / 1000000000);
-  vmsg->writeTime.nanoseconds = (uint32_t) (tstamp.v % 1000000000);
-  C_TIME_SET_KIND (vmsg->writeTime, C_TIME_REALTIME);
-  vmsg->writerGID = wri->writerGID;
-  vmsg->writerInstanceGID = wri->writerInstanceGID;
-  vmsg->transactionId = pwr->transaction_id;
-  if (pwr->c.proxypp->kernel_sequence_numbers)
-    vmsg->sequenceNumber = wri->sequenceNumber;
-  else
-    vmsg->sequenceNumber = (uint32_t) seq;
-  vmsg->qos = c_keep (pwr->v_message_qos);
-
-  if (have_data)
-  {
-    /* we now always set L_WRITE if there is real data, detecting a
-       write_dispose based on just statusinfo is a bit of a problem
-       ... */
-    v_stateSet (v_nodeState (vmsg), L_WRITE);
-  }
-
-  if (statusinfo == NN_STATUSINFO_UNREGISTER)
-    v_stateSet (v_nodeState (vmsg), L_UNREGISTER);
-  if (statusinfo == NN_STATUSINFO_DISPOSE)
-    v_stateSet (v_nodeState (vmsg), L_DISPOSED);
-  if (pwr->cs_seq)
-    v_stateSet (v_nodeState (vmsg), L_TRANSACTION);
-  if (pwr->c.xqos->synchronous_endpoint.value)
-    v_stateSet (v_nodeState (vmsg), L_SYNCHRONOUS);
-
-  assert ((statusinfo & ~(NN_STATUSINFO_DISPOSE | NN_STATUSINFO_UNREGISTER)) == 0);
-}
-#endif
 
 unsigned char normalize_data_datafrag_flags (const SubmessageHeader_t *smhdr, int datafrag_as_data)
 {
@@ -2107,235 +1870,8 @@ unsigned char normalize_data_datafrag_flags (const SubmessageHeader_t *smhdr, in
   }
 }
 
-#if ! LITE
-static void maybe_end_transaction(struct proxy_writer * const pwr, const nn_prismtech_writer_info_t *wri, nn_ddsi_time_t timestamp, int64_t seq, const nn_plist_t *ps, int have_data)
-{
-  int64_t cs_seq = (ps->present & PP_COHERENT_SET) ? fromSN(ps->coherent_set_seqno) : 0;
-  const nn_prismtech_eotinfo_t *txnid = (ps->present & PP_PRISMTECH_EOTINFO) ? &ps->eotinfo : NULL;
-  assert (pwr->cs_seq != 0 || pwr->transaction_id == 0);
 
-  if (txnid != NULL || (pwr->cs_seq != 0 && cs_seq != pwr->cs_seq))
-  {
-    v_message vmsg;
 
-    TRACE (("(commit %x:%x:%x:%x txn %u %u seq_offset %"PA_PRId64"", PGUID(pwr->e.guid), pwr->transaction_id, txnid ? wri->transactionId : 0, pwr->seq_offset));
-
-    if ((vmsg = c_new (v_kernelType (gv.ospl_kernel, K_MESSAGEEOT))) == NULL)
-    {
-      OS_REPORT (OS_ERROR, "ddsi2::maybe_end_transaction", V_RESULT_OUT_OF_MEMORY, "could not allocatare resource for end of transaction");
-    }
-    else
-    {
-      struct do_groupwrite_arg arg;
-
-      set_vmsg_header(pwr, vmsg, wri, timestamp, seq + pwr->seq_offset, 0, 0);
-      v_stateSet(v_nodeState(vmsg), L_ENDOFTRANSACTION);
-      if (txnid)
-      {
-        /* The members unique to v_messageEOT need to be filled only
-           in case of a group-coherent update.  The group-coherent
-           updates always have txnid != NULL. */
-        v_messageEOT eot = (v_messageEOT) vmsg;
-        nn_guid_t wrguid;
-        struct v_tid *tids;
-        uint32_t i;
-
-        /* Special case writers that did not participate in a group transaction.
-           Use the transaction id in the OSPL writer info - all versions of DDSI2
-           that generate EOTINFO also generate WRITERINFO, and we only get here
-           if EOTINFO was included. */
-        if (pwr->transaction_id == 0)
-        {
-          v_stateSet(v_nodeState(vmsg), L_TRANSACTION);
-          vmsg->transactionId = wri->transactionId;
-        }
-
-        wrguid.prefix = pwr->e.guid.prefix;
-        eot->publisherId = pwr->c.group_gid.localId;
-        eot->transactionId = txnid->transactionId;
-        eot->tidList = c_newBaseArrayObject (gv.ospl_eotgroup_tidlist_type, txnid->n);
-        tids = (struct v_tid *) eot->tidList;
-        for (i = 0; i < txnid->n; i++)
-        {
-          struct proxy_writer *some_pwr;
-          if (txnid->tids[i].writer_entityid.u == pwr->e.guid.entityid.u)
-          {
-            /* Avoid depending on a lookup of the writer itself, in
-               asynchronous delivery mode, the proxy writer deletion
-               may asynchronously remove the GUID from the hash
-               table, but we can still deliver the data */
-            some_pwr = pwr;
-          }
-          else
-          {
-            wrguid.entityid = txnid->tids[i].writer_entityid;
-            if ((some_pwr = ephash_lookup_proxy_writer_guid (&wrguid)) == NULL)
-              break;
-          }
-          assert (some_pwr->c.group_gid.localId == pwr->c.group_gid.localId);
-          tids[i].wgid = some_pwr->c.gid;
-          tids[i].seqnr = txnid->tids[i].transactionId;
-        }
-        if (i < txnid->n)
-        {
-          /* Can't have accepted data from unknown writers and no
-             knowledge of topic, type & QoS, so the transaction must
-             be treated as incomplete (but surely it requires another
-             writer to have been part of the transaction) */
-          assert (txnid->n > 1);
-          c_free (vmsg);
-          vmsg = NULL;
-        }
-      }
-      pwr->cs_seq = 0;
-      pwr->transaction_id = 0;
-      if (have_data)
-      {
-        /* If the same DATA/DATAFRAG also has data, this is an
-           implicit end-of-transaction marker and we need to allocate
-           a sequence number to it (a.k.a. increase the offset for
-           future messages). */
-        pwr->seq_offset++;
-        TRACE ((" seq_offset now %"PA_PRId64"", pwr->seq_offset));
-      }
-
-      if (vmsg)
-      {
-        arg.msg = vmsg;
-        arg.reliable = (pwr->n_reliable_readers > 0);
-        if (nn_groupset_foreach (pwr->groups, do_groupwrite, &arg) == 0)
-          pa_st32 (&pwr->next_deliv_seq_lowword, (uint32_t) (seq + 1));
-        else if (config.late_ack_mode)
-          TRACE ((" rejected"));
-        else
-        {
-          /* "early" ack mode and a rejection means the sample will never
-             be delivered; updating next_deliv_seq_lowword in this case is
-             a formality because it is irrelevant in this mode. */
-          NN_WARNING2 ("incomplete delivery of writer %x:%x:%x:%x sample %"PA_PRId64"\n", PGUID (pwr->e.guid), seq);
-          pa_st32 (&pwr->next_deliv_seq_lowword, (uint32_t) (seq + 1));
-        }
-
-        c_free (vmsg);
-      }
-    }
-
-    TRACE ((")"));
-  }
-}
-
-static void maybe_begin_transaction(struct proxy_writer * const pwr, const nn_prismtech_writer_info_t *wri, int64_t seq, const nn_plist_t *ps)
-{
-  int64_t cs_seq = (ps->present & PP_COHERENT_SET) ? fromSN(ps->coherent_set_seqno) : 0;
-  assert (pwr->cs_seq != 0 || pwr->transaction_id == 0);
-
-  if (cs_seq != 0 && pwr->cs_seq == 0)
-  {
-    /* 0 is a valid transaction_id, but for sanity checking it is the
-       only allowed value when not in a transaction, and  */
-    pwr->cs_seq = cs_seq;
-    if (pwr->c.proxypp->kernel_sequence_numbers)
-      pwr->transaction_id = wri->transactionId;
-    else
-      pwr->transaction_id = (uint32_t) seq;
-
-    TRACE (("(begin %x:%x:%x:%x txn %u)", PGUID(pwr->e.guid), pwr->transaction_id));
-  }
-}
-#endif
-
-#if ! LITE
-static void get_writer_info (nn_prismtech_writer_info_t *wri, struct proxy_writer *pwr, const struct nn_rsample_info *sampleinfo, const struct nn_rdata *fragchain, int pwr_locked)
-{
-  /* If config.generate_builtin_topics is set, we always have a GID
-     set in the proxy writer and it never changes; if
-     config.generate_builtin_topics is not set, we may have to
-     generate one on the fly, for which we lock the writer.  I doubt
-     anybody still runs it without having generate_builtin_topics
-     enabled, so in that case we may as well lock the proxy writer
-     whether or not the GID is set by now. */
-  if (!config.generate_builtin_topics && !pwr_locked)
-    os_mutexLock (&pwr->e.lock);
-
-  if (NN_SAMPLEINFO_HAS_WRINFO (sampleinfo))
-  {
-    nn_plist_extract_wrinfo (wri, sampleinfo, fragchain);
-    if (!config.generate_builtin_topics)
-    {
-      if (pwr->c.gid.systemId == 0 && pwr->c.gid.localId == 0 && pwr->c.gid.serial == 0)
-        pwr->c.gid = wri->writerGID;
-    }
-  }
-  else
-  {
-    memset (wri, 0, sizeof (*wri));
-    if (!config.generate_builtin_topics)
-    {
-      if (pwr->c.gid.systemId == 0 && pwr->c.gid.localId == 0 && pwr->c.gid.serial == 0)
-        nn_guid_to_ospl_gid (&pwr->c.gid, &pwr->e.guid, vendor_is_opensplice (pwr->c.vendor));
-    }
-  }
-  /* In all cases, take the writerGID from the proxy writer, whether or not it
-     was provided by the peer: if the peer is an "old" OpenSplice node and we are
-     generating built-in topics, we will have come up with a fake GID instead. */
-  wri->writerGID = pwr->c.gid;
-
-  if (!config.generate_builtin_topics && !pwr_locked)
-    os_mutexUnlock (&pwr->e.lock);
-}
-#endif
-
-#if ! LITE
-static int wait_for_memory_threshold (c_base base)
-{
-  if (c_baseGetMemThresholdStatus (base) == C_MEMTHRESHOLD_OK)
-    return 1;
-
-  {
-    const os_time reltimeout = { 0, 500000000 };
-    const os_time tnowM = os_timeGetMonotonic();
-    const os_time abstimeout = os_timeAdd (tnowM, reltimeout);
-    int print_drop_count = 1;
-
-    TRACE (("shmem threshold reached"));
-
-    {
-      uint32_t last_threshold_warning_sec = pa_ld32 (&gv.last_threshold_warning_sec);
-      do {
-        if (tnowM.tv_sec < (os_timeSec) (last_threshold_warning_sec + 10))
-        {
-          print_drop_count = 0;
-          break;
-        }
-      } while (!pa_cas32 (&gv.last_threshold_warning_sec, last_threshold_warning_sec, (uint32_t) tnowM.tv_sec));
-    }
-
-    if (print_drop_count)
-    {
-      uint32_t n = pa_ld32 (&gv.memory_shortage_dropcount);
-      NN_WARNING3 ("Shared memory usage has reached threshold, waiting up to %d.%09u seconds for the situation to improve (already dropped %"PA_PRIu32" samples because of shared memory exhaustion).\n", (int) reltimeout.tv_sec, (unsigned) reltimeout.tv_nsec, n);
-    }
-
-    do {
-      const os_time shortdelay = { 0, 10000000 };
-      os_nanoSleep (shortdelay);
-    } while (c_baseGetMemThresholdStatus (base) != C_MEMTHRESHOLD_OK && os_timeCompare (os_timeGetMonotonic(), abstimeout) == OS_LESS);
-
-    if (c_baseGetMemThresholdStatus (base) == C_MEMTHRESHOLD_OK)
-    {
-      uint32_t n = pa_ld32 (&gv.memory_shortage_dropcount);
-      TRACE ((" - delivering (%"PA_PRIu32")\n", n));
-      return 1;
-    }
-    else
-    {
-      uint32_t n = pa_inc32_nv (&gv.memory_shortage_dropcount);
-      TRACE ((" - dropping (%"PA_PRIu32")\n", n));
-      return 0;
-    }
-  }
-}
-#endif
 
 static int deliver_user_data (const struct nn_rsample_info *sampleinfo, const struct nn_rdata *fragchain, const nn_guid_t *rdguid, int pwr_locked)
 {
@@ -2347,12 +1883,7 @@ static int deliver_user_data (const struct nn_rsample_info *sampleinfo, const st
   unsigned char data_smhdr_flags;
   nn_plist_t qos;
   int need_keyhash;
-#if LITE
   serdata_t payload;
-#else
-  v_message payload;
-  nn_prismtech_writer_info_t wri;
-#endif
 
   /* NOTE: pwr->e.lock need not be held for correct processing (though
      it may be useful to hold it for maintaining order all the way to
@@ -2361,10 +1892,6 @@ static int deliver_user_data (const struct nn_rsample_info *sampleinfo, const st
      pwr->groupset takes care of itself.  FIXME: groupset may be
      taking care of itself, but it is currently doing so in an
      annoyingly simplistic manner ...  */
-#if ! LITE
-  if (!wait_for_memory_threshold (gv.ospl_base))
-    return 0;
-#endif
 
   /* FIXME: fragments are now handled by copying the message to
      freshly malloced memory (see defragment()) ... that'll have to
@@ -2421,7 +1948,6 @@ static int deliver_user_data (const struct nn_rsample_info *sampleinfo, const st
      data sample (once per reader that cares about that data).  For
      now, this is accepted as sufficiently abnormal behaviour to not
      worry about it. */
-#if LITE
   {
     nn_wctime_t tstamp;
     if (valid_ddsi_timestamp (sampleinfo->timestamp))
@@ -2430,60 +1956,12 @@ static int deliver_user_data (const struct nn_rsample_info *sampleinfo, const st
       tstamp.v = 0;
     payload = extract_sample_from_data (sampleinfo, data_smhdr_flags, &qos, fragchain, statusinfo, tstamp, topic);
   }
-#else
-  payload = extract_vmsg_from_data (sampleinfo, data_smhdr_flags, &qos, fragchain, statusinfo, topic);
-  get_writer_info (&wri, pwr, sampleinfo, fragchain, pwr_locked);
-#endif
   if (payload == NULL)
   {
-#if ! LITE
-    if (pwr->c.xqos->presentation.coherent_access && pwr->c.xqos->presentation.access_scope != NN_INSTANCE_PRESENTATION_QOS)
-    {
-      if (pwr_locked)
-        maybe_end_transaction(pwr, &wri, sampleinfo->timestamp, sampleinfo->seq, &qos, 0);
-      else
-      {
-        os_mutexLock(&pwr->e.lock);
-        maybe_end_transaction(pwr, &wri, sampleinfo->timestamp, sampleinfo->seq, &qos, 0);
-        os_mutexUnlock(&pwr->e.lock);
-      }
-      /* maybe_end_transaction doesn't flush */
-      TRACE (("\n"));
-    }
-#endif
     goto no_payload;
   }
 
-#if ! LITE
-  /* If tracing, print the full contents */
-  if (config.enabled_logcats & LC_TRACE)
-  {
-    char tmp[1024];
-    int tmpsize = sizeof (tmp), res;
-    int64_t cs_seq = (qos.present & PP_COHERENT_SET) ? fromSN(qos.coherent_set_seqno) : 0;
-    if (data_smhdr_flags & DATA_FLAG_DATAFLAG)
-    {
-      serdata_t qq = serialize (gv.serpool, topic, payload);
-      res = prettyprint_serdata (tmp, tmpsize, qq);
-      ddsi_serdata_unref (qq);
-    }
-    else
-    {
-      serdata_t qq = serialize_key (gv.serpool, topic, payload);
-      res = prettyprint_serdata (tmp, tmpsize, qq);
-      ddsi_serdata_unref (qq);
-    }
-    assert (res >= 0);
-    nn_log (LC_TRACE, "data(application, vendor %d.%d): %x:%x:%x:%x #%"PA_PRId64"",
-            rst->vendor.id[0], rst->vendor.id[1], PGUID (pwr->e.guid), sampleinfo->seq);
-    if (cs_seq != 0)
-      nn_log (LC_TRACE, " C#%"PA_PRId64"", cs_seq);
-    nn_log (LC_TRACE, ": ST%x %s/%s:%s%s\n",
-            statusinfo, topic->name, topic->typename, tmp, res < tmpsize ? "" : " (trunc)");
-  }
-#endif
 
-#if LITE
   /* Generate the DDS_SampleInfo (which is faked to some extent
    because we don't actually have a data reader); also note that
    the PRISMTECH_WRITER_INFO thing is completely meaningless to
@@ -2577,56 +2055,6 @@ retry:
     }
   }
   ddsi_serdata_unref (payload);
-#endif
-#if ! LITE
-  (void) rdguid;
-  /* Fill in the non-payload part of the v_message */
-  {
-    const int iscoherent = (pwr->c.xqos->presentation.coherent_access && pwr->c.xqos->presentation.access_scope != NN_INSTANCE_PRESENTATION_QOS);
-    struct do_groupwrite_arg arg;
-
-    /* Coherent updates requires messing with internal state of the proxy writer,
-       hence locking.  We need the (new) transaction id to create the new message,
-       we need the new message to begin the new transaction.  Although it would be
-       perfectly safe to store a pointer to the payload and fix the header later,
-       and even to write the sample before beginning the new transaction, that all
-       seems a bit counter-intuitive. */
-    if (!iscoherent)
-    {
-      assert (pwr->seq_offset == 0);
-      set_vmsg_header (pwr, payload, &wri, sampleinfo->timestamp, sampleinfo->seq, statusinfo, data_smhdr_flags & DATA_FLAG_DATAFLAG);
-    }
-    else
-    {
-      if (!pwr_locked)
-        os_mutexLock(&pwr->e.lock);
-      maybe_end_transaction(pwr, &wri, sampleinfo->timestamp, sampleinfo->seq, &qos, 1);
-      maybe_begin_transaction(pwr, &wri, sampleinfo->seq + pwr->seq_offset, &qos);
-      set_vmsg_header (pwr, payload, &wri, sampleinfo->timestamp, sampleinfo->seq + pwr->seq_offset, statusinfo, data_smhdr_flags & DATA_FLAG_DATAFLAG);
-      if (!pwr_locked)
-        os_mutexUnlock(&pwr->e.lock);
-    }
-
-    TRACE ((" %"PA_PRId64"(%p)=>%p\n", sampleinfo->seq, (void *) fragchain, (void *) pwr->groups));
-
-    arg.msg = payload;
-    arg.reliable = (pwr->n_reliable_readers > 0);
-    if (nn_groupset_foreach (pwr->groups, do_groupwrite, &arg) == 0)
-      pa_st32 (&pwr->next_deliv_seq_lowword, (uint32_t) (sampleinfo->seq + 1));
-    else if (config.late_ack_mode)
-      TRACE ((" rejected\n"));
-    else
-    {
-      /* "early" ack mode and a rejection means the sample will never
-       be delivered; updating next_deliv_seq_lowword in this case is
-       a formality because it is irrelevant in this mode. */
-      NN_WARNING2 ("incomplete delivery of writer %x:%x:%x:%x sample %"PA_PRId64"\n",
-                   PGUID (pwr->e.guid), sampleinfo->seq);
-      pa_st32 (&pwr->next_deliv_seq_lowword, (uint32_t) (sampleinfo->seq + 1));
-    }
-  }
-  c_free (payload);
-#endif
  no_payload:
   nn_plist_fini (&qos);
   return 0;
@@ -3318,9 +2746,7 @@ static int handle_submsg_sequence
         {
           struct nn_rsample_info sampleinfo;
           unsigned char *datap;
-#if LITE
           sampleinfo.hashash = 0;
-#endif
           /* valid_DataFrag does not validate the payload */
           if (!valid_DataFrag (rst, rmsg, &sm->datafrag, submsg_size, byteswap, &sampleinfo, &datap))
             goto malformed;
@@ -3336,9 +2762,7 @@ static int handle_submsg_sequence
         {
           struct nn_rsample_info sampleinfo;
           unsigned char *datap;
-#if LITE
           sampleinfo.hashash = 0;
-#endif
           /* valid_Data does not validate the payload */
           if (!valid_Data (rst, rmsg, &sm->data, submsg_size, byteswap, &sampleinfo, &datap))
           {
@@ -3550,13 +2974,6 @@ static bool do_packet
       TRACE (("HDR(%x:%x:%x vendor %d.%d) len %lu\n",
         PGUIDPREFIX (hdr->guid_prefix), hdr->vendorid.id[0], hdr->vendorid.id[1], (unsigned long) sz));
 
-#if ! LITE
-      if (config.coexistWithNativeNetworking && is_own_vendor (hdr->vendorid))
-      {
-        /* ignore */
-      }
-      else
-#endif
       {
         handle_submsg_sequence
         (

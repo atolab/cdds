@@ -92,15 +92,6 @@ struct reader *ephash_lookup_reader_guid (const struct nn_guid *guid);
 struct proxy_writer *ephash_lookup_proxy_writer_guid (const struct nn_guid *guid);
 struct proxy_reader *ephash_lookup_proxy_reader_guid (const struct nn_guid *guid);
 
-#if ! LITE
-struct v_gid_s;
-void ephash_insert_writer_gid (struct ephash *gid_hash, struct writer *wr);
-void ephash_insert_reader_gid (struct ephash *gid_hash, struct reader *rd);
-void ephash_remove_writer_gid (struct ephash *gid_hash, struct writer *wr);
-void ephash_remove_reader_gid (struct ephash *gid_hash, struct reader *rd);
-struct writer *ephash_lookup_writer_gid (const struct ephash *gid_hash, const struct v_gid_s *gid);
-struct reader *ephash_lookup_reader_gid (const struct ephash *gid_hash, const struct v_gid_s *gid);
-#endif
 
 /* Enumeration of entries in the hash table:
 

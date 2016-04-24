@@ -49,9 +49,7 @@ int join_mcgroups (struct nn_group_membership *mship, os_socket socket, const os
 int leave_mcgroups (struct nn_group_membership *mship, os_socket socket, const os_sockaddr_storage *srcip, const os_sockaddr_storage *mcip);
 void sockaddr_set_port (os_sockaddr_storage *addr, unsigned short port);
 unsigned short sockaddr_get_port (const os_sockaddr_storage *addr);
-#if LITE
 unsigned sockaddr_to_hopefully_unique_uint32 (const os_sockaddr_storage *src);
-#endif
 
 #if defined (__cplusplus)
 }

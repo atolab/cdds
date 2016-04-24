@@ -1320,19 +1320,6 @@ static int do_guid (nn_guid_t *dst, uint64_t *present, uint64_t fl, int (*valid)
   return 0;
 }
 
-#if !LITE
-static void bswap_prismtech_writer_info (nn_prismtech_writer_info_t *wri)
-{
-  wri->transactionId = bswap4u (wri->transactionId);
-  wri->writerGID.systemId = bswap4u (wri->writerGID.systemId);
-  wri->writerGID.localId = bswap4u (wri->writerGID.localId);
-  wri->writerGID.serial = bswap4u (wri->writerGID.serial);
-  wri->writerInstanceGID.systemId = bswap4u (wri->writerInstanceGID.systemId);
-  wri->writerInstanceGID.localId = bswap4u (wri->writerInstanceGID.localId);
-  wri->writerInstanceGID.serial = bswap4u (wri->writerInstanceGID.serial);
-  wri->sequenceNumber = bswap4u (wri->sequenceNumber);
-}
-#endif
 
 static void bswap_prismtech_participant_version_info (nn_prismtech_participant_version_info_t *pvi)
 {
@@ -1376,41 +1363,7 @@ static int do_prismtech_participant_version_info (nn_prismtech_participant_versi
   }
 }
 
-#if !LITE
-static int do_share_qospolicy (nn_share_qospolicy_t *q, uint64_t *present, uint64_t *aliased, uint64_t fl, const struct dd *dd)
-{
-  struct dd dd1;
-  unsigned len;
-  int res;
-  if (dd->bufsz < 4)
-  {
-    TRACE (("plist/do_share: buffer too small\n"));
-    return ERR_INVALID;
-  }
-  q->enable = (unsigned char) dd->buf[0];
-  if (q->enable != 0 && q->enable != 1)
-  {
-    TRACE (("plist/do_share: invalid enable (%d)\n", (int) q->enable));
-    return ERR_INVALID;
-  }
-  dd1 = *dd;
-  dd1.buf += 4;
-  dd1.bufsz -= 4;
-  if ((res = alias_string ((const unsigned char **) &q->name, &dd1, &len)) >= 0)
-  {
-    *present |= fl;
-    *aliased |= fl;
-  }
-  return res;
-}
-#endif
 
-#if !LITE
-static void unalias_share_qospolicy (nn_share_qospolicy_t *q, int bswap)
-{
-  unalias_string (&q->name, bswap);
-}
-#endif
 
 static int do_subscription_keys_qospolicy (nn_subscription_keys_qospolicy_t *q, uint64_t *present, uint64_t *aliased, uint64_t fl, const struct dd *dd)
 {
@@ -2005,71 +1958,6 @@ static int init_one_parameter
       else
         return do_guid (&dest->endpoint_guid, &dest->present, PP_ENDPOINT_GUID, valid_endpoint_guid, dd);
 
-#if ! LITE
-    case PID_PRISMTECH_ENDPOINT_GID:
-      if (!vendor_is_prismtech (dd->vendorid))
-        return 0;
-      else if (dd->bufsz < sizeof (v_gid))
-      {
-        TRACE (("plist/init_one_parameter[pid=PID_PRISMTECH_ENDPOINT_GID]: buffer too small\n"));
-        return ERR_INVALID;
-      }
-      else
-      {
-        v_gid *g = &dest->endpoint_gid;
-        memcpy (g, dd->buf, sizeof (*g));
-        if (dd->bswap)
-        {
-          g->systemId = bswap4u (g->systemId);
-          g->localId = bswap4u (g->localId);
-          g->serial = bswap4u (g->serial);
-        }
-        /* FIXME: localId and serial have limited range, &c. */
-        dest->present |= PP_PRISMTECH_ENDPOINT_GID;
-        return 0;
-      }
-
-    case PID_PRISMTECH_GROUP_GID:
-      if (!vendor_is_prismtech (dd->vendorid))
-        return 0;
-      else if (dd->bufsz < sizeof (v_gid))
-      {
-        TRACE (("plist/init_one_parameter[pid=PID_PRISMTECH_GROUP_GID]: buffer too small\n"));
-        return ERR_INVALID;
-      }
-      else
-      {
-        v_gid *g = &dest->group_gid;
-        memcpy (g, dd->buf, sizeof (*g));
-        if (dd->bswap)
-        {
-          g->systemId = bswap4u (g->systemId);
-          g->localId = bswap4u (g->localId);
-          g->serial = bswap4u (g->serial);
-        }
-        /* FIXME: localId and serial have limited range, &c. */
-        dest->present |= PP_PRISMTECH_GROUP_GID;
-        return 0;
-      }
-
-    case PID_PRISMTECH_WRITER_INFO: /* PrismTech specific */
-      if (!vendor_is_prismtech (dd->vendorid))
-        return 0;
-      else if (dd->bufsz < sizeof (nn_prismtech_writer_info_old_t))
-      {
-        TRACE (("plist/init_one_parameter[pid=PRISMTECH_WRITER_INFO]: buffer too small\n"));
-        return ERR_INVALID;
-      }
-      else
-      {
-        nn_prismtech_writer_info_t *wri = &dest->prismtech_writer_info;
-        memcpy (wri, dd->buf, sizeof (*wri));
-        if (dd->bswap)
-          bswap_prismtech_writer_info (wri);
-        dest->present |= PP_PRISMTECH_WRITER_INFO;
-        return 0;
-      }
-#endif
 
     case PID_PRISMTECH_PARTICIPANT_VERSION_INFO:
       return do_prismtech_participant_version_info(&dest->prismtech_participant_version_info, &dest->present, &dest->aliased, dd);
@@ -2084,12 +1972,6 @@ static int init_one_parameter
         return 0;
       return do_reader_lifespan_qospolicy (&dest->qos.reader_lifespan, &dest->qos.present, QP_PRISMTECH_READER_LIFESPAN, dd);
 
-#if !LITE
-    case PID_PRISMTECH_SHARE:
-      if (!vendor_is_prismtech (dd->vendorid))
-        return 0;
-      return do_share_qospolicy (&dest->qos.share, &dest->qos.present, &dest->qos.aliased, QP_PRISMTECH_SHARE, dd);
-#endif
 
     case PID_PRISMTECH_ENTITY_FACTORY:
       if (!vendor_is_prismtech (dd->vendorid))
@@ -2298,11 +2180,6 @@ void nn_plist_mergein_missing (nn_plist_t *a, const nn_plist_t *b)
   CQ (PRISMTECH_SERVICE_TYPE, service_type);
   CQ (PRISMTECH_PROCESS_ID, process_id);
   CQ (PRISMTECH_BUILTIN_ENDPOINT_SET, prismtech_builtin_endpoint_set);
-#if ! LITE
-  CQ (PRISMTECH_WRITER_INFO, prismtech_writer_info);
-  CQ (PRISMTECH_GROUP_GID, group_gid);
-  CQ (PRISMTECH_ENDPOINT_GID, endpoint_gid);
-#endif
 #ifdef DDSI_INCLUDE_SSM
   CQ (READER_FAVOURS_SSM, reader_favours_ssm);
 #endif
@@ -2564,7 +2441,6 @@ unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn
       case PID_PAD:
         break;
       case PID_KEYHASH:
-#if LITE
       if (length < sizeof (dest->keyhash))
       {
         TRACE (("plist(vendor %d.%d): quickscan(PID_KEYHASH): buffer too small\n",
@@ -2573,7 +2449,6 @@ unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn
       }
       memcpy (&dest->keyhash, pl, sizeof (dest->keyhash));
       dest->hashash = 1;
-#endif
         break;
       case PID_STATUSINFO:
         if (length < 4)
@@ -2593,17 +2468,6 @@ unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn
             dest->complex_qos = 1;
         }
         break;
-#if !LITE
-      case PID_PRISMTECH_WRITER_INFO:
-        if (length < sizeof (nn_prismtech_writer_info_old_t))
-        {
-          TRACE (("plist(vendor %d.%d): quickscan(PRISMTECH_WRITER_INFO): buffer too small\n",
-                  src->vendorid.id[0], src->vendorid.id[1]));
-          return NULL;
-        }
-        dest->pt_wr_info_zoff = NN_OFF_TO_ZOFF ((unsigned) (pl - NN_RMSG_PAYLOAD (rmsg)));
-        break;
-#endif
       default:
         TRACE_PLIST (("(pid=%x complex_qos=1)", pid));
         dest->complex_qos = 1;
@@ -2618,17 +2482,6 @@ unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn
   return NULL;
 }
 
-#if !LITE
-void nn_plist_extract_wrinfo (nn_prismtech_writer_info_t *wri, const struct nn_rsample_info *sampleinfo, const struct nn_rdata *rdata)
-{
-  unsigned wrinfo_off = NN_SAMPLEINFO_WRINFO_OFF (sampleinfo);
-  assert (wrinfo_off > NN_RDATA_SUBMSG_OFF (rdata));
-  assert (wrinfo_off + sizeof (*wri) <= NN_RDATA_PAYLOAD_OFF (rdata));
-  memcpy (wri, NN_RMSG_PAYLOADOFF (rdata->rmsg, wrinfo_off), sizeof (*wri));
-  if (sampleinfo->bswap)
-    bswap_prismtech_writer_info (wri);
-}
-#endif
 
 void nn_xqos_init_empty (nn_xqos_t *dest)
 {
@@ -2718,12 +2571,6 @@ void nn_xqos_init_default_reader (nn_xqos_t *xqos)
   xqos->reader_lifespan.use_lifespan = 0;
   xqos->reader_lifespan.duration = nn_to_ddsi_duration (T_NEVER);
 
-#if !LITE
-  xqos->present |= QP_PRISMTECH_SHARE;
-  xqos->aliased |= QP_PRISMTECH_SHARE;
-  xqos->share.enable = 0;
-  xqos->share.name = "";
-#endif
 
   xqos->present |= QP_PRISMTECH_SUBSCRIPTION_KEYS;
   xqos->subscription_keys.use_key_list = 0;
@@ -2803,12 +2650,6 @@ void nn_xqos_init_default_subscriber (nn_xqos_t *xqos)
   xqos->present |= QP_PRISMTECH_ENTITY_FACTORY;
   xqos->entity_factory.autoenable_created_entities = 1;
 
-#if !LITE
-  xqos->present |= QP_PRISMTECH_SHARE;
-  xqos->aliased |= QP_PRISMTECH_SHARE;
-  xqos->share.enable = 0;
-  xqos->share.name = "";
-#endif
 
   xqos->present |= QP_PARTITION;
   xqos->partition.n = 0;
@@ -2880,9 +2721,6 @@ void nn_xqos_mergein_missing (nn_xqos_t *a, const nn_xqos_t *b)
   CQ (USER_DATA, user_data, octetseq, nn_octetseq_t);
   CQ (TOPIC_NAME, topic_name, string, char *);
   CQ (TYPE_NAME, type_name, string, char *);
-#if !LITE
-  CQ (PRISMTECH_SHARE, share, share_qospolicy, nn_share_qospolicy_t);
-#endif
 #undef CQ
   if (!(a->present & QP_PRISMTECH_SUBSCRIPTION_KEYS) && (b->present & QP_PRISMTECH_SUBSCRIPTION_KEYS))
   {
@@ -2918,9 +2756,6 @@ void nn_xqos_unalias (nn_xqos_t *xqos)
   Q (TOPIC_NAME, string, topic_name);
   Q (TYPE_NAME, string, type_name);
   Q (PARTITION, stringseq, partition);
-#if !LITE
-  Q (PRISMTECH_SHARE, share_qospolicy, share);
-#endif
   Q (PRISMTECH_SUBSCRIPTION_KEYS, subscription_keys_qospolicy, subscription_keys);
 #undef Q
   assert (xqos->aliased == 0);
@@ -2935,9 +2770,6 @@ void nn_xqos_fini (nn_xqos_t *xqos)
     { QP_USER_DATA, offsetof (nn_xqos_t, user_data.value) },
     { QP_TOPIC_NAME, offsetof (nn_xqos_t, topic_name) },
     { QP_TYPE_NAME, offsetof (nn_xqos_t, type_name) },
-#if !LITE
-    { QP_PRISMTECH_SHARE, offsetof (nn_xqos_t, share.name) },
-#endif
   };
   int i;
   TRACE_PLIST (("NN_XQOS_FINI\n"));
@@ -3238,15 +3070,6 @@ uint64_t nn_xqos_delta (const nn_xqos_t *a, const nn_xqos_t *b, uint64_t mask)
          durations_differ (&a->reader_lifespan.duration, &b->reader_lifespan.duration)))
       delta |= QP_PRISMTECH_READER_LIFESPAN;
   }
-#if !LITE
-  if (check & QP_PRISMTECH_SHARE) {
-    /* Note: the conjunction need not test both a & b for having use_lifespan set */
-    if (a->share.enable != b->share.enable ||
-        (a->share.enable && b->share.enable &&
-         strcmp (a->share.name, b->share.name)))
-      delta |= QP_PRISMTECH_SHARE;
-  }
-#endif
   if (check & QP_PRISMTECH_SUBSCRIPTION_KEYS) {
     /* Note: the conjunction need not test both a & b for having use_lifespan set */
     if (a->subscription_keys.use_key_list != b->subscription_keys.use_key_list ||
@@ -3319,9 +3142,6 @@ void nn_xqos_addtomsg (struct nn_xmsg *m, const nn_xqos_t *xqos, uint64_t wanted
   SIMPLE (PRISMTECH_WRITER_DATA_LIFECYCLE, writer_data_lifecycle);
   SIMPLE (PRISMTECH_RELAXED_QOS_MATCHING, relaxed_qos_matching);
   SIMPLE (PRISMTECH_READER_LIFESPAN, reader_lifespan);
-#if !LITE
-  FUNC_BY_REF (PRISMTECH_SHARE, share, share);
-#endif
   FUNC_BY_REF (PRISMTECH_SUBSCRIPTION_KEYS, subscription_keys, subscription_keys);
   SIMPLE (PRISMTECH_ENTITY_FACTORY, entity_factory);
   SIMPLE (PRISMTECH_SYNCHRONOUS_ENDPOINT, synchronous_endpoint);
@@ -3405,11 +3225,6 @@ void nn_plist_addtomsg (struct nn_xmsg *m, const nn_plist_t *ps, uint64_t pwante
   FUNC_BY_VAL (PRISMTECH_EXEC_NAME, exec_name, string);
   SIMPLE_TYPE (PRISMTECH_PROCESS_ID, process_id, unsigned);
   SIMPLE_TYPE (PRISMTECH_SERVICE_TYPE, service_type, unsigned);
-#if ! LITE
-  SIMPLE_TYPE (PRISMTECH_WRITER_INFO, prismtech_writer_info, nn_prismtech_writer_info_t);
-  SIMPLE_TYPE (PRISMTECH_GROUP_GID, group_gid, v_gid);
-  SIMPLE_TYPE (PRISMTECH_ENDPOINT_GID, endpoint_gid, v_gid);
-#endif
   FUNC_BY_VAL (PRISMTECH_TYPE_DESCRIPTION, type_description, string);
   FUNC_BY_REF (PRISMTECH_EOTINFO, eotinfo, eotinfo);
 #ifdef DDSI_INCLUDE_SSM
@@ -3536,9 +3351,6 @@ void nn_log_xqos (logcat_t cat, const nn_xqos_t *xqos)
     }
     nn_log (cat, "}}");
   });
-#if !LITE
-  DO (PRISMTECH_SHARE, { LOGB2 ("share={%d,%s}", xqos->share.enable, xqos->share.name ? xqos->share.name : "(null)"); });
-#endif
   DO (PRISMTECH_ENTITY_FACTORY, { LOGB1 ("entity_factory=%d", xqos->entity_factory.autoenable_created_entities); });
   DO (PRISMTECH_SYNCHRONOUS_ENDPOINT, { LOGB1 ("synchronous_endpoint=%d", xqos->synchronous_endpoint.value); });
 

@@ -275,11 +275,6 @@ int spdp_write (struct participant *pp)
     ps.prismtech_participant_version_info.flags =
       NN_PRISMTECH_FL_DDSI2_PARTICIPANT_FLAG |
       NN_PRISMTECH_FL_PTBES_FIXED_0;
-#if !LITE
-    ps.prismtech_participant_version_info.flags |=
-      NN_PRISMTECH_FL_DISCOVERY_INCLUDES_GID |
-      NN_PRISMTECH_FL_KERNEL_SEQUENCE_NUMBER;
-#endif
     os_mutexLock (&gv.privileged_pp_lock);
     if (pp->is_ddsi2_pp)
       ps.prismtech_participant_version_info.flags |= NN_PRISMTECH_FL_PARTICIPANT_IS_DDSI2;
@@ -287,20 +282,10 @@ int spdp_write (struct participant *pp)
 
     os_gethostname(node, sizeof(node)-1);
     node[sizeof(node)-1] = '\0';
-#if LITE
     size = strlen(node) + strlen(OSPL_VERSION_STR) + strlen(OSPL_HOST_STR) + strlen(OSPL_TARGET_STR) + 4; /* + ///'\0' */
-#else
-    size = strlen(node) + strlen(OSPL_VERSION_STR) + strlen(OSPL_INNER_REV_STR) +
-            strlen(OSPL_OUTER_REV_STR) + strlen(OSPL_HOST_STR) + strlen(OSPL_TARGET_STR) + 6; /* + /////'\0' */
-#endif
     ps.prismtech_participant_version_info.internals = os_malloc(size);
-#if LITE
     snprintf(ps.prismtech_participant_version_info.internals, size, "%s/%s/%s/%s",
              node, OSPL_VERSION_STR, OSPL_HOST_STR, OSPL_TARGET_STR);
-#else
-    snprintf(ps.prismtech_participant_version_info.internals, size, "%s/%s/%s/%s/%s/%s",
-             node, OSPL_VERSION_STR, OSPL_INNER_REV_STR, OSPL_OUTER_REV_STR, OSPL_HOST_STR, OSPL_TARGET_STR);
-#endif
     TRACE (("spdp_write(%x:%x:%x:%x) - internals: %s\n", PGUID (pp->e.guid), ps.prismtech_participant_version_info.internals));
   }
 
@@ -534,22 +519,11 @@ static void handle_SPDP_alive (const struct receiver_state *rst, const nn_plist_
     return;
   }
 
-#if LITE
   if (!config.enableLoopback)
-#endif
   {
     int islocal = 0;
     if (ephash_lookup_participant_guid (&datap->participant_guid))
       islocal = 1;
-#if ! LITE
-    if (!islocal && is_own_vendor (datap->vendorid))
-    {
-      os_mutexLock (&gv.privileged_pp_lock);
-      if (gv.privileged_pp && datap->participant_guid.prefix.u[0] == gv.privileged_pp->e.guid.prefix.u[0])
-        islocal = 2;
-      os_mutexUnlock (&gv.privileged_pp_lock);
-    }
-#endif
     if (islocal)
     {
       TRACE ((" (local %d)", islocal));
@@ -594,12 +568,6 @@ static void handle_SPDP_alive (const struct receiver_state *rst, const nn_plist_
   else
     memset (&privileged_pp_guid.prefix, 0, sizeof (privileged_pp_guid.prefix));
 
-#if !LITE
-  if ((datap->present & PP_PRISMTECH_SERVICE_TYPE) &&
-      (datap->service_type == (unsigned) V_SERVICETYPE_DDSI2 ||
-       datap->service_type == (unsigned) V_SERVICETYPE_DDSI2E))
-    custom_flags |= CF_PARTICIPANT_IS_DDSI2;
-#endif
 
   if (datap->present & PP_PRISMTECH_PARTICIPANT_VERSION_INFO) {
     if (datap->prismtech_participant_version_info.flags & NN_PRISMTECH_FL_KERNEL_SEQUENCE_NUMBER)
@@ -808,17 +776,6 @@ static int sedp_write_endpoint
   nn_plist_init_empty (&ps);
   ps.present |= PP_ENDPOINT_GUID;
   ps.endpoint_guid = *epguid;
-#if ! LITE
-  if (epcommon && !gid_is_fake (&epcommon->gid))
-  {
-    /* Built-in endpoints are not published, so the absence of a GID for
-     those doesn't matter, but, e.g., the fictitious transient data readers
-     also don't have a GID.  By not publishing a GID, we ensure the other
-     side will fake it. */
-    ps.present |= PP_PRISMTECH_ENDPOINT_GID;
-    ps.endpoint_gid = epcommon->gid;
-  }
-#endif
 
   if (common && *common->name != 0)
   {
@@ -845,10 +802,6 @@ static int sedp_write_endpoint
     {
       ps.present |= PP_GROUP_GUID;
       ps.group_guid = epcommon->group_guid;
-#if ! LITE
-      ps.present |= PP_PRISMTECH_GROUP_GID;
-      ps.group_gid = epcommon->group_gid;
-#endif
     }
 
 #ifdef DDSI_INCLUDE_SSM
@@ -1004,9 +957,7 @@ static void handle_SEDP_alive (nn_plist_t *datap /* note: potentially modifies d
 
   if
   (
-#if LITE
     (! config.enableLoopback) &&
-#endif
     (ephash_lookup_participant_guid (&ppguid) != NULL)
   )
     E (" local pp?\n", err);
@@ -1135,23 +1086,6 @@ static void handle_SEDP_alive (nn_plist_t *datap /* note: potentially modifies d
   }
   else
   {
-#if ! LITE
-    if ((datap->present & PP_GROUP_GUID) && vendor_is_prismtech (vendorid))
-    {
-      /* For PrismTech peers, make sure we have a proxy group: not
-         because we will make it public or rely on it in any way - yet -
-         in the reader/writer handling, but because for Cafe we need to
-         map the GUIDs to GIDs ... */
-      if (memcmp (&datap->group_guid.prefix, &ppguid.prefix, sizeof (datap->group_guid.prefix)) == 0)
-      {
-         if (datap->present & PP_PRISMTECH_GROUP_GID)
-         {
-            struct v_gid_s *gid = (datap->present & PP_PRISMTECH_GROUP_GID) ? &datap->group_gid : NULL;
-            new_proxy_group (&datap->group_guid, gid, NULL, NULL);
-         }
-      }
-    }
-#endif
     if (is_writer)
     {
       if (pwr)
@@ -1310,58 +1244,6 @@ int sedp_write_topic (struct participant *pp, const struct nn_plist *datap)
   return write_sample (NULL, sedp_wr, serdata);
 }
 
-#if ! LITE
-static void handle_SEDP_TOPIC (const struct receiver_state *rst, nn_entityid_t wr_entity_id, unsigned statusinfo, const void *vdata, unsigned len)
-{
-  const struct CDRHeader *data = vdata; /* built-ins not deserialized (yet) */
-  TRACE (("SEDP_TOPIC ST%x", statusinfo));
-  assert (wr_entity_id.u == NN_ENTITYID_SEDP_BUILTIN_TOPIC_WRITER);
-  (void) wr_entity_id;
-  if (data == NULL)
-  {
-    TRACE ((" no payload?\n"));
-    return;
-  }
-  else
-  {
-    nn_plist_t decoded_data;
-    nn_plist_src_t src;
-    src.protocol_version = rst->protocol_version;
-    src.vendorid = rst->vendor;
-    src.encoding = data->identifier;
-    src.buf = (unsigned char *) data + 4;
-    src.bufsz = len - 4;
-    if (nn_plist_init_frommsg (&decoded_data, NULL, ~(uint64_t)0, ~(uint64_t)0, &src) < 0)
-    {
-      NN_WARNING2 ("SEDP_TOPIC (vendor %d.%d): invalid qos/parameters\n", src.vendorid.id[0], src.vendorid.id[1]);
-      return;
-    }
-
-    /* Is there any point in maintaining proxy topics? Within the context of OSPL, topics come but never go, and all topics are consistent - and so we can simply publish the DCPSTopic built-in topic when we receive a definition. Within the context of DDS, topics and come and go; and within that of DDSI, topics are not necessarily consistent. So for a full implementation, we will probably need to maintain proxy topics per participant ... But for simply supporting built-in topics in OSPL, we don't. */
-    if ((statusinfo & (NN_STATUSINFO_DISPOSE | NN_STATUSINFO_UNREGISTER)) == 0)
-    {
-      if (!((decoded_data.present & PP_PRISMTECH_TYPE_DESCRIPTION) &&
-            (decoded_data.qos.present & QP_TOPIC_NAME) &&
-            (decoded_data.qos.present & QP_TYPE_NAME)))
-      {
-        const char *name = (decoded_data.qos.present & QP_TOPIC_NAME) ? decoded_data.qos.topic_name : "(anonymous)";
-        nn_log (LC_DISCOVERY, "SEDP_TOPIC (vendor %d.%d): missing qos/parameters %"PA_PRIx64"/%"PA_PRIx64" for topic %s\n", src.vendorid.id[0], src.vendorid.id[1], decoded_data.present, decoded_data.qos.present, name);
-      }
-      else
-      {
-        TRACE ((" %s/%s QOS={", decoded_data.qos.topic_name, decoded_data.qos.type_name));
-        nn_xqos_mergein_missing (&decoded_data.qos, &gv.default_xqos_tp);
-        nn_log_xqos (LC_TRACE, &decoded_data.qos);
-        TRACE (("}"));
-        write_builtin_topic_proxy_topic (&decoded_data);
-      }
-    }
-
-    nn_plist_fini (&decoded_data);
-  }
-  TRACE (("\n"));
-}
-#endif
 
 /******************************************************************************
  ***
@@ -1520,12 +1402,6 @@ int sedp_write_cm_publisher (const struct nn_plist *datap, int alive)
   serdata = ddsi_serstate_fix (serstate);
   nn_xmsg_free (mpayload);
 
-#if ! LITE
-  TRACE (("sedp: write CMPublisher ST%x for %x:%x:%x:%x (%x:%x:%x) via %x:%x:%x:%x\n",
-          statusinfo, PGUID (datap->group_guid),
-          datap->group_gid.systemId, datap->group_gid.localId, datap->group_gid.serial,
-          PGUID (sedp_wr->e.guid)));
-#endif
   return write_sample (NULL, sedp_wr, serdata);
 }
 
@@ -1581,12 +1457,6 @@ int sedp_write_cm_subscriber (const struct nn_plist *datap, int alive)
   serdata = ddsi_serstate_fix (serstate);
   nn_xmsg_free (mpayload);
 
-#if ! LITE
-  TRACE (("sedp: write CMSubscriber ST%x for %x:%x:%x:%x (%x:%x:%x) via %x:%x:%x:%x\n",
-          statusinfo, PGUID (datap->group_guid),
-          datap->group_gid.systemId, datap->group_gid.localId, datap->group_gid.serial,
-          PGUID (sedp_wr->e.guid)));
-#endif
   return write_sample (NULL, sedp_wr, serdata);
 }
 
@@ -1609,12 +1479,6 @@ static void handle_SEDP_GROUP_alive (nn_plist_t *datap /* note: potentially modi
   {
     struct v_gid_s *gid = NULL;
     char *name;
-#if ! LITE
-    if (datap->present & PP_PRISMTECH_GROUP_GID)
-    {
-      gid = &datap->group_gid;
-    }
-#endif
     name = (datap->present & PP_ENTITY_NAME) ? datap->entity_name : "";
     new_proxy_group (&datap->group_guid, gid, name, &datap->qos);
   }
@@ -1897,11 +1761,6 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
     case NN_ENTITYID_SEDP_BUILTIN_CM_SUBSCRIBER_WRITER:
       handle_SEDP_GROUP (sampleinfo->rst, statusinfo, datap, datasz);
       break;
-#if ! LITE
-    case NN_ENTITYID_SEDP_BUILTIN_TOPIC_WRITER:
-      handle_SEDP_TOPIC (sampleinfo->rst, srcguid.entityid, statusinfo, datap, datasz);
-      break;
-#endif
     default:
       NN_WARNING4 ("data(builtin, vendor %d.%d): %x:%x:%x:%x #%lld: not handled\n",
                    sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],

@@ -21,13 +21,6 @@
 #include "os/os_socket.h"
 #include "os/os_heap.h"
 
-#if !LITE
-#include "util/ut_crc.h"
-#include "u_participant.h"
-#include "u_cfElement.h"
-#include "u_cfData.h"
-#include "u_cfNode.h"
-#endif
 
 #include "ddsi/q_config.h"
 #include "ddsi/q_log.h"
@@ -39,9 +32,7 @@
 #include "ddsi/q_error.h"
 #include "ddsi/sysdeps.h"
 
-#if LITE
 #include "util/ut_xmlparser.h"
-#endif
 
 #define WARN_DEPRECATED_ALIAS 1
 #define WARN_DEPRECATED_UNIT 1
@@ -94,13 +85,6 @@ struct cfgst {
   ut_avlTree_t found;
   struct config *cfg;
 
-#if !LITE
-  /* Servicename is used by uf_service_name to use as a default value
-     when the supplied string is empty, which happens when the service
-     is started without a DDSI2EService configuration item, i.e. when
-     everything is left at the default. */
-  const char *servicename;
-#endif
 
   /* path_depth, isattr and path together control the formatting of
      error messages by cfg_error() */
@@ -166,14 +150,7 @@ DU (uf_cipher);
 DU (uf_bandwidth);
 #endif
 DU (uf_domainId);
-#if !LITE
-DU (uf_maybe_duration_inf);
-DU (uf_service_name);
-DU (uf_boolean_default);
-#endif
-#if LITE
 DU (uf_durability_cdr);
-#endif
 #undef DU
 
 #define DF(fname) static void fname (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem)
@@ -221,13 +198,7 @@ PF (pf_sched_prio_class);
 PF (pf_sched_class);
 PF (pf_maybe_memsize);
 PF (pf_maybe_int32);
-#if ! LITE
-PF (pf_maybe_duration);
-PF (pf_boolean_default);
-#endif
-#if LITE
 PF (pf_durability_cdr);
-#endif
 #ifdef DDSI_INCLUDE_ENCRYPTION
 PF (pf_cipher);
 PF (pf_key);
@@ -248,7 +219,7 @@ PF (pf_bandwidth);
 #define GROUP(name, children) name, children, NULL, 1, NULL, 0, 0, 0, 0, 0, 0
 #define MGROUP(name, children, attrs) name, children, attrs
 #define ATTR(name) name, NULL, NULL
-/* MOVED: whereto must be a path relative to DDSI2EService, may not be used in/for lists and only for elements, may not be chained */
+/* MOVED: whereto must be a path relative to DDSI2Service, may not be used in/for lists and only for elements, may not be chained */
 #define MOVED(name, whereto) ">" name, NULL, NULL, 0, whereto, 0, 0, 0, 0, 0, 0
 static const struct cfgelem timestamp_cfgattrs[] = {
   { ATTR ("absolute"), 1, "false", ABSOFF (tracingRelativeTimestamps), 0, uf_negated_boolean, 0, pf_negated_boolean },
@@ -265,11 +236,7 @@ static const struct cfgelem general_cfgelems[] = {
   { LEAF ("DontRoute"), 1, "false", ABSOFF (dontRoute), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("UseIPv6"), 1, "false", ABSOFF (useIpv6), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("EnableMulticastLoopback"), 1, "true", ABSOFF (enableMulticastLoopback), 0, uf_boolean, 0, pf_boolean },
-#if LITE
   { LEAF ("EnableLoopback"), 1, "false", ABSOFF (enableLoopback), 0, uf_boolean, 0, pf_boolean },
-#else
-  { LEAF ("CoexistWithNativeNetworking"), 1, "false", ABSOFF (coexistWithNativeNetworking), 0, uf_boolean, 0, pf_boolean },
-#endif
   { LEAF ("StartupModeDuration"), 1, "2 s", ABSOFF (startup_mode_duration), 0, uf_duration_ms_1hr, 0, pf_duration },
   { LEAF ("StartupModeCoversTransient"), 1, "true", ABSOFF (startup_mode_full), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("MaxMessageSize"), 1, "4096 B", ABSOFF (max_msg_size), 0, uf_memsize, 0, pf_memsize },
@@ -344,9 +311,6 @@ static const struct cfgelem channel_cfgelems[] = {
   { LEAF ("AuxiliaryBandwidthLimit"), 1, "inf", RELOFF (config_channel_listelem, auxiliary_bandwidth_limit), 0, uf_bandwidth, 0, pf_bandwidth },
 #endif
   { LEAF ("DiffServField"), 1, "0", RELOFF (config_channel_listelem, diffserv_field), 0, uf_natint, 0, pf_int },
-#if ! LITE
-  { ATTR ("Resolution"), 1, "1ms", RELOFF (config_channel_listelem, resolution), 0, uf_duration_ms_1s, 0, pf_duration },
-#endif
   END_MARKER
 };
 
@@ -427,11 +391,7 @@ static const struct cfgelem unsupp_cfgelems[] = {
   { LEAF ("DefragUnreliableMaxSamples"), 1, "4", ABSOFF (defrag_unreliable_maxsamples), 0, uf_uint, 0, pf_uint },
   { LEAF ("DefragReliableMaxSamples"), 1, "16", ABSOFF (defrag_reliable_maxsamples), 0, uf_uint, 0, pf_uint },
   { LEAF ("BuiltinEndpointSet"), 1, "writers", ABSOFF (besmode), 0, uf_besmode, 0, pf_besmode },
-#if !LITE
-  { LEAF ("AggressiveKeepLastWhc|AggressiveKeepLast1Whc"), 1, "false", ABSOFF (aggressive_keep_last_whc), 0, uf_boolean, 0, pf_boolean },
-#else
   { LEAF ("AggressiveKeepLastWhc|AggressiveKeepLast1Whc"), 1, "true", ABSOFF (aggressive_keep_last_whc), 0, uf_boolean, 0, pf_boolean },
-#endif
   { LEAF ("ConservativeBuiltinReaderStartup"), 1, "false", ABSOFF (conservative_builtin_reader_startup), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("MeasureHbToAckLatency"), 1, "false", ABSOFF (meas_hb_to_ack_latency), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("SuppressSPDPMulticast"), 1, "false", ABSOFF (suppress_spdp_multicast), 0, uf_boolean, 0, pf_boolean },
@@ -440,22 +400,11 @@ static const struct cfgelem unsupp_cfgelems[] = {
   { LEAF ("SynchronousDeliveryLatencyBound"), 1, "inf", ABSOFF (synchronous_delivery_latency_bound), 0, uf_duration_inf, 0, pf_duration },
   { LEAF ("MaxParticipants"), 1, "0", ABSOFF (max_participants), 0, uf_natint, 0, pf_int },
   { LEAF ("AccelerateRexmitBlockSize"), 1, "0", ABSOFF (accelerate_rexmit_block_size), 0, uf_uint, 0, pf_uint },
-#if !LITE
-  { LEAF ("ResponsivenessTimeout"), 1, "1 s", ABSOFF (responsiveness_timeout), 0, uf_duration_ms_1hr, 0, pf_duration },
-#endif
   { LEAF ("RetransmitMerging"), 1, "adaptive", ABSOFF (retransmit_merging), 0, uf_retransmit_merging, 0, pf_retransmit_merging },
   { LEAF ("RetransmitMergingPeriod"), 1, "5 ms", ABSOFF (retransmit_merging_period), 0, uf_duration_us_1s, 0, pf_duration },
   { LEAF ("MaxQueuedRexmitBytes"), 1, "50 kB", ABSOFF (max_queued_rexmit_bytes), 0, uf_memsize, 0, pf_memsize },
   { LEAF ("MaxQueuedRexmitMessages"), 1, "200", ABSOFF (max_queued_rexmit_msgs), 0, uf_uint, 0, pf_uint },
-#if !LITE
-  { LEAF ("MirrorRemoteEntities"), 1, "default", ABSOFF (mirror_remote_entities), 0, uf_boolean_default, 0, pf_boolean_default },
-  { LEAF ("ForwardRemoteData"), 1, "default", ABSOFF (forward_remote_data), 0, uf_boolean_default, 0, pf_boolean },
-#endif
-#if LITE
   { LEAF ("LeaseDuration"), 1, "10 s", ABSOFF (lease_duration), 0, uf_duration_ms_1hr, 0, pf_duration },
-#else
-  { LEAF ("LeaseDuration"), 1, "0 s", ABSOFF (lease_duration), 0, uf_duration_ms_1hr, 0, pf_duration },
-#endif
   { LEAF ("WriterLingerDuration"), 1, "1 s", ABSOFF (writer_linger_duration), 0, uf_duration_ms_1hr, 0, pf_duration },
   { LEAF ("MinimumSocketReceiveBufferSize"), 1, "default", ABSOFF (socket_min_rcvbuf_size), 0, uf_maybe_memsize, 0, pf_maybe_memsize },
   { LEAF ("MinimumSocketSendBufferSize"), 1, "64 KiB", ABSOFF (socket_min_sndbuf_size), 0, uf_memsize, 0, pf_memsize },
@@ -471,15 +420,10 @@ static const struct cfgelem unsupp_cfgelems[] = {
   { LEAF ("SPDPResponseMaxDelay"), 1, "0 ms", ABSOFF (spdp_response_delay_max), 0, uf_duration_ms_1s, 0, pf_duration },
   { LEAF ("LateAckMode"), 1, "false", ABSOFF (late_ack_mode), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("ForwardAllMessages"), 1, "false", ABSOFF (forward_all_messages), 0, uf_boolean, 0, pf_boolean },
-#if !LITE
-  { LEAF ("RetryOnRejectDuration"), 1, "default", ABSOFF (retry_on_reject_duration), 0, uf_maybe_duration_inf, 0, pf_maybe_duration },
-#endif
   { LEAF ("RetryOnRejectBestEffort"), 1, "false", ABSOFF (retry_on_reject_besteffort), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("GenerateKeyhash"), 1, "true", ABSOFF (generate_keyhash), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("MaxSampleSize"), 1, "2147483647 B", ABSOFF (max_sample_size), 0, uf_memsize, 0, pf_memsize },
-#if LITE
   { LEAF ("WriteBatch"), 1, "false", ABSOFF (whc_batch), 0, uf_boolean, 0, pf_boolean },
-#endif
   { LEAF ("LogStackTraces"), 1, "true", ABSOFF (noprogress_log_stacktraces), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("MonitorPort"), 1, "-1", ABSOFF (monitor_port), 0, uf_int, 0, pf_int },
   { LEAF ("AssumeMulticastCapable"), 1, "", ABSOFF (assumeMulticastCapable), 0, uf_string, ff_free, pf_string },
@@ -492,18 +436,10 @@ static const struct cfgelem unsupp_cfgelems[] = {
 
 static const struct cfgelem sizing_cfgelems[] =
 {
-#if LITE
   { LEAF ("ReceiveBufferSize"), 1, "128 KiB", ABSOFF (rbuf_size), 0, uf_memsize, 0, pf_memsize },
   { LEAF ("ReceiveBufferChunkSize"), 1, "64 KiB", ABSOFF (rmsg_chunk_size), 0, uf_memsize, 0, pf_memsize },
   { LEAF ("EndpointsInSystem"), 1, "200", ABSOFF (guid_hash_softlimit), 0, uf_uint32, 0, pf_uint32 },
   { LEAF ("NetworkQueueSize"), 1, "10", ABSOFF (nw_queue_size), 0, uf_uint, 0, pf_uint },
-#else
-  { LEAF ("ReceiveBufferSize"), 1, "1 MiB", ABSOFF (rbuf_size), 0, uf_memsize, 0, pf_memsize },
-  { LEAF ("ReceiveBufferChunkSize"), 1, "128 KiB", ABSOFF (rmsg_chunk_size), 0, uf_memsize, 0, pf_memsize },
-  { LEAF ("LocalEndpoints"), 1, "1000", ABSOFF (gid_hash_softlimit), 0, uf_uint32, 0, pf_uint32 },
-  { LEAF ("EndpointsInSystem"), 1, "20000", ABSOFF (guid_hash_softlimit), 0, uf_uint32, 0, pf_uint32 },
-  { LEAF ("NetworkQueueSize"), 1, "1000", ABSOFF (nw_queue_size), 0, uf_uint, 0, pf_uint },
-#endif
   END_MARKER
 };
 
@@ -566,9 +502,6 @@ static const struct cfgelem discovery_peers_cfgelems[] = {
 
 static const struct cfgelem discovery_cfgelems[] = {
   { LEAF ("DomainId"), 1, "default", ABSOFF (discoveryDomainId), 0, uf_maybe_int32, 0, pf_maybe_int32 },
-#if !LITE
-  { LEAF ("LocalDiscoveryPartition"), 1, "__BUILT-IN PARTITION__", ABSOFF (local_discovery_partition), 0, uf_string, ff_free, pf_string },
-#endif
   { LEAF ("GenerateBuiltinTopics"), 1, "true", ABSOFF (generate_builtin_topics), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("AdvertiseBuiltinTopicWriters"), 1, "true", ABSOFF (advertise_builtin_topic_writers), 0, uf_boolean, 0, pf_boolean },
   { GROUP ("Peers", discovery_peers_cfgelems) },
@@ -584,11 +517,7 @@ static const struct cfgelem discovery_cfgelems[] = {
 static const struct cfgelem tracing_cfgelems[] = {
   { LEAF ("EnableCategory"), 1, "", 0, 0, 0, uf_logcat, 0, pf_logcat },
   { LEAF ("Verbosity"), 1, "none", 0, 0, 0, uf_verbosity, 0, pf_nop },
-#if LITE
   { LEAF ("OutputFile"), 1, "lite.log", ABSOFF (tracingOutputFileName), 0, uf_tracingOutputFileName, ff_free, pf_string },
-#else
-  { LEAF ("OutputFile"), 1, "ddsi2.log", ABSOFF (tracingOutputFileName), 0, uf_tracingOutputFileName, ff_free, pf_string },
-#endif
   { LEAF_W_ATTRS ("Timestamps", timestamp_cfgattrs), 1, "true", ABSOFF (tracingTimestamps), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("AppendToFile"), 1, "false", ABSOFF (tracingAppendToFile), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("PacketCaptureFile"), 1, "", ABSOFF (pcap_file), 0, uf_string, ff_free, pf_string },
@@ -652,7 +581,6 @@ static const struct cfgelem lease_cfgelems[] = {
   END_MARKER
 };
 
-#if LITE
 
 static const struct cfgelem domain_cfgelems[] = {
   { GROUP ("Lease", lease_cfgelems) },
@@ -668,7 +596,7 @@ static const struct cfgelem durability_cfgelems[] = {
 
 static const struct cfgelem root_cfgelems[] = {
   { "Domain", domain_cfgelems, NULL, NODATA },
-  { "DDSI2E", ddsi2_cfgelems, NULL, NODATA },
+  { "DDSI2", ddsi2_cfgelems, NULL, NODATA },
   { "Durability", durability_cfgelems, NULL, NODATA },
   { "Lease", lease_cfgelems, NULL, NODATA },
   END_MARKER
@@ -683,31 +611,6 @@ static const struct cfgelem lite_root_cfgelems[] =
 static const struct cfgelem root_cfgelem =
   { "root", lite_root_cfgelems, NULL, NODATA };
 
-#else
-
-static const struct cfgelem domain_cfgelems[] = {
-  { GROUP ("Lease", lease_cfgelems) },
-  { LEAF ("Id"), 1, "0", ABSOFF (domainId), 0, uf_domainId, 0, pf_int },
-  WILDCARD,
-  END_MARKER
-};
-
-static const struct cfgelem ddsi2_cfgattrs[] = {
-  { ATTR ("name"), 1, NULL, ABSOFF (servicename), 0, uf_service_name, ff_free, pf_string },
-  END_MARKER
-};
-
-static const struct cfgelem root_cfgelems[] = {
-  { "DDSI2EService|DDSI2Service", ddsi2_cfgelems, ddsi2_cfgattrs, NODATA },
-  { "Lease", lease_cfgelems, NULL, NODATA },
-  { "Domain", domain_cfgelems, NULL, NODATA },
-  END_MARKER
-};
-
-static const struct cfgelem root_cfgelem =
-  { "root", root_cfgelems, NULL, NODATA };
-
-#endif
 
 #undef ATTR
 #undef GROUP
@@ -1139,35 +1042,6 @@ static int uf_negated_boolean (struct cfgst *cfgst, void *parent, struct cfgelem
   }
 }
 
-#if ! LITE
-static int uf_boolean_default (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, UNUSED_ARG (int first), const char *value)
-{
-  static const char *vs[] = { "default", "false", "true", NULL };
-  static const enum boolean_default ms[] = {
-    BOOLDEF_DEFAULT, BOOLDEF_FALSE, BOOLDEF_TRUE, 0,
-  };
-  int *elem = cfg_address (cfgst, parent, cfgelem);
-  int idx = list_index (vs, value);
-  assert (sizeof (vs) / sizeof (*vs) == sizeof (ms) / sizeof (*ms));
-  if (idx < 0)
-    return cfg_error (cfgst, "'%s': undefined value", value);
-  *elem = ms[idx];
-  return 1;
-}
-
-static void pf_boolean_default (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, int is_default)
-{
-  enum besmode *p = cfg_address (cfgst, parent, cfgelem);
-  const char *str = "INVALID";
-  switch (*p)
-  {
-    case BOOLDEF_DEFAULT: str = "default"; break;
-    case BOOLDEF_FALSE: str = "false"; break;
-    case BOOLDEF_TRUE: str = "true"; break;
-  }
-  cfg_log (cfgst, "%s%s", str, is_default ? " [def]" : "");
-}
-#endif
 
 static int uf_logcat (struct cfgst *cfgst, UNUSED_ARG (void *parent), UNUSED_ARG (struct cfgelem const * const cfgelem), UNUSED_ARG (int first), const char *value)
 {
@@ -1240,7 +1114,6 @@ static void pf_besmode (struct cfgst *cfgst, void *parent, struct cfgelem const 
   cfg_log (cfgst, "%s%s", str, is_default ? " [def]" : "");
 }
 
-#if LITE
 
 static int uf_durability_cdr (struct cfgst *cfgst, UNUSED_ARG (void *parent), UNUSED_ARG (struct cfgelem const * const cfgelem), UNUSED_ARG (int first), const char *value)
 {
@@ -1270,7 +1143,6 @@ static void pf_durability_cdr (struct cfgst *cfgst, void *parent, struct cfgelem
   cfg_log (cfgst, "%s%s", str, is_default ? " [def]" : "");
 }
 
-#endif
 
 static int uf_retransmit_merging (struct cfgst *cfgst, UNUSED_ARG (void *parent), UNUSED_ARG (struct cfgelem const * const cfgelem), UNUSED_ARG (int first), const char *value)
 {
@@ -1402,26 +1274,10 @@ static int uf_cipher (struct cfgst *cfgst, void *parent, struct cfgelem const * 
 }
 #endif /* DDSI_INCLUDE_ENCRYPTION */
 
-#if !LITE
-static int uf_service_name (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, UNUSED_ARG (int first), const char *value)
-{
-  char **elem = cfg_address (cfgst, parent, cfgelem);
-  if (*value == 0)
-    *elem = os_strdup (cfgst->servicename);
-  else
-    *elem = os_strdup (value);
-  return 1;
-}
-#endif
 
 static int uf_tracingOutputFileName (struct cfgst *cfgst, UNUSED_ARG (void *parent), UNUSED_ARG (struct cfgelem const * const cfgelem), UNUSED_ARG (int first), const char *value)
 {
   struct config *cfg = cfgst->cfg;
-#if !LITE
-  if (os_strcasecmp (value, "stdout") != 0 && os_strcasecmp (value, "stderr") != 0)
-    cfg->tracingOutputFileName = os_fileNormalize (value);
-  else
-#endif
   {
     cfg->tracingOutputFileName = os_strdup (value);
   }
@@ -1666,26 +1522,6 @@ static int uf_maybe_memsize (struct cfgst *cfgst, void *parent, struct cfgelem c
   }
 }
 
-#if !LITE
-static int uf_maybe_duration_inf (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, UNUSED_ARG (int first), const char *value)
-{
-  struct config_maybe_int64 *elem = cfg_address (cfgst, parent, cfgelem);
-  if (os_strcasecmp (value, "default") == 0) {
-    elem->isdefault = 1;
-    elem->value = 0;
-    return 1;
-  } else if (os_strcasecmp (value, "inf") == 0) {
-    elem->isdefault = 0;
-    elem->value = T_NEVER;
-    return 1;
-  } else if (uf_natint64_unit (cfgst, &elem->value, value, unittab_duration, 0, T_NEVER - 1)) {
-    elem->isdefault = 0;
-    return 1;
-  } else {
-    return 0;
-  }
-}
-#endif
 
 static int uf_float (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, UNUSED_ARG (int first), const char *value)
 {
@@ -2071,18 +1907,6 @@ static void pf_maybe_memsize (struct cfgst *cfgst, void *parent, struct cfgelem 
     pf_int64_unit (cfgst, p->value, is_default, unittab_memsize, "B");
 }
 
-#if !LITE
-static void pf_maybe_duration (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, int is_default)
-{
-  struct config_maybe_int64 *p = cfg_address (cfgst, parent, cfgelem);
-  if (p->isdefault)
-    cfg_log (cfgst, "default%s", is_default ? " [def]" : "");
-  else if (p->value == T_NEVER)
-    cfg_log (cfgst, "inf%s", is_default ? " [def]" : "");
-  else
-    pf_int64_unit (cfgst, p->value, is_default, unittab_duration, "s");
-}
-#endif
 
 static void pf_float (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, int is_default)
 {
@@ -2497,104 +2321,6 @@ static void proc_error (void *varg, const char *msg, int line)
   cfg_error (cfgst, "parser error %s at line %d", msg, line);
 }
 
-#if ! LITE
-static int walk_element (struct cfgst *cfgst, const char *name, u_cfElement elem);
-
-static int walk_attributes (struct cfgst *cfgst, u_cfElement base)
-{
-  c_iter iter;
-  u_cfNode child;
-  int ok = 1;
-  iter = u_cfElementGetAttributes (base);
-  child = u_cfNode (c_iterTakeFirst (iter));
-  while (child)
-  {
-    u_cfAttribute attr;
-    c_char *name, *value;
-    int ok1 = 0;
-    name = u_cfNodeName (child);
-    assert (name != NULL);
-    assert (u_cfNodeKind (child) == V_CFATTRIBUTE);
-    attr = u_cfAttribute (child);
-    if (!u_cfAttributeStringValue (attr, &value))
-      ok1 = cfg_error (cfgst, "failed to extract data");
-    else
-    {
-      ok1 = proc_attr (cfgst, name, value);
-      os_free (value);
-    }
-    ok = ok && ok1;
-    os_free (name);
-    u_cfNodeFree (child);
-    child = u_cfNode (c_iterTakeFirst (iter));
-  }
-  c_iterFree (iter);
-  return ok;
-}
-
-static int walk_children (struct cfgst *cfgst, u_cfElement base)
-{
-  c_iter iter;
-  u_cfNode child;
-  int ok = 1;
-  iter = u_cfElementGetChildren (base);
-  child = u_cfNode (c_iterTakeFirst (iter));
-  while (child)
-  {
-    c_char *child_name;
-    int ok1 = 0;
-    child_name = u_cfNodeName (child);
-    assert (child_name != NULL);
-    switch (u_cfNodeKind (child))
-    {
-      case V_CFELEMENT:
-      {
-        u_cfElement elem = u_cfElement (child);
-        ok1 = walk_element (cfgst, child_name, elem);
-        break;
-      }
-      case V_CFDATA:
-      {
-        u_cfData data = u_cfData (child);
-        c_char *value;
-        if (!u_cfDataStringValue (data, &value))
-          ok1 = cfg_error (cfgst, "failed to extract data");
-        else
-        {
-          if (strspn (value, " \t\r\n") != strlen (value))
-            ok1 = proc_elem_data (cfgst, value);
-          else
-            ok1 = 1;
-          os_free (value);
-        }
-        break;
-      }
-      default:
-        abort ();
-    }
-    ok = ok && ok1;
-    os_free (child_name);
-    u_cfNodeFree (child);
-    child = u_cfNode (c_iterTakeFirst (iter));
-  }
-  c_iterFree (iter);
-  return ok;
-}
-
-static int walk_element (struct cfgst *cfgst, const char *name, u_cfElement elem)
-{
-  if (!proc_elem_open (cfgst, name))
-    return 0;
-  else
-  {
-    int ok;
-    ok = walk_attributes (cfgst, elem) && walk_children (cfgst, elem);
-    if (!proc_elem_close (cfgst))
-      ok = 0;
-    return ok;
-  }
-}
-#endif
 
 static int cfgst_node_cmp (const void *va, const void *vb)
 {
@@ -2686,31 +2412,14 @@ static int sort_channels_check_nodups (struct config *cfg)
 
 struct cfgst * config_init
 (
-#if LITE
   const char *configfile
-#else
-  /* C_STRUCT (u_participant) const * */u_participant participant, const char *servicename
-#endif
 )
 {
   int ok = 1;
   struct cfgst *cfgst;
-#if !LITE
-  u_cfElement root, elem;
-  c_iter iter;
-  int rootidx;
-  assert (participant != NULL);
-#endif
 
   memset (&config, 0, sizeof (config));
 
-#if ! LITE
-  /* Enable logging of errors &c. to stderr until configuration is read */
-  config.enabled_logcats = LC_FATAL | LC_ERROR | LC_WARNING;
-#ifdef DDSI_INCLUDE_ENCRYPTION
-  ddsi_security_plugin ();
-#endif
-#endif
   config.tracingOutputFile = stderr;
 
   cfgst = os_malloc (sizeof (*cfgst));
@@ -2718,11 +2427,7 @@ struct cfgst * config_init
 
   ut_avlInit (&cfgst_found_treedef, &cfgst->found);
   cfgst->cfg = &config;
-#if !LITE
-  cfgst->servicename = servicename;
-#endif
 
-#if LITE
   /* configfile == NULL will get you the default configuration */
   if (configfile)
   {
@@ -2769,67 +2474,6 @@ struct cfgst * config_init
     }
     os_free (copy);
   }
-#else
-  if ((root = u_participantGetConfiguration ((u_participant) participant)) == NULL)
-  {
-    NN_ERROR0 ("config_init: u_participantGetConfiguration failed");
-    ut_avlFree (&cfgst_found_treedef, &cfgst->found, os_free);
-    os_free (cfgst);
-    return NULL;
-  }
-
-  /* Only suitable for Domain (without a attributes) and a service
-   with a matching name attribute */
-  cfgst_push (cfgst, 0, &root_cfgelem, &config);
-  for (rootidx = 0; root_cfgelems[rootidx].name; rootidx++)
-  {
-    const struct cfgelem *root_cfgelem = &root_cfgelems[rootidx];
-    char *copy = os_strdup (root_cfgelem->name), *cursor = copy, *tok;
-    while ((tok = os_strsep (&cursor, "|")) != NULL)
-    {
-      if (*tok == 0)
-      {
-        /* The configuration tables are supposed to be reasonable and not contain empty tags. Then, "||" is returned as an empty token by os_strsep, but we can simply skip it */
-        continue;
-      }
-      iter = u_cfElementXPath (root, tok);
-      elem = u_cfElement (c_iterTakeFirst (iter));
-      while (elem)
-      {
-        c_char *str;
-        if (root_cfgelem->attributes == NULL)
-        {
-          /* Domain element */
-          int ok1;
-          char *name = u_cfNodeName (u_cfNode (elem));
-          ok1 = walk_element (cfgst, name, elem);
-          os_free (name);
-          ok = ok && ok1;
-        }
-        else if (u_cfElementAttributeStringValue (elem, "name", &str))
-        {
-          int ok1;
-          if (os_strcasecmp (servicename, str) != 0)
-            ok1 = 1;
-          else
-          {
-            char *name = u_cfNodeName (u_cfNode (elem));
-            ok1 = walk_element (cfgst, name, elem);
-            os_free (name);
-          }
-          ok = ok && ok1;
-          os_free (str);
-        }
-        u_cfElementFree (elem);
-        elem = u_cfElement (c_iterTakeFirst (iter));
-      }
-      c_iterFree (iter);
-    }
-    os_free (copy);
-  }
-  cfgst_pop (cfgst);
-  u_cfElementFree (root);
-#endif
 
   /* Set defaults for everything not set that we have a default value
      for, signal errors for things unset but without a default. */
@@ -2864,17 +2508,17 @@ struct cfgst * config_init
         case Q_CIPHER_NULL:
           /* nop */
           if (s->key && strlen (s->key) > 0) {
-            NN_ERROR1 ("config: DDSI2EService/Security/SecurityProfile[@cipherkey]: %s: cipher key not required\n",s->key);
+            NN_ERROR1 ("config: DDSI2Service/Security/SecurityProfile[@cipherkey]: %s: cipher key not required\n",s->key);
           }
           break;
 
         default:
           /* read the cipherkey if present */
           if (!s->key || strlen (s->key) == 0) {
-            NN_ERROR0 ("config: DDSI2EService/Security/SecurityProfile[@cipherkey]: cipher key missing\n");
+            NN_ERROR0 ("config: DDSI2Service/Security/SecurityProfile[@cipherkey]: cipher key missing\n");
             ok = 0;
           } else if (q_security_plugin.valid_uri && ! (q_security_plugin.valid_uri) (s->cipher,s->key)) {
-            NN_ERROR1 ("config: DDSI2EService/Security/SecurityProfile[@cipherkey]: %s : incorrect key\n", s->key);
+            NN_ERROR1 ("config: DDSI2Service/Security/SecurityProfile[@cipherkey]: %s : incorrect key\n", s->key);
             ok = 0;
           }
       }
@@ -2906,7 +2550,7 @@ struct cfgst * config_init
           p->securityProfile = s;
         else
         {
-          NN_ERROR1 ("config: DDSI2EService/Partitioning/NetworkPartitions/NetworkPartition[@securityprofile]: %s: unknown securityprofile\n", p->profileName);
+          NN_ERROR1 ("config: DDSI2Service/Partitioning/NetworkPartitions/NetworkPartition[@securityprofile]: %s: unknown securityprofile\n", p->profileName);
           ok = 0;
         }
       }
@@ -2917,11 +2561,7 @@ struct cfgst * config_init
          forces us to include a crc32 routine when we have md5
          available anyway */
       p->partitionId = config.nof_networkPartitions; /* starting at 1 */
-#if LITE
       p->partitionHash = crc32_calc (p->name, (int) strlen (p->name));
-#else
-      p->partitionHash = ut_crcCalculate (p->name, strlen (p->name));
-#endif
       p = p->next;
     }
   }
@@ -2938,7 +2578,7 @@ struct cfgst * config_init
       if (p) {
         m->partition = p;
       } else {
-        NN_ERROR1 ("config: DDSI2EService/Partitioning/PartitionMappings/PartitionMapping[@networkpartition]: %s: unknown partition\n", m->networkPartition);
+        NN_ERROR1 ("config: DDSI2Service/Partitioning/PartitionMappings/PartitionMapping[@networkpartition]: %s: unknown partition\n", m->networkPartition);
         ok = 0;
       }
       m = m->next;

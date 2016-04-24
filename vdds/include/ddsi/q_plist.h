@@ -15,10 +15,6 @@
 #include "ddsi/q_feature_check.h"
 #include "ddsi/q_xqos.h"
 
-#if !LITE
-#include "c_base.h"
-#include "kernelModule.h"
-#endif
 
 #if defined (__cplusplus)
 extern "C" {
@@ -75,10 +71,6 @@ typedef struct nn_original_writer_info {
 #define PP_PRISMTECH_LISTENER_SCHEDULING        ((uint64_t)1 << 32)
 #define PP_PRISMTECH_BUILTIN_ENDPOINT_SET       ((uint64_t)1 << 33)
 #define PP_PRISMTECH_TYPE_DESCRIPTION           ((uint64_t)1 << 34)
-#if ! LITE
-#define PP_PRISMTECH_ENDPOINT_GID               ((uint64_t)1 << 35)
-#define PP_PRISMTECH_GROUP_GID                  ((uint64_t)1 << 36)
-#endif
 #define PP_COHERENT_SET                         ((uint64_t)1 << 37)
 #define PP_PRISMTECH_EOTINFO                    ((uint64_t)1 << 38)
 #ifdef DDSI_INCLUDE_SSM
@@ -121,22 +113,6 @@ typedef struct nn_keyhash {
   unsigned char value[16];
 } nn_keyhash_t;
 
-#if !LITE
-typedef struct nn_prismtech_writer_info_old
-{
-  uint32_t transactionId;
-  v_gid writerGID;
-  v_gid writerInstanceGID;
-} nn_prismtech_writer_info_old_t;
-
-typedef struct nn_prismtech_writer_info
-{
-  uint32_t transactionId;
-  v_gid writerGID;
-  v_gid writerInstanceGID;
-  uint32_t sequenceNumber;
-} nn_prismtech_writer_info_t;
-#endif
 
 #ifdef DDSI_INCLUDE_SSM
 typedef struct nn_reader_favours_ssm {
@@ -198,19 +174,12 @@ typedef struct nn_plist {
   char *entity_name;
   nn_keyhash_t keyhash;
   unsigned statusinfo;
-#if !LITE
-  nn_prismtech_writer_info_t prismtech_writer_info;
-#endif
   nn_prismtech_participant_version_info_t prismtech_participant_version_info;
   char *node_name;
   char *exec_name;
   unsigned char is_service;
   unsigned service_type;
   unsigned process_id;
-#if ! LITE
-  v_gid endpoint_gid;
-  v_gid group_gid;
-#endif
   char *type_description;
   nn_sequence_number_t coherent_set_seqno;
   nn_prismtech_eotinfo_t eotinfo;
@@ -260,9 +229,6 @@ struct nn_rsample_info;
 struct nn_rdata;
 
 unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn_rmsg *rmsg, const nn_plist_src_t *src);
-#if !LITE
-void nn_plist_extract_wrinfo (nn_prismtech_writer_info_t *wri, const struct nn_rsample_info *sampleinfo, const struct nn_rdata *rdata);
-#endif
 
 #if defined (__cplusplus)
 }

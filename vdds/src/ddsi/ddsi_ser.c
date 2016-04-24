@@ -164,25 +164,12 @@ void ddsi_serstate_append_blob (serstate_t st, size_t align, size_t sz, const vo
 void ddsi_serstate_set_msginfo
 (
   serstate_t st, unsigned statusinfo, nn_wctime_t timestamp,
-#if LITE
   void * dummy
-#else
-  const struct nn_prismtech_writer_info *wri
-#endif
 )
 {
   serdata_t d = st->data;
   d->v.msginfo.statusinfo = statusinfo;
   d->v.msginfo.timestamp = timestamp;
-#if !LITE
-  if (wri == NULL)
-    d->v.msginfo.have_wrinfo = 0;
-  else
-  {
-    d->v.msginfo.have_wrinfo = 1;
-    d->v.msginfo.wrinfo = *wri;
-  }
-#endif
 }
 
 uint32_t ddsi_serdata_size (const struct serdata *serdata)
@@ -248,9 +235,7 @@ void ddsi_serstate_release (serstate_t st)
   if (os_atomic_dec32_nv (&st->refcount) == 0)
   {
     serstatepool_t pool = st->pool;
-#if LITE
     sertopic_free ((sertopic_t) st->topic);
-#endif
 #if USE_ATOMIC_LIFO
     if (pa_inc32_nv(&pool->approx_nfree) <= MAX_POOL_SIZE)
       os_atomic_lifo_push (&pool->freelist, st, offsetof (struct serstate, next));

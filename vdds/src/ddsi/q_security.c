@@ -406,41 +406,6 @@ static os_uint32 q_securityEncoderSetHeaderSize (q_securityEncoderSet codec)
   return codec->headerSizeMax;
 }
 
-#if !LITE
-/**
- * Convert the binary hash of a certificate's fingerprint to
- * base64 format, for printing it (e.g. log mesages)
- **/
-char* binaryToBase64(const char* data, os_size_t len)
-{
-    BIO* b64 = NULL;
-    BIO* bio = NULL;
-    char* encoded = NULL;
-    os_size_t encodedLen = 0;
-    char* result = NULL;
-
-    /* encode to Base64 */
-    b64 = BIO_new( BIO_f_base64() );
-    /* no new line on end */
-    BIO_set_flags( b64, BIO_FLAGS_BASE64_NO_NL );
-    bio = BIO_new( BIO_s_mem() );
-    bio = BIO_push( b64, bio );
-    (void)BIO_write( bio, data, (int)len);
-    (void)BIO_flush( bio ); /* tell b64 that no more data follows */
-
-    /* encoded stays owned by openssl */
-    encodedLen = (os_size_t) BIO_get_mem_data(bio, &encoded);
-
-    result = (char*)os_malloc(encodedLen+1);
-    memcpy(result,encoded,encodedLen);
-    result[encodedLen] = 0;
-
-    BIO_free_all(bio);
-
-    return result;
-}
-
-#endif
 
 static c_bool decoderIsBlocked (q_securityPartitionDecoder codec)
 {
@@ -589,11 +554,7 @@ static c_bool q_securityResolveCipherKeyFromUri
         const char *justPath =
                 (char *)(uriStr + strlen(URI_FILESCHEMA));
 
-#if LITE
         filename = os_strdup (justPath);
-#else
-        filename = os_fileNormalize(justPath);
-#endif
         file = fopen(filename, "r");
         if (file) {
             /* read at most 255 chars from file, this should suffice if the
@@ -719,18 +680,14 @@ static os_uint32 cipherTypeToHeaderSize(q_cipherType cipherType) {
 
 /*these two methods are not static for the moment because of tests*/
 
-#if LITE
 static
-#endif
 void q_securityRNGSeed (void)
 {
         os_time time=os_timeGetMonotonic();
         RAND_seed((const void *)&time.tv_nsec,sizeof(time.tv_nsec));
 }
 
-#if LITE
 static
-#endif
 void q_securityRNGGetRandomNumber(int number_length,unsigned char * randNumber)
 {
     RAND_bytes(randNumber,number_length);

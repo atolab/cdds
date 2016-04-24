@@ -131,9 +131,6 @@ void nn_xmsg_addpar_reliability (struct nn_xmsg *m, unsigned pid, const struct n
 void nn_xmsg_addpar_share (struct nn_xmsg *m, unsigned pid, const struct nn_share_qospolicy *rq);
 void nn_xmsg_addpar_subscription_keys (struct nn_xmsg *m, unsigned pid, const struct nn_subscription_keys_qospolicy *rq);
 
-#if !LITE
-void nn_xmsg_addpar_wrinfo (struct nn_xmsg *m, const struct nn_prismtech_writer_info *wri);
-#endif
 void nn_xmsg_addpar_parvinfo (struct nn_xmsg *m, unsigned pid, const struct nn_prismtech_participant_version_info *pvi);
 void nn_xmsg_addpar_eotinfo (struct nn_xmsg *m, unsigned pid, const struct nn_prismtech_eotinfo *txnid);
 void nn_xmsg_addpar_sentinel (struct nn_xmsg *m);

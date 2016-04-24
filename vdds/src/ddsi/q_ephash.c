@@ -23,10 +23,6 @@
 #include "ddsi/q_rtps.h" /* guid_t */
 #include "ddsi/q_thread.h" /* for assert(thread is awake) */
 
-#if ! LITE
-#include "kernelModule.h" /* v_gid */
-#include "v_public.h" /* v_handleIsEqual */
-#endif
 
 #define CONTAINER_OF(ptr, type, member) ((type *) ((char *) (ptr) - offsetof (type, member)))
 
@@ -53,17 +49,6 @@ static const uint64_t unihashconsts[] = {
 
 static void ephash_update_enums_on_delete (struct ephash *h, struct ephash_chain_entry *ce);
 
-#if ! LITE
-static int hash_gid (const v_gid *gid, int nbitskey)
-{
-  /* Universal hashing relying on 64-bit arithmetic. SystemId is a constant for local writers, but with bridging support requires handling entities from all over the domain and hence is needed in at least some cases. Easiest is to always take it into account. See, e.g., http://en.wikipedia.org/wiki/Universal_hash_function. */
-  return
-  (int) (((((uint32_t) gid->systemId + unihashconsts[0]) *
-           ((uint32_t) gid->localId + unihashconsts[1])) +
-          ((uint32_t) gid->serial * unihashconsts[2]))
-         >> (64 - nbitskey));
-}
-#endif
 
 static int hash_guid (const struct nn_guid *guid, int nbitskey)
 {
@@ -75,12 +60,6 @@ static int hash_guid (const struct nn_guid *guid, int nbitskey)
            >> (64 - nbitskey));
 }
 
-#if ! LITE
-static int gid_eq (const struct v_gid_s *a, const struct v_gid_s *b)
-{
-  return v_gidEqual (*a, *b);
-}
-#endif
 
 static int guid_eq (const struct nn_guid *a, const struct nn_guid *b)
 {
@@ -321,70 +300,6 @@ struct proxy_reader *ephash_lookup_proxy_reader_guid (const struct nn_guid *guid
   return ephash_lookup_guid (gv.guid_hash, guid, EK_PROXY_READER);
 }
 
-#if ! LITE
-/* GID-based */
-
-static void ephash_gid_insert (struct ephash *gid_hash, struct generic_endpoint *ep)
-{
-  if (v_gidIsValid (ep->c.gid))
-    ephash_insert (gid_hash, hash_gid (&ep->c.gid, gid_hash->nbitskey), &ep->c.gid_hash_chain, (int) ep->e.kind);
-}
-
-static void ephash_gid_remove (struct ephash *gid_hash, struct generic_endpoint *ep)
-{
-  if (v_gidIsValid (ep->c.gid))
-    ephash_remove (gid_hash, hash_gid (&ep->c.gid, gid_hash->nbitskey), &ep->c.gid_hash_chain, (int) ep->e.kind);
-}
-
-static struct generic_endpoint *ephash_lookup_gid (const struct ephash *ephash, const struct v_gid_s *gid)
-{
-  struct ephash_chain_entry *ce;
-  int idx = hash_gid (gid, ephash->nbitskey);
-
-  assert (idx >= 0 && idx < (1 << ephash->nbitskey));
-  for (ce = ephash->heads[idx]; ce; ce = ce->next)
-  {
-    struct generic_endpoint *ep = CONTAINER_OF (ce, struct generic_endpoint, c.gid_hash_chain);
-    if (gid_eq (gid, &ep->c.gid))
-      return ep;
-  }
-  return NULL;
-}
-
-void ephash_insert_writer_gid (struct ephash *gid_hash, struct writer *wr)
-{
-  ephash_gid_insert (gid_hash, (struct generic_endpoint *) wr);
-}
-
-void ephash_insert_reader_gid (struct ephash *gid_hash, struct reader *rd)
-{
-  ephash_gid_insert (gid_hash, (struct generic_endpoint *) rd);
-}
-
-void ephash_remove_writer_gid (struct ephash *gid_hash, struct writer *wr)
-{
-  ephash_gid_remove (gid_hash, (struct generic_endpoint *) wr);
-}
-
-void ephash_remove_reader_gid (struct ephash *gid_hash, struct reader *rd)
-{
-  ephash_gid_remove (gid_hash, (struct generic_endpoint *) rd);
-}
-
-struct writer *ephash_lookup_writer_gid (const struct ephash *gid_hash, const struct v_gid_s *gid)
-{
-  struct generic_endpoint *ep = ephash_lookup_gid (gid_hash, gid);
-  assert (ep == NULL || ep->e.kind == EK_WRITER);
-  return (struct writer *) ep;
-}
-
-struct reader *ephash_lookup_reader_gid (const struct ephash *gid_hash, const struct v_gid_s *gid)
-{
-  struct generic_endpoint *ep = ephash_lookup_gid (gid_hash, gid);
-  assert (ep == NULL || ep->e.kind == EK_READER);
-  return (struct reader *) ep;
-}
-#endif
 
 /* Enumeration */
 

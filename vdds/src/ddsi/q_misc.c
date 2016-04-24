@@ -11,9 +11,6 @@
  */
 #include <string.h>
 
-#if ! LITE
-#include "kernelModule.h"
-#endif
 #include "ddsi/q_misc.h"
 #include "ddsi/q_bswap.h"
 #include "ddsi/q_md5.h"
@@ -63,20 +60,6 @@ int is_own_vendor (nn_vendorid_t vendor)
   return vendor.id[0] == ownid.id[0] && vendor.id[1] == ownid.id[1];
 }
 
-#if ! LITE
-int gid_is_fake (const struct v_gid_s *gid)
-{
-  /* 0:0:0 is not so much fake as invalid, but here they both mean we
-     pretend there is no gid.  For the localId mask, see v_handle.c --
-     this is very much an undocumented characteristic of GIDs ... */
-  if (gid->systemId == 0 && gid->localId == 0 && gid->serial == 0)
-    return 1;
-  else if (gid->localId & 0xffc00000)
-    return 1;
-  else
-    return 0;
-}
-#endif
 
 int64_t fromSN (const nn_sequence_number_t sn)
 {
@@ -114,17 +97,6 @@ int WildcardOverlap(char * p1, char * p2)
 }
 #endif
 
-#if ! LITE
-int ddsi2_patmatch (const char *pat, const char *str)
-{
-  c_value p, n, r;
-  p.kind = n.kind = V_STRING;
-  p.is.String = (char *) pat;
-  n.is.String = (char *) str;
-  r = c_valueStringMatch (p, n);
-  return r.is.Boolean;
-}
-#else
 int ddsi2_patmatch (const char *pat, const char *str)
 {
   while (*pat)
@@ -172,54 +144,8 @@ int ddsi2_patmatch (const char *pat, const char *str)
   }
   return *str == 0;
 }
-#endif
 
-#if ! LITE
-void nn_guid_to_ospl_gid (v_gid *gid, const nn_guid_t *guid, int guid_has_systemid)
-{
-  /* Try hard to fake a writer id for OpenSplice based on a GUID. All
-   systems I know of have something resembling a host/system id in
-   the first 32 bits, so copy that as the system id and copy half of
-   an MD5 hash into the remaining 64 bits. Now if only OpenSplice
-   would use all 96 bits as a key, we'd be doing reasonably well ... */
-  const nn_guid_t nguid = nn_hton_guid (*guid);
-  union { uint32_t u[4]; unsigned char md5[16]; } hp, hg;
-  md5_state_t md5st;
 
-  if (guid_has_systemid)
-  {
-    /* for old OpenSplice versions: modern durability relies on the systemId for
-       liveliness of its fellows, so we must not modify it */
-    gid->systemId = guid->prefix.u[0];
-  }
-  else
-  {
-    md5_init (&md5st);
-    md5_append (&md5st, (unsigned char *) &nguid.prefix, sizeof (nguid.prefix));
-    md5_finish (&md5st, hp.md5);
-    gid->systemId = fromBE4u (hp.u[0]);
-  }
-
-  md5_init (&md5st);
-  md5_append (&md5st, (unsigned char *) &nguid, sizeof (nguid));
-  md5_finish (&md5st, hg.md5);
-
-  /* See also gid_is_fake for the masking of bits in localId */
-  gid->localId = fromBE4u (hg.u[0]) & 0x3fffff;
-  gid->serial = guid->entityid.u;
-}
-
-int version_info_is_6_4_1 (const char *internals)
-{
-  /* node/version/...; unfortunately, the version is quoted on some platforms */
-  const char *p;
-  if (internals == NULL || (p = strchr (internals, '/')) == NULL)
-    return 0;
-  return (strncmp (p + 1, "V6.4.1/", 7) == 0 || strncmp (p + 1, "\"V6.4.1\"/", 9) == 0);
-}
-#endif
-
-#if LITE
 static const uint32_t crc32_table[] = {
   0x00000000, 0x04c11db7, 0x09823b6e, 0x0d4326d9, 0x130476dc, 0x17c56b6b,
   0x1a864db2, 0x1e475005, 0x2608edb8, 0x22c9f00f, 0x2f8ad6d6, 0x2b4bcb61,
@@ -280,4 +206,3 @@ uint32_t crc32_calc (const void *buf, uint32_t length)
   }
   return reg;
 }
-#endif

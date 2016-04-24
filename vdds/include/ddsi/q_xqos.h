@@ -234,9 +234,6 @@ typedef struct nn_share_qospolicy {
 #define QP_PRISMTECH_RELAXED_QOS_MATCHING    ((uint64_t)1 << 23)
 #define QP_PRISMTECH_READER_LIFESPAN         ((uint64_t)1 << 24)
 #define QP_PRISMTECH_SUBSCRIPTION_KEYS       ((uint64_t)1 << 25)
-#if !LITE
-#define QP_PRISMTECH_SHARE                   ((uint64_t)1 << 26)
-#endif
 #define QP_PRISMTECH_ENTITY_FACTORY          ((uint64_t)1 << 27)
 #define QP_PRISMTECH_SYNCHRONOUS_ENDPOINT    ((uint64_t)1 << 28)
 

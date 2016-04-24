@@ -871,11 +871,7 @@ void nn_xmsg_addpar_keyhash (struct nn_xmsg *m, const struct serdata *serdata)
   if (!ddsi_serdata_is_empty (serdata))
   {
     char *p = nn_xmsg_addpar (m, PID_KEYHASH, 16);
-#if LITE
     memcpy (p, serdata->v.keyhash.m_hash, 16);
-#else
-    serdata_keyhash (serdata, p);
-#endif
   }
 }
 
@@ -943,14 +939,6 @@ void nn_xmsg_addpar_statusinfo (struct nn_xmsg *m, unsigned statusinfo)
   nn_xmsg_addpar_BE4u (m, PID_STATUSINFO, statusinfo);
 }
 
-#if !LITE
-void nn_xmsg_addpar_wrinfo (struct nn_xmsg *m, const struct nn_prismtech_writer_info *wri)
-{
-  struct nn_prismtech_writer_info *p;
-  p = nn_xmsg_addpar (m, PID_PRISMTECH_WRITER_INFO, sizeof (*p));
-  *p = *wri;
-}
-#endif
 
 void nn_xmsg_addpar_share (struct nn_xmsg *m, unsigned pid, const struct nn_share_qospolicy *q)
 {

@@ -31,11 +31,6 @@ struct serdata;
 int write_sample (struct nn_xpack *xp, struct writer *wr, struct serdata *serdata);
 int write_sample_kernel_seq (struct nn_xpack *xp, struct writer *wr, struct serdata *serdata, int have_kernel_seq, uint32_t kernel_seq);
 
-#if ! LITE
-void begin_coherent_set (struct writer *wr);
-/* plist (if != NULL) gets "consumed" by end_coherent_set */
-int end_coherent_set (struct nn_xpack *xp, struct writer *wr, struct nn_plist *plist, struct serdata *serdata, int have_kernel_seq, uint32_t kernel_seq);
-#endif
 
 /* When calling the following functions, wr->lock must be held */
 int create_fragment_message (struct writer *wr, int64_t seq, const struct nn_plist *plist, struct serdata *serdata, unsigned fragnum, struct proxy_reader *prd,struct nn_xmsg **msg, int isnew);

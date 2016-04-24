@@ -22,10 +22,8 @@
 #define OS_API OS_API_IMPORT
 #endif
 
-#if LITE
 #include "dds.h"
 #include "kernel/dds_topic.h"
-#endif
 
 #ifndef PLATFORM_IS_LITTLE_ENDIAN
 #  if OS_ENDIANNESS == OS_BIG_ENDIAN
@@ -60,14 +58,6 @@ struct serdata_msginfo
 {
   unsigned statusinfo;
   nn_wctime_t timestamp;
-#if !LITE
-#ifndef NDEBUG
-  unsigned have_wrinfo: 2;
-#else
-  unsigned have_wrinfo: 1;
-#endif
-  struct nn_prismtech_writer_info wrinfo;
-#endif
 };
 
 enum serstate_kind {
@@ -83,9 +73,6 @@ struct serstate
   os_atomic_uint32_t refcount;
   size_t pos;
   size_t size;
-#if !LITE
-  int keyidx; /* current index in topic.keys */
-#endif
   const struct sertopic * topic;
   enum serstate_kind kind;
   serstatepool_t pool;
@@ -105,7 +92,6 @@ struct serstatepool
 #endif
 };
 
-#if LITE
 
 #define DDS_KEY_SET 0x0001
 #define DDS_KEY_HASH_SET 0x0002
@@ -120,7 +106,6 @@ typedef struct dds_key_hash
   uint32_t m_flags;          /* State of key/hash (see DDS_KEY_XXX) */
 }
 dds_key_hash_t;
-#endif
 
 struct serdata_base
 {
@@ -128,13 +113,8 @@ struct serdata_base
   struct serdata_msginfo msginfo;
   int hash_valid;       /* whether hash is valid or must be computed from key/data */
   uint32_t hash;       /* cached serdata hash, valid only if hash_valid != 0 */
-#if LITE
   dds_key_hash_t keyhash;
   bool bswap;           /* Whether state is native endian or requires swapping */
-#else
-  char key[32];         /* copies + 32-bit offsets (from &key[0] into data) to CDR strings */
-  unsigned isstringref; /* (isstringref & (1 << k)) iff key[k] is first of an offset */
-#endif
 };
 
 struct serdata
@@ -148,44 +128,13 @@ struct serdata
   char data[1];
 };
 
-#if LITE
 
 struct dds_key_descriptor;
 
-#else
 
-typedef enum dds_keytype
-{
-  DDS_KEY_ONEBYTE,
-  DDS_KEY_TWOBYTES,
-  DDS_KEY_FOURBYTES,
-  DDS_KEY_EIGHTBYTES,
-  DDS_KEY_STRINGREF,
-  DDS_KEY_STRINGINLINE
-}
-dds_keytype_t;
-
-typedef struct dds_key_descriptor
-{
-  unsigned long long ord;       /* serialization order (lower values of ord go earlier) */
-  unsigned off;                 /* offset from start of (input) sample */
-  unsigned m_seroff;            /* offset in serdata_base.key */
-  dds_keytype_t m_keytype;      /* type class */
-  unsigned short align;         /* required alignment */
-  unsigned short specord_idx;   /* index in serialization order where current index in specification order can be found (i.e. keys[keys[i].specord_idx] <=> key i in specification order) */
-  void * type;                  /* full type for key (only for (de)serializing keys/keyhashes) */
-}
-dds_key_descriptor_t;
-
-#endif
-
-#if LITE
 struct dds_topic;
 typedef void (*topic_cb_t) (struct dds_topic * topic);
 typedef bool (*dds_topic_intern_filter_fn) (const void * sample, void *ctx);
-#else
-struct v_topic_s;
-#endif
 
 struct sertopic
 {
@@ -196,7 +145,6 @@ struct sertopic
   void * type;
   unsigned nkeys;
 
-#if LITE
   uint32_t id;
   uint32_t hash;
   uint32_t flags;
@@ -208,12 +156,6 @@ struct sertopic
   void * filter_ctx;
   struct dds_topic * status_cb_entity;
   const struct dds_key_descriptor * keys;
-#else
-  struct v_topic_s *ospl_topic;
-  struct sd_cdrInfo *ci;
-  unsigned keysersize;
-  struct dds_key_descriptor keys[1];
-#endif
 
   /*
     Array of keys, represented as offset in the OpenSplice internal
@@ -245,11 +187,7 @@ OS_API void ddsi_serstate_append_blob (serstate_t st, size_t align, size_t sz, c
 OS_API void ddsi_serstate_set_msginfo
 (
   serstate_t st, unsigned statusinfo, nn_wctime_t timestamp,
-#if LITE
   void * dummy
-#else
-  const struct nn_prismtech_writer_info *wri
-#endif
 );
 OS_API serstate_t ddsi_serstate_new (serstatepool_t pool, const struct sertopic * topic);
 OS_API serdata_t ddsi_serstate_fix (serstate_t st);

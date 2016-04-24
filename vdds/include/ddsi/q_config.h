@@ -66,7 +66,6 @@ enum boolean_default {
   BOOLDEF_TRUE
 };
 
-#if LITE
 enum durability_cdr
 {
   DUR_CDR_LE,
@@ -74,7 +73,6 @@ enum durability_cdr
   DUR_CDR_SERVER,
   DUR_CDR_CLIENT
 };
-#endif
 
 #define PARTICIPANT_INDEX_AUTO -1
 #define PARTICIPANT_INDEX_NONE -2
@@ -240,11 +238,6 @@ struct config
   int noprogress_log_stacktraces;
   int prioritize_retransmit;
 
-#if ! LITE
-  char *local_discovery_partition;
-  enum boolean_default mirror_remote_entities;
-  enum boolean_default forward_remote_data;
-#endif
 
   unsigned primary_reorder_maxsamples;
   unsigned secondary_reorder_maxsamples;
@@ -256,13 +249,8 @@ struct config
 
   uint32_t guid_hash_softlimit;
 
-#if LITE
   int enableLoopback;
   enum durability_cdr durability_cdr;
-#else
-  uint32_t gid_hash_softlimit;
-  int coexistWithNativeNetworking;
-#endif
 
   unsigned nw_queue_size;
 
@@ -337,9 +325,7 @@ struct config
 
   /* Write cache */
 
-#if LITE
   int whc_batch;
-#endif
   uint32_t whc_lowwater_mark;
   uint32_t whc_highwater_mark;
   struct config_maybe_uint32 whc_init_highwater_mark;
@@ -364,9 +350,6 @@ struct config
   unsigned max_queued_rexmit_msgs;
   unsigned ddsi2direct_max_threads;
   int late_ack_mode;
-#if !LITE
-  struct config_maybe_int64 retry_on_reject_duration;
-#endif
   int retry_on_reject_besteffort;
   int generate_keyhash;
   uint32_t max_sample_size;
@@ -399,7 +382,6 @@ struct config
   q__schedPrioClass watchdog_sched_priority_class;
 };
 
-#if LITE
 struct rhc;
 struct nn_xqos;
 struct tkmap_instance;
@@ -408,14 +390,12 @@ struct serdata;
 struct sertopic;
 struct proxy_writer;
 struct proxy_writer_info;
-#endif
 
 struct ddsi_plugin
 {
   int (*init_fn) (void);
   void (*fini_fn) (void);
 
-#if LITE
 
   /* Read cache */
 
@@ -436,7 +416,6 @@ struct ddsi_plugin
 
   uint64_t (*iidgen_fn) (void);
 
-#endif
 };
 
 extern struct config OS_API config;
@@ -444,12 +423,7 @@ extern struct ddsi_plugin ddsi_plugin;
 
 struct cfgst;
 
-#if LITE
 struct cfgst *config_init (const char *configfile);
-#else
-struct u_participant_s;
-struct cfgst *config_init (struct u_participant_s *participant, const char *serviceName);
-#endif
 void config_print_and_free_cfgst (struct cfgst *cfgst);
 void config_fini (void);
 

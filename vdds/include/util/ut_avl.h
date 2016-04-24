@@ -189,7 +189,7 @@ typedef struct ut_avlNode {
 #define UT_AVL_TREEDEF_FLAG_ALLOWDUPS 4
 
 typedef struct ut_avlTreedef {
-#if LITE && defined (__cplusplus)
+#if defined (__cplusplus)
     ut_avlTreedef() {}
 #endif
     size_t avlnodeoffset;

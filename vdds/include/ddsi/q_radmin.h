@@ -107,7 +107,6 @@ struct receiver_state {
   ddsi_tran_conn_t conn;                  /* Connection for request */
 };
 
-#if LITE
 struct proxy_writer_info
 {
   nn_guid_t guid;
@@ -115,7 +114,6 @@ struct proxy_writer_info
   int32_t ownership_strength;
   uint64_t iid;
 };
-#endif
 
 struct nn_rsample_info {
   int64_t seq;
@@ -129,11 +127,9 @@ struct nn_rsample_info {
   unsigned pt_wr_info_zoff: 16; /* PrismTech writer info offset */
   unsigned bswap: 1;            /* so we can extract well formatted writer info quicker */
   unsigned complex_qos: 1;      /* includes QoS other than keyhash, 2-bit statusinfo, PT writer info */
-#if LITE
   unsigned hashash: 1;          /* Do we have a key hash */
   nn_keyhash_t keyhash;         /* Key hash. Not currently used by OSPL */
   struct proxy_writer_info pwr_info;
-#endif
 };
 
 struct nn_rdata {

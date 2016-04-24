@@ -466,15 +466,6 @@ int rtps_config_prep (struct cfgst *cfgst)
 
   /* retry_on_reject_duration default is dependent on late_ack_mode and responsiveness timeout, so fix up */
 
-#if !LITE
-  if (config.retry_on_reject_duration.isdefault)
-  {
-    if (config.late_ack_mode)
-      config.retry_on_reject_duration.value = 0;
-    else
-      config.retry_on_reject_duration.value = 4 * (config.responsiveness_timeout / 5);
-  }
-#endif
 
   if (config.whc_init_highwater_mark.isdefault)
     config.whc_init_highwater_mark.value = config.whc_lowwater_mark;
@@ -598,11 +589,7 @@ int rtps_config_prep (struct cfgst *cfgst)
   /* For Lite - Temporary
     Thread states for each application thread is managed using thread_states structure
   */
-#if LITE
 #define USER_MAX_THREADS 50
-#else
-#define USER_MAX_THREADS 0
-#endif
 
 #ifdef DDSI_INCLUDE_NETWORK_CHANNELS
     const unsigned max_threads = 7 + USER_MAX_THREADS + num_channel_threads + config.ddsi2direct_max_threads;
@@ -819,23 +806,17 @@ int rtps_init (void)
   os_mutexInit (&gv.privileged_pp_lock, NULL);
   gv.privileged_pp = NULL;
 
-#if LITE
   /* Template PP guid -- protected by privileged_pp_lock for simplicity */
   gv.next_ppguid.prefix.u[0] = sockaddr_to_hopefully_unique_uint32 (&gv.ownip);
   gv.next_ppguid.prefix.u[1] = (unsigned) getpid (); /* FIXME! OS abstraction */
   gv.next_ppguid.prefix.u[2] = 1;
   gv.next_ppguid.entityid.u = NN_ENTITYID_PARTICIPANT;
-#endif
 
   os_mutexInit (&gv.lock, NULL);
   os_mutexInit (&gv.spdp_lock, NULL);
   gv.spdp_defrag = nn_defrag_new (NN_DEFRAG_DROP_OLDEST, config.defrag_unreliable_maxsamples);
   gv.spdp_reorder = nn_reorder_new (NN_REORDER_MODE_ALWAYS_DELIVER, config.primary_reorder_maxsamples);
 
-#if ! LITE
-  pa_st32 (&gv.last_threshold_warning_sec, 0);
-  pa_st32 (&gv.memory_shortage_dropcount, 0);
-#endif
 
   if (gv.m_factory->m_connless)
   {

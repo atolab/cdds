@@ -33,11 +33,7 @@
 #include "ddsi/q_hbcontrol.h"
 #include "ddsi/q_static_assert.h"
 
-#if LITE
 #include "ddsi/ddsi_ser.h"
-#else
-#include "kernel/q_osplser.h"
-#endif
 
 #include "ddsi/sysdeps.h"
 
@@ -551,18 +547,6 @@ int create_fragment_message (struct writer *wr, int64_t seq, const struct nn_pli
     {
       nn_xmsg_addpar_statusinfo (*pmsg, serdata->v.msginfo.statusinfo);
     }
-#if !LITE
-    if (plist)
-    {
-      nn_plist_addtomsg (*pmsg, plist, ~(uint64_t)0, ~(uint64_t)0);
-    }
-    /* If it's 0 or 1, we know the proper calls have been made */
-    assert (serdata == NULL || serdata->v.msginfo.have_wrinfo == 0 || serdata->v.msginfo.have_wrinfo == 1);
-    if (serdata->v.msginfo.have_wrinfo)
-    {
-      nn_xmsg_addpar_wrinfo (*pmsg, &serdata->v.msginfo.wrinfo);
-    }
-#endif
     rc = nn_xmsg_addpar_sentinel_ifparam (*pmsg);
     if (rc > 0)
     {
@@ -771,12 +755,8 @@ static int insert_sample_in_whc (struct writer *wr, int64_t seq, struct nn_plist
     int tmp;
     const char *tname = wr->topic ? wr->topic->name : "(null)";
     const char *ttname = wr->topic ? wr->topic->typename : "(null)";
-#if LITE
     ppbuf[0] = '\0';
     tmp = sizeof (ppbuf) - 1;
-#else
-    tmp = prettyprint_serdata (ppbuf, sizeof (ppbuf), serdata);
-#endif
     nn_log (LC_TRACE, "write_sample %x:%x:%x:%x #%"PRId64"", PGUID (wr->e.guid), seq);
     if (plist != 0 && (plist->present & PP_COHERENT_SET))
       nn_log (LC_TRACE, " C#%"PRId64"", fromSN (plist->coherent_set_seqno));
@@ -816,26 +796,6 @@ static int writer_may_continue (const struct writer *wr)
   return (whc_unacked_bytes (wr->whc) <= wr->whc_low && !wr->retransmitting) || (wr->state != WRST_OPERATIONAL);
 }
 
-#if !LITE
-static void throttle_helper (struct wr_prd_match *wprd, struct writer * const wr)
-{
-  /* Mark connected readers that haven't acked all data as "not
-     responsive". Both wprd->seq (&c.) and wr->seq are protected by
-     wr->e.lock, which must be held on entry. */
-  ASSERT_MUTEX_HELD (&wr->e.lock);
-
-  if (wprd->seq < wr->seq)
-  {
-    wprd->seq = MAX_SEQ_NUMBER;
-    /* ensure heartbeats will be going out - else it might not have a
-       chance to recover */
-    wprd->has_replied_to_hb = 0;
-    ut_avlAugmentUpdate (&wr_readers_treedef, wprd);
-    NN_WARNING2 ("writer %x:%x:%x:%x considering reader %x:%x:%x:%x non-responsive\n",
-                 PGUID ( wr->e.guid), PGUID (wprd->prd_guid));
-  }
-}
-#endif
 
 static os_result throttle_writer (struct nn_xpack *xp, struct writer *wr)
 {
@@ -875,11 +835,7 @@ static os_result throttle_writer (struct nn_xpack *xp, struct writer *wr)
 
   os_result result = os_resultSuccess;
   const nn_mtime_t tnow = now_mt ();
-#if LITE
   const nn_mtime_t abstimeout = add_duration_to_mtime (tnow, nn_from_ddsi_duration (wr->xqos->reliability.max_blocking_time));
-#else
-  const nn_mtime_t abstimeout = add_duration_to_mtime (tnow, config.responsiveness_timeout);
-#endif
   size_t n_unacked = whc_unacked_bytes (wr->whc);
 
   /* We don't _really_ need to hold the lock if we can decide whether
@@ -922,22 +878,7 @@ static os_result throttle_writer (struct nn_xpack *xp, struct writer *wr)
     }
     if (result == os_resultTimeout)
     {
-#if LITE
       break;
-#else
-      n_unacked = whc_unacked_bytes (wr->whc);
-      TRACE (("writer %x:%x:%x:%x whc not shrunk enough after maximum blocking time (whc %"PA_PRIuSIZE")\n", PGUID (wr->e.guid), n_unacked));
-      /* Walk over all connected readers and mark them "not responsive" if they have unacked data. */
-      ut_avlWalk (&wr_readers_treedef, &wr->readers, (ut_avlWalk_t) throttle_helper, wr);
-      remove_acked_messages (wr);
-      if (whc_unacked_bytes (wr->whc) == 0)
-      {
-        wr->retransmitting = 0;
-        wr->t_rexmit_end = now_et();
-      }
-      os_condBroadcast (&wr->throttle_cond);
-      result = os_resultSuccess;
-#endif
     }
   }
 
@@ -977,12 +918,8 @@ static int write_sample_kernel_seq_eot (struct nn_xpack *xp, struct writer *wr, 
     int tmp;
     const char *tname = wr->topic ? wr->topic->name : "(null)";
     const char *ttname = wr->topic ? wr->topic->typename : "(null)";
-#if LITE
     ppbuf[0] = '\0';
     tmp = sizeof (ppbuf) - 1;
-#else
-    tmp = prettyprint_serdata (ppbuf, sizeof (ppbuf), serdata);
-#endif
     NN_WARNING7 ("dropping oversize (%u > %u) sample from local writer %x:%x:%x:%x %s/%s:%s%s\n",
                  ddsi_serdata_size (serdata), config.max_sample_size,
                  PGUID (wr->e.guid), tname, ttname, ppbuf,
@@ -1107,26 +1044,6 @@ int write_sample_kernel_seq (struct nn_xpack *xp, struct writer *wr, serdata_t s
 
 int write_sample (struct nn_xpack *xp, struct writer *wr, serdata_t serdata)
 {
-#if ! LITE
-#ifndef NDEBUG
-  const nn_vendorid_t ownvendorid = MY_VENDOR_ID;
-  assert (is_builtin_entityid (wr->e.guid.entityid, ownvendorid));
-#endif
-#endif
   return write_sample_kernel_seq_eot (xp, wr, NULL, serdata, 0, 0, 0);
 }
 
-#if ! LITE
-void begin_coherent_set (struct writer *wr)
-{
-  os_mutexLock (&wr->e.lock);
-  if (wr->cs_seq == 0)
-    wr->cs_seq = wr->seq + 1;
-  os_mutexUnlock (&wr->e.lock);
-}
-
-int end_coherent_set (struct nn_xpack *xp, struct writer *wr, struct nn_plist *plist, serdata_t serdata, int have_kernel_seq, uint32_t kernel_seq)
-{
-  return write_sample_kernel_seq_eot (xp, wr, plist, serdata, have_kernel_seq, kernel_seq, 1);
-}
-#endif

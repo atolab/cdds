@@ -14,11 +14,7 @@
 
 #include "os/os.h"
 
-#if LITE
 #include "kernel/dds_types.h"
-#else
-#include "kernelModuleI.h"
-#endif
 
 #include "util/ut_avl.h"
 #include "ddsi/q_rtps.h"
@@ -36,9 +32,6 @@ extern "C" {
 
 struct xevent;
 struct nn_reorder;
-#if ! LITE
-struct nn_groupset;
-#endif
 struct nn_defrag;
 struct nn_dqueue;
 struct addrset;
@@ -52,7 +45,6 @@ struct v_gid_s;
 struct proxy_group;
 struct proxy_endpoint_common;
 
-#if LITE
 typedef struct status_cb_data
 {
   uint32_t status;
@@ -63,7 +55,6 @@ typedef struct status_cb_data
 status_cb_data_t;
 
 typedef void (*status_cb_t) (void * entity, const status_cb_data_t * data);
-#endif
 
 struct prd_wr_match {
   ut_avlNode_t avlnode;
@@ -145,9 +136,7 @@ struct entity_common {
   enum entity_kind kind;
   nn_guid_t guid;
   char *name;
-#if LITE
   uint64_t iid;
-#endif
   os_mutex lock;
 };
 
@@ -172,11 +161,6 @@ struct participant
 
 struct endpoint_common {
   struct participant *pp;
-#if ! LITE
-  struct ephash_chain_entry gid_hash_chain;
-  v_gid gid;
-  v_gid group_gid;
-#endif
   nn_guid_t group_guid;
 };
 
@@ -195,10 +179,8 @@ struct writer
 {
   struct entity_common e;
   struct endpoint_common c;
-#if LITE
   status_cb_t status_cb;
   void * status_cb_entity;
-#endif
   os_cond throttle_cond;
   long long seq; /* last sequence number (transmitted seqs are 1 ... seq) */
   long long cs_seq; /* 1st seq in coherent set (or 0) */
@@ -248,13 +230,9 @@ struct reader
 {
   struct entity_common e;
   struct endpoint_common c;
-#if LITE
   status_cb_t status_cb;
   void * status_cb_entity;
   struct rhc * rhc;
-#else
-  struct nn_groupset *matching_groups;
-#endif
   struct nn_xqos *xqos;
   unsigned reliable: 1;
   unsigned handle_as_transient_local: 1;
@@ -278,9 +256,6 @@ struct proxy_participant
   unsigned prismtech_bes;
   nn_guid_t privileged_pp_guid; /* if this PP depends on another PP for its SEDP writing */
   nn_plist_t *plist;
-#if ! LITE
-  v_gid gid;
-#endif
   struct lease *lease;
   struct addrset *as_default;
   struct addrset *as_meta;
@@ -302,9 +277,6 @@ struct proxy_participant
 struct proxy_group {
   ut_avlNode_t avlnode;
   nn_guid_t guid;
-#if ! LITE
-  v_gid gid;
-#endif
   char *name;
   struct proxy_participant *proxypp;
   struct nn_xqos *xqos;
@@ -320,28 +292,12 @@ struct proxy_endpoint_common
   struct addrset *as;
   nn_guid_t group_guid; /* 0:0:0:0 if not available */
   nn_vendorid_t vendor; /* cached from proxypp->vendor */
-#if ! LITE
-  v_gid gid; /* 0:0:0 for built-in endpoints */
-  v_gid group_gid; /* 0:0:0 if not available */
-#endif
 };
 
 struct proxy_writer {
   struct entity_common e;
   struct proxy_endpoint_common c;
   ut_avlTree_t readers;
-#if ! LITE
-  struct nn_groupset *groups;
-  c_array v_message_qos;
-  /* Transactions: current transaction id for the kernel and DDSI
-     sequence number at which the coherent seq started. Both 0 if not
-     currently in a transaction. The transaction id need not be the
-     lower 32 bits of the sequence numbers, as we pass on the
-     OpenSplice kernel sequence numbers unchanged. */
-  c_ulong transaction_id;
-  int64_t cs_seq;
-  int64_t seq_offset;
-#endif
   int n_reliable_readers;
   int n_readers_out_of_sync;
   long long last_seq; /* last known seq, not last delivered */
@@ -358,12 +314,10 @@ struct proxy_writer {
   struct nn_reorder *reorder;
   struct nn_dqueue *dqueue;
   struct xeventq *evq;
-#if LITE
   os_mutex rdary_lock;
   int n_readers;
   struct reader **rdary; /* for efficient delivery, null-pointer terminated */
   unsigned deleting: 1; /* set when being deleted and (about to be) removed from GUID hash */
-#endif
 };
 
 struct proxy_reader {
@@ -453,9 +407,7 @@ int pp_allocate_entityid (nn_entityid_t *id, unsigned kind, struct participant *
    (a.o.) */
 int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const struct nn_plist *plist);
 
-#if LITE
 int new_participant (struct nn_guid *ppguid, unsigned flags, const struct nn_plist *plist);
-#endif
 
 /* To delete a DDSI participant: this only removes the participant
    from the hash tables and schedules the actual delete operation,
@@ -482,14 +434,8 @@ struct writer * new_writer
   const struct nn_guid *ppguid,
   const struct sertopic *topic,
   const struct nn_xqos *xqos,
-#if LITE
   status_cb_t status_cb,
   void * status_cb_arg
-#else
-  const struct v_gid_s *gid,
-  const struct v_gid_s *group_gid,
-  const char *endpoint_name
-#endif
 );
 
 struct reader * new_reader
@@ -499,15 +445,9 @@ struct reader * new_reader
   const struct nn_guid *ppguid,
   const struct sertopic *topic,
   const struct nn_xqos *xqos,
-#if LITE
   struct rhc * rhc,
   status_cb_t status_cb,
   void * status_cb_arg
-#else
-  const struct v_gid_s *gid,
-  const struct v_gid_s *group_gid,
-  const char *endpoint_name
-#endif
 );
 
 unsigned remove_acked_messages (struct writer *wr);
@@ -573,12 +513,6 @@ void delete_proxy_group (const struct nn_guid *guid, int isimplicit);
 
 void writer_exit_startup_mode (struct writer *wr);
 
-#if ! LITE
-/* To update readers/proxy writers with new groups when they are created by the kernel */
-void add_group_to_readers_and_proxy_writers (const struct sertopic *topic, const char *partition, v_group group);
-/* to signal historical data is complete, pwr may be NULL */
-void notify_wait_for_historical_data (struct proxy_writer *pwr, const nn_guid_t *rd_guid);
-#endif
 
 #if defined (__cplusplus)
 }

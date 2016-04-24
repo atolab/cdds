@@ -324,7 +324,6 @@ char *locator_to_string_no_port (char addrbuf[INET6_ADDRSTRLEN_EXTENDED], const 
   return sockaddr_to_string_no_port (addrbuf, &addr);
 }
 
-#if LITE
 unsigned sockaddr_to_hopefully_unique_uint32 (const os_sockaddr_storage *src)
 {
   switch (src->ss_family)
@@ -349,7 +348,6 @@ unsigned sockaddr_to_hopefully_unique_uint32 (const os_sockaddr_storage *src)
       return 0;
   }
 }
-#endif
 
 unsigned short get_socket_port (os_socket socket)
 {

@@ -18,10 +18,6 @@
 
 #include "util/ut_fibheap.h"
 
-#if !LITE
-#include "c_base.h"
-#include "kernelModuleI.h"
-#endif
 
 #include "ddsi/q_plist.h"
 #include "ddsi/q_protocol.h"
@@ -78,13 +74,6 @@ struct q_globals {
   volatile int exception;
   volatile int deaf_mute;
 
-#if ! LITE
-  /* OpenSplice base & kernel pointers, QoS type */
-  c_base ospl_base;
-  v_kernel ospl_kernel;
-  c_collectionType ospl_qostype;
-  c_collectionType ospl_eotgroup_tidlist_type;
-#endif
 
   /* Hash tables for participants, readers, writers, proxy
      participants, proxy readers and proxy writers by GUID
@@ -152,11 +141,9 @@ struct q_globals {
   struct participant *privileged_pp;
   os_mutex privileged_pp_lock;
 
-#if LITE
   /* GUID to be used in next call to new_participant; also protected
      by privileged_pp_lock */
   struct nn_guid next_ppguid;
-#endif
 
   /* number of up, non-loopback, IPv4/IPv6 interfaces, the index of
      the selected/preferred one, and the discovered interfaces. */
@@ -205,12 +192,10 @@ struct q_globals {
 
   os_mutex lock;
 
-#if LITE
   /* guarantees serialisation of attach/detach operations on waitsets
      -- a single global lock is a bit coarse, but these operations are
      rare and at initialisation time anyway */
   os_mutex attach_lock;
-#endif
 
   /* Receive thread. (We can only has one for now, cos of the signal
      trigger socket.) Receive buffer pool is per receive thread,
@@ -286,11 +271,6 @@ struct q_globals {
      remove the need to include kernelModule.h) */
   uint32_t myNetworkId;
 
-#if ! LITE
-  /* Shared memory exhaustion warnings */
-  pa_uint32_t last_threshold_warning_sec;
-  pa_uint32_t memory_shortage_dropcount;
-#endif
 
 #ifdef DDSI_INCLUDE_ENCRYPTION
   /* Codecs needed for decoding incoming encrypted messages

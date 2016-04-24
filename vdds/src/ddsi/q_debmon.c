@@ -38,19 +38,9 @@
 #include "ddsi/ddsi_ser.h"
 #include "ddsi/ddsi_tran.h"
 #include "ddsi/ddsi_tcp.h"
-#if ! LITE
-#include "q_mtreader.h"
-#include "q_groupset.h"
-#include "v_topic.h"
-#include "v_partition.h"
-#include "v_group.h"
-#endif
 
 #include "ddsi/sysdeps.h"
 
-#if ! LITE
-#define PGID(x) (x).systemId, (x).localId, (x).serial
-#endif
 
 struct plugin {
   debug_monitor_plugin_t fn;
@@ -127,17 +117,10 @@ static int print_addrset_if_notempty (ddsi_tran_conn_t conn, const char *prefix,
 }
 
 static int print_any_endpoint_common (ddsi_tran_conn_t conn, const char *label, const struct entity_common *e,
-#if ! LITE
-                                      const struct v_gid_s *gid,
-#endif
                                       const struct nn_xqos *xqos, const struct sertopic *topic)
 {
   int x = 0;
-#if ! LITE
-  x += cpf (conn, "  %s %x:%x:%x:%x gid %x:%x:%x ", label, PGUID (e->guid), PGID (*gid));
-#else
   x += cpf (conn, "  %s %x:%x:%x:%x ", label, PGUID (e->guid));
-#endif
   if (xqos->present & QP_PARTITION)
   {
     unsigned i;
@@ -155,32 +138,18 @@ static int print_any_endpoint_common (ddsi_tran_conn_t conn, const char *label, 
 
 static int print_endpoint_common (ddsi_tran_conn_t conn, const char *label, const struct entity_common *e, const struct endpoint_common *c, const struct nn_xqos *xqos, const struct sertopic *topic)
 {
-#if ! LITE
-  return print_any_endpoint_common (conn, label, e, &c->gid, xqos, topic);
-#else
   OS_UNUSED_ARG (c);
   return print_any_endpoint_common (conn, label, e, xqos, topic);
-#endif
 }
 
 static int print_proxy_endpoint_common (ddsi_tran_conn_t conn, const char *label, const struct entity_common *e, const struct proxy_endpoint_common *c)
 {
   int x = 0;
-#if ! LITE
-  x += print_any_endpoint_common (conn, label, e, &c->gid, c->xqos, c->topic);
-#else
   x += print_any_endpoint_common (conn, label, e, c->xqos, c->topic);
-#endif
   x += print_addrset_if_notempty (conn, "    as", c->as, "\n");
   return x;
 }
 
-#if ! LITE
-static int print_group_helper (v_group group, void *vconn)
-{
-    return cpf (vconn, "    group %p %s.%s\n", group, v_topicName(v_groupTopic(group)), v_partitionName(v_groupPartition(group)));
-}
-#endif
 
 static int print_participants (struct thread_state1 *self, ddsi_tran_conn_t conn)
 {
@@ -207,9 +176,6 @@ static int print_participants (struct thread_state1 *self, ddsi_tran_conn_t conn
           continue;
         os_mutexLock (&r->e.lock);
         print_endpoint_common (conn, "rd", &r->e, &r->c, r->xqos, r->topic);
-#if ! LITE
-        nn_groupset_foreach (r->matching_groups, print_group_helper, conn);
-#endif
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
         x += print_addrset_if_notempty (conn, "    as", r->as, "\n");
 #endif
@@ -279,11 +245,7 @@ static int print_proxy_participants (struct thread_state1 *self, ddsi_tran_conn_
   while ((p = ephash_enum_proxy_participant_next (&e)) != NULL)
   {
     os_mutexLock (&p->e.lock);
-#if ! LITE
-    x += cpf (conn, "proxypp %x:%x:%x:%x gid %x:%x:%x%s\n", PGUID (p->e.guid), PGID (p->gid), p->is_ddsi2_pp ? " [ddsi2]" : "");
-#else
     x += cpf (conn, "proxypp %x:%x:%x:%x%s\n", PGUID (p->e.guid), p->is_ddsi2_pp ? " [ddsi2]" : "");
-#endif
     os_mutexUnlock (&p->e.lock);
     x += print_addrset (conn, "  as data", p->as_default, "");
     x += print_addrset (conn, " meta", p->as_default, "\n");
@@ -319,12 +281,7 @@ static int print_proxy_participants (struct thread_state1 *self, ddsi_tran_conn_
           continue;
         os_mutexLock (&w->e.lock);
         print_proxy_endpoint_common (conn, "pwr", &w->e, &w->c);
-#if ! LITE
-        nn_groupset_foreach (w->groups, print_group_helper, conn);
-        x += cpf (conn, "    last_seq %lld last_fragnum %u cs_seq %lld txn %u\n", w->last_seq, w->last_fragnum, w->cs_seq, w->transaction_id);
-#else
         x += cpf (conn, "    last_seq %lld last_fragnum %u\n", w->last_seq, w->last_fragnum);
-#endif
         for (m = ut_avlIterFirst (&wr_readers_treedef, &w->readers, &rdit); m; m = ut_avlIterNext (&rdit))
         {
           x += cpf (conn, "    rd %x:%x:%x:%x (nack %lld %lld)\n",

@@ -158,12 +158,10 @@ int nn_log (logcat_t cat, const char *fmt, ...)
     nn_vlogb (self, fmt, ap);
     va_end (ap);
   }
-#if LITE
   if (cat == LC_FATAL)
   {
     abort ();
   }
-#endif
   return 0;
 }
 
