@@ -16,13 +16,13 @@
 #include <execinfo.h>
 #include <inttypes.h>
 
-#include "os.h"
+#include "os/os.h"
 #include "dds.h"
 #include "server.h"
-#include "q_thread.h"
-#include "dds_init.h"
-#include "dds_rhc.h"
-#include "ddsi_ser.h"
+#include "kernel/dds_init.h"
+#include "kernel/dds_rhc.h"
+#include "ddsi/q_thread.h"
+#include "ddsi/ddsi_ser.h"
 
 #define LOCKFILE_NAME "/tmp/vdds-server-lock"
 
@@ -735,7 +735,7 @@ int main(int argc, char **argv)
     close(sock);
     rm_lock_file();
     return 0;
-    
+
 err_accept:
 err_poll:
 err_listen:

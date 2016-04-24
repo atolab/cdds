@@ -18,12 +18,12 @@
 
 #include <string.h>
 
-#include "os_defs.h"
-#include "os_errno.h"
-#include "os_stdlib.h"
-#include "os_thread.h"
+#include "os/os_defs.h"
+#include "os/os_errno.h"
+#include "os/os_stdlib.h"
+#include "os/os_thread.h"
 
-#include "os_errno.h"
+#include "os/os_errno.h"
 
 int
 os_getErrno (void)

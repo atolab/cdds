@@ -11,7 +11,7 @@
  */
 #include <ctype.h>
 #include <string.h>
-#include "os.h"
+#include "os/os.h"
 
 int os_todigit (const int chr)
 {

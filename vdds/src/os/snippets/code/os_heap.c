@@ -22,7 +22,7 @@
 #ifdef VXWORKS_RTP
 #include <string.h>
 #endif
-#include "os.h"
+#include "os/os.h"
 
 #if defined LINUX && defined OSPL_STRICT_MEM
 #include <stdint.h>

@@ -9,7 +9,7 @@
  *   for full copyright notice and license terms.
  *
  */
-#include "os_stdlib.h"
+#include "os/os_stdlib.h"
 
 char *os_strsep (char **str, const char *sep)
 {

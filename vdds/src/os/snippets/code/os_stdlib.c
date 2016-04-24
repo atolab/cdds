@@ -9,7 +9,7 @@
  *   for full copyright notice and license terms.
  *
  */
-#include "os.h"
+#include "os/os.h"
 
 #include <assert.h>
 #include <stdlib.h>

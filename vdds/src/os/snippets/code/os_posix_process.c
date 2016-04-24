@@ -15,7 +15,7 @@
  * Implements process management for POSIX
  */
 
-#include "os.h"
+#include "os/os.h"
 
 #include <sys/types.h>
 #ifndef OSPL_NO_VMEM

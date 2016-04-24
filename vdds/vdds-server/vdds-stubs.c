@@ -16,17 +16,17 @@
 #include <execinfo.h>
 #include <inttypes.h>
 
-#include "os.h"
+#include "os/os.h"
 #include "dds.h"
-#include "dds_public_log.h"
-#include "q_config.h"
-#include "q_globals.h"
-#include "q_xmsg.h"
-#include "q_log.h"
-#include "q_unused.h"
-#include "ddsi_ser.h"
-#include "dds_stream.h"
-#include "q_osplser.h"
+#include "dds/dds_public_log.h"
+#include "ddsi/q_config.h"
+#include "ddsi/q_globals.h"
+#include "ddsi/q_xmsg.h"
+#include "ddsi/q_log.h"
+#include "ddsi/q_unused.h"
+#include "ddsi/ddsi_ser.h"
+#include "kernel/dds_stream.h"
+#include "kernel/q_osplser.h"
 #include "server.h"
 
 struct config config;
