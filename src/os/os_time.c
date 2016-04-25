@@ -201,7 +201,7 @@ os_realToTime(
   return tr;
 }
 
-#ifndef LITE
+#if 0
 os_result
 os_timeGetPowerEvents(
                       os_timePowerEvents *events,
