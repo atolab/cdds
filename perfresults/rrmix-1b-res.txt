@@ -1,0 +1,665 @@
+*********************************
+
+NSUB 1
+
+*********************************
+listening ...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Payload size: 1 | Total received: 455732 samples, 4101588 bytes | Out of order: 0 samples Transfer rate: 455678.23 samples/s, 32.00 Mbit/s | nreads 8796
+Payload size: 1 | Total received: 911175 samples, 8200575 bytes | Out of order: 0 samples Transfer rate: 455415.68 samples/s, 32.00 Mbit/s | nreads 17427
+Payload size: 1 | Total received: 1371325 samples, 12341925 bytes | Out of order: 0 samples Transfer rate: 460127.91 samples/s, 33.00 Mbit/s | nreads 26299
+Payload size: 1 | Total received: 1828227 samples, 16454043 bytes | Out of order: 0 samples Transfer rate: 456878.24 samples/s, 32.00 Mbit/s | nreads 35100
+Payload size: 1 | Total received: 2282022 samples, 20538198 bytes | Out of order: 0 samples Transfer rate: 453769.14 samples/s, 32.00 Mbit/s | nreads 43632
+Payload size: 1 | Total received: 2745001 samples, 24705009 bytes | Out of order: 0 samples Transfer rate: 462964.19 samples/s, 33.00 Mbit/s | nreads 52594
+Payload size: 1 | Total received: 3206852 samples, 28861668 bytes | Out of order: 0 samples Transfer rate: 461849.61 samples/s, 33.00 Mbit/s | nreads 61608
+Payload size: 1 | Total received: 3671218 samples, 33040962 bytes | Out of order: 0 samples Transfer rate: 464309.35 samples/s, 33.00 Mbit/s | nreads 70716
+Payload size: 1 | Total received: 4120802 samples, 37087218 bytes | Out of order: 0 samples Transfer rate: 449543.54 samples/s, 32.00 Mbit/s | nreads 79399
+*********************************
+
+NSUB 2
+
+*********************************
+listening ...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Payload size: 1 | Total received: 421799 samples, 3796191 bytes | Out of order: 0 samples Transfer rate: 421798.16 samples/s, 30.00 Mbit/s | nreads 11289
+Payload size: 1 | Total received: 421818 samples, 3796362 bytes | Out of order: 0 samples Transfer rate: 421794.80 samples/s, 30.00 Mbit/s | nreads 11862
+Payload size: 1 | Total received: 846134 samples, 7615206 bytes | Out of order: 0 samples Transfer rate: 424233.70 samples/s, 29.99 Mbit/s | nreads 23724
+Payload size: 1 | Total received: 846139 samples, 7615251 bytes | Out of order: 0 samples Transfer rate: 424235.64 samples/s, 29.99 Mbit/s | nreads 22607
+Payload size: 1 | Total received: 1266083 samples, 11394747 bytes | Out of order: 0 samples Transfer rate: 419933.46 samples/s, 30.00 Mbit/s | nreads 35238
+Payload size: 1 | Total received: 1266111 samples, 11394999 bytes | Out of order: 0 samples Transfer rate: 419940.08 samples/s, 30.00 Mbit/s | nreads 33596
+Payload size: 1 | Total received: 1682203 samples, 15139827 bytes | Out of order: 0 samples Transfer rate: 416112.93 samples/s, 29.00 Mbit/s | nreads 46742
+Payload size: 1 | Total received: 1682227 samples, 15140043 bytes | Out of order: 0 samples Transfer rate: 416111.42 samples/s, 29.00 Mbit/s | nreads 44576
+Payload size: 1 | Total received: 2105393 samples, 18948537 bytes | Out of order: 0 samples Transfer rate: 423165.46 samples/s, 30.00 Mbit/s | nreads 58457
+Payload size: 1 | Total received: 2105413 samples, 18948717 bytes | Out of order: 0 samples Transfer rate: 423160.61 samples/s, 30.00 Mbit/s | nreads 55746
+Payload size: 1 | Total received: 2531207 samples, 22780863 bytes | Out of order: 0 samples Transfer rate: 425802.93 samples/s, 30.00 Mbit/s | nreads 70303
+Payload size: 1 | Total received: 2531234 samples, 22781106 bytes | Out of order: 0 samples Transfer rate: 425819.72 samples/s, 30.00 Mbit/s | nreads 67104
+Payload size: 1 | Total received: 2951771 samples, 26565939 bytes | Out of order: 0 samples Transfer rate: 420547.60 samples/s, 30.00 Mbit/s | nreads 81951
+Payload size: 1 | Total received: 2951798 samples, 26566182 bytes | Out of order: 0 samples Transfer rate: 420547.18 samples/s, 30.00 Mbit/s | nreads 78243
+Payload size: 1 | Total received: 3376142 samples, 30385278 bytes | Out of order: 0 samples Transfer rate: 424338.75 samples/s, 30.00 Mbit/s | nreads 93699
+Payload size: 1 | Total received: 3376150 samples, 30385350 bytes | Out of order: 0 samples Transfer rate: 424322.30 samples/s, 30.00 Mbit/s | nreads 89464
+Payload size: 1 | Total received: 3799096 samples, 34191864 bytes | Out of order: 0 samples Transfer rate: 422945.12 samples/s, 30.00 Mbit/s | nreads 105377
+Payload size: 1 | Total received: 3799119 samples, 34192071 bytes | Out of order: 0 samples Transfer rate: 422957.58 samples/s, 30.00 Mbit/s | nreads 100656
+*********************************
+
+NSUB 3
+
+*********************************
+listening ...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Payload size: 1 | Total received: 329860 samples, 2968740 bytes | Out of order: 0 samples Transfer rate: 329851.75 samples/s, 23.00 Mbit/s | nreads 13577
+Payload size: 1 | Total received: 329878 samples, 2968902 bytes | Out of order: 0 samples Transfer rate: 329861.84 samples/s, 23.00 Mbit/s | nreads 10554
+Payload size: 1 | Total received: 329889 samples, 2969001 bytes | Out of order: 0 samples Transfer rate: 329857.33 samples/s, 23.00 Mbit/s | nreads 10214
+Payload size: 1 | Total received: 655550 samples, 5899950 bytes | Out of order: 0 samples Transfer rate: 325681.53 samples/s, 23.00 Mbit/s | nreads 26872
+Payload size: 1 | Total received: 655561 samples, 5900049 bytes | Out of order: 0 samples Transfer rate: 325674.53 samples/s, 23.00 Mbit/s | nreads 20916
+Payload size: 1 | Total received: 655581 samples, 5900229 bytes | Out of order: 0 samples Transfer rate: 325679.95 samples/s, 23.00 Mbit/s | nreads 19910
+Payload size: 1 | Total received: 985698 samples, 8871282 bytes | Out of order: 0 samples Transfer rate: 330133.80 samples/s, 23.00 Mbit/s | nreads 39946
+Payload size: 1 | Total received: 985699 samples, 8871291 bytes | Out of order: 0 samples Transfer rate: 330134.37 samples/s, 23.00 Mbit/s | nreads 30979
+Payload size: 1 | Total received: 985748 samples, 8871732 bytes | Out of order: 0 samples Transfer rate: 330141.25 samples/s, 23.00 Mbit/s | nreads 29389
+Payload size: 1 | Total received: 1319293 samples, 11873637 bytes | Out of order: 0 samples Transfer rate: 333583.66 samples/s, 24.00 Mbit/s | nreads 53444
+Payload size: 1 | Total received: 1319310 samples, 11873790 bytes | Out of order: 0 samples Transfer rate: 333592.99 samples/s, 24.00 Mbit/s | nreads 41312
+Payload size: 1 | Total received: 1319371 samples, 11874339 bytes | Out of order: 0 samples Transfer rate: 333591.64 samples/s, 24.00 Mbit/s | nreads 39098
+Payload size: 1 | Total received: 1652695 samples, 14874255 bytes | Out of order: 0 samples Transfer rate: 333395.33 samples/s, 24.00 Mbit/s | nreads 67151
+Payload size: 1 | Total received: 1652733 samples, 14874597 bytes | Out of order: 0 samples Transfer rate: 333376.66 samples/s, 24.00 Mbit/s | nreads 51839
+Payload size: 1 | Total received: 1652734 samples, 14874606 bytes | Out of order: 0 samples Transfer rate: 333360.00 samples/s, 24.00 Mbit/s | nreads 48977
+Payload size: 1 | Total received: 1980262 samples, 17822358 bytes | Out of order: 0 samples Transfer rate: 327558.81 samples/s, 23.00 Mbit/s | nreads 80797
+Payload size: 1 | Total received: 1980344 samples, 17823096 bytes | Out of order: 0 samples Transfer rate: 327579.55 samples/s, 23.00 Mbit/s | nreads 62305
+Payload size: 1 | Total received: 1980359 samples, 17823231 bytes | Out of order: 0 samples Transfer rate: 327584.71 samples/s, 23.00 Mbit/s | nreads 58913
+Payload size: 1 | Total received: 2311257 samples, 20801313 bytes | Out of order: 0 samples Transfer rate: 330991.69 samples/s, 23.00 Mbit/s | nreads 94162
+Payload size: 1 | Total received: 2311350 samples, 20802150 bytes | Out of order: 0 samples Transfer rate: 330988.46 samples/s, 23.00 Mbit/s | nreads 72463
+Payload size: 1 | Total received: 2311353 samples, 20802177 bytes | Out of order: 0 samples Transfer rate: 330990.03 samples/s, 23.00 Mbit/s | nreads 68690
+Payload size: 1 | Total received: 2641047 samples, 23769423 bytes | Out of order: 0 samples Transfer rate: 329779.45 samples/s, 23.00 Mbit/s | nreads 107452
+Payload size: 1 | Total received: 2641124 samples, 23770116 bytes | Out of order: 0 samples Transfer rate: 329767.40 samples/s, 23.00 Mbit/s | nreads 82698
+Payload size: 1 | Total received: 2641134 samples, 23770206 bytes | Out of order: 0 samples Transfer rate: 329770.12 samples/s, 23.00 Mbit/s | nreads 78300
+Payload size: 1 | Total received: 2975228 samples, 26777052 bytes | Out of order: 0 samples Transfer rate: 334180.33 samples/s, 24.00 Mbit/s | nreads 120855
+Payload size: 1 | Total received: 2975333 samples, 26777997 bytes | Out of order: 0 samples Transfer rate: 334195.30 samples/s, 24.00 Mbit/s | nreads 93076
+Payload size: 1 | Total received: 2975357 samples, 26778213 bytes | Out of order: 0 samples Transfer rate: 334195.60 samples/s, 24.00 Mbit/s | nreads 88136
+*********************************
+
+NSUB 4
+
+*********************************
+listening ...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Payload size: 1 | Total received: 274856 samples, 2473704 bytes | Out of order: 0 samples Transfer rate: 274839.23 samples/s, 19.00 Mbit/s | nreads 7598
+Payload size: 1 | Total received: 274871 samples, 2473839 bytes | Out of order: 0 samples Transfer rate: 274837.74 samples/s, 19.00 Mbit/s | nreads 7970
+Payload size: 1 | Total received: 274871 samples, 2473839 bytes | Out of order: 0 samples Transfer rate: 274860.01 samples/s, 19.00 Mbit/s | nreads 11760
+Payload size: 1 | Total received: 274871 samples, 2473839 bytes | Out of order: 0 samples Transfer rate: 274856.43 samples/s, 19.00 Mbit/s | nreads 10175
+Payload size: 1 | Total received: 551940 samples, 4967460 bytes | Out of order: 0 samples Transfer rate: 277071.25 samples/s, 19.00 Mbit/s | nreads 15016
+Payload size: 1 | Total received: 551966 samples, 4967694 bytes | Out of order: 0 samples Transfer rate: 277083.92 samples/s, 19.00 Mbit/s | nreads 23444
+Payload size: 1 | Total received: 551967 samples, 4967703 bytes | Out of order: 0 samples Transfer rate: 277087.13 samples/s, 19.00 Mbit/s | nreads 20301
+Payload size: 1 | Total received: 551970 samples, 4967730 bytes | Out of order: 0 samples Transfer rate: 277069.91 samples/s, 19.00 Mbit/s | nreads 15739
+Payload size: 1 | Total received: 835824 samples, 7522416 bytes | Out of order: 0 samples Transfer rate: 283860.16 samples/s, 20.00 Mbit/s | nreads 22536
+Payload size: 1 | Total received: 835844 samples, 7522596 bytes | Out of order: 0 samples Transfer rate: 283863.24 samples/s, 20.00 Mbit/s | nreads 35387
+Payload size: 1 | Total received: 835846 samples, 7522614 bytes | Out of order: 0 samples Transfer rate: 283864.24 samples/s, 20.00 Mbit/s | nreads 30525
+Payload size: 1 | Total received: 835847 samples, 7522623 bytes | Out of order: 0 samples Transfer rate: 283865.08 samples/s, 20.00 Mbit/s | nreads 23645
+Payload size: 1 | Total received: 1120134 samples, 10081206 bytes | Out of order: 0 samples Transfer rate: 284278.34 samples/s, 20.00 Mbit/s | nreads 47291
+Payload size: 1 | Total received: 1120140 samples, 10081260 bytes | Out of order: 0 samples Transfer rate: 284281.63 samples/s, 20.00 Mbit/s | nreads 31526
+Payload size: 1 | Total received: 1120141 samples, 10081269 bytes | Out of order: 0 samples Transfer rate: 284283.74 samples/s, 20.00 Mbit/s | nreads 30045
+Payload size: 1 | Total received: 1120146 samples, 10081314 bytes | Out of order: 0 samples Transfer rate: 284272.14 samples/s, 20.00 Mbit/s | nreads 40799
+Payload size: 1 | Total received: 1394004 samples, 12546036 bytes | Out of order: 0 samples Transfer rate: 273868.90 samples/s, 19.00 Mbit/s | nreads 59046
+Payload size: 1 | Total received: 1394051 samples, 12546459 bytes | Out of order: 0 samples Transfer rate: 273893.20 samples/s, 19.00 Mbit/s | nreads 39332
+Payload size: 1 | Total received: 1394052 samples, 12546468 bytes | Out of order: 0 samples Transfer rate: 273886.35 samples/s, 19.00 Mbit/s | nreads 37507
+Payload size: 1 | Total received: 1394055 samples, 12546495 bytes | Out of order: 0 samples Transfer rate: 273876.68 samples/s, 19.00 Mbit/s | nreads 50916
+Payload size: 1 | Total received: 1672768 samples, 15054912 bytes | Out of order: 0 samples Transfer rate: 278748.39 samples/s, 20.00 Mbit/s | nreads 70820
+Payload size: 1 | Total received: 1672789 samples, 15055101 bytes | Out of order: 0 samples Transfer rate: 278725.74 samples/s, 20.00 Mbit/s | nreads 47150
+Payload size: 1 | Total received: 1672800 samples, 15055200 bytes | Out of order: 0 samples Transfer rate: 278734.62 samples/s, 20.00 Mbit/s | nreads 44958
+Payload size: 1 | Total received: 1672806 samples, 15055254 bytes | Out of order: 0 samples Transfer rate: 278747.10 samples/s, 20.00 Mbit/s | nreads 61082
+Payload size: 1 | Total received: 1955557 samples, 17600013 bytes | Out of order: 0 samples Transfer rate: 282787.02 samples/s, 20.00 Mbit/s | nreads 82704
+Payload size: 1 | Total received: 1955584 samples, 17600256 bytes | Out of order: 0 samples Transfer rate: 282776.08 samples/s, 20.00 Mbit/s | nreads 52469
+Payload size: 1 | Total received: 1955590 samples, 17600310 bytes | Out of order: 0 samples Transfer rate: 282773.25 samples/s, 20.00 Mbit/s | nreads 71317
+Payload size: 1 | Total received: 1955592 samples, 17600328 bytes | Out of order: 0 samples Transfer rate: 282757.19 samples/s, 20.00 Mbit/s | nreads 55017
+Payload size: 1 | Total received: 2238278 samples, 20144502 bytes | Out of order: 0 samples Transfer rate: 282712.80 samples/s, 20.00 Mbit/s | nreads 94596
+Payload size: 1 | Total received: 2238310 samples, 20144790 bytes | Out of order: 0 samples Transfer rate: 282707.34 samples/s, 20.00 Mbit/s | nreads 59981
+Payload size: 1 | Total received: 2238312 samples, 20144808 bytes | Out of order: 0 samples Transfer rate: 282710.41 samples/s, 20.00 Mbit/s | nreads 81581
+Payload size: 1 | Total received: 2238332 samples, 20144988 bytes | Out of order: 0 samples Transfer rate: 282726.99 samples/s, 20.00 Mbit/s | nreads 62849
+Payload size: 1 | Total received: 2515216 samples, 22636944 bytes | Out of order: 0 samples Transfer rate: 276926.65 samples/s, 19.00 Mbit/s | nreads 106324
+Payload size: 1 | Total received: 2515263 samples, 22637367 bytes | Out of order: 0 samples Transfer rate: 276939.65 samples/s, 19.00 Mbit/s | nreads 91709
+Payload size: 1 | Total received: 2515265 samples, 22637385 bytes | Out of order: 0 samples Transfer rate: 276933.68 samples/s, 19.00 Mbit/s | nreads 67420
+Payload size: 1 | Total received: 2515277 samples, 22637493 bytes | Out of order: 0 samples Transfer rate: 276926.45 samples/s, 19.00 Mbit/s | nreads 70627
+*********************************
+
+NSUB 5
+
+*********************************
+listening ...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Payload size: 1 | Total received: 246173 samples, 2215557 bytes | Out of order: 0 samples Transfer rate: 246163.65 samples/s, 17.00 Mbit/s | nreads 6187
+Payload size: 1 | Total received: 246204 samples, 2215836 bytes | Out of order: 0 samples Transfer rate: 246187.51 samples/s, 17.00 Mbit/s | nreads 5942
+Payload size: 1 | Total received: 246224 samples, 2216016 bytes | Out of order: 0 samples Transfer rate: 246216.61 samples/s, 17.00 Mbit/s | nreads 8213
+Payload size: 1 | Total received: 246230 samples, 2216070 bytes | Out of order: 0 samples Transfer rate: 246198.49 samples/s, 17.00 Mbit/s | nreads 10640
+Payload size: 1 | Total received: 246231 samples, 2216079 bytes | Out of order: 0 samples Transfer rate: 246197.27 samples/s, 17.00 Mbit/s | nreads 9178
+Payload size: 1 | Total received: 489327 samples, 4403943 bytes | Out of order: 0 samples Transfer rate: 243139.90 samples/s, 17.00 Mbit/s | nreads 12183
+Payload size: 1 | Total received: 489384 samples, 4404456 bytes | Out of order: 0 samples Transfer rate: 243145.46 samples/s, 17.00 Mbit/s | nreads 18223
+Payload size: 1 | Total received: 489385 samples, 4404465 bytes | Out of order: 0 samples Transfer rate: 243138.15 samples/s, 17.00 Mbit/s | nreads 16302
+Payload size: 1 | Total received: 489386 samples, 4404474 bytes | Out of order: 0 samples Transfer rate: 243137.75 samples/s, 17.00 Mbit/s | nreads 11712
+Payload size: 1 | Total received: 489390 samples, 4404510 bytes | Out of order: 0 samples Transfer rate: 243133.74 samples/s, 17.00 Mbit/s | nreads 21126
+Payload size: 1 | Total received: 732185 samples, 6589665 bytes | Out of order: 0 samples Transfer rate: 242837.36 samples/s, 17.00 Mbit/s | nreads 18143
+Payload size: 1 | Total received: 732226 samples, 6590034 bytes | Out of order: 0 samples Transfer rate: 242828.16 samples/s, 17.00 Mbit/s | nreads 27208
+Payload size: 1 | Total received: 732237 samples, 6590133 bytes | Out of order: 0 samples Transfer rate: 242835.70 samples/s, 17.00 Mbit/s | nreads 17425
+Payload size: 1 | Total received: 732238 samples, 6590142 bytes | Out of order: 0 samples Transfer rate: 242834.16 samples/s, 17.00 Mbit/s | nreads 31475
+Payload size: 1 | Total received: 732239 samples, 6590151 bytes | Out of order: 0 samples Transfer rate: 242825.59 samples/s, 17.00 Mbit/s | nreads 24334
+Payload size: 1 | Total received: 980896 samples, 8828064 bytes | Out of order: 0 samples Transfer rate: 248675.69 samples/s, 17.00 Mbit/s | nreads 24237
+Payload size: 1 | Total received: 980910 samples, 8828190 bytes | Out of order: 0 samples Transfer rate: 248671.01 samples/s, 17.00 Mbit/s | nreads 23264
+Payload size: 1 | Total received: 980921 samples, 8828289 bytes | Out of order: 0 samples Transfer rate: 248673.37 samples/s, 17.00 Mbit/s | nreads 36353
+Payload size: 1 | Total received: 980932 samples, 8828388 bytes | Out of order: 0 samples Transfer rate: 248675.85 samples/s, 17.00 Mbit/s | nreads 42058
+Payload size: 1 | Total received: 980933 samples, 8828397 bytes | Out of order: 0 samples Transfer rate: 248675.35 samples/s, 17.00 Mbit/s | nreads 32523
+Payload size: 1 | Total received: 1221117 samples, 10990053 bytes | Out of order: 0 samples Transfer rate: 240193.38 samples/s, 17.00 Mbit/s | nreads 30178
+Payload size: 1 | Total received: 1221124 samples, 10990116 bytes | Out of order: 0 samples Transfer rate: 240193.15 samples/s, 17.00 Mbit/s | nreads 45278
+Payload size: 1 | Total received: 1221125 samples, 10990125 bytes | Out of order: 0 samples Transfer rate: 240191.46 samples/s, 17.00 Mbit/s | nreads 28956
+Payload size: 1 | Total received: 1221131 samples, 10990179 bytes | Out of order: 0 samples Transfer rate: 240192.00 samples/s, 17.00 Mbit/s | nreads 40527
+Payload size: 1 | Total received: 1221133 samples, 10990197 bytes | Out of order: 0 samples Transfer rate: 240186.59 samples/s, 17.00 Mbit/s | nreads 52365
+Payload size: 1 | Total received: 1469629 samples, 13226661 bytes | Out of order: 0 samples Transfer rate: 248507.03 samples/s, 17.00 Mbit/s | nreads 36219
+Payload size: 1 | Total received: 1469635 samples, 13226715 bytes | Out of order: 0 samples Transfer rate: 248507.76 samples/s, 17.00 Mbit/s | nreads 34760
+Payload size: 1 | Total received: 1469638 samples, 13226742 bytes | Out of order: 0 samples Transfer rate: 248494.62 samples/s, 17.00 Mbit/s | nreads 54331
+Payload size: 1 | Total received: 1469659 samples, 13226931 bytes | Out of order: 0 samples Transfer rate: 248508.12 samples/s, 17.00 Mbit/s | nreads 48684
+Payload size: 1 | Total received: 1469672 samples, 13227048 bytes | Out of order: 0 samples Transfer rate: 248512.91 samples/s, 17.00 Mbit/s | nreads 62926
+Payload size: 1 | Total received: 1714452 samples, 15430068 bytes | Out of order: 0 samples Transfer rate: 244808.43 samples/s, 17.00 Mbit/s | nreads 40497
+Payload size: 1 | Total received: 1714464 samples, 15430176 bytes | Out of order: 0 samples Transfer rate: 244801.95 samples/s, 17.00 Mbit/s | nreads 42198
+Payload size: 1 | Total received: 1714471 samples, 15430239 bytes | Out of order: 0 samples Transfer rate: 244812.93 samples/s, 17.00 Mbit/s | nreads 63325
+Payload size: 1 | Total received: 1714481 samples, 15430329 bytes | Out of order: 0 samples Transfer rate: 244802.42 samples/s, 17.00 Mbit/s | nreads 56723
+Payload size: 1 | Total received: 1714485 samples, 15430365 bytes | Out of order: 0 samples Transfer rate: 244796.11 samples/s, 17.00 Mbit/s | nreads 73324
+Payload size: 1 | Total received: 1962540 samples, 17662860 bytes | Out of order: 0 samples Transfer rate: 248021.28 samples/s, 17.00 Mbit/s | nreads 46355
+Payload size: 1 | Total received: 1962539 samples, 17662851 bytes | Out of order: 0 samples Transfer rate: 248022.92 samples/s, 17.00 Mbit/s | nreads 48296
+Payload size: 1 | Total received: 1962544 samples, 17662896 bytes | Out of order: 0 samples Transfer rate: 248030.97 samples/s, 17.00 Mbit/s | nreads 83979
+Payload size: 1 | Total received: 1962545 samples, 17662905 bytes | Out of order: 0 samples Transfer rate: 248024.40 samples/s, 17.00 Mbit/s | nreads 72501
+Payload size: 1 | Total received: 1962546 samples, 17662914 bytes | Out of order: 0 samples Transfer rate: 248023.08 samples/s, 17.00 Mbit/s | nreads 64944
+Payload size: 1 | Total received: 2210820 samples, 19897380 bytes | Out of order: 0 samples Transfer rate: 248272.80 samples/s, 17.00 Mbit/s | nreads 52167
+Payload size: 1 | Total received: 2210828 samples, 19897452 bytes | Out of order: 0 samples Transfer rate: 248270.59 samples/s, 17.00 Mbit/s | nreads 94525
+Payload size: 1 | Total received: 2210833 samples, 19897497 bytes | Out of order: 0 samples Transfer rate: 248270.12 samples/s, 17.00 Mbit/s | nreads 81609
+Payload size: 1 | Total received: 2210839 samples, 19897551 bytes | Out of order: 0 samples Transfer rate: 248268.47 samples/s, 17.00 Mbit/s | nreads 54336
+Payload size: 1 | Total received: 2210851 samples, 19897659 bytes | Out of order: 0 samples Transfer rate: 248271.73 samples/s, 17.00 Mbit/s | nreads 73081
+*********************************
+
+NSUB 6
+
+*********************************
+listening ...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Payload size: 1 | Total received: 205604 samples, 1850436 bytes | Out of order: 0 samples Transfer rate: 205600.92 samples/s, 14.00 Mbit/s | nreads 8479
+Payload size: 1 | Total received: 205604 samples, 1850436 bytes | Out of order: 0 samples Transfer rate: 205590.02 samples/s, 14.00 Mbit/s | nreads 4839
+Payload size: 1 | Total received: 205604 samples, 1850436 bytes | Out of order: 0 samples Transfer rate: 205598.04 samples/s, 14.00 Mbit/s | nreads 7538
+Payload size: 1 | Total received: 205604 samples, 1850436 bytes | Out of order: 0 samples Transfer rate: 205574.19 samples/s, 14.00 Mbit/s | nreads 5007
+Payload size: 1 | Total received: 205616 samples, 1850544 bytes | Out of order: 0 samples Transfer rate: 205552.07 samples/s, 14.00 Mbit/s | nreads 8818
+Payload size: 1 | Total received: 205620 samples, 1850580 bytes | Out of order: 0 samples Transfer rate: 205564.50 samples/s, 14.00 Mbit/s | nreads 6615
+Payload size: 1 | Total received: 416204 samples, 3745836 bytes | Out of order: 0 samples Transfer rate: 210599.37 samples/s, 15.00 Mbit/s | nreads 17080
+Payload size: 1 | Total received: 416226 samples, 3746034 bytes | Out of order: 0 samples Transfer rate: 210598.83 samples/s, 15.00 Mbit/s | nreads 15152
+Payload size: 1 | Total received: 416235 samples, 3746115 bytes | Out of order: 0 samples Transfer rate: 210603.83 samples/s, 15.00 Mbit/s | nreads 9985
+Payload size: 1 | Total received: 416236 samples, 3746124 bytes | Out of order: 0 samples Transfer rate: 210590.51 samples/s, 15.00 Mbit/s | nreads 9654
+Payload size: 1 | Total received: 416270 samples, 3746430 bytes | Out of order: 0 samples Transfer rate: 210638.41 samples/s, 15.00 Mbit/s | nreads 17749
+Payload size: 1 | Total received: 416287 samples, 3746583 bytes | Out of order: 0 samples Transfer rate: 210641.30 samples/s, 15.00 Mbit/s | nreads 13290
+Payload size: 1 | Total received: 632678 samples, 5694102 bytes | Out of order: 0 samples Transfer rate: 216455.17 samples/s, 15.00 Mbit/s | nreads 25872
+Payload size: 1 | Total received: 632726 samples, 5694534 bytes | Out of order: 0 samples Transfer rate: 216474.46 samples/s, 15.00 Mbit/s | nreads 22959
+Payload size: 1 | Total received: 632731 samples, 5694579 bytes | Out of order: 0 samples Transfer rate: 216468.51 samples/s, 15.00 Mbit/s | nreads 15071
+Payload size: 1 | Total received: 632788 samples, 5695092 bytes | Out of order: 0 samples Transfer rate: 216492.89 samples/s, 15.00 Mbit/s | nreads 26892
+Payload size: 1 | Total received: 632798 samples, 5695182 bytes | Out of order: 0 samples Transfer rate: 216495.75 samples/s, 15.00 Mbit/s | nreads 14578
+Payload size: 1 | Total received: 632809 samples, 5695281 bytes | Out of order: 0 samples Transfer rate: 216493.42 samples/s, 15.00 Mbit/s | nreads 20141
+Payload size: 1 | Total received: 850149 samples, 7651341 bytes | Out of order: 0 samples Transfer rate: 217379.09 samples/s, 15.00 Mbit/s | nreads 30761
+Payload size: 1 | Total received: 850151 samples, 7651359 bytes | Out of order: 0 samples Transfer rate: 217384.57 samples/s, 15.00 Mbit/s | nreads 20138
+Payload size: 1 | Total received: 850157 samples, 7651413 bytes | Out of order: 0 samples Transfer rate: 217358.78 samples/s, 15.00 Mbit/s | nreads 36017
+Payload size: 1 | Total received: 850158 samples, 7651422 bytes | Out of order: 0 samples Transfer rate: 217379.35 samples/s, 14.99 Mbit/s | nreads 34672
+Payload size: 1 | Total received: 850172 samples, 7651548 bytes | Out of order: 0 samples Transfer rate: 217352.35 samples/s, 15.00 Mbit/s | nreads 26975
+Payload size: 1 | Total received: 850185 samples, 7651665 bytes | Out of order: 0 samples Transfer rate: 217342.66 samples/s, 15.00 Mbit/s | nreads 19486
+Payload size: 1 | Total received: 1059886 samples, 9538974 bytes | Out of order: 0 samples Transfer rate: 209718.54 samples/s, 15.00 Mbit/s | nreads 38454
+Payload size: 1 | Total received: 1059890 samples, 9539010 bytes | Out of order: 0 samples Transfer rate: 209722.09 samples/s, 15.00 Mbit/s | nreads 45061
+Payload size: 1 | Total received: 1059891 samples, 9539019 bytes | Out of order: 0 samples Transfer rate: 209722.93 samples/s, 15.00 Mbit/s | nreads 43380
+Payload size: 1 | Total received: 1059904 samples, 9539136 bytes | Out of order: 0 samples Transfer rate: 209731.58 samples/s, 15.00 Mbit/s | nreads 33740
+Payload size: 1 | Total received: 1059908 samples, 9539172 bytes | Out of order: 0 samples Transfer rate: 209716.73 samples/s, 15.00 Mbit/s | nreads 25191
+Payload size: 1 | Total received: 1059935 samples, 9539415 bytes | Out of order: 0 samples Transfer rate: 209747.48 samples/s, 15.00 Mbit/s | nreads 24370
+Payload size: 1 | Total received: 1272201 samples, 11449809 bytes | Out of order: 0 samples Transfer rate: 212308.21 samples/s, 15.00 Mbit/s | nreads 46228
+Payload size: 1 | Total received: 1272207 samples, 11449863 bytes | Out of order: 0 samples Transfer rate: 212307.66 samples/s, 15.00 Mbit/s | nreads 54194
+Payload size: 1 | Total received: 1272208 samples, 11449872 bytes | Out of order: 0 samples Transfer rate: 212305.54 samples/s, 15.00 Mbit/s | nreads 52149
+Payload size: 1 | Total received: 1272209 samples, 11449881 bytes | Out of order: 0 samples Transfer rate: 212303.09 samples/s, 15.00 Mbit/s | nreads 40538
+Payload size: 1 | Total received: 1272227 samples, 11450043 bytes | Out of order: 0 samples Transfer rate: 212305.20 samples/s, 15.00 Mbit/s | nreads 30267
+Payload size: 1 | Total received: 1272244 samples, 11450196 bytes | Out of order: 0 samples Transfer rate: 212292.87 samples/s, 15.00 Mbit/s | nreads 29278
+Payload size: 1 | Total received: 1489745 samples, 13407705 bytes | Out of order: 0 samples Transfer rate: 217489.07 samples/s, 15.00 Mbit/s | nreads 35345
+Payload size: 1 | Total received: 1489749 samples, 13407741 bytes | Out of order: 0 samples Transfer rate: 217488.25 samples/s, 15.00 Mbit/s | nreads 34189
+Payload size: 1 | Total received: 1489752 samples, 13407768 bytes | Out of order: 0 samples Transfer rate: 217485.50 samples/s, 15.00 Mbit/s | nreads 60932
+Payload size: 1 | Total received: 1489750 samples, 13407750 bytes | Out of order: 0 samples Transfer rate: 217479.71 samples/s, 15.00 Mbit/s | nreads 63320
+Payload size: 1 | Total received: 1489754 samples, 13407786 bytes | Out of order: 0 samples Transfer rate: 217477.97 samples/s, 14.99 Mbit/s | nreads 54019
+Payload size: 1 | Total received: 1489755 samples, 13407795 bytes | Out of order: 0 samples Transfer rate: 217483.58 samples/s, 15.00 Mbit/s | nreads 47346
+Payload size: 1 | Total received: 1702260 samples, 15320340 bytes | Out of order: 0 samples Transfer rate: 212510.96 samples/s, 15.00 Mbit/s | nreads 40417
+Payload size: 1 | Total received: 1702267 samples, 15320403 bytes | Out of order: 0 samples Transfer rate: 212503.12 samples/s, 15.00 Mbit/s | nreads 39098
+Payload size: 1 | Total received: 1702276 samples, 15320484 bytes | Out of order: 0 samples Transfer rate: 212512.19 samples/s, 15.00 Mbit/s | nreads 72449
+Payload size: 1 | Total received: 1702277 samples, 15320493 bytes | Out of order: 0 samples Transfer rate: 212509.06 samples/s, 15.00 Mbit/s | nreads 69688
+Payload size: 1 | Total received: 1702280 samples, 15320520 bytes | Out of order: 0 samples Transfer rate: 212507.51 samples/s, 15.00 Mbit/s | nreads 61768
+Payload size: 1 | Total received: 1702281 samples, 15320529 bytes | Out of order: 0 samples Transfer rate: 212506.87 samples/s, 15.00 Mbit/s | nreads 54153
+Payload size: 1 | Total received: 1916940 samples, 17252460 bytes | Out of order: 0 samples Transfer rate: 214657.25 samples/s, 15.00 Mbit/s | nreads 45489
+Payload size: 1 | Total received: 1916950 samples, 17252550 bytes | Out of order: 0 samples Transfer rate: 214667.07 samples/s, 15.00 Mbit/s | nreads 60960
+Payload size: 1 | Total received: 1916956 samples, 17252604 bytes | Out of order: 0 samples Transfer rate: 214661.97 samples/s, 15.00 Mbit/s | nreads 81568
+Payload size: 1 | Total received: 1916957 samples, 17252613 bytes | Out of order: 0 samples Transfer rate: 214663.26 samples/s, 15.00 Mbit/s | nreads 78475
+Payload size: 1 | Total received: 1916957 samples, 17252613 bytes | Out of order: 0 samples Transfer rate: 214664.98 samples/s, 15.00 Mbit/s | nreads 69514
+Payload size: 1 | Total received: 1916963 samples, 17252667 bytes | Out of order: 0 samples Transfer rate: 214663.16 samples/s, 15.00 Mbit/s | nreads 44010
+*********************************
+
+NSUB 7
+
+*********************************
+listening ...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Payload size: 1 | Total received: 200807 samples, 1807263 bytes | Out of order: 0 samples Transfer rate: 200794.35 samples/s, 14.00 Mbit/s | nreads 4073
+Payload size: 1 | Total received: 200814 samples, 1807326 bytes | Out of order: 0 samples Transfer rate: 200806.97 samples/s, 14.00 Mbit/s | nreads 7217
+Payload size: 1 | Total received: 200821 samples, 1807389 bytes | Out of order: 0 samples Transfer rate: 200810.76 samples/s, 14.00 Mbit/s | nreads 4330
+Payload size: 1 | Total received: 200829 samples, 1807461 bytes | Out of order: 0 samples Transfer rate: 200794.06 samples/s, 14.00 Mbit/s | nreads 7501
+Payload size: 1 | Total received: 200830 samples, 1807470 bytes | Out of order: 0 samples Transfer rate: 200795.46 samples/s, 14.00 Mbit/s | nreads 7448
+Payload size: 1 | Total received: 200834 samples, 1807506 bytes | Out of order: 0 samples Transfer rate: 200803.28 samples/s, 14.00 Mbit/s | nreads 6472
+Payload size: 1 | Total received: 200835 samples, 1807515 bytes | Out of order: 0 samples Transfer rate: 200799.46 samples/s, 14.00 Mbit/s | nreads 5619
+Payload size: 1 | Total received: 397230 samples, 3575070 bytes | Out of order: 0 samples Transfer rate: 196414.23 samples/s, 14.00 Mbit/s | nreads 14396
+Payload size: 1 | Total received: 397265 samples, 3575385 bytes | Out of order: 0 samples Transfer rate: 196423.38 samples/s, 14.00 Mbit/s | nreads 8616
+Payload size: 1 | Total received: 397266 samples, 3575394 bytes | Out of order: 0 samples Transfer rate: 196403.81 samples/s, 14.00 Mbit/s | nreads 8095
+Payload size: 1 | Total received: 397281 samples, 3575529 bytes | Out of order: 0 samples Transfer rate: 196420.97 samples/s, 14.00 Mbit/s | nreads 14987
+Payload size: 1 | Total received: 397287 samples, 3575583 bytes | Out of order: 0 samples Transfer rate: 196425.96 samples/s, 14.00 Mbit/s | nreads 14857
+Payload size: 1 | Total received: 397290 samples, 3575610 bytes | Out of order: 0 samples Transfer rate: 196409.84 samples/s, 14.00 Mbit/s | nreads 12936
+Payload size: 1 | Total received: 397319 samples, 3575871 bytes | Out of order: 0 samples Transfer rate: 196431.75 samples/s, 14.00 Mbit/s | nreads 11248
+Payload size: 1 | Total received: 594005 samples, 5346045 bytes | Out of order: 0 samples Transfer rate: 196757.69 samples/s, 14.00 Mbit/s | nreads 21650
+Payload size: 1 | Total received: 594060 samples, 5346540 bytes | Out of order: 0 samples Transfer rate: 196754.67 samples/s, 14.00 Mbit/s | nreads 12915
+Payload size: 1 | Total received: 594061 samples, 5346549 bytes | Out of order: 0 samples Transfer rate: 196764.70 samples/s, 14.00 Mbit/s | nreads 12143
+Payload size: 1 | Total received: 594066 samples, 5346594 bytes | Out of order: 0 samples Transfer rate: 196751.95 samples/s, 14.00 Mbit/s | nreads 22547
+Payload size: 1 | Total received: 594070 samples, 5346630 bytes | Out of order: 0 samples Transfer rate: 196751.32 samples/s, 14.00 Mbit/s | nreads 22357
+Payload size: 1 | Total received: 594073 samples, 5346657 bytes | Out of order: 0 samples Transfer rate: 196761.95 samples/s, 14.00 Mbit/s | nreads 19424
+Payload size: 1 | Total received: 594074 samples, 5346666 bytes | Out of order: 0 samples Transfer rate: 196741.62 samples/s, 14.00 Mbit/s | nreads 16921
+Payload size: 1 | Total received: 792003 samples, 7128027 bytes | Out of order: 0 samples Transfer rate: 197974.44 samples/s, 14.00 Mbit/s | nreads 28951
+Payload size: 1 | Total received: 792040 samples, 7128360 bytes | Out of order: 0 samples Transfer rate: 197978.02 samples/s, 14.00 Mbit/s | nreads 17233
+Payload size: 1 | Total received: 792055 samples, 7128495 bytes | Out of order: 0 samples Transfer rate: 197971.43 samples/s, 14.00 Mbit/s | nreads 16223
+Payload size: 1 | Total received: 792068 samples, 7128612 bytes | Out of order: 0 samples Transfer rate: 197985.68 samples/s, 14.00 Mbit/s | nreads 22630
+Payload size: 1 | Total received: 792079 samples, 7128711 bytes | Out of order: 0 samples Transfer rate: 197979.54 samples/s, 14.00 Mbit/s | nreads 30170
+Payload size: 1 | Total received: 792080 samples, 7128720 bytes | Out of order: 0 samples Transfer rate: 197975.55 samples/s, 14.00 Mbit/s | nreads 29919
+Payload size: 1 | Total received: 792082 samples, 7128738 bytes | Out of order: 0 samples Transfer rate: 197977.92 samples/s, 14.00 Mbit/s | nreads 25953
+Payload size: 1 | Total received: 988833 samples, 8899497 bytes | Out of order: 0 samples Transfer rate: 196806.19 samples/s, 14.00 Mbit/s | nreads 36265
+Payload size: 1 | Total received: 988878 samples, 8899902 bytes | Out of order: 0 samples Transfer rate: 196799.82 samples/s, 14.00 Mbit/s | nreads 21573
+Payload size: 1 | Total received: 988886 samples, 8899974 bytes | Out of order: 0 samples Transfer rate: 196806.02 samples/s, 14.00 Mbit/s | nreads 37818
+Payload size: 1 | Total received: 988894 samples, 8900046 bytes | Out of order: 0 samples Transfer rate: 196803.37 samples/s, 14.00 Mbit/s | nreads 28349
+Payload size: 1 | Total received: 988910 samples, 8900190 bytes | Out of order: 0 samples Transfer rate: 196801.86 samples/s, 14.00 Mbit/s | nreads 37492
+Payload size: 1 | Total received: 988911 samples, 8900199 bytes | Out of order: 0 samples Transfer rate: 196804.20 samples/s, 14.00 Mbit/s | nreads 32532
+Payload size: 1 | Total received: 988912 samples, 8900208 bytes | Out of order: 0 samples Transfer rate: 196798.35 samples/s, 14.00 Mbit/s | nreads 20305
+Payload size: 1 | Total received: 1188285 samples, 10694565 bytes | Out of order: 0 samples Transfer rate: 199399.16 samples/s, 14.00 Mbit/s | nreads 43681
+Payload size: 1 | Total received: 1188301 samples, 10694709 bytes | Out of order: 0 samples Transfer rate: 199395.46 samples/s, 14.00 Mbit/s | nreads 45532
+Payload size: 1 | Total received: 1188306 samples, 10694754 bytes | Out of order: 0 samples Transfer rate: 199387.92 samples/s, 14.00 Mbit/s | nreads 25938
+Payload size: 1 | Total received: 1188312 samples, 10694808 bytes | Out of order: 0 samples Transfer rate: 199395.22 samples/s, 14.00 Mbit/s | nreads 39204
+Payload size: 1 | Total received: 1188313 samples, 10694817 bytes | Out of order: 0 samples Transfer rate: 199388.49 samples/s, 14.00 Mbit/s | nreads 34128
+Payload size: 1 | Total received: 1188314 samples, 10694826 bytes | Out of order: 0 samples Transfer rate: 199391.43 samples/s, 14.00 Mbit/s | nreads 24415
+Payload size: 1 | Total received: 1188324 samples, 10694916 bytes | Out of order: 0 samples Transfer rate: 199386.68 samples/s, 14.00 Mbit/s | nreads 45139
+Payload size: 1 | Total received: 1386094 samples, 12474846 bytes | Out of order: 0 samples Transfer rate: 197790.61 samples/s, 14.00 Mbit/s | nreads 50915
+Payload size: 1 | Total received: 1386099 samples, 12474891 bytes | Out of order: 0 samples Transfer rate: 197783.36 samples/s, 14.00 Mbit/s | nreads 53086
+Payload size: 1 | Total received: 1386099 samples, 12474891 bytes | Out of order: 0 samples Transfer rate: 197782.84 samples/s, 14.00 Mbit/s | nreads 39788
+Payload size: 1 | Total received: 1386099 samples, 12474891 bytes | Out of order: 0 samples Transfer rate: 197776.39 samples/s, 14.00 Mbit/s | nreads 30228
+Payload size: 1 | Total received: 1386105 samples, 12474945 bytes | Out of order: 0 samples Transfer rate: 197708.18 samples/s, 13.99 Mbit/s | nreads 45724
+Payload size: 1 | Total received: 1386108 samples, 12474972 bytes | Out of order: 0 samples Transfer rate: 197714.91 samples/s, 13.99 Mbit/s | nreads 28458
+Payload size: 1 | Total received: 1386114 samples, 12475026 bytes | Out of order: 0 samples Transfer rate: 197712.69 samples/s, 13.99 Mbit/s | nreads 52617
+Payload size: 1 | Total received: 1584787 samples, 14263083 bytes | Out of order: 0 samples Transfer rate: 198689.82 samples/s, 14.00 Mbit/s | nreads 58318
+Payload size: 1 | Total received: 1584821 samples, 14263389 bytes | Out of order: 0 samples Transfer rate: 198698.95 samples/s, 14.00 Mbit/s | nreads 60802
+Payload size: 1 | Total received: 1584834 samples, 14263506 bytes | Out of order: 0 samples Transfer rate: 198698.04 samples/s, 14.00 Mbit/s | nreads 45562
+Payload size: 1 | Total received: 1584841 samples, 14263569 bytes | Out of order: 0 samples Transfer rate: 198695.11 samples/s, 14.00 Mbit/s | nreads 34590
+Payload size: 1 | Total received: 1584870 samples, 14263830 bytes | Out of order: 0 samples Transfer rate: 198754.47 samples/s, 14.00 Mbit/s | nreads 52333
+Payload size: 1 | Total received: 1584882 samples, 14263938 bytes | Out of order: 0 samples Transfer rate: 198759.85 samples/s, 14.00 Mbit/s | nreads 60276
+Payload size: 1 | Total received: 1584922 samples, 14264298 bytes | Out of order: 0 samples Transfer rate: 198759.94 samples/s, 14.00 Mbit/s | nreads 32578
+Payload size: 1 | Total received: 1777821 samples, 16000389 bytes | Out of order: 0 samples Transfer rate: 193015.47 samples/s, 13.00 Mbit/s | nreads 65578
+Payload size: 1 | Total received: 1777863 samples, 16000767 bytes | Out of order: 0 samples Transfer rate: 193005.71 samples/s, 13.00 Mbit/s | nreads 68361
+Payload size: 1 | Total received: 1777871 samples, 16000839 bytes | Out of order: 0 samples Transfer rate: 193016.93 samples/s, 13.00 Mbit/s | nreads 51214
+Payload size: 1 | Total received: 1777872 samples, 16000848 bytes | Out of order: 0 samples Transfer rate: 193021.35 samples/s, 13.00 Mbit/s | nreads 38864
+Payload size: 1 | Total received: 1777909 samples, 16001181 bytes | Out of order: 0 samples Transfer rate: 193014.65 samples/s, 13.00 Mbit/s | nreads 67767
+Payload size: 1 | Total received: 1777914 samples, 16001226 bytes | Out of order: 0 samples Transfer rate: 193014.85 samples/s, 13.00 Mbit/s | nreads 58797
+Payload size: 1 | Total received: 1777930 samples, 16001370 bytes | Out of order: 0 samples Transfer rate: 193007.61 samples/s, 13.00 Mbit/s | nreads 36623
+*********************************
+
+NSUB 8
+
+*********************************
+listening ...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Payload size: 1 | Total received: 183345 samples, 1650105 bytes | Out of order: 0 samples Transfer rate: 183336.02 samples/s, 13.00 Mbit/s | nreads 6609
+Payload size: 1 | Total received: 183346 samples, 1650114 bytes | Out of order: 0 samples Transfer rate: 183336.28 samples/s, 13.00 Mbit/s | nreads 6604
+Payload size: 1 | Total received: 183347 samples, 1650123 bytes | Out of order: 0 samples Transfer rate: 183339.12 samples/s, 13.00 Mbit/s | nreads 6566
+Payload size: 1 | Total received: 183351 samples, 1650159 bytes | Out of order: 0 samples Transfer rate: 183346.23 samples/s, 13.00 Mbit/s | nreads 5715
+Payload size: 1 | Total received: 183352 samples, 1650168 bytes | Out of order: 0 samples Transfer rate: 183339.35 samples/s, 13.00 Mbit/s | nreads 3659
+Payload size: 1 | Total received: 183364 samples, 1650276 bytes | Out of order: 0 samples Transfer rate: 183342.18 samples/s, 13.00 Mbit/s | nreads 6397
+Payload size: 1 | Total received: 183365 samples, 1650285 bytes | Out of order: 0 samples Transfer rate: 183321.74 samples/s, 13.00 Mbit/s | nreads 3870
+Payload size: 1 | Total received: 183374 samples, 1650366 bytes | Out of order: 0 samples Transfer rate: 183335.13 samples/s, 13.00 Mbit/s | nreads 5051
+Payload size: 1 | Total received: 362288 samples, 3260592 bytes | Out of order: 0 samples Transfer rate: 178929.40 samples/s, 12.00 Mbit/s | nreads 13124
+Payload size: 1 | Total received: 362290 samples, 3260610 bytes | Out of order: 0 samples Transfer rate: 178930.40 samples/s, 12.00 Mbit/s | nreads 13102
+Payload size: 1 | Total received: 362291 samples, 3260619 bytes | Out of order: 0 samples Transfer rate: 178930.76 samples/s, 12.00 Mbit/s | nreads 13030
+Payload size: 1 | Total received: 362294 samples, 3260646 bytes | Out of order: 0 samples Transfer rate: 178925.00 samples/s, 12.00 Mbit/s | nreads 7232
+Payload size: 1 | Total received: 362296 samples, 3260664 bytes | Out of order: 0 samples Transfer rate: 178918.22 samples/s, 12.00 Mbit/s | nreads 12719
+Payload size: 1 | Total received: 362297 samples, 3260673 bytes | Out of order: 0 samples Transfer rate: 178915.76 samples/s, 12.00 Mbit/s | nreads 11378
+Payload size: 1 | Total received: 362299 samples, 3260691 bytes | Out of order: 0 samples Transfer rate: 178915.70 samples/s, 12.00 Mbit/s | nreads 10050
+Payload size: 1 | Total received: 362301 samples, 3260709 bytes | Out of order: 0 samples Transfer rate: 178899.86 samples/s, 12.00 Mbit/s | nreads 7664
+Payload size: 1 | Total received: 545731 samples, 4911579 bytes | Out of order: 0 samples Transfer rate: 183421.36 samples/s, 13.00 Mbit/s | nreads 19788
+Payload size: 1 | Total received: 545732 samples, 4911588 bytes | Out of order: 0 samples Transfer rate: 183421.27 samples/s, 13.00 Mbit/s | nreads 19768
+Payload size: 1 | Total received: 545734 samples, 4911606 bytes | Out of order: 0 samples Transfer rate: 183436.53 samples/s, 13.00 Mbit/s | nreads 19186
+Payload size: 1 | Total received: 545733 samples, 4911597 bytes | Out of order: 0 samples Transfer rate: 183421.64 samples/s, 13.00 Mbit/s | nreads 19664
+Payload size: 1 | Total received: 545742 samples, 4911678 bytes | Out of order: 0 samples Transfer rate: 183436.38 samples/s, 13.00 Mbit/s | nreads 17203
+Payload size: 1 | Total received: 545754 samples, 4911786 bytes | Out of order: 0 samples Transfer rate: 183423.87 samples/s, 13.00 Mbit/s | nreads 10881
+Payload size: 1 | Total received: 545767 samples, 4911903 bytes | Out of order: 0 samples Transfer rate: 183444.52 samples/s, 13.00 Mbit/s | nreads 15151
+Payload size: 1 | Total received: 545790 samples, 4912110 bytes | Out of order: 0 samples Transfer rate: 183443.51 samples/s, 13.00 Mbit/s | nreads 11527
+Payload size: 1 | Total received: 725032 samples, 6525288 bytes | Out of order: 0 samples Transfer rate: 179283.79 samples/s, 12.00 Mbit/s | nreads 26334
+Payload size: 1 | Total received: 725034 samples, 6525306 bytes | Out of order: 0 samples Transfer rate: 179283.89 samples/s, 12.00 Mbit/s | nreads 26301
+Payload size: 1 | Total received: 725035 samples, 6525315 bytes | Out of order: 0 samples Transfer rate: 179284.61 samples/s, 12.00 Mbit/s | nreads 26159
+Payload size: 1 | Total received: 725036 samples, 6525324 bytes | Out of order: 0 samples Transfer rate: 179280.13 samples/s, 12.00 Mbit/s | nreads 25522
+Payload size: 1 | Total received: 725048 samples, 6525432 bytes | Out of order: 0 samples Transfer rate: 179276.24 samples/s, 12.00 Mbit/s | nreads 22904
+Payload size: 1 | Total received: 725066 samples, 6525594 bytes | Out of order: 0 samples Transfer rate: 179276.23 samples/s, 12.00 Mbit/s | nreads 20159
+Payload size: 1 | Total received: 725089 samples, 6525801 bytes | Out of order: 0 samples Transfer rate: 179288.74 samples/s, 12.00 Mbit/s | nreads 14473
+Payload size: 1 | Total received: 725139 samples, 6526251 bytes | Out of order: 0 samples Transfer rate: 179290.01 samples/s, 12.00 Mbit/s | nreads 15347
+Payload size: 1 | Total received: 904041 samples, 8136369 bytes | Out of order: 0 samples Transfer rate: 178999.51 samples/s, 12.00 Mbit/s | nreads 32925
+Payload size: 1 | Total received: 904042 samples, 8136378 bytes | Out of order: 0 samples Transfer rate: 178998.69 samples/s, 12.00 Mbit/s | nreads 32886
+Payload size: 1 | Total received: 904044 samples, 8136396 bytes | Out of order: 0 samples Transfer rate: 179000.12 samples/s, 12.00 Mbit/s | nreads 31921
+Payload size: 1 | Total received: 904043 samples, 8136387 bytes | Out of order: 0 samples Transfer rate: 178996.90 samples/s, 12.00 Mbit/s | nreads 32703
+Payload size: 1 | Total received: 904069 samples, 8136621 bytes | Out of order: 0 samples Transfer rate: 179003.99 samples/s, 12.00 Mbit/s | nreads 28616
+Payload size: 1 | Total received: 904092 samples, 8136828 bytes | Out of order: 0 samples Transfer rate: 179000.94 samples/s, 12.00 Mbit/s | nreads 25219
+Payload size: 1 | Total received: 904142 samples, 8137278 bytes | Out of order: 0 samples Transfer rate: 178998.94 samples/s, 12.00 Mbit/s | nreads 18086
+Payload size: 1 | Total received: 904159 samples, 8137431 bytes | Out of order: 0 samples Transfer rate: 179000.49 samples/s, 12.00 Mbit/s | nreads 19160
+Payload size: 1 | Total received: 1083321 samples, 9749889 bytes | Out of order: 0 samples Transfer rate: 179264.40 samples/s, 12.00 Mbit/s | nreads 39415
+Payload size: 1 | Total received: 1083325 samples, 9749925 bytes | Out of order: 0 samples Transfer rate: 179268.38 samples/s, 12.00 Mbit/s | nreads 39156
+Payload size: 1 | Total received: 1083339 samples, 9750051 bytes | Out of order: 0 samples Transfer rate: 179266.52 samples/s, 12.00 Mbit/s | nreads 39370
+Payload size: 1 | Total received: 1083341 samples, 9750069 bytes | Out of order: 0 samples Transfer rate: 179268.14 samples/s, 12.00 Mbit/s | nreads 38217
+Payload size: 1 | Total received: 1083342 samples, 9750078 bytes | Out of order: 0 samples Transfer rate: 179266.19 samples/s, 12.00 Mbit/s | nreads 34308
+Payload size: 1 | Total received: 1083389 samples, 9750501 bytes | Out of order: 0 samples Transfer rate: 179264.19 samples/s, 12.00 Mbit/s | nreads 30202
+Payload size: 1 | Total received: 1083435 samples, 9750915 bytes | Out of order: 0 samples Transfer rate: 179270.80 samples/s, 12.00 Mbit/s | nreads 22957
+Payload size: 1 | Total received: 1083465 samples, 9751185 bytes | Out of order: 0 samples Transfer rate: 179269.22 samples/s, 12.00 Mbit/s | nreads 21640
+Payload size: 1 | Total received: 1265709 samples, 11391381 bytes | Out of order: 0 samples Transfer rate: 182374.50 samples/s, 13.00 Mbit/s | nreads 46087
+Payload size: 1 | Total received: 1265711 samples, 11391399 bytes | Out of order: 0 samples Transfer rate: 182375.06 samples/s, 13.00 Mbit/s | nreads 45782
+Payload size: 1 | Total received: 1265729 samples, 11391561 bytes | Out of order: 0 samples Transfer rate: 182372.86 samples/s, 13.00 Mbit/s | nreads 46034
+Payload size: 1 | Total received: 1265733 samples, 11391597 bytes | Out of order: 0 samples Transfer rate: 182373.22 samples/s, 13.00 Mbit/s | nreads 44701
+Payload size: 1 | Total received: 1265754 samples, 11391786 bytes | Out of order: 0 samples Transfer rate: 182378.08 samples/s, 13.00 Mbit/s | nreads 40103
+Payload size: 1 | Total received: 1265775 samples, 11391975 bytes | Out of order: 0 samples Transfer rate: 182379.43 samples/s, 13.00 Mbit/s | nreads 35320
+Payload size: 1 | Total received: 1265826 samples, 11392434 bytes | Out of order: 0 samples Transfer rate: 182362.00 samples/s, 13.00 Mbit/s | nreads 26818
+Payload size: 1 | Total received: 1265864 samples, 11392776 bytes | Out of order: 0 samples Transfer rate: 182362.35 samples/s, 13.00 Mbit/s | nreads 25293
+Payload size: 1 | Total received: 1443852 samples, 12994668 bytes | Out of order: 0 samples Transfer rate: 178090.41 samples/s, 12.00 Mbit/s | nreads 52616
+Payload size: 1 | Total received: 1443853 samples, 12994677 bytes | Out of order: 0 samples Transfer rate: 178089.46 samples/s, 12.00 Mbit/s | nreads 52338
+Payload size: 1 | Total received: 1443855 samples, 12994695 bytes | Out of order: 0 samples Transfer rate: 178089.42 samples/s, 12.00 Mbit/s | nreads 45808
+Payload size: 1 | Total received: 1443854 samples, 12994686 bytes | Out of order: 0 samples Transfer rate: 178090.72 samples/s, 12.00 Mbit/s | nreads 51083
+Payload size: 1 | Total received: 1443859 samples, 12994731 bytes | Out of order: 0 samples Transfer rate: 178085.36 samples/s, 12.00 Mbit/s | nreads 52686
+Payload size: 1 | Total received: 1443881 samples, 12994929 bytes | Out of order: 0 samples Transfer rate: 178081.07 samples/s, 12.00 Mbit/s | nreads 40375
+Payload size: 1 | Total received: 1443912 samples, 12995208 bytes | Out of order: 0 samples Transfer rate: 178075.85 samples/s, 12.00 Mbit/s | nreads 30651
+Payload size: 1 | Total received: 1443953 samples, 12995577 bytes | Out of order: 0 samples Transfer rate: 178052.14 samples/s, 12.00 Mbit/s | nreads 28906
+Payload size: 1 | Total received: 1625244 samples, 14627196 bytes | Out of order: 0 samples Transfer rate: 181387.65 samples/s, 13.00 Mbit/s | nreads 59308
+Payload size: 1 | Total received: 1625245 samples, 14627205 bytes | Out of order: 0 samples Transfer rate: 181387.47 samples/s, 13.00 Mbit/s | nreads 58994
+Payload size: 1 | Total received: 1625247 samples, 14627223 bytes | Out of order: 0 samples Transfer rate: 181387.20 samples/s, 13.00 Mbit/s | nreads 57595
+Payload size: 1 | Total received: 1625248 samples, 14627232 bytes | Out of order: 0 samples Transfer rate: 181385.74 samples/s, 13.00 Mbit/s | nreads 51629
+Payload size: 1 | Total received: 1625255 samples, 14627295 bytes | Out of order: 0 samples Transfer rate: 181388.93 samples/s, 13.00 Mbit/s | nreads 59382
+Payload size: 1 | Total received: 1625275 samples, 14627475 bytes | Out of order: 0 samples Transfer rate: 181351.76 samples/s, 13.00 Mbit/s | nreads 34527
+Payload size: 1 | Total received: 1625287 samples, 14627583 bytes | Out of order: 0 samples Transfer rate: 181332.38 samples/s, 12.99 Mbit/s | nreads 45498
+Payload size: 1 | Total received: 1625324 samples, 14627916 bytes | Out of order: 0 samples Transfer rate: 181360.48 samples/s, 13.00 Mbit/s | nreads 32568
+*********************************
+
+NSUB 9
+
+*********************************
+listening ...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Payload size: 1 | Total received: 170418 samples, 1533762 bytes | Out of order: 0 samples Transfer rate: 170417.49 samples/s, 12.00 Mbit/s | nreads 5745
+Payload size: 1 | Total received: 170423 samples, 1533807 bytes | Out of order: 0 samples Transfer rate: 170403.40 samples/s, 12.00 Mbit/s | nreads 5082
+Payload size: 1 | Total received: 170424 samples, 1533816 bytes | Out of order: 0 samples Transfer rate: 170409.69 samples/s, 12.00 Mbit/s | nreads 3472
+Payload size: 1 | Total received: 170444 samples, 1533996 bytes | Out of order: 0 samples Transfer rate: 170409.07 samples/s, 12.00 Mbit/s | nreads 4385
+Payload size: 1 | Total received: 170447 samples, 1534023 bytes | Out of order: 0 samples Transfer rate: 170443.76 samples/s, 12.00 Mbit/s | nreads 3214
+Payload size: 1 | Total received: 170447 samples, 1534023 bytes | Out of order: 0 samples Transfer rate: 170415.30 samples/s, 12.00 Mbit/s | nreads 5732
+Payload size: 1 | Total received: 170447 samples, 1534023 bytes | Out of order: 0 samples Transfer rate: 170418.20 samples/s, 12.00 Mbit/s | nreads 5741
+Payload size: 1 | Total received: 170447 samples, 1534023 bytes | Out of order: 0 samples Transfer rate: 170418.37 samples/s, 12.00 Mbit/s | nreads 5700
+Payload size: 1 | Total received: 170447 samples, 1534023 bytes | Out of order: 0 samples Transfer rate: 170420.58 samples/s, 12.00 Mbit/s | nreads 5564
+Payload size: 1 | Total received: 342444 samples, 3081996 bytes | Out of order: 0 samples Transfer rate: 172023.94 samples/s, 12.00 Mbit/s | nreads 11573
+Payload size: 1 | Total received: 342447 samples, 3082023 bytes | Out of order: 0 samples Transfer rate: 172021.45 samples/s, 12.00 Mbit/s | nreads 6929
+Payload size: 1 | Total received: 342455 samples, 3082095 bytes | Out of order: 0 samples Transfer rate: 172016.86 samples/s, 12.00 Mbit/s | nreads 10276
+Payload size: 1 | Total received: 342464 samples, 3082176 bytes | Out of order: 0 samples Transfer rate: 172004.86 samples/s, 12.00 Mbit/s | nreads 8824
+Payload size: 1 | Total received: 342469 samples, 3082221 bytes | Out of order: 0 samples Transfer rate: 172012.20 samples/s, 12.00 Mbit/s | nreads 11561
+Payload size: 1 | Total received: 342471 samples, 3082239 bytes | Out of order: 0 samples Transfer rate: 172016.78 samples/s, 12.00 Mbit/s | nreads 11563
+Payload size: 1 | Total received: 342482 samples, 3082338 bytes | Out of order: 0 samples Transfer rate: 172011.61 samples/s, 12.00 Mbit/s | nreads 11502
+Payload size: 1 | Total received: 342483 samples, 3082347 bytes | Out of order: 0 samples Transfer rate: 172014.67 samples/s, 12.00 Mbit/s | nreads 11238
+Payload size: 1 | Total received: 342500 samples, 3082500 bytes | Out of order: 0 samples Transfer rate: 171994.69 samples/s, 12.00 Mbit/s | nreads 6424
+Payload size: 1 | Total received: 510446 samples, 4594014 bytes | Out of order: 0 samples Transfer rate: 167972.52 samples/s, 12.00 Mbit/s | nreads 15350
+Payload size: 1 | Total received: 510447 samples, 4594023 bytes | Out of order: 0 samples Transfer rate: 167978.97 samples/s, 12.00 Mbit/s | nreads 13193
+Payload size: 1 | Total received: 510448 samples, 4594032 bytes | Out of order: 0 samples Transfer rate: 167969.93 samples/s, 12.00 Mbit/s | nreads 10323
+Payload size: 1 | Total received: 510454 samples, 4594086 bytes | Out of order: 0 samples Transfer rate: 167977.94 samples/s, 12.00 Mbit/s | nreads 17268
+Payload size: 1 | Total received: 510455 samples, 4594095 bytes | Out of order: 0 samples Transfer rate: 167960.78 samples/s, 12.00 Mbit/s | nreads 17285
+Payload size: 1 | Total received: 510456 samples, 4594104 bytes | Out of order: 0 samples Transfer rate: 167976.27 samples/s, 12.00 Mbit/s | nreads 17261
+Payload size: 1 | Total received: 510469 samples, 4594221 bytes | Out of order: 0 samples Transfer rate: 167979.45 samples/s, 12.00 Mbit/s | nreads 16794
+Payload size: 1 | Total received: 510483 samples, 4594347 bytes | Out of order: 0 samples Transfer rate: 167975.80 samples/s, 12.00 Mbit/s | nreads 17168
+Payload size: 1 | Total received: 510493 samples, 4594437 bytes | Out of order: 0 samples Transfer rate: 167979.39 samples/s, 12.00 Mbit/s | nreads 9581
+Payload size: 1 | Total received: 682006 samples, 6138054 bytes | Out of order: 0 samples Transfer rate: 171555.71 samples/s, 12.00 Mbit/s | nreads 20537
+Payload size: 1 | Total received: 682020 samples, 6138180 bytes | Out of order: 0 samples Transfer rate: 171557.25 samples/s, 12.00 Mbit/s | nreads 13808
+Payload size: 1 | Total received: 682025 samples, 6138225 bytes | Out of order: 0 samples Transfer rate: 171557.79 samples/s, 12.00 Mbit/s | nreads 23125
+Payload size: 1 | Total received: 682026 samples, 6138234 bytes | Out of order: 0 samples Transfer rate: 171557.28 samples/s, 12.00 Mbit/s | nreads 23148
+Payload size: 1 | Total received: 682026 samples, 6138234 bytes | Out of order: 0 samples Transfer rate: 171558.51 samples/s, 12.00 Mbit/s | nreads 23115
+Payload size: 1 | Total received: 682031 samples, 6138279 bytes | Out of order: 0 samples Transfer rate: 171549.69 samples/s, 12.00 Mbit/s | nreads 17650
+Payload size: 1 | Total received: 682048 samples, 6138432 bytes | Out of order: 0 samples Transfer rate: 171544.86 samples/s, 12.00 Mbit/s | nreads 22496
+Payload size: 1 | Total received: 682061 samples, 6138549 bytes | Out of order: 0 samples Transfer rate: 171548.67 samples/s, 12.00 Mbit/s | nreads 22999
+Payload size: 1 | Total received: 682084 samples, 6138756 bytes | Out of order: 0 samples Transfer rate: 171543.31 samples/s, 12.00 Mbit/s | nreads 12807
+Payload size: 1 | Total received: 850416 samples, 7653744 bytes | Out of order: 0 samples Transfer rate: 168401.07 samples/s, 12.00 Mbit/s | nreads 25615
+Payload size: 1 | Total received: 850437 samples, 7653933 bytes | Out of order: 0 samples Transfer rate: 168406.61 samples/s, 12.00 Mbit/s | nreads 28889
+Payload size: 1 | Total received: 850438 samples, 7653942 bytes | Out of order: 0 samples Transfer rate: 168404.76 samples/s, 12.00 Mbit/s | nreads 28913
+Payload size: 1 | Total received: 850439 samples, 7653951 bytes | Out of order: 0 samples Transfer rate: 168406.60 samples/s, 12.00 Mbit/s | nreads 28875
+Payload size: 1 | Total received: 850462 samples, 7654158 bytes | Out of order: 0 samples Transfer rate: 168398.55 samples/s, 12.00 Mbit/s | nreads 17238
+Payload size: 1 | Total received: 850470 samples, 7654230 bytes | Out of order: 0 samples Transfer rate: 168409.20 samples/s, 12.00 Mbit/s | nreads 28104
+Payload size: 1 | Total received: 850475 samples, 7654275 bytes | Out of order: 0 samples Transfer rate: 168399.37 samples/s, 12.00 Mbit/s | nreads 22057
+Payload size: 1 | Total received: 850505 samples, 7654545 bytes | Out of order: 0 samples Transfer rate: 168413.85 samples/s, 12.00 Mbit/s | nreads 28726
+Payload size: 1 | Total received: 850509 samples, 7654581 bytes | Out of order: 0 samples Transfer rate: 168416.24 samples/s, 12.00 Mbit/s | nreads 15982
+Payload size: 1 | Total received: 1020871 samples, 9187839 bytes | Out of order: 0 samples Transfer rate: 170415.42 samples/s, 12.00 Mbit/s | nreads 34702
+Payload size: 1 | Total received: 1020872 samples, 9187848 bytes | Out of order: 0 samples Transfer rate: 170418.15 samples/s, 12.00 Mbit/s | nreads 34730
+Payload size: 1 | Total received: 1020874 samples, 9187866 bytes | Out of order: 0 samples Transfer rate: 170416.25 samples/s, 12.00 Mbit/s | nreads 34685
+Payload size: 1 | Total received: 1020877 samples, 9187893 bytes | Out of order: 0 samples Transfer rate: 170415.67 samples/s, 12.00 Mbit/s | nreads 30800
+Payload size: 1 | Total received: 1020904 samples, 9188136 bytes | Out of order: 0 samples Transfer rate: 170421.73 samples/s, 12.00 Mbit/s | nreads 33768
+Payload size: 1 | Total received: 1020909 samples, 9188181 bytes | Out of order: 0 samples Transfer rate: 170410.36 samples/s, 12.00 Mbit/s | nreads 20696
+Payload size: 1 | Total received: 1020927 samples, 9188343 bytes | Out of order: 0 samples Transfer rate: 170414.85 samples/s, 12.00 Mbit/s | nreads 26492
+Payload size: 1 | Total received: 1020932 samples, 9188388 bytes | Out of order: 0 samples Transfer rate: 170402.12 samples/s, 12.00 Mbit/s | nreads 34505
+Payload size: 1 | Total received: 1020967 samples, 9188703 bytes | Out of order: 0 samples Transfer rate: 170391.89 samples/s, 12.00 Mbit/s | nreads 19186
+Payload size: 1 | Total received: 1188659 samples, 10697931 bytes | Out of order: 0 samples Transfer rate: 167787.66 samples/s, 12.00 Mbit/s | nreads 40478
+Payload size: 1 | Total received: 1188660 samples, 10697940 bytes | Out of order: 0 samples Transfer rate: 167787.83 samples/s, 12.00 Mbit/s | nreads 40509
+Payload size: 1 | Total received: 1188661 samples, 10697949 bytes | Out of order: 0 samples Transfer rate: 167786.50 samples/s, 12.00 Mbit/s | nreads 40457
+Payload size: 1 | Total received: 1188683 samples, 10698147 bytes | Out of order: 0 samples Transfer rate: 167792.74 samples/s, 12.00 Mbit/s | nreads 35934
+Payload size: 1 | Total received: 1188702 samples, 10698318 bytes | Out of order: 0 samples Transfer rate: 167794.14 samples/s, 12.00 Mbit/s | nreads 39391
+Payload size: 1 | Total received: 1188727 samples, 10698543 bytes | Out of order: 0 samples Transfer rate: 167796.69 samples/s, 12.00 Mbit/s | nreads 24114
+Payload size: 1 | Total received: 1188737 samples, 10698633 bytes | Out of order: 0 samples Transfer rate: 167804.50 samples/s, 12.00 Mbit/s | nreads 40249
+Payload size: 1 | Total received: 1188751 samples, 10698759 bytes | Out of order: 0 samples Transfer rate: 167784.57 samples/s, 12.00 Mbit/s | nreads 30920
+Payload size: 1 | Total received: 1188795 samples, 10699155 bytes | Out of order: 0 samples Transfer rate: 167803.84 samples/s, 12.00 Mbit/s | nreads 22366
+Payload size: 1 | Total received: 1359769 samples, 12237921 bytes | Out of order: 0 samples Transfer rate: 171108.14 samples/s, 12.00 Mbit/s | nreads 46334
+Payload size: 1 | Total received: 1359792 samples, 12238128 bytes | Out of order: 0 samples Transfer rate: 171117.82 samples/s, 12.00 Mbit/s | nreads 46284
+Payload size: 1 | Total received: 1359798 samples, 12238182 bytes | Out of order: 0 samples Transfer rate: 171107.35 samples/s, 12.00 Mbit/s | nreads 46314
+Payload size: 1 | Total received: 1359805 samples, 12238245 bytes | Out of order: 0 samples Transfer rate: 171104.55 samples/s, 12.00 Mbit/s | nreads 41103
+Payload size: 1 | Total received: 1359828 samples, 12238452 bytes | Out of order: 0 samples Transfer rate: 171101.53 samples/s, 12.00 Mbit/s | nreads 45054
+Payload size: 1 | Total received: 1359848 samples, 12238632 bytes | Out of order: 0 samples Transfer rate: 171102.01 samples/s, 12.00 Mbit/s | nreads 27558
+Payload size: 1 | Total received: 1359862 samples, 12238758 bytes | Out of order: 0 samples Transfer rate: 171090.44 samples/s, 12.00 Mbit/s | nreads 46053
+Payload size: 1 | Total received: 1359887 samples, 12238983 bytes | Out of order: 0 samples Transfer rate: 171099.73 samples/s, 12.00 Mbit/s | nreads 35375
+Payload size: 1 | Total received: 1359915 samples, 12239235 bytes | Out of order: 0 samples Transfer rate: 171108.71 samples/s, 12.00 Mbit/s | nreads 25576
+Payload size: 1 | Total received: 1529567 samples, 13766103 bytes | Out of order: 0 samples Transfer rate: 169772.96 samples/s, 12.00 Mbit/s | nreads 52156
+Payload size: 1 | Total received: 1529567 samples, 13766103 bytes | Out of order: 0 samples Transfer rate: 169779.49 samples/s, 12.00 Mbit/s | nreads 52210
+Payload size: 1 | Total received: 1529578 samples, 13766202 bytes | Out of order: 0 samples Transfer rate: 169770.32 samples/s, 12.00 Mbit/s | nreads 52182
+Payload size: 1 | Total received: 1529584 samples, 13766256 bytes | Out of order: 0 samples Transfer rate: 169770.51 samples/s, 12.00 Mbit/s | nreads 46301
+Payload size: 1 | Total received: 1529605 samples, 13766445 bytes | Out of order: 0 samples Transfer rate: 169774.45 samples/s, 12.00 Mbit/s | nreads 50778
+Payload size: 1 | Total received: 1529648 samples, 13766832 bytes | Out of order: 0 samples Transfer rate: 169765.54 samples/s, 12.00 Mbit/s | nreads 31028
+Payload size: 1 | Total received: 1529673 samples, 13767057 bytes | Out of order: 0 samples Transfer rate: 169781.12 samples/s, 12.00 Mbit/s | nreads 51899
+Payload size: 1 | Total received: 1529689 samples, 13767201 bytes | Out of order: 0 samples Transfer rate: 169779.76 samples/s, 12.00 Mbit/s | nreads 39863
+Payload size: 1 | Total received: 1529690 samples, 13767210 bytes | Out of order: 0 samples Transfer rate: 169774.15 samples/s, 12.00 Mbit/s | nreads 28807
+*********************************
+
+NSUB 10
+
+*********************************
+listening ...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Cycles: 0 | PollingDelay: 0 | Partition: Throughput example
+Waiting for samples...
+Payload size: 1 | Total received: 161889 samples, 1457001 bytes | Out of order: 0 samples Transfer rate: 161888.84 samples/s, 11.00 Mbit/s | nreads 3280
+Payload size: 1 | Total received: 161891 samples, 1457019 bytes | Out of order: 0 samples Transfer rate: 161890.35 samples/s, 11.00 Mbit/s | nreads 3009
+Payload size: 1 | Total received: 161896 samples, 1457064 bytes | Out of order: 0 samples Transfer rate: 161892.44 samples/s, 11.00 Mbit/s | nreads 5219
+Payload size: 1 | Total received: 161897 samples, 1457073 bytes | Out of order: 0 samples Transfer rate: 161894.73 samples/s, 11.00 Mbit/s | nreads 5223
+Payload size: 1 | Total received: 161898 samples, 1457082 bytes | Out of order: 0 samples Transfer rate: 161897.19 samples/s, 11.00 Mbit/s | nreads 5220
+Payload size: 1 | Total received: 161899 samples, 1457091 bytes | Out of order: 0 samples Transfer rate: 161898.03 samples/s, 11.00 Mbit/s | nreads 5215
+Payload size: 1 | Total received: 161899 samples, 1457091 bytes | Out of order: 0 samples Transfer rate: 161896.09 samples/s, 11.00 Mbit/s | nreads 5192
+Payload size: 1 | Total received: 161901 samples, 1457109 bytes | Out of order: 0 samples Transfer rate: 161877.37 samples/s, 11.00 Mbit/s | nreads 4734
+Payload size: 1 | Total received: 161903 samples, 1457127 bytes | Out of order: 0 samples Transfer rate: 161877.42 samples/s, 11.00 Mbit/s | nreads 4108
+Payload size: 1 | Total received: 161929 samples, 1457361 bytes | Out of order: 0 samples Transfer rate: 161893.87 samples/s, 11.00 Mbit/s | nreads 5108
+Payload size: 1 | Total received: 320067 samples, 2880603 bytes | Out of order: 0 samples Transfer rate: 158160.88 samples/s, 11.00 Mbit/s | nreads 10298
+Payload size: 1 | Total received: 320070 samples, 2880630 bytes | Out of order: 0 samples Transfer rate: 158164.30 samples/s, 11.00 Mbit/s | nreads 10303
+Payload size: 1 | Total received: 320072 samples, 2880648 bytes | Out of order: 0 samples Transfer rate: 158161.66 samples/s, 11.00 Mbit/s | nreads 10299
+Payload size: 1 | Total received: 320074 samples, 2880666 bytes | Out of order: 0 samples Transfer rate: 158160.29 samples/s, 11.00 Mbit/s | nreads 10291
+Payload size: 1 | Total received: 320077 samples, 2880693 bytes | Out of order: 0 samples Transfer rate: 158162.97 samples/s, 11.00 Mbit/s | nreads 10255
+Payload size: 1 | Total received: 320080 samples, 2880720 bytes | Out of order: 0 samples Transfer rate: 158161.92 samples/s, 11.00 Mbit/s | nreads 9358
+Payload size: 1 | Total received: 320073 samples, 2880657 bytes | Out of order: 0 samples Transfer rate: 158140.88 samples/s, 11.00 Mbit/s | nreads 5882
+Payload size: 1 | Total received: 320091 samples, 2880819 bytes | Out of order: 0 samples Transfer rate: 158143.33 samples/s, 11.00 Mbit/s | nreads 6458
+Payload size: 1 | Total received: 320096 samples, 2880864 bytes | Out of order: 0 samples Transfer rate: 158149.60 samples/s, 11.00 Mbit/s | nreads 10099
+Payload size: 1 | Total received: 320099 samples, 2880891 bytes | Out of order: 0 samples Transfer rate: 158139.86 samples/s, 11.00 Mbit/s | nreads 8105
+Payload size: 1 | Total received: 481408 samples, 4332672 bytes | Out of order: 0 samples Transfer rate: 161331.32 samples/s, 11.00 Mbit/s | nreads 15496
+Payload size: 1 | Total received: 481409 samples, 4332681 bytes | Out of order: 0 samples Transfer rate: 161330.45 samples/s, 11.00 Mbit/s | nreads 15512
+Payload size: 1 | Total received: 481410 samples, 4332690 bytes | Out of order: 0 samples Transfer rate: 161328.97 samples/s, 11.00 Mbit/s | nreads 15510
+Payload size: 1 | Total received: 481412 samples, 4332708 bytes | Out of order: 0 samples Transfer rate: 161332.19 samples/s, 11.00 Mbit/s | nreads 15495
+Payload size: 1 | Total received: 481414 samples, 4332726 bytes | Out of order: 0 samples Transfer rate: 161331.51 samples/s, 11.00 Mbit/s | nreads 15446
+Payload size: 1 | Total received: 481415 samples, 4332735 bytes | Out of order: 0 samples Transfer rate: 161331.77 samples/s, 11.00 Mbit/s | nreads 14114
+Payload size: 1 | Total received: 481419 samples, 4332771 bytes | Out of order: 0 samples Transfer rate: 161313.09 samples/s, 11.00 Mbit/s | nreads 8810
+Payload size: 1 | Total received: 481420 samples, 4332780 bytes | Out of order: 0 samples Transfer rate: 161293.35 samples/s, 11.00 Mbit/s | nreads 9695
+Payload size: 1 | Total received: 481441 samples, 4332969 bytes | Out of order: 0 samples Transfer rate: 161299.84 samples/s, 11.00 Mbit/s | nreads 15206
+Payload size: 1 | Total received: 481442 samples, 4332978 bytes | Out of order: 0 samples Transfer rate: 161305.90 samples/s, 11.00 Mbit/s | nreads 12198
+Payload size: 1 | Total received: 640142 samples, 5761278 bytes | Out of order: 0 samples Transfer rate: 158732.10 samples/s, 11.00 Mbit/s | nreads 20555
+Payload size: 1 | Total received: 640144 samples, 5761296 bytes | Out of order: 0 samples Transfer rate: 158732.46 samples/s, 11.00 Mbit/s | nreads 20572
+Payload size: 1 | Total received: 640146 samples, 5761314 bytes | Out of order: 0 samples Transfer rate: 158735.37 samples/s, 11.00 Mbit/s | nreads 20575
+Payload size: 1 | Total received: 640147 samples, 5761323 bytes | Out of order: 0 samples Transfer rate: 158732.62 samples/s, 11.00 Mbit/s | nreads 20553
+Payload size: 1 | Total received: 640150 samples, 5761350 bytes | Out of order: 0 samples Transfer rate: 158732.35 samples/s, 11.00 Mbit/s | nreads 20484
+Payload size: 1 | Total received: 640157 samples, 5761413 bytes | Out of order: 0 samples Transfer rate: 158738.03 samples/s, 11.00 Mbit/s | nreads 18733
+Payload size: 1 | Total received: 640235 samples, 5762115 bytes | Out of order: 0 samples Transfer rate: 158775.67 samples/s, 11.00 Mbit/s | nreads 11663
+Payload size: 1 | Total received: 640256 samples, 5762304 bytes | Out of order: 0 samples Transfer rate: 158786.46 samples/s, 11.00 Mbit/s | nreads 12858
+Payload size: 1 | Total received: 640258 samples, 5762322 bytes | Out of order: 0 samples Transfer rate: 158779.53 samples/s, 11.00 Mbit/s | nreads 20173
+Payload size: 1 | Total received: 640258 samples, 5762322 bytes | Out of order: 0 samples Transfer rate: 158776.15 samples/s, 11.00 Mbit/s | nreads 16171
+Payload size: 1 | Total received: 798356 samples, 7185204 bytes | Out of order: 0 samples Transfer rate: 158195.17 samples/s, 11.00 Mbit/s | nreads 25674
+Payload size: 1 | Total received: 798384 samples, 7185456 bytes | Out of order: 0 samples Transfer rate: 158206.30 samples/s, 11.00 Mbit/s | nreads 25694
+Payload size: 1 | Total received: 798388 samples, 7185492 bytes | Out of order: 0 samples Transfer rate: 158206.72 samples/s, 11.00 Mbit/s | nreads 25698
+Payload size: 1 | Total received: 798392 samples, 7185528 bytes | Out of order: 0 samples Transfer rate: 158204.97 samples/s, 11.00 Mbit/s | nreads 25666
+Payload size: 1 | Total received: 798393 samples, 7185537 bytes | Out of order: 0 samples Transfer rate: 158203.61 samples/s, 11.00 Mbit/s | nreads 25595
+Payload size: 1 | Total received: 798395 samples, 7185555 bytes | Out of order: 0 samples Transfer rate: 158195.76 samples/s, 11.00 Mbit/s | nreads 23403
+Payload size: 1 | Total received: 798419 samples, 7185771 bytes | Out of order: 0 samples Transfer rate: 158175.62 samples/s, 11.00 Mbit/s | nreads 14572
+Payload size: 1 | Total received: 798446 samples, 7186014 bytes | Out of order: 0 samples Transfer rate: 158187.21 samples/s, 11.00 Mbit/s | nreads 25195
+Payload size: 1 | Total received: 798450 samples, 7186050 bytes | Out of order: 0 samples Transfer rate: 158191.84 samples/s, 11.00 Mbit/s | nreads 20188
+Payload size: 1 | Total received: 798468 samples, 7186212 bytes | Out of order: 0 samples Transfer rate: 158180.21 samples/s, 11.00 Mbit/s | nreads 16049
+Payload size: 1 | Total received: 955535 samples, 8599815 bytes | Out of order: 0 samples Transfer rate: 157176.49 samples/s, 11.00 Mbit/s | nreads 30800
+Payload size: 1 | Total received: 955553 samples, 8599977 bytes | Out of order: 0 samples Transfer rate: 157162.40 samples/s, 11.00 Mbit/s | nreads 30828
+Payload size: 1 | Total received: 955554 samples, 8599986 bytes | Out of order: 0 samples Transfer rate: 157159.56 samples/s, 11.00 Mbit/s | nreads 30824
+Payload size: 1 | Total received: 955556 samples, 8600004 bytes | Out of order: 0 samples Transfer rate: 157160.86 samples/s, 11.00 Mbit/s | nreads 30790
+Payload size: 1 | Total received: 955569 samples, 8600121 bytes | Out of order: 0 samples Transfer rate: 157159.50 samples/s, 11.00 Mbit/s | nreads 30703
+Payload size: 1 | Total received: 955607 samples, 8600463 bytes | Out of order: 0 samples Transfer rate: 157166.11 samples/s, 11.00 Mbit/s | nreads 28060
+Payload size: 1 | Total received: 955649 samples, 8600841 bytes | Out of order: 0 samples Transfer rate: 157187.60 samples/s, 11.00 Mbit/s | nreads 30222
+Payload size: 1 | Total received: 955655 samples, 8600895 bytes | Out of order: 0 samples Transfer rate: 157184.33 samples/s, 11.00 Mbit/s | nreads 19227
+Payload size: 1 | Total received: 955659 samples, 8600931 bytes | Out of order: 0 samples Transfer rate: 157180.11 samples/s, 11.00 Mbit/s | nreads 17466
+Payload size: 1 | Total received: 955678 samples, 8601102 bytes | Out of order: 0 samples Transfer rate: 157182.10 samples/s, 11.00 Mbit/s | nreads 24227
+Payload size: 1 | Total received: 1116961 samples, 10052649 bytes | Out of order: 0 samples Transfer rate: 161406.63 samples/s, 11.00 Mbit/s | nreads 36007
+Payload size: 1 | Total received: 1116962 samples, 10052658 bytes | Out of order: 0 samples Transfer rate: 161407.71 samples/s, 11.00 Mbit/s | nreads 36042
+Payload size: 1 | Total received: 1116992 samples, 10052928 bytes | Out of order: 0 samples Transfer rate: 161404.11 samples/s, 11.00 Mbit/s | nreads 36042
+Payload size: 1 | Total received: 1116994 samples, 10052946 bytes | Out of order: 0 samples Transfer rate: 161405.56 samples/s, 11.00 Mbit/s | nreads 36003
+Payload size: 1 | Total received: 1116995 samples, 10052955 bytes | Out of order: 0 samples Transfer rate: 161407.76 samples/s, 11.00 Mbit/s | nreads 35903
+Payload size: 1 | Total received: 1117017 samples, 10053153 bytes | Out of order: 0 samples Transfer rate: 161395.80 samples/s, 11.00 Mbit/s | nreads 32803
+Payload size: 1 | Total received: 1117070 samples, 10053630 bytes | Out of order: 0 samples Transfer rate: 161382.27 samples/s, 11.00 Mbit/s | nreads 35353
+Payload size: 1 | Total received: 1117071 samples, 10053639 bytes | Out of order: 0 samples Transfer rate: 161387.51 samples/s, 11.00 Mbit/s | nreads 28303
+Payload size: 1 | Total received: 1117088 samples, 10053792 bytes | Out of order: 0 samples Transfer rate: 161373.45 samples/s, 11.00 Mbit/s | nreads 22440
+Payload size: 1 | Total received: 1117131 samples, 10054179 bytes | Out of order: 0 samples Transfer rate: 161396.14 samples/s, 10.99 Mbit/s | nreads 20405
+Payload size: 1 | Total received: 1275055 samples, 11475495 bytes | Out of order: 0 samples Transfer rate: 158081.67 samples/s, 11.00 Mbit/s | nreads 41133
+Payload size: 1 | Total received: 1275056 samples, 11475504 bytes | Out of order: 0 samples Transfer rate: 158083.57 samples/s, 11.00 Mbit/s | nreads 41170
+Payload size: 1 | Total received: 1275105 samples, 11475945 bytes | Out of order: 0 samples Transfer rate: 158091.03 samples/s, 11.00 Mbit/s | nreads 41171
+Payload size: 1 | Total received: 1275105 samples, 11475945 bytes | Out of order: 0 samples Transfer rate: 158089.50 samples/s, 11.00 Mbit/s | nreads 41128
+Payload size: 1 | Total received: 1275106 samples, 11475954 bytes | Out of order: 0 samples Transfer rate: 158090.92 samples/s, 11.00 Mbit/s | nreads 41008
+Payload size: 1 | Total received: 1275152 samples, 11476368 bytes | Out of order: 0 samples Transfer rate: 158104.80 samples/s, 11.00 Mbit/s | nreads 37471
+Payload size: 1 | Total received: 1275184 samples, 11476656 bytes | Out of order: 0 samples Transfer rate: 158108.62 samples/s, 11.00 Mbit/s | nreads 40388
+Payload size: 1 | Total received: 1275205 samples, 11476845 bytes | Out of order: 0 samples Transfer rate: 158107.91 samples/s, 11.00 Mbit/s | nreads 32332
+Payload size: 1 | Total received: 1275246 samples, 11477214 bytes | Out of order: 0 samples Transfer rate: 158124.79 samples/s, 11.00 Mbit/s | nreads 25626
+Payload size: 1 | Total received: 1275251 samples, 11477259 bytes | Out of order: 0 samples Transfer rate: 158104.82 samples/s, 11.00 Mbit/s | nreads 23301
+Payload size: 1 | Total received: 1436442 samples, 12927978 bytes | Out of order: 0 samples Transfer rate: 161367.15 samples/s, 11.00 Mbit/s | nreads 46286
+Payload size: 1 | Total received: 1436444 samples, 12927996 bytes | Out of order: 0 samples Transfer rate: 161367.34 samples/s, 11.00 Mbit/s | nreads 46329
+Payload size: 1 | Total received: 1436479 samples, 12928311 bytes | Out of order: 0 samples Transfer rate: 161365.93 samples/s, 11.00 Mbit/s | nreads 46328
+Payload size: 1 | Total received: 1436481 samples, 12928329 bytes | Out of order: 0 samples Transfer rate: 161366.96 samples/s, 11.00 Mbit/s | nreads 46281
+Payload size: 1 | Total received: 1436497 samples, 12928473 bytes | Out of order: 0 samples Transfer rate: 161359.70 samples/s, 11.00 Mbit/s | nreads 46150
+Payload size: 1 | Total received: 1436540 samples, 12928860 bytes | Out of order: 0 samples Transfer rate: 161350.08 samples/s, 11.00 Mbit/s | nreads 42171
+Payload size: 1 | Total received: 1436550 samples, 12928950 bytes | Out of order: 0 samples Transfer rate: 161347.61 samples/s, 11.00 Mbit/s | nreads 45456
+Payload size: 1 | Total received: 1436588 samples, 12929292 bytes | Out of order: 0 samples Transfer rate: 161338.13 samples/s, 11.00 Mbit/s | nreads 28825
+Payload size: 1 | Total received: 1436606 samples, 12929454 bytes | Out of order: 0 samples Transfer rate: 161341.63 samples/s, 11.00 Mbit/s | nreads 36377
+Payload size: 1 | Total received: 1436650 samples, 12929850 bytes | Out of order: 0 samples Transfer rate: 161340.27 samples/s, 11.00 Mbit/s | nreads 26207

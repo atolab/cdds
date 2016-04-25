@@ -1,0 +1,21 @@
+#!/bin/bash
+
+for n in 1 2 3 4 5 6 7 8 9 10 ; do
+    echo "*********************************"
+    echo
+    echo "NSUB $n"
+    echo
+    echo "*********************************"
+    k=0
+    gen/vdds-server $1 & pids=$!
+    sleep 1
+    while [ $k -lt $n ] ; do
+        k=`expr $k + 1`
+        gen/rpc-subscriber & pids="$pids $!"
+    done
+    sleep 2
+    gen/publisher 1 & pids="$pids $!"
+    sleep 10
+    kill -9 $pids
+    sleep 2
+done

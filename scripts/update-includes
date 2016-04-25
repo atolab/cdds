@@ -1,0 +1,32 @@
+#!/usr/bin/perl -w
+
+open FH, "find include -name \*.h |" or die "can't find headers";
+while (<FH>) {
+  chomp;
+  if ($_ =~ /^include\/(.*)\/([^\/]+)$/) {
+    die "$_: duplicate" if exists $h{$2};
+    $h{$2} = "$1/$2";
+  }
+}
+close FH;
+
+open FH, "find include -name '*.[ch]' |" or die "can't find sources";
+while (<FH>) {
+  chomp;
+  my $src = $_;
+  my $tmp = "$src.bak";
+  die "can't rename $src to $tmp" unless rename $src, $tmp;
+  open SRC, "< $tmp" or die "can't open source $tmp";
+  open DST, "> $src" or die "can't open destination $src";
+  while (<SRC>) {
+    if (!/^(\s*#\s*include)\s+"([^\/]+\.h)"(.*)/ || not exists $h{$2}) {
+      print DST $_;
+    } else {
+      print DST "$1 \"$h{$2}\"$3\n";
+    }
+  }
+  close DST;
+  close SRC;
+  unlink $tmp;
+}
+close FH;
