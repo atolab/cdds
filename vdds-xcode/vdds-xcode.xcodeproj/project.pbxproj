@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		03C96E9F1CCE5B8D0012F15D /* libvdds.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 03E6CEA91CCE0CA400D73982 /* libvdds.dylib */; };
+		03C96EA51CCE5B9F0012F15D /* server2.c in Sources */ = {isa = PBXBuildFile; fileRef = 03C96E9A1CCE5B800012F15D /* server2.c */; };
+		03C96EA71CCE5CD20012F15D /* libevent_pthreads-2.0.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C96EA61CCE5CD20012F15D /* libevent_pthreads-2.0.5.dylib */; };
+		03C96EA91CCF6D030012F15D /* libevent-2.0.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C96EA81CCF6D030012F15D /* libevent-2.0.5.dylib */; };
 		03E6CFD01CCE0DD400D73982 /* ddsi_ser.c in Sources */ = {isa = PBXBuildFile; fileRef = 03E6CF481CCE0DAB00D73982 /* ddsi_ser.c */; };
 		03E6CFD11CCE0DD400D73982 /* ddsi_ssl.c in Sources */ = {isa = PBXBuildFile; fileRef = 03E6CF491CCE0DAB00D73982 /* ddsi_ssl.c */; };
 		03E6CFD21CCE0DD400D73982 /* ddsi_tcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 03E6CF4A1CCE0DAB00D73982 /* ddsi_tcp.c */; };
@@ -160,6 +164,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		03C96EA01CCE5B8D0012F15D /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		03E6D0511CCE116900D73982 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -244,6 +257,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		03C96E9A1CCE5B800012F15D /* server2.c */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.c.c; path = server2.c; sourceTree = "<group>"; };
+		03C96EA41CCE5B8D0012F15D /* vdds-server2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "vdds-server2"; sourceTree = BUILT_PRODUCTS_DIR; };
+		03C96EA61CCE5CD20012F15D /* libevent_pthreads-2.0.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libevent_pthreads-2.0.5.dylib"; path = "../../../../../usr/local/Cellar/libevent/2.0.22/lib/libevent_pthreads-2.0.5.dylib"; sourceTree = "<group>"; };
+		03C96EA81CCF6D030012F15D /* libevent-2.0.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libevent-2.0.5.dylib"; path = "../../../../../usr/local/Cellar/libevent/2.0.22/lib/libevent-2.0.5.dylib"; sourceTree = "<group>"; };
 		03E6CEA91CCE0CA400D73982 /* libvdds.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libvdds.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		03E6CEB11CCE0CCC00D73982 /* libvdds-stubs.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = "libvdds-stubs.dylib"; sourceTree = BUILT_PRODUCTS_DIR; };
 		03E6CEB71CCE0DAB00D73982 /* RoundTrip.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = RoundTrip.c; sourceTree = "<group>"; };
@@ -494,7 +511,7 @@
 		03E6CFC91CCE0DAB00D73982 /* ut_hopscotch.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ut_hopscotch.c; sourceTree = "<group>"; };
 		03E6CFCA1CCE0DAB00D73982 /* ut_thread_pool.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ut_thread_pool.c; sourceTree = "<group>"; };
 		03E6CFCB1CCE0DAB00D73982 /* ut_xmlparser.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ut_xmlparser.c; sourceTree = "<group>"; };
-		03E6CFCD1CCE0DAB00D73982 /* server.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = server.c; sourceTree = "<group>"; };
+		03E6CFCD1CCE0DAB00D73982 /* server.c */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.c.c; path = server.c; sourceTree = "<group>"; };
 		03E6CFCE1CCE0DAB00D73982 /* server.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = server.h; sourceTree = "<group>"; };
 		03E6CFCF1CCE0DAB00D73982 /* vdds-stubs.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "vdds-stubs.c"; sourceTree = "<group>"; };
 		03E6D0531CCE116900D73982 /* vdds-server */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "vdds-server"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -509,6 +526,16 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		03C96E9E1CCE5B8D0012F15D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				03C96EA91CCF6D030012F15D /* libevent-2.0.5.dylib in Frameworks */,
+				03C96EA71CCE5CD20012F15D /* libevent_pthreads-2.0.5.dylib in Frameworks */,
+				03C96E9F1CCE5B8D0012F15D /* libvdds.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		03E6CEA61CCE0CA400D73982 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -601,6 +628,8 @@
 		03E6CE951CCE0C6B00D73982 = {
 			isa = PBXGroup;
 			children = (
+				03C96EA81CCF6D030012F15D /* libevent-2.0.5.dylib */,
+				03C96EA61CCE5CD20012F15D /* libevent_pthreads-2.0.5.dylib */,
 				03E6CEC11CCE0DAB00D73982 /* include */,
 				03E6CF461CCE0DAB00D73982 /* src */,
 				03E6CFCC1CCE0DAB00D73982 /* vdds-server */,
@@ -624,6 +653,7 @@
 				03E6D0971CCE123000D73982 /* rpc-subscriber */,
 				03E6D0A21CCE123500D73982 /* rpc-ping */,
 				03E6D0AD1CCE123A00D73982 /* rpc-pong */,
+				03C96EA41CCE5B8D0012F15D /* vdds-server2 */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -637,6 +667,7 @@
 				03E6CEBF1CCE0DAB00D73982 /* publisher.c */,
 				03E6CEC01CCE0DAB00D73982 /* subscriber.c */,
 			);
+			indentWidth = 4;
 			name = examples;
 			path = ../examples;
 			sourceTree = "<group>";
@@ -887,6 +918,7 @@
 				03E6CF441CCE0DAB00D73982 /* rpc-publisher.c */,
 				03E6CF451CCE0DAB00D73982 /* rpc-subscriber.c */,
 			);
+			indentWidth = 4;
 			name = "rpc-examples";
 			path = "../rpc-examples";
 			sourceTree = "<group>";
@@ -1111,10 +1143,12 @@
 		03E6CFCC1CCE0DAB00D73982 /* vdds-server */ = {
 			isa = PBXGroup;
 			children = (
+				03C96E9A1CCE5B800012F15D /* server2.c */,
 				03E6CFCD1CCE0DAB00D73982 /* server.c */,
 				03E6CFCE1CCE0DAB00D73982 /* server.h */,
 				03E6CFCF1CCE0DAB00D73982 /* vdds-stubs.c */,
 			);
+			indentWidth = 4;
 			name = "vdds-server";
 			path = "../vdds-server";
 			sourceTree = "<group>";
@@ -1139,6 +1173,23 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		03C96E9B1CCE5B8D0012F15D /* vdds-server2 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 03C96EA11CCE5B8D0012F15D /* Build configuration list for PBXNativeTarget "vdds-server2" */;
+			buildPhases = (
+				03C96E9C1CCE5B8D0012F15D /* Sources */,
+				03C96E9E1CCE5B8D0012F15D /* Frameworks */,
+				03C96EA01CCE5B8D0012F15D /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "vdds-server2";
+			productName = "vdds-server";
+			productReference = 03C96EA41CCE5B8D0012F15D /* vdds-server2 */;
+			productType = "com.apple.product-type.tool";
+		};
 		03E6CEA81CCE0CA400D73982 /* vdds */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 03E6CEAA1CCE0CA400D73982 /* Build configuration list for PBXNativeTarget "vdds" */;
@@ -1393,11 +1444,20 @@
 				03E6D0961CCE123000D73982 /* rpc-subscriber */,
 				03E6D0A11CCE123500D73982 /* rpc-ping */,
 				03E6D0AC1CCE123A00D73982 /* rpc-pong */,
+				03C96E9B1CCE5B8D0012F15D /* vdds-server2 */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		03C96E9C1CCE5B8D0012F15D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				03C96EA51CCE5B9F0012F15D /* server2.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		03E6CEA51CCE0CA400D73982 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1619,6 +1679,34 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		03C96EA21CCE5B8D0012F15D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				HEADER_SEARCH_PATHS = /usr/local/include;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/libevent/2.0.22/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "../include ../examples/generated";
+			};
+			name = Debug;
+		};
+		03C96EA31CCE5B8D0012F15D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				HEADER_SEARCH_PATHS = /usr/local/include;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/libevent/2.0.22/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "../include ../examples/generated";
+			};
+			name = Release;
+		};
 		03E6CEA01CCE0C6B00D73982 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1891,6 +1979,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		03C96EA11CCE5B8D0012F15D /* Build configuration list for PBXNativeTarget "vdds-server2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				03C96EA21CCE5B8D0012F15D /* Debug */,
+				03C96EA31CCE5B8D0012F15D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		03E6CE991CCE0C6B00D73982 /* Build configuration list for PBXProject "vdds-xcode" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1907,6 +2004,7 @@
 				03E6CEAC1CCE0CA400D73982 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E6CEB21CCE0CCC00D73982 /* Build configuration list for PBXNativeTarget "vdds-stubs" */ = {
 			isa = XCConfigurationList;
@@ -1915,6 +2013,7 @@
 				03E6CEB41CCE0CCC00D73982 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E6D0571CCE116900D73982 /* Build configuration list for PBXNativeTarget "vdds-server" */ = {
 			isa = XCConfigurationList;
@@ -1923,6 +2022,7 @@
 				03E6D0591CCE116900D73982 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E6D0641CCE121300D73982 /* Build configuration list for PBXNativeTarget "publisher" */ = {
 			isa = XCConfigurationList;
@@ -1931,6 +2031,7 @@
 				03E6D0661CCE121300D73982 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E6D06F1CCE121A00D73982 /* Build configuration list for PBXNativeTarget "subscriber" */ = {
 			isa = XCConfigurationList;
@@ -1939,6 +2040,7 @@
 				03E6D0711CCE121A00D73982 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E6D07A1CCE121F00D73982 /* Build configuration list for PBXNativeTarget "ping" */ = {
 			isa = XCConfigurationList;
@@ -1947,6 +2049,7 @@
 				03E6D07C1CCE121F00D73982 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E6D0851CCE122400D73982 /* Build configuration list for PBXNativeTarget "pong" */ = {
 			isa = XCConfigurationList;
@@ -1955,6 +2058,7 @@
 				03E6D0871CCE122400D73982 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E6D0901CCE122A00D73982 /* Build configuration list for PBXNativeTarget "rpc-publisher" */ = {
 			isa = XCConfigurationList;
@@ -1963,6 +2067,7 @@
 				03E6D0921CCE122A00D73982 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E6D09B1CCE123000D73982 /* Build configuration list for PBXNativeTarget "rpc-subscriber" */ = {
 			isa = XCConfigurationList;
@@ -1971,6 +2076,7 @@
 				03E6D09D1CCE123000D73982 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E6D0A61CCE123500D73982 /* Build configuration list for PBXNativeTarget "rpc-ping" */ = {
 			isa = XCConfigurationList;
@@ -1979,6 +2085,7 @@
 				03E6D0A81CCE123500D73982 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E6D0B11CCE123A00D73982 /* Build configuration list for PBXNativeTarget "rpc-pong" */ = {
 			isa = XCConfigurationList;
@@ -1987,6 +2094,7 @@
 				03E6D0B31CCE123A00D73982 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

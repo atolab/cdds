@@ -49,6 +49,11 @@
 			<key>orderHint</key>
 			<integer>3</integer>
 		</dict>
+		<key>vdds-server2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>12</integer>
+		</dict>
 		<key>vdds-stubs.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -67,6 +72,11 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>03C96E9B1CCE5B8D0012F15D</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>03E6CE9D1CCE0C6B00D73982</key>
 		<dict>
 			<key>primary</key>

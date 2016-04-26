@@ -160,6 +160,20 @@
                ReferencedContainer = "container:vdds-xcode.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "03C96E9B1CCE5B8D0012F15D"
+               BuildableName = "vdds-server2"
+               BlueprintName = "vdds-server2"
+               ReferencedContainer = "container:vdds-xcode.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

@@ -55,9 +55,11 @@ int main (int argc, char **argv)
   dds_time_t deltaTv;
   ThroughputModule_DataType sample;
   dds_publication_matched_status_t pms;
-  const char *pubParts[1];
+  const char *parts[1];
   dds_qos_t *pubQos;
   dds_qos_t *dwQos;
+  int localReaders = 0;
+  dds_entity_t rds[16];
 
   /* Register handler for Ctrl-C */
 
@@ -106,9 +108,19 @@ int main (int argc, char **argv)
   {
     partitionName = argv[5]; /* The name of the partition */
   }
+  if (argc > 6)
+  {
+    localReaders = atoi(argv[6]);
+    if (localReaders < 0 || localReaders > (int)(sizeof(rds)/sizeof(rds[0])))
+    {
+      printf("number of local readers out of range\n");
+      return EXIT_FAILURE;
+    }
+  }
 
   printf ("payloadSize: %i bytes burstInterval: %u ms burstSize: %d timeOut: %u seconds partitionName: %s\n",
     payloadSize, burstInterval, burstSize, timeOut, partitionName);
+  parts[0] = partitionName;
 
   /* A domain participant is created for the default domain. */
 
@@ -121,11 +133,27 @@ int main (int argc, char **argv)
   status = dds_topic_create (participant, &topic, &ThroughputModule_DataType_desc, "Throughput", NULL, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
+  if (localReaders)
+  {
+    dds_qos_t *qos = dds_qos_create ();
+    dds_entity_t sub;
+    dds_qset_partition (qos, 1, parts);
+    status = dds_subscriber_create (participant, &sub, qos, NULL);
+    DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+    dds_qos_delete (qos);
+    qos = dds_qos_create ();
+    for (i = 0; i < localReaders; i++)
+    {
+      status = dds_reader_create (sub, &rds[i], topic, qos, NULL);
+      DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+    }
+    dds_qos_delete (qos);
+  }
+  
   /* A publisher is created on the domain participant. */
 
   pubQos = dds_qos_create ();
-  pubParts[0] = partitionName;
-  dds_qset_partition (pubQos, 1, pubParts);
+  dds_qset_partition (pubQos, 1, parts);
   status = dds_publisher_create (participant, &publisher, pubQos, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (pubQos);
@@ -158,21 +186,24 @@ int main (int argc, char **argv)
   /* Wait until have a reader */
 
   pubStart = dds_time ();
-  do
+  if (!localReaders)
   {
-    dds_sleepfor (DDS_MSECS (100));
-    status = dds_get_publication_matched_status (writer, &pms);
-    if (timeOut)
+    do
     {
-      now = dds_time ();
-      deltaTv = now - pubStart;
-      if ((deltaTv) > DDS_SECS (timeOut))
+      dds_sleepfor (DDS_MSECS (100));
+      status = dds_get_publication_matched_status (writer, &pms);
+      if (timeOut)
       {
-        timedOut = true;
+        now = dds_time ();
+        deltaTv = now - pubStart;
+        if ((deltaTv) > DDS_SECS (timeOut))
+        {
+          timedOut = true;
+        }
       }
     }
+    while (pms.total_count == 0 && !timedOut);
   }
-  while (pms.total_count == 0 && !timedOut);
 
   /* Register the sample instance and write samples repeatedly or until time out */
   {
@@ -239,6 +270,19 @@ int main (int argc, char **argv)
     {
       printf ("Timed out, %llu samples written.\n", (long long) sample.count);
     }
+  }
+
+  for (i = 0; i < localReaders; i++)
+  {
+    ThroughputModule_DataType s;
+    void *ms[1] = { &s };
+    dds_sample_info_t is[1];
+    int n = dds_take (rds[i], ms, 1, is, 0);
+    DDS_ERR_CHECK (n, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+    if (n == 0)
+      s.count = 0;
+    if (s.count + 1 != sample.count)
+      printf("reader: %llu, writer: %llu - huh?\n", (long long) s.count + 1, (long long) sample.count);
   }
 
   /* Cleanup */

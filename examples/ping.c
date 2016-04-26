@@ -201,18 +201,6 @@ int main (int argc, char *argv[])
   pubQos = dds_qos_create ();
   dds_qset_partition (pubQos, 1, pubPartitions);
 
-  status = dds_publisher_create (participant, &publisher, pubQos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  dds_qos_delete (pubQos);
-
-  /* A DDS_DataWriter is created on the Publisher & Topic with a modified Qos. */
-  dwQos = dds_qos_create ();
-  dds_qset_reliability (dwQos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
-  dds_qset_writer_data_lifecycle (dwQos, false);
-  status = dds_writer_create (publisher, &writer, topic, dwQos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  dds_qos_delete (dwQos);
-
   /* A DDS_Subscriber is created on the domain participant. */
   subQos = dds_qos_create ();
   dds_qset_partition (subQos, 1, subPartitions);
@@ -227,6 +215,18 @@ int main (int argc, char *argv[])
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (drQos);
 
+  status = dds_publisher_create (participant, &publisher, pubQos, NULL);
+  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  dds_qos_delete (pubQos);
+
+  /* A DDS_DataWriter is created on the Publisher & Topic with a modified Qos. */
+  dwQos = dds_qos_create ();
+  dds_qset_reliability (dwQos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
+  dds_qset_writer_data_lifecycle (dwQos, false);
+  status = dds_writer_create (publisher, &writer, topic, dwQos, NULL);
+  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  dds_qos_delete (dwQos);
+  
   terminated = dds_guardcondition_create ();
   waitSet = dds_waitset_create ();
   readCond = dds_readcondition_create (reader, DDS_ANY_STATE);

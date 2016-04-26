@@ -67,7 +67,7 @@ static int dds_waitset_wait_impl_locked
     }
     else if (abstimeout == DDS_NEVER)
     {
-      if (waitset->trp_fd >= 0)
+      if (waitset->cont)
         break;
       waitset->timeout_counter++;
       os_condWait (&waitset->cv, &waitset->conds_lock);
@@ -86,7 +86,7 @@ static int dds_waitset_wait_impl_locked
       /* Do not assume the abstraction layer can handle timeouts >=
          2^31-1, given that we have at least some implementations
          that define os_timeSec as a 32-bit integer */
-      if (waitset->trp_fd >= 0)
+      if (waitset->cont)
         break;
       waitset->timeout_counter++;
       dds_duration_t dt = abstimeout - tnow;
@@ -106,12 +106,11 @@ static int dds_waitset_wait_impl_locked
     }
   }
 
-  if (waitset->trp_fd >= 0 && ret >= 0)
+  if (ret >= 0)
   {
-    waitset->trp_hdr.status = ret;
-    if (write(waitset->trp_fd, &waitset->trp_hdr, sizeof(waitset->trp_hdr) + ret * sizeof(waitset->trp_xs[0])) != sizeof(waitset->trp_hdr) + ret * sizeof(waitset->trp_xs[0]))
-      abort();
-    waitset->trp_fd = -1;
+    if (waitset->cont)
+      waitset->cont(waitset, waitset+1, ret);
+    waitset->trp_xs = NULL;
   }
   return ret;
 }
@@ -119,21 +118,19 @@ static int dds_waitset_wait_impl_locked
 static int dds_waitset_wait_impl
 (
  dds_waitset *waitset, dds_attach_t *xs, size_t nxs,
- const dds_time_t abstimeout, dds_time_t tnow,
- int trp_fd
+ const dds_time_t abstimeout, dds_time_t tnow
  )
 {
   int ret;
 
   assert(waitset);
-  assert(nxs <= DDS_WAITSET_MAX);
-  assert(trp_fd == -1 || xs == waitset->trp_xs);
   os_mutexLock (&waitset->conds_lock);
-  assert(waitset->trp_fd == -1);
-  waitset->trp_fd = trp_fd;
+  assert(waitset->trp_xs == NULL);
+  waitset->trp_xs = xs;
   waitset->trp_nxs = nxs;
   waitset->trp_abstimeout = abstimeout;
-  ret = dds_waitset_wait_impl_locked(waitset, xs, nxs, abstimeout, tnow);
+  if ((ret = dds_waitset_wait_impl_locked(waitset, xs, nxs, abstimeout, tnow)) < 0 && waitset->block)
+    waitset->block(waitset, waitset+1, abstimeout);
   os_mutexUnlock (&waitset->conds_lock);
   return ret;
 }
@@ -227,14 +224,25 @@ int dds_waitset_remove_condition_locked (dds_waitset * ws, dds_condition * cond)
   return DDS_RETCODE_OK;
 }
 
-dds_waitset_t dds_waitset_create (void)
+dds_waitset_t dds_waitset_create_cont (void (*block) (dds_waitset_t ws, void *arg, dds_time_t abstimeout), void (*cont) (dds_waitset_t ws, void *arg, int ret), size_t contsize)
 {
-  dds_waitset * waitset = dds_alloc (sizeof (*waitset));
+  dds_waitset * waitset = dds_alloc (sizeof (*waitset) + contsize);
   os_mutexInit (&waitset->conds_lock, NULL);
   os_condInit (&waitset->cv, &waitset->conds_lock, NULL);
-  waitset->trp_fd = -1;
-  waitset->trp_hdr.code = 5;
+  waitset->block = block;
+  waitset->cont = cont;
+  waitset->trp_xs = NULL;
   return waitset;
+}
+
+void *dds_waitset_get_cont (dds_waitset_t ws)
+{
+  return ws+1;
+}
+
+dds_waitset_t dds_waitset_create (void)
+{
+  return dds_waitset_create_cont(0, 0, 0);
 }
 
 int dds_waitset_delete (dds_waitset_t ws)
@@ -248,7 +256,7 @@ int dds_waitset_delete (dds_waitset_t ws)
   {
     os_mutexLock (&gv.attach_lock);
     os_mutexLock (&ws->conds_lock);
-    if (ws->timeout_counter > 0 || ws->trp_fd >= 0)
+    if (ws->timeout_counter > 0)
     {
       ret = DDS_ERRNO (DDS_RETCODE_PRECONDITION_NOT_MET, DDS_MOD_WAITSET, DDS_ERR_M5);
     }
@@ -370,30 +378,23 @@ int dds_waitset_detach (dds_waitset_t ws, dds_condition_t cond)
 
 int dds_waitset_wait_until (dds_waitset_t ws, dds_attach_t *xs, size_t nxs, dds_time_t abstimeout)
 {
-  return dds_waitset_wait_impl (ws, xs, nxs, abstimeout, dds_time (), -1);
+  return dds_waitset_wait_impl (ws, xs, nxs, abstimeout, dds_time ());
 }
 
 int dds_waitset_wait (dds_waitset_t ws, dds_attach_t *xs, size_t nxs, dds_time_t reltimeout)
 {
   dds_time_t tnow = dds_time ();
   dds_time_t abstimeout = (DDS_INFINITY - reltimeout <= tnow) ? DDS_NEVER : (tnow + reltimeout);
-  return dds_waitset_wait_impl (ws, xs, nxs, abstimeout, tnow, -1);
-}
-
-int dds_waitset_wait_async (dds_waitset_t ws, size_t nxs, dds_time_t reltimeout, int trp_fd)
-{
-  dds_time_t tnow = dds_time ();
-  dds_time_t abstimeout = (DDS_INFINITY - reltimeout <= tnow) ? DDS_NEVER : (tnow + reltimeout);
-  assert(nxs <= DDS_WAITSET_MAX);
-  return dds_waitset_wait_impl (ws, ws->trp_xs, nxs, abstimeout, tnow, trp_fd);
+  return dds_waitset_wait_impl (ws, xs, nxs, abstimeout, tnow);
 }
 
 void dds_waitset_signal (dds_waitset * ws)
 {
   os_mutexLock (&ws->conds_lock);
   ws->triggered++;
-  os_condBroadcast (&ws->cv);
-  if (ws->trp_fd >= 0)
+  if (ws->block == 0)
+    os_condBroadcast (&ws->cv);
+  else if (ws->trp_xs) /* note: signal is called also when no-one is waiting */
     dds_waitset_wait_impl_locked(ws, ws->trp_xs, ws->trp_nxs, ws->trp_abstimeout, dds_time());
   os_mutexUnlock (&ws->conds_lock);
 }

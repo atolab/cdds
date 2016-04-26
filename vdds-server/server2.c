@@ -16,6 +16,12 @@
 #include <execinfo.h>
 #include <inttypes.h>
 
+#include <event2/event.h>
+#include <event2/thread.h>
+#include <event2/listener.h>
+#include <event2/buffer.h>
+#include <event2/bufferevent.h>
+
 #include "os/os.h"
 #include "dds.h"
 #include "server.h"
@@ -26,106 +32,16 @@
 
 #define LOCKFILE_NAME "/tmp/vdds-server-lock"
 
-#define IOBUF_SIZE 4096
-struct iobuf1 {
-    size_t rp, wp;
-    char buf[4096];
-};
-
-struct iobuf {
-    int fd;
-    struct iobuf1 r, w;
-};
-
-int ibread(struct iobuf *b, void *dst, size_t n)
-{
-    size_t av = b->r.wp - b->r.rp;
-    if (av == 0) {
-        ssize_t nrd;
-        if ((nrd = read(b->fd, b->r.buf, sizeof(b->r.buf))) <= 0) {
-            return -1;
-        }
-        b->r.rp = 0;
-        b->r.wp = (size_t)nrd;
-        av = b->r.wp - b->r.rp;
-    }
-    if (n <= av) {
-        memcpy(dst, b->r.buf + b->r.rp, n);
-        b->r.rp += n;
-        return 1;
-    } else {
-        memcpy(dst, b->r.buf + b->r.rp, av);
-        b->r.rp += av;
-        return ibread(b, (char *)dst + av, n - av);
-    }
-}
-
-int ibavail(const struct iobuf *b)
-{
-    return b->r.rp < b->r.wp;
-}
-
-int ibwrite(struct iobuf *b, const void *src, size_t n)
-{
-    size_t av = sizeof(b->w.buf) - b->w.wp;
-    if (av == 0) {
-        ssize_t nwr;
-        if ((nwr = write(b->fd, b->w.buf + b->w.rp, b->w.wp - b->w.rp)) <= 0) {
-            return -1;
-        }
-        b->w.rp += (size_t)nwr;
-        if (b->w.rp < b->w.wp) {
-            memmove(b->w.buf, b->w.buf + b->w.rp, b->w.wp - b->w.rp);
-            b->w.wp -= b->w.rp;
-            b->w.rp = 0;
-        } else {
-            b->w.rp = b->w.wp = 0;
-        }
-        av = sizeof(b->w.buf) - b->w.wp;
-    }
-    if (n <= av) {
-        memcpy(b->w.buf + b->w.wp, src, n);
-        b->w.wp += n;
-        return 1;
-    } else {
-        memcpy(b->w.buf + b->w.wp, src, av);
-        b->w.wp += av;
-        return ibwrite(b, (const char *)src + av, n - av);
-    }
-}
-
-int ibflush(struct iobuf *b)
-{
-    while (b->w.rp < b->w.wp) {
-        ssize_t nwr;
-        if ((nwr = write(b->fd, b->w.buf + b->w.rp, b->w.wp - b->w.rp)) <= 0) {
-            return -1;
-        }
-        b->w.rp += (size_t)nwr;
-    }
-    b->w.rp = b->w.wp = 0;
-    return 1;
-}
-
 struct client {
-    struct iobuf ib;
+    struct bufferevent *bev;
+    int (*dispatch) (struct client *cl, const struct reqhdr *req);
     pid_t pid;
     dds_entity_t ppant;
-    int (*dispatch) (struct client *cl, const struct reqhdr *req);
-    struct thread_state1 *server_tid;
-    struct client *next;
 };
 
-sig_atomic_t terminate = 0;
-os_mutex clients_lock;
-os_cond clients_cond;
-struct client *clients = NULL;
-struct client *dead_clients = NULL;
-
-void sigh(int sig __attribute__ ((unused)))
-{
-    terminate = 1;
-}
+struct admin {
+    char dummy;
+};
 
 int grab_lock_file(void)
 {
@@ -184,54 +100,13 @@ int rm_lock_file(void)
     return 0;
 }
 
-#if 0
-int make_shmem(void **paddr, size_t size)
-{
-    char template[] = "/tmp/vdds.XXXXXX";
-    struct stat statbuf;
-    int fd;
-    void *addr;
-    if ((fd = mkstemp(template)) == -1) {
-        perror("mkstemp");
-        goto err_mkstemp;
-    }
-    if (unlink(template) == -1) {
-        perror("unlink");
-        goto err_unlink;
-    }
-    if (fstat(fd, &statbuf) == -1) {
-        perror("fstat");
-        goto err_fstat;
-    }
-    if (statbuf.st_nlink != 0) {
-        fprintf(stderr, "Filesystem sill has links to the inode? Someone must be playing games\n");
-        goto err_fstat;
-    }
-    if ((ftruncate(fd, size)) == -1) {
-        perror("ftruncate");
-        goto err_ftruncate;
-    }
-    addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (addr == (void *) -1) {
-        perror("mmap");
-        goto err_mmap;
-    }
-    *paddr = addr;
-    return fd;
-err_mmap:
-err_ftruncate:
-err_fstat:
-err_unlink:
-    close(fd);
-err_mkstemp:
-    *paddr = NULL;
-    return -1;
-}
-#endif
-
 int reply(struct client *cl, const struct rephdr *rep)
 {
-    return ibwrite(&cl->ib, rep, sizeof(*rep));
+    if (bufferevent_write(cl->bev, rep, sizeof(*rep)) == -1) {
+        abort();
+    }
+    bufferevent_flush(cl->bev, EV_WRITE, BEV_FLUSH);
+    return 1;
 }
 
 static int protocol_error(int rc)
@@ -247,7 +122,7 @@ int dispatch_unbound(struct client *cl, const struct reqhdr *req)
             return -1;
         }
         cl->pid = req->u.hello.pid;
-        printf("sock%d: pid %d\n", cl->ib.fd, (int)cl->pid);
+        printf("sock%d: pid %d\n", bufferevent_getfd(cl->bev), (int)cl->pid);
         return 0;
     } else {
         return -1;
@@ -256,13 +131,13 @@ int dispatch_unbound(struct client *cl, const struct reqhdr *req)
 
 int rd_blob(struct client *cl, size_t *sz, void **blob)
 {
-    if (ibread(&cl->ib, sz, sizeof(*sz)) < 0) {
-        return -1;
+    if (bufferevent_read(cl->bev, sz, sizeof(*sz)) != sizeof(*sz)) {
+        abort();
     }
     *blob = os_malloc(*sz);
-    if (ibread(&cl->ib, *blob, *sz) < 0) {
+    if (bufferevent_read(cl->bev, *blob, *sz) != *sz) {
         os_free(*blob);
-        return -1;
+        abort();
     }
     return 0;
 }
@@ -427,12 +302,16 @@ int db_take(struct client *cl, const struct reqhdr *req)
         goto out;
     }
     if (rep.status > 0) {
-        if (ibwrite(&cl->ib, si, sizeof(*si) * rep.status) < 0) {
+        if (bufferevent_write(cl->bev, si, sizeof(*si) * rep.status) == -1) {
+            rc = -1;
             goto out;
         }
         while (i < rep.status) {
             size_t sz = ddsi_serdata_size(buf[i]);
-            if (ibwrite(&cl->ib, &sz, sizeof(sz)) < 0 || ibwrite(&cl->ib, &buf[i]->hdr, sz) < 0) {
+            if (bufferevent_write(cl->bev, &sz, sizeof(sz)) == -1 ||
+                bufferevent_write(cl->bev, &buf[i]->hdr, sz) == -1 ||
+                bufferevent_flush(cl->bev, EV_WRITE, BEV_FLUSH) < 0) {
+                rc = -1;
                 goto out;
             }
             ddsi_serdata_unref(buf[i]);
@@ -446,31 +325,34 @@ out:
     }
     os_free(buf);
     os_free(si);
+    if (rc < 0) abort();
     return rc;
 }
 
 #define WAITSET_MAX 64
 struct dds_waitset_cont {
-  int trp_fd;
-  /* memory layout of trp_hdr + trp_xs assumed to match excepted reply in client */
-  struct {
-    int code; /* = 5, see server.h */
-    int status;
-    void *pad; /* entity pointer */
-  } trp_hdr;
-  dds_attach_t trp_xs[WAITSET_MAX];
+    struct bufferevent *bev;
+    /* memory layout of trp_hdr + trp_xs assumed to match excepted reply in client */
+    struct {
+        int code; /* = 5, see server.h */
+        int status;
+        void *pad; /* entity pointer */
+    } trp_hdr;
+    dds_attach_t trp_xs[WAITSET_MAX];
 };
 
 static void waitset_cont(dds_waitset_t ws, void *arg, int ret)
 {
     struct dds_waitset_cont *c = arg;
     assert(ret >= 0);
-    assert(c->trp_fd >= 0);
+    assert(c->bev != NULL);
     c->trp_hdr.status = ret;
-    if (write(c->trp_fd, &c->trp_hdr, sizeof(c->trp_hdr) + ret * sizeof(c->trp_xs[0])) != sizeof(c->trp_hdr) + ret * sizeof(c->trp_xs[0])) {
+    if (bufferevent_write(c->bev, &c->trp_hdr, sizeof(c->trp_hdr) + ret * sizeof(c->trp_xs[0])) == -1) {
         abort();
+    } else {
+        bufferevent_flush(c->bev, EV_WRITE, BEV_FLUSH);
     }
-    c->trp_fd = -1;
+    c->bev = NULL;
 }
 
 static void waitset_block(dds_waitset_t ws, void *arg, dds_time_t abstimeout)
@@ -488,7 +370,7 @@ int db_waitset_create(struct client *cl, const struct reqhdr *req)
     rep.status = 0;
     rep.u.waitset.ws = dds_waitset_create_cont(waitset_block, waitset_cont, sizeof(struct dds_waitset_cont));
     c = dds_waitset_get_cont(rep.u.waitset.ws);
-    c->trp_fd = -1;
+    c->bev = NULL;
     c->trp_hdr.code = 5;
     return reply(cl, &rep);
 }
@@ -514,8 +396,8 @@ int db_waitset_wait(struct client *cl, const struct reqhdr *req)
     struct dds_waitset_cont *c;
     c = dds_waitset_get_cont(req->u.wait.ws);
     assert(req->u.wait.nxs <= WAITSET_MAX);
-    assert(c->trp_fd == -1);
-    c->trp_fd = cl->ib.fd;
+    assert(c->bev == NULL);
+    c->bev = cl->bev;
     dds_waitset_wait(req->u.wait.ws, c->trp_xs, req->u.wait.nxs, req->u.wait.reltimeout);
     return 1;
 }
@@ -531,7 +413,6 @@ int db_readcondition_create(struct client *cl, const struct reqhdr *req)
 
 int dispatch_bound(struct client *cl, const struct reqhdr *req)
 {
-    //printf("%d\n", (int)req->code);
     switch (req->code) {
         case VDDSREQ_HELLO:
             return protocol_error(-1);
@@ -573,89 +454,117 @@ int dispatch_bound(struct client *cl, const struct reqhdr *req)
     return protocol_error(-1);
 }
 
-int serve_one(struct client *cl)
+void cb_handle_req(struct bufferevent *bev, void *arg)
 {
+    struct client * const cl = arg;
+    struct evbuffer * const input = bufferevent_get_input(bev);
+    unsigned char *mem;
     struct reqhdr req;
-    if (ibread(&cl->ib, &req, sizeof(req)) > 0) {
+    //printf("handle_req\n");
+    while ((mem = evbuffer_pullup(input, sizeof(req))) != NULL) {
         int rc;
+        req = *(struct reqhdr *)mem;
+        (void)evbuffer_drain(input, sizeof(req));
+        //printf("%d\n", (int)req.code);
         if ((rc = cl->dispatch(cl, &req)) <= 0) {
             if (rc < 0) {
-                printf("sock%d: protocol error\n", cl->ib.fd);
-                goto error;
+                printf("sock%d: protocol error\n", bufferevent_getfd(cl->bev));
+                bufferevent_free(bev);
+                return;
             } else if (rc == 0) {
                 cl->dispatch = (cl->pid == -1) ? dispatch_unbound : dispatch_bound;
             }
         }
-        ibflush(&cl->ib);
-    }
-    return 1;
-error:
-    printf("sock%d: disconnect\n", cl->ib.fd);
-    if (cl->ppant != DDS_HANDLE_NIL) {
-        dds_entity_delete(cl->ppant);
-    }
-
-    {
-        struct client **ptr, *cur;
-        os_mutexLock(&clients_lock);
-        for (ptr = &clients, cur = clients; cur != cl; ptr = &cur->next, cur = cur->next)
-            ;
-        *ptr = cl->next;
-        cl->next = dead_clients;
-        dead_clients = cl;
-        os_mutexUnlock(&clients_lock);
-    }
-    return -1;
-}
-
-void *server(void *vclient)
-{
-    struct client *cl = vclient;
-    while (!terminate && serve_one(cl) > 0)
-        ;
-    return NULL;
-}
-
-void reap_dead_client(struct client *cl)
-{
-    (void)join_thread(cl->server_tid, NULL);
-    close(cl->ib.fd);
-    os_free(cl);
-}
-
-void reap_dead_clients_unlocked(void)
-{
-    while (dead_clients) {
-        struct client *cl = dead_clients;
-        dead_clients = cl->next;
-        reap_dead_client(cl);
+        bufferevent_flush(bev, EV_WRITE, BEV_FLUSH);
     }
 }
 
-void reap_dead_clients(void)
+void cb_handle_resp(struct bufferevent *bev, void *arg)
 {
-    os_mutexLock(&clients_lock);
-    reap_dead_clients_unlocked();
-    os_mutexUnlock(&clients_lock);
+    //printf("handle_resp\n");
 }
 
-#define MAX_CLIENTS 16
+void cb_handle_event(struct bufferevent *bev, short events, void *arg)
+{
+    struct client * const cl = arg;
+    printf("handle_event\n");
+    if (events & BEV_EVENT_ERROR)
+        perror("Error from bufferevent");
+    if (events & (BEV_EVENT_EOF | BEV_EVENT_ERROR)) {
+        printf("sock%d: disconnect\n", bufferevent_getfd(cl->bev));
+        if (cl->ppant != DDS_HANDLE_NIL) {
+            dds_entity_delete(cl->ppant);
+        }
+        os_free(cl);
+        bufferevent_free(bev);
+    }
+}
+
+void cb_connect(struct evconnlistener *listener, evutil_socket_t fd, struct sockaddr *addr, int len, void *arg)
+{
+    struct event_base * const base = evconnlistener_get_base(listener);
+    struct bufferevent *bev;
+    char tname[32];
+    struct client *cl;
+    snprintf(tname, sizeof(tname), "sock%d", fd);
+
+    bev = bufferevent_socket_new (base, fd, BEV_OPT_CLOSE_ON_FREE | BEV_OPT_THREADSAFE);
+    if (bev == NULL) {
+        abort();
+    }
+
+    cl = os_malloc(sizeof(*cl));
+    cl->pid = -1;
+    cl->ppant = DDS_HANDLE_NIL;
+    cl->dispatch = dispatch_unbound;
+    cl->bev = bev;
+
+    bufferevent_setcb(bev, cb_handle_req, cb_handle_resp, cb_handle_event, cl);
+    if (bufferevent_enable(bev, EV_READ|EV_WRITE) != 0) {
+        abort();
+    }
+
+    printf("%s: accepted client %p\n", tname, cl);
+}
+
+void cb_connect_err(struct evconnlistener *listener, void *arg)
+{
+    struct event_base * const base = evconnlistener_get_base(listener);
+    int err = EVUTIL_SOCKET_ERROR();
+    fprintf(stderr, "Got an error %d (%s) on the listener. Shutting down.\n", err, evutil_socket_error_to_string(err));
+    event_base_loopexit(base, NULL);
+}
 
 int main(int argc, char **argv)
 {
     struct sockaddr_un addr;
     int sock, opt;
-    struct pollfd pollfd[1 + MAX_CLIENTS];
-    int single = 0;
-    int ncl = 0;
-    int pending = 0;
-    struct client *ix2cl[1 + MAX_CLIENTS];
+    struct event_base *evbase;
+    struct evconnlistener *evconn;
+    struct admin adm;
+    int exitcode = EXIT_FAILURE;
 
-    while ((opt = getopt(argc, argv, "1")) != EOF) {
+    memset(&adm, 0, sizeof(adm));
+
+    //event_enable_debug_mode();
+
+    {
+        int rc;
+#if defined EVTHREAD_USE_WINDOWS_THREADS_IMPLEMENTED
+        rc = evthread_use_windows_threads();
+#elif defined EVTHREAD_USE_PTHREADS_IMPLEMENTED
+        rc = evthread_use_pthreads();
+#else
+#error "no libevent threading support"
+#endif
+        if (rc == -1) {
+            fprintf(stderr, "libevent thread support init failed\n");
+            return 1;
+        }
+    }
+
+    while ((opt = getopt(argc, argv, "")) != EOF) {
         switch (opt) {
-            case '1':
-                single = 1;
-                break;
             default:
                 fprintf(stderr, "usage: %s\n", argv[0]);
                 return 1;
@@ -680,109 +589,31 @@ int main(int argc, char **argv)
         perror("listen");
         goto err_listen;
     }
-    signal(SIGINT, sigh);
-    signal(SIGTERM, sigh);
+    evutil_make_socket_nonblocking(sock);
 
     dds_init(argc, argv);
     dds_init_impl(DDS_DOMAIN_DEFAULT);
-    os_mutexInit(&clients_lock, NULL);
-    os_condInit(&clients_cond, &clients_lock, NULL);
 
-    pollfd[0].fd = sock;
-    pollfd[0].events = POLLIN;
-    printf("listening ...\n");
-    fflush(stdout);
-    while (!terminate) {
-        int res;
-        reap_dead_clients();
-        if ((res = poll(pollfd, 1 + ncl, pending ? 0 : -1)) == -1) {
-            if (errno == EINTR) {
-                continue;
-            } else {
-                perror("poll");
-                goto err_poll;
-            }
-        }
-
-        if (pollfd[0].revents & POLLIN) {
-            struct sockaddr_un addr;
-            socklen_t addrlen;
-            char tname[32];
-            struct client *cl;
-            int s;
-            if ((s = accept(sock, (struct sockaddr *)&addr, &addrlen)) == -1) {
-                perror("accept");
-                goto err_accept;
-            }
-            snprintf(tname, sizeof(tname), "sock%d", s);
-
-            cl = os_malloc(sizeof(*cl));
-            cl->pid = -1;
-            cl->ppant = DDS_HANDLE_NIL;
-            cl->dispatch = dispatch_unbound;
-            cl->ib.fd = s;
-            cl->ib.r.rp = cl->ib.r.wp = 0;
-            cl->ib.w.rp = cl->ib.w.wp = 0;
-            os_mutexLock(&clients_lock);
-            cl->next = clients;
-            clients = cl;
-            os_mutexUnlock(&clients_lock);
-
-            printf("%s: accepted client %p\n", tname, cl);
-            if (!single) {
-                cl->server_tid = create_thread(tname, server, cl);
-            } else {
-                ++ncl;
-                pollfd[ncl].fd = s;
-                pollfd[ncl].events = POLLIN | POLLHUP;
-                ix2cl[ncl] = cl;
-            }
-        }
-
-        if (single)
-        {
-            int i = 1;
-            pending = 0;
-            while (i <= ncl) {
-                if (!(pollfd[i].revents & (POLLIN | POLLHUP)) && !ibavail(&ix2cl[i]->ib)) {
-                    ++i;
-                } else if (serve_one(ix2cl[i]) >= 0) {
-                    pending += ibavail(&ix2cl[i]->ib);
-                    ++i;
-                } else {
-                    if (i < ncl) {
-                        ix2cl[i] = ix2cl[ncl];
-                        pollfd[i] = pollfd[ncl];
-                    }
-                    --ncl;
-                }
-            }
-        }
+    if ((evbase = event_base_new()) == NULL) {
+        goto err_event_base;
     }
 
-    terminate = 1;
-    os_mutexLock(&clients_lock);
-    while (clients) {
-        os_condWait(&clients_cond, &clients_lock);
-        reap_dead_clients_unlocked();
-    }
-    os_mutexUnlock(&clients_lock);
+    evconn = evconnlistener_new(evbase, cb_connect, &adm, 0, 0, sock);
+    evconnlistener_set_error_cb(evconn, cb_connect_err);
+    event_base_loop(evbase, 0);
+    exitcode = 0;
 
-    os_condDestroy(&clients_cond);
-    os_mutexDestroy(&clients_lock);
+    event_base_free(evbase);
+err_event_base:
     dds_fini();
-    unlink(VDDS_SOCKET_NAME);
-    close(sock);
-    rm_lock_file();
-    return 0;
-
-err_accept:
-err_poll:
 err_listen:
     unlink(VDDS_SOCKET_NAME);
 err_bind:
     close(sock);
 err_socket:
     rm_lock_file();
-    return 2;
+#if LIBEVENT_VERSION_NUMBER >= 0x2010100
+    libevent_global_shutdown();
+#endif
+    return exitcode;
 }

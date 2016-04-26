@@ -799,6 +799,9 @@ typedef void * dds_attach_t;
  *   -# Returns a pointer to a waitset created
  */
 DDS_EXPORT dds_waitset_t dds_waitset_create (void);
+DDS_EXPORT dds_waitset_t dds_waitset_create_cont (void (*block) (dds_waitset_t ws, void *arg, dds_time_t abstimeout), void (*cont) (dds_waitset_t ws, void *arg, int ret), size_t contsize);
+DDS_EXPORT void *dds_waitset_get_cont (dds_waitset_t ws);
+
 
 /**
  * Description : Get the conditions associated with a waitset. The sequence of
@@ -881,8 +884,6 @@ DDS_EXPORT int dds_waitset_detach (dds_waitset_t ws, dds_condition_t e);
  *   -# Returns 0 on timeout, else number of signaled waitset conditions
  */
 DDS_EXPORT int dds_waitset_wait (dds_waitset_t ws, dds_attach_t *xs, size_t nxs, dds_duration_t reltimeout);
-DDS_EXPORT int dds_waitset_wait_async (dds_waitset_t ws, size_t nxs, dds_time_t reltimeout, int trp_fd);
-
 
 /**
  * Description : This API is used to block the current executing thread until some of the

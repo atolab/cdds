@@ -3,10 +3,10 @@
 OPT = #
 CC = clang
 LD = clang
-CFLAGS = -c -DLITE=1 $(OPT) -g -I$(PWD)/include
+CFLAGS = -c $(OPT) -g -I$(PWD)/include
 LDFLAGS = -g -Wall -L$(PWD)/gen -rpath $(PWD)/gen
 
-all: gen/libvdds.dylib gen/libvdds-stubs.dylib gen/vdds-server gen/publisher gen/subscriber gen/rpc-publisher gen/rpc-subscriber gen/ping gen/pong gen/rpc-ping gen/rpc-pong
+all: gen/libvdds.dylib gen/libvdds-stubs.dylib gen/vdds-server gen/publisher gen/subscriber gen/rpc-publisher gen/rpc-subscriber gen/ping gen/pong gen/rpc-ping gen/rpc-pong gen/vdds-server2
 clean: ; rm -rf gen/*
 
 LIBVDDS_DIRS := src/ddsi src/kernel src/util src/os src/os/darwin
@@ -24,7 +24,14 @@ gen/libvdds-stubs.dylib: $(LIBVDDS_STUBS:%=gen/%.o)
 	$(LD) $(LDFLAGS) -dynamiclib -install_name @rpath/libvdds-stubs.dylib $^ -o $@
 
 gen/vdds-server: gen/server.o | gen/libvdds.dylib
-	$(LD) $(LDFLAGS) $^ -o $@ -lvdds
+	$(LD) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+
+gen/vdds-server gen/vdds-server2: LDLIBS += -lvdds
+gen/vdds-server2: LDFLAGS += -L/usr/local/lib -rpath /usr/local/lib
+gen/vdds-server2: LDLIBS += -levent_pthreads -levent
+gen/vdds-server2: CFLAGS += -I/usr/local/include
+gen/vdds-server2: gen/server2.o | gen/libvdds.dylib
+	$(LD) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 gen/publisher.o gen/subscriber.o gen/rpc-publisher.o gen/rpc-subscriber.o gen/ping.o gen/pong.o gen/rpc-ping.o gen/rpc-pong.o: CFLAGS += -I$(PWD)/examples/generated
 gen/publisher.d gen/subscriber.d gen/rpc-publisher.d gen/rpc-subscriber.d gen/ping.d gen/pong.d gen/rpc-ping.d gen/rpc-pong.d: CFLAGS += -I$(PWD)/examples/generated
