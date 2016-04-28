@@ -20,7 +20,7 @@
  */
 
 #include <assert.h>
-#include "os/os_thread.h"
+#include "os/os.h"
 
 /** \brief Initialize thread attributes
  *

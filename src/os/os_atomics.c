@@ -14,4 +14,4 @@
 #define VDDS_INLINE        /* no "inline" in function defs (not really needed) */
 #define OS_ATOMICS_OMIT_FUNCTIONS 0 /* force inclusion of functions defs */
 
-#include "os/os_atomics.h"
+#include "os/os.h"

@@ -11,7 +11,7 @@
  */
 
 #include <assert.h>
-#include "os/os_sync.h"
+#include "os/os.h"
 
 /** \file os/common/code/os_mutex_attr.c
  *  \brief Common mutual exclusion semaphore attributes
@@ -49,17 +49,6 @@ os_mutexAttrInit (
  *   for full copyright notice and license terms.
  *
  */
-
-/** \file os/common/code/os_cond_attr.c
- *  \brief Common condition variable attributes
- *
- * Implements os_condAttrInit and sets attributes
- * to platform independent values:
- * - scope is OS_SCOPE_SHARED
- */
-
-#include <assert.h>
-#include "os/os.h"
 
 /** \brief Initialize condition variable attribute
  *

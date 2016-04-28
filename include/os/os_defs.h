@@ -4,8 +4,6 @@
 #define OS_LITTLE_ENDIAN 1
 #define OS_BIG_ENDIAN 2
 
-#include "os/darwin/os_platform.h"
-
 #if OS_ENDIANNESS != OS_LITTLE_ENDIAN && OS_ENDIANNESS != OS_BIG_ENDIAN
 #error "OS_ENDIANNESS not set correctly"
 #endif
@@ -241,7 +239,7 @@ extern "C" {
 #if ! OS_HAVE_INLINE
 #define VDDS_INLINE
 #endif
-    
+
 #endif /* not defined OS_HAVE_INLINE */
 
 

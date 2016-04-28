@@ -14,7 +14,7 @@
 
 #include <stdarg.h>
 
-#include "os/os_defs.h"
+#include "os/os.h"
 #include "ddsi/q_time.h"
 
 #if defined (__cplusplus)

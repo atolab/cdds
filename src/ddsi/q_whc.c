@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "os/os_heap.h"
+#include "os/os.h"
 #include "ddsi/ddsi_ser.h"
 #include "ddsi/q_unused.h"
 #include "ddsi/q_config.h"

@@ -3,19 +3,6 @@
 
 #include "os_public.h"
 
-#include "os_defs.h"
-#include "os_thread.h"
-#include "os_sync.h"
-#include "os_time.h"
-#include "os_atomics.h"
-#include "os_socket.h"
-#include "os_heap.h"
-#include "os_stdlib.h"
-#include "os_report.h"
-#include "os_init.h"
-#include "os_process.h"
-#include "os_errno.h"
-
 #if __linux__ == 1
 #include "linux/os_platform.h"
 #elif __vxworks == 1
@@ -45,6 +32,19 @@
 #else
 #error "Platform missing from os.h list"
 #endif
+
+#include "os_defs.h"
+#include "os_thread.h"
+#include "os_sync.h"
+#include "os_time.h"
+#include "os_atomics.h"
+#include "os_socket.h"
+#include "os_heap.h"
+#include "os_stdlib.h"
+#include "os_report.h"
+#include "os_init.h"
+#include "os_process.h"
+#include "os_errno.h"
 
 #define OSPL_VERSION_STR "aap"
 #define OSPL_HOST_STR "noot"

@@ -12,7 +12,7 @@
 #ifndef NN_TIME_H
 #define NN_TIME_H
 
-#include "os/os_defs.h"
+#include "os/os.h"
 
 #if defined (__cplusplus)
 extern "C" {

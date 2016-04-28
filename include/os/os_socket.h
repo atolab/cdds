@@ -13,9 +13,6 @@
 #ifndef OS_SOCKET_H
 #define OS_SOCKET_H
 
-#include "os/os_defs.h"
-#include "os/darwin/os_platform_socket.h"
-
 #ifndef OS_SOCKET_HAS_IPV6
 #error "OS_SOCKET_HAS_IPV6 should have been defined by os_platform_socket.h"
 #endif

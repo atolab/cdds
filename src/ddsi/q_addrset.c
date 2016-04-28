@@ -13,10 +13,7 @@
 #include <stddef.h>
 #include <assert.h>
 
-#include "os/os_heap.h"
-#include "os/os_socket.h"
-#include "os/os_stdlib.h"
-#include "os/os_atomics.h"
+#include "os/os.h"
 
 #include "util/ut_avl.h"
 #include "ddsi/q_log.h"

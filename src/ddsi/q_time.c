@@ -11,7 +11,7 @@
  */
 #include <assert.h>
 
-#include "os/os_time.h"
+#include "os/os.h"
 
 #include "ddsi/q_time.h"
 

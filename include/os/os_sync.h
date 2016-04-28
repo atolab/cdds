@@ -1,9 +1,6 @@
 #ifndef OS_SYNC_H
 #define OS_SYNC_H
 
-#include "os/os_defs.h"
-#include "os/darwin/os_platform_sync.h"
-
 #if defined (__cplusplus)
 extern "C" {
 #endif

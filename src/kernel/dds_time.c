@@ -1,5 +1,5 @@
 #include "dds.h"
-#include "os/os_time.h"
+#include "os/os.h"
 
 dds_time_t dds_time (void)
 {

@@ -16,8 +16,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "os/os_stdlib.h"
-#include "os/os_heap.h"
+#include "os/os.h"
 
 #include "ddsi/q_config.h"
 #include "ddsi/q_globals.h"
