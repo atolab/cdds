@@ -257,6 +257,20 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		037D2E711CD2455A004434B2 /* os_platform_heap.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_heap.c; sourceTree = "<group>"; };
+		037D2E721CD2455A004434B2 /* os_platform_init.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_init.c; sourceTree = "<group>"; };
+		037D2E731CD2455A004434B2 /* os_platform_socket.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_socket.c; sourceTree = "<group>"; };
+		037D2E741CD2455A004434B2 /* os_platform_sync.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_sync.c; sourceTree = "<group>"; };
+		037D2E751CD2455A004434B2 /* os_platform_thread.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_thread.c; sourceTree = "<group>"; };
+		037D2E761CD2455A004434B2 /* os_platform_time.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_time.c; sourceTree = "<group>"; };
+		037D2E771CD24576004434B2 /* os_atomics_win32.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_atomics_win32.h; sourceTree = "<group>"; };
+		037D2E801CD245BB004434B2 /* os_platform_public.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform_public.h; sourceTree = "<group>"; };
+		037D2E811CD245BB004434B2 /* os_platform_socket.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform_socket.h; sourceTree = "<group>"; };
+		037D2E821CD245BB004434B2 /* os_platform_stdlib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform_stdlib.h; sourceTree = "<group>"; };
+		037D2E831CD245BB004434B2 /* os_platform_sync.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform_sync.h; sourceTree = "<group>"; };
+		037D2E841CD245BB004434B2 /* os_platform_thread.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform_thread.h; sourceTree = "<group>"; };
+		037D2E851CD245BB004434B2 /* os_platform_time.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform_time.h; sourceTree = "<group>"; };
+		037D2E861CD245BB004434B2 /* os_platform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform.h; sourceTree = "<group>"; };
 		03C96E9A1CCE5B800012F15D /* server2.c */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.c.c; path = server2.c; sourceTree = "<group>"; };
 		03C96EA41CCE5B8D0012F15D /* vdds-server2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "vdds-server2"; sourceTree = BUILT_PRODUCTS_DIR; };
 		03C96EA61CCE5CD20012F15D /* libevent_pthreads-2.0.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libevent_pthreads-2.0.5.dylib"; path = "../../../../../usr/local/Cellar/libevent/2.0.22/lib/libevent_pthreads-2.0.5.dylib"; sourceTree = "<group>"; };
@@ -491,19 +505,6 @@
 		03E6CFB01CCE0DAB00D73982 /* os_stdlib_strtok_r.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_stdlib_strtok_r.c; sourceTree = "<group>"; };
 		03E6CFB11CCE0DAB00D73982 /* os_stdlib_strtol.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_stdlib_strtol.c; sourceTree = "<group>"; };
 		03E6CFB31CCE0DAB00D73982 /* os_posix_stdlib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_posix_stdlib.h; sourceTree = "<group>"; };
-		03E6CFB61CCE0DAB00D73982 /* os_platform_heap.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_heap.c; sourceTree = "<group>"; };
-		03E6CFB71CCE0DAB00D73982 /* os_platform_init.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_init.c; sourceTree = "<group>"; };
-		03E6CFB81CCE0DAB00D73982 /* os_platform_socket.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_socket.c; sourceTree = "<group>"; };
-		03E6CFB91CCE0DAB00D73982 /* os_platform_sync.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_sync.c; sourceTree = "<group>"; };
-		03E6CFBA1CCE0DAB00D73982 /* os_platform_thread.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_thread.c; sourceTree = "<group>"; };
-		03E6CFBB1CCE0DAB00D73982 /* os_platform_time.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_time.c; sourceTree = "<group>"; };
-		03E6CFBD1CCE0DAB00D73982 /* os_platform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform.h; sourceTree = "<group>"; };
-		03E6CFBE1CCE0DAB00D73982 /* os_platform_public.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform_public.h; sourceTree = "<group>"; };
-		03E6CFBF1CCE0DAB00D73982 /* os_platform_socket.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform_socket.h; sourceTree = "<group>"; };
-		03E6CFC01CCE0DAB00D73982 /* os_platform_stdlib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform_stdlib.h; sourceTree = "<group>"; };
-		03E6CFC11CCE0DAB00D73982 /* os_platform_sync.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform_sync.h; sourceTree = "<group>"; };
-		03E6CFC21CCE0DAB00D73982 /* os_platform_thread.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform_thread.h; sourceTree = "<group>"; };
-		03E6CFC31CCE0DAB00D73982 /* os_platform_time.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_platform_time.h; sourceTree = "<group>"; };
 		03E6CFC51CCE0DAB00D73982 /* ut_avl.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ut_avl.c; sourceTree = "<group>"; };
 		03E6CFC61CCE0DAB00D73982 /* ut_crc.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ut_crc.c; sourceTree = "<group>"; };
 		03E6CFC71CCE0DAB00D73982 /* ut_expand_envvars.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ut_expand_envvars.c; sourceTree = "<group>"; };
@@ -625,6 +626,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		037D2E7F1CD24583004434B2 /* win32 */ = {
+			isa = PBXGroup;
+			children = (
+				037D2E801CD245BB004434B2 /* os_platform_public.h */,
+				037D2E811CD245BB004434B2 /* os_platform_socket.h */,
+				037D2E821CD245BB004434B2 /* os_platform_stdlib.h */,
+				037D2E831CD245BB004434B2 /* os_platform_sync.h */,
+				037D2E841CD245BB004434B2 /* os_platform_thread.h */,
+				037D2E851CD245BB004434B2 /* os_platform_time.h */,
+				037D2E861CD245BB004434B2 /* os_platform.h */,
+			);
+			path = win32;
+			sourceTree = "<group>";
+		};
 		03E6CE951CCE0C6B00D73982 = {
 			isa = PBXGroup;
 			children = (
@@ -861,10 +876,12 @@
 		03E6CF1F1CCE0DAB00D73982 /* os */ = {
 			isa = PBXGroup;
 			children = (
+				037D2E7F1CD24583004434B2 /* win32 */,
 				03E6CF201CCE0DAB00D73982 /* darwin */,
 				03E6CF271CCE0DAB00D73982 /* os.h */,
 				03E6CF281CCE0DAB00D73982 /* os_atomics.h */,
 				03E6CF291CCE0DAB00D73982 /* os_atomics_gcc.h */,
+				037D2E771CD24576004434B2 /* os_atomics_win32.h */,
 				03E6CF2A1CCE0DAB00D73982 /* os_decl_attributes.h */,
 				03E6CF2B1CCE0DAB00D73982 /* os_decl_attributes_sal.h */,
 				03E6CF2C1CCE0DAB00D73982 /* os_defs.h */,
@@ -1093,37 +1110,14 @@
 		03E6CFB41CCE0DAB00D73982 /* win32 */ = {
 			isa = PBXGroup;
 			children = (
-				03E6CFB51CCE0DAB00D73982 /* code */,
-				03E6CFBC1CCE0DAB00D73982 /* include */,
+				037D2E711CD2455A004434B2 /* os_platform_heap.c */,
+				037D2E721CD2455A004434B2 /* os_platform_init.c */,
+				037D2E731CD2455A004434B2 /* os_platform_socket.c */,
+				037D2E741CD2455A004434B2 /* os_platform_sync.c */,
+				037D2E751CD2455A004434B2 /* os_platform_thread.c */,
+				037D2E761CD2455A004434B2 /* os_platform_time.c */,
 			);
 			path = win32;
-			sourceTree = "<group>";
-		};
-		03E6CFB51CCE0DAB00D73982 /* code */ = {
-			isa = PBXGroup;
-			children = (
-				03E6CFB61CCE0DAB00D73982 /* os_platform_heap.c */,
-				03E6CFB71CCE0DAB00D73982 /* os_platform_init.c */,
-				03E6CFB81CCE0DAB00D73982 /* os_platform_socket.c */,
-				03E6CFB91CCE0DAB00D73982 /* os_platform_sync.c */,
-				03E6CFBA1CCE0DAB00D73982 /* os_platform_thread.c */,
-				03E6CFBB1CCE0DAB00D73982 /* os_platform_time.c */,
-			);
-			path = code;
-			sourceTree = "<group>";
-		};
-		03E6CFBC1CCE0DAB00D73982 /* include */ = {
-			isa = PBXGroup;
-			children = (
-				03E6CFBD1CCE0DAB00D73982 /* os_platform.h */,
-				03E6CFBE1CCE0DAB00D73982 /* os_platform_public.h */,
-				03E6CFBF1CCE0DAB00D73982 /* os_platform_socket.h */,
-				03E6CFC01CCE0DAB00D73982 /* os_platform_stdlib.h */,
-				03E6CFC11CCE0DAB00D73982 /* os_platform_sync.h */,
-				03E6CFC21CCE0DAB00D73982 /* os_platform_thread.h */,
-				03E6CFC31CCE0DAB00D73982 /* os_platform_time.h */,
-			);
-			path = include;
 			sourceTree = "<group>";
 		};
 		03E6CFC41CCE0DAB00D73982 /* util */ = {
