@@ -1,70 +1,66 @@
 .PHONY: all clean
 
-OPT = #
-CC = clang
-LD = clang
-CFLAGS = -c $(OPT) -g -I$(PWD)/include
-LDFLAGS = -g -Wall -L$(PWD)/gen -rpath $(PWD)/gen
+include config.mk
 
-all: gen/libvdds.dylib gen/libvdds-stubs.dylib gen/vdds-server gen/publisher gen/subscriber gen/rpc-publisher gen/rpc-subscriber gen/ping gen/pong gen/rpc-ping gen/rpc-pong gen/vdds-server2
-clean: ; rm -rf gen/*
+CPPFLAGS += -Iinclude
+
+SHLIBS = vdds vdds-stubs
+EXES   = vdds-server publisher subscriber rpc-publisher rpc-subscriber ping pong rpc-ping rpc-pong
+
+all: $(SHLIBS:%=gen/$(LIBPRE)%$(SO)) $(EXES:%=gen/%$X)
+
+clean:
+	rm -rf gen/*
 
 LIBVDDS_DIRS := src/ddsi src/kernel src/util src/os src/os/darwin
 
-LIBVDDS := $(notdir $(patsubst %.c, %, $(filter-out %_template.c, $(wildcard $(LIBVDDS_DIRS:%=%/*.c)))))
-
-LIBVDDS_STUBS := $(patsubst %.c, %, $(notdir $(wildcard src/os/*.c src/os/darwin/*.c))) vdds-stubs dds_alloc dds_time dds_stream dds_key dds_err dds_qos q_bswap q_bswap_inlines q_md5 q_plist q_time q_misc q_osplser ddsi_ser
-
 vpath %.c $(LIBVDDS_DIRS) vdds-server examples examples/generated rpc-examples
 
-gen/libvdds.dylib: $(LIBVDDS:%=gen/%.o)
-	$(LD) $(LDFLAGS) -dynamiclib -install_name @rpath/libvdds.dylib $^ -o $@
+LIBVDDS := $(notdir $(patsubst %.c, %, $(filter-out %_template.c, $(wildcard $(LIBVDDS_DIRS:%=%/*.c)))))
+gen/$(LIBPRE)vdds$(SO): $(LIBVDDS:%=gen/%$O)
+	$(make_shlib)
 
-gen/libvdds-stubs.dylib: $(LIBVDDS_STUBS:%=gen/%.o)
-	$(LD) $(LDFLAGS) -dynamiclib -install_name @rpath/libvdds-stubs.dylib $^ -o $@
+LIBVDDS_STUBS := $(patsubst %.c, %, $(notdir $(wildcard src/os/*.c src/os/darwin/*.c))) vdds-stubs dds_alloc dds_time dds_stream dds_key dds_err dds_qos q_bswap q_bswap_inlines q_md5 q_plist q_time q_misc q_osplser ddsi_ser
+gen/$(LIBPRE)vdds-stubs$(SO): $(LIBVDDS_STUBS:%=gen/%$O)
+	$(make_shlib)
 
-gen/vdds-server: gen/server.o | gen/libvdds.dylib
-	$(LD) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+gen/vdds-server$X: gen/server$O | gen/$(LIBPRE)vdds$(SO)
+	$(make_exe)
 
-gen/vdds-server gen/vdds-server2: LDLIBS += -lvdds
-gen/vdds-server2: LDFLAGS += -L/usr/local/lib -rpath /usr/local/lib
-gen/vdds-server2: LDLIBS += -levent_pthreads -levent
-gen/vdds-server2: CFLAGS += -I/usr/local/include
-gen/vdds-server2: gen/server2.o | gen/libvdds.dylib
-	$(LD) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+gen/vdds-server$X gen/vdds-server2$X: LDLIBS += -lvdds
+gen/vdds-server2$X: LDFLAGS += -L/usr/local/lib -rpath /usr/local/lib
+gen/vdds-server2$X: LDLIBS += -levent_pthreads -levent
+gen/vdds-server2$X: CPPFLAGS += -I/usr/local/include
+gen/vdds-server2$X: gen/server2$O | gen/$(LIBPRE)vdds$(SO)
+	$(make_exe)
 
-gen/publisher.o gen/subscriber.o gen/rpc-publisher.o gen/rpc-subscriber.o gen/ping.o gen/pong.o gen/rpc-ping.o gen/rpc-pong.o: CFLAGS += -I$(PWD)/examples/generated
-gen/publisher.d gen/subscriber.d gen/rpc-publisher.d gen/rpc-subscriber.d gen/ping.d gen/pong.d gen/rpc-ping.d gen/rpc-pong.d: CFLAGS += -I$(PWD)/examples/generated
+gen/publisher$O gen/subscriber$O gen/rpc-publisher$O gen/rpc-subscriber$O gen/ping$O gen/pong$O gen/rpc-ping$O gen/rpc-pong$O: CPPFLAGS += -Iexamples/generated
+gen/publisher.d gen/subscriber.d gen/rpc-publisher.d gen/rpc-subscriber.d gen/ping.d gen/pong.d gen/rpc-ping.d gen/rpc-pong.d: CPPFLAGS += -Iexamples/generated
 
-gen/publisher: gen/publisher.o gen/Throughput.o | gen/libvdds.dylib
-	$(LD) $(LDFLAGS) $^ -o $@ -lvdds
+gen/publisher gen/subscriber gen/ping gen/pong: LDLIBS += -lvdds
+gen/rpc-publisher gen/rpc-subscriber gen/rpc-ping gen/rpc-pong: LDLIBS += -lvdds-stubs
+gen/publisher$X: gen/publisher$O gen/Throughput$O | gen/$(LIBPRE)vdds$(SO)
+	$(make_exe)
+gen/subscriber$X: gen/subscriber$O gen/Throughput$O | gen/$(LIBPRE)vdds$(SO)
+	$(make_exe)
+gen/rpc-publisher$X: gen/rpc-publisher$O gen/Throughput$O | gen/$(LIBPRE)vdds-stubs$(SO)
+	$(make_exe)
+gen/rpc-subscriber$X: gen/rpc-subscriber$O gen/Throughput$O | gen/$(LIBPRE)vdds-stubs$(SO)
+	$(make_exe)
+gen/ping$X: gen/ping$O gen/RoundTrip$O | gen/$(LIBPRE)vdds$(SO)
+	$(make_exe)
+gen/pong$X: gen/pong$O gen/RoundTrip$O | gen/$(LIBPRE)vdds$(SO)
+	$(make_exe)
+gen/rpc-ping$X: gen/rpc-ping$O gen/RoundTrip$O | gen/$(LIBPRE)vdds-stubs$(SO)
+	$(make_exe)
+gen/rpc-pong$X: gen/rpc-pong$O gen/RoundTrip$O | gen/$(LIBPRE)vdds-stubs$(SO)
+	$(make_exe)
 
-gen/subscriber: gen/subscriber.o gen/Throughput.o | gen/libvdds.dylib
-	$(LD) $(LDFLAGS) $^ -o $@ -lvdds
-
-gen/rpc-publisher: gen/rpc-publisher.o gen/Throughput.o | gen/libvdds-stubs.dylib
-	$(LD) $(LDFLAGS) $^ -o $@ -lvdds-stubs
-
-gen/rpc-subscriber: gen/rpc-subscriber.o gen/Throughput.o | gen/libvdds-stubs.dylib
-	$(LD) $(LDFLAGS) $^ -o $@ -lvdds-stubs
-
-gen/ping: gen/ping.o gen/RoundTrip.o | gen/libvdds.dylib
-	$(LD) $(LDFLAGS) $^ -o $@ -lvdds
-
-gen/pong: gen/pong.o gen/RoundTrip.o | gen/libvdds.dylib
-	$(LD) $(LDFLAGS) $^ -o $@ -lvdds
-
-gen/rpc-ping: gen/rpc-ping.o gen/RoundTrip.o | gen/libvdds-stubs.dylib
-	$(LD) $(LDFLAGS) $^ -o $@ -lvdds-stubs
-
-gen/rpc-pong: gen/rpc-pong.o gen/RoundTrip.o | gen/libvdds-stubs.dylib
-	$(LD) $(LDFLAGS) $^ -o $@ -lvdds-stubs
-
-gen/%.o: %.c
-	$(CC) $(CFLAGS) $< -o $@
+gen/%$O: %.c
+	$(CC) $(CPPFLAGS) $(OBJ_OFLAG)$@ -c $<
 
 gen/%.d: %.c
-	$(CC) -M $(CFLAGS) $< -o $@
+	$(make_dep)
 
 ifneq ($(MAKECMDGOALS),clean)
   -include $(LIBVDDS:%=gen/%.d) $(LIBVDDS_STUBS:%=gen/%.d) gen/server.d gen/publisher.d gen/Throuhgput.d gen/subscriber.d gen/rpc-publisher.d gen/rpc-subscriber.d gen/ping.d gen/RoundTrip.d gen/pong.d gen/rpc-ping.d gen/rpc-pong.d

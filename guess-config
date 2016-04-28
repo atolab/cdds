@@ -1,0 +1,19 @@
+#!/bin/sh
+
+case `uname -m`.`uname -s` in
+     x86_64.Darwin)
+        cfg="x86_64.darwin"
+        ;;
+     i686.CYGWIN*)
+         cfg="x86.win32"
+         ;;
+     x86_64.CYGWIN*)
+         cfg="x86_64.win32"
+         ;;
+     *)
+         echo "$0: unknown configuration"
+         exit 1
+         ;;
+esac
+
+echo $cfg

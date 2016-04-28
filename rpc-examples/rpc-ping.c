@@ -104,7 +104,7 @@ int main (int argc, char *argv[])
   dds_entity_t publisher;
   dds_entity_t subscriber;
   dds_waitset_t waitSet;
-  
+
   const char *pubPartitions[] = { "ping" };
   const char *subPartitions[] = { "pong" };
   dds_qos_t *pubQos;
@@ -265,7 +265,7 @@ int main (int argc, char *argv[])
       status = dds_take (reader, samples, MAX_SAMPLES, info, 0);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     }
-    
+
     time = dds_time ();
     difference = time - startTime;
   }
@@ -329,7 +329,7 @@ int main (int argc, char *argv[])
       difference = (postTakeTime - startTime)/DDS_NSECS_IN_USEC;
       if (difference > US_IN_ONE_SEC || (i && i == numSamples))
       {
-        printf 
+        printf
         (
           "%9" PRIi64 " %9lu %8.0f %8"PRId64" %10lu %8.0f %8"PRId64" %10lu %8.0f %8"PRId64"\n",
           elapsed + 1,
@@ -375,8 +375,6 @@ int main (int argc, char *argv[])
     );
   }
 
-done:
-
   /* Clean up */
 
   exampleDeleteTimeStats (&roundTrip);
@@ -385,7 +383,7 @@ done:
   exampleDeleteTimeStats (&roundTripOverall);
   exampleDeleteTimeStats (&writeAccessOverall);
   exampleDeleteTimeStats (&readAccessOverall);
- 
+
   status = dds_waitset_delete (waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_entity_delete (participant);

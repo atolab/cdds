@@ -106,7 +106,7 @@ int dds_write_impl
 
   /* Set if disposing or unregistering */
 
-  d->v.msginfo.statusinfo = 
+  d->v.msginfo.statusinfo =
     ((action & DDS_WR_DISPOSE_BIT) ? NN_STATUSINFO_DISPOSE : 0) |
     ((action & DDS_WR_UNREGISTER_BIT) ? NN_STATUSINFO_UNREGISTER : 0);
   d->v.msginfo.timestamp.v = tstamp;
@@ -243,8 +243,6 @@ int dds_writecdr_impl
     thread_state_asleep (thr);
   }
 
-filtered:
-  
   return ret;
 }
 
