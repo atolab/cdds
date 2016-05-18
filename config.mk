@@ -123,7 +123,7 @@ ifeq "$(OS)" "darwin"
 	$(LD) $(LDFLAGS) $(patsubst -L%, -rpath %, $(filter -L%, $(LDFLAGS))) $(EXE_OFLAG)$@ $^ $(LDLIBS)
   endef
   define make_shlib
-	$(LD) $(LDFLAGS) $(patsubst -L%, -rpath %, $(filter -L%, $(LDFLAGS))) -dynamiclib -install_name @rpath/$@ $(SHLIB_OFLAG)$@ $^ $(LDLIBS)
+	$(LD) $(LDFLAGS) $(patsubst -L%, -rpath %, $(filter -L%, $(LDFLAGS))) -dynamiclib -install_name @rpath/$(notdir $@) $(SHLIB_OFLAG)$@ $^ $(LDLIBS)
   endef
   define make_archive
 	ar -ru $@ $?
