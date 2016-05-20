@@ -48,7 +48,9 @@ struct whc_intvnode {
 };
 
 struct whc_idxnode {
+  int64_t iid;
   int64_t prune_seq;
+  struct tkmap_instance *tk;
   unsigned headidx;
 #if __STDC_VERSION__ >= 199901L
   struct whc_node *hist[];
@@ -90,7 +92,7 @@ struct whc_node *whc_findkey (const struct whc *whc, const struct serdata *serda
    reliable readers that have not acknowledged all data */
 /* max_drop_seq must go soon, it's way too ugly. */
 /* plist may be NULL or os_malloc'd, WHC takes ownership of plist */
-int whc_insert (struct whc *whc, int64_t max_drop_seq, int64_t seq, struct nn_plist *plist, struct serdata *serdata);
+int whc_insert (struct whc *whc, int64_t max_drop_seq, int64_t seq, struct nn_plist *plist, struct serdata *serdata, struct tkmap_instance *tk);
 void whc_downgrade_to_volatile (struct whc *whc);
 unsigned whc_remove_acked_messages (struct whc *whc, int64_t max_drop_seq);
 

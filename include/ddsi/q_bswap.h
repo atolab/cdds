@@ -23,7 +23,7 @@
 #define bswap8(x) ((long long) bswap8u ((unsigned long long) (x)))
 
 #if NN_HAVE_C99_INLINE && !defined SUPPRESS_BSWAP_INLINES
-#include "q_bswap_template.c"
+#include "q_bswap_template.h"
 #else
 #if defined (__cplusplus)
 extern "C" {

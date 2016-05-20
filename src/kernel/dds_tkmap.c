@@ -76,7 +76,8 @@ static uint32_t dds_tk_hash (const struct tkmap_instance * inst)
   if (! sd->v.hash_valid)
   {
     const uint32_t * k = (const uint32_t *) sd->v.keyhash.m_hash;
-    sd->v.hash = ((sd->v.keyhash.m_flags & DDS_KEY_IS_HASH) ? dds_mh3 (k) : (*k)) ^ sd->v.st->topic->hash;
+    const uint32_t hash0 = sd->v.st->topic ? sd->v.st->topic->hash : 0;
+    sd->v.hash = ((sd->v.keyhash.m_flags & DDS_KEY_IS_HASH) ? dds_mh3 (k) : (*k)) ^ hash0;
     sd->v.hash_valid = 1;
   }
 
@@ -117,13 +118,13 @@ void dds_tkmap_free (struct tkmap * map)
   }
 }
 
-uint64_t dds_tkmap_lookup (struct tkmap * map, struct serdata * sd)
+uint64_t dds_tkmap_lookup (struct tkmap * map, const struct serdata * sd)
 {
   struct tkmap_instance dummy;
   struct tkmap_instance * tk;
 
   os_mutexLock (&map->m_lock);
-  dummy.m_sample = sd;
+  dummy.m_sample = (struct serdata *) sd;
   tk = ut_hhLookup (map->m_hh, &dummy);
   os_mutexUnlock (&map->m_lock);
   return (tk) ? tk->m_iid : DDS_HANDLE_NIL;
@@ -205,13 +206,13 @@ struct tkmap_instance * dds_tkmap_find
 {
   struct tkmap_instance dummy;
   struct tkmap_instance * tk;
-  struct tkmap * map = (rd) ? topic->m_entity.m_domain->m_rd_tkmap : topic->m_entity.m_domain->m_wr_tkmap;
+  struct tkmap * map = gv.m_tkmap;
 
   dummy.m_sample = sd;
 
   /* Generate key hash if required and not provided */
 
-  if (topic->m_descriptor->m_nkeys)
+  if (topic && topic->m_descriptor->m_nkeys)
   {
     if ((sd->v.keyhash.m_flags & DDS_KEY_HASH_SET) == 0)
     {
@@ -251,10 +252,7 @@ struct tkmap_instance * dds_tkmap_find
   tk = ut_hhLookup (map->m_hh, &dummy);
   if (tk)
   {
-    if (rd)
-    {
-      os_atomic_inc32 (&tk->m_refc);
-    }
+    os_atomic_inc32 (&tk->m_refc);
   }
   else
   {
@@ -280,16 +278,18 @@ struct tkmap_instance * dds_tkmap_find
 
 struct tkmap_instance * dds_tkmap_lookup_instance_ref (struct serdata * sd)
 {
-  dds_topic * topic = sd->v.st->topic->status_cb_entity;
+  dds_topic * topic = sd->v.st->topic ? sd->v.st->topic->status_cb_entity : NULL;
 
   assert (vtime_awake_p (lookup_thread_state ()->vtime));
 
-  /* Topic might have been deleted */
-
+#if 0
+  /* Topic might have been deleted -- FIXME: no way the topic may be deleted when there're still users out there */
   if (topic == NULL)
   {
     return NULL;
   }
+#endif
+
   return dds_tkmap_find (topic, sd, true, true);
 }
 

@@ -95,7 +95,7 @@ static double exampleGetMedianFromTimeStats (ExampleTimeStats *stats)
   return median;
 }
 
-int main (int argc, char *argv[])
+int ping_main (int argc, char *argv[])
 {
   dds_entity_t writer;
   dds_entity_t reader;
@@ -192,7 +192,7 @@ int main (int argc, char *argv[])
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (drQos);
 
-  printf("Let pong create reader, then press enter to continue ..."); fflush(stdout);getchar();
+  printf("Sleep 3s for pong to create reader ...\n"); fflush(stdout); dds_sleepfor(DDS_SECS(3));
 
   /* A DDS_DataWriter is created on the Publisher & Topic with a modified Qos. */
   dwQos = dds_qos_create ();
@@ -397,4 +397,10 @@ int main (int argc, char *argv[])
   dds_fini ();
 
   return 0;
+}
+
+#pragma weak main
+int main (int argc, char *argv[])
+{
+  return ping_main(argc, argv);
 }

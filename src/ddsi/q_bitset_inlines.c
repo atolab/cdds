@@ -12,5 +12,5 @@
 #define SUPPRESS_BITSET_INLINES
 
 #include "ddsi/q_bitset.h"
-#include "q_bitset_template.c"
+#include "ddsi/q_bitset_template.h"
 

@@ -193,8 +193,6 @@ typedef struct dds_domain
   dds_domainid_t m_id;
   ut_avlTree_t m_topics;
   uint32_t m_refc;
-  struct tkmap * m_rd_tkmap;
-  struct tkmap * m_wr_tkmap;
 }
 dds_domain;
 

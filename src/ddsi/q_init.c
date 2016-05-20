@@ -55,6 +55,8 @@
 #include "ddsi/ddsi_udp.h"
 #include "ddsi/ddsi_tcp.h"
 
+#include "kernel/dds_tkmap.h"
+
 static void add_peer_addresses (struct addrset *as, const struct config_peer_listelem *list)
 {
   while (list)
@@ -817,6 +819,7 @@ int rtps_init (void)
   gv.spdp_defrag = nn_defrag_new (NN_DEFRAG_DROP_OLDEST, config.defrag_unreliable_maxsamples);
   gv.spdp_reorder = nn_reorder_new (NN_REORDER_MODE_ALWAYS_DELIVER, config.primary_reorder_maxsamples);
 
+  gv.m_tkmap = dds_tkmap_new ();
 
   if (gv.m_factory->m_connless)
   {
@@ -1102,6 +1105,7 @@ err_mc_conn:
     ddsi_conn_free (gv.disc_conn_uc);
   }
 err_unicast_sockets:
+  dds_tkmap_free (gv.m_tkmap);
   nn_reorder_free (gv.spdp_reorder);
   nn_defrag_free (gv.spdp_defrag);
   os_mutexDestroy (&gv.spdp_lock);
@@ -1364,6 +1368,7 @@ void rtps_term (void)
      stopped, defrags and reorders have been freed, and all delivery
      queues been drained.  I.e., until very late in the game. */
   nn_rbufpool_free (gv.rbufpool);
+  dds_tkmap_free (gv.m_tkmap);
 
   ephash_free (gv.guid_hash);
   deleted_participants_admin_fini ();

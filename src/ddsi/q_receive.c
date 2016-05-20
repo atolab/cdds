@@ -1338,7 +1338,7 @@ static int handle_HeartbeatFrag (struct receiver_state *rst, UNUSED_ARG(nn_wctim
      discover a missing fragment, which differs significantly from
      handle_Heartbeat's scheduling of an AckNack event when it must
      respond.  Why?  Just because. */
-  if (ut_avlIsEmpty (&pwr->readers))
+  if (ut_avlIsEmpty (&pwr->readers) || pwr->local_matching_inprogress)
     TRACE ((" no readers"));
   else
   {
@@ -2130,7 +2130,7 @@ static void handle_regular (struct receiver_state *rst, struct nn_rmsg *rmsg, co
 
   /* Shouldn't lock the full writer, but will do so for now */
   os_mutexLock (&pwr->e.lock);
-  if (ut_avlIsEmpty (&pwr->readers))
+  if (ut_avlIsEmpty (&pwr->readers) || pwr->local_matching_inprogress)
   {
     os_mutexUnlock (&pwr->e.lock);
     TRACE ((" %x:%x:%x:%x -> %x:%x:%x:%x: no readers", PGUID (pwr->e.guid), PGUID (dst)));

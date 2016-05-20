@@ -459,6 +459,28 @@ void ut_chhEnumUnsafe (struct ut_chh * UT_HH_RESTRICT rt, void (*f) (void *a, vo
     }
 }
 
+void *ut_chhIterNext (struct ut_chhIter *it)
+{
+  uint32_t i;
+  for (i = it->cursor; i < it->size; i++) {
+    void *data = os_atomic_ldvoidp (&it->bs[i].data);
+    if (data && data != CHH_BUSY) {
+      it->cursor = i+1;
+      return data;
+    }
+  }
+  return NULL;
+}
+
+void *ut_chhIterFirst (struct ut_chh * UT_HH_RESTRICT rt, struct ut_chhIter *it)
+{
+  struct ut_chhBucketArray * const bsary = os_atomic_ldvoidp (&rt->buckets);
+  it->bs = bsary->bs;
+  it->size = bsary->size;
+  it->cursor = 0;
+  return ut_chhIterNext (it);
+}
+
 /************* SEQUENTIAL VERSION ***************/
 
 struct ut_hhBucket {

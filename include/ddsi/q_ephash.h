@@ -13,6 +13,7 @@
 #define Q_EPHASH_H
 
 #include "os/os_defs.h"
+#include "util/ut_hopscotch.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -44,10 +45,9 @@ struct ephash_chain_entry {
 
 struct ephash_enum
 {
-  struct ephash_chain_entry *cursor;
-  struct ephash *ephash;
-  struct ephash_enum *next_live;
-  struct ephash_enum *prev_live;
+  struct ut_chhIter it;
+  int kind;
+  struct entity_common *cur;
 };
 
 /* Readers & writers are both in a GUID- and in a GID-keyed table. If

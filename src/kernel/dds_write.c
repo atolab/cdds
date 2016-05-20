@@ -28,15 +28,13 @@ int dds_write_ts (dds_entity_t wr, const void * data, dds_time_t tstamp)
 #include "ddsi/q_radmin.h"
 #include <string.h>
 
-static void deliver_locally (const nn_guid_t *wrguid, int64_t seq, size_t nrdguid, const nn_guid_t *rdguid, serdata_t data)
+static void deliver_locally (const nn_guid_t *wrguid, int64_t seq, size_t nrdguid, const nn_guid_t *rdguid, serdata_t data, struct tkmap_instance * tk)
 {
   struct reader *rd;
   size_t idx = 0;
   if ((rd = ephash_lookup_reader_guid (&rdguid[idx++])) != NULL)
   {
     struct nn_rsample_info sampleinfo;
-    struct tkmap_instance * tk;
-    tk = (ddsi_plugin.rhc_lookup_fn) (data);
     memset(&sampleinfo, 0, sizeof(sampleinfo));
     sampleinfo.bswap = 0;
     sampleinfo.complex_qos = 0;
@@ -53,8 +51,6 @@ static void deliver_locally (const nn_guid_t *wrguid, int64_t seq, size_t nrdgui
       while (rd && ! (ddsi_plugin.rhc_store_fn) (rd->rhc, &sampleinfo, data, tk))
         dds_sleepfor (DDS_MSECS (10));
     } while (idx < nrdguid && (rd = ephash_lookup_reader_guid (&rdguid[idx++])) != NULL);
-
-    (ddsi_plugin.rhc_unref_fn) (tk);
   }
 }
 
@@ -76,6 +72,7 @@ int dds_write_impl
   const bool writekey = action & DDS_WR_KEY_BIT;
   dds_writer * writer = (dds_writer*) wr;
   struct writer * ddsi_wr = writer->m_wr;
+  struct tkmap_instance * tk;
   serdata_t d;
 
   /* Check for topic filter */
@@ -112,7 +109,8 @@ int dds_write_impl
   d->v.msginfo.timestamp.v = tstamp;
   os_mutexLock (&writer->m_call_lock);
   ddsi_serdata_ref(d);
-  ret = write_sample (writer->m_xp, ddsi_wr, d);
+  tk = (ddsi_plugin.rhc_lookup_fn) (d);
+  ret = write_sample (writer->m_xp, ddsi_wr, d, tk);
 
   if (ret >= 0)
   {
@@ -138,8 +136,9 @@ int dds_write_impl
   if (ret == DDS_RETCODE_OK)
     deliver_locally (&ddsi_wr->e.guid, os_atomic_inc64_nv(&fake_seq),
                      sizeof(ddsi_wr->local_reader_guid)/sizeof(ddsi_wr->local_reader_guid[0]),
-                     ddsi_wr->local_reader_guid, d);
+                     ddsi_wr->local_reader_guid, d, tk);
   ddsi_serdata_unref(d);
+  (ddsi_plugin.rhc_unref_fn) (tk);
 
   if (asleep)
   {
@@ -169,6 +168,7 @@ int dds_writecdr_impl
   const bool writekey = action & DDS_WR_KEY_BIT;
   dds_writer * writer = (dds_writer*) wr;
   struct writer * ddsi_wr = writer->m_wr;
+  struct tkmap_instance * tk;
   serdata_t d;
 
   /* Check for topic filter */
@@ -210,7 +210,8 @@ int dds_writecdr_impl
   d->v.msginfo.timestamp.v = tstamp;
   os_mutexLock (&writer->m_call_lock);
   ddsi_serdata_ref(d);
-  ret = write_sample (writer->m_xp, ddsi_wr, d);
+  tk = (ddsi_plugin.rhc_lookup_fn) (d);
+  ret = write_sample (writer->m_xp, ddsi_wr, d, tk);
 
   if (ret >= 0)
   {
@@ -235,8 +236,9 @@ int dds_writecdr_impl
   if (ret == DDS_RETCODE_OK)
     deliver_locally (&ddsi_wr->e.guid, os_atomic_inc64_nv(&fake_seq),
                      sizeof(ddsi_wr->local_reader_guid)/sizeof(ddsi_wr->local_reader_guid[0]),
-                     ddsi_wr->local_reader_guid, d);
+                     ddsi_wr->local_reader_guid, d, tk);
   ddsi_serdata_unref(d);
+  (ddsi_plugin.rhc_unref_fn) (tk);
 
   if (asleep)
   {

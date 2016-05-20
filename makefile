@@ -5,7 +5,7 @@ include config.mk
 CPPFLAGS += -Iinclude
 
 SHLIBS = vdds vdds-stubs
-EXES   = vdds-server publisher subscriber rpc-publisher rpc-subscriber ping pong rpc-ping rpc-pong
+EXES   = vdds-server publisher subscriber rpc-publisher rpc-subscriber ping pong rpc-ping rpc-pong rpc-pingpong
 
 all: $(SHLIBS:%=gen/$(LIBPRE)%$(SO)) $(EXES:%=gen/%$X)
 
@@ -54,6 +54,10 @@ gen/pong$X: gen/pong$O gen/RoundTrip$O | gen/$(LIBPRE)vdds$(SO)
 gen/rpc-ping$X: gen/rpc-ping$O gen/RoundTrip$O | gen/$(LIBPRE)vdds-stubs$(SO)
 	$(make_exe)
 gen/rpc-pong$X: gen/rpc-pong$O gen/RoundTrip$O | gen/$(LIBPRE)vdds-stubs$(SO)
+	$(make_exe)
+
+gen/rpc-pingpong$X: LDLIBS += -lvdds
+gen/rpc-pingpong$X: gen/rpc-ping$O gen/rpc-pong$O gen/rpc-pingpong$O gen/RoundTrip$O | gen/$(LIBPRE)vdds$(SO)
 	$(make_exe)
 
 gen/%$O: %.c

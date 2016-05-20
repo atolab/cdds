@@ -221,6 +221,11 @@ int dds_topic_create(dds_entity_t pp, dds_entity_t *topic, const dds_topic_descr
     return rep.status;
 }
 
+dds_entity_t dds_topic_find(dds_entity_t pp, const char *name)
+{
+    return NULL;
+}
+
 void dds_write_set_batch(bool enable)
 {
     struct reqhdr req;

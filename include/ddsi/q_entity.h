@@ -307,6 +307,7 @@ struct proxy_writer {
   unsigned deliver_synchronously: 1;
   unsigned have_seen_heartbeat: 1;
   unsigned assert_pp_lease: 1;
+  unsigned local_matching_inprogress: 1;
 #ifdef DDSI_INCLUDE_SSM
   unsigned supports_ssm: 1;
 #endif

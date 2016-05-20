@@ -119,12 +119,22 @@ else
 endif
 
 ifeq "$(OS)" "darwin"
-  define make_exe
+  ifneq "$(findstring clang, $(CC))" ""
+    define make_exe
 	$(LD) $(LDFLAGS) $(patsubst -L%, -rpath %, $(filter -L%, $(LDFLAGS))) $(EXE_OFLAG)$@ $^ $(LDLIBS)
-  endef
-  define make_shlib
+    endef
+    define make_shlib
 	$(LD) $(LDFLAGS) $(patsubst -L%, -rpath %, $(filter -L%, $(LDFLAGS))) -dynamiclib -install_name @rpath/$(notdir $@) $(SHLIB_OFLAG)$@ $^ $(LDLIBS)
-  endef
+    endef
+  else # assume gcc
+    comma=,
+    define make_exe
+	$(LD) $(LDFLAGS) $(patsubst -L%, -Wl$(comma)-rpath$(comma)%, $(filter -L%, $(LDFLAGS))) $(EXE_OFLAG)$@ $^ $(LDLIBS)
+    endef
+    define make_shlib
+	$(LD) $(LDFLAGS) $(patsubst -L%, -Wl$(comma)-rpath$(comma)%, $(filter -L%, $(LDFLAGS))) -dynamiclib -Wl,-install_name,@rpath/$(notdir $@) $(SHLIB_OFLAG)$@ $^ $(LDLIBS)
+    endef
+  endif
   define make_archive
 	ar -ru $@ $?
   endef

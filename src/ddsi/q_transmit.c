@@ -742,7 +742,7 @@ int enqueue_sample_wrlock_held (struct writer *wr, int64_t seq, const struct nn_
   return enqueued ? 0 : -1;
 }
 
-static int insert_sample_in_whc (struct writer *wr, int64_t seq, struct nn_plist *plist, serdata_t serdata)
+static int insert_sample_in_whc (struct writer *wr, int64_t seq, struct nn_plist *plist, serdata_t serdata, struct tkmap_instance *tk)
 {
   /* returns: < 0 on error, 0 if no need to insert in whc, > 0 if inserted */
   int do_insert, insres, res;
@@ -776,7 +776,7 @@ static int insert_sample_in_whc (struct writer *wr, int64_t seq, struct nn_plist
 
   if (!do_insert)
     res = 0;
-  else if ((insres = whc_insert (wr->whc, writer_max_drop_seq (wr), seq, plist, serdata)) < 0)
+  else if ((insres = whc_insert (wr->whc, writer_max_drop_seq (wr), seq, plist, serdata, tk)) < 0)
     res = insres;
   else
     res = 1;
@@ -906,7 +906,7 @@ static int maybe_grow_whc (struct writer *wr)
   return 0;
 }
 
-static int write_sample_kernel_seq_eot (struct nn_xpack *xp, struct writer *wr, struct nn_plist *plist, serdata_t serdata, int have_kernel_seq, uint32_t kernel_seq, int end_of_txn)
+static int write_sample_eot (struct nn_xpack *xp, struct writer *wr, struct nn_plist *plist, serdata_t serdata, struct tkmap_instance *tk, int end_of_txn)
 {
   int r;
   int64_t seq;
@@ -935,26 +935,7 @@ static int write_sample_kernel_seq_eot (struct nn_xpack *xp, struct writer *wr, 
     wr->cs_seq = 0;
   }
 
-  if (config.forward_all_messages || !have_kernel_seq)
-  {
-    /* no filtering */
-  }
-  else if (wr->last_kernel_seq != kernel_seq)
-  {
-    wr->last_kernel_seq = kernel_seq;
-  }
-  else
-  {
-    os_mutexUnlock (&wr->e.lock);
-    TRACE (("write_sample %x:%x:%x:%x - dropping kernel seq %u as duplicate\n",
-            PGUID (wr->e.guid), kernel_seq));
-    r = 0;
-    goto drop;
-  }
-
   /* If WHC overfull, block. */
-
-
   {
     size_t unacked_bytes = whc_unacked_bytes (wr->whc);
     os_result ores;
@@ -995,7 +976,7 @@ static int write_sample_kernel_seq_eot (struct nn_xpack *xp, struct writer *wr, 
     plist->coherent_set_seqno = toSN (wr->cs_seq);
   }
 
-  if ((r = insert_sample_in_whc (wr, seq, plist, serdata)) < 0)
+  if ((r = insert_sample_in_whc (wr, seq, plist, serdata, tk)) < 0)
   {
     /* Failure of some kind */
     os_mutexUnlock (&wr->e.lock);
@@ -1037,13 +1018,18 @@ drop:
   return r;
 }
 
-int write_sample_kernel_seq (struct nn_xpack *xp, struct writer *wr, serdata_t serdata, int have_kernel_seq, uint32_t kernel_seq)
+int write_sample (struct nn_xpack *xp, struct writer *wr, serdata_t serdata, struct tkmap_instance *tk)
 {
-  return write_sample_kernel_seq_eot (xp, wr, NULL, serdata, have_kernel_seq, kernel_seq, 0);
+  return write_sample_eot (xp, wr, NULL, serdata, tk, 0);
 }
 
-int write_sample (struct nn_xpack *xp, struct writer *wr, serdata_t serdata)
+int write_sample_notk (struct nn_xpack *xp, struct writer *wr, serdata_t serdata)
 {
-  return write_sample_kernel_seq_eot (xp, wr, NULL, serdata, 0, 0, 0);
+  struct tkmap_instance *tk;
+  int res;
+  tk = (ddsi_plugin.rhc_lookup_fn) (serdata);
+  res = write_sample_eot (xp, wr, NULL, serdata, tk, 0);
+  (ddsi_plugin.rhc_unref_fn) (tk);
+  return res;
 }
 

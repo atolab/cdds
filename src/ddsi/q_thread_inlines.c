@@ -12,4 +12,4 @@
 #define SUPPRESS_THREAD_INLINES
 
 #include "ddsi/q_thread.h"
-#include "q_thread_template.c"
+#include "ddsi/q_thread_template.h"

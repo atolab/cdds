@@ -6,7 +6,7 @@
 
 #define MAX_SAMPLES 10
 
-int main (int argc, char *argv[])
+int pong_main (int argc, char *argv[])
 {
   dds_duration_t waitTimeout = DDS_INFINITY;
   unsigned int i;
@@ -47,6 +47,12 @@ int main (int argc, char *argv[])
 
   status = dds_topic_create
     (participant, &topic, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
+  if (status < 0 && dds_err_no(status) == DDS_RETCODE_BAD_PARAMETER)
+  {
+    topic = dds_topic_find(participant, "RoundTrip");
+    if (topic != NULL)
+      status = 0;
+  }
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   /* A DDS Publisher is created on the domain participant. */
@@ -73,7 +79,7 @@ int main (int argc, char *argv[])
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (qos);
 
-  printf("Let ping create reader, then press enter to continue ..."); fflush(stdout);getchar();
+  printf("Sleep 3s for ping to create reader ...\n"); fflush(stdout); dds_sleepfor(DDS_SECS(3));
 
   /* A DDS DataWriter is created on the Publisher & Topic with a modififed Qos. */
 
@@ -131,4 +137,11 @@ int main (int argc, char *argv[])
   dds_fini ();
   return 0;
 #endif
+}
+
+
+#pragma weak main
+int main (int argc, char *argv[])
+{
+  return pong_main(argc, argv);
 }

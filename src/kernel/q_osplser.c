@@ -51,38 +51,6 @@ int serdata_cmp (const struct serdata *a, const struct serdata *b)
   return memcmp (a->v.keyhash.m_hash, b->v.keyhash.m_hash, 16);
 }
 
-uint32_t serdata_hash (const struct serdata *a)
-{
-  static const uint64_t c[] = {
-    UINT64_C (16292676669999574021),
-    UINT64_C (10242350189706880077),
-    UINT64_C (12844332200329132887),
-    UINT64_C (16728792139623414127)
-  };
-  const uint32_t *kh;
-
-  /* Samples with a keyless topic map to the default instance */
-
-  if
-    (
-     (a->v.st->topic) &&
-     (((dds_topic_descriptor_t*) a->v.st->topic->type)->m_keys == 0)
-     )
-  {
-    return 0;
-  }
-
-  /* Check key has been hashed */
-
-  assert (a->v.keyhash.m_flags & DDS_KEY_HASH_SET);
-
-  /* Compare by hash */
-  kh = (const uint32_t *) a->v.keyhash.m_hash;
-  return (uint32_t) (((((uint32_t) kh[0] + c[0]) * ((uint32_t) kh[1] + c[1])) +
-                      (((uint32_t) kh[2] + c[2]) * ((uint32_t) kh[3] + c[3])))
-                     >> 32);
-}
-
 serdata_t serialize_key (serstatepool_t pool, const struct sertopic * tp, const void * sample)
 {
   serdata_t sd;

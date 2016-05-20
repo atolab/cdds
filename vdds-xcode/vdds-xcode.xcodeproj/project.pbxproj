@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0335203F1CEDD22A003E7429 /* rpc-ping.c in Sources */ = {isa = PBXBuildFile; fileRef = 03E6CF421CCE0DAB00D73982 /* rpc-ping.c */; };
+		033520401CEDD22A003E7429 /* RoundTrip.c in Sources */ = {isa = PBXBuildFile; fileRef = 03E6CEB71CCE0DAB00D73982 /* RoundTrip.c */; };
+		033520481CEDD242003E7429 /* rpc-pong.c in Sources */ = {isa = PBXBuildFile; fileRef = 03E6CF431CCE0DAB00D73982 /* rpc-pong.c */; };
+		033520491CEDD244003E7429 /* rpc-pingpong.c in Sources */ = {isa = PBXBuildFile; fileRef = 0335203C1CEDD031003E7429 /* rpc-pingpong.c */; };
+		0335204A1CEDDC48003E7429 /* libvdds.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 03E6CEA91CCE0CA400D73982 /* libvdds.dylib */; };
 		03C96E9F1CCE5B8D0012F15D /* libvdds.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 03E6CEA91CCE0CA400D73982 /* libvdds.dylib */; };
 		03C96EA51CCE5B9F0012F15D /* server2.c in Sources */ = {isa = PBXBuildFile; fileRef = 03C96E9A1CCE5B800012F15D /* server2.c */; };
 		03C96EA71CCE5CD20012F15D /* libevent_pthreads-2.0.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C96EA61CCE5CD20012F15D /* libevent_pthreads-2.0.5.dylib */; };
@@ -164,6 +169,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		033520431CEDD22A003E7429 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		03C96EA01CCE5B8D0012F15D /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -257,6 +271,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0335203C1CEDD031003E7429 /* rpc-pingpong.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "rpc-pingpong.c"; sourceTree = "<group>"; };
+		033520471CEDD22A003E7429 /* rpc-pingpong */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "rpc-pingpong"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0335204B1CEF4B21003E7429 /* q_bitset_template.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = q_bitset_template.h; sourceTree = "<group>"; };
+		0335204C1CEF4B21003E7429 /* q_bswap_template.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = q_bswap_template.h; sourceTree = "<group>"; };
+		0335204D1CEF4B21003E7429 /* q_thread_template.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = q_thread_template.h; sourceTree = "<group>"; };
 		037D2E711CD2455A004434B2 /* os_platform_heap.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_heap.c; sourceTree = "<group>"; };
 		037D2E721CD2455A004434B2 /* os_platform_init.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_init.c; sourceTree = "<group>"; };
 		037D2E731CD2455A004434B2 /* os_platform_socket.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_socket.c; sourceTree = "<group>"; };
@@ -411,10 +430,8 @@
 		03E6CF4C1CCE0DAB00D73982 /* ddsi_udp.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ddsi_udp.c; sourceTree = "<group>"; };
 		03E6CF4D1CCE0DAB00D73982 /* q_addrset.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_addrset.c; sourceTree = "<group>"; };
 		03E6CF4E1CCE0DAB00D73982 /* q_bitset_inlines.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_bitset_inlines.c; sourceTree = "<group>"; };
-		03E6CF4F1CCE0DAB00D73982 /* q_bitset_template.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_bitset_template.c; sourceTree = "<group>"; };
 		03E6CF501CCE0DAB00D73982 /* q_bswap.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_bswap.c; sourceTree = "<group>"; };
 		03E6CF511CCE0DAB00D73982 /* q_bswap_inlines.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_bswap_inlines.c; sourceTree = "<group>"; };
-		03E6CF521CCE0DAB00D73982 /* q_bswap_template.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_bswap_template.c; sourceTree = "<group>"; };
 		03E6CF531CCE0DAB00D73982 /* q_config.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_config.c; sourceTree = "<group>"; };
 		03E6CF541CCE0DAB00D73982 /* q_ddsi_discovery.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_ddsi_discovery.c; sourceTree = "<group>"; };
 		03E6CF551CCE0DAB00D73982 /* q_debmon.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_debmon.c; sourceTree = "<group>"; };
@@ -438,7 +455,6 @@
 		03E6CF671CCE0DAB00D73982 /* q_sockwaitset.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_sockwaitset.c; sourceTree = "<group>"; };
 		03E6CF681CCE0DAB00D73982 /* q_thread.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_thread.c; sourceTree = "<group>"; };
 		03E6CF691CCE0DAB00D73982 /* q_thread_inlines.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_thread_inlines.c; sourceTree = "<group>"; };
-		03E6CF6A1CCE0DAB00D73982 /* q_thread_template.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_thread_template.c; sourceTree = "<group>"; };
 		03E6CF6B1CCE0DAB00D73982 /* q_time.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_time.c; sourceTree = "<group>"; };
 		03E6CF6C1CCE0DAB00D73982 /* q_transmit.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_transmit.c; sourceTree = "<group>"; };
 		03E6CF6D1CCE0DAB00D73982 /* q_whc.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = q_whc.c; sourceTree = "<group>"; };
@@ -527,6 +543,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		033520411CEDD22A003E7429 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0335204A1CEDDC48003E7429 /* libvdds.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		03C96E9E1CCE5B8D0012F15D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -669,6 +693,7 @@
 				03E6D0A21CCE123500D73982 /* rpc-ping */,
 				03E6D0AD1CCE123A00D73982 /* rpc-pong */,
 				03C96EA41CCE5B8D0012F15D /* vdds-server2 */,
+				033520471CEDD22A003E7429 /* rpc-pingpong */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -796,7 +821,9 @@
 				03E6CED91CCE0DAB00D73982 /* probes-constants.h */,
 				03E6CEDA1CCE0DAB00D73982 /* q_addrset.h */,
 				03E6CEDB1CCE0DAB00D73982 /* q_align.h */,
+				0335204B1CEF4B21003E7429 /* q_bitset_template.h */,
 				03E6CEDC1CCE0DAB00D73982 /* q_bitset.h */,
+				0335204C1CEF4B21003E7429 /* q_bswap_template.h */,
 				03E6CEDD1CCE0DAB00D73982 /* q_bswap.h */,
 				03E6CEDE1CCE0DAB00D73982 /* q_builtin_topic.h */,
 				03E6CEDF1CCE0DAB00D73982 /* q_config.h */,
@@ -827,6 +854,7 @@
 				03E6CEF81CCE0DAB00D73982 /* q_servicelease.h */,
 				03E6CEF91CCE0DAB00D73982 /* q_sockwaitset.h */,
 				03E6CEFA1CCE0DAB00D73982 /* q_static_assert.h */,
+				0335204D1CEF4B21003E7429 /* q_thread_template.h */,
 				03E6CEFB1CCE0DAB00D73982 /* q_thread.h */,
 				03E6CEFC1CCE0DAB00D73982 /* q_time.h */,
 				03E6CEFD1CCE0DAB00D73982 /* q_transmit.h */,
@@ -934,8 +962,9 @@
 				03E6CF431CCE0DAB00D73982 /* rpc-pong.c */,
 				03E6CF441CCE0DAB00D73982 /* rpc-publisher.c */,
 				03E6CF451CCE0DAB00D73982 /* rpc-subscriber.c */,
+				0335203C1CEDD031003E7429 /* rpc-pingpong.c */,
 			);
-			indentWidth = 4;
+			indentWidth = 2;
 			name = "rpc-examples";
 			path = "../rpc-examples";
 			sourceTree = "<group>";
@@ -962,10 +991,8 @@
 				03E6CF4C1CCE0DAB00D73982 /* ddsi_udp.c */,
 				03E6CF4D1CCE0DAB00D73982 /* q_addrset.c */,
 				03E6CF4E1CCE0DAB00D73982 /* q_bitset_inlines.c */,
-				03E6CF4F1CCE0DAB00D73982 /* q_bitset_template.c */,
 				03E6CF501CCE0DAB00D73982 /* q_bswap.c */,
 				03E6CF511CCE0DAB00D73982 /* q_bswap_inlines.c */,
-				03E6CF521CCE0DAB00D73982 /* q_bswap_template.c */,
 				03E6CF531CCE0DAB00D73982 /* q_config.c */,
 				03E6CF541CCE0DAB00D73982 /* q_ddsi_discovery.c */,
 				03E6CF551CCE0DAB00D73982 /* q_debmon.c */,
@@ -989,7 +1016,6 @@
 				03E6CF671CCE0DAB00D73982 /* q_sockwaitset.c */,
 				03E6CF681CCE0DAB00D73982 /* q_thread.c */,
 				03E6CF691CCE0DAB00D73982 /* q_thread_inlines.c */,
-				03E6CF6A1CCE0DAB00D73982 /* q_thread_template.c */,
 				03E6CF6B1CCE0DAB00D73982 /* q_time.c */,
 				03E6CF6C1CCE0DAB00D73982 /* q_transmit.c */,
 				03E6CF6D1CCE0DAB00D73982 /* q_whc.c */,
@@ -1167,6 +1193,23 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		0335203D1CEDD22A003E7429 /* rpc-pingpong */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 033520441CEDD22A003E7429 /* Build configuration list for PBXNativeTarget "rpc-pingpong" */;
+			buildPhases = (
+				0335203E1CEDD22A003E7429 /* Sources */,
+				033520411CEDD22A003E7429 /* Frameworks */,
+				033520431CEDD22A003E7429 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "rpc-pingpong";
+			productName = "rpc-ping";
+			productReference = 033520471CEDD22A003E7429 /* rpc-pingpong */;
+			productType = "com.apple.product-type.tool";
+		};
 		03C96E9B1CCE5B8D0012F15D /* vdds-server2 */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 03C96EA11CCE5B8D0012F15D /* Build configuration list for PBXNativeTarget "vdds-server2" */;
@@ -1439,11 +1482,23 @@
 				03E6D0A11CCE123500D73982 /* rpc-ping */,
 				03E6D0AC1CCE123A00D73982 /* rpc-pong */,
 				03C96E9B1CCE5B8D0012F15D /* vdds-server2 */,
+				0335203D1CEDD22A003E7429 /* rpc-pingpong */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		0335203E1CEDD22A003E7429 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0335203F1CEDD22A003E7429 /* rpc-ping.c in Sources */,
+				033520481CEDD242003E7429 /* rpc-pong.c in Sources */,
+				033520491CEDD244003E7429 /* rpc-pingpong.c in Sources */,
+				033520401CEDD22A003E7429 /* RoundTrip.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		03C96E9C1CCE5B8D0012F15D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1673,6 +1728,22 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		033520451CEDD22A003E7429 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		033520461CEDD22A003E7429 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		03C96EA21CCE5B8D0012F15D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1973,6 +2044,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		033520441CEDD22A003E7429 /* Build configuration list for PBXNativeTarget "rpc-pingpong" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				033520451CEDD22A003E7429 /* Debug */,
+				033520461CEDD22A003E7429 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		03C96EA11CCE5B8D0012F15D /* Build configuration list for PBXNativeTarget "vdds-server2" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

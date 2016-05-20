@@ -38,7 +38,7 @@ static void dds_instance_remove (const dds_topic * topic,  const void * data, dd
 
   if (handle != DDS_HANDLE_NIL)
   {
-    inst = dds_tkmap_find_by_id (topic->m_entity.m_domain->m_wr_tkmap, handle);
+    inst = dds_tkmap_find_by_id (gv.m_tkmap, handle);
   }
   else
   {
@@ -51,24 +51,17 @@ static void dds_instance_remove (const dds_topic * topic,  const void * data, dd
   }
 }
 
-static const dds_topic * dds_instance_info (dds_entity_t e, struct tkmap ** map)
+static const dds_topic * dds_instance_info (dds_entity_t e)
 {
   const dds_topic * topic;
 
   assert (e);
   assert (e->m_kind & DDS_IS_RD_OR_WR);
-  assert (map);
 
   if (e->m_kind == DDS_TYPE_READER)
-  {
     topic = ((dds_reader*) e)->m_topic;
-    *map = e->m_domain->m_rd_tkmap;
-  }
   else
-  {
     topic = ((dds_writer*) e)->m_topic;
-    *map = e->m_domain->m_wr_tkmap;
-  }
   return topic;
 }
 
@@ -81,7 +74,7 @@ dds_instance_handle_t dds_instance_register (dds_entity_t wr, const void * data)
   assert (data);
 
   inst = dds_instance_find (((dds_writer*) wr)->m_topic, data, true);
-  return inst->m_iid;;
+  return inst->m_iid;
 }
 
 int dds_instance_unregister (dds_entity_t wr, const void * data, dds_instance_handle_t handle)
@@ -105,8 +98,8 @@ int dds_instance_unregister_ts (dds_entity_t wr, const void * data, dds_instance
 
   if (sample == NULL)
   {
-    struct tkmap * map;
-    topic = dds_instance_info (wr, &map);
+    struct tkmap * map = gv.m_tkmap;
+    topic = dds_instance_info (wr);
     sample = dds_alloc (topic->m_descriptor->m_size);
     if (! dds_tkmap_get_key (map, handle, sample))
     {
@@ -155,13 +148,13 @@ dds_instance_handle_t dds_instance_lookup (dds_entity_t e, const void * data)
 {
   dds_instance_handle_t ih;
   const dds_topic * topic;
-  struct tkmap * map;
+  struct tkmap * map = gv.m_tkmap;
   serdata_t sd;
 
   assert (e);
   assert (data);
 
-  topic = dds_instance_info (e, &map);
+  topic = dds_instance_info (e);
   sd = serialize_key (gv.serpool, topic->m_stopic, data);
   ih = dds_tkmap_lookup (map, sd);
   ddsi_serdata_unref (sd);
@@ -176,11 +169,11 @@ int dds_instance_get_key
 )
 {
   const dds_topic * topic;
-  struct tkmap * map;
+  struct tkmap * map = gv.m_tkmap;
 
   assert (data);
 
-  topic = dds_instance_info (e, &map);
+  topic = dds_instance_info (e);
   memset (data, 0, topic->m_descriptor->m_size);
   return (dds_tkmap_get_key (map, inst, data)) ?
     DDS_RETCODE_OK : DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER, DDS_MOD_INST, DDS_ERR_M1);

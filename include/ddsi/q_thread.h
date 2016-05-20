@@ -108,7 +108,7 @@ int thread_exists (const char *name);
 #endif
 
 #if NN_HAVE_C99_INLINE && !defined SUPPRESS_THREAD_INLINES
-#include "q_thread_template.c"
+#include "q_thread_template.h"
 #else
 #if defined (__cplusplus)
 extern "C" {

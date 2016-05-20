@@ -24,13 +24,13 @@ struct nn_xmsg;
 struct writer;
 struct proxy_reader;
 struct serdata;
+struct tkmap_instance;
 
 /* Writing new data; serdata_twrite (serdata) is assumed to be really
    recentish; serdata is unref'd.  If xp == NULL, data is queued, else
    packed. */
-int write_sample (struct nn_xpack *xp, struct writer *wr, struct serdata *serdata);
-int write_sample_kernel_seq (struct nn_xpack *xp, struct writer *wr, struct serdata *serdata, int have_kernel_seq, uint32_t kernel_seq);
-
+int write_sample (struct nn_xpack *xp, struct writer *wr, struct serdata *serdata, struct tkmap_instance *tk);
+int write_sample_notk (struct nn_xpack *xp, struct writer *wr, struct serdata *serdata);
 
 /* When calling the following functions, wr->lock must be held */
 int create_fragment_message (struct writer *wr, int64_t seq, const struct nn_plist *plist, struct serdata *serdata, unsigned fragnum, struct proxy_reader *prd,struct nn_xmsg **msg, int isnew);

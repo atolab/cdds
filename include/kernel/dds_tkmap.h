@@ -23,7 +23,7 @@ struct tkmap_instance
 struct tkmap * dds_tkmap_new (void);
 void dds_tkmap_free (struct tkmap *tkmap);
 void dds_tkmap_instance_ref (struct tkmap_instance *tk);
-uint64_t dds_tkmap_lookup (struct tkmap *tkmap, struct serdata *serdata);
+uint64_t dds_tkmap_lookup (struct tkmap *tkmap, const struct serdata *serdata);
 bool dds_tkmap_get_key (struct tkmap * map, uint64_t iid, void * sample);
 struct tkmap_instance * dds_tkmap_find
 (

@@ -19,6 +19,7 @@
 #include "ddsi/q_config.h"
 #include "ddsi/q_whc.h"
 #include "kernel/q_osplser.h"
+#include "kernel/dds_tkmap.h"
 
 /* Avoiding all nn_log-related activities when LC_WHC is not set
    (and it hardly ever is, as it is not even included in "trace")
@@ -74,17 +75,14 @@ static int whc_node_eq (const void *va, const void *vb)
 static uint32_t whc_idxnode_hash_key (const void *vn)
 {
   const struct whc_idxnode *n = vn;
-  assert(n->hist[n->headidx]);
-  return serdata_hash(n->hist[n->headidx]->serdata);
+  return (uint32_t)n->iid;
 }
 
 static int whc_idxnode_eq_key (const void *va, const void *vb)
 {
   const struct whc_idxnode *a = va;
   const struct whc_idxnode *b = vb;
-  assert(a->hist[a->headidx]);
-  assert(b->hist[b->headidx]);
-  return serdata_cmp(a->hist[a->headidx]->serdata, b->hist[b->headidx]->serdata) == 0;
+  return (a->iid == b->iid);
 }
 
 static int compare_seq (const void *va, const void *vb)
@@ -352,6 +350,7 @@ static void delete_one_sample_from_idx (struct whc *whc, struct whc_node *whcn)
 #endif
     if (!ut_hhRemove (whc->idx_hash, idxn))
       assert (0);
+    dds_tkmap_instance_unref(idxn->tk);
     os_free (idxn);
   }
   whcn->idxnode = NULL;
@@ -360,6 +359,7 @@ static void delete_one_sample_from_idx (struct whc *whc, struct whc_node *whcn)
 static void free_one_instance_from_idx (struct whc *whc, struct whc_idxnode *idxn)
 {
   unsigned i;
+  dds_tkmap_instance_unref(idxn->tk);
   for (i = 0; i < whc->idxdepth; i++)
     if (idxn->hist[i])
       idxn->hist[i]->idxnode = NULL;
@@ -641,9 +641,7 @@ unsigned whc_remove_acked_messages (struct whc *whc, int64_t max_drop_seq)
             struct whc_idxnode idxn;
             char pad[sizeof(struct whc_idxnode) + sizeof(struct whc_node *)];
           } template;
-          template.idxn.headidx = 0;
-          template.idxn.hist[0] = &whcn_template;
-          whcn_template.serdata = ddsi_serdata_ref(oldn->serdata);
+          template.idxn.iid = idxn->iid;
           assert(oldn->seq < whcn->seq);
 #endif
           TRACE_WHC((" del %p %"PRId64, (void *) oldn, oldn->seq));
@@ -670,16 +668,13 @@ unsigned whc_remove_acked_messages (struct whc *whc, int64_t max_drop_seq)
 
 struct whc_node *whc_findkey (const struct whc *whc, const struct serdata *serdata_key)
 {
-  struct whc_node whcn_template;
   union {
     struct whc_idxnode idxn;
     char pad[sizeof(struct whc_idxnode) + sizeof(struct whc_node *)];
   } template;
   struct whc_idxnode *n;
   check_whc (whc);
-  template.idxn.headidx = 0;
-  template.idxn.hist[0] = &whcn_template;
-  whcn_template.serdata = (struct serdata *) serdata_key;
+  template.idxn.iid = dds_tkmap_lookup(gv.m_tkmap, serdata_key);
   n = ut_hhLookup (whc->idx_hash, &template.idxn);
   if (n == NULL)
     return NULL;
@@ -748,7 +743,7 @@ static struct whc_node *whc_insert_seq (struct whc *whc, int64_t max_drop_seq, i
   return newn;
 }
 
-int whc_insert (struct whc *whc, int64_t max_drop_seq, int64_t seq, struct nn_plist *plist, serdata_t serdata)
+int whc_insert (struct whc *whc, int64_t max_drop_seq, int64_t seq, struct nn_plist *plist, serdata_t serdata, struct tkmap_instance *tk)
 {
   struct whc_node *newn = NULL;
   struct whc_idxnode *idxn;
@@ -784,8 +779,7 @@ int whc_insert (struct whc *whc, int64_t max_drop_seq, int64_t seq, struct nn_pl
     return 0;
   }
 
-  template.idxn.headidx = 0;
-  template.idxn.hist[0] = newn;
+  template.idxn.iid = tk->m_iid;
   if ((idxn = ut_hhLookup (whc->idx_hash, &template)) != NULL)
   {
     /* Unregisters cause deleting of index entry, non-unregister of adding/overwriting in history */
@@ -843,6 +837,9 @@ int whc_insert (struct whc *whc, int64_t max_drop_seq, int64_t seq, struct nn_pl
       unsigned i;
       idxn = os_malloc (sizeof (*idxn) + whc->idxdepth * sizeof (idxn->hist[0]));
       TRACE_WHC((" idxn %p", (void *)idxn));
+      dds_tkmap_instance_ref(tk);
+      idxn->iid = tk->m_iid;
+      idxn->tk = tk;
       idxn->prune_seq = 0;
       idxn->headidx = 0;
       idxn->hist[0] = newn;

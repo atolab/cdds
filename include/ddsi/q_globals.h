@@ -52,6 +52,7 @@ struct ddsi_tran_conn;
 struct ddsi_tran_listener;
 struct ddsi_tran_factory;
 struct ut_thread_pool_s;
+struct tkmap;
 
 typedef struct ospl_in_addr_node {
    os_sockaddr_storage addr;
@@ -74,6 +75,7 @@ struct q_globals {
   volatile int exception;
   volatile int deaf_mute;
 
+  struct tkmap * m_tkmap;
 
   /* Hash tables for participants, readers, writers, proxy
      participants, proxy readers and proxy writers by GUID

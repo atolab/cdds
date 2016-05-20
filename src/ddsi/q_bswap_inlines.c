@@ -12,4 +12,4 @@
 #define SUPPRESS_BSWAP_INLINES
 
 #include "ddsi/q_bswap.h"
-#include "q_bswap_template.c"
+#include "ddsi/q_bswap_template.h"

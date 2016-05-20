@@ -12,7 +12,7 @@
 #ifndef NN_INLINE_H
 #define NN_INLINE_H
 
-#ifndef NN_SUPPRESS_C99_INLINE
+#ifdef NN_SUPPRESS_C99_INLINE
 
 #define NN_HAVE_C99_INLINE 0
 

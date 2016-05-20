@@ -30,8 +30,6 @@ dds_domain * dds_domain_create (dds_domainid_t id)
     domain->m_id = id;
     ut_avlInit (&dds_topictree_def, &domain->m_topics);
     ut_avlInsert (&dds_domaintree_def, &dds_global.m_domains, domain);
-    domain->m_rd_tkmap = dds_tkmap_new ();
-    domain->m_wr_tkmap = dds_tkmap_new ();
   }
   domain->m_refc++;
   os_mutexUnlock (&dds_global.m_mutex);
@@ -44,8 +42,6 @@ void dds_domain_free (dds_domain * domain)
   if (--domain->m_refc == 0)
   {
     ut_avlDelete (&dds_domaintree_def, &dds_global.m_domains, domain);
-    dds_tkmap_free (domain->m_rd_tkmap);
-    dds_tkmap_free (domain->m_wr_tkmap);
     dds_free (domain);
   }
   os_mutexUnlock (&dds_global.m_mutex);

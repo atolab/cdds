@@ -3300,6 +3300,7 @@ int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, 
     pwr->deliver_synchronously = 0;
   }
   pwr->have_seen_heartbeat = 0;
+  pwr->local_matching_inprogress = 1;
 #ifdef DDSI_INCLUDE_SSM
   pwr->supports_ssm = (addrset_contains_ssm (as) && config.allowMulticast & AMC_SSM) ? 1 : 0;
 #endif
@@ -3344,6 +3345,10 @@ int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, 
 
   ephash_insert_proxy_writer_guid (pwr);
   match_proxy_writer_with_readers (pwr, tnow);
+
+  os_mutexLock (&pwr->e.lock);
+  pwr->local_matching_inprogress = 0;
+  os_mutexUnlock (&pwr->e.lock);
 
   return 0;
 }

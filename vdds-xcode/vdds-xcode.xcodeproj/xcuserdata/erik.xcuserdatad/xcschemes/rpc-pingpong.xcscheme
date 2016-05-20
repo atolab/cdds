@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "03E6D05F1CCE121300D73982"
-               BuildableName = "publisher"
-               BlueprintName = "publisher"
+               BlueprintIdentifier = "0335203D1CEDD22A003E7429"
+               BuildableName = "rpc-pingpong"
+               BlueprintName = "rpc-pingpong"
                ReferencedContainer = "container:vdds-xcode.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -32,9 +32,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "03E6D05F1CCE121300D73982"
-            BuildableName = "publisher"
-            BlueprintName = "publisher"
+            BlueprintIdentifier = "0335203D1CEDD22A003E7429"
+            BuildableName = "rpc-pingpong"
+            BlueprintName = "rpc-pingpong"
             ReferencedContainer = "container:vdds-xcode.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -55,18 +55,12 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "03E6D05F1CCE121300D73982"
-            BuildableName = "publisher"
-            BlueprintName = "publisher"
+            BlueprintIdentifier = "0335203D1CEDD22A003E7429"
+            BuildableName = "rpc-pingpong"
+            BlueprintName = "rpc-pingpong"
             ReferencedContainer = "container:vdds-xcode.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-         <CommandLineArgument
-            argument = "1 0 1 10 &quot;XX&quot; 16"
-            isEnabled = "YES">
-         </CommandLineArgument>
-      </CommandLineArguments>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>
@@ -80,9 +74,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "03E6D05F1CCE121300D73982"
-            BuildableName = "publisher"
-            BlueprintName = "publisher"
+            BlueprintIdentifier = "0335203D1CEDD22A003E7429"
+            BuildableName = "rpc-pingpong"
+            BlueprintName = "rpc-pingpong"
             ReferencedContainer = "container:vdds-xcode.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

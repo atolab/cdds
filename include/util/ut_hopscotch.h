@@ -21,6 +21,12 @@ extern "C" {
 
 /* Concurrent version */
 struct ut_chh;
+struct ut_chhBucket;
+struct ut_chhIter {
+  struct ut_chhBucket *bs;
+  uint32_t size;
+  uint32_t cursor;
+};
 
 typedef int (*ut_hhEquals_fn) (const void *, const void *);
 
@@ -30,6 +36,8 @@ OS_API void *ut_chhLookup (struct ut_chh * UT_HH_RESTRICT rt, const void * UT_HH
 OS_API int ut_chhAdd (struct ut_chh * UT_HH_RESTRICT rt, const void * UT_HH_RESTRICT data);
 OS_API int ut_chhRemove (struct ut_chh * UT_HH_RESTRICT rt, const void * UT_HH_RESTRICT template);
 OS_API void ut_chhEnum_unsafe (struct ut_chh * UT_HH_RESTRICT rt, void (*f) (void *a, void *f_arg), void *f_arg); /* may delete a */
+void *ut_chhIterFirst (struct ut_chh * UT_HH_RESTRICT rt, struct ut_chhIter *it);
+void *ut_chhIterNext (struct ut_chhIter *it);
 
 /* Sequential version */
 struct ut_hh;

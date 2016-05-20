@@ -18,7 +18,7 @@
 #include "ddsi/q_inline.h"
 
 #if NN_HAVE_C99_INLINE && !defined SUPPRESS_BITSET_INLINES
-#include "q_bitset_template.c"
+#include "q_bitset_template.h"
 #else
 #if defined (__cplusplus)
 extern "C" {
