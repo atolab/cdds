@@ -15,7 +15,7 @@ PROC := $(shell echo $(CONFIG) | sed -e 's/^\([^.]*\)\..*/\1/')
 ifeq "$(OS)" "darwin"
   CC = clang
   LD = $(CC)
-  OPT = #-O3 -DNDEBUG
+  OPT = -fsanitize=address #-O3 -DNDEBUG
   PROF =
   CPPFLAGS += -Wall -g $(OPT) $(PROF)
   CFLAGS += $(CPPFLAGS) #-fno-inline
