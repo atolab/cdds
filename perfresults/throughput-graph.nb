@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     76021,       1683]
-NotebookOptionsPosition[     74308,       1624]
-NotebookOutlinePosition[     74666,       1640]
-CellTagsIndexPosition[     74623,       1637]
+NotebookDataLength[     78518,       1742]
+NotebookOptionsPosition[     76688,       1679]
+NotebookOutlinePosition[     77046,       1695]
+CellTagsIndexPosition[     77003,       1692]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -1620,6 +1620,61 @@ EnKe72D7fyWwxejosx2VJJw9eH10aorALZaJl9dcIuE/EIYv9Q==
   Ticks->{Automatic, Automatic}]], "Output",
  CellChangeTimes->{3.670218763737543*^9, 3.67021883472281*^9, 
   3.67021947564968*^9, 3.672730134729416*^9, 3.672733504054059*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ListLinePlot", "[", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"1", "/", "vddsShortCircuit"}], ",", 
+    RowBox[{"1", "/", "liteShortCircuit"}]}], "}"}], "]"}]], "Input",
+ CellChangeTimes->{{3.672739815260045*^9, 3.672739833762596*^9}}],
+
+Cell[BoxData[
+ GraphicsBox[{{}, {{}, {}, 
+    {RGBColor[0.368417, 0.506779, 0.709798], PointSize[0.019444444444444445`],
+      AbsoluteThickness[1.6], 
+     LineBox[{{1., 9.767360041788673*^-8}, {2., 1.0645313586986317`*^-7}, {3.,
+       1.198926912456275*^-7}, {4., 1.289755421099986*^-7}, {5., 
+      1.383088752528632*^-7}, {6., 1.5369950087624086`*^-7}, {7., 
+      1.6008416585103783`*^-7}, {8., 1.6743012010934525`*^-7}, {9., 
+      1.7851111731536416`*^-7}, {10., 1.887983663654955*^-7}, {11., 
+      1.9583774294651202`*^-7}, {12., 2.0797379862895353`*^-7}, {13., 
+      2.1815299025576038`*^-7}, {14., 2.287842109610058*^-7}, {15., 
+      2.387819066353194*^-7}, {16., 2.487767646482247*^-7}}]}, 
+    {RGBColor[0.880722, 0.611041, 0.142051], PointSize[0.019444444444444445`],
+      AbsoluteThickness[1.6], 
+     LineBox[{{1., 1.0227092590982773`*^-7}, {2., 1.1728561216345627`*^-7}, {
+      3., 1.3322385884772287`*^-7}, {4., 1.516286662484748*^-7}, {5., 
+      1.6482113692631325`*^-7}, {6., 1.8032548027888418`*^-7}, {7., 
+      1.977008967317274*^-7}, {8., 2.1119288499618164`*^-7}, {9., 
+      2.2701161232500526`*^-7}, {10., 2.576907149654656*^-7}, {11., 
+      2.571812726769587*^-7}, {12., 2.724408878194676*^-7}, {13., 
+      2.891186161163968*^-7}, {14., 3.0476831360415654`*^-7}, {15., 
+      3.2298865276265114`*^-7}, {16., 3.351665828191599*^-7}}]}}, {}},
+  AspectRatio->NCache[GoldenRatio^(-1), 0.6180339887498948],
+  Axes->{True, True},
+  AxesLabel->{None, None},
+  AxesOrigin->{0, 0},
+  DisplayFunction->Identity,
+  Frame->{{False, False}, {False, False}},
+  FrameLabel->{{None, None}, {None, None}},
+  FrameTicks->{{Automatic, Automatic}, {Automatic, Automatic}},
+  GridLines->{None, None},
+  GridLinesStyle->Directive[
+    GrayLevel[0.5, 0.4]],
+  Method->{},
+  PlotRange->{{0., 16.}, {0, 3.351665828191599*^-7}},
+  PlotRangeClipping->True,
+  PlotRangePadding->{{
+     Scaled[0.02], 
+     Scaled[0.02]}, {
+     Scaled[0.02], 
+     Scaled[0.05]}},
+  Ticks->{Automatic, Automatic}]], "Output",
+ CellChangeTimes->{{3.672739829479315*^9, 3.672739834179842*^9}}]
 }, Open  ]]
 },
 WindowSize->{808, 716},
@@ -1684,6 +1739,10 @@ Cell[CellGroupData[{
 Cell[70004, 1530, 726, 19, 46, "Input"],
 Cell[70733, 1551, 245, 4, 32, "Output"],
 Cell[70981, 1557, 3311, 64, 225, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[74329, 1626, 258, 6, 28, "Input"],
+Cell[74590, 1634, 2082, 42, 265, "Output"]
 }, Open  ]]
 }
 ]
