@@ -70,6 +70,16 @@ struct rd_pwr_match {
 #endif
 };
 
+struct wr_rd_match {
+  ut_avlNode_t avlnode;
+  nn_guid_t rd_guid;
+};
+  
+struct rd_wr_match {
+  ut_avlNode_t avlnode;
+  nn_guid_t wr_guid;
+};
+
 struct wr_prd_match {
   ut_avlNode_t avlnode;
   nn_guid_t prd_guid; /* guid of the proxy reader */
@@ -118,21 +128,10 @@ struct pwr_rd_match {
   } u;
 };
 
-enum entity_kind {
-  EK_PARTICIPANT,
-  EK_PROXY_PARTICIPANT,
-  EK_WRITER,
-  EK_PROXY_WRITER,
-  EK_READER,
-  EK_PROXY_READER
-};
-#define EK_NKINDS ((int) EK_PROXY_READER + 1)
-
 struct nn_rsample_info;
 struct nn_rdata;
 
 struct entity_common {
-  struct ephash_chain_entry guid_hash_chain;
   enum entity_kind kind;
   nn_guid_t guid;
   char *name;
@@ -140,6 +139,14 @@ struct entity_common {
   os_mutex lock;
 };
 
+struct local_reader_ary {
+  os_mutex rdary_lock;
+  unsigned valid: 1; /* always true until (proxy-)writer is being deleted; !valid => !fastpath_ok */
+  unsigned fastpath_ok: 1; /* if not ok, fall back to using GUIDs (gives access to the reader-writer match data for handling readers that bumped into resource limits, hence can flip-flop, unlike "valid") */
+  int n_readers;
+  struct reader **rdary; /* for efficient delivery, null-pointer terminated */
+};
+  
 struct participant
 {
   struct entity_common e;
@@ -213,6 +220,7 @@ struct writer
   nn_etime_t t_whc_high_upd;
   int num_reliable_readers;
   ut_avlTree_t readers;
+  ut_avlTree_t local_readers;
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
   uint32_t partition_id;
 #endif
@@ -222,8 +230,7 @@ struct writer
   uint32_t rexmit_count;
   uint32_t rexmit_lost_count;
   struct xeventq *evq;
-
-  nn_guid_t local_reader_guid[16];
+  struct local_reader_ary rdary;
 };
 
 struct reader
@@ -245,6 +252,7 @@ struct reader
 #endif
   const struct sertopic * topic;
   ut_avlTree_t writers;
+  ut_avlTree_t local_writers;
 };
 
 struct proxy_participant
@@ -315,10 +323,7 @@ struct proxy_writer {
   struct nn_reorder *reorder;
   struct nn_dqueue *dqueue;
   struct xeventq *evq;
-  os_mutex rdary_lock;
-  int n_readers;
-  struct reader **rdary; /* for efficient delivery, null-pointer terminated */
-  unsigned deleting: 1; /* set when being deleted and (about to be) removed from GUID hash */
+  struct local_reader_ary rdary;
 };
 
 struct proxy_reader {
@@ -334,7 +339,9 @@ struct proxy_reader {
 };
 
 extern const ut_avlTreedef_t wr_readers_treedef;
+extern const ut_avlTreedef_t wr_local_readers_treedef;
 extern const ut_avlTreedef_t rd_writers_treedef;
+extern const ut_avlTreedef_t rd_local_writers_treedef;
 extern const ut_avlTreedef_t pwr_readers_treedef;
 extern const ut_avlTreedef_t prd_writers_treedef;
 extern const ut_avlTreedef_t deleted_participants_treedef;

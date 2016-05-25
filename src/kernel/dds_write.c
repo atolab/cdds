@@ -28,29 +28,68 @@ int dds_write_ts (dds_entity_t wr, const void * data, dds_time_t tstamp)
 #include "ddsi/q_radmin.h"
 #include <string.h>
 
-static void deliver_locally (const nn_guid_t *wrguid, int64_t seq, size_t nrdguid, const nn_guid_t *rdguid, serdata_t data, struct tkmap_instance * tk)
+static void init_sampleinfo (struct nn_rsample_info *sampleinfo, struct writer *wr, int64_t seq, serdata_t payload)
 {
-  struct reader *rd;
-  size_t idx = 0;
-  if ((rd = ephash_lookup_reader_guid (&rdguid[idx++])) != NULL)
-  {
-    struct nn_rsample_info sampleinfo;
-    memset(&sampleinfo, 0, sizeof(sampleinfo));
-    sampleinfo.bswap = 0;
-    sampleinfo.complex_qos = 0;
-    sampleinfo.hashash = 0;
-    sampleinfo.seq = seq;
-    sampleinfo.reception_timestamp = data->v.msginfo.timestamp;
-    sampleinfo.statusinfo = data->v.msginfo.statusinfo;
-    sampleinfo.pwr_info.iid = 1;
-    sampleinfo.pwr_info.auto_dispose = 0;
-    sampleinfo.pwr_info.guid = *wrguid;
-    sampleinfo.pwr_info.ownership_strength = 0;
+  memset(sampleinfo, 0, sizeof(*sampleinfo));
+  sampleinfo->bswap = 0;
+  sampleinfo->complex_qos = 0;
+  sampleinfo->hashash = 0;
+  sampleinfo->seq = seq;
+  sampleinfo->reception_timestamp = payload->v.msginfo.timestamp;
+  sampleinfo->statusinfo = payload->v.msginfo.statusinfo;
+  sampleinfo->pwr_info.iid = 1;
+  sampleinfo->pwr_info.auto_dispose = 0;
+  sampleinfo->pwr_info.guid = wr->e.guid;
+  sampleinfo->pwr_info.ownership_strength = 0;
+}
 
-    do {
-      while (rd && ! (ddsi_plugin.rhc_store_fn) (rd->rhc, &sampleinfo, data, tk))
-        dds_sleepfor (DDS_MSECS (10));
-    } while (idx < nrdguid && (rd = ephash_lookup_reader_guid (&rdguid[idx++])) != NULL);
+static void deliver_locally (struct writer *wr, int64_t seq, serdata_t payload, struct tkmap_instance * tk)
+{
+  os_mutexLock (&wr->rdary.rdary_lock);
+  if (wr->rdary.fastpath_ok)
+  {
+    struct reader ** const rdary = wr->rdary.rdary;
+    if (rdary[0])
+    {
+      struct nn_rsample_info sampleinfo;
+      unsigned i;
+      init_sampleinfo(&sampleinfo, wr, seq, payload);
+      for (i = 0; rdary[i]; i++)
+      {
+        TRACE (("reader %x:%x:%x:%x\n", PGUID (rdary[i]->e.guid)));
+        if (! (ddsi_plugin.rhc_store_fn) (rdary[i]->rhc, &sampleinfo, payload, tk))
+          abort();
+      }
+    }
+    os_mutexUnlock (&wr->rdary.rdary_lock);
+  }
+  else
+  {
+    /* When deleting, pwr is no longer accessible via the hash
+     tables, and consequently, a reader may be deleted without
+     it being possible to remove it from rdary. The primary
+     reason rdary exists is to avoid locking the proxy writer
+     but this is less of an issue when we are deleting it, so
+     we fall back to using the GUIDs so that we can deliver all
+     samples we received from it. As writer being deleted any
+     reliable samples that are rejected are simply discarded. */
+    ut_avlIter_t it;
+    struct pwr_rd_match *m;
+    struct nn_rsample_info sampleinfo;
+    os_mutexUnlock (&wr->rdary.rdary_lock);
+    init_sampleinfo(&sampleinfo, wr, seq, payload);
+    os_mutexLock (&wr->e.lock);
+    for (m = ut_avlIterFirst (&wr_local_readers_treedef, &wr->local_readers, &it); m != NULL; m = ut_avlIterNext (&it))
+    {
+      struct reader *rd;
+      if ((rd = ephash_lookup_reader_guid (&m->rd_guid)) != NULL)
+      {
+        TRACE (("reader-via-guid %x:%x:%x:%x\n", PGUID (rd->e.guid)));
+        if (! (ddsi_plugin.rhc_store_fn) (rd->rhc, &sampleinfo, payload, tk))
+          abort();
+      }
+    }
+    os_mutexUnlock (&wr->e.lock);
   }
 }
 
@@ -134,9 +173,7 @@ int dds_write_impl
   os_mutexUnlock (&writer->m_call_lock);
 
   if (ret == DDS_RETCODE_OK)
-    deliver_locally (&ddsi_wr->e.guid, os_atomic_inc64_nv(&fake_seq),
-                     sizeof(ddsi_wr->local_reader_guid)/sizeof(ddsi_wr->local_reader_guid[0]),
-                     ddsi_wr->local_reader_guid, d, tk);
+    deliver_locally (ddsi_wr, os_atomic_inc64_nv(&fake_seq), d, tk);
   ddsi_serdata_unref(d);
   (ddsi_plugin.rhc_unref_fn) (tk);
 
@@ -234,9 +271,7 @@ int dds_writecdr_impl
   os_mutexUnlock (&writer->m_call_lock);
 
   if (ret == DDS_RETCODE_OK)
-    deliver_locally (&ddsi_wr->e.guid, os_atomic_inc64_nv(&fake_seq),
-                     sizeof(ddsi_wr->local_reader_guid)/sizeof(ddsi_wr->local_reader_guid[0]),
-                     ddsi_wr->local_reader_guid, d, tk);
+    deliver_locally (ddsi_wr, os_atomic_inc64_nv(&fake_seq), d, tk);
   ddsi_serdata_unref(d);
   (ddsi_plugin.rhc_unref_fn) (tk);
 

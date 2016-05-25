@@ -1993,10 +1993,10 @@ static int deliver_user_data (const struct nn_rsample_info *sampleinfo, const st
           (with late acknowledgement of sample and nack). */
 retry:
 
-        os_mutexLock (&pwr->rdary_lock);
-        if (!pwr->deleting)
+        os_mutexLock (&pwr->rdary.rdary_lock);
+        if (pwr->rdary.fastpath_ok)
         {
-          struct reader ** const rdary = pwr->rdary;
+          struct reader ** const rdary = pwr->rdary.rdary;
           unsigned i;
           for (i = 0; rdary[i]; i++)
           {
@@ -2004,13 +2004,13 @@ retry:
             if (! (ddsi_plugin.rhc_store_fn) (rdary[i]->rhc, sampleinfo, payload, tk))
             {
               if (pwr_locked) os_mutexUnlock (&pwr->e.lock);
-              os_mutexUnlock (&pwr->rdary_lock);
+              os_mutexUnlock (&pwr->rdary.rdary_lock);
               dds_sleepfor (DDS_MSECS (10));
               if (pwr_locked) os_mutexLock (&pwr->e.lock);
               goto retry;
             }
           }
-          os_mutexUnlock (&pwr->rdary_lock);
+          os_mutexUnlock (&pwr->rdary.rdary_lock);
         }
         else
         {
@@ -2024,7 +2024,7 @@ retry:
              reliable samples that are rejected are simply discarded. */
           ut_avlIter_t it;
           struct pwr_rd_match *m;
-          os_mutexUnlock (&pwr->rdary_lock);
+          os_mutexUnlock (&pwr->rdary.rdary_lock);
           if (!pwr_locked) os_mutexLock (&pwr->e.lock);
           for (m = ut_avlIterFirst (&pwr_readers_treedef, &pwr->readers, &it); m != NULL; m = ut_avlIterNext (&it))
           {
@@ -2044,7 +2044,7 @@ retry:
       {
         struct reader *rd = ephash_lookup_reader_guid (rdguid);;
         TRACE ((" %"PRId64"=>%x:%x:%x:%x%s\n", sampleinfo->seq, PGUID (*rdguid), rd ? "" : "?"));
-        while (rd && ! (ddsi_plugin.rhc_store_fn) (rd->rhc, sampleinfo, payload, tk) && !pwr->deleting)
+        while (rd && ! (ddsi_plugin.rhc_store_fn) (rd->rhc, sampleinfo, payload, tk) && ephash_lookup_proxy_writer_guid (&pwr->e.guid))
         {
           if (pwr_locked) os_mutexUnlock (&pwr->e.lock);
           dds_sleepfor (DDS_MSECS (1));

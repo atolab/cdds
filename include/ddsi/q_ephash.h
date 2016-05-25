@@ -28,25 +28,20 @@ struct proxy_reader;
 struct proxy_writer;
 struct nn_guid;
 
-struct ephash_chain_entry {
-  struct ephash_chain_entry *next;
-  struct ephash_chain_entry *prev;
-
-  /* In a bit of a hurry, so use a separate doubly-linked list for
-     enumeration and fixed-size hash tables, instead of a dynamically
-     resized hash table and iterating over the bins. That'd be
-     straightforward if I didn't try to do a lock-free
-     lookup. Scanning a 30k entry hash table for a handful of entries
-     just doesn't feel right. These are per-tag, we get that for
-     free. */
-  struct ephash_chain_entry *enum_prev;
-  struct ephash_chain_entry *enum_next;
-};
-
+  enum entity_kind {
+    EK_PARTICIPANT,
+    EK_PROXY_PARTICIPANT,
+    EK_WRITER,
+    EK_PROXY_WRITER,
+    EK_READER,
+    EK_PROXY_READER
+  };
+#define EK_NKINDS ((int) EK_PROXY_READER + 1)
+  
 struct ephash_enum
 {
   struct ut_chhIter it;
-  int kind;
+  enum entity_kind kind;
   struct entity_common *cur;
 };
 
@@ -85,6 +80,8 @@ void ephash_remove_reader_guid (struct reader *rd);
 void ephash_remove_proxy_writer_guid (struct proxy_writer *pwr);
 void ephash_remove_proxy_reader_guid (struct proxy_reader *prd);
 
+void *ephash_lookup_guid (const struct nn_guid *guid, enum entity_kind kind);
+
 struct participant *ephash_lookup_participant_guid (const struct nn_guid *guid);
 struct proxy_participant *ephash_lookup_proxy_participant_guid (const struct nn_guid *guid);
 struct writer *ephash_lookup_writer_guid (const struct nn_guid *guid);
@@ -112,6 +109,10 @@ struct ephash_enum_reader { struct ephash_enum st; };
 struct ephash_enum_proxy_participant { struct ephash_enum st; };
 struct ephash_enum_proxy_writer { struct ephash_enum st; };
 struct ephash_enum_proxy_reader { struct ephash_enum st; };
+
+void ephash_enum_init (struct ephash_enum *st, enum entity_kind kind);
+void *ephash_enum_next (struct ephash_enum *st);
+void ephash_enum_fini (struct ephash_enum *st);
 
 void ephash_enum_writer_init (struct ephash_enum_writer *st);
 void ephash_enum_reader_init (struct ephash_enum_reader *st);

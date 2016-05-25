@@ -79,8 +79,6 @@ int pong_main (int argc, char *argv[])
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (qos);
 
-  printf("Sleep 3s for ping to create reader ...\n"); fflush(stdout); dds_sleepfor(DDS_SECS(3));
-
   /* A DDS DataWriter is created on the Publisher & Topic with a modififed Qos. */
 
   qos = dds_qos_create ();
