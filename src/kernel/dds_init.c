@@ -114,18 +114,18 @@ extern int dds_init (int argc, char ** argv)
   gv.tstart = now ();
   gv.exception = false;
 
+  gv.static_logbuf_lock_inited = 0;
+  logbuf_init (&gv.static_logbuf);
+  os_mutexInit (&gv.static_logbuf_lock, NULL);
+  gv.static_logbuf_lock_inited = 1;
+  os_mutexInit (&dds_global.m_mutex, NULL);
+
   dds_cfgst = config_init (uri);
   if (dds_cfgst == NULL)
   {
     fprintf (stderr, "Configuration XML file failed to parse\n");
     return DDS_ERRNO (DDS_RETCODE_ERROR, DDS_MOD_KERNEL, DDS_ERR_M1);
   }
-
-  gv.static_logbuf_lock_inited = 0;
-  logbuf_init (&gv.static_logbuf);
-  os_mutexInit (&gv.static_logbuf_lock, NULL);
-  gv.static_logbuf_lock_inited = 1;
-  os_mutexInit (&dds_global.m_mutex, NULL);
 
   if (! rtps_config_open ())
   {

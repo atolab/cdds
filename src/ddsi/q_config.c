@@ -593,7 +593,7 @@ static const struct cfgelem durability_cfgelems[] = {
 
 static const struct cfgelem root_cfgelems[] = {
   { "Domain", domain_cfgelems, NULL, NODATA },
-  { "DDSI2", ddsi2_cfgelems, NULL, NODATA },
+  { "DDSI2E|DDSI2", ddsi2_cfgelems, NULL, NODATA },
   { "Durability", durability_cfgelems, NULL, NODATA },
   { "Lease", lease_cfgelems, NULL, NODATA },
   END_MARKER
@@ -2418,6 +2418,7 @@ struct cfgst * config_init
   memset (&config, 0, sizeof (config));
 
   config.tracingOutputFile = stderr;
+  config.enabled_logcats = LC_ERROR | LC_WARNING;
 
   cfgst = os_malloc (sizeof (*cfgst));
   memset (cfgst, 0, sizeof (*cfgst));
