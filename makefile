@@ -5,7 +5,7 @@ include config.mk
 CPPFLAGS += -Iinclude
 
 SHLIBS = vdds vdds-stubs
-EXES   = vdds-server publisher subscriber rpc-publisher rpc-subscriber ping pong rpc-ping rpc-pong rpc-pingpong
+EXES   = vdds-server vdds-server2 publisher subscriber rpc-publisher rpc-subscriber ping pong rpc-ping rpc-pong rpc-pingpong
 
 all: $(SHLIBS:%=gen/$(LIBPRE)%$(SO)) $(EXES:%=gen/%$X)
 
