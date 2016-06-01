@@ -702,6 +702,11 @@ int enqueue_sample_wrlock_held (struct writer *wr, seqno_t seq, const struct nn_
 
   sz = ddsi_serdata_size (serdata);
   nfrags = (sz + config.fragment_size - 1) / config.fragment_size;
+  if (nfrags == 0)
+  {
+    /* end-of-transaction messages are empty, but still need to be sent */
+    nfrags = 1;
+  }
   for (i = 0; i < nfrags && enqueued; i++)
   {
     struct nn_xmsg *fmsg = NULL;
