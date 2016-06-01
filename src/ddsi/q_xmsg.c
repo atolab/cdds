@@ -99,7 +99,7 @@ struct nn_xmsg {
     char control;
     struct {
       nn_guid_t wrguid;
-      int64_t wrseq;
+      seqno_t wrseq;
       nn_fragment_number_t wrfragid;
       /* readerId encodes offset to destination readerId or 0 -- used
          only for rexmits, but more convenient to combine both into
@@ -505,7 +505,7 @@ enum nn_xmsg_kind nn_xmsg_kind (const struct nn_xmsg *m)
   return m->kind;
 }
 
-void nn_xmsg_guid_seq_fragid (const struct nn_xmsg *m, nn_guid_t *wrguid, int64_t *wrseq, nn_fragment_number_t *wrfragid)
+void nn_xmsg_guid_seq_fragid (const struct nn_xmsg *m, nn_guid_t *wrguid, seqno_t *wrseq, nn_fragment_number_t *wrfragid)
 {
   assert (m->kind != NN_XMSG_KIND_CONTROL);
   *wrguid = m->kindspecific.data.wrguid;
@@ -791,13 +791,13 @@ int nn_xmsg_setencoderid (struct nn_xmsg *msg, uint32_t encoderid)
 }
 #endif
 
-void nn_xmsg_setwriterseq (struct nn_xmsg *msg, const nn_guid_t *wrguid, int64_t wrseq)
+void nn_xmsg_setwriterseq (struct nn_xmsg *msg, const nn_guid_t *wrguid, seqno_t wrseq)
 {
   msg->kindspecific.data.wrguid = *wrguid;
   msg->kindspecific.data.wrseq = wrseq;
 }
 
-void nn_xmsg_setwriterseq_fragid (struct nn_xmsg *msg, const nn_guid_t *wrguid, int64_t wrseq, nn_fragment_number_t wrfragid)
+void nn_xmsg_setwriterseq_fragid (struct nn_xmsg *msg, const nn_guid_t *wrguid, seqno_t wrseq, nn_fragment_number_t wrfragid)
 {
   nn_xmsg_setwriterseq (msg, wrguid, wrseq);
   msg->kindspecific.data.wrfragid = wrfragid;

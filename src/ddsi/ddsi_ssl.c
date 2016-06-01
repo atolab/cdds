@@ -72,7 +72,7 @@ static os_ssize_t ddsi_ssl_read (SSL * ssl, void * buf, os_size_t len, int * err
 {
   int ret;
 
-  assert (len <= 0x7fffffff);
+  assert (len <= INT32_MAX);
 
   if (SSL_get_shutdown (ssl) != 0)
   {
@@ -115,7 +115,7 @@ static os_ssize_t ddsi_ssl_write (SSL * ssl, const void * buf, os_size_t len, in
 {
   int ret;
 
-  assert(len <= 0x7fffffff);
+  assert(len <= INT32_MAX);
 
   if (SSL_get_shutdown (ssl) != 0)
   {

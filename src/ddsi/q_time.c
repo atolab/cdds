@@ -15,12 +15,12 @@
 
 #include "ddsi/q_time.h"
 
-const nn_ddsi_time_t invalid_ddsi_timestamp = { -1, 0xffffffff };
-const nn_ddsi_time_t ddsi_time_infinite = { 0x7fffffff, 0xffffffff };
+const nn_ddsi_time_t invalid_ddsi_timestamp = { -1, UINT32_MAX };
+const nn_ddsi_time_t ddsi_time_infinite = { INT32_MAX, UINT32_MAX };
 #if DDSI_DURATION_ACCORDING_TO_SPEC
-const nn_duration_t duration_infinite = { 0x7fffffff, 0x7fffffff };
+const nn_duration_t duration_infinite = { INT32_MAX, INT32_MAX };
 #else
-const nn_duration_t duration_infinite = { 0x7fffffff, 0xffffffff };
+const nn_duration_t duration_infinite = { INT32_MAX, UINT32_MAX };
 #endif
 
 nn_wctime_t now (void)

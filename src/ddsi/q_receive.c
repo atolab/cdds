@@ -70,7 +70,7 @@ Notes:
 
 static void deliver_user_data_synchronously (struct nn_rsample_chain *sc);
 
-static void maybe_set_reader_in_sync (struct proxy_writer *pwr, struct pwr_rd_match *wn, int64_t last_deliv_seq)
+static void maybe_set_reader_in_sync (struct proxy_writer *pwr, struct pwr_rd_match *wn, seqno_t last_deliv_seq)
 {
   switch (wn->in_sync)
   {
@@ -575,7 +575,7 @@ static int valid_DataFrag (const struct receiver_state *rst, struct nn_rmsg *rms
   return 1;
 }
 
-static int add_Gap (struct nn_xmsg *msg, struct writer *wr, struct proxy_reader *prd, int64_t start, int64_t base, unsigned numbits, const unsigned *bits)
+static int add_Gap (struct nn_xmsg *msg, struct writer *wr, struct proxy_reader *prd, seqno_t start, seqno_t base, unsigned numbits, const unsigned *bits)
 {
   struct nn_xmsg_marker sm_marker;
   Gap_t *gap;
@@ -617,7 +617,7 @@ static void force_heartbeat_to_peer (struct writer *wr, struct proxy_reader *prd
        sequence number and it now receives an unsollicited response to
        a NACK ... */
     unsigned bits = 0;
-    int64_t seq;
+    seqno_t seq;
     if (wr->seq > 0)
       seq = wr->seq;
     else
@@ -640,9 +640,9 @@ static void force_heartbeat_to_peer (struct writer *wr, struct proxy_reader *prd
   qxev_msg (wr->evq, m);
 }
 
-static int64_t grow_gap_to_next_seq (const struct writer *wr, int64_t seq)
+static seqno_t grow_gap_to_next_seq (const struct writer *wr, seqno_t seq)
 {
-  int64_t next_seq = whc_next_seq (wr->whc, seq);
+  seqno_t next_seq = whc_next_seq (wr->whc, seq);
   if (next_seq == MAX_SEQ_NUMBER) /* no next sample */
     return wr->seq_xmit + 1;
   else if (next_seq > wr->seq_xmit)  /* next is beyond last actually transmitted */
@@ -721,9 +721,9 @@ static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const A
   struct wr_prd_match *rn;
   struct writer *wr;
   nn_guid_t src, dst;
-  int64_t seqbase;
+  seqno_t seqbase;
   nn_count_t *countp;
-  int64_t gapstart = -1, gapend = -1;
+  seqno_t gapstart = -1, gapend = -1;
   unsigned gapnumbits = 0;
   unsigned gapbits[256 / 32];
   int accelerate_rexmit = 0;
@@ -732,7 +732,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const A
   int enqueued;
   unsigned numbits;
   uint32_t msgs_sent, msgs_lost;
-  int64_t max_seq_in_reply;
+  seqno_t max_seq_in_reply;
   unsigned i;
   int hb_sent_in_response = 0;
   memset (gapbits, 0, sizeof (gapbits));
@@ -846,7 +846,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const A
      so update its status */
   if (rn->seq == MAX_SEQ_NUMBER && prd->c.xqos->reliability.kind == NN_RELIABLE_RELIABILITY_QOS)
   {
-    int64_t oldest_seq;
+    seqno_t oldest_seq;
     if (whc_empty (wr->whc))
       oldest_seq = wr->seq;
     else
@@ -948,7 +948,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const A
        left off ... */
     if (i >= msg->readerSNState.numbits || nn_bitset_isset (numbits, msg->readerSNState.bits, i))
     {
-      int64_t seq = seqbase + i;
+      seqno_t seq = seqbase + i;
       struct whc_node *whcn;
       if ((whcn = whc_findseq (wr->whc, seq)) != NULL)
       {
@@ -1137,7 +1137,7 @@ static void handle_Heartbeat_helper (struct pwr_rd_match * const wn, struct hand
 {
   Heartbeat_t const * const msg = arg->msg;
   struct proxy_writer * const pwr = arg->pwr;
-  int64_t refseq;
+  seqno_t refseq;
 
   ASSERT_MUTEX_HELD (&pwr->e.lock);
 
@@ -1204,7 +1204,7 @@ static int handle_Heartbeat (struct receiver_state *rst, nn_wctime_t tnow, struc
      A heartbeat that states [a,b] is the smallest interval in which
      the range of available sequence numbers is is interpreted here as
      a gap [1,a). See also handle_Gap.  */
-  const int64_t firstseq = fromSN (msg->firstSN);
+  const seqno_t firstseq = fromSN (msg->firstSN);
   struct handle_Heartbeat_helper_arg arg;
   struct proxy_writer *pwr;
   nn_guid_t src, dst;
@@ -1257,7 +1257,7 @@ static int handle_Heartbeat (struct receiver_state *rst, nn_wctime_t tnow, struc
     for (wn = ut_avlFindMin (&pwr_readers_treedef, &pwr->readers); wn; wn = ut_avlFindSucc (&pwr_readers_treedef, &pwr->readers, wn))
       if (wn->in_sync != PRMSS_SYNC)
       {
-        int64_t last_deliv_seq = 0;
+        seqno_t last_deliv_seq = 0;
         switch (wn->in_sync)
         {
           case PRMSS_SYNC:
@@ -1298,7 +1298,7 @@ static int handle_Heartbeat (struct receiver_state *rst, nn_wctime_t tnow, struc
 
 static int handle_HeartbeatFrag (struct receiver_state *rst, UNUSED_ARG(nn_wctime_t tnow), const HeartbeatFrag_t *msg)
 {
-  const int64_t seq = fromSN (msg->writerSN);
+  const seqno_t seq = fromSN (msg->writerSN);
   const nn_fragment_number_t fragnum = msg->lastFragmentNum - 1; /* we do 0-based */
   nn_guid_t src, dst;
   struct proxy_writer *pwr;
@@ -1408,7 +1408,7 @@ static int handle_NackFrag (struct receiver_state *rst, nn_wctime_t tnow, const 
   struct whc_node *whcn;
   nn_guid_t src, dst;
   nn_count_t *countp;
-  int64_t seq = fromSN (msg->writerSN);
+  seqno_t seq = fromSN (msg->writerSN);
   unsigned i;
 
   countp = (nn_count_t *) ((char *) msg + offsetof (NackFrag_t, fragmentNumberState) + NN_FRAGMENT_NUMBER_SET_SIZE (msg->fragmentNumberState.numbits));
@@ -1547,7 +1547,7 @@ static int handle_InfoTS (const InfoTS_t *msg, nn_ddsi_time_t *timestamp)
   return 1;
 }
 
-static int handle_one_gap (struct proxy_writer *pwr, struct pwr_rd_match *wn, int64_t a, int64_t b, struct nn_rdata *gap, int *refc_adjust)
+static int handle_one_gap (struct proxy_writer *pwr, struct pwr_rd_match *wn, seqno_t a, seqno_t b, struct nn_rdata *gap, int *refc_adjust)
 {
   struct nn_rsample_chain sc;
   nn_reorder_result_t res;
@@ -1630,7 +1630,8 @@ static int handle_Gap (struct receiver_state *rst, nn_wctime_t tnow, struct nn_r
   struct proxy_writer *pwr;
   struct pwr_rd_match *wn;
   nn_guid_t src, dst;
-  int64_t gapstart, listbase, last_included_rel;
+  seqno_t gapstart, listbase;
+  int64_t last_included_rel;
   unsigned listidx;
 
   src.prefix = rst->src_guid_prefix;
@@ -2087,13 +2088,13 @@ static void deliver_user_data_synchronously (struct nn_rsample_chain *sc)
 
 static void clean_defrag (struct proxy_writer *pwr)
 {
-  int64_t seq = nn_reorder_next_seq (pwr->reorder);
+  seqno_t seq = nn_reorder_next_seq (pwr->reorder);
   struct pwr_rd_match *wn;
   for (wn = ut_avlFindMin (&pwr_readers_treedef, &pwr->readers); wn != NULL; wn = ut_avlFindSucc (&pwr_readers_treedef, &pwr->readers, wn))
   {
     if (wn->in_sync == PRMSS_OUT_OF_SYNC)
     {
-      int64_t seq1 = nn_reorder_next_seq (wn->u.not_in_sync.reorder);
+      seqno_t seq1 = nn_reorder_next_seq (wn->u.not_in_sync.reorder);
       if (seq1 < seq)
         seq = seq1;
     }
@@ -2490,9 +2491,9 @@ static void malformed_packet_received
       if (smsize >= sizeof (AckNack_t))
       {
         const AckNack_t *x = (const AckNack_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%lld,%u}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%"PRId64",%u}",
                          x->smhdr.submessageId, x->smhdr.flags, x->smhdr.octetsToNextHeader,
-                         x->readerId.u, x->writerId.u, (long long int) fromSN (x->readerSNState.bitmap_base),
+                         x->readerId.u, x->writerId.u, fromSN (x->readerSNState.bitmap_base),
                          x->readerSNState.numbits);
       }
       break;
@@ -2500,28 +2501,28 @@ static void malformed_packet_received
       if (smsize >= sizeof (Heartbeat_t))
       {
         const Heartbeat_t *x = (const Heartbeat_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%lld,%lld}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%"PRId64",%"PRId64"}",
                          x->smhdr.submessageId, x->smhdr.flags, x->smhdr.octetsToNextHeader,
-                         x->readerId.u, x->writerId.u, (long long int) fromSN (x->firstSN), (long long int) fromSN (x->lastSN));
+                         x->readerId.u, x->writerId.u, fromSN (x->firstSN), fromSN (x->lastSN));
       }
       break;
     case SMID_GAP:
       if (smsize >= sizeof (Gap_t))
       {
         const Gap_t *x = (const Gap_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%lld,%lld,%u}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%"PRId64",%"PRId64",%u}",
                          x->smhdr.submessageId, x->smhdr.flags, x->smhdr.octetsToNextHeader,
-                         x->readerId.u, x->writerId.u, (long long int) fromSN (x->gapStart),
-                         (long long int) fromSN (x->gapList.bitmap_base), x->gapList.numbits);
+                         x->readerId.u, x->writerId.u, fromSN (x->gapStart),
+                         fromSN (x->gapList.bitmap_base), x->gapList.numbits);
       }
       break;
     case SMID_NACK_FRAG:
       if (smsize >= sizeof (NackFrag_t))
       {
         const NackFrag_t *x = (const NackFrag_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%lld,%u,%u}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%"PRId64",%u,%u}",
                          x->smhdr.submessageId, x->smhdr.flags, x->smhdr.octetsToNextHeader,
-                         x->readerId.u, x->writerId.u, (long long int) fromSN (x->writerSN),
+                         x->readerId.u, x->writerId.u, fromSN (x->writerSN),
                          x->fragmentNumberState.bitmap_base, x->fragmentNumberState.numbits);
       }
       break;
@@ -2529,9 +2530,9 @@ static void malformed_packet_received
       if (smsize >= sizeof (HeartbeatFrag_t))
       {
         const HeartbeatFrag_t *x = (const HeartbeatFrag_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%lld,%u}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%"PRId64",%u}",
                          x->smhdr.submessageId, x->smhdr.flags, x->smhdr.octetsToNextHeader,
-                         x->readerId.u, x->writerId.u, (long long int) fromSN (x->writerSN),
+                         x->readerId.u, x->writerId.u, fromSN (x->writerSN),
                          x->lastFragmentNum);
       }
       break;
@@ -2539,20 +2540,20 @@ static void malformed_packet_received
       if (smsize >= sizeof (Data_t))
       {
         const Data_t *x = (const Data_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%d,%x,%x,%lld}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%d,%x,%x,%"PRId64"}",
                          x->x.smhdr.submessageId, x->x.smhdr.flags, x->x.smhdr.octetsToNextHeader,
                          x->x.extraFlags, x->x.octetsToInlineQos,
-                         x->x.readerId.u, x->x.writerId.u, (long long int) fromSN (x->x.writerSN));
+                         x->x.readerId.u, x->x.writerId.u, fromSN (x->x.writerSN));
       }
       break;
     case SMID_DATA_FRAG:
       if (smsize >= sizeof (DataFrag_t))
       {
         const DataFrag_t *x = (const DataFrag_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%d,%x,%x,%lld,%u,%u,%u,%u}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%d,%x,%x,%"PRId64",%u,%u,%u,%u}",
                          x->x.smhdr.submessageId, x->x.smhdr.flags, x->x.smhdr.octetsToNextHeader,
                          x->x.extraFlags, x->x.octetsToInlineQos,
-                         x->x.readerId.u, x->x.writerId.u, (long long int) fromSN (x->x.writerSN),
+                         x->x.readerId.u, x->x.writerId.u, fromSN (x->x.writerSN),
                          x->fragmentStartingNum, x->fragmentsInSubmessage, x->fragmentSize, x->sampleSize);
       }
       break;

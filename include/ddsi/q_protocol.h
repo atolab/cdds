@@ -37,7 +37,7 @@ typedef struct {
 } nn_sequence_number_t;
 #define NN_SEQUENCE_NUMBER_UNKNOWN_HIGH -1
 #define NN_SEQUENCE_NUMBER_UNKNOWN_LOW 0
-#define NN_SEQUENCE_NUMBER_UNKNOWN ((int64_t) (((uint64_t)NN_SEQUENCE_NUMBER_UNKNOWN_HIGH << 32) | NN_SEQUENCE_NUMBER_UNKNOWN_LOW))
+#define NN_SEQUENCE_NUMBER_UNKNOWN ((seqno_t) (((uint64_t)NN_SEQUENCE_NUMBER_UNKNOWN_HIGH << 32) | NN_SEQUENCE_NUMBER_UNKNOWN_LOW))
 typedef struct nn_sequence_number_set {
   nn_sequence_number_t bitmap_base;
   unsigned numbits;

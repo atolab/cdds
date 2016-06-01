@@ -97,8 +97,8 @@ int nn_xmsg_merge_rexmit_destinations_wrlock_held (struct nn_xmsg *m, const stru
 /* To set writer ids for updating last transmitted sequence number;
    wrfragid is 0 based, unlike DDSI but like other places where
    fragment numbers are handled internally. */
-void nn_xmsg_setwriterseq (struct nn_xmsg *msg, const nn_guid_t *wrguid, int64_t wrseq);
-void nn_xmsg_setwriterseq_fragid (struct nn_xmsg *msg, const nn_guid_t *wrguid, int64_t wrseq, nn_fragment_number_t wrfragid);
+void nn_xmsg_setwriterseq (struct nn_xmsg *msg, const nn_guid_t *wrguid, seqno_t wrseq);
+void nn_xmsg_setwriterseq_fragid (struct nn_xmsg *msg, const nn_guid_t *wrguid, seqno_t wrseq, nn_fragment_number_t wrfragid);
 
 /* Comparison function for retransmits: orders messages on writer
    guid, sequence number and fragment id */
@@ -108,7 +108,7 @@ void nn_xmsg_free (struct nn_xmsg *msg);
 size_t nn_xmsg_size (const struct nn_xmsg *m);
 void *nn_xmsg_payload (size_t *sz, struct nn_xmsg *m);
 enum nn_xmsg_kind nn_xmsg_kind (const struct nn_xmsg *m);
-void nn_xmsg_guid_seq_fragid (const struct nn_xmsg *m, nn_guid_t *wrguid, int64_t *wrseq, nn_fragment_number_t *wrfragid);
+void nn_xmsg_guid_seq_fragid (const struct nn_xmsg *m, nn_guid_t *wrguid, seqno_t *wrseq, nn_fragment_number_t *wrfragid);
 
 void *nn_xmsg_submsg_from_marker (struct nn_xmsg *msg, struct nn_xmsg_marker marker);
 void *nn_xmsg_append (struct nn_xmsg *m, struct nn_xmsg_marker *marker, size_t sz);

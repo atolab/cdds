@@ -1460,7 +1460,7 @@ static void proxy_writer_add_connection (struct proxy_writer *pwr, struct reader
 {
   struct pwr_rd_match *m = os_malloc (sizeof (*m));
   ut_avlIPath_t path;
-  int64_t last_deliv_seq;
+  seqno_t last_deliv_seq;
 
   os_mutexLock (&pwr->e.lock);
   if (ut_avlLookupIPath (&pwr_readers_treedef, &pwr->readers, &rd->e.guid, &path))
@@ -2089,7 +2089,7 @@ static void augment_wr_prd_match (void *vnode, const void *vleft, const void *vr
   struct wr_prd_match *n = vnode;
   const struct wr_prd_match *left = vleft;
   const struct wr_prd_match *right = vright;
-  int64_t min_seq, max_seq;
+  seqno_t min_seq, max_seq;
   int have_replied = n->has_replied_to_hb;
 
   /* note: this means min <= seq, but not min <= max nor seq <= max!
@@ -2179,7 +2179,7 @@ static void augment_wr_prd_match (void *vnode, const void *vleft, const void *vr
   }
 }
 
-int64_t writer_max_drop_seq (const struct writer *wr)
+seqno_t writer_max_drop_seq (const struct writer *wr)
 {
   const struct wr_prd_match *n;
   if (ut_avlIsEmpty (&wr->readers))
@@ -2273,9 +2273,6 @@ static struct writer * new_writer_guid
   wr->hbcount = 0;
   wr->state = WRST_OPERATIONAL;
   wr->hbfragcount = 0;
-  /* kernel starts the sequenceNumbers at 0, which must be different
-     from what we initialise it with */
-  wr->last_kernel_seq = 0xffffffff;
   writer_hbcontrol_init (&wr->hbcontrol);
   wr->throttling = 0;
   wr->retransmitting = 0;

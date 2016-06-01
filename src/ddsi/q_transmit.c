@@ -193,11 +193,11 @@ struct nn_xmsg *writer_hbcontrol_create_heartbeat (struct writer *wr, nn_mtime_t
     TRACE (("multicasting "));
   else
     TRACE (("unicasting to prd %x:%x:%x:%x ", PGUID (*prd_guid)));
-  TRACE (("(rel-prd %d seq-eq-max %d seq %lld maxseq %"PRId64")\n",
+  TRACE (("(rel-prd %d seq-eq-max %d seq %"PRId64" maxseq %"PRId64")\n",
           wr->num_reliable_readers,
           ut_avlIsEmpty (&wr->readers) ? -1 : root_rdmatch (wr)->num_reliable_readers_where_seq_equals_max,
           wr->seq,
-          ut_avlIsEmpty (&wr->readers) ? (int64_t) -1 : root_rdmatch (wr)->max_seq));
+          ut_avlIsEmpty (&wr->readers) ? (seqno_t) -1 : root_rdmatch (wr)->max_seq));
 
   if (prd_guid == NULL)
   {
@@ -326,7 +326,7 @@ void add_Heartbeat (struct nn_xmsg *msg, struct writer *wr, int hbansreq, nn_ent
 {
   struct nn_xmsg_marker sm_marker;
   Heartbeat_t * hb;
-  int64_t max = 0, min = 1;
+  seqno_t max = 0, min = 1;
 
   ASSERT_MUTEX_HELD (&wr->e.lock);
 
@@ -399,7 +399,7 @@ void add_Heartbeat (struct nn_xmsg *msg, struct writer *wr, int hbansreq, nn_ent
   nn_xmsg_submsg_setnext (msg, sm_marker);
 }
 
-int create_fragment_message (struct writer *wr, int64_t seq, const struct nn_plist *plist, struct serdata *serdata, unsigned fragnum, struct proxy_reader *prd, struct nn_xmsg **pmsg, int isnew)
+int create_fragment_message (struct writer *wr, seqno_t seq, const struct nn_plist *plist, struct serdata *serdata, unsigned fragnum, struct proxy_reader *prd, struct nn_xmsg **pmsg, int isnew)
 {
   /* We always fragment into FRAGMENT_SIZEd fragments, which are near
      the smallest allowed fragment size & can't be bothered (yet) to
@@ -566,7 +566,7 @@ int create_fragment_message (struct writer *wr, int64_t seq, const struct nn_pli
   return ret;
 }
 
-static void create_HeartbeatFrag (struct writer *wr, int64_t seq, unsigned fragnum, struct proxy_reader *prd, struct nn_xmsg **pmsg)
+static void create_HeartbeatFrag (struct writer *wr, seqno_t seq, unsigned fragnum, struct proxy_reader *prd, struct nn_xmsg **pmsg)
 {
   struct nn_xmsg_marker sm_marker;
   HeartbeatFrag_t *hbf;
@@ -627,7 +627,7 @@ static int must_skip_frag (const char *frags_to_skip, int frag)
 }
 #endif
 
-static int transmit_sample (struct nn_xpack *xp, struct writer *wr, int64_t seq, const struct nn_plist *plist, serdata_t serdata, struct proxy_reader *prd, int isnew)
+static int transmit_sample (struct nn_xpack *xp, struct writer *wr, seqno_t seq, const struct nn_plist *plist, serdata_t serdata, struct proxy_reader *prd, int isnew)
 {
   unsigned i, sz, nfrags;
 #if 0
@@ -693,7 +693,7 @@ static int transmit_sample (struct nn_xpack *xp, struct writer *wr, int64_t seq,
   return 0;
 }
 
-int enqueue_sample_wrlock_held (struct writer *wr, int64_t seq, const struct nn_plist *plist, serdata_t serdata, struct proxy_reader *prd, int isnew)
+int enqueue_sample_wrlock_held (struct writer *wr, seqno_t seq, const struct nn_plist *plist, serdata_t serdata, struct proxy_reader *prd, int isnew)
 {
   unsigned i, sz, nfrags;
   int enqueued = 1;
@@ -742,7 +742,7 @@ int enqueue_sample_wrlock_held (struct writer *wr, int64_t seq, const struct nn_
   return enqueued ? 0 : -1;
 }
 
-static int insert_sample_in_whc (struct writer *wr, int64_t seq, struct nn_plist *plist, serdata_t serdata, struct tkmap_instance *tk)
+static int insert_sample_in_whc (struct writer *wr, seqno_t seq, struct nn_plist *plist, serdata_t serdata, struct tkmap_instance *tk)
 {
   /* returns: < 0 on error, 0 if no need to insert in whc, > 0 if inserted */
   int do_insert, insres, res;
@@ -909,7 +909,7 @@ static int maybe_grow_whc (struct writer *wr)
 static int write_sample_eot (struct nn_xpack *xp, struct writer *wr, struct nn_plist *plist, serdata_t serdata, struct tkmap_instance *tk, int end_of_txn)
 {
   int r;
-  int64_t seq;
+  seqno_t seq;
   nn_mtime_t tnow;
 
   if (ddsi_serdata_size (serdata) > config.max_sample_size)

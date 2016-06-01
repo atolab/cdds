@@ -52,6 +52,7 @@ struct ddsi_tran_conn;
 struct ddsi_tran_listener;
 struct ddsi_tran_factory;
 struct ut_thread_pool_s;
+struct debug_monitor;
 struct tkmap;
 
 typedef struct ospl_in_addr_node {
@@ -254,6 +255,8 @@ struct q_globals {
   /* Connection used by general timed-event queue for transmitting data */
 
   struct ddsi_tran_conn * tev_conn;
+
+  struct debug_monitor *debmon;
 
 #ifndef DDSI_INCLUDE_NETWORK_CHANNELS
   uint32_t networkQueueId;

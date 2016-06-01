@@ -58,9 +58,7 @@ static uint32_t whc_node_hash (const void *vn)
   const struct whc_node *n = vn;
   /* we hash the lower 32 bits, on the assumption that with 4 billion
    samples in between there won't be significant correlation */
-#define UINT64_CONST(x, y, z) (((uint64_t) (x) * 1000000 + (y)) * 1000000 + (z))
-  const uint64_t c = UINT64_CONST (16292676, 669999, 574021);
-#undef UINT64_CONST
+  const uint64_t c = UINT64_C(16292676669999574021);
   const uint32_t x = (uint32_t) n->seq;
   return (unsigned) ((x * c) >> 32);
 }
@@ -87,8 +85,8 @@ static int whc_idxnode_eq_key (const void *va, const void *vb)
 
 static int compare_seq (const void *va, const void *vb)
 {
-  const int64_t *a = va;
-  const int64_t *b = vb;
+  const seqno_t *a = va;
+  const seqno_t *b = vb;
   return (*a == *b) ? 0 : (*a < *b) ? -1 : 1;
 }
 
@@ -151,7 +149,7 @@ static void remove_whcn_from_hash (struct whc *whc, struct whc_node *whcn)
     assert(0);
 }
 
-struct whc_node *whc_findseq (const struct whc *whc, int64_t seq)
+struct whc_node *whc_findseq (const struct whc *whc, seqno_t seq)
 {
   struct whc_node template;
   template.seq = seq;
@@ -251,7 +249,7 @@ int whc_empty (const struct whc *whc)
   return whc->seq_size == 0;
 }
 
-int64_t whc_min_seq (const struct whc *whc)
+seqno_t whc_min_seq (const struct whc *whc)
 {
   /* precond: whc not empty */
   const struct whc_intvnode *intv;
@@ -271,7 +269,7 @@ struct whc_node *whc_findmax (const struct whc *whc)
   return (struct whc_node *) whc->maxseq_node;
 }
 
-int64_t whc_max_seq (const struct whc *whc)
+seqno_t whc_max_seq (const struct whc *whc)
 {
   /* precond: whc not empty */
   check_whc (whc);
@@ -280,7 +278,7 @@ int64_t whc_max_seq (const struct whc *whc)
   return whc->maxseq_node->seq;
 }
 
-static struct whc_node *find_nextseq_intv (struct whc_intvnode **p_intv, const struct whc *whc, int64_t seq)
+static struct whc_node *find_nextseq_intv (struct whc_intvnode **p_intv, const struct whc *whc, seqno_t seq)
 {
   struct whc_node *n;
   struct whc_intvnode *intv;
@@ -322,7 +320,7 @@ static struct whc_node *find_nextseq_intv (struct whc_intvnode **p_intv, const s
   }
 }
 
-int64_t whc_next_seq (const struct whc *whc, int64_t seq)
+seqno_t whc_next_seq (const struct whc *whc, seqno_t seq)
 {
   struct whc_node *n;
   struct whc_intvnode *intv;
@@ -387,7 +385,7 @@ static int whcn_in_tlidx (const struct whc *whc, const struct whc_idxnode *idxn,
 
 void whc_downgrade_to_volatile (struct whc *whc)
 {
-  int64_t old_max_drop_seq;
+  seqno_t old_max_drop_seq;
 
   /* We only remove them from whc->tlidx: we don't remove them from
      whc->seq yet.  That'll happen eventually.  */
@@ -541,7 +539,7 @@ static void whc_delete_one (struct whc *whc, struct whc_node *whcn)
   whc->seq_size--;
 }
 
-unsigned whc_remove_acked_messages (struct whc *whc, int64_t max_drop_seq)
+unsigned whc_remove_acked_messages (struct whc *whc, seqno_t max_drop_seq)
 {
   struct whc_intvnode *intv;
   struct whc_node *whcn;
@@ -551,8 +549,8 @@ unsigned whc_remove_acked_messages (struct whc *whc, int64_t max_drop_seq)
 
   TRACE_WHC(("whc_removed_acked_messages(%p max_drop_seq %"PRId64")\n", (void *)whc, max_drop_seq));
   TRACE_WHC(("  whc: [%"PRId64",%"PRId64"] max_drop_seq %"PRId64" h %u tl %u\n",
-             whc_empty(whc) ? (int64_t)-1 : whc_min_seq(whc),
-             whc_empty(whc) ? (int64_t)-1 : whc_max_seq(whc),
+             whc_empty(whc) ? (seqno_t)-1 : whc_min_seq(whc),
+             whc_empty(whc) ? (seqno_t)-1 : whc_max_seq(whc),
              whc->max_drop_seq, whc->hdepth, whc->tldepth));
 
   check_whc (whc);
@@ -611,7 +609,7 @@ unsigned whc_remove_acked_messages (struct whc *whc, int64_t max_drop_seq)
       struct whc_idxnode * const idxn = whcn->idxnode;
       unsigned cnt, idx;
 
-      TRACE_WHC(("  whcn %p %"PRId64" idxn %p prune_seq %"PRId64":", (void *)whcn, whcn->seq, (void *)idxn, idxn ? idxn->prune_seq : (int64_t)-1));
+      TRACE_WHC(("  whcn %p %"PRId64" idxn %p prune_seq %"PRId64":", (void *)whcn, whcn->seq, (void *)idxn, idxn ? idxn->prune_seq : (seqno_t)-1));
 
       assert(whcn_in_tlidx(whc, idxn, whcn->idxnode_pos));
       assert (idxn->prune_seq <= max_drop_seq);
@@ -685,7 +683,7 @@ struct whc_node *whc_findkey (const struct whc *whc, const struct serdata *serda
   }
 }
 
-static struct whc_node *whc_insert_seq (struct whc *whc, int64_t max_drop_seq, int64_t seq, struct nn_plist *plist, serdata_t serdata)
+static struct whc_node *whc_insert_seq (struct whc *whc, seqno_t max_drop_seq, seqno_t seq, struct nn_plist *plist, serdata_t serdata)
 {
   struct whc_node *newn = NULL;
 
@@ -743,7 +741,7 @@ static struct whc_node *whc_insert_seq (struct whc *whc, int64_t max_drop_seq, i
   return newn;
 }
 
-int whc_insert (struct whc *whc, int64_t max_drop_seq, int64_t seq, struct nn_plist *plist, serdata_t serdata, struct tkmap_instance *tk)
+int whc_insert (struct whc *whc, seqno_t max_drop_seq, seqno_t seq, struct nn_plist *plist, serdata_t serdata, struct tkmap_instance *tk)
 {
   struct whc_node *newn = NULL;
   struct whc_idxnode *idxn;
@@ -755,8 +753,8 @@ int whc_insert (struct whc *whc, int64_t max_drop_seq, int64_t seq, struct nn_pl
 
   TRACE_WHC(("whc_insert(%p max_drop_seq %"PRId64" seq %"PRId64" plist %p serdata %p:%x)\n", (void *)whc, max_drop_seq, seq, (void*)plist, (void*)serdata, *(unsigned *)serdata->v.keyhash.m_hash));
   TRACE_WHC(("  whc: [%"PRId64",%"PRId64"] max_drop_seq %"PRId64" h %u tl %u\n",
-             whc_empty(whc) ? (int64_t)-1 : whc_min_seq(whc),
-             whc_empty(whc) ? (int64_t)-1 : whc_max_seq(whc),
+             whc_empty(whc) ? (seqno_t)-1 : whc_min_seq(whc),
+             whc_empty(whc) ? (seqno_t)-1 : whc_max_seq(whc),
              whc->max_drop_seq, whc->hdepth, whc->tldepth));
 
   assert (max_drop_seq < MAX_SEQ_NUMBER);

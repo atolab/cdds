@@ -355,20 +355,18 @@ static unsigned pseudo_random_delay (const nn_guid_t *x, const nn_guid_t *y, nn_
   /* You know, an ordinary random generator would be even better, but
      the C library doesn't have a reentrant one and I don't feel like
      integrating, say, the Mersenne Twister right now. */
-#define UINT64_CONST(x, y, z) (((uint64_t) (x) * 1000000 + (y)) * 1000000 + (z))
   static const uint64_t cs[] = {
-    UINT64_CONST (15385148,  50874, 689571),
-    UINT64_CONST (17503036, 526311, 582379),
-    UINT64_CONST (11075621, 958654, 396447),
-    UINT64_CONST ( 9748227, 842331,  24047),
-    UINT64_CONST (14689485, 562394, 710107),
-    UINT64_CONST (17256284, 993973, 210745),
-    UINT64_CONST ( 9288286, 355086, 959209),
-    UINT64_CONST (17718429, 552426, 935775),
-    UINT64_CONST (10054290, 541876, 311021),
-    UINT64_CONST (13417933, 704571, 658407)
+    UINT64_C (15385148050874689571),
+    UINT64_C (17503036526311582379),
+    UINT64_C (11075621958654396447),
+    UINT64_C ( 9748227842331024047),
+    UINT64_C (14689485562394710107),
+    UINT64_C (17256284993973210745),
+    UINT64_C ( 9288286355086959209),
+    UINT64_C (17718429552426935775),
+    UINT64_C (10054290541876311021),
+    UINT64_C (13417933704571658407)
   };
-#undef UINT64_CONST
   uint32_t a = x->prefix.u[0], b = x->prefix.u[1], c = x->prefix.u[2], d = x->entityid.u;
   uint32_t e = y->prefix.u[0], f = y->prefix.u[1], g = y->prefix.u[2], h = y->entityid.u;
   uint32_t i = (uint32_t) ((uint64_t) tnow.v >> 32), j = (uint32_t) tnow.v;
@@ -1637,9 +1635,8 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
     src.bufsz = NN_RDATA_PAYLOAD_OFF (fragchain) - qos_offset;
     if (nn_plist_init_frommsg (&qos, NULL, PP_STATUSINFO | PP_KEYHASH, 0, &src) < 0)
     {
-      NN_WARNING4 ("data(builtin, vendor %d.%d): %x:%x:%x:%x #%lld: invalid inline qos\n",
-                   src.vendorid.id[0], src.vendorid.id[1], PGUID (srcguid),
-                   (long long int) sampleinfo->seq);
+      NN_WARNING4 ("data(builtin, vendor %d.%d): %x:%x:%x:%x #%"PRId64": invalid inline qos\n",
+                   src.vendorid.id[0], src.vendorid.id[1], PGUID (srcguid), sampleinfo->seq);
       goto done_upd_deliv;
     }
     /* Complex qos bit also gets set when statusinfo bits other than
@@ -1662,10 +1659,10 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
   {
     if (datasz == 0 || !(data_smhdr_flags & DATA_FLAG_DATAFLAG))
     {
-      NN_WARNING4 ("data(builtin, vendor %d.%d): %x:%x:%x:%x #%lld: "
+      NN_WARNING4 ("data(builtin, vendor %d.%d): %x:%x:%x:%x #%"PRId64": "
                    "built-in data but no payload\n",
                    sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
-                   PGUID (srcguid), (long long int) sampleinfo->seq);
+                   PGUID (srcguid), sampleinfo->seq);
       goto done_upd_deliv;
     }
   }
@@ -1676,10 +1673,10 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
        hasn't been checked fully yet. */
     if (!(data_smhdr_flags & DATA_FLAG_KEYFLAG))
     {
-      NN_WARNING4 ("data(builtin, vendor %d.%d): %x:%x:%x:%x #%lld: "
+      NN_WARNING4 ("data(builtin, vendor %d.%d): %x:%x:%x:%x #%"PRId64": "
                    "dispose/unregister of built-in data but payload not just key\n",
                    sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
-                   PGUID (srcguid), (long long int) sampleinfo->seq);
+                   PGUID (srcguid), sampleinfo->seq);
       goto done_upd_deliv;
     }
   }
@@ -1718,9 +1715,9 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
           pid = PID_ENDPOINT_GUID;
           break;
         default:
-          NN_WARNING4 ("data(builtin, vendor %d.%d): %x:%x:%x:%x #%lld: mapping keyhash to ENDPOINT_GUID",
+          NN_WARNING4 ("data(builtin, vendor %d.%d): %x:%x:%x:%x #%"PRId64": mapping keyhash to ENDPOINT_GUID",
                        sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
-                       PGUID (srcguid), (long long int) sampleinfo->seq);
+                       PGUID (srcguid), sampleinfo->seq);
           pid = PID_ENDPOINT_GUID;
           break;
       }
@@ -1735,10 +1732,10 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
   }
   else
   {
-    NN_WARNING4 ("data(builtin, vendor %d.%d): %x:%x:%x:%x #%lld: "
+    NN_WARNING4 ("data(builtin, vendor %d.%d): %x:%x:%x:%x #%"PRId64": "
                  "dispose/unregister with no content\n",
                  sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
-                 PGUID (srcguid), (long long int) sampleinfo->seq);
+                 PGUID (srcguid), sampleinfo->seq);
     goto done_upd_deliv;
   }
 
@@ -1762,9 +1759,9 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
       handle_SEDP_GROUP (sampleinfo->rst, statusinfo, datap, datasz);
       break;
     default:
-      NN_WARNING4 ("data(builtin, vendor %d.%d): %x:%x:%x:%x #%lld: not handled\n",
+      NN_WARNING4 ("data(builtin, vendor %d.%d): %x:%x:%x:%x #%"PRId64": not handled\n",
                    sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
-                   PGUID (srcguid), (long long int) sampleinfo->seq);
+                   PGUID (srcguid), sampleinfo->seq);
       break;
   }
 

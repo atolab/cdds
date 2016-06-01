@@ -87,9 +87,9 @@ struct wr_prd_match {
   unsigned has_replied_to_hb: 1; /* we must keep sending HBs until all readers have this set */
   unsigned all_have_replied_to_hb: 1; /* true iff 'has_replied_to_hb' for all readers in subtree */
   unsigned is_reliable: 1; /* true iff reliable proxy reader */
-  int64_t min_seq; /* smallest ack'd seq nr in subtree */
-  int64_t max_seq; /* sort-of highest ack'd seq nr in subtree (see augment function) */
-  int64_t seq; /* highest acknowledged seq nr */
+  seqno_t min_seq; /* smallest ack'd seq nr in subtree */
+  seqno_t max_seq; /* sort-of highest ack'd seq nr in subtree (see augment function) */
+  seqno_t seq; /* highest acknowledged seq nr */
   int num_reliable_readers_where_seq_equals_max;
   nn_guid_t arbitrary_unacked_reader;
   nn_count_t next_acknack; /* next acceptable acknack sequence number */
@@ -103,7 +103,7 @@ struct wr_prd_match {
 
 enum pwr_rd_match_syncstate {
   PRMSS_SYNC, /* in sync with proxy writer, has caught up with historical data */
-  PRMSS_TLCATCHUP, /* in sync with proxy writer, still catching up on historical data */
+  PRMSS_TLCATCHUP, /* in sync with proxy writer, pwr + readers still catching up on historical data */
   PRMSS_OUT_OF_SYNC /* not in sync with proxy writer */
 };
 
@@ -116,13 +116,13 @@ struct pwr_rd_match {
   nn_wctime_t hb_timestamp; /* time of most recent heartbeat that rescheduled the ack event */
   nn_wctime_t t_heartbeat_accepted; /* (local) time a heartbeat was last accepted */  /* FIXME: probably elapsed time is beter */
   nn_mtime_t t_last_nack; /* (local) time we last sent a NACK */  /* FIXME: probably elapsed time is better */
-  int64_t seq_last_nack; /* last seq for which we requested a retransmit */
+  seqno_t seq_last_nack; /* last seq for which we requested a retransmit */
   struct xevent *acknack_xevent; /* entry in xevent queue for sending acknacks */
   enum pwr_rd_match_syncstate in_sync; /* whether in sync with the proxy writer */
   union {
     struct {
-      int64_t end_of_tl_seq; /* when seq >= end_of_tl_seq, it's in sync, =0 when not tl */
-      int64_t end_of_out_of_sync_seq; /* when seq >= end_of_tl_seq, it's in sync, =0 when not tl */
+      seqno_t end_of_tl_seq; /* when seq >= end_of_tl_seq, it's in sync, =0 when not tl */
+      seqno_t end_of_out_of_sync_seq; /* when seq >= end_of_tl_seq, it's in sync, =0 when not tl */
       struct nn_reorder *reorder; /* can be done (mostly) per proxy writer, but that is harder; only when state=OUT_OF_SYNC */
     } not_in_sync;
   } u;
@@ -150,20 +150,20 @@ struct local_reader_ary {
 struct participant
 {
   struct entity_common e;
-  long long lease_duration;
-  unsigned bes;
-  unsigned prismtech_bes;
-  unsigned is_ddsi2_pp: 1;
-  nn_plist_t *plist;
-  struct xevent *spdp_xevent;
-  struct xevent *pmd_update_xevent;
+  long long lease_duration; /* constant */
+  unsigned bes; /* built-in endpoint set */
+  unsigned prismtech_bes; /* prismtech-specific extension of built-in endpoints set */
+  unsigned is_ddsi2_pp: 1; /* true for the "federation leader", the ddsi2 participant itself in OSPL; FIXME: probably should use this for broker mode as well ... */
+  nn_plist_t *plist; /* settings/QoS for this participant */
+  struct xevent *spdp_xevent; /* timed event for periodically publishing SPDP */
+  struct xevent *pmd_update_xevent; /* timed event for periodically publishing ParticipantMessageData */
   nn_locator_t m_locator;
   ddsi_tran_conn_t m_conn;
-  unsigned next_entityid;
-  int32_t user_refc;
-  int32_t builtin_refc;
+  unsigned next_entityid; /* next available entity id [e.lock] */
   os_mutex refc_lock;
-  int builtins_deleted;
+  int32_t user_refc; /* number of non-built-in endpoints in this participant [refc_lock] */
+  int32_t builtin_refc; /* number of built-in endpoints in this participant [refc_lock] */
+  int builtins_deleted; /* whether deletion of built-in endpoints has been initiated [refc_lock] */
 };
 
 struct endpoint_common {
@@ -171,15 +171,15 @@ struct endpoint_common {
   nn_guid_t group_guid;
 };
 
-struct generic_endpoint {
+struct generic_endpoint { /* FIXME: currently only local endpoints; proxies use entity_common + proxy_endpoint common */
   struct entity_common e;
   struct endpoint_common c;
 };
 
 enum writer_state {
-  WRST_OPERATIONAL,
-  WRST_LINGERING,
-  WRST_DELETING
+  WRST_OPERATIONAL, /* normal situation */
+  WRST_LINGERING, /* writer deletion has been requested but still has unack'd data */
+  WRST_DELETING /* writer is actually being deleted (removed from hash table) */
 };
 
 struct writer
@@ -188,49 +188,49 @@ struct writer
   struct endpoint_common c;
   status_cb_t status_cb;
   void * status_cb_entity;
-  os_cond throttle_cond;
-  long long seq; /* last sequence number (transmitted seqs are 1 ... seq) */
-  long long cs_seq; /* 1st seq in coherent set (or 0) */
-  long long seq_xmit; /* last sequence number actually transmitted */
+  os_cond throttle_cond; /* used to trigger a transmit thread blocked in throttle_writer() */
+  seqno_t seq; /* last sequence number (transmitted seqs are 1 ... seq) */
+  seqno_t cs_seq; /* 1st seq in coherent set (or 0) */
+  seqno_t seq_xmit; /* last sequence number actually transmitted */
+  seqno_t min_local_readers_reject_seq; /* mimum of local_readers->last_deliv_seq */
   nn_count_t hbcount; /* last hb seq number */
   nn_count_t hbfragcount; /* last hb frag seq number */
-  uint32_t last_kernel_seq; /* last v_message sequenceNumber processed */
   int throttling; /* non-zero when some thread is waiting for the WHC to shrink */
-  struct hbcontrol hbcontrol;
+  struct hbcontrol hbcontrol; /* controls heartbeat timing, piggybacking */
   struct nn_xqos *xqos;
   enum writer_state state;
-  unsigned reliable: 1;
-  unsigned handle_as_transient_local: 1;
-  unsigned aggressive_keep_last: 1;
+  unsigned reliable: 1; /* iff 1, writer is reliable <=> heartbeat_xevent != NULL */
+  unsigned handle_as_transient_local: 1; /* controls whether data is retained in WHC */
+  unsigned aggressive_keep_last: 1; /* controls whether KEEP_LAST will overwrite samples that haven't been ACK'd yet */
   unsigned startup_mode: 1; /* causes data to be treated as T-L for a while */
-  unsigned include_keyhash: 1;
-  unsigned retransmitting: 1;
+  unsigned include_keyhash: 1; /* iff 1, this writer includes a keyhash; keyless topics => include_keyhash = 0 */
+  unsigned retransmitting: 1; /* iff 1, this writer is currently retransmitting */
 #ifdef DDSI_INCLUDE_SSM
   unsigned supports_ssm: 1;
   struct addrset *ssm_as;
 #endif
-  const struct sertopic * topic;
+  const struct sertopic * topic; /* topic, but may be NULL for built-ins */
   struct addrset *as; /* set of addresses to publish to */
-  struct addrset *as_group;
-  struct xevent *heartbeat_xevent;
+  struct addrset *as_group; /* alternate case, used for SPDP, when using Cloud with multiple bootstrap locators */
+  struct xevent *heartbeat_xevent; /* timed event for "periodically" publishing heartbeats when unack'd data present, NULL <=> unreliable */
   long long lease_duration;
-  struct whc *whc;
-  uint32_t whc_low, whc_high;
-  nn_etime_t t_rexmit_end;
-  nn_etime_t t_whc_high_upd;
-  int num_reliable_readers;
-  ut_avlTree_t readers;
-  ut_avlTree_t local_readers;
+  struct whc *whc; /* WHC tracking history, T-L durability service history + samples by sequence number for retransmit */
+  uint32_t whc_low, whc_high; /* watermarks for WHC in bytes (counting only unack'd data) */
+  nn_etime_t t_rexmit_end; /* time of last 1->0 transition of "retransmitting" */
+  nn_etime_t t_whc_high_upd; /* time "whc_high" was last updated for controlled ramp-up of throughput */
+  int num_reliable_readers; /* number of matching reliable PROXY readers */
+  ut_avlTree_t readers; /* all matching PROXY readers, see struct wr_prd_match */
+  ut_avlTree_t local_readers; /* all matching LOCAL readers, see struct wr_rd_match */
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
   uint32_t partition_id;
 #endif
-  uint32_t num_acks_received;
-  uint32_t num_nacks_received;
-  uint32_t throttle_count;
-  uint32_t rexmit_count;
-  uint32_t rexmit_lost_count;
-  struct xeventq *evq;
-  struct local_reader_ary rdary;
+  uint32_t num_acks_received; /* cum received ACKNACKs with no request for retransmission */
+  uint32_t num_nacks_received; /* cum received ACKNACKs that did request retransmission */
+  uint32_t throttle_count; /* cum times transmitting was throttled (whc hitting high-level mark) */
+  uint32_t rexmit_count; /* cum samples retransmitted (counting events; 1 sample can be counted many times) */
+  uint32_t rexmit_lost_count; /* cum samples lost but retransmit requested (also counting events) */
+  struct xeventq *evq; /* timed event queue to be used by this writer */
+  struct local_reader_ary rdary; /* LOCAL readers for fast-pathing; if not fast-pathed, fall back to scanning local_readers */
 };
 
 struct reader
@@ -239,40 +239,40 @@ struct reader
   struct endpoint_common c;
   status_cb_t status_cb;
   void * status_cb_entity;
-  struct rhc * rhc;
+  struct rhc * rhc; /* reader history, tracks registrations and data */
   struct nn_xqos *xqos;
-  unsigned reliable: 1;
-  unsigned handle_as_transient_local: 1;
+  unsigned reliable: 1; /* 1 iff reader is reliable */
+  unsigned handle_as_transient_local: 1; /* 1 iff reader wants historical data from proxy writers */
 #ifdef DDSI_INCLUDE_SSM
-  unsigned favours_ssm: 1;
+  unsigned favours_ssm: 1; /* iff 1, this reader favours SSM */
 #endif
-  nn_count_t init_acknack_count;
+  nn_count_t init_acknack_count; /* initial value for "count" (i.e. ACK seq num) for newly matched proxy writers */
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
   struct addrset *as;
 #endif
-  const struct sertopic * topic;
-  ut_avlTree_t writers;
-  ut_avlTree_t local_writers;
+  const struct sertopic * topic; /* topic is NULL for built-in readers */
+  ut_avlTree_t writers; /* all matching PROXY writers, see struct rd_pwr_match */
+  ut_avlTree_t local_writers; /* all matching LOCAL writers, see struct rd_wr_match */
 };
 
 struct proxy_participant
 {
   struct entity_common e;
-  uint32_t refc;
-  nn_vendorid_t vendor;
-  unsigned bes;
-  unsigned prismtech_bes;
+  uint32_t refc; /* number of proxy endpoints (both user & built-in; not groups, they don't have a life of their own) */
+  nn_vendorid_t vendor; /* vendor code from discovery */
+  unsigned bes; /* built-in endpoint set */
+  unsigned prismtech_bes; /* prismtech-specific extension of built-in endpoints set */
   nn_guid_t privileged_pp_guid; /* if this PP depends on another PP for its SEDP writing */
-  nn_plist_t *plist;
-  struct lease *lease;
-  struct addrset *as_default;
-  struct addrset *as_meta;
-  struct proxy_endpoint_common *endpoints;
-  ut_avlTree_t groups;
-  unsigned kernel_sequence_numbers : 1;
-  unsigned implicitly_created : 1;
-  unsigned is_ddsi2_pp: 1;
-  unsigned lease_expired: 1;
+  nn_plist_t *plist; /* settings/QoS for this participant */
+  struct lease *lease; /* lease object for this participant, for automatic leases */
+  struct addrset *as_default; /* default address set to use for user data traffic */
+  struct addrset *as_meta; /* default address set to use for discovery traffic */
+  struct proxy_endpoint_common *endpoints; /* all proxy endpoints can be reached from here */
+  ut_avlTree_t groups; /* table of all groups (publisher, subscriber), see struct proxy_group */
+  unsigned kernel_sequence_numbers : 1; /* whether this proxy participant generates OSPL kernel sequence numbers */
+  unsigned implicitly_created : 1; /* participants are implicitly created for Cloud/Fog discovered endpoints */
+  unsigned is_ddsi2_pp: 1; /* if this is the federation-leader on the remote node */
+  unsigned lease_expired: 1; /* FIXME: doesn't appear to be used in a meaningful way ... */
 };
 
 /* Representing proxy subscriber & publishers as "groups": until DDSI2
@@ -286,18 +286,18 @@ struct proxy_group {
   ut_avlNode_t avlnode;
   nn_guid_t guid;
   char *name;
-  struct proxy_participant *proxypp;
-  struct nn_xqos *xqos;
+  struct proxy_participant *proxypp; /* uncounted backref to proxy participant */
+  struct nn_xqos *xqos; /* publisher/subscriber QoS */
 };
 
 struct proxy_endpoint_common
 {
-  struct proxy_participant *proxypp;
-  struct proxy_endpoint_common *next_ep;
-  struct proxy_endpoint_common *prev_ep;
-  struct nn_xqos *xqos;
-  const struct sertopic * topic;
-  struct addrset *as;
+  struct proxy_participant *proxypp; /* counted backref to proxy participant */
+  struct proxy_endpoint_common *next_ep; /* next \ endpoint belonging to this proxy participant */
+  struct proxy_endpoint_common *prev_ep; /* prev / -- this is in arbitrary ordering */
+  struct nn_xqos *xqos; /* proxy endpoint QoS lives here; FIXME: local ones should have it moved to common as well */
+  const struct sertopic * topic; /* topic may be NULL: for built-ins, but also for never-yet matched proxies (so we don't have to know the topic; when we match, we certainly do know) */
+  struct addrset *as; /* address set to use for communicating with this endpoint */
   nn_guid_t group_guid; /* 0:0:0:0 if not available */
   nn_vendorid_t vendor; /* cached from proxypp->vendor */
 };
@@ -305,37 +305,37 @@ struct proxy_endpoint_common
 struct proxy_writer {
   struct entity_common e;
   struct proxy_endpoint_common c;
-  ut_avlTree_t readers;
-  int n_reliable_readers;
-  int n_readers_out_of_sync;
-  long long last_seq; /* last known seq, not last delivered */
+  ut_avlTree_t readers; /* matching LOCAL readers, see pwr_rd_match */
+  int n_reliable_readers; /* number of those that are reliable */
+  int n_readers_out_of_sync; /* number of those that require special handling (accepting historical data, waiting for historical data set to become complete) */
+  seqno_t last_seq; /* highest known seq published by the writer, not last delivered */
   uint32_t last_fragnum; /* last known frag for last_seq, or ~0u if last_seq not partial */
   nn_count_t nackfragcount; /* last nackfrag seq number */
-  os_atomic_uint32_t next_deliv_seq_lowword; /* for generating acks; 32-bit so atomic reads on all supported platforms */
-  unsigned deliver_synchronously: 1;
-  unsigned have_seen_heartbeat: 1;
-  unsigned assert_pp_lease: 1;
-  unsigned local_matching_inprogress: 1;
+  os_atomic_uint32_t next_deliv_seq_lowword; /* lower 32-bits for next sequence number that will be delivered; for generating acks; 32-bit so atomic reads on all supported platforms */
+  unsigned deliver_synchronously: 1; /* iff 1, delivery happens straight from receive thread for non-historical data; else through delivery queue "dqueue" */
+  unsigned have_seen_heartbeat: 1; /* iff 1, we have received at least on heartbeat from this proxy writer */
+  unsigned assert_pp_lease: 1; /* iff 1, renew the proxy-participant's lease when data comes in */
+  unsigned local_matching_inprogress: 1; /* iff 1, we are still busy matching local readers; this is so we don't deliver incoming data to some but not all readers initially */
 #ifdef DDSI_INCLUDE_SSM
-  unsigned supports_ssm: 1;
+  unsigned supports_ssm: 1; /* iff 1, this proxy writer supports SSM */
 #endif
-  struct nn_defrag *defrag;
-  struct nn_reorder *reorder;
-  struct nn_dqueue *dqueue;
-  struct xeventq *evq;
-  struct local_reader_ary rdary;
+  struct nn_defrag *defrag; /* defragmenter for this proxy writer; FIXME: perhaps shouldn't be for historical data */
+  struct nn_reorder *reorder; /* message reordering for this proxy writer, out-of-sync readers can have their own, see pwr_rd_match */
+  struct nn_dqueue *dqueue; /* delivery queue for asynchronous delivery (historical data is always delivered asynchronously) */
+  struct xeventq *evq; /* timed event queue to be used for ACK generation */
+  struct local_reader_ary rdary; /* LOCAL readers for fast-pathing; if not fast-pathed, fall back to scanning local_readers */
 };
 
 struct proxy_reader {
   struct entity_common e;
   struct proxy_endpoint_common c;
   unsigned deleting: 1; /* set when being deleted */
-  unsigned is_fict_trans_reader: 1; /* only true when this is certain */
-  unsigned assert_pp_lease: 1;
+  unsigned is_fict_trans_reader: 1; /* only true when it is certain that is a fictitious transient data reader (affects built-in topic generation) */
+  unsigned assert_pp_lease: 1; /* iff 1, renew the proxy-participant's lease when data comes in */
 #ifdef DDSI_INCLUDE_SSM
-  unsigned favours_ssm: 1;
+  unsigned favours_ssm: 1; /* iff 1, this proxy reader favours SSM when available */
 #endif
-  ut_avlTree_t writers;
+  ut_avlTree_t writers; /* matching LOCAL writers */
 };
 
 extern const ut_avlTreedef_t wr_readers_treedef;
@@ -459,7 +459,7 @@ struct reader * new_reader
 );
 
 unsigned remove_acked_messages (struct writer *wr);
-int64_t writer_max_drop_seq (const struct writer *wr);
+seqno_t writer_max_drop_seq (const struct writer *wr);
 int writer_must_have_hb_scheduled (const struct writer *wr);
 
 int delete_writer (const struct nn_guid *guid);

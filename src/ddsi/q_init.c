@@ -47,6 +47,7 @@
 #include "ddsi/q_receive.h"
 #include "ddsi/q_pcap.h"
 #include "ddsi/q_feature_check.h"
+#include "ddsi/q_debmon.h"
 
 #include "ddsi/sysdeps.h"
 
@@ -682,6 +683,7 @@ int rtps_init (void)
   gv.tev_conn = NULL;
   gv.listener = NULL;
   gv.thread_pool = NULL;
+  gv.debmon = NULL;
 
   /* Print start time for referencing relative times in the remainder
    of the nn_log. */
@@ -1087,6 +1089,11 @@ int rtps_init (void)
     qxev_end_startup_mode (add_duration_to_mtime (now_mt (), config.startup_mode_duration));
   }
 
+  if (config.monitor_port >= 0)
+  {
+    gv.debmon = new_debug_monitor (config.monitor_port);
+  }
+
   return 0;
 
 err_mc_conn:
@@ -1175,6 +1182,12 @@ void rtps_term (void)
 #ifdef DDSI_INCLUDE_NETWORK_CHANNELS
   struct config_channel_listelem * chptr;
 #endif
+
+  if (gv.debmon)
+  {
+    free_debug_monitor (gv.debmon);
+    gv.debmon = NULL;
+  }
 
   /* Stop all I/O */
   os_mutexLock (&gv.lock);

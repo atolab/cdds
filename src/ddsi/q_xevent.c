@@ -190,10 +190,10 @@ static void trace_msg (const char *func, const struct nn_xmsg *m)
   if (config.enabled_logcats & LC_TRACE)
   {
     nn_guid_t wrguid;
-    int64_t wrseq;
+    seqno_t wrseq;
     nn_fragment_number_t wrfragid;
     nn_xmsg_guid_seq_fragid (m, &wrguid, &wrseq, &wrfragid);
-    TRACE ((" %s(%x:%x:%x:%x/%lld/%u)", func, PGUID (wrguid), wrseq, wrfragid));
+    TRACE ((" %s(%x:%x:%x:%x/%"PRId64"/%u)", func, PGUID (wrguid), wrseq, wrfragid));
   }
 }
 #else
@@ -630,9 +630,9 @@ static void handle_xevk_heartbeat (struct nn_xpack *xp, struct xevent *ev, nn_mt
           hbansreq ? "" : " final",
           msg ? "sent" : "suppressed",
           (t_next.v == T_NEVER) ? POS_INFINITY_DOUBLE : (double)(t_next.v - tnow.v) / 1e9,
-          ut_avlIsEmpty (&wr->readers) ? (int64_t) -1 : ((struct wr_prd_match *) ut_avlRoot (&wr_readers_treedef, &wr->readers))->min_seq,
+          ut_avlIsEmpty (&wr->readers) ? (seqno_t) -1 : ((struct wr_prd_match *) ut_avlRoot (&wr_readers_treedef, &wr->readers))->min_seq,
           ut_avlIsEmpty (&wr->readers) || ((struct wr_prd_match *) ut_avlRoot (&wr_readers_treedef, &wr->readers))->all_have_replied_to_hb ? "" : "!",
-          whc_empty (wr->whc) ? (int64_t) -1 : whc_max_seq (wr->whc), wr->seq_xmit));
+          whc_empty (wr->whc) ? (seqno_t) -1 : whc_max_seq (wr->whc), wr->seq_xmit));
   resched_xevent_if_earlier (ev, t_next);
   wr->hbcontrol.tsched = t_next;
   os_mutexUnlock (&wr->e.lock);
@@ -648,7 +648,7 @@ static void handle_xevk_heartbeat (struct nn_xpack *xp, struct xevent *ev, nn_mt
   }
 }
 
-static int64_t next_deliv_seq (const struct proxy_writer *pwr, const int64_t next_seq)
+static seqno_t next_deliv_seq (const struct proxy_writer *pwr, const seqno_t next_seq)
 {
   /* We want to determine next_deliv_seq, the next sequence number to
      be delivered to all in-sync readers, so that we can acknowledge
@@ -689,15 +689,15 @@ static int64_t next_deliv_seq (const struct proxy_writer *pwr, const int64_t nex
      provided #dqueue is decremented after delivery, rather than
      before delivery. */
   const uint32_t lw = os_atomic_ld32 (&pwr->next_deliv_seq_lowword);
-  int64_t next_deliv_seq;
-  next_deliv_seq = (next_seq & ~(int64_t) 0xffffffff) | lw;
+  seqno_t next_deliv_seq;
+  next_deliv_seq = (next_seq & ~(seqno_t) UINT32_MAX) | lw;
   if (next_deliv_seq > next_seq)
-    next_deliv_seq -= ((int64_t) 1) << 32;
+    next_deliv_seq -= ((seqno_t) 1) << 32;
   assert (0 < next_deliv_seq && next_deliv_seq <= next_seq);
   return next_deliv_seq;
 }
 
-static void add_AckNack (struct nn_xmsg *msg, struct proxy_writer *pwr, struct pwr_rd_match *rwn, int64_t *nack_seq)
+static void add_AckNack (struct nn_xmsg *msg, struct proxy_writer *pwr, struct pwr_rd_match *rwn, seqno_t *nack_seq)
 {
   /* If pwr->have_seen_heartbeat == 0, no heartbeat has been received
      by this proxy writer yet, so we'll be sending a pre-emptive
@@ -710,7 +710,7 @@ static void add_AckNack (struct nn_xmsg *msg, struct proxy_writer *pwr, struct p
   AckNack_t *an;
   struct nn_xmsg_marker sm_marker;
   unsigned i, numbits;
-  int64_t base;
+  seqno_t base;
   unsigned ui;
 
   union {
@@ -718,8 +718,8 @@ static void add_AckNack (struct nn_xmsg *msg, struct proxy_writer *pwr, struct p
     char pad[NN_FRAGMENT_NUMBER_SET_SIZE (256)];
   } nackfrag;
   int nackfrag_numbits;
-  int64_t nackfrag_seq = 0;
-  int64_t bitmap_base;
+  seqno_t nackfrag_seq = 0;
+  seqno_t bitmap_base;
 
   ASSERT_MUTEX_HELD (pwr->e.lock);
 
@@ -766,7 +766,7 @@ static void add_AckNack (struct nn_xmsg *msg, struct proxy_writer *pwr, struct p
     if (nackfrag_seq == pwr->last_seq)
       fragnum = pwr->last_fragnum;
     else
-      fragnum = 0xffffffff;
+      fragnum = UINT32_MAX;
     nackfrag_numbits = nn_defrag_nackmap (pwr->defrag, nackfrag_seq, fragnum, &nackfrag.set, max_numbits);
   }
   if (nackfrag_numbits >= 0) {
@@ -894,7 +894,7 @@ static void handle_xevk_acknack (UNUSED_ARG (struct nn_xpack *xp), struct xevent
 
   if (addrset_any_uc (pwr->c.as, &loc) || addrset_any_mc (pwr->c.as, &loc))
   {
-    int64_t nack_seq;
+    seqno_t nack_seq;
     if ((msg = nn_xmsg_new (gv.xmsgpool, &ev->u.acknack.rd_guid.prefix, ACKNACK_SIZE_MAX, NN_XMSG_KIND_CONTROL)) == NULL)
       goto outofmem;
     nn_xmsg_setdst1 (msg, &ev->u.acknack.pwr_guid.prefix, &loc);

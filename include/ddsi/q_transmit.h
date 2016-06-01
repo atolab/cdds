@@ -33,8 +33,8 @@ int write_sample (struct nn_xpack *xp, struct writer *wr, struct serdata *serdat
 int write_sample_notk (struct nn_xpack *xp, struct writer *wr, struct serdata *serdata);
 
 /* When calling the following functions, wr->lock must be held */
-int create_fragment_message (struct writer *wr, int64_t seq, const struct nn_plist *plist, struct serdata *serdata, unsigned fragnum, struct proxy_reader *prd,struct nn_xmsg **msg, int isnew);
-int enqueue_sample_wrlock_held (struct writer *wr, int64_t seq, const struct nn_plist *plist, struct serdata *serdata, struct proxy_reader *prd, int isnew);
+int create_fragment_message (struct writer *wr, seqno_t seq, const struct nn_plist *plist, struct serdata *serdata, unsigned fragnum, struct proxy_reader *prd,struct nn_xmsg **msg, int isnew);
+int enqueue_sample_wrlock_held (struct writer *wr, seqno_t seq, const struct nn_plist *plist, struct serdata *serdata, struct proxy_reader *prd, int isnew);
 void add_Heartbeat (struct nn_xmsg *msg, struct writer *wr, int hbansreq, nn_entityid_t dst, int issync);
 
 #if defined (__cplusplus)

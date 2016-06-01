@@ -517,7 +517,7 @@ static int validate_time (const nn_ddsi_time_t *t)
      the DDS 2.1 spec, table 9.4. */
   if (t->seconds >= 0)
     return 0;
-  else if (t->seconds == -1 && t->fraction == 0xffffffff)
+  else if (t->seconds == -1 && t->fraction == UINT32_MAX)
     return 0;
   else
   {
@@ -542,9 +542,9 @@ int validate_duration (const nn_duration_t *d)
      the DDS 1.2 spec. */
   if (d->sec >= 0 && d->nanosec >= 0 && d->nanosec < 1000000000)
     return 0;
-  else if (d->sec == (int) 0x7fffffff && d->nanosec == (int) 0x7fffffff)
+  else if (d->sec == (int) INT32_MAX && d->nanosec == (int) INT32_MAX)
     return 0;
-  else if (d->sec == -1 && d->nanosec == (int) 0xffffffff)
+  else if (d->sec == -1 && d->nanosec == (int) UINT32_MAX)
     return 0;
   else
   {
@@ -1914,7 +1914,7 @@ static int init_one_parameter
       else
       {
         nn_sequence_number_t *q = &dest->coherent_set_seqno;
-        int64_t seqno;
+        seqno_t seqno;
         memcpy (q, dd->buf, sizeof (*q));
         if (dd->bswap)
         {

@@ -850,12 +850,12 @@ struct nn_rsample {
       ut_avlTree_t fragtree;
       struct nn_defrag_iv *lastfrag;
       struct nn_rsample_info *sampleinfo;
-      int64_t seq;
+      seqno_t seq;
     } defrag;
     struct nn_rsample_reorder {
       ut_avlNode_t avlnode;       /* for nn_reorder::sampleivtree, if head of a chain */
       struct nn_rsample_chain sc; /* this interval's samples, covering ... */
-      int64_t min, maxp1;        /* ... seq nos: [min,maxp1), but possibly with holes in it */
+      seqno_t min, maxp1;        /* ... seq nos: [min,maxp1), but possibly with holes in it */
       uint32_t n_samples;        /* so this is the actual length of the chain */
     } reorder;
   } u;
@@ -870,9 +870,9 @@ struct nn_defrag {
 };
 
 static int compare_uint32 (const void *va, const void *vb);
-static int compare_int64 (const void *va, const void *vb);
+static int compare_seqno (const void *va, const void *vb);
 
-static const ut_avlTreedef_t defrag_sampletree_treedef = UT_AVL_TREEDEF_INITIALIZER (offsetof (struct nn_rsample, u.defrag.avlnode), offsetof (struct nn_rsample, u.defrag.seq), compare_int64, 0);
+static const ut_avlTreedef_t defrag_sampletree_treedef = UT_AVL_TREEDEF_INITIALIZER (offsetof (struct nn_rsample, u.defrag.avlnode), offsetof (struct nn_rsample, u.defrag.seq), compare_seqno, 0);
 static const ut_avlTreedef_t rsample_defrag_fragtree_treedef = UT_AVL_TREEDEF_INITIALIZER (offsetof (struct nn_defrag_iv, avlnode), offsetof (struct nn_defrag_iv, min), compare_uint32, 0);
 
 static int compare_uint32 (const void *va, const void *vb)
@@ -882,10 +882,10 @@ static int compare_uint32 (const void *va, const void *vb)
   return (a == b) ? 0 : (a < b) ? -1 : 1;
 }
 
-static int compare_int64 (const void *va, const void *vb)
+static int compare_seqno (const void *va, const void *vb)
 {
-  int64_t a = *((const int64_t *) va);
-  int64_t b = *((const int64_t *) vb);
+  seqno_t a = *((const seqno_t *) va);
+  seqno_t b = *((const seqno_t *) vb);
   return (a == b) ? 0 : (a < b) ? -1 : 1;
 }
 
@@ -1148,7 +1148,7 @@ static void rsample_convert_defrag_to_reorder (struct nn_rsample *sample)
   struct nn_rdata *fragchain = iv->first;
   struct nn_rsample_info *sampleinfo = sample->u.defrag.sampleinfo;
   struct nn_rsample_chain_elem *sce;
-  int64_t seq = sample->u.defrag.seq;
+  seqno_t seq = sample->u.defrag.seq;
 
   /* re-use memory fragment interval node for sample chain */
   sce = (struct nn_rsample_chain_elem *) ut_avlRoot (&rsample_defrag_fragtree_treedef, &sample->u.defrag.fragtree);
@@ -1282,7 +1282,7 @@ static int nn_rdata_is_fragment (const struct nn_rdata *rdata, const struct nn_r
   return !(rdata->min == 0 && rdata->maxp1 == sampleinfo->size);
 }
 
-static int defrag_limit_samples (struct nn_defrag *defrag, int64_t seq, int64_t *max_seq)
+static int defrag_limit_samples (struct nn_defrag *defrag, seqno_t seq, seqno_t *max_seq)
 {
   struct nn_rsample *sample_to_drop = NULL;
   if (defrag->n_samples < defrag->max_samples)
@@ -1349,7 +1349,7 @@ struct nn_rsample *nn_defrag_rsample (struct nn_defrag *defrag, struct nn_rdata 
      function have been accounted for in the refcount of their rmsgs
      by adding BIAS to the refcount. */
   struct nn_rsample *sample, *result;
-  int64_t max_seq;
+  seqno_t max_seq;
   ut_avlIPath_t path;
 
   assert (defrag->n_samples <= defrag->max_samples);
@@ -1435,7 +1435,7 @@ struct nn_rsample *nn_defrag_rsample (struct nn_defrag *defrag, struct nn_rdata 
   return result;
 }
 
-void nn_defrag_notegap (struct nn_defrag *defrag, int64_t min, int64_t maxp1)
+void nn_defrag_notegap (struct nn_defrag *defrag, seqno_t min, seqno_t maxp1)
 {
   /* All sequence numbers in [min,maxp1) are unavailable so any
      fragments in that range must be discarded.  Used both for
@@ -1450,7 +1450,7 @@ void nn_defrag_notegap (struct nn_defrag *defrag, int64_t min, int64_t maxp1)
   defrag->max_sample = ut_avlFindMax (&defrag_sampletree_treedef, &defrag->sampletree);
 }
 
-int nn_defrag_nackmap (struct nn_defrag *defrag, int64_t seq, uint32_t maxfragnum, struct nn_fragment_number_set *map, uint32_t maxsz)
+int nn_defrag_nackmap (struct nn_defrag *defrag, seqno_t seq, uint32_t maxfragnum, struct nn_fragment_number_set *map, uint32_t maxsz)
 {
   struct nn_rsample *s;
   struct nn_defrag_iv *iv;
@@ -1459,7 +1459,7 @@ int nn_defrag_nackmap (struct nn_defrag *defrag, int64_t seq, uint32_t maxfragnu
   s = ut_avlLookup (&defrag_sampletree_treedef, &defrag->sampletree, &seq);
   if (s == NULL)
   {
-    if (maxfragnum == 0xffffffff)
+    if (maxfragnum == UINT32_MAX)
     {
       /* If neither the caller nor the defragmenter knows anything about the sample, say so */
       return -1;
@@ -1633,14 +1633,14 @@ int nn_defrag_nackmap (struct nn_defrag *defrag, int64_t seq, uint32_t maxfragnu
 struct nn_reorder {
   ut_avlTree_t sampleivtree;
   struct nn_rsample *max_sampleiv; /* = max(sampleivtree) */
-  int64_t next_seq;
+  seqno_t next_seq;
   enum nn_reorder_mode mode;
   uint32_t max_samples;
   uint32_t n_samples;
 };
 
 static const ut_avlTreedef_t reorder_sampleivtree_treedef =
-  UT_AVL_TREEDEF_INITIALIZER (offsetof (struct nn_rsample, u.reorder.avlnode), offsetof (struct nn_rsample, u.reorder.min), compare_int64, 0);
+  UT_AVL_TREEDEF_INITIALIZER (offsetof (struct nn_rsample, u.reorder.avlnode), offsetof (struct nn_rsample, u.reorder.min), compare_seqno, 0);
 
 struct nn_reorder *nn_reorder_new (enum nn_reorder_mode mode, uint32_t max_samples)
 {
@@ -1923,7 +1923,7 @@ nn_reorder_result_t nn_reorder_rsample (struct nn_rsample_chain *sc, struct nn_r
 
     /* Adjust reorder->n_samples, new sample is not counted yet */
     assert (s->maxp1 - s->min >= 1);
-    assert (s->maxp1 - s->min <= (int) 0x7fffffff);
+    assert (s->maxp1 - s->min <= (int) INT32_MAX);
     assert (s->min + s->n_samples <= s->maxp1);
     assert (reorder->n_samples >= s->n_samples - 1);
     reorder->n_samples -= s->n_samples - 1;
@@ -2096,7 +2096,7 @@ nn_reorder_result_t nn_reorder_rsample (struct nn_rsample_chain *sc, struct nn_r
   return NN_REORDER_ACCEPT;
 }
 
-static struct nn_rsample *coalesce_intervals_touching_range (struct nn_reorder *reorder, int64_t min, int64_t maxp1, int *valuable)
+static struct nn_rsample *coalesce_intervals_touching_range (struct nn_reorder *reorder, seqno_t min, seqno_t maxp1, int *valuable)
 {
   struct nn_rsample *s, *t;
   *valuable = 0;
@@ -2151,7 +2151,7 @@ struct nn_rdata *nn_rdata_newgap (struct nn_rmsg *rmsg)
   return d;
 }
 
-static int reorder_insert_gap (struct nn_reorder *reorder, struct nn_rdata *rdata, int64_t min, int64_t maxp1)
+static int reorder_insert_gap (struct nn_reorder *reorder, struct nn_rdata *rdata, seqno_t min, seqno_t maxp1)
 {
   struct nn_rsample_chain_elem *sce;
   struct nn_rsample *s;
@@ -2173,7 +2173,7 @@ static int reorder_insert_gap (struct nn_reorder *reorder, struct nn_rdata *rdat
   return 1;
 }
 
-nn_reorder_result_t nn_reorder_gap (struct nn_rsample_chain *sc, struct nn_reorder *reorder, struct nn_rdata *rdata, int64_t min, int64_t maxp1, int *refcount_adjust)
+nn_reorder_result_t nn_reorder_gap (struct nn_rsample_chain *sc, struct nn_reorder *reorder, struct nn_rdata *rdata, seqno_t min, seqno_t maxp1, int *refcount_adjust)
 {
   /* All sequence numbers in [min,maxp1) are unavailable so any
      fragments in that range must be discarded.  Used both for
@@ -2285,7 +2285,7 @@ nn_reorder_result_t nn_reorder_gap (struct nn_rsample_chain *sc, struct nn_reord
   }
 }
 
-int nn_reorder_wantsample (struct nn_reorder *reorder, int64_t seq)
+int nn_reorder_wantsample (struct nn_reorder *reorder, seqno_t seq)
 {
   struct nn_rsample *s;
   if (seq < reorder->next_seq)
@@ -2297,10 +2297,10 @@ int nn_reorder_wantsample (struct nn_reorder *reorder, int64_t seq)
   return (s == NULL || s->u.reorder.maxp1 <= seq);
 }
 
-unsigned nn_reorder_nackmap (struct nn_reorder *reorder, int64_t base, int64_t maxseq, struct nn_sequence_number_set *map, uint32_t maxsz, int notail)
+unsigned nn_reorder_nackmap (struct nn_reorder *reorder, seqno_t base, seqno_t maxseq, struct nn_sequence_number_set *map, uint32_t maxsz, int notail)
 {
   struct nn_rsample *iv;
-  int64_t i;
+  seqno_t i;
 
   /* reorder->next_seq-1 is the last one we delivered, so the last one
      we ack; maxseq is the latest sample we know exists.  Valid bitmap
@@ -2319,13 +2319,13 @@ unsigned nn_reorder_nackmap (struct nn_reorder *reorder, int64_t base, int64_t m
 #else
   if (base > reorder->next_seq)
   {
-    NN_ERROR2 ("nn_reorder_nackmap: incorrect base sequence number supplied (%lld > %lld)\n", (long long int) base, (long long int) reorder->next_seq);
+    NN_ERROR2 ("nn_reorder_nackmap: incorrect base sequence number supplied (%"PRId64" > %"PRId64")\n", base, reorder->next_seq);
     base = reorder->next_seq;
   }
 #endif
   if (maxseq + 1 < base)
   {
-    NN_ERROR2 ("nn_reorder_nackmap: incorrect max sequence number supplied (maxseq %lld base %lld)\n", (long long int) maxseq, (long long int) base);
+    NN_ERROR2 ("nn_reorder_nackmap: incorrect max sequence number supplied (maxseq %"PRId64" base %"PRId64")\n", maxseq, base);
     maxseq = base - 1;
   }
 
@@ -2362,7 +2362,7 @@ unsigned nn_reorder_nackmap (struct nn_reorder *reorder, int64_t base, int64_t m
   return map->numbits;
 }
 
-int64_t nn_reorder_next_seq (const struct nn_reorder *reorder)
+seqno_t nn_reorder_next_seq (const struct nn_reorder *reorder)
 {
   return reorder->next_seq;
 }

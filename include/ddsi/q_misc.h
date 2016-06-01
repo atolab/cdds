@@ -29,8 +29,8 @@ int vendor_is_cloud (nn_vendorid_t vendor);
 int is_own_vendor (nn_vendorid_t vendor);
 unsigned char normalize_data_datafrag_flags (const SubmessageHeader_t *smhdr, int datafrag_as_data);
 
-int64_t fromSN (const nn_sequence_number_t sn);
-nn_sequence_number_t toSN (int64_t);
+seqno_t fromSN (const nn_sequence_number_t sn);
+nn_sequence_number_t toSN (seqno_t);
 
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
 int WildcardOverlap(char * p1, char * p2);

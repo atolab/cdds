@@ -187,7 +187,7 @@ long random (void)
   int i;
   for (i = 0; i < 4; i++)
     t.c[i] = (unsigned char) ((rand () >> 4) & 0xff);
-#if RAND_MAX == 0x7fffffff || RAND_MAX == 0x7fff
+#if RAND_MAX == INT32_MAX || RAND_MAX == 0x7fff
   t.x &= RAND_MAX;
 #elif RAND_MAX <= 0x7ffffffe
   t.x %= (RAND_MAX+1);

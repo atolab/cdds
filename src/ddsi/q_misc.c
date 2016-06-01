@@ -61,12 +61,12 @@ int is_own_vendor (nn_vendorid_t vendor)
 }
 
 
-int64_t fromSN (const nn_sequence_number_t sn)
+seqno_t fromSN (const nn_sequence_number_t sn)
 {
-  return ((int64_t) sn.high << 32) | sn.low;
+  return ((seqno_t) sn.high << 32) | sn.low;
 }
 
-nn_sequence_number_t toSN (int64_t n)
+nn_sequence_number_t toSN (seqno_t n)
 {
   nn_sequence_number_t x;
   x.high = (int) (n >> 32);

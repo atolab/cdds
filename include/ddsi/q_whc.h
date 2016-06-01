@@ -15,12 +15,11 @@
 #include "util/ut_avl.h"
 #include "util/ut_hopscotch.h"
 #include "ddsi/q_time.h"
+#include "ddsi/q_rtps.h"
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
-
-#define MAX_SEQ_NUMBER 0x7fffffffffffffffll
 
 struct serdata;
 struct nn_plist;
@@ -31,7 +30,7 @@ struct whc_node {
   struct whc_node *prev_seq; /* prev in this interval */
   struct whc_idxnode *idxnode; /* NULL if not in index */
   unsigned idxnode_pos; /* index in idxnode.hist */
-  int64_t seq;
+  seqno_t seq;
   struct nn_plist *plist; /* 0 if nothing special */
   unsigned unacked: 1; /* counted in whc::unacked_bytes iff 1 */
   nn_mtime_t last_rexmit_ts;
@@ -41,15 +40,15 @@ struct whc_node {
 
 struct whc_intvnode {
   ut_avlNode_t avlnode;
-  int64_t min;
-  int64_t maxp1;
+  seqno_t min;
+  seqno_t maxp1;
   struct whc_node *first; /* linked list of seqs with contiguous sequence numbers [min,maxp1) */
   struct whc_node *last; /* valid iff first != NULL */
 };
 
 struct whc_idxnode {
   int64_t iid;
-  int64_t prune_seq;
+  seqno_t prune_seq;
   struct tkmap_instance *tk;
   unsigned headidx;
 #if __STDC_VERSION__ >= 199901L
@@ -67,7 +66,7 @@ struct whc {
   unsigned hdepth; /* 0 = unlimited */
   unsigned tldepth; /* 0 = disabled/unlimited (no need to maintain an index if KEEP_ALL <=> is_transient_local + tldepth=0) */
   unsigned idxdepth; /* = max(hdepth, tldepth) */
-  int64_t max_drop_seq; /* samples in whc with seq <= max_drop_seq => transient-local */
+  seqno_t max_drop_seq; /* samples in whc with seq <= max_drop_seq => transient-local */
   struct whc_intvnode *open_intv; /* interval where next sample will go (usually) */
   struct whc_node *maxseq_node; /* NULL if empty; if not in open_intv, open_intv is empty */
   struct whc_node *freelist; /* linked via whc_node::next_seq */
@@ -79,12 +78,12 @@ struct whc {
 struct whc *whc_new (int is_transient_local, unsigned hdepth, unsigned tldepth, size_t sample_overhead);
 void whc_free (struct whc *whc);
 int whc_empty (const struct whc *whc);
-int64_t whc_min_seq (const struct whc *whc);
-int64_t whc_max_seq (const struct whc *whc);
-int64_t whc_next_seq (const struct whc *whc, int64_t seq);
+seqno_t whc_min_seq (const struct whc *whc);
+seqno_t whc_max_seq (const struct whc *whc);
+seqno_t whc_next_seq (const struct whc *whc, seqno_t seq);
 size_t whc_unacked_bytes (struct whc *whc);
 
-struct whc_node *whc_findseq (const struct whc *whc, int64_t seq);
+struct whc_node *whc_findseq (const struct whc *whc, seqno_t seq);
 struct whc_node *whc_findmax (const struct whc *whc);
 struct whc_node *whc_findkey (const struct whc *whc, const struct serdata *serdata_key);
 
@@ -92,9 +91,9 @@ struct whc_node *whc_findkey (const struct whc *whc, const struct serdata *serda
    reliable readers that have not acknowledged all data */
 /* max_drop_seq must go soon, it's way too ugly. */
 /* plist may be NULL or os_malloc'd, WHC takes ownership of plist */
-int whc_insert (struct whc *whc, int64_t max_drop_seq, int64_t seq, struct nn_plist *plist, struct serdata *serdata, struct tkmap_instance *tk);
+int whc_insert (struct whc *whc, seqno_t max_drop_seq, seqno_t seq, struct nn_plist *plist, struct serdata *serdata, struct tkmap_instance *tk);
 void whc_downgrade_to_volatile (struct whc *whc);
-unsigned whc_remove_acked_messages (struct whc *whc, int64_t max_drop_seq);
+unsigned whc_remove_acked_messages (struct whc *whc, seqno_t max_drop_seq);
 
 #if defined (__cplusplus)
 }
