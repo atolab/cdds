@@ -249,7 +249,7 @@ int is_ssm_mcaddr (const nn_locator_t *loc)
   {
     case NN_LOCATOR_KIND_UDPv4: {
       const os_sockaddr_in *x = (const os_sockaddr_in *) &tmp;
-      return (((os_uint32) ntohl (x->sin_addr.s_addr)) >> 24) == 232;
+      return (((uint32_t) ntohl (x->sin_addr.s_addr)) >> 24) == 232;
     }
 #if OS_SOCKET_HAS_IPV6
     case NN_LOCATOR_KIND_UDPv6: {

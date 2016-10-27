@@ -1127,7 +1127,7 @@ bool dds_rhc_store
        a write -- ignore it, I think we can get away with ignoring dispose or unregisters
        on unknown instances.
      */
-    if (!has_data)
+    if (!has_data && !is_dispose)
     {
       TRACE ((" disp/unreg on unknown instance"));
       goto error_or_nochange;
@@ -1996,12 +1996,12 @@ static int dds_rhc_takecdr_w_qminv
   TRACE (("take: returning %d\n", n));
   assert (rhc_check_counts_locked (rhc, true));
   os_mutexUnlock (&rhc->lock);
-  
+
   if (trigger_waitsets)
   {
     signal_conditions (rhc);
   }
-  
+
   return n;
 }
 

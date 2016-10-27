@@ -3,9 +3,10 @@
 include config.mk
 
 CPPFLAGS += -Iinclude
+CPPFLAGS += -DDDSI_INCLUDE_SSM -DDDSI_INCLUDE_BANDWIDTH_LIMITING -DDDSI_INCLUDE_NETWORK_PARTITIONS -DDDSI_INCLUDE_NETWORK_CHANNELS
 
 SHLIBS = vdds vdds-stubs
-EXES   = vdds-server vdds-server2 publisher subscriber rpc-publisher rpc-subscriber ping pong rpc-ping rpc-pong rpc-pingpong
+EXES   = vdds-server vdds-server2 ppss publisher subscriber rpc-publisher rpc-subscriber ping pong rpc-ping rpc-pong rpc-pingpong
 
 all: $(SHLIBS:%=gen/$(LIBPRE)%$(SO)) $(EXES:%=gen/%$X)
 
@@ -34,11 +35,14 @@ gen/vdds-server2$X: CPPFLAGS += -I/usr/local/include
 gen/vdds-server2$X: gen/server2$O | gen/$(LIBPRE)vdds$(SO)
 	$(make_exe)
 
-gen/publisher$O gen/subscriber$O gen/rpc-publisher$O gen/rpc-subscriber$O gen/ping$O gen/pong$O gen/rpc-ping$O gen/rpc-pong$O: CPPFLAGS += -Iexamples/generated
-gen/publisher.d gen/subscriber.d gen/rpc-publisher.d gen/rpc-subscriber.d gen/ping.d gen/pong.d gen/rpc-ping.d gen/rpc-pong.d: CPPFLAGS += -Iexamples/generated
+gen/publisher$O gen/subscriber$O gen/rpc-publisher$O gen/rpc-subscriber$O gen/ping$O gen/pong$O gen/rpc-ping$O gen/rpc-pong$O gen/ppss$O: CPPFLAGS += -Iexamples/generated
+gen/publisher.d gen/subscriber.d gen/rpc-publisher.d gen/rpc-subscriber.d gen/ping.d gen/pong.d gen/rpc-ping.d gen/rpc-pong.d gen/ppss.d: CPPFLAGS += -Iexamples/generated
 
+gen/ppss: LDLIBS += -lvdds
 gen/publisher gen/subscriber gen/ping gen/pong: LDLIBS += -lvdds
 gen/rpc-publisher gen/rpc-subscriber gen/rpc-ping gen/rpc-pong: LDLIBS += -lvdds-stubs
+gen/ppss$X: gen/ppss$O gen/Throughput$O | gen/$(LIBPRE)vdds$(SO)
+	$(make_exe)
 gen/publisher$X: gen/publisher$O gen/Throughput$O | gen/$(LIBPRE)vdds$(SO)
 	$(make_exe)
 gen/subscriber$X: gen/subscriber$O gen/Throughput$O | gen/$(LIBPRE)vdds$(SO)

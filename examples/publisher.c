@@ -176,7 +176,7 @@ int main (int argc, char **argv)
   /* Fill the sample payload with data */
 
   sample.count = 0;
-  sample.payload._buffer = dds_alloc (payloadSize);
+  sample.payload._buffer = payloadSize ? dds_alloc (payloadSize) : NULL;
   sample.payload._length = payloadSize;
   sample.payload._release = true;
   for (i = 0; i < payloadSize; i++)

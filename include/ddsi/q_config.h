@@ -127,7 +127,7 @@ struct config_networkpartition_listelem {
 
 struct config_ignoredpartition_listelem {
   struct config_ignoredpartition_listelem *next;
-  os_char *DCPSPartitionTopic;
+  char *DCPSPartitionTopic;
 };
 
 struct config_partitionmapping_listelem {

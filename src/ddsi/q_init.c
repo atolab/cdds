@@ -543,7 +543,7 @@ int rtps_config_prep (struct cfgst *cfgst)
 
     while (chptr)
     {
-      os_size_t slen = strlen (chptr->name) + 5;
+      size_t slen = strlen (chptr->name) + 5;
       char *thread_name = os_malloc (slen);
       snprintf (thread_name, slen, "tev.%s", chptr->name);
       if (chptr->queue_size == 0)
@@ -613,7 +613,7 @@ int rtps_config_prep (struct cfgst *cfgst)
     for (np = config.networkPartitions; np; np = np->next)
     {
       static const char msgtag_fixed[] = ": partition address";
-      os_size_t slen = strlen (np->name) + sizeof (msgtag_fixed);
+      size_t slen = strlen (np->name) + sizeof (msgtag_fixed);
       char * msgtag = os_malloc (slen);
       int rc;
       snprintf (msgtag, slen, "%s%s", np->name, msgtag_fixed);
@@ -956,7 +956,7 @@ int rtps_init (void)
     struct config_channel_listelem *chptr = config.channels;
     while (chptr)
     {
-      os_size_t slen = strlen (chptr->name) + 5;
+      size_t slen = strlen (chptr->name) + 5;
       char * tname = os_malloc (slen);
       snprintf (tname, slen, "tev.%s", chptr->name);
 

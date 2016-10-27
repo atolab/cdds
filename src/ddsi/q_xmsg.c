@@ -1119,7 +1119,7 @@ static void nn_xmsg_chain_add (struct nn_xmsg_chain *chain, struct nn_xmsg *m)
 
 #define NN_BW_LIMIT_MAX_BUFFER (-30 * T_MILLISECOND)
 #define NN_BW_LIMIT_MIN_SLEEP (2 * T_MILLISECOND)
-static void nn_bw_limit_sleep_if_needed(struct nn_bw_limiter* this, os_ssize_t size)
+static void nn_bw_limit_sleep_if_needed(struct nn_bw_limiter* this, ssize_t size)
 {
   if ( this->bandwidth > 0 ) {
     nn_mtime_t tnow = now_mt();
@@ -1135,19 +1135,19 @@ static void nn_bw_limit_sleep_if_needed(struct nn_bw_limiter* this, os_ssize_t s
     this->balance += (target_interval - actual_interval);
 
 
-    TRACE ((" <limiter(us):%"PA_PRId64"",(target_interval - actual_interval)/1000));
+    TRACE ((" <limiter(us):%"PRId64"",(target_interval - actual_interval)/1000));
 
     if ( this->balance < NN_BW_LIMIT_MAX_BUFFER )
     {
       /* We're below the bandwidth limit, do not further accumulate  */
       this->balance = NN_BW_LIMIT_MAX_BUFFER;
-      TRACE ((":%"PA_PRId64":max",this->balance/1000));
+      TRACE ((":%"PRId64":max",this->balance/1000));
     }
     else if ( this->balance > NN_BW_LIMIT_MIN_SLEEP )
     {
       /* We're over the bandwidth limit far enough, to warrent a sleep. */
       os_time delay;
-      TRACE ((":%"PA_PRId64":sleep",this->balance/1000));
+      TRACE ((":%"PRId64":sleep",this->balance/1000));
       delay.tv_sec = (int32_t) (this->balance / T_SECOND);
       delay.tv_nsec = (int32_t) (this->balance % T_SECOND);
       thread_state_blocked (lookup_thread_state ());
@@ -1156,7 +1156,7 @@ static void nn_bw_limit_sleep_if_needed(struct nn_bw_limiter* this, os_ssize_t s
     }
     else
     {
-      TRACE ((":%"PA_PRId64"",this->balance/1000));
+      TRACE ((":%"PRId64"",this->balance/1000));
     }
     TRACE ((">"));
   }
