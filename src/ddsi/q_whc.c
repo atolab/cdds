@@ -48,6 +48,7 @@ static int trace_whc (const char *fmt, ...)
  */
 
 static void insert_whcn_in_hash (struct whc *whc, struct whc_node *whcn);
+static void whc_delete_one (struct whc *whc, struct whc_node *whcn);
 static int compare_seq (const void *va, const void *vb);
 
 static const ut_avlTreedef_t whc_seq_treedef =
@@ -354,21 +355,31 @@ static void delete_one_sample_from_idx (struct whc *whc, struct whc_node *whcn)
   whcn->idxnode = NULL;
 }
 
-static void free_one_instance_from_idx (struct whc *whc, struct whc_idxnode *idxn)
+static void free_one_instance_from_idx (struct whc *whc, seqno_t max_drop_seq, struct whc_idxnode *idxn)
 {
   unsigned i;
-  dds_tkmap_instance_unref(idxn->tk);
   for (i = 0; i < whc->idxdepth; i++)
+  {
     if (idxn->hist[i])
-      idxn->hist[i]->idxnode = NULL;
+    {
+      struct whc_node *oldn = idxn->hist[i];
+      oldn->idxnode = NULL;
+      if (oldn->seq <= max_drop_seq)
+      {
+        TRACE_WHC(("  prune tl whcn %p\n", (void *)oldn));
+        assert(oldn != whc->maxseq_node);
+        whc_delete_one (whc, oldn);
+      }
+    }
+  }
   os_free(idxn);
 }
 
-static void delete_one_instance_from_idx (struct whc *whc, struct whc_idxnode *idxn)
+static void delete_one_instance_from_idx (struct whc *whc, seqno_t max_drop_seq, struct whc_idxnode *idxn)
 {
   if (!ut_hhRemove (whc->idx_hash, idxn))
     assert (0);
-  free_one_instance_from_idx (whc, idxn);
+  free_one_instance_from_idx (whc, max_drop_seq, idxn);
 }
 
 static int whcn_in_tlidx (const struct whc *whc, const struct whc_idxnode *idxn, unsigned pos)
@@ -401,7 +412,7 @@ void whc_downgrade_to_volatile (struct whc *whc)
       struct ut_hhIter it;
       struct whc_idxnode *n;
       for (n = ut_hhIterFirst(whc->idx_hash, &it); n != NULL; n = ut_hhIterNext(&it))
-        free_one_instance_from_idx (whc, n);
+        free_one_instance_from_idx (whc, 0, n);
       ut_hhFree(whc->idx_hash);
       whc->idxdepth = 0;
       whc->idx_hash = NULL;
@@ -784,8 +795,8 @@ int whc_insert (struct whc *whc, seqno_t max_drop_seq, seqno_t seq, struct nn_pl
     TRACE_WHC((" idxn %p", (void *)idxn));
     if (serdata->v.msginfo.statusinfo & NN_STATUSINFO_UNREGISTER)
     {
-      TRACE_WHC((" unreg:delete"));
-      delete_one_instance_from_idx(whc, idxn);
+      TRACE_WHC((" unreg:delete\n"));
+      delete_one_instance_from_idx (whc, max_drop_seq, idxn);
     }
     else
     {
@@ -824,6 +835,7 @@ int whc_insert (struct whc *whc, seqno_t max_drop_seq, seqno_t seq, struct nn_pl
           whc_delete_one (whc, oldn);
         }
       }
+      TRACE_WHC(("\n"));
     }
   }
   else
@@ -852,8 +864,8 @@ int whc_insert (struct whc *whc, seqno_t max_drop_seq, seqno_t seq, struct nn_pl
     {
       TRACE_WHC((" unreg:skip"));
     }
+    TRACE_WHC(("\n"));
   }
-  TRACE_WHC(("\n"));
   return 0;
 }
 

@@ -275,6 +275,8 @@ int spdp_write (struct participant *pp)
     ps.prismtech_participant_version_info.flags =
       NN_PRISMTECH_FL_DDSI2_PARTICIPANT_FLAG |
       NN_PRISMTECH_FL_PTBES_FIXED_0;
+    if (config.besmode == BESMODE_MINIMAL)
+      ps.prismtech_participant_version_info.flags |= NN_PRISMTECH_FL_MINIMAL_BES_MODE;
     os_mutexLock (&gv.privileged_pp_lock);
     if (pp->is_ddsi2_pp)
       ps.prismtech_participant_version_info.flags |= NN_PRISMTECH_FL_PARTICIPANT_IS_DDSI2;
@@ -448,6 +450,58 @@ static void allowmulticast_aware_add_to_addrset (struct addrset *as, const nn_lo
   add_to_addrset (as, loc);
 }
 
+static struct proxy_participant *find_ddsi2_proxy_participant (const nn_guid_t *ppguid)
+{
+  struct ephash_enum_proxy_participant it;
+  struct proxy_participant *pp;
+  ephash_enum_proxy_participant_init (&it);
+  while ((pp = ephash_enum_proxy_participant_next (&it)) != NULL)
+  {
+    if (vendor_is_opensplice (pp->vendor) && pp->e.guid.prefix.u[0] == ppguid->prefix.u[0] && pp->is_ddsi2_pp)
+      break;
+  }
+  ephash_enum_proxy_participant_fini (&it);
+  return pp;
+}
+
+static void make_participants_dependent_on_ddsi2 (const nn_guid_t *ddsi2guid)
+{
+  struct ephash_enum_proxy_participant it;
+  struct proxy_participant *pp, *d2pp;
+  struct lease *d2pp_lease;
+  if ((d2pp = ephash_lookup_proxy_participant_guid (ddsi2guid)) == NULL)
+    return;
+  d2pp_lease = os_atomic_ldvoidp (&d2pp->lease);
+  ephash_enum_proxy_participant_init (&it);
+  while ((pp = ephash_enum_proxy_participant_next (&it)) != NULL)
+  {
+    if (vendor_is_opensplice (pp->vendor) && pp->e.guid.prefix.u[0] == ddsi2guid->prefix.u[0] && !pp->is_ddsi2_pp)
+    {
+      TRACE (("proxy participant %x:%x:%x:%x depends on ddsi2 %x:%x:%x:%x", PGUID (pp->e.guid), PGUID (*ddsi2guid)));
+      os_mutexLock (&pp->e.lock);
+      pp->privileged_pp_guid = *ddsi2guid;
+      os_mutexUnlock (&pp->e.lock);
+      proxy_participant_reassign_lease (pp, d2pp_lease);
+      TRACE (("\n"));
+
+      if (ephash_lookup_proxy_participant_guid (ddsi2guid) == NULL)
+      {
+        /* If DDSI2 has been deleted here (i.e., very soon after
+           having been created), we don't know whether pp will be
+           deleted */
+        break;
+      }
+    }
+  }
+  ephash_enum_proxy_participant_fini (&it);
+
+  if (pp != NULL)
+  {
+    TRACE (("make_participants_dependent_on_ddsi2: ddsi2 %x:%x:%x:%x is no more, delete %x:%x:%x:%x\n", PGUID (*ddsi2guid), PGUID (pp->e.guid)));
+    delete_proxy_participant_by_guid (&pp->e.guid, 1);
+  }
+}
+
 static void handle_SPDP_alive (const struct receiver_state *rst, const nn_plist_t *datap)
 {
   const unsigned bes_sedp_announcer_mask =
@@ -513,7 +567,7 @@ static void handle_SPDP_alive (const struct receiver_state *rst, const nn_plist_
 
   if (is_deleted_participant_guid (&datap->participant_guid, DPG_REMOTE))
   {
-    TRACE ((" (recently deleted)"));
+    TRACE ((" (recently deleted)\n"));
     return;
   }
 
@@ -524,7 +578,7 @@ static void handle_SPDP_alive (const struct receiver_state *rst, const nn_plist_
       islocal = 1;
     if (islocal)
     {
-      TRACE ((" (local %d)", islocal));
+      TRACE ((" (local %d)\n", islocal));
       return;
     }
   }
@@ -536,7 +590,16 @@ static void handle_SPDP_alive (const struct receiver_state *rst, const nn_plist_
        regardless of
        config.arrival_of_data_asserts_pp_and_ep_liveliness. */
     TRACE ((" (known)"));
-    lease_renew (proxypp->lease, now ());
+    lease_renew (os_atomic_ldvoidp (&proxypp->lease), now_et ());
+    os_mutexLock (&proxypp->e.lock);
+    if (proxypp->implicitly_created)
+    {
+      TRACE ((" (NEW was-implicitly-created)"));
+      proxypp->implicitly_created = 0;
+      update_proxy_participant_plist_locked (proxypp, datap, UPD_PROXYPP_SPDP);
+    }
+    os_mutexUnlock (&proxypp->e.lock);
+    TRACE (("\n"));
     return;
   }
 
@@ -551,21 +614,6 @@ static void handle_SPDP_alive (const struct receiver_state *rst, const nn_plist_
     TRACE ((" (PARTICIPANT_LEASE_DURATION defaulting to 100s)"));
     lease_duration = nn_to_ddsi_duration (100 * T_SECOND);
   }
-
-  /* If any of the SEDP announcer are missing AND the guid prefix of
-     the SPDP writer differs from the guid prefix of the new participant,
-     we make it dependent on the writer's participant.  See also the
-     lease expiration handling.  Note that the entityid MUST be
-     NN_ENTITYID_PARTICIPANT or ephash_lookup will assert.  So we only
-     zero the prefix. */
-  privileged_pp_guid.prefix = rst->src_guid_prefix;
-  privileged_pp_guid.entityid.u = NN_ENTITYID_PARTICIPANT;
-  if ((builtin_endpoint_set & bes_sedp_announcer_mask) != bes_sedp_announcer_mask &&
-      memcmp (&privileged_pp_guid, &datap->participant_guid, sizeof (nn_guid_t)) != 0)
-    TRACE ((" (depends on %x:%x:%x:%x)", PGUID (privileged_pp_guid)));
-  else
-    memset (&privileged_pp_guid.prefix, 0, sizeof (privileged_pp_guid.prefix));
-
 
   if (datap->present & PP_PRISMTECH_PARTICIPANT_VERSION_INFO) {
     if (datap->prismtech_participant_version_info.flags & NN_PRISMTECH_FL_KERNEL_SEQUENCE_NUMBER)
@@ -582,6 +630,41 @@ static void handle_SPDP_alive (const struct receiver_state *rst, const nn_plist_
             datap->prismtech_participant_version_info.unused[1],
             datap->prismtech_participant_version_info.unused[2],
             datap->prismtech_participant_version_info.internals));
+  }
+
+  /* If any of the SEDP announcer are missing AND the guid prefix of
+     the SPDP writer differs from the guid prefix of the new participant,
+     we make it dependent on the writer's participant.  See also the
+     lease expiration handling.  Note that the entityid MUST be
+     NN_ENTITYID_PARTICIPANT or ephash_lookup will assert.  So we only
+     zero the prefix. */
+  privileged_pp_guid.prefix = rst->src_guid_prefix;
+  privileged_pp_guid.entityid.u = NN_ENTITYID_PARTICIPANT;
+  if (0 && (builtin_endpoint_set & bes_sedp_announcer_mask) != bes_sedp_announcer_mask &&
+      memcmp (&privileged_pp_guid, &datap->participant_guid, sizeof (nn_guid_t)) != 0)
+  {
+    TRACE ((" (depends on %x:%x:%x:%x)", PGUID (privileged_pp_guid)));
+    /* never expire lease for this proxy: it won't actually expire
+       until the "privileged" one expires anyway */
+    lease_duration = nn_to_ddsi_duration (T_NEVER);
+  }
+  else if (vendor_is_opensplice (rst->vendor) && !(custom_flags & CF_PARTICIPANT_IS_DDSI2))
+  {
+    /* Non-DDSI2 participants are made dependent on DDSI2 (but DDSI2
+       itself need not be discovered yet) */
+    struct proxy_participant *ddsi2;
+    if ((ddsi2 = find_ddsi2_proxy_participant (&datap->participant_guid)) == NULL)
+      memset (&privileged_pp_guid.prefix, 0, sizeof (privileged_pp_guid.prefix));
+    else
+    {
+      privileged_pp_guid.prefix = ddsi2->e.guid.prefix;
+      lease_duration = nn_to_ddsi_duration (T_NEVER);
+      TRACE ((" (depends on %x:%x:%x:%x)", PGUID (privileged_pp_guid)));
+    }
+  }
+  else
+  {
+    memset (&privileged_pp_guid.prefix, 0, sizeof (privileged_pp_guid.prefix));
   }
 
   /* Choose locators */
@@ -628,7 +711,7 @@ static void handle_SPDP_alive (const struct receiver_state *rst, const nn_plist_
 
   if (addrset_empty_uc (as_default) || addrset_empty_uc (as_meta))
   {
-    TRACE ((" (no unicast address)"));
+    TRACE ((" (no unicast address)\n"));
     unref_addrset (as_default);
     unref_addrset (as_meta);
     return;
@@ -664,10 +747,29 @@ static void handle_SPDP_alive (const struct receiver_state *rst, const nn_plist_
     {
       TRACE (("broadcasted SPDP packet -> answering"));
       respond_to_spdp (&datap->participant_guid);
+      TRACE (("\n"));
     }
     else
     {
-      TRACE (("directed SPDP packet -> not responding"));
+      TRACE (("directed SPDP packet -> not responding\n"));
+    }
+  }
+
+  if (custom_flags & CF_PARTICIPANT_IS_DDSI2)
+  {
+    /* If we just discovered DDSI2, make sure any existing
+       participants served by it are made dependent on it */
+    make_participants_dependent_on_ddsi2 (&datap->participant_guid);
+  }
+  else if (privileged_pp_guid.prefix.u[0] || privileged_pp_guid.prefix.u[1] || privileged_pp_guid.prefix.u[2])
+  {
+    /* If we just created a participant dependent on DDSI2, make sure
+       DDSI2 still exists.  There is a risk of racing the lease expiry
+       of DDSI2. */
+    if (ephash_lookup_proxy_participant_guid (&privileged_pp_guid) == NULL)
+    {
+      TRACE (("make_participants_dependent_on_ddsi2: ddsi2 %x:%x:%x:%x is no more, delete %x:%x:%x:%x\n", PGUID (privileged_pp_guid), PGUID (datap->participant_guid)));
+      delete_proxy_participant_by_guid (&datap->participant_guid, 1);
     }
   }
 }
@@ -710,7 +812,6 @@ static void handle_SPDP (const struct receiver_state *rst, unsigned statusinfo, 
     }
 
     nn_plist_fini (&decoded_data);
-    TRACE (("\n"));
   }
 }
 
@@ -927,6 +1028,73 @@ static const char *durability_to_string (nn_durability_kind_t k)
   abort (); return 0;
 }
 
+static struct proxy_participant *implicitly_create_proxypp (const nn_guid_t *ppguid, nn_plist_t *datap /* note: potentially modifies datap */, const nn_guid_prefix_t *src_guid_prefix, nn_vendorid_t vendorid)
+{
+  nn_guid_t privguid;
+  nn_plist_t pp_plist;
+
+  if (memcmp (&ppguid->prefix, src_guid_prefix, sizeof (ppguid->prefix)) == 0)
+    /* if the writer is owned by the participant itself, we're not interest */
+    return NULL;
+
+  privguid.prefix = *src_guid_prefix;
+  privguid.entityid = to_entityid (NN_ENTITYID_PARTICIPANT);
+  nn_plist_init_empty(&pp_plist);
+
+  if (vendor_is_cloud (vendorid))
+  {
+    /* Some endpoint that we discovered through the DS, but then it must have at least some locators */
+    TRACE ((" from-DS %x:%x:%x:%x", PGUID (privguid)));
+    /* avoid "no address" case, so we never create the proxy participant for nothing (FIXME: rework some of this) */
+    if (!(datap->present & (PP_UNICAST_LOCATOR | PP_MULTICAST_LOCATOR)))
+    {
+      TRACE ((" data locator absent\n"));
+      goto err;
+    }
+    TRACE ((" new-proxypp %x:%x:%x:%x\n", PGUID (*ppguid)));
+    new_proxy_participant(ppguid, 0, 0, &privguid, new_addrset(), new_addrset(), &pp_plist, T_NEVER, vendorid, CF_IMPLICITLY_CREATED_PROXYPP);
+  }
+  else if (ppguid->prefix.u[0] == src_guid_prefix->u[0] && vendor_is_opensplice (vendorid))
+  {
+    /* FIXME: requires address sets to be those of ddsi2, no built-in
+       readers or writers, only if remote ddsi2 is provably running
+       with a minimal built-in endpoint set */
+    struct proxy_participant *privpp;
+    if ((privpp = ephash_lookup_proxy_participant_guid (&privguid)) == NULL) {
+      TRACE ((" unknown-src-proxypp?\n"));
+      goto err;
+    } else if (!privpp->is_ddsi2_pp) {
+      TRACE ((" src-proxypp-not-ddsi2?\n"));
+      goto err;
+    } else if (!privpp->minimal_bes_mode) {
+      TRACE ((" src-ddsi2-not-minimal-bes-mode?\n"));
+      goto err;
+    } else {
+      struct addrset *as_default, *as_meta;
+      nn_plist_t tmp_plist;
+      TRACE ((" from-ddsi2 %x:%x:%x:%x", PGUID (privguid)));
+      nn_plist_init_empty (&pp_plist);
+
+      os_mutexLock (&privpp->e.lock);
+      as_default = ref_addrset(privpp->as_default);
+      as_meta = ref_addrset(privpp->as_meta);
+      /* copy just what we need */
+      tmp_plist = *privpp->plist;
+      tmp_plist.present = PP_PARTICIPANT_GUID | PP_PRISMTECH_PARTICIPANT_VERSION_INFO;
+      tmp_plist.participant_guid = *ppguid;
+      nn_plist_mergein_missing (&pp_plist, &tmp_plist);
+      os_mutexUnlock (&privpp->e.lock);
+
+      pp_plist.prismtech_participant_version_info.flags &= ~NN_PRISMTECH_FL_PARTICIPANT_IS_DDSI2;
+      new_proxy_participant (ppguid, 0, 0, &privguid, as_default, as_meta, &pp_plist, T_NEVER, vendorid, CF_IMPLICITLY_CREATED_PROXYPP | CF_PROXYPP_NO_SPDP);
+    }
+  }
+
+ err:
+  nn_plist_fini (&pp_plist);
+  return ephash_lookup_proxy_participant_guid (ppguid);
+}
+
 static void handle_SEDP_alive (nn_plist_t *datap /* note: potentially modifies datap */, const nn_guid_prefix_t *src_guid_prefix, nn_vendorid_t vendorid)
 {
 #define E(msg, lbl) do { nn_log (LC_TRACE, (msg)); goto lbl; } while (0)
@@ -970,26 +1138,10 @@ static void handle_SEDP_alive (nn_plist_t *datap /* note: potentially modifies d
   if ((pp = ephash_lookup_proxy_participant_guid (&ppguid)) == NULL)
   {
     TRACE ((" unknown-proxypp"));
-    if (memcmp (&ppguid.prefix, src_guid_prefix, sizeof (ppguid.prefix)) != 0 && vendor_is_cloud (vendorid)) {
-      nn_plist_t pp_plist;
-      nn_guid_t ds_pp_guid;
-      /* Some endpoint that we discovered through the DS, but then it must have at least some locators */
-      ds_pp_guid.prefix = *src_guid_prefix;
-      ds_pp_guid.entityid = to_entityid (NN_ENTITYID_PARTICIPANT);
-      TRACE ((" from-DS %x:%x:%x:%x", PGUID (ds_pp_guid)));
-      /* avoid "no address" case, so we never create the proxy participant for nothing (FIXME: rework some of this) */
-      if (!(datap->present & (PP_UNICAST_LOCATOR | PP_MULTICAST_LOCATOR)))
-        E (" data locator absent\n", err);
-      TRACE ((" new-proxypp %x:%x:%x:%x\n", PGUID (ppguid)));
-      nn_plist_init_empty(&pp_plist);
-      new_proxy_participant(&ppguid, 0, 0, &ds_pp_guid, new_addrset(), new_addrset(), &pp_plist, T_NEVER, vendorid, CF_IMPLICITLY_CREATED_PROXYPP);
-      pp = ephash_lookup_proxy_participant_guid (&ppguid);
-      /* Repeat regular SEDP trace for convenience */
-      TRACE (("SEDP ST0 %x:%x:%x:%x (cont)", PGUID (datap->endpoint_guid)));
-      assert(pp != NULL);
-    } else {
+    if ((pp = implicitly_create_proxypp (&ppguid, datap, src_guid_prefix, vendorid)) == NULL)
       E ("?\n", err);
-    }
+    /* Repeat regular SEDP trace for convenience */
+    TRACE (("SEDP ST0 %x:%x:%x:%x (cont)", PGUID (datap->endpoint_guid)));
   }
 
   xqos = &datap->qos;
@@ -1331,8 +1483,13 @@ static void handle_SEDP_CM (const struct receiver_state *rst, nn_entityid_t wr_e
       struct proxy_participant *proxypp;
       if (!(decoded_data.present & PP_PARTICIPANT_GUID))
         NN_WARNING2 ("SEDP_CM (vendor %d.%d): missing participant GUID\n", src.vendorid.id[0], src.vendorid.id[1]);
-      else if ((proxypp = ephash_lookup_proxy_participant_guid (&decoded_data.participant_guid)) != NULL)
-        update_proxy_participant_plist (proxypp, &decoded_data);
+      else
+      {
+        if ((proxypp = ephash_lookup_proxy_participant_guid (&decoded_data.participant_guid)) == NULL)
+          proxypp = implicitly_create_proxypp (&decoded_data.participant_guid, &decoded_data, &rst->src_guid_prefix, rst->vendor);
+        if (proxypp != NULL)
+          update_proxy_participant_plist (proxypp, &decoded_data, UPD_PROXYPP_CM);
+      }
     }
 
     nn_plist_fini (&decoded_data);

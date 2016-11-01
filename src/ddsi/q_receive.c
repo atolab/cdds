@@ -669,7 +669,7 @@ static int acknack_is_nack (const AckNack_t *msg)
   return x != 0;
 }
 
-static int accept_ack_or_hb_w_timeout (nn_count_t new_count, nn_count_t *exp_count, nn_wctime_t tnow, nn_wctime_t *t_last_accepted, int force_accept)
+static int accept_ack_or_hb_w_timeout (nn_count_t new_count, nn_count_t *exp_count, nn_etime_t tnow, nn_etime_t *t_last_accepted, int force_accept)
 {
   /* AckNacks and Heartbeats with a sequence number (called "count"
      for some reason) equal to or less than the highest one received
@@ -697,25 +697,7 @@ static int accept_ack_or_hb_w_timeout (nn_count_t new_count, nn_count_t *exp_cou
   return 1;
 }
 
-static void set_retransmitting (struct writer *wr)
-{
-  assert (!wr->retransmitting);
-  wr->retransmitting = 1;
-  if (config.whc_adaptive && wr->whc_high > wr->whc_low)
-  {
-    uint32_t m = 8 * wr->whc_high / 10;
-    wr->whc_high = (m > wr->whc_low) ? m : wr->whc_low;
-  }
-}
-
-static void clear_retransmitting (struct writer *wr)
-{
-  wr->retransmitting = 0;
-  wr->t_whc_high_upd = wr->t_rexmit_end = now_et();
-  os_condBroadcast (&wr->throttle_cond);
-}
-
-static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const AckNack_t *msg, nn_ddsi_time_t timestamp)
+static int handle_AckNack (struct receiver_state *rst, nn_etime_t tnow, const AckNack_t *msg, nn_ddsi_time_t timestamp)
 {
   struct proxy_reader *prd;
   struct wr_prd_match *rn;
@@ -728,6 +710,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const A
   unsigned gapbits[256 / 32];
   int accelerate_rexmit = 0;
   int is_pure_ack;
+  int is_pure_nonhist_ack;
   int is_preemptive_ack;
   int enqueued;
   unsigned numbits;
@@ -748,6 +731,12 @@ static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const A
     TRACE (("%c", nn_bitset_isset (msg->readerSNState.numbits, msg->readerSNState.bits, i) ? '1' : '0'));
   seqbase = fromSN (msg->readerSNState.bitmap_base);
 
+  if (!rst->forme)
+  {
+    TRACE ((" %x:%x:%x:%x -> %x:%x:%x:%x not-for-me)", PGUID (src), PGUID (dst)));
+    return 1;
+  }
+
   if ((wr = ephash_lookup_writer_guid (&dst)) == NULL)
   {
     TRACE ((" %x:%x:%x:%x -> %x:%x:%x:%x?)", PGUID (src), PGUID (dst)));
@@ -765,7 +754,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const A
 
   /* liveliness is still only implemented partially (with all set to AUTOMATIC, BY_PARTICIPANT, &c.), so we simply renew the proxy participant's lease. */
   if (prd->assert_pp_lease)
-    lease_renew (prd->c.proxypp->lease, tnow);
+    lease_renew (os_atomic_ldvoidp (&prd->c.proxypp->lease), tnow);
 
   if (!wr->reliable) /* note: reliability can't be changed */
   {
@@ -780,7 +769,11 @@ static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const A
     goto out;
   }
 
+  /* is_pure_nonhist ack differs from is_pure_ack in that it doesn't
+     get set when only historical data is being acked, which is
+     relevant to setting "has_replied_to_hb" and "assumed_in_sync". */
   is_pure_ack = !acknack_is_nack (msg);
+  is_pure_nonhist_ack = is_pure_ack && seqbase - 1 >= rn->seq;
   is_preemptive_ack = seqbase <= 1 && is_pure_ack;
 
   wr->num_acks_received++;
@@ -838,8 +831,6 @@ static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const A
     ut_avlAugmentUpdate (&wr_readers_treedef, rn);
     n = remove_acked_messages (wr);
     TRACE ((" ACK%"PRId64" RM%u", n_ack, n));
-    if (wr->retransmitting && whc_unacked_bytes (wr->whc) == 0)
-      clear_retransmitting (wr);
   }
 
   /* If this reader was marked as "non-responsive" in the past, it's now responding again,
@@ -873,7 +864,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const A
   msgs_sent = 0;
   msgs_lost = 0;
   max_seq_in_reply = 0;
-  if (!rn->has_replied_to_hb && seqbase > 1 && is_pure_ack)
+  if (!rn->has_replied_to_hb && seqbase > 1 && is_pure_nonhist_ack)
   {
     TRACE ((" setting-has-replied-to-hb"));
     rn->has_replied_to_hb = 1;
@@ -912,7 +903,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const A
        catch up, so we try to accelerate its attempts at catching up
        by a configurable amount. FIXME: what about a pulling reader?
        that doesn't play too nicely with this. */
-    if (is_pure_ack)
+    if (is_pure_nonhist_ack)
     {
       TRACE ((" happy-now"));
       rn->assumed_in_sync = 1;
@@ -953,7 +944,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const A
       if ((whcn = whc_findseq (wr->whc, seq)) != NULL)
       {
         if (!wr->retransmitting && whcn->unacked)
-          set_retransmitting (wr);
+          writer_set_retransmitting (wr);
 
         if (config.retransmit_merging != REXMIT_MERGE_NEVER && rn->assumed_in_sync)
         {
@@ -1065,6 +1056,13 @@ static int handle_AckNack (struct receiver_state *rst, nn_wctime_t tnow, const A
     TRACE ((" rexmit#%u maxseq:%"PRId64"<%lld<=%lld", msgs_sent, max_seq_in_reply, wr->seq_xmit, wr->seq));
     force_heartbeat_to_peer (wr, prd, 1);
     hb_sent_in_response = 1;
+
+    /* The primary purpose of hbcontrol_note_asyncwrite is to ensure
+       heartbeats will go out at the "normal" rate again, instead of a
+       gradually lowering rate.  If we just got a request for a
+       retransmit, and there is more to be retransmitted, surely the
+       rate should be kept up for now */
+    writer_hbcontrol_note_asyncwrite (wr, now_mt ());
   }
   /* If "final" flag not set, we must respond with a heartbeat. Do it
      now if we haven't done so already */
@@ -1129,7 +1127,7 @@ struct handle_Heartbeat_helper_arg {
   const Heartbeat_t *msg;
   struct proxy_writer *pwr;
   nn_ddsi_time_t timestamp;
-  nn_wctime_t tnow;
+  nn_etime_t tnow;
   nn_mtime_t tnow_mt;
 };
 
@@ -1191,7 +1189,7 @@ static void handle_Heartbeat_helper (struct pwr_rd_match * const wn, struct hand
   }
 }
 
-static int handle_Heartbeat (struct receiver_state *rst, nn_wctime_t tnow, struct nn_rmsg *rmsg, const Heartbeat_t *msg, nn_ddsi_time_t timestamp)
+static int handle_Heartbeat (struct receiver_state *rst, nn_etime_t tnow, struct nn_rmsg *rmsg, const Heartbeat_t *msg, nn_ddsi_time_t timestamp)
 {
   /* We now cheat: and process the heartbeat for _all_ readers,
      always, regardless of the destination address in the Heartbeat
@@ -1217,6 +1215,12 @@ static int handle_Heartbeat (struct receiver_state *rst, nn_wctime_t tnow, struc
   TRACE (("HEARTBEAT(%s#%d:%"PRId64"..%"PRId64" ", msg->smhdr.flags & HEARTBEAT_FLAG_FINAL ? "F" : "",
           msg->count, firstseq, fromSN (msg->lastSN)));
 
+  if (!rst->forme)
+  {
+    TRACE (("%x:%x:%x:%x -> %x:%x:%x:%x not-for-me)", PGUID (src), PGUID (dst)));
+    return 1;
+  }
+
   if ((pwr = ephash_lookup_proxy_writer_guid (&src)) == NULL)
   {
     TRACE (("%x:%x:%x:%x? -> %x:%x:%x:%x)", PGUID (src), PGUID (dst)));
@@ -1225,7 +1229,7 @@ static int handle_Heartbeat (struct receiver_state *rst, nn_wctime_t tnow, struc
 
   /* liveliness is still only implemented partially (with all set to AUTOMATIC, BY_PARTICIPANT, &c.), so we simply renew the proxy participant's lease. */
   if (pwr->assert_pp_lease)
-    lease_renew (pwr->c.proxypp->lease, tnow);
+    lease_renew (os_atomic_ldvoidp (&pwr->c.proxypp->lease), tnow);
 
   TRACE (("%x:%x:%x:%x -> %x:%x:%x:%x:", PGUID (src), PGUID (dst)));
 
@@ -1236,6 +1240,17 @@ static int handle_Heartbeat (struct receiver_state *rst, nn_wctime_t tnow, struc
   {
     pwr->last_seq = fromSN (msg->lastSN);
     pwr->last_fragnum = ~0u;
+    pwr->last_fragnum_reset = 0;
+  }
+  else if (pwr->last_fragnum != ~0u && fromSN (msg->lastSN) == pwr->last_seq)
+  {
+    if (!pwr->last_fragnum_reset)
+      pwr->last_fragnum_reset = 1;
+    else
+    {
+      pwr->last_fragnum = ~0u;
+      pwr->last_fragnum_reset = 0;
+    }
   }
 
   nn_defrag_notegap (pwr->defrag, 1, firstseq);
@@ -1276,7 +1291,7 @@ static int handle_Heartbeat (struct receiver_state *rst, nn_wctime_t tnow, struc
         if (wn->u.not_in_sync.end_of_tl_seq == MAX_SEQ_NUMBER)
         {
           wn->u.not_in_sync.end_of_tl_seq = fromSN (msg->lastSN);
-          TRACE ((" end-of-tl-seq(rd %x:%x:%x:%x #%lld)", PGUID(wn->rd_guid), wn->u.not_in_sync.end_of_tl_seq));
+          TRACE ((" end-of-tl-seq(rd %x:%x:%x:%x #%"PRId64")", PGUID(wn->rd_guid), wn->u.not_in_sync.end_of_tl_seq));
         }
         maybe_set_reader_in_sync (pwr, wn, last_deliv_seq);
       }
@@ -1296,7 +1311,7 @@ static int handle_Heartbeat (struct receiver_state *rst, nn_wctime_t tnow, struc
   return 1;
 }
 
-static int handle_HeartbeatFrag (struct receiver_state *rst, UNUSED_ARG(nn_wctime_t tnow), const HeartbeatFrag_t *msg)
+static int handle_HeartbeatFrag (struct receiver_state *rst, UNUSED_ARG(nn_etime_t tnow), const HeartbeatFrag_t *msg)
 {
   const seqno_t seq = fromSN (msg->writerSN);
   const nn_fragment_number_t fragnum = msg->lastFragmentNum - 1; /* we do 0-based */
@@ -1309,6 +1324,11 @@ static int handle_HeartbeatFrag (struct receiver_state *rst, UNUSED_ARG(nn_wctim
   dst.entityid = msg->readerId;
 
   TRACE (("HEARTBEATFRAG(#%d:%"PRId64"/[1,%u]", msg->count, seq, fragnum+1));
+  if (!rst->forme)
+  {
+    TRACE ((" %x:%x:%x:%x -> %x:%x:%x:%x not-for-me)", PGUID (src), PGUID (dst)));
+    return 1;
+  }
 
   if ((pwr = ephash_lookup_proxy_writer_guid (&src)) == NULL)
   {
@@ -1318,7 +1338,7 @@ static int handle_HeartbeatFrag (struct receiver_state *rst, UNUSED_ARG(nn_wctim
 
   /* liveliness is still only implemented partially (with all set to AUTOMATIC, BY_PARTICIPANT, &c.), so we simply renew the proxy participant's lease. */
   if (pwr->assert_pp_lease)
-    lease_renew (pwr->c.proxypp->lease, tnow);
+    lease_renew (os_atomic_ldvoidp (&pwr->c.proxypp->lease), tnow);
 
   TRACE ((" %x:%x:%x:%x -> %x:%x:%x:%x", PGUID (src), PGUID (dst)));
   os_mutexLock (&pwr->e.lock);
@@ -1327,10 +1347,12 @@ static int handle_HeartbeatFrag (struct receiver_state *rst, UNUSED_ARG(nn_wctim
   {
     pwr->last_seq = seq;
     pwr->last_fragnum = fragnum;
+    pwr->last_fragnum_reset = 0;
   }
   else if (seq == pwr->last_seq && fragnum > pwr->last_fragnum)
   {
     pwr->last_fragnum = fragnum;
+    pwr->last_fragnum_reset = 0;
   }
 
   /* Defragmenting happens at the proxy writer, readers have nothing
@@ -1400,7 +1422,7 @@ static int handle_HeartbeatFrag (struct receiver_state *rst, UNUSED_ARG(nn_wctim
   return 1;
 }
 
-static int handle_NackFrag (struct receiver_state *rst, nn_wctime_t tnow, const NackFrag_t *msg)
+static int handle_NackFrag (struct receiver_state *rst, nn_etime_t tnow, const NackFrag_t *msg)
 {
   struct proxy_reader *prd;
   struct wr_prd_match *rn;
@@ -1421,6 +1443,12 @@ static int handle_NackFrag (struct receiver_state *rst, nn_wctime_t tnow, const 
   for (i = 0; i < msg->fragmentNumberState.numbits; i++)
     TRACE (("%c", nn_bitset_isset (msg->fragmentNumberState.numbits, msg->fragmentNumberState.bits, i) ? '1' : '0'));
 
+  if (!rst->forme)
+  {
+    TRACE ((" %x:%x:%x:%x -> %x:%x:%x:%x not-for-me)", PGUID (src), PGUID (dst)));
+    return 1;
+  }
+
   if ((wr = ephash_lookup_writer_guid (&dst)) == NULL)
   {
     TRACE ((" %x:%x:%x:%x -> %x:%x:%x:%x?)", PGUID (src), PGUID (dst)));
@@ -1438,7 +1466,7 @@ static int handle_NackFrag (struct receiver_state *rst, nn_wctime_t tnow, const 
 
   /* liveliness is still only implemented partially (with all set to AUTOMATIC, BY_PARTICIPANT, &c.), so we simply renew the proxy participant's lease. */
   if (prd->assert_pp_lease)
-    lease_renew (prd->c.proxypp->lease, tnow);
+    lease_renew (os_atomic_ldvoidp (&prd->c.proxypp->lease), tnow);
 
   if (!wr->reliable) /* note: reliability can't be changed */
   {
@@ -1500,6 +1528,14 @@ static int handle_NackFrag (struct receiver_state *rst, nn_wctime_t tnow, const 
       }
     }
   }
+  if (seq < wr->seq_xmit)
+  {
+    /* Not everything was retransmitted yet, so force a heartbeat out
+       to give the reader a chance to nack the rest and make sure
+       hearbeats will go out at a reasonably high rate for a while */
+    force_heartbeat_to_peer (wr, prd, 1);
+    writer_hbcontrol_note_asyncwrite (wr, now_mt ());
+  }
 
  out:
   os_mutexUnlock (&wr->e.lock);
@@ -1511,8 +1547,19 @@ static int handle_InfoDST (struct receiver_state *rst, const InfoDST_t *msg, con
 {
   rst->dst_guid_prefix = nn_ntoh_guid_prefix (msg->guid_prefix);
   TRACE (("INFODST(%x:%x:%x)", PGUIDPREFIX (rst->dst_guid_prefix)));
-  if (rst->dst_guid_prefix.u[0] == 0 && rst->dst_guid_prefix.u[1] == 0 && rst->dst_guid_prefix.u[2] == 0 && dst_prefix)
-    rst->dst_guid_prefix = *dst_prefix;
+  if (rst->dst_guid_prefix.u[0] == 0 && rst->dst_guid_prefix.u[1] == 0 && rst->dst_guid_prefix.u[2] == 0)
+  {
+    if (dst_prefix)
+      rst->dst_guid_prefix = *dst_prefix;
+    rst->forme = 1;
+  }
+  else
+  {
+    nn_guid_t dst;
+    dst.prefix = rst->dst_guid_prefix;
+    dst.entityid = to_entityid(NN_ENTITYID_PARTICIPANT);
+    rst->forme = (ephash_lookup_participant_guid (&dst) != NULL) || is_deleted_participant_guid (&dst, DPG_LOCAL);
+  }
   return 1;
 }
 
@@ -1609,7 +1656,7 @@ static int handle_one_gap (struct proxy_writer *pwr, struct pwr_rd_match *wn, se
   return gap_was_valuable;
 }
 
-static int handle_Gap (struct receiver_state *rst, nn_wctime_t tnow, struct nn_rmsg *rmsg, const Gap_t *msg)
+static int handle_Gap (struct receiver_state *rst, nn_etime_t tnow, struct nn_rmsg *rmsg, const Gap_t *msg)
 {
   /* Option 1: Process the Gap for the proxy writer and all
      out-of-sync readers: what do I care which reader is being
@@ -1650,6 +1697,12 @@ static int handle_Gap (struct receiver_state *rst, nn_wctime_t tnow, struct nn_r
       break;
   last_included_rel = (int)listidx - 1;
 
+  if (!rst->forme)
+  {
+    TRACE (("%x:%x:%x:%x -> %x:%x:%x:%x not-for-me)", PGUID (src), PGUID (dst)));
+    return 1;
+  }
+
   if ((pwr = ephash_lookup_proxy_writer_guid (&src)) == NULL)
   {
     TRACE (("%x:%x:%x:%x? -> %x:%x:%x:%x)", PGUID (src), PGUID (dst)));
@@ -1658,7 +1711,7 @@ static int handle_Gap (struct receiver_state *rst, nn_wctime_t tnow, struct nn_r
 
   /* liveliness is still only implemented partially (with all set to AUTOMATIC, BY_PARTICIPANT, &c.), so we simply renew the proxy participant's lease. */
   if (pwr->assert_pp_lease)
-    lease_renew (pwr->c.proxypp->lease, tnow);
+    lease_renew (os_atomic_ldvoidp (&pwr->c.proxypp->lease), tnow);
 
   os_mutexLock (&pwr->e.lock);
   if ((wn = ut_avlLookup (&pwr_readers_treedef, &pwr->readers, &dst)) == NULL)
@@ -1715,6 +1768,7 @@ static int handle_Gap (struct receiver_state *rst, nn_wctime_t tnow, struct nn_r
   {
     pwr->last_seq = listbase + last_included_rel;
     pwr->last_fragnum = ~0u;
+    pwr->last_fragnum_reset = 0;
   }
   TRACE ((")"));
   os_mutexUnlock (&pwr->e.lock);
@@ -2038,7 +2092,7 @@ retry:
           }
           if (!pwr_locked) os_mutexUnlock (&pwr->e.lock);
         }
-  
+
         os_atomic_st32 (&pwr->next_deliv_seq_lowword, (uint32_t) (sampleinfo->seq + 1));
       }
       else
@@ -2102,7 +2156,7 @@ static void clean_defrag (struct proxy_writer *pwr)
   nn_defrag_notegap (pwr->defrag, 1, seq);
 }
 
-static void handle_regular (struct receiver_state *rst, struct nn_rmsg *rmsg, const Data_DataFrag_common_t *msg, const struct nn_rsample_info *sampleinfo, uint32_t fragnum, struct nn_rdata *rdata)
+static void handle_regular (struct receiver_state *rst, nn_etime_t tnow, struct nn_rmsg *rmsg, const Data_DataFrag_common_t *msg, const struct nn_rsample_info *sampleinfo, uint32_t fragnum, struct nn_rdata *rdata)
 {
   struct proxy_writer *pwr;
   struct nn_rsample *rsample;
@@ -2126,7 +2180,7 @@ static void handle_regular (struct receiver_state *rst, struct nn_rmsg *rmsg, co
      participant's lease. */
   if (pwr->assert_pp_lease)
   {
-    lease_renew (pwr->c.proxypp->lease, sampleinfo->reception_timestamp);
+    lease_renew (os_atomic_ldvoidp (&pwr->c.proxypp->lease), tnow);
   }
 
   /* Shouldn't lock the full writer, but will do so for now */
@@ -2145,10 +2199,12 @@ static void handle_regular (struct receiver_state *rst, struct nn_rmsg *rmsg, co
   {
     pwr->last_seq = sampleinfo->seq;
     pwr->last_fragnum = fragnum;
+    pwr->last_fragnum_reset = 0;
   }
   else if (sampleinfo->seq == pwr->last_seq && fragnum > pwr->last_fragnum)
   {
     pwr->last_fragnum = fragnum;
+    pwr->last_fragnum_reset = 0;
   }
 
   clean_defrag (pwr);
@@ -2313,12 +2369,17 @@ static void drop_oversize (struct receiver_state *rst, struct nn_rmsg *rmsg, con
   }
 }
 
-static int handle_Data (struct receiver_state *rst, struct nn_rmsg *rmsg, const Data_t *msg, size_t size, struct nn_rsample_info *sampleinfo, unsigned char *datap)
+static int handle_Data (struct receiver_state *rst, nn_etime_t tnow, struct nn_rmsg *rmsg, const Data_t *msg, size_t size, struct nn_rsample_info *sampleinfo, unsigned char *datap)
 {
   TRACE (("DATA(%x:%x:%x:%x -> %x:%x:%x:%x #%"PRId64"",
           PGUIDPREFIX (rst->src_guid_prefix), msg->x.writerId.u,
           PGUIDPREFIX (rst->dst_guid_prefix), msg->x.readerId.u,
           fromSN (msg->x.writerSN)));
+  if (!rst->forme)
+  {
+    TRACE ((" not-for-me)"));
+    return 1;
+  }
 
   if (sampleinfo->size > config.max_sample_size)
     drop_oversize (rst, rmsg, &msg->x, sampleinfo);
@@ -2345,20 +2406,25 @@ static int handle_Data (struct receiver_state *rst, struct nn_rmsg *rmsg, const 
     }
     else
     {
-      handle_regular (rst, rmsg, &msg->x, sampleinfo, ~0u, rdata);
+      handle_regular (rst, tnow, rmsg, &msg->x, sampleinfo, ~0u, rdata);
     }
   }
   TRACE ((")"));
   return 1;
 }
 
-static int handle_DataFrag (struct receiver_state *rst, struct nn_rmsg *rmsg, const DataFrag_t *msg, size_t size, struct nn_rsample_info *sampleinfo, unsigned char *datap)
+static int handle_DataFrag (struct receiver_state *rst, nn_etime_t tnow, struct nn_rmsg *rmsg, const DataFrag_t *msg, size_t size, struct nn_rsample_info *sampleinfo, unsigned char *datap)
 {
   TRACE (("DATAFRAG(%x:%x:%x:%x -> %x:%x:%x:%x #%"PRId64"/[%u..%u]",
           PGUIDPREFIX (rst->src_guid_prefix), msg->x.writerId.u,
           PGUIDPREFIX (rst->dst_guid_prefix), msg->x.readerId.u,
           fromSN (msg->x.writerSN),
           msg->fragmentStartingNum, msg->fragmentStartingNum + msg->fragmentsInSubmessage - 1));
+  if (!rst->forme)
+  {
+    TRACE ((" not-for-me)"));
+    return 1;
+  }
 
   if (sampleinfo->size > config.max_sample_size)
     drop_oversize (rst, rmsg, &msg->x, sampleinfo);
@@ -2413,7 +2479,7 @@ static int handle_DataFrag (struct receiver_state *rst, struct nn_rmsg *rmsg, co
        wrong, it'll simply generate a request for retransmitting a
        non-existent fragment.  The other side SHOULD be capable of
        dealing with that. */
-    handle_regular (rst, rmsg, &msg->x, sampleinfo, msg->fragmentStartingNum + msg->fragmentsInSubmessage - 2, rdata);
+    handle_regular (rst, tnow, rmsg, &msg->x, sampleinfo, msg->fragmentStartingNum + msg->fragmentsInSubmessage - 2, rdata);
   }
   TRACE ((")"));
   return 1;
@@ -2581,7 +2647,8 @@ static int handle_submsg_sequence
 (
   ddsi_tran_conn_t conn,
   struct thread_state1 * const self,
-  nn_wctime_t tnow,
+  nn_wctime_t tnowWC,
+  nn_etime_t tnowE,
   const nn_guid_prefix_t * const src_prefix,
   const nn_guid_prefix_t * const dst_prefix,
   unsigned char * const msg /* NOT const - we may byteswap it */,
@@ -2603,7 +2670,6 @@ static int handle_submsg_sequence
      the message.  Updates cause a new copy to be created if the
      current one is "live", i.e., possibly referenced by a
      submessage (for now, only Data(Frag)). */
-
   rst = nn_rmsg_alloc (rmsg, sizeof (*rst));
   memset (rst, 0, sizeof (*rst));
   rst->conn = conn;
@@ -2612,6 +2678,14 @@ static int handle_submsg_sequence
   {
     rst->dst_guid_prefix = *dst_prefix;
   }
+  /* "forme" is a whether the current submessage is intended for this
+     instance of DDSI2 and is roughly equivalent to
+       (dst_prefix == 0) ||
+       (ephash_lookup_participant_guid(dst_prefix:1c1) != 0)
+     they are only roughly equivalent because the second term can become
+     false at any time. That's ok: it's real purpose is to filter out
+     discovery data accidentally sent by Cloud */
+  rst->forme = 1;
   rst->vendor = hdr->vendorid;
   rst->protocol_version = hdr->version;
   rst_live = 0;
@@ -2669,14 +2743,14 @@ static int handle_submsg_sequence
         state = "parse:acknack";
         if (!valid_AckNack (&sm->acknack, submsg_size, byteswap))
           goto malformed;
-        handle_AckNack (rst, tnow, &sm->acknack, ts_for_latmeas ? timestamp : invalid_ddsi_timestamp);
+        handle_AckNack (rst, tnowE, &sm->acknack, ts_for_latmeas ? timestamp : invalid_ddsi_timestamp);
         ts_for_latmeas = 0;
         break;
       case SMID_HEARTBEAT:
         state = "parse:heartbeat";
         if (!valid_Heartbeat (&sm->heartbeat, submsg_size, byteswap))
           goto malformed;
-        handle_Heartbeat (rst, tnow, rmsg, &sm->heartbeat, ts_for_latmeas ? timestamp : invalid_ddsi_timestamp);
+        handle_Heartbeat (rst, tnowE, rmsg, &sm->heartbeat, ts_for_latmeas ? timestamp : invalid_ddsi_timestamp);
         ts_for_latmeas = 0;
         break;
       case SMID_GAP:
@@ -2688,7 +2762,7 @@ static int handle_submsg_sequence
            rst after inserting the gap in the admin. */
         if (!valid_Gap (&sm->gap, submsg_size, byteswap))
           goto malformed;
-        handle_Gap (rst, tnow, rmsg, &sm->gap);
+        handle_Gap (rst, tnowE, rmsg, &sm->gap);
         ts_for_latmeas = 0;
         break;
       case SMID_INFO_TS:
@@ -2732,14 +2806,14 @@ static int handle_submsg_sequence
         state = "parse:nackfrag";
         if (!valid_NackFrag (&sm->nackfrag, submsg_size, byteswap))
           goto malformed;
-        handle_NackFrag (rst, tnow, &sm->nackfrag);
+        handle_NackFrag (rst, tnowE, &sm->nackfrag);
         ts_for_latmeas = 0;
         break;
       case SMID_HEARTBEAT_FRAG:
         state = "parse:heartbeatfrag";
         if (!valid_HeartbeatFrag (&sm->heartbeatfrag, submsg_size, byteswap))
           goto malformed;
-        handle_HeartbeatFrag (rst, tnow, &sm->heartbeatfrag);
+        handle_HeartbeatFrag (rst, tnowE, &sm->heartbeatfrag);
         ts_for_latmeas = 0;
         break;
       case SMID_DATA_FRAG:
@@ -2752,8 +2826,8 @@ static int handle_submsg_sequence
           if (!valid_DataFrag (rst, rmsg, &sm->datafrag, submsg_size, byteswap, &sampleinfo, &datap))
             goto malformed;
           sampleinfo.timestamp = timestamp;
-          sampleinfo.reception_timestamp = tnow;
-          handle_DataFrag (rst, rmsg, &sm->datafrag, submsg_size, &sampleinfo, datap);
+          sampleinfo.reception_timestamp = tnowWC;
+          handle_DataFrag (rst, tnowE, rmsg, &sm->datafrag, submsg_size, &sampleinfo, datap);
           rst_live = 1;
           ts_for_latmeas = 0;
         }
@@ -2770,8 +2844,8 @@ static int handle_submsg_sequence
             goto malformed;
           }
           sampleinfo.timestamp = timestamp;
-          sampleinfo.reception_timestamp = tnow;
-          handle_Data (rst, rmsg, &sm->data, submsg_size, &sampleinfo, datap);
+          sampleinfo.reception_timestamp = tnowWC;
+          handle_Data (rst, tnowE, rmsg, &sm->data, submsg_size, &sampleinfo, datap);
           rst_live = 1;
           ts_for_latmeas = 0;
         }
@@ -2797,7 +2871,7 @@ static int handle_submsg_sequence
                 size_t len2 = decode_container (submsg1, len1);
                 if ( len2 != 0 ) {
                   TRACE ((")\n"));
-                  if (handle_submsg_sequence (conn, self, tnow, src_prefix, dst_prefix, msg, (size_t) (submsg1 - msg) + len2, submsg1, rmsg) < 0)
+                  if (handle_submsg_sequence (conn, self, tnowWC, tnowE, src_prefix, dst_prefix, msg, (size_t) (submsg1 - msg) + len2, submsg1, rmsg) < 0)
                     goto malformed;
                 }
                 TRACE (("PT_INFO_CONTAINER END"));
@@ -2953,7 +3027,7 @@ static bool do_packet
     sz = ddsi_conn_read (conn, buff, buff_len);
   }
 
-  if (sz > 0 && !gv.deaf_mute)
+  if (sz > 0 && !gv.deaf)
   {
     nn_rmsg_setsize (rmsg, (uint32_t) sz);
     assert (vtime_asleep_p (self->vtime));
@@ -2981,6 +3055,7 @@ static bool do_packet
           conn,
           self,
           now (),
+          now_et (),
           &hdr->guid_prefix,
           guidprefix,
           buff,

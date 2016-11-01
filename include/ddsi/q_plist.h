@@ -88,6 +88,7 @@ typedef struct nn_original_writer_info {
 #define NN_PRISMTECH_FL_PTBES_FIXED_0           (1u << 2)
 #define NN_PRISMTECH_FL_DDSI2_PARTICIPANT_FLAG  (1u << 3)
 #define NN_PRISMTECH_FL_PARTICIPANT_IS_DDSI2    (1u << 4)
+#define NN_PRISMTECH_FL_MINIMAL_BES_MODE        (1u << 5)
 
 /* For locators one could patch the received message data to create
    singly-linked lists (parameter header -> offset of next entry in

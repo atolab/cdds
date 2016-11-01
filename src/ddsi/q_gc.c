@@ -110,7 +110,7 @@ static void *gcreq_queue_thread (struct gcreq_queue *q)
        burden on the system than having a separate thread or adding it
        to the workload of the data handling threads. */
     thread_state_awake (self);
-    check_and_handle_lease_expiration (self, now ());
+    check_and_handle_lease_expiration (self, now_et ());
     thread_state_asleep (self);
 
     if (gcreq)

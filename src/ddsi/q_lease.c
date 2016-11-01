@@ -45,8 +45,8 @@
 
 struct lease {
   ut_fibheapNode_t heapnode;
-  nn_wctime_t tsched;  /* access guarded by leaseheap_lock */
-  nn_wctime_t tend;    /* access guarded by lock_lease/unlock_lease */
+  nn_etime_t tsched;  /* access guarded by leaseheap_lock */
+  nn_etime_t tend;    /* access guarded by lock_lease/unlock_lease */
   int64_t tdur;       /* constant */
   struct entity_common *entity; /* constant */
 };
@@ -105,7 +105,7 @@ struct lease *lease_new (int64_t tdur, struct entity_common *e)
     return NULL;
   TRACE (("lease_new(tdur %"PRId64" guid %x:%x:%x:%x) @ %p\n", tdur, PGUID (e->guid), (void *) l));
   l->tdur = tdur;
-  l->tend = add_duration_to_wctime (now (), tdur);
+  l->tend = add_duration_to_etime (now_et (), tdur);
   l->tsched.v = TSCHED_NOT_ON_HEAP;
   l->entity = e;
   return l;
@@ -135,9 +135,9 @@ void lease_free (struct lease *l)
   os_free (l);
 }
 
-void lease_renew (struct lease *l, nn_wctime_t tnow)
+void lease_renew (struct lease *l, nn_etime_t tnowE)
 {
-  nn_wctime_t tend_new = add_duration_to_wctime (tnow, l->tdur);
+  nn_etime_t tend_new = add_duration_to_etime (tnowE, l->tdur);
   int did_update;
   lock_lease (l);
   if (tend_new.v <= l->tend.v)
@@ -157,16 +157,16 @@ void lease_renew (struct lease *l, nn_wctime_t tnow)
       TRACE ((":%x", l->entity->guid.entityid.u));
     else
       TRACE (("%x:%x:%x:%x", PGUID (l->entity->guid)));
-    wctime_to_sec_usec (&tsec, &tusec, tend_new);
+    etime_to_sec_usec (&tsec, &tusec, tend_new);
     TRACE ((" %d.%06d)", tsec, tusec));
   }
 }
 
-void check_and_handle_lease_expiration (UNUSED_ARG (struct thread_state1 *self), nn_wctime_t tnow)
+void check_and_handle_lease_expiration (UNUSED_ARG (struct thread_state1 *self), nn_etime_t tnowE)
 {
   struct lease *l;
   os_mutexLock (&gv.leaseheap_lock);
-  while ((l = ut_fibheapMin (&lease_fhdef, &gv.leaseheap)) != NULL && l->tsched.v <= tnow.v)
+  while ((l = ut_fibheapMin (&lease_fhdef, &gv.leaseheap)) != NULL && l->tsched.v <= tnowE.v)
   {
     nn_guid_t g = l->entity->guid;
     enum entity_kind k = l->entity->kind;
@@ -175,7 +175,7 @@ void check_and_handle_lease_expiration (UNUSED_ARG (struct thread_state1 *self),
     ut_fibheapExtractMin (&lease_fhdef, &gv.leaseheap);
 
     lock_lease (l);
-    if (tnow.v < l->tend.v)
+    if (tnowE.v < l->tend.v)
     {
       l->tsched = l->tend;
       unlock_lease (l);
@@ -183,7 +183,7 @@ void check_and_handle_lease_expiration (UNUSED_ARG (struct thread_state1 *self),
       continue;
     }
 
-    TRACE (("lease expired: l %p guid %x:%x:%x:%x tend %"PRId64" < now %"PRId64"\n", (void *) l, PGUID (g), l->tend.v, tnow.v));
+    TRACE (("lease expired: l %p guid %x:%x:%x:%x tend %"PRId64" < now %"PRId64"\n", (void *) l, PGUID (g), l->tend.v, tnowE.v));
 
     /* If the proxy participant is relying on another participant for
        writing its discovery data (on the privileged participant,
@@ -218,7 +218,7 @@ void check_and_handle_lease_expiration (UNUSED_ARG (struct thread_state1 *self),
       {
         TRACE (("but postponing because privileged pp %x:%x:%x:%x is still live\n",
                 PGUID (proxypp->privileged_pp_guid)));
-        l->tsched = l->tend = add_duration_to_wctime (tnow, 200 * T_MILLISECOND);
+        l->tsched = l->tend = add_duration_to_etime (tnowE, 200 * T_MILLISECOND);
         unlock_lease (l);
         ut_fibheapInsert (&lease_fhdef, &gv.leaseheap, l);
         continue;
@@ -311,7 +311,7 @@ void handle_PMD (UNUSED_ARG (const struct receiver_state *rst), unsigned statusi
           /* Renew lease if arrival of this message didn't already do so, also renew the lease
              of the virtual participant used for DS-discovered endpoints */
           if (!config.arrival_of_data_asserts_pp_and_ep_liveliness)
-            lease_renew (pp->lease, now ());
+            lease_renew (os_atomic_ldvoidp (&pp->lease), now_et ());
         }
       }
       break;

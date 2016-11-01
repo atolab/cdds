@@ -74,7 +74,8 @@ enum recvips_mode {
 struct q_globals {
   volatile int terminate;
   volatile int exception;
-  volatile int deaf_mute;
+  volatile int deaf;
+  volatile int mute;
 
   struct tkmap * m_tkmap;
 

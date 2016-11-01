@@ -365,17 +365,23 @@ static const struct cfgelem unsupp_watermarks_cfgelems[] = {
   { LEAF ("WhcLow"), 1, "1 kB", ABSOFF (whc_lowwater_mark), 0, uf_memsize, 0, pf_memsize },
   { LEAF ("WhcHigh"), 1, "100 kB", ABSOFF (whc_highwater_mark), 0, uf_memsize, 0, pf_memsize },
   { LEAF ("WhcHighInit"), 1, "30 kB", ABSOFF (whc_init_highwater_mark), 0, uf_maybe_memsize, 0, pf_maybe_memsize },
-  { LEAF ("WhcAdaptative"), 1, "true", ABSOFF (whc_adaptive), 0, uf_boolean, 0, pf_boolean },
+  { LEAF ("WhcAdaptive|WhcAdaptative"), 1, "true", ABSOFF (whc_adaptive), 0, uf_boolean, 0, pf_boolean },
   END_MARKER
 };
 
 static const struct cfgelem control_topic_cfgattrs[] = {
-  { ATTR ("Enable"), 1, "false", ABSOFF (enable_control_topic), 0, uf_boolean, 0, pf_boolean },
+  { ATTR ("enable"), 1, "false", ABSOFF (enable_control_topic), 0, uf_boolean, 0, pf_boolean },
   END_MARKER
 };
 
 static const struct cfgelem control_topic_cfgelems[] = {
-  { LEAF ("DeafMute"), 1, "false", ABSOFF (initial_deaf_mute), 0, uf_boolean, 0, pf_boolean },
+  { LEAF ("Deaf"), 1, "false", ABSOFF (initial_deaf), 0, uf_boolean, 0, pf_boolean },
+  { LEAF ("Mute"), 1, "false", ABSOFF (initial_mute), 0, uf_boolean, 0, pf_boolean },
+  END_MARKER
+};
+
+static const struct cfgelem rediscovery_blacklist_duration_attrs[] = {
+  { ATTR ("enforce"), 1, "false", ABSOFF (prune_deleted_ppant.enforce_delay), 0, uf_boolean, 0, pf_boolean },
   END_MARKER
 };
 
@@ -425,6 +431,8 @@ static const struct cfgelem unsupp_cfgelems[] = {
   { LEAF ("MonitorPort"), 1, "-1", ABSOFF (monitor_port), 0, uf_int, 0, pf_int },
   { LEAF ("AssumeMulticastCapable"), 1, "", ABSOFF (assumeMulticastCapable), 0, uf_string, ff_free, pf_string },
   { LEAF ("PrioritizeRetransmit"), 1, "true", ABSOFF (prioritize_retransmit), 0, uf_boolean, 0, pf_boolean },
+  { LEAF ("UseMulticastIfMreqn"), 1, "0", ABSOFF (use_multicast_if_mreqn), 0, uf_int, 0, pf_int },
+  { LEAF_W_ATTRS ("RediscoveryBlacklistDuration", rediscovery_blacklist_duration_attrs), 1, "10s", ABSOFF (prune_deleted_ppant.delay), 0, uf_duration_inf, 0, pf_duration },
   { MGROUP ("ControlTopic", control_topic_cfgelems, control_topic_cfgattrs), 1, 0, 0, 0, 0, 0, 0, 0 },
   { GROUP ("Test", unsupp_test_cfgelems) },
   { GROUP ("Watermarks", unsupp_watermarks_cfgelems) },

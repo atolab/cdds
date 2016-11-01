@@ -589,8 +589,28 @@ static int set_mc_options_transmit_ipv4 (os_socket socket)
 {
   unsigned char ttl = (unsigned char) config.multicast_ttl;
   unsigned char loop;
+  os_result ret;
 
-  if (os_sockSetsockopt (socket, IPPROTO_IP, IP_MULTICAST_IF, (char *) &((os_sockaddr_in *) &gv.ownip)->sin_addr, sizeof (((os_sockaddr_in *) &gv.ownip)->sin_addr)) != os_resultSuccess)
+#if defined __linux || defined __APPLE__
+  if (config.use_multicast_if_mreqn)
+  {
+    struct ip_mreqn mreqn;
+    memset (&mreqn, 0, sizeof (mreqn));
+    /* looks like imr_multiaddr is not relevant, not sure about imr_address */
+    mreqn.imr_multiaddr.s_addr = htonl (INADDR_ANY);
+    if (config.use_multicast_if_mreqn > 1)
+      mreqn.imr_address.s_addr = ((os_sockaddr_in *) &gv.ownip)->sin_addr.s_addr;
+    else
+      mreqn.imr_address.s_addr = htonl (INADDR_ANY);
+    mreqn.imr_ifindex = (int) gv.interfaceNo;
+    ret = os_sockSetsockopt (socket, IPPROTO_IP, IP_MULTICAST_IF, &mreqn, sizeof (mreqn));
+  }
+  else
+#endif
+  {
+    ret = os_sockSetsockopt (socket, IPPROTO_IP, IP_MULTICAST_IF, (char *) &((os_sockaddr_in *) &gv.ownip)->sin_addr, sizeof (((os_sockaddr_in *) &gv.ownip)->sin_addr));
+  }
+  if (ret != os_resultSuccess)
   {
     print_sockerror ("IP_MULTICAST_IF");
     return -2;

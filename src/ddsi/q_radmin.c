@@ -323,12 +323,27 @@ static uint32_t max_uint32 (uint32_t a, uint32_t b)
   return a >= b ? a : b;
 }
 
+static uint32_t max_rmsg_size_w_hdr (uint32_t max_rmsg_size)
+{
+  /* rbuf_alloc allocates max_rmsg_size, which is actually max
+     _payload_ size (this is so 64kB max_rmsg_size always suffices for
+     a UDP packet, regardless of internal structure).  We use it for
+     nn_rmsg and nn_rmsg_chunk, but the difference in size is
+     negligible really.  So in the interest of simplicity, we always
+     allocate for the worst case, and may waste a few bytes here or
+     there. */
+  return
+    max_uint32 ((uint32_t) offsetof (struct nn_rmsg, chunk.u.payload),
+                (uint32_t) offsetof (struct nn_rmsg_chunk, u.payload))
+    + max_rmsg_size;
+}
+
 struct nn_rbufpool *nn_rbufpool_new (uint32_t rbuf_size, uint32_t max_rmsg_size)
 {
   struct nn_rbufpool *rbp;
 
   assert (max_rmsg_size > 0);
-  assert (rbuf_size >= max_rmsg_size);
+  assert (rbuf_size >= max_rmsg_size_w_hdr (max_rmsg_size));
 
   if ((rbp = os_malloc (sizeof (*rbp))) == NULL)
     goto fail_rbp;
@@ -340,18 +355,7 @@ struct nn_rbufpool *nn_rbufpool_new (uint32_t rbuf_size, uint32_t max_rmsg_size)
     goto fail_lock;
 
   rbp->rbuf_size = rbuf_size;
-
-  /* rbuf_alloc allocates max_rmsg_size, which is actually max
-     _payload_ size (this is so 64kB max_rmsg_size always suffices for
-     a UDP packet, regardless of internal structure).  We use it for
-     nn_rmsg and nn_rmsg_chunk, but the difference in size is
-     negligible really.  So in the interest of simplicity, we always
-     allocate for the worst case, and may waste a few bytes here or
-     there. */
-  rbp->max_rmsg_size =
-    max_uint32 ((uint32_t) offsetof (struct nn_rmsg, chunk.u.payload),
-                (uint32_t) offsetof (struct nn_rmsg_chunk, u.payload))
-    + max_rmsg_size;
+  rbp->max_rmsg_size = max_rmsg_size;
 
 #if USE_VALGRIND
   VALGRIND_CREATE_MEMPOOL (rbp, 0, 0);
@@ -487,7 +491,7 @@ static void nn_rbuf_release (struct nn_rbuf *rbuf)
 static void *nn_rbuf_alloc (struct nn_rbufpool *rbufpool)
 {
   /* Note: only one thread calls nn_rmsg_new on a pool */
-  uint32_t asize = rbufpool->max_rmsg_size;
+  uint32_t asize = max_rmsg_size_w_hdr (rbufpool->max_rmsg_size);
   struct nn_rbuf *rb;
   TRACE_RADMIN (("rmsg_rbuf_alloc(%p, %u)\n", (void *) rbufpool, asize));
   ASSERT_RBUFPOOL_OWNER (rbufpool);

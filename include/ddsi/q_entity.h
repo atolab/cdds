@@ -37,7 +37,6 @@ struct nn_dqueue;
 struct addrset;
 struct sertopic;
 struct whc;
-struct lease;
 struct nn_xqos;
 struct nn_plist;
 struct v_gid_s;
@@ -74,7 +73,7 @@ struct wr_rd_match {
   ut_avlNode_t avlnode;
   nn_guid_t rd_guid;
 };
-  
+
 struct rd_wr_match {
   ut_avlNode_t avlnode;
   nn_guid_t wr_guid;
@@ -94,7 +93,7 @@ struct wr_prd_match {
   nn_guid_t arbitrary_unacked_reader;
   nn_count_t next_acknack; /* next acceptable acknack sequence number */
   nn_count_t next_nackfrag; /* next acceptable nackfrag sequence number */
-  nn_wctime_t t_acknack_accepted; /* (local) time an acknack was last accepted */ /* FIXME: probably elapsed time is better */
+  nn_etime_t t_acknack_accepted; /* (local) time an acknack was last accepted */
   struct nn_lat_estim hb_to_ack_latency;
   nn_wctime_t hb_to_ack_latency_tlastlog;
   uint32_t non_responsive_count;
@@ -114,7 +113,7 @@ struct pwr_rd_match {
   nn_count_t count; /* most recent acknack sequence number */
   nn_count_t next_heartbeat; /* next acceptable heartbeat (see also add_proxy_writer_to_reader) */
   nn_wctime_t hb_timestamp; /* time of most recent heartbeat that rescheduled the ack event */
-  nn_wctime_t t_heartbeat_accepted; /* (local) time a heartbeat was last accepted */  /* FIXME: probably elapsed time is beter */
+  nn_etime_t t_heartbeat_accepted; /* (local) time a heartbeat was last accepted */
   nn_mtime_t t_last_nack; /* (local) time we last sent a NACK */  /* FIXME: probably elapsed time is better */
   seqno_t seq_last_nack; /* last seq for which we requested a retransmit */
   struct xevent *acknack_xevent; /* entry in xevent queue for sending acknacks */
@@ -146,7 +145,7 @@ struct local_reader_ary {
   int n_readers;
   struct reader **rdary; /* for efficient delivery, null-pointer terminated */
 };
-  
+
 struct participant
 {
   struct entity_common e;
@@ -264,7 +263,7 @@ struct proxy_participant
   unsigned prismtech_bes; /* prismtech-specific extension of built-in endpoints set */
   nn_guid_t privileged_pp_guid; /* if this PP depends on another PP for its SEDP writing */
   nn_plist_t *plist; /* settings/QoS for this participant */
-  struct lease *lease; /* lease object for this participant, for automatic leases */
+  os_atomic_voidp_t lease; /* lease object for this participant, for automatic leases */
   struct addrset *as_default; /* default address set to use for user data traffic */
   struct addrset *as_meta; /* default address set to use for discovery traffic */
   struct proxy_endpoint_common *endpoints; /* all proxy endpoints can be reached from here */
@@ -272,7 +271,11 @@ struct proxy_participant
   unsigned kernel_sequence_numbers : 1; /* whether this proxy participant generates OSPL kernel sequence numbers */
   unsigned implicitly_created : 1; /* participants are implicitly created for Cloud/Fog discovered endpoints */
   unsigned is_ddsi2_pp: 1; /* if this is the federation-leader on the remote node */
-  unsigned lease_expired: 1; /* FIXME: doesn't appear to be used in a meaningful way ... */
+  unsigned minimal_bes_mode: 1;
+  unsigned lease_expired: 1;
+  unsigned proxypp_have_spdp: 1;
+  unsigned proxypp_have_cm: 1;
+  unsigned owns_lease: 1;
 };
 
 /* Representing proxy subscriber & publishers as "groups": until DDSI2
@@ -312,6 +315,7 @@ struct proxy_writer {
   uint32_t last_fragnum; /* last known frag for last_seq, or ~0u if last_seq not partial */
   nn_count_t nackfragcount; /* last nackfrag seq number */
   os_atomic_uint32_t next_deliv_seq_lowword; /* lower 32-bits for next sequence number that will be delivered; for generating acks; 32-bit so atomic reads on all supported platforms */
+  unsigned last_fragnum_reset: 1; /* iff set, heartbeat advertising last_seq as highest seq resets last_fragnum */
   unsigned deliver_synchronously: 1; /* iff 1, delivery happens straight from receive thread for non-historical data; else through delivery queue "dqueue" */
   unsigned have_seen_heartbeat: 1; /* iff 1, we have received at least on heartbeat from this proxy writer */
   unsigned assert_pp_lease: 1; /* iff 1, renew the proxy-participant's lease when data comes in */
@@ -461,6 +465,8 @@ struct reader * new_reader
 unsigned remove_acked_messages (struct writer *wr);
 seqno_t writer_max_drop_seq (const struct writer *wr);
 int writer_must_have_hb_scheduled (const struct writer *wr);
+void writer_set_retransmitting (struct writer *wr);
+void writer_clear_retransmitting (struct writer *wr);
 
 int delete_writer (const struct nn_guid *guid);
 int delete_writer_nolinger (const struct nn_guid *guid);
@@ -489,10 +495,20 @@ int delete_reader (const struct nn_guid *guid);
 /* Set when this proxy participant is a DDSI2 participant, to help Cloud figure out whom to send
    discovery data when used in conjunction with the networking bridge */
 #define CF_PARTICIPANT_IS_DDSI2                (1 << 2)
+/* Set when this proxy participant is not to be announced on the built-in topics yet */
+#define CF_PROXYPP_NO_SPDP                     (1 << 3)
 
 void new_proxy_participant (const struct nn_guid *guid, unsigned bes, unsigned prismtech_bes, const struct nn_guid *privileged_pp_guid, struct addrset *as_default, struct addrset *as_meta, const struct nn_plist *plist, int64_t tlease_dur, nn_vendorid_t vendor, unsigned custom_flags);
 int delete_proxy_participant_by_guid (const struct nn_guid * guid, int isimplicit);
-int update_proxy_participant_plist (struct proxy_participant *proxypp, const struct nn_plist *datap);
+
+enum update_proxy_participant_source {
+  UPD_PROXYPP_SPDP,
+  UPD_PROXYPP_CM
+};
+
+int update_proxy_participant_plist_locked (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source);
+int update_proxy_participant_plist (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source);
+void proxy_participant_reassign_lease (struct proxy_participant *proxypp, struct lease *newlease);
 
 void purge_proxy_participants (const nn_locator_t *loc, bool delete_from_as_disc);
 

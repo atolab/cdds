@@ -46,7 +46,7 @@ struct deleted_participant {
   ut_avlNode_t avlnode;
   nn_guid_t guid;
   unsigned for_what;
-  nn_mtime_t t_insert;
+  nn_mtime_t t_prune;
 };
 
 static os_mutex deleted_participants_lock;
@@ -258,13 +258,12 @@ static void prune_deleted_participant_guids_unlocked (nn_mtime_t tnow)
   /* Could do a better job of finding prunable ones efficiently under
      all circumstances, but I expect the tree to be very small at all
      times, so a full scan is fine, too ... */
-  int64_t tprune = tnow.v - 10000 * T_MILLISECOND;
   struct deleted_participant *dpp;
   dpp = ut_avlFindMin (&deleted_participants_treedef, &deleted_participants);
   while (dpp)
   {
     struct deleted_participant *dpp1 = ut_avlFindSucc (&deleted_participants_treedef, &deleted_participants, dpp);
-    if (dpp->t_insert.v < tprune)
+    if (dpp->t_prune.v < tnow.v)
     {
       ut_avlDelete (&deleted_participants_treedef, &deleted_participants, dpp);
       os_free (dpp);
@@ -290,7 +289,7 @@ static void remember_deleted_participant_guid (const struct nn_guid *guid)
     if ((n = os_malloc (sizeof (*n))) != NULL)
     {
       n->guid = *guid;
-      n->t_insert = now_mt ();
+      n->t_prune.v = T_NEVER;
       n->for_what = DPG_LOCAL | DPG_REMOTE;
       ut_avlInsertIPath (&deleted_participants_treedef, &deleted_participants, n, &path);
     }
@@ -314,18 +313,35 @@ int is_deleted_participant_guid (const struct nn_guid *guid, unsigned for_what)
 
 static void remove_deleted_participant_guid (const struct nn_guid *guid, unsigned for_what)
 {
-  struct deleted_participant *n;
-  os_mutexLock (&deleted_participants_lock);
-  if ((n = ut_avlLookup (&deleted_participants_treedef, &deleted_participants, guid)) != NULL)
+  if (!config.prune_deleted_ppant.enforce_delay)
   {
-    n->for_what &= ~for_what;
-    if (n->for_what == 0)
+    struct deleted_participant *n;
+  TRACE (("remove_deleted_participant_guid(%x:%x:%x:%x for_what=%x)\n", PGUID (*guid), for_what));
+    os_mutexLock (&deleted_participants_lock);
+    if ((n = ut_avlLookup (&deleted_participants_treedef, &deleted_participants, guid)) != NULL)
     {
-      ut_avlDelete (&deleted_participants_treedef, &deleted_participants, n);
-      os_free (n);
+    if (config.prune_deleted_ppant.enforce_delay)
+    {
+      n->t_prune = add_duration_to_mtime (now_mt (), config.prune_deleted_ppant.delay);
+    }
+    else
+    {
+      n->for_what &= ~for_what;
+      if (n->for_what != 0)
+      {
+        /* For local participants (remove called with LOCAL, leaving
+           REMOTE blacklisted, and has to do with network briding) */
+        n->t_prune = add_duration_to_mtime (now_mt (), config.prune_deleted_ppant.delay);
+      }
+      else
+      {
+        ut_avlDelete (&deleted_participants_treedef, &deleted_participants, n);
+        os_free (n);
+      }
     }
   }
-  os_mutexUnlock (&deleted_participants_lock);
+    os_mutexUnlock (&deleted_participants_lock);
+  }
 }
 
 
@@ -430,11 +446,9 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
   /* SPDP writer */
 #define LAST_WR_PARAMS NULL, NULL
 
-#if 0 /* SPDP writer incurs no cost */
   /* Note: skip SEDP <=> skip SPDP because of the way ddsi_discovery.c does things
      currently.  */
   if (!(flags & RTPS_PF_NO_BUILTIN_WRITERS))
-#endif
   {
     subguid.entityid = to_entityid (NN_ENTITYID_SPDP_BUILTIN_PARTICIPANT_WRITER);
     new_writer_guid (&subguid, &group_guid, pp, NULL, &gv.spdp_endpoint_xqos, LAST_WR_PARAMS);
@@ -457,11 +471,7 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
   ephash_insert_participant_guid (pp);
 
   /* SEDP writers: */
-#if 0 /* Can't have SEDP data arriving before SPDP data (FIXME: that's fixable) */
-  /* Note: skip SEDP <=> skip SPDP because of the way ddsi_discovery.c does things
-     currently.  */
   if (!(flags & RTPS_PF_NO_BUILTIN_WRITERS))
-#endif
   {
     subguid.entityid = to_entityid (NN_ENTITYID_SEDP_BUILTIN_SUBSCRIPTIONS_WRITER);
     new_writer_guid (&subguid, &group_guid, pp, NULL, &gv.builtin_endpoint_xqos_wr, LAST_WR_PARAMS);
@@ -492,9 +502,7 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
   }
 
   /* PMD writer: */
-#if 0 /* PMD should be ok */
   if (!(flags & RTPS_PF_NO_BUILTIN_WRITERS))
-#endif
   {
     subguid.entityid = to_entityid (NN_ENTITYID_P2P_BUILTIN_PARTICIPANT_MESSAGE_WRITER);
     new_writer_guid (&subguid, &group_guid, pp, NULL, &gv.builtin_endpoint_xqos_wr, LAST_WR_PARAMS);
@@ -1241,7 +1249,7 @@ static void writer_add_connection (struct writer *wr, struct proxy_reader *prd)
   m->prd_guid = prd->e.guid;
   m->is_reliable = (prd->c.xqos->reliability.kind > NN_BEST_EFFORT_RELIABILITY_QOS);
   m->assumed_in_sync = (config.retransmit_merging == REXMIT_MERGE_ALWAYS);
-  m->has_replied_to_hb = 0;
+  m->has_replied_to_hb = !m->is_reliable;
   m->all_have_replied_to_hb = 0;
   m->non_responsive_count = 0;
   m->rexmit_requests = 0;
@@ -1517,7 +1525,7 @@ static void proxy_writer_add_connection (struct proxy_writer *pwr, struct reader
     m->in_sync = PRMSS_OUT_OF_SYNC;
     m->u.not_in_sync.end_of_tl_seq = MAX_SEQ_NUMBER;
     m->u.not_in_sync.end_of_out_of_sync_seq = last_deliv_seq;
-    TRACE ((" - out-of-sync %lld", m->u.not_in_sync.end_of_out_of_sync_seq));
+    TRACE ((" - out-of-sync %"PRId64, m->u.not_in_sync.end_of_out_of_sync_seq));
   }
   if (m->in_sync != PRMSS_SYNC)
     pwr->n_readers_out_of_sync++;
@@ -2218,6 +2226,24 @@ int writer_must_have_hb_scheduled (const struct writer *wr)
   }
 }
 
+void writer_set_retransmitting (struct writer *wr)
+{
+  assert (!wr->retransmitting);
+  wr->retransmitting = 1;
+  if (config.whc_adaptive && wr->whc_high > wr->whc_low)
+  {
+    uint32_t m = 8 * wr->whc_high / 10;
+    wr->whc_high = (m > wr->whc_low) ? m : wr->whc_low;
+  }
+}
+
+void writer_clear_retransmitting (struct writer *wr)
+{
+  wr->retransmitting = 0;
+  wr->t_whc_high_upd = wr->t_rexmit_end = now_et();
+  os_condBroadcast (&wr->throttle_cond);
+}
+
 unsigned remove_acked_messages (struct writer *wr)
 {
   unsigned n;
@@ -2230,6 +2256,8 @@ unsigned remove_acked_messages (struct writer *wr)
   n_unacked = whc_unacked_bytes (wr->whc);
   if (wr->throttling && n_unacked <= wr->whc_low)
     os_condBroadcast (&wr->throttle_cond);
+  if (wr->retransmitting && whc_unacked_bytes (wr->whc) == 0)
+    writer_clear_retransmitting (wr);
   if (wr->state == WRST_LINGERING && n_unacked == 0)
   {
     nn_log (LC_DISCOVERY, "remove_acked_messages: deleting lingering writer %x:%x:%x:%x\n", PGUID (wr->e.guid));
@@ -2402,9 +2430,9 @@ static struct writer * new_writer_guid
 #ifdef DDSI_INCLUDE_NETWORK_CHANNELS
   if (!is_builtin_entityid (wr->e.guid.entityid, ownvendorid))
   {
-    struct config_channel_listelem *channel = find_channel (xqos->transport_priority);
+    struct config_channel_listelem *channel = find_channel (wr->xqos->transport_priority);
     TRACE (("writer %x:%x:%x:%x: transport priority %d => channel '%s' priority %d\n",
-            PGUID (wr->e.guid), xqos->transport_priority.value, channel->name, channel->priority));
+            PGUID (wr->e.guid), wr->xqos->transport_priority.value, channel->name, channel->priority));
     wr->evq = channel->evq ? channel->evq : gv.xevents;
   }
   else
@@ -2455,7 +2483,7 @@ static struct writer * new_writer_guid
       tldepth = 0;
     }
     wr->whc = whc_new (wr->handle_as_transient_local, hdepth, tldepth, sample_overhead);
-    if (hdepth > 0 || (wr->handle_as_transient_local && tldepth > 0))
+    if (hdepth > 0)
     {
       /* hdepth > 0 => "aggressive keep last", and in that case: why
          bother blocking for a slow receiver when the entire point of
@@ -2688,6 +2716,7 @@ void writer_exit_startup_mode (struct writer *wr)
     wr->startup_mode = 0;
     whc_downgrade_to_volatile (wr->whc);
     n = remove_acked_messages (wr);
+    writer_clear_retransmitting (wr);
     TRACE (("  wr %x:%x:%x:%x dropped %u entr%s\n", PGUID (wr->e.guid), n, n == 1 ? "y" : "ies"));
   }
   os_mutexUnlock (&wr->e.lock);
@@ -2964,6 +2993,41 @@ int delete_reader (const struct nn_guid *guid)
 }
 
 /* PROXY-PARTICIPANT ------------------------------------------------ */
+static void gc_proxy_participant_lease (struct gcreq *gcreq)
+{
+  lease_free (gcreq->arg);
+  gcreq_free (gcreq);
+}
+
+void proxy_participant_reassign_lease (struct proxy_participant *proxypp, struct lease *newlease)
+{
+  /* Lease renewal is done by the receive thread without locking the
+     proxy participant (and I'd like to keep it that way), but that
+     means we must guarantee that the lease pointer remains valid once
+     loaded.
+
+     By loading/storing the pointer atomically, we ensure we always
+     read a valid (or once valid) value, by delaying the freeing
+     through the garbage collector, we ensure whatever lease update
+     occurs in parallel completes before the memory is released.
+
+     The lease_renew(never) call ensures the lease will never expire
+     while we are messing with it. */
+  os_mutexLock (&proxypp->e.lock);
+  if (proxypp->owns_lease)
+  {
+    const nn_etime_t never = { T_NEVER };
+    struct gcreq *gcreq = gcreq_new (gv.gcreq_queue, gc_proxy_participant_lease);
+    struct lease *oldlease = os_atomic_ldvoidp (&proxypp->lease);
+    lease_renew (oldlease, never);
+    gcreq->arg = oldlease;
+    gcreq_enqueue (gcreq);
+    proxypp->owns_lease = 0;
+  }
+  os_atomic_stvoidp (&proxypp->lease, newlease);
+  os_mutexUnlock (&proxypp->e.lock);
+}
+
 void new_proxy_participant
 (
   const struct nn_guid *ppguid,
@@ -3009,7 +3073,27 @@ void new_proxy_participant
     proxypp->is_ddsi2_pp = 1;
   else
     proxypp->is_ddsi2_pp = 0;
-  proxypp->lease = lease_new (tlease_dur, &proxypp->e);
+  if ((plist->present & PP_PRISMTECH_PARTICIPANT_VERSION_INFO) &&
+      (plist->prismtech_participant_version_info.flags & NN_PRISMTECH_FL_MINIMAL_BES_MODE))
+    proxypp->minimal_bes_mode = 1;
+  else
+    proxypp->minimal_bes_mode = 0;
+
+  {
+    struct proxy_participant *privpp;
+    privpp = ephash_lookup_proxy_participant_guid (&proxypp->privileged_pp_guid);
+    if (privpp != NULL && privpp->is_ddsi2_pp)
+    {
+      os_atomic_stvoidp (&proxypp->lease, os_atomic_ldvoidp (&privpp->lease));
+      proxypp->owns_lease = 0;
+    }
+    else
+    {
+      os_atomic_stvoidp (&proxypp->lease, lease_new (tlease_dur, &proxypp->e));
+      proxypp->owns_lease = 1;
+    }
+  }
+
   proxypp->as_default = as_default;
   proxypp->as_meta = as_meta;
   proxypp->endpoints = NULL;
@@ -3025,6 +3109,19 @@ void new_proxy_participant
     proxypp->implicitly_created = 1;
   else
     proxypp->implicitly_created = 0;
+
+  if (custom_flags & CF_PROXYPP_NO_SPDP)
+    proxypp->proxypp_have_spdp = 0;
+  else
+    proxypp->proxypp_have_spdp = 1;
+  /* Non-PrismTech doesn't implement the PT extensions and therefore won't generate
+     a CMParticipant; if a PT peer does not implement a CMParticipant writer, then it
+     presumably also is a handicapped implementation (perhaps simply an old one) */
+  if (!vendor_is_prismtech(proxypp->vendor) ||
+      (proxypp->bes != 0 && !(proxypp->prismtech_bes & NN_DISC_BUILTIN_ENDPOINT_CM_PARTICIPANT_WRITER)))
+    proxypp->proxypp_have_cm = 1;
+  else
+    proxypp->proxypp_have_cm = 0;
 
   /* Proxy participant must be in the hash tables for
      new_proxy_{writer,reader} to work */
@@ -3102,31 +3199,51 @@ void new_proxy_participant
     nn_plist_fini (&plist_rd);
   }
 
-  lease_register (proxypp->lease);
-
+  /* Register lease, but be careful not to accidentally re-register
+     DDSI2's lease, as we may have become dependent on DDSI2 any time
+     after ephash_insert_proxy_participant_guid even if
+     privileged_pp_guid was NULL originally */
+  os_mutexLock (&proxypp->e.lock);
+  if (proxypp->owns_lease)
+    lease_register (os_atomic_ldvoidp (&proxypp->lease));
+  os_mutexUnlock (&proxypp->e.lock);
 }
 
-int update_proxy_participant_plist (struct proxy_participant *proxypp, const struct nn_plist *datap)
+int update_proxy_participant_plist_locked (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source)
 {
   /* Currently, built-in processing is single-threaded, and it is only through this function and the proxy participant deletion (which necessarily happens when no-one else potentially references the proxy participant anymore).  So at the moment, the lock is superfluous. */
-  nn_plist_t tmp;
   nn_plist_t *new_plist;
 
-  /* FIXME: find a better way of restricting which bits can get updated */
-  os_mutexLock (&proxypp->e.lock);
-  tmp = *datap;
-  tmp.present &=
-    PP_PRISMTECH_NODE_NAME | PP_PRISMTECH_EXEC_NAME | PP_PRISMTECH_PROCESS_ID |
-    PP_PRISMTECH_WATCHDOG_SCHEDULING | PP_PRISMTECH_LISTENER_SCHEDULING |
-    PP_PRISMTECH_SERVICE_TYPE | PP_ENTITY_NAME;
-  tmp.qos.present &= QP_PRISMTECH_ENTITY_FACTORY;
-  new_plist = nn_plist_dup (&tmp);
+  new_plist = nn_plist_dup (datap);
   nn_plist_mergein_missing (new_plist, proxypp->plist);
   nn_plist_fini (proxypp->plist);
   os_free (proxypp->plist);
   proxypp->plist = new_plist;
-  os_mutexUnlock (&proxypp->e.lock);
+  return 0;
+}
 
+int update_proxy_participant_plist (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source)
+{
+  nn_plist_t tmp;
+
+  /* FIXME: find a better way of restricting which bits can get updated */
+  os_mutexLock (&proxypp->e.lock);
+  switch (source)
+  {
+    case UPD_PROXYPP_SPDP:
+      update_proxy_participant_plist_locked (proxypp, datap, source);
+      break;
+    case UPD_PROXYPP_CM:
+      tmp = *datap;
+      tmp.present &=
+        PP_PRISMTECH_NODE_NAME | PP_PRISMTECH_EXEC_NAME | PP_PRISMTECH_PROCESS_ID |
+        PP_PRISMTECH_WATCHDOG_SCHEDULING | PP_PRISMTECH_LISTENER_SCHEDULING |
+        PP_PRISMTECH_SERVICE_TYPE | PP_ENTITY_NAME;
+      tmp.qos.present &= QP_PRISMTECH_ENTITY_FACTORY;
+      update_proxy_participant_plist_locked (proxypp, &tmp, source);
+      break;
+  }
+  os_mutexUnlock (&proxypp->e.lock);
   return 0;
 }
 
@@ -3174,7 +3291,8 @@ static void unref_proxy_participant (struct proxy_participant *proxypp, struct p
     unref_addrset (proxypp->as_meta);
     nn_plist_fini (proxypp->plist);
     os_free (proxypp->plist);
-    lease_free (proxypp->lease);
+    if (proxypp->owns_lease)
+      lease_free (os_atomic_ldvoidp (&proxypp->lease));
     entity_common_fini (&proxypp->e);
     remove_deleted_participant_guid (&proxypp->e.guid, DPG_LOCAL | DPG_REMOTE);
     os_free (proxypp);
@@ -3184,7 +3302,7 @@ static void unref_proxy_participant (struct proxy_participant *proxypp, struct p
     assert (refc == 1);
     os_mutexUnlock (&proxypp->e.lock);
     TRACE (("unref_proxy_participant(%x:%x:%x:%x): refc=%u, no endpoints, implicitly created, deleting\n", PGUID (proxypp->e.guid), (unsigned) refc));
-    delete_proxy_participant_by_guid(&proxypp->e.guid, 0);
+    delete_proxy_participant_by_guid(&proxypp->e.guid, 1);
     /* Deletion is still (and has to be) asynchronous. A parallel endpoint creation may or may not
        succeed, and if it succeeds it will be deleted along with the proxy participant. So "your
        mileage may vary". Also, the proxy participant may be blacklisted for a little ... */
@@ -3495,6 +3613,7 @@ int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, 
   pwr->last_seq = 0;
   pwr->last_fragnum = ~0u;
   pwr->nackfragcount = 0;
+  pwr->last_fragnum_reset = 0;
   os_atomic_st32 (&pwr->next_deliv_seq_lowword, 1);
   if (is_builtin_entityid (pwr->e.guid.entityid, pwr->c.vendor)) {
     /* The DDSI built-in proxy writers always deliver
@@ -3758,6 +3877,7 @@ static void proxy_reader_set_delete_and_ack_all_messages (struct proxy_reader *p
         m_wr->seq = MAX_SEQ_NUMBER;
         ut_avlAugmentUpdate (&wr_readers_treedef, m_wr);
         remove_acked_messages (wr);
+        writer_clear_retransmitting (wr);
       }
       os_mutexUnlock (&wr->e.lock);
     }

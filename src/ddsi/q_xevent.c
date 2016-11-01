@@ -813,8 +813,6 @@ static void add_AckNack (struct nn_xmsg *msg, struct proxy_writer *pwr, struct p
     nn_count_t *countp =
       (nn_count_t *) ((char *) an + offsetof (AckNack_t, readerSNState) +
                       NN_SEQUENCE_NUMBER_SET_SIZE (an->readerSNState.numbits));
-    if (rwn->count == DDSI_COUNT_MAX)
-      NN_FATAL0 ("reader reached maximum acknack sequence number");
     *countp = ++rwn->count;
 
     /* Reset submessage size, now that we know the real size, and update
@@ -850,8 +848,6 @@ static void add_AckNack (struct nn_xmsg *msg, struct proxy_writer *pwr, struct p
     {
       nn_count_t *countp =
         (nn_count_t *) ((char *) nf + offsetof (NackFrag_t, fragmentNumberState) + NN_FRAGMENT_NUMBER_SET_SIZE (nf->fragmentNumberState.numbits));
-      if (pwr->nackfragcount == DDSI_COUNT_MAX)
-        NN_FATAL0 ("proxy writer reached maximum nackfrag sequence number");
       *countp = ++pwr->nackfragcount;
       nn_xmsg_submsg_setnext (msg, sm_marker);
 
@@ -1071,9 +1067,9 @@ static void handle_xevk_spdp (UNUSED_ARG (struct nn_xpack *xp), struct xevent *e
       intv = mindelta;
     else if (ldur < 10 * T_SECOND)
       intv = 4 * ldur / 5;
-    else if (ldur - 2 * T_SECOND < config.spdp_interval)
-      intv = ldur - 2 * T_SECOND;
     else
+      intv = ldur - 2 * T_SECOND;
+    if (intv > config.spdp_interval)
       intv = config.spdp_interval;
     tnext = add_duration_to_mtime (tnow, intv);
     TRACE (("xmit spdp %x:%x:%x:%x to %x:%x:%x:%x (resched %gs)\n",

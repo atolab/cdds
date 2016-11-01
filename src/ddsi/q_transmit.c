@@ -103,7 +103,7 @@ int64_t writer_hbcontrol_intv (const struct writer *wr, UNUSED_ARG (nn_mtime_t t
   }
 
   n_unacked = whc_unacked_bytes (wr->whc);
-  if (n_unacked >= 3 * (wr->whc_low + (wr->whc_high - wr->whc_low)) / 4)
+  if (n_unacked >= wr->whc_low + 3 * (wr->whc_high - wr->whc_low) / 4)
     ret /= 2;
   if (n_unacked >= wr->whc_low + (wr->whc_high - wr->whc_low) / 2)
     ret /= 2;
@@ -365,7 +365,7 @@ void add_Heartbeat (struct nn_xmsg *msg, struct writer *wr, int hbansreq, nn_ent
   else
   {
     min = whc_min_seq (wr->whc);
-    max = whc_max_seq (wr->whc);
+    max = wr->seq;
     assert (min <= max);
     /* Informing readers of samples that haven't even been transmitted makes little sense,
        but for transient-local data, we let the first heartbeat determine the time at which
@@ -392,8 +392,6 @@ void add_Heartbeat (struct nn_xmsg *msg, struct writer *wr, int hbansreq, nn_ent
   hb->firstSN = toSN (min);
   hb->lastSN = toSN (max);
 
-  if (wr->hbcount == DDSI_COUNT_MAX)
-    NN_FATAL0 ("writer reached maximum heartbeat sequence number");
   hb->count = ++wr->hbcount;
 
   nn_xmsg_submsg_setnext (msg, sm_marker);
@@ -597,30 +595,28 @@ static void create_HeartbeatFrag (struct writer *wr, seqno_t seq, unsigned fragn
   hbf->writerSN = toSN (seq);
   hbf->lastFragmentNum = fragnum + 1; /* network format is 1 based */
 
-  if (wr->hbfragcount == DDSI_COUNT_MAX)
-    NN_FATAL0 ("writer reached maximum heartbeat-frag sequence number");
   hbf->count = ++wr->hbfragcount;
 
   nn_xmsg_submsg_setnext (*pmsg, sm_marker);
 }
 
 #if 0
-static int must_skip_frag (const char *frags_to_skip, int frag)
+static int must_skip_frag (const char *frags_to_skip, unsigned frag)
 {
   /* one based, for easier reading of logs */
   char str[14];
   int n, m;
   if (frags_to_skip == NULL)
     return 0;
-  n = snprintf (str, sizeof (str), ",%d,", frag + 1);
+  n = snprintf (str, sizeof (str), ",%u,", frag + 1);
   if (strstr (frags_to_skip, str))
     return 1; /* somewhere in middle */
-  if (strncmp (frags_to_skip, str+1, n-1) == 0)
+  if (strncmp (frags_to_skip, str+1, (size_t)n-1) == 0)
     return 1; /* first in list */
   str[--n] = 0; /* drop trailing comma */
   if (strcmp (frags_to_skip, str+1) == 0)
     return 1; /* only one */
-  m = strlen (frags_to_skip);
+  m = (int)strlen (frags_to_skip);
   if (m >= n && strcmp (frags_to_skip + m - n, str) == 0)
     return 1; /* last one in list */
   return 0;
@@ -998,8 +994,22 @@ static int write_sample_eot (struct nn_xpack *xp, struct writer *wr, struct nn_p
        cleaning that up. */
     if (xp)
     {
+      /* If all reliable readers disappear between unlocking the writer and
+       * creating the message, the WHC will free the plist (if any). Currently,
+       * plist's are only used for coherent sets, which is assumed to be rare,
+       * which in turn means that an extra copy doesn't hurt too badly ... */
+      nn_plist_t plist_stk, *plist_copy;
+      if (plist == NULL)
+        plist_copy = NULL;
+      else
+      {
+        plist_copy = &plist_stk;
+        nn_plist_copy (plist_copy, plist);
+      }
       os_mutexUnlock (&wr->e.lock);
-      transmit_sample (xp, wr, seq, plist, serdata, NULL, 1);
+      transmit_sample (xp, wr, seq, plist_copy, serdata, NULL, 1);
+      if (plist_copy)
+        nn_plist_fini (plist_copy);
     }
     else
     {

@@ -187,6 +187,11 @@ struct config_peer_listelem
   char *peer;
 };
 
+struct prune_deleted_ppant {
+  int64_t delay;
+  int enforce_delay;
+};
+
 /* allow multicast bits: */
 #define AMC_FALSE 0u
 #define AMC_SPDP 1u
@@ -373,7 +378,10 @@ struct config
   int monitor_port;
 
   int enable_control_topic;
-  int initial_deaf_mute;
+  int initial_deaf;
+  int initial_mute;
+  int use_multicast_if_mreqn;
+  struct prune_deleted_ppant prune_deleted_ppant;
 
   /* not used by ddsi2, only validated; user layer directly accesses
      the configuration tree */

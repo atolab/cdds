@@ -480,6 +480,18 @@ int rtps_config_prep (struct cfgst *cfgst)
     goto err_config_late_error;
   }
 
+  if (config.besmode == BESMODE_MINIMAL && config.many_sockets_mode)
+  {
+    /* These two are incompatible because minimal bes mode can result
+       in implicitly creating proxy participants inheriting the
+       address set from the ddsi2 participant (which is then typically
+       inherited by readers/writers), but in many sockets mode each
+       participant has its own socket, and therefore unique address
+       set */
+    NN_ERROR0 ("Minimal built-in endpoint set mode and ManySocketsMode are incompatible\n");
+    goto err_config_late_error;
+  }
+
   /* Dependencies between default values is not handled
    automatically by the config processing (yet) */
   if (config.many_sockets_mode)
@@ -632,9 +644,14 @@ err_config_late_error:
   return -1;
 }
 
-static void join_spdp_defmcip_helper (const nn_locator_t *loc, void *varg)
+struct joinleave_spdp_defmcip_helper_arg {
+  int errcount;
+  int dojoin;
+};
+
+static void joinleave_spdp_defmcip_helper (const nn_locator_t *loc, void *varg)
 {
-  int *errcount = varg;
+  struct joinleave_spdp_defmcip_helper_arg *arg = varg;
   if (!is_mcaddr (loc))
     return;
 #ifdef DDSI_INCLUDE_SSM
@@ -642,22 +659,29 @@ static void join_spdp_defmcip_helper (const nn_locator_t *loc, void *varg)
   if (is_ssm_mcaddr (loc))
     return;
 #endif
-  if (ddsi_conn_join_mc (gv.disc_conn_mc, NULL, loc) < 0 || ddsi_conn_join_mc (gv.data_conn_mc, NULL, loc) < 0)
-    (*errcount)++;
+  if (arg->dojoin) {
+    if (ddsi_conn_join_mc (gv.disc_conn_mc, NULL, loc) < 0 || ddsi_conn_join_mc (gv.data_conn_mc, NULL, loc) < 0)
+      arg->errcount++;
+  } else {
+    if (ddsi_conn_leave_mc (gv.disc_conn_mc, NULL, loc) < 0 || ddsi_conn_leave_mc (gv.data_conn_mc, NULL, loc) < 0)
+      arg->errcount++;
+  }
 }
 
-static int join_spdp_defmcip (void)
+static int joinleave_spdp_defmcip (int dojoin)
 {
   /* Addrset provides an easy way to filter out duplicates */
+  struct joinleave_spdp_defmcip_helper_arg arg;
   struct addrset *as = new_addrset ();
-  int errcount = 0;
+  arg.errcount = 0;
+  arg.dojoin = dojoin;
   if (config.allowMulticast & AMC_SPDP)
     add_to_addrset (as, &gv.loc_spdp_mc);
   if (config.allowMulticast & ~AMC_SPDP)
     add_to_addrset (as, &gv.loc_default_mc);
-  addrset_forall (as, join_spdp_defmcip_helper, &errcount);
+  addrset_forall (as, joinleave_spdp_defmcip_helper, &arg);
   unref_addrset (as);
-  if (errcount)
+  if (arg.errcount)
   {
     NN_ERROR2 ("rtps_init: failed to join multicast groups for domain %d participant %d\n", config.domainId, config.participantIndex);
     return -1;
@@ -916,7 +940,7 @@ int rtps_init (void)
       if (!is_unspec_locator(&gv.loc_default_mc))
         gv.loc_default_mc.port = ddsi_tran_port (gv.data_conn_mc);
 
-      if (join_spdp_defmcip () < 0)
+      if (joinleave_spdp_defmcip (1) < 0)
         goto err_mc_conn;
     }
   }
@@ -1176,6 +1200,20 @@ static void builtins_dqueue_ready_cb (void *varg)
   os_mutexUnlock (&arg->lock);
 }
 
+void rtps_term_prep (void)
+{
+  /* Stop all I/O */
+  os_mutexLock (&gv.lock);
+  if (gv.rtps_keepgoing)
+  {
+    gv.rtps_keepgoing = 0; /* so threads will stop once they get round to checking */
+    os_atomic_fence ();
+    /* can't wake up throttle_writer, currently, but it'll check every few seconds */
+    os_sockWaitsetTrigger (gv.waitset);
+  }
+  os_mutexUnlock (&gv.lock);
+}
+
 void rtps_term (void)
 {
   struct thread_state1 *self = lookup_thread_state ();
@@ -1190,12 +1228,7 @@ void rtps_term (void)
   }
 
   /* Stop all I/O */
-  os_mutexLock (&gv.lock);
-  gv.rtps_keepgoing = 0; /* so threads will stop once they get round to checking */
-  os_atomic_fence ();
-  /* can't wake up throttle_writer, currently */
-  os_sockWaitsetTrigger (gv.waitset);
-  os_mutexUnlock (&gv.lock);
+  rtps_term_prep ();
   join_thread (gv.recv_ts, NULL);
 
   if (gv.listener)
@@ -1350,6 +1383,8 @@ void rtps_term (void)
   ut_thread_pool_free (gv.thread_pool);
 
   os_sockWaitsetFree (gv.waitset);
+
+  (void) joinleave_spdp_defmcip (0);
 
   ddsi_conn_free (gv.disc_conn_mc);
   ddsi_conn_free (gv.data_conn_mc);

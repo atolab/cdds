@@ -1320,7 +1320,7 @@ static ssize_t nn_xpack_send1 (const nn_locator_t *loc, void * varg)
   else
 #endif
   {
-    if (!gv.deaf_mute)
+    if (!gv.mute)
       nbytes = ddsi_conn_write (xp->conn, &mhdr, xp->msg_len.length, xp->call_flags);
     else
     {

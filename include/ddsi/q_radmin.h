@@ -102,8 +102,9 @@ struct receiver_state {
   nn_guid_prefix_t src_guid_prefix;       /* 12 */
   nn_guid_prefix_t dst_guid_prefix;       /* 12 */
   struct addrset *reply_locators;         /* 4/8 */
+  int forme;                              /* 4 */
   nn_vendorid_t vendor;                   /* 2 */
-  nn_protocol_version_t protocol_version; /* 2 => 40/44 */
+  nn_protocol_version_t protocol_version; /* 2 => 44/48 */
   ddsi_tran_conn_t conn;                  /* Connection for request */
 };
 

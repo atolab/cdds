@@ -1719,7 +1719,7 @@ static os_ssize_t q_security_sendmsg
     /* send the encrypted data to the connection */
 
     nbytes = message->msg_iov[0].iov_len + message->msg_iov[1].iov_len + message->msg_iov[2].iov_len;
-    if (!gv.deaf_mute)
+    if (!gv.mute)
       ret = ddsi_conn_write (conn, message, nbytes, flags);
     else
     {
