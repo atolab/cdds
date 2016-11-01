@@ -134,7 +134,10 @@ struct dds_key_descriptor;
 
 struct dds_topic;
 typedef void (*topic_cb_t) (struct dds_topic * topic);
+#ifndef DDS_TOPIC_INTERN_FILTER_FN_DEFINED
+#define DDS_TOPIC_INTERN_FILTER_FN_DEFINED
 typedef bool (*dds_topic_intern_filter_fn) (const void * sample, void *ctx);
+#endif
 
 struct sertopic
 {

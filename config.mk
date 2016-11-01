@@ -27,7 +27,18 @@ ifeq "$(OS)" "darwin"
   LIBPRE = lib
 else
   ifeq "$(OS)" "linux"
-    $(error "Gasp! Linux isn't yet supported!")
+    CC = gcc -std=gnu99 -fpic
+    LD = $(CC)
+    OPT = #-fsanitize=address #-O3 -DNDEBUG
+    PROF =
+    CPPFLAGS += -Wall -g $(OPT) $(PROF)
+    CFLAGS += $(CPPFLAGS) #-fno-inline
+    LDFLAGS += -g $(OPT) $(PROF)
+    X =
+    O = .o
+    A = .a
+    SO = .so
+    LIBPRE = lib
   else
     ifeq "$(OS)" "win32"
       CC = cl
@@ -143,11 +154,13 @@ ifeq "$(OS)" "darwin"
   endef
 else
   ifeq "$(OS)" "linux"
+    LDLIBS += -lpthread -lrt
+    comma=,
     define make_exe
-	$(LD) $(LDFLAGS) $(EXE_OFLAG)$@ $^ $(LDLIBS:-l%=%.lib)
+	$(LD) $(LDFLAGS) $(patsubst -L%,-Wl$(comma)-rpath$(comma)%, $(filter -L%, $(LDFLAGS))) $(EXE_OFLAG)$@ $^ $(LDLIBS)
     endef
     define make_shlib
-	$(LD) $(LDFLAGS) $(patsubst -L%, -Wl$(comma)-rpath %, $(filter -L%, $(LDFLAGS))) -dynamiclib $(SHLIB_OFLAG)$@ $^ $(LDLIBS:-l%=%.lib)
+	$(LD) $(LDFLAGS) -Wl$(comma)--no-allow-shlib-undefined $(patsubst -L%,-Wl$(comma)-rpath$(comma)%, $(filter -L%, $(LDFLAGS))) -shared $(SHLIB_OFLAG)$@ $^ $(LDLIBS)
     endef
     define make_archive
 	ar -ru $@ $?

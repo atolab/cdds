@@ -37,7 +37,7 @@ extern "C" {
  *
  * os_procId is a platform specific definition for a process identification.
  */
-typedef int32_t os_procId;
+//typedef int32_t os_procId;
 
 /**
 * A platform specific definition of an invalid os_procId value.

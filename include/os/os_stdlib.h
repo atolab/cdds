@@ -21,6 +21,7 @@
 #define OS_STDLIB_H
 
 #include <stdio.h>
+#include <stdarg.h>
 #include "os/os_defs.h"
 
 #if defined (__cplusplus)

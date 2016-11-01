@@ -4,6 +4,9 @@ case `uname -m`.`uname -s` in
      x86_64.Darwin)
         cfg="x86_64.darwin"
         ;;
+     x86_64.Linux)
+        cfg="x86_64.linux"
+        ;;
      i686.CYGWIN*)
          cfg="x86.win32"
          ;;
