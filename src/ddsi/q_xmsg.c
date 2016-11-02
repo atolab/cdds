@@ -129,12 +129,12 @@ struct nn_xmsg {
 #define NN_XMSG_MAX_SUBMESSAGE_IOVECS 3
 
 #ifdef IOV_MAX
-#if IOV_MAX > 0 && IOV_MAX < 128
+#if IOV_MAX > 0 && IOV_MAX < 256
 #define NN_XMSG_MAX_MESSAGE_IOVECS IOV_MAX
 #endif
 #endif /* defined IOV_MAX */
 #ifndef NN_XMSG_MAX_MESSAGE_IOVECS
-#define NN_XMSG_MAX_MESSAGE_IOVECS 128
+#define NN_XMSG_MAX_MESSAGE_IOVECS 256
 #endif
 
 /* Used to keep them in order, but it now transpires that delayed
