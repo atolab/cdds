@@ -36,21 +36,19 @@ static dds_instance_handle_t ph = 0;
 
 static HandleMap * imap;
 static HandleEntry * current = NULL;
-static unsigned long long outOfOrder = 0;
-static unsigned long long total_bytes = 0;
-static unsigned long long total_samples = 0;
+static volatile unsigned long long outOfOrder = 0;
+static volatile unsigned long long total_bytes = 0;
+static volatile unsigned long long total_samples = 0;
 
-static dds_time_t startTime = 0;
+static volatile dds_time_t startTime = 0;
 static dds_time_t time_now = 0;
 
-static unsigned long payloadSize = 0;
-static double deltaTime = 0;
+static volatile unsigned long payloadSize = 0;
 
 static ThroughputModule_DataType data [MAX_SAMPLES];
 static void * samples[MAX_SAMPLES];
 
 static dds_condition_t terminated;
-static dds_condition_t gCond;
 
 /* Functions to handle Ctrl-C presses. */
 
@@ -120,16 +118,14 @@ static HandleEntry* retrieve_handle (HandleMap *map, dds_instance_handle_t key)
 
 static void data_available_handler (dds_entity_t reader)
 {
-  static dds_time_t prev_time = 0;
-  dds_time_t deltaTv;
-  static bool first_batch = true;
   int samples_received;
   dds_sample_info_t info [MAX_SAMPLES];
   int i;
+  dds_time_t tnow = dds_time ();
 
   if (startTime == 0)
   {
-    startTime = dds_time ();
+    startTime = tnow;
   }
 
   /* Take samples and iterate through them */
@@ -137,7 +133,7 @@ static void data_available_handler (dds_entity_t reader)
   samples_received = dds_take (reader, samples, MAX_SAMPLES, info, 0);
   DDS_ERR_CHECK (samples_received, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-  for (i = 0; !dds_condition_triggered (terminated) && i < samples_received; i++)
+  for (i = 0; i < samples_received; i++)
   {
     if (info[i].valid_data)
     {
@@ -164,28 +160,6 @@ static void data_available_handler (dds_entity_t reader)
       total_samples++;
     }
   }
-
-  /* Check that at least one second has passed since the last output */
-  time_now = dds_time ();
-  if (time_now > (prev_time + DDS_SECS (1)))
-  {
-    if (!first_batch)
-    {
-      deltaTv = time_now - prev_time;
-      deltaTime = (double) deltaTv / DDS_NSECS_IN_SEC;
-      prev_time = time_now;
-
-      if (gCond)
-      {
-        dds_guard_trigger (gCond);
-      }
-    }
-    else
-    {
-      prev_time = time_now;
-      first_batch = false;
-    }
-  }
 }
 
 
@@ -195,7 +169,7 @@ int main (int argc, char **argv)
   unsigned long i;
   int result = EXIT_SUCCESS;
   unsigned long long maxCycles = 0;
-  unsigned long pollingDelay = 0;
+  long pollingDelay = 0;
   char *partitionName = "Throughput example";
 
   dds_entity_t participant;
@@ -205,12 +179,11 @@ int main (int argc, char **argv)
   dds_waitset_t waitSet;
   dds_condition_t rdcond = NULL;
   dds_readerlistener_t rd_listener;
-  bool use_waitset = false;
 
   unsigned long long prev_samples = 0;
   unsigned long long prev_bytes = 0;
-  dds_time_t deltaTv;
-  dds_time_t printT = use_waitset ? 0 : 1;
+  double deltaTime;
+  dds_time_t printT = 0, lastPrintT = 0;
 
   setvbuf (stdout, (char *) NULL, _IOLBF, 0);
 
@@ -235,7 +208,7 @@ int main (int argc, char **argv)
   if (argc == 2 && (strcmp (argv[1], "-h") == 0 || strcmp (argv[1], "--help") == 0))
   {
     printf ("Usage (parameters must be supplied in order):\n");
-    printf ("./subscriber [maxCycles (0 = infinite)] [pollingDelay (ms, 0 = event based)] [partitionName]\n");
+    printf ("./subscriber [maxCycles (0 = infinite)] [pollingDelay (ms, 0: listener <0: waitset)] [partitionName]\n");
     printf ("Defaults:\n");
     printf ("./subscriber 0 0 \"Throughput example\"\n");
     return result;
@@ -247,14 +220,14 @@ int main (int argc, char **argv)
   }
   if (argc > 2)
   {
-    pollingDelay = atoi (argv[2]); /* The number of ms to wait between reads (0 = event based) */
+    pollingDelay = atoi (argv[2]); /* The number of ms to wait between reads (0: listener based, <0: waitset) */
   }
   if (argc > 3)
   {
     partitionName = argv[3]; /* The name of the partition */
   }
 
-  printf ("Cycles: %llu | PollingDelay: %lu | Partition: %s\n",
+  printf ("Cycles: %llu | PollingDelay: %ld | Partition: %s\n",
     maxCycles, pollingDelay, partitionName);
 
   /* Initialise entities */
@@ -264,9 +237,8 @@ int main (int argc, char **argv)
     dds_qos_t *subQos = dds_qos_create ();
     dds_qos_t *drQos = dds_qos_create ();
     uint32_t maxSamples = 400;
-    dds_attach_t wsresults[1];
+    dds_attach_t wsresults[2];
     size_t wsresultsize = 1U;
-    dds_duration_t infinite = DDS_INFINITY;
     int nreads = 0;
 
     /* A Participant is created for the default domain. */
@@ -296,23 +268,23 @@ int main (int argc, char **argv)
     memset (&rd_listener, 0, sizeof (rd_listener));
     rd_listener.on_data_available = data_available_handler;
 
-    status = dds_reader_create (subscriber, &reader, topic, drQos, use_waitset ? NULL : &rd_listener);
+    status = dds_reader_create (subscriber, &reader, topic, drQos, pollingDelay ? NULL : &rd_listener);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     dds_qos_delete (drQos);
+#if 0
+    if (pollingDelay)
+      dds_status_set_enabled (reader, 0);
+#endif
 
     /* A Read Condition is created which is triggered when data is available to read */
 
     waitSet = dds_waitset_create ();
 
-    gCond = dds_guardcondition_create ();
-    status = dds_waitset_attach (waitSet, gCond, gCond);
-    DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
     terminated = dds_guardcondition_create ();
     status = dds_waitset_attach (waitSet, terminated, terminated);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    if (use_waitset)
+    if (pollingDelay < 0)
     {
       rdcond = dds_readcondition_create(reader, DDS_ANY_STATE);
       status = dds_waitset_attach (waitSet, rdcond, rdcond);
@@ -333,49 +305,53 @@ int main (int argc, char **argv)
 
     while (!dds_condition_triggered (terminated) && (maxCycles == 0 || cycles < maxCycles))
     {
-      if (pollingDelay)
+      if (pollingDelay == 0)
+      {
+        status = dds_waitset_wait (waitSet, wsresults, wsresultsize, DDS_SECS (1));
+      }
+      else if (pollingDelay > 0)
       {
         dds_sleepfor (DDS_MSECS (pollingDelay));
+        data_available_handler (reader);
       }
       else
       {
-        status = dds_waitset_wait (waitSet, wsresults, wsresultsize, infinite);
+        status = dds_waitset_wait (waitSet, wsresults, wsresultsize, DDS_SECS (1));
         DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-        if ((status > 0 ) && (dds_condition_triggered (gCond)))
-        {
-          dds_guard_reset (gCond);
-        }
-
         for (int i = 0; i < status; i++)
         {
           if (wsresults[i] == rdcond)
           {
             data_available_handler(reader);
-            nreads++;
             break;
           }
         }
       }
 
       time_now = dds_time();
-      if (!use_waitset || time_now > printT) {
-        if (printT) {
-          printf
-          (
-           "Payload size: %lu | Total received: %llu samples, %llu bytes | Out of order: %llu samples "
-           "Transfer rate: %.2lf samples/s, %.2lf Mbit/s | nreads %d\n",
-           payloadSize, total_samples, total_bytes, outOfOrder,
-           (total_samples - prev_samples) / deltaTime,
-           ((total_bytes - prev_bytes) / BYTES_PER_SEC_TO_MEGABITS_PER_SEC) / deltaTime,
-           nreads);
+      if (time_now > printT) {
+        if (lastPrintT) {
+          /* FIXME: should do this atomically */
+          unsigned long long ts = total_samples;
+          unsigned long long tb = total_bytes;
+          unsigned long long oo = outOfOrder;
+          deltaTime = (time_now - lastPrintT) / 1e9;
+          if (ts != prev_samples)
+          {
+            printf ("Payload size: %lu | Total received: %llu samples, %llu bytes | Out of order: %llu samples Transfer rate: %.2lf samples/s, %.2lf Mbit/s | nreads %d\n",
+                    payloadSize, ts, tb, oo,
+                    (ts - prev_samples) / deltaTime,
+                    ((tb - prev_bytes) / BYTES_PER_SEC_TO_MEGABITS_PER_SEC) / deltaTime,
+                    nreads);
+          }
           cycles++;
 
           /* Update the previous values for next iteration */
 
-          prev_bytes = total_bytes;
-          prev_samples = total_samples;
+          prev_bytes = tb;
+          prev_samples = ts;
         }
+        lastPrintT = time_now;
         printT = time_now + DDS_SECS(1);
       }
     }
@@ -386,8 +362,7 @@ int main (int argc, char **argv)
 
     /* Output totals and averages */
 
-    deltaTv = time_now - startTime;
-    deltaTime = (double) (deltaTv / DDS_NSECS_IN_SEC);
+    deltaTime = (double) (time_now - startTime) / 1e9;
     printf ("\nTotal received: %llu samples, %llu bytes\n", total_samples, total_bytes);
     printf ("Out of order: %llu samples\n", outOfOrder);
     printf ("Average transfer rate: %.2lf samples/s, ", total_samples / deltaTime);
@@ -402,13 +377,10 @@ int main (int argc, char **argv)
   {
     ThroughputModule_DataType_free (&data[i], DDS_FREE_CONTENTS);
   }
-  
+
   status = dds_waitset_detach (waitSet, terminated);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  status = dds_waitset_detach (waitSet, gCond);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_condition_delete (terminated);
-  dds_condition_delete (gCond);
   status = dds_waitset_delete (waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_entity_delete (participant);
