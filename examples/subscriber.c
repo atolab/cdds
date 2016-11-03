@@ -17,7 +17,7 @@
  */
 
 #define BYTES_PER_SEC_TO_MEGABITS_PER_SEC 125000.0
-#define MAX_SAMPLES 100
+#define MAX_SAMPLES 1000
 
 typedef struct HandleEntry
 {
@@ -236,7 +236,7 @@ int main (int argc, char **argv)
     const char *subParts[1];
     dds_qos_t *subQos = dds_qos_create ();
     dds_qos_t *drQos = dds_qos_create ();
-    uint32_t maxSamples = 400;
+    uint32_t maxSamples = 4000;
     dds_attach_t wsresults[2];
     size_t wsresultsize = 1U;
     int nreads = 0;
