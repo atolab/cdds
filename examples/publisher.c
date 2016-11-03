@@ -150,7 +150,7 @@ int main (int argc, char **argv)
     }
     dds_qos_delete (qos);
   }
-  
+
   /* A publisher is created on the domain participant. */
 
   pubQos = dds_qos_create ();
@@ -213,6 +213,7 @@ int main (int argc, char **argv)
 
     printf ("Writing samples...\n");
     burstStart = pubStart;
+    dds_instance_register (writer, &sample);
 
     while (!dds_condition_triggered (terminated) && !timedOut)
     {
