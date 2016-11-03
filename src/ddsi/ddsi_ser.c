@@ -26,7 +26,7 @@
 #include "ddsi/q_bswap.h"
 #include "kernel/q_osplser.h"
 
-#define MAX_POOL_SIZE 128
+#define MAX_POOL_SIZE 1024
 
 #ifndef NDEBUG
 static int ispowerof2_size (size_t x)
