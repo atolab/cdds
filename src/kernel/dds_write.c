@@ -10,6 +10,14 @@
 #include "ddsi/q_config.h"
 #include "ddsi/q_entity.h"
 
+#if OS_ATOMIC64_SUPPORT
+typedef os_atomic_uint64_t fake_seq_t;
+uint64_t fake_seq_next (fake_seq_t *x) { return os_atomic_inc64_nv (x); }
+#else /* HACK */
+typedef os_atomic_uint32_t fake_seq_t;
+uint64_t fake_seq_next (fake_seq_t *x) { return os_atomic_inc32_nv (x); }
+#endif
+
 int dds_write (dds_entity_t wr, const void * data)
 {
   return dds_write_impl (wr, data, dds_time (), 0);
@@ -99,7 +107,7 @@ int dds_write_impl
   dds_time_t tstamp, dds_write_action action
 )
 {
-  static os_atomic_uint64_t fake_seq;
+  static fake_seq_t fake_seq;
   int ret = DDS_RETCODE_OK;
 
   assert (wr);
@@ -173,7 +181,7 @@ int dds_write_impl
   os_mutexUnlock (&writer->m_call_lock);
 
   if (ret == DDS_RETCODE_OK)
-    deliver_locally (ddsi_wr, os_atomic_inc64_nv(&fake_seq), d, tk);
+    deliver_locally (ddsi_wr, fake_seq_next(&fake_seq), d, tk);
   ddsi_serdata_unref(d);
   (ddsi_plugin.rhc_unref_fn) (tk);
 
@@ -193,7 +201,7 @@ int dds_writecdr_impl
  dds_time_t tstamp, dds_write_action action
  )
 {
-  static os_atomic_uint64_t fake_seq;
+  static fake_seq_t fake_seq;
   int ret = DDS_RETCODE_OK;
 
   assert (wr);
@@ -271,7 +279,7 @@ int dds_writecdr_impl
   os_mutexUnlock (&writer->m_call_lock);
 
   if (ret == DDS_RETCODE_OK)
-    deliver_locally (ddsi_wr, os_atomic_inc64_nv(&fake_seq), d, tk);
+    deliver_locally (ddsi_wr, fake_seq_next(&fake_seq), d, tk);
   ddsi_serdata_unref(d);
   (ddsi_plugin.rhc_unref_fn) (tk);
 
