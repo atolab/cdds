@@ -65,7 +65,7 @@ gen/rpc-pingpong$X: gen/rpc-ping$O gen/rpc-pong$O gen/rpc-pingpong$O gen/RoundTr
 	$(make_exe)
 
 gen/%$O: %.c
-	$(CC) $(CPPFLAGS) $(OBJ_OFLAG)$@ -c $<
+	$(CC) $(CPPFLAGS) $(OBJ_OFLAG)$@ -c $(abspath $<)
 
 gen/%.d: %.c
 	$(make_dep)
