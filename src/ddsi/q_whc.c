@@ -650,7 +650,9 @@ unsigned whc_remove_acked_messages (struct whc *whc, seqno_t max_drop_seq)
             struct whc_idxnode idxn;
             char pad[sizeof(struct whc_idxnode) + sizeof(struct whc_node *)];
           } template;
-          template.idxn.iid = idxn->iid;
+          template.idxn.headidx = 0;
+          template.idxn.hist[0] = &whcn_template;
+          whcn_template.serdata = ddsi_serdata_ref(oldn->serdata);
           assert(oldn->seq < whcn->seq);
 #endif
           TRACE_WHC((" del %p %"PRId64, (void *) oldn, oldn->seq));
