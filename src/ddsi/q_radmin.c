@@ -2454,7 +2454,9 @@ static void *dqueue_thread (struct nn_dqueue *q)
       struct nn_rsample_chain_elem *e = sc.first;
       int ret;
       sc.first = e->next;
-      os_atomic_dec32 (&q->nof_samples);
+      if (os_atomic_dec32_ov (&q->nof_samples) == 1) {
+        os_condBroadcast (&q->cond);
+      }
       thread_state_awake (self);
       switch (dqueue_elem_kind (e))
       {
@@ -2582,7 +2584,7 @@ void nn_dqueue_enqueue (struct nn_dqueue *q, struct nn_rsample_chain *sc, nn_reo
   os_mutexLock (&q->lock);
   os_atomic_add32 (&q->nof_samples, (uint32_t) rres);
   if (nn_dqueue_enqueue_locked (q, sc))
-    os_condSignal (&q->cond);
+    os_condBroadcast (&q->cond);
   os_mutexUnlock (&q->lock);
 }
 
@@ -2601,7 +2603,7 @@ static void nn_dqueue_enqueue_bubble (struct nn_dqueue *q, struct nn_dqueue_bubb
   os_mutexLock (&q->lock);
   os_atomic_inc32 (&q->nof_samples);
   if (nn_dqueue_enqueue_bubble_locked (q, b))
-    os_condSignal (&q->cond);
+    os_condBroadcast (&q->cond);
   os_mutexUnlock (&q->lock);
 }
 
@@ -2631,7 +2633,7 @@ void nn_dqueue_enqueue1 (struct nn_dqueue *q, const nn_guid_t *rdguid, struct nn
   os_mutexLock (&q->lock);
   os_atomic_add32 (&q->nof_samples, 1 + (uint32_t) rres);
   if (nn_dqueue_enqueue_bubble_locked (q, b))
-    os_condSignal (&q->cond);
+    os_condBroadcast (&q->cond);
   nn_dqueue_enqueue_locked (q, sc);
   os_mutexUnlock (&q->lock);
 }
@@ -2647,6 +2649,18 @@ int nn_dqueue_is_full (struct nn_dqueue *q)
      could've been queued (we do), it should be ok. */
   const uint32_t count = os_atomic_ld32 (&q->nof_samples);
   return (count >= q->max_samples);
+}
+
+void nn_dqueue_wait_until_empty_if_full (struct nn_dqueue *q)
+{
+  const uint32_t count = os_atomic_ld32 (&q->nof_samples);
+  if (count >= q->max_samples)
+  {
+    os_mutexLock (&q->lock);
+    while (os_atomic_ld32 (&q->nof_samples) > 0)
+      os_condWait (&q->cond, &q->lock);
+    os_mutexUnlock (&q->lock);
+  }
 }
 
 void nn_dqueue_free (struct nn_dqueue *q)

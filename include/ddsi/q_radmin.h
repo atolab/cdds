@@ -241,6 +241,7 @@ void nn_dqueue_enqueue (struct nn_dqueue *q, struct nn_rsample_chain *sc, nn_reo
 void nn_dqueue_enqueue1 (struct nn_dqueue *q, const nn_guid_t *rdguid, struct nn_rsample_chain *sc, nn_reorder_result_t rres);
 void nn_dqueue_enqueue_callback (struct nn_dqueue *q, nn_dqueue_callback_t cb, void *arg);
 int  nn_dqueue_is_full (struct nn_dqueue *q);
+void nn_dqueue_wait_until_empty_if_full (struct nn_dqueue *q);
 
 #if defined (__cplusplus)
 }

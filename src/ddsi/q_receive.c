@@ -2216,7 +2216,7 @@ static void handle_regular (struct receiver_state *rst, nn_etime_t tnow, struct 
     struct nn_rdata *fragchain = nn_rsample_fragchain (rsample);
     nn_reorder_result_t rres;
 
-    rres = nn_reorder_rsample (&sc, pwr->reorder, rsample, &refc_adjust, nn_dqueue_is_full (pwr->dqueue));
+    rres = nn_reorder_rsample (&sc, pwr->reorder, rsample, &refc_adjust, 0); // nn_dqueue_is_full (pwr->dqueue));
 
     if (rres == NN_REORDER_ACCEPT && pwr->n_reliable_readers == 0)
     {
@@ -2302,6 +2302,7 @@ static void handle_regular (struct receiver_state *rst, nn_etime_t tnow, struct 
     nn_fragchain_adjust_refcount (fragchain, refc_adjust);
   }
   os_mutexUnlock (&pwr->e.lock);
+  nn_dqueue_wait_until_empty_if_full (pwr->dqueue);
 }
 
 static int handle_SPDP (const struct nn_rsample_info *sampleinfo, struct nn_rdata *rdata)
