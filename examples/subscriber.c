@@ -47,6 +47,7 @@ static volatile unsigned long payloadSize = 0;
 
 static ThroughputModule_DataType data [MAX_SAMPLES];
 static void * samples[MAX_SAMPLES];
+static long pollingDelay = 0;
 
 static dds_condition_t terminated;
 
@@ -116,7 +117,7 @@ static HandleEntry* retrieve_handle (HandleMap *map, dds_instance_handle_t key)
   return entry;
 }
 
-static void data_available_handler (dds_entity_t reader)
+static bool data_available_handler (dds_entity_t reader)
 {
   int samples_received;
   dds_sample_info_t info [MAX_SAMPLES];
@@ -130,7 +131,11 @@ static void data_available_handler (dds_entity_t reader)
 
   /* Take samples and iterate through them */
 
-  samples_received = dds_take (reader, samples, MAX_SAMPLES, info, 0);
+  if (pollingDelay == -1) {
+    samples_received = dds_read (reader, samples, MAX_SAMPLES, info, 0);
+  } else {
+    samples_received = dds_take (reader, samples, MAX_SAMPLES, info, 0);
+  }
   DDS_ERR_CHECK (samples_received, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   for (i = 0; i < samples_received; i++)
@@ -160,8 +165,14 @@ static void data_available_handler (dds_entity_t reader)
       total_samples++;
     }
   }
+
+  return samples_received > 0;
 }
 
+static void data_available_handler_listener (dds_entity_t reader)
+{
+    (void) data_available_handler (reader);
+}
 
 int main (int argc, char **argv)
 {
@@ -169,7 +180,6 @@ int main (int argc, char **argv)
   unsigned long i;
   int result = EXIT_SUCCESS;
   unsigned long long maxCycles = 0;
-  long pollingDelay = 0;
   char *partitionName = "Throughput example";
 
   dds_entity_t participant;
@@ -208,7 +218,7 @@ int main (int argc, char **argv)
   if (argc == 2 && (strcmp (argv[1], "-h") == 0 || strcmp (argv[1], "--help") == 0))
   {
     printf ("Usage (parameters must be supplied in order):\n");
-    printf ("./subscriber [maxCycles (0 = infinite)] [pollingDelay (ms, 0: listener <0: waitset)] [partitionName]\n");
+    printf ("./subscriber [maxCycles (0 = infinite)] [pollingDelay (ms, 0: listener; -1: listener keep-last-1; <-1: waitset)] [partitionName]\n");
     printf ("Defaults:\n");
     printf ("./subscriber 0 0 \"Throughput example\"\n");
     return result;
@@ -220,7 +230,7 @@ int main (int argc, char **argv)
   }
   if (argc > 2)
   {
-    pollingDelay = atoi (argv[2]); /* The number of ms to wait between reads (0: listener based, <0: waitset) */
+    pollingDelay = atoi (argv[2]); /* The number of ms to wait between reads (0, -1: listener based, <-1: waitset) */
   }
   if (argc > 3)
   {
@@ -262,19 +272,17 @@ int main (int argc, char **argv)
     /* A Reader is created on the Subscriber & Topic with a modified Qos. */
 
     dds_qset_reliability (drQos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
-    dds_qset_history (drQos, DDS_HISTORY_KEEP_ALL, 0);
+    if (pollingDelay != -1) {
+      dds_qset_history (drQos, DDS_HISTORY_KEEP_ALL, 0);
+    }
     dds_qset_resource_limits (drQos, maxSamples, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
 
     memset (&rd_listener, 0, sizeof (rd_listener));
-    rd_listener.on_data_available = data_available_handler;
+    rd_listener.on_data_available = data_available_handler_listener;
 
-    status = dds_reader_create (subscriber, &reader, topic, drQos, pollingDelay ? NULL : &rd_listener);
+    status = dds_reader_create (subscriber, &reader, topic, drQos, pollingDelay < -1 || pollingDelay > 0 ? NULL : &rd_listener);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     dds_qos_delete (drQos);
-#if 0
-    if (pollingDelay)
-      dds_status_set_enabled (reader, 0);
-#endif
 
     /* A Read Condition is created which is triggered when data is available to read */
 
@@ -284,7 +292,7 @@ int main (int argc, char **argv)
     status = dds_waitset_attach (waitSet, terminated, terminated);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    if (pollingDelay < 0)
+    if (pollingDelay < -1)
     {
       rdcond = dds_readcondition_create(reader, DDS_ANY_STATE);
       status = dds_waitset_attach (waitSet, rdcond, rdcond);
@@ -305,14 +313,14 @@ int main (int argc, char **argv)
 
     while (!dds_condition_triggered (terminated) && (maxCycles == 0 || cycles < maxCycles))
     {
-      if (pollingDelay == 0)
+      if (pollingDelay == -1 || pollingDelay == 0)
       {
         status = dds_waitset_wait (waitSet, wsresults, wsresultsize, DDS_SECS (1));
       }
       else if (pollingDelay > 0)
       {
         dds_sleepfor (DDS_MSECS (pollingDelay));
-        data_available_handler (reader);
+        while (data_available_handler (reader)) { }
       }
       else
       {
