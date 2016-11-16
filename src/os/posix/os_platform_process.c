@@ -1,6 +1,9 @@
 #include "os/os.h"
 #include <unistd.h>
+
+#ifdef __APPLE__
 #include <mach-o/dyld.h>
+#endif
 
 #include "../snippets/code/os_posix_process.c"
 
@@ -10,6 +13,7 @@ os_procGetProcessName(
                       char *procName,
                       unsigned procNameSize)
 {
+#ifdef __APPLE__
     char* process_env_name;
     char* exec;
 
@@ -36,5 +40,8 @@ os_procGetProcessName(
         }
     }
     return snprintf(procName, procNameSize, "%s", processName);
+#else
+    return snprintf(procName, procNameSize, "bla%lu", (unsigned long)getpid());
+#endif
 }
 #undef _OS_PROCESS_DEFAULT_NAME_LEN_

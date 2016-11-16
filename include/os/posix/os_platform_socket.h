@@ -22,7 +22,9 @@
 #include <net/if.h>
 
 #include <sys/select.h>
+#ifdef __APPLE__
 #include <sys/sockio.h>
+#endif
 #include <unistd.h>
 
 #include <ifaddrs.h>

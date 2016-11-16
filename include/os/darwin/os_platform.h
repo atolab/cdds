@@ -45,10 +45,10 @@ extern "C" {
     typedef mode_t os_mode_t;
     typedef pid_t os_procId;
 
-#include "os/darwin/os_platform_socket.h"
-#include "os/darwin/os_platform_sync.h"
-#include "os/darwin/os_platform_thread.h"
-#include "os/darwin/os_platform_stdlib.h"
+#include "os/posix/os_platform_socket.h"
+#include "os/posix/os_platform_sync.h"
+#include "os/posix/os_platform_thread.h"
+#include "os/posix/os_platform_stdlib.h"
 
 #if defined (__cplusplus)
 }

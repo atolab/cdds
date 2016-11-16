@@ -146,7 +146,8 @@ os_sockSetsockopt(
     if (setsockopt(s, level, optname, optval, optlen) == -1) {
         result = os_resultFail;
     }
-#if 0
+
+#ifdef __APPLE__
     if (result == os_resultSuccess && level == SOL_SOCKET && optname == SO_REUSEADDR)
     {
        if (setsockopt(s, level, SO_REUSEPORT, optval, optlen) == -1)
@@ -155,6 +156,7 @@ os_sockSetsockopt(
        }
     }
 #endif
+
     return result;
 }
 

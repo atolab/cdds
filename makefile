@@ -13,7 +13,7 @@ all: $(SHLIBS:%=gen/$(LIBPRE)%$(SO)) $(EXES:%=gen/%$X)
 clean:
 	rm -rf gen/*
 
-LIBVDDS_DIRS := src/ddsi src/kernel src/util src/os src/os/$(OS)
+LIBVDDS_DIRS := src/ddsi src/kernel src/util src/os $(OSX:%=src/os/%)
 
 vpath %.c $(LIBVDDS_DIRS) vdds-server examples examples/generated rpc-examples
 
@@ -21,7 +21,7 @@ LIBVDDS := $(notdir $(patsubst %.c, %, $(filter-out %_template.c, $(wildcard $(L
 gen/$(LIBPRE)vdds$(SO): $(LIBVDDS:%=gen/%$O)
 	$(make_shlib)
 
-LIBVDDS_STUBS := $(patsubst %.c, %, $(notdir $(wildcard src/os/*.c src/os/$(OS)/*.c))) vdds-stubs dds_alloc dds_time dds_stream dds_key dds_err dds_qos q_bswap q_bswap_inlines q_md5 q_plist q_time q_misc q_osplser ddsi_ser
+LIBVDDS_STUBS := $(patsubst %.c, %, $(notdir $(wildcard src/os/*.c $(OSX:%=src/os/%/*.c)))) vdds-stubs dds_alloc dds_time dds_stream dds_key dds_err dds_qos q_bswap q_bswap_inlines q_md5 q_plist q_time q_misc q_osplser ddsi_ser sysdeps
 gen/$(LIBPRE)vdds-stubs$(SO): $(LIBVDDS_STUBS:%=gen/%$O)
 	$(make_shlib)
 

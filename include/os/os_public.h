@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 #if __linux__ == 1
-#include "linux/os_platform_public.h"
+#include "posix/os_platform_public.h"
 #elif __vxworks == 1
 #if __RTP__ == 1
 #include "vxworks_rtp/os_platform_public.h"
@@ -26,7 +26,7 @@
 #include "win32/os_platform_public.h"
 #endif
 #elif defined __APPLE__
-#include "darwin/os_platform_public.h"
+#include "posix/os_platform_public.h"
 #elif defined __CYGWIN__
 #include "cygwin/os_platform_public.h"
 #else

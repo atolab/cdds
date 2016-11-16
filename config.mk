@@ -11,8 +11,10 @@ endif
 
 OS := $(shell echo $(CONFIG) | sed -e 's/^[^.]*\.//' -e 's/^\([^-_]*\)[-_].*/\1/')
 PROC := $(shell echo $(CONFIG) | sed -e 's/^\([^.]*\)\..*/\1/')
+OSX := $(OS)
 
 ifeq "$(OS)" "darwin"
+  OSX += posix
   CC = clang
   LD = $(CC)
   OPT = -fsanitize=address #-O3 -DNDEBUG
@@ -27,9 +29,12 @@ ifeq "$(OS)" "darwin"
   LIBPRE = lib
 else
   ifeq "$(OS)" "linux"
+    OSX += posix
     CC = gcc -std=gnu99 -fpic
+    OPT = #-fsanitize=address
+    # CC = gcc-6.2 -std=gnu99 -fpic -mcx16
+    # OPT = -O3 -DNDEBUG -flto
     LD = $(CC)
-    OPT = #-fsanitize=address #-O3 -DNDEBUG
     PROF =
     CPPFLAGS += -Wall -g $(OPT) $(PROF)
     CFLAGS += $(CPPFLAGS) #-fno-inline
@@ -150,7 +155,7 @@ ifeq "$(OS)" "darwin"
 	ar -ru $@ $?
   endef
   define make_dep
-	$(CC) -M $(CPPFLAGS) $< -o $@
+	$(CC) -M $(CPPFLAGS) $< | sed 's|[a-zA-Z0-9_-]*\.o|gen/&|' > $@ || { rm $@ ; exit 1 ; }
   endef
 else
   ifeq "$(OS)" "linux"
@@ -166,7 +171,7 @@ else
 	ar -ru $@ $?
     endef
     define make_dep
-	$(CC) -M $(CPPFLAGS) $< -o $@
+	$(CC) -M $(CPPFLAGS) $< | sed 's|[a-zA-Z0-9_-]*\.o|gen/&|' > $@ || { rm $@ ; exit 1 ; }
     endef
   else
     ifeq "$(OS)" "win32"
