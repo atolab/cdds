@@ -124,7 +124,7 @@ void serstate_init (serstate_t st, const struct sertopic * topic)
 
 void serstate_free (serstate_t st)
 {
-#if ! USE_ATOMIC_LIFO
+#if ! HAVE_ATOMIC_LIFO
 #ifndef NDEBUG
   {
     serstate_t b;

@@ -172,25 +172,19 @@ int64_t get_thread_cputime (void);
 int os_threadEqual (os_threadId a, os_threadId b);
 void log_stacktrace (const char *name, os_threadId tid);
 
-#if !(defined HAVE_ATOMIC_LIFO && HAVE_ATOMIC_LIFO == 0)
-  #if !(defined __APPLE__ && defined __OPTIMIZE__ && NN_HAVE_C99_INLINE)
-    #define HAVE_ATOMIC_LIFO 0
+#if (_LP64 && __GCC_HAVE_SYNC_COMPARE_AND_SWAP_16) || (!_LP64 && __GCC_HAVE_SYNC_COMPARE_AND_SWAP_8)
+  #define HAVE_ATOMIC_LIFO 1
+  #if _LP64
+  typedef union { __int128 x; struct { uintptr_t a, b; } s; } os_atomic_uintptr2_t;
   #else
-    #define HAVE_ATOMIC_LIFO 1
-    #include <libkern/OSAtomic.h>
-    #include <string.h>
-    typedef OSQueueHead os_atomic_lifo_t;
-    NN_C99_INLINE void os_atomic_lifo_init (os_atomic_lifo_t *head) {
-      OSQueueHead q = OS_ATOMIC_QUEUE_INIT;
-      memcpy ((void *) head, (void *) &q, sizeof (*head));
-    }
-    NN_C99_INLINE void os_atomic_lifo_push (os_atomic_lifo_t *head, void *elem, size_t linkoff) {
-      OSAtomicEnqueue (head, elem, linkoff);
-    }
-    NN_C99_INLINE void *os_atomic_lifo_pop (os_atomic_lifo_t *head, size_t linkoff) {
-      return OSAtomicDequeue (head, linkoff);
-    }
+  typedef union { uint64_t x; struct { uintptr_t a, b; } s; } os_atomic_uintptr2_t;
   #endif
+  typedef struct os_atomic_lifo {
+    os_atomic_uintptr2_t aba_head;
+  } os_atomic_lifo_t;
+  void os_atomic_lifo_init (os_atomic_lifo_t *head);
+  void os_atomic_lifo_push (os_atomic_lifo_t *head, void *elem, size_t linkoff);
+  void *os_atomic_lifo_pop (os_atomic_lifo_t *head, size_t linkoff);
 #endif
 
 #if defined (__cplusplus)

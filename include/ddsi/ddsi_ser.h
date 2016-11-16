@@ -15,6 +15,7 @@
 #include "os/os.h"
 #include "ddsi/q_plist.h" /* for nn_prismtech_writer_info */
 #include "util/ut_avl.h"
+#include "sysdeps.h"
 
 #ifdef OSPL_BUILD_DDSI2
 #define OS_API OS_API_EXPORT
@@ -81,9 +82,9 @@ struct serstate
 
 struct serstatepool
 {
-#if USE_ATOMIC_LIFO
+#if HAVE_ATOMIC_LIFO
   os_atomic_lifo_t freelist;
-  pa_uint32_t approx_nfree;
+  os_atomic_uint32_t approx_nfree;
 #else
   os_mutex lock;
   int nalloced;
