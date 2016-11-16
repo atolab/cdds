@@ -30,7 +30,7 @@ ifeq "$(OS)" "darwin"
 else
   ifeq "$(OS)" "linux"
     OSX += posix
-    CC = gcc -std=gnu99 -fpic
+    CC = gcc-6.2 -std=gnu99 -fpic -mcx16
     OPT = #-fsanitize=address
     # CC = gcc-6.2 -std=gnu99 -fpic -mcx16
     # OPT = -O3 -DNDEBUG -flto
