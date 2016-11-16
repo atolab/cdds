@@ -233,7 +233,7 @@ void * ddsi_serstate_append (serstate_t st, size_t n)
 
 void ddsi_serstate_release (serstate_t st)
 {
-  if (os_atomic_dec32_nv (&st->refcount) == 0)
+  if (os_atomic_dec32_ov (&st->refcount) == 1)
   {
     serstatepool_t pool = st->pool;
     sertopic_free ((sertopic_t) st->topic);

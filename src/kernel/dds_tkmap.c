@@ -110,7 +110,7 @@ struct tkmap * dds_tkmap_new (void)
 
 void dds_tkmap_free (struct tkmap * map)
 {
-  if (os_atomic_dec32_nv (&map->m_refc) == 0)
+  if (os_atomic_dec32_ov (&map->m_refc) == 1)
   {
     ut_hhFree (map->m_hh);
     os_mutexDestroy (&map->m_lock);
@@ -300,7 +300,7 @@ void dds_tkmap_instance_ref (struct tkmap_instance *tk)
 
 void dds_tkmap_instance_unref (struct tkmap_instance * tk)
 {
-  if (os_atomic_dec32_nv (&tk->m_refc) == 0)
+  if (os_atomic_dec32_ov (&tk->m_refc) == 1)
   {
     /* Remove from hash table */
 

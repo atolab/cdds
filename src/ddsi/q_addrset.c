@@ -194,7 +194,7 @@ struct addrset *ref_addrset (struct addrset *as)
 
 void unref_addrset (struct addrset *as)
 {
-  if ((as != NULL) && (os_atomic_dec32_nv (&as->refc) == 0))
+  if ((as != NULL) && (os_atomic_dec32_ov (&as->refc) == 1))
   {
     ut_avlCFree (&addrset_treedef, &as->ucaddrs, os_free);
     ut_avlCFree (&addrset_treedef, &as->mcaddrs, os_free);

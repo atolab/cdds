@@ -60,7 +60,7 @@ void ddsi_conn_free (ddsi_tran_conn_t conn)
         (conn->m_factory->m_close_conn_fn) (conn);
       }
     }
-    if (os_atomic_dec32_nv (&conn->m_count) == 0)
+    if (os_atomic_dec32_ov (&conn->m_count) == 1)
     {
       (conn->m_factory->m_release_conn_fn) (conn);
     }

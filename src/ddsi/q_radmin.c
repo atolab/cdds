@@ -464,7 +464,7 @@ static void nn_rbuf_release (struct nn_rbuf *rbuf)
 {
   struct nn_rbufpool *rbp = rbuf->rbufpool;
   TRACE_RADMIN (("rbuf_release(%p) pool %p current %p\n", rbuf, rbp, rbp->current));
-  if (os_atomic_dec32_nv (&rbuf->n_live_rmsg_chunks) == 0)
+  if (os_atomic_dec32_ov (&rbuf->n_live_rmsg_chunks) == 1)
   {
     TRACE_RADMIN (("rbuf_release(%p) free\n", rbuf));
     os_free (rbuf);
@@ -674,7 +674,7 @@ static void nn_rmsg_unref (struct nn_rmsg *rmsg)
 {
   TRACE_RADMIN (("rmsg_unref(%p)\n", rmsg));
   assert (os_atomic_ld32 (&rmsg->refcount) > 0);
-  if (os_atomic_dec32_nv (&rmsg->refcount) == 0)
+  if (os_atomic_dec32_ov (&rmsg->refcount) == 1)
     nn_rmsg_free (rmsg);
 }
 
@@ -755,7 +755,7 @@ static void nn_rdata_rmbias_and_adjust (struct nn_rdata *rdata, int adjust)
 {
   TRACE_RADMIN (("rdata_rmbias_and_adjust(%p, %d)\n", rdata, adjust));
 #ifndef NDEBUG
-  if (os_atomic_dec32_nv (&rdata->refcount_bias_added) != 0)
+  if (os_atomic_dec32_ov (&rdata->refcount_bias_added) != 1)
     abort ();
 #endif
   nn_rmsg_rmbias_and_adjust (rdata->rmsg, adjust);
@@ -765,7 +765,7 @@ static void nn_rdata_rmbias_anythread (struct nn_rdata *rdata)
 {
   TRACE_RADMIN (("rdata_rmbias_anytrhead(%p, %d)\n", rdata));
 #ifndef NDEBUG
-  if (os_atomic_dec32_nv (&rdata->refcount_bias_added) != 0)
+  if (os_atomic_dec32_ov (&rdata->refcount_bias_added) != 1)
     abort ();
 #endif
   nn_rmsg_rmbias_anythread (rdata->rmsg);

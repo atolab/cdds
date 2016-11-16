@@ -1357,7 +1357,7 @@ static void nn_xpack_send1_thread (void * varg)
 {
   nn_xpack_send1_thread_arg_t arg = varg;
   (void) nn_xpack_send1 (arg->loc, arg->xp);
-  if (os_atomic_dec32_nv (&arg->xp->calls) == 0)
+  if (os_atomic_dec32_ov (&arg->xp->calls) == 1)
   {
     os_sem_post (&arg->xp->sem);
   }
@@ -1422,7 +1422,7 @@ void nn_xpack_send (struct nn_xpack * xp)
            decrementing "calls" to 0, all of the work has been completed and
            none of the threads will be posting; else some thread will be
            posting it and we had better wait for it */
-        if (os_atomic_dec32_nv (&xp->calls) != 0)
+        if (os_atomic_dec32_ov (&xp->calls) != 1)
           os_sem_wait (&xp->sem);
       }
       unref_addrset (xp->dstaddr.all.as);

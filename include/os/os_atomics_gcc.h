@@ -45,6 +45,8 @@ VDDS_INLINE void os_atomic_dec32 (volatile os_atomic_uint32_t *x);
 VDDS_INLINE void os_atomic_decptr (volatile os_atomic_uintptr_t *x);
 VDDS_INLINE uint32_t os_atomic_dec32_nv (volatile os_atomic_uint32_t *x);
 VDDS_INLINE uintptr_t os_atomic_decptr_nv (volatile os_atomic_uintptr_t *x);
+VDDS_INLINE uint32_t os_atomic_dec32_ov (volatile os_atomic_uint32_t *x);
+VDDS_INLINE uintptr_t os_atomic_decptr_ov (volatile os_atomic_uintptr_t *x);
 VDDS_INLINE void os_atomic_add32 (volatile os_atomic_uint32_t *x, uint32_t v);
 VDDS_INLINE void os_atomic_addptr (volatile os_atomic_uintptr_t *x, uintptr_t v);
 VDDS_INLINE void os_atomic_addvoidp (volatile os_atomic_voidp_t *x, ptrdiff_t v);
@@ -82,6 +84,7 @@ VDDS_INLINE void os_atomic_inc64 (volatile os_atomic_uint64_t *x);
 VDDS_INLINE uint64_t os_atomic_inc64_nv (volatile os_atomic_uint64_t *x);
 VDDS_INLINE void os_atomic_dec64 (volatile os_atomic_uint64_t *x);
 VDDS_INLINE uint64_t os_atomic_dec64_nv (volatile os_atomic_uint64_t *x);
+VDDS_INLINE uint64_t os_atomic_dec64_ov (volatile os_atomic_uint64_t *x);
 VDDS_INLINE void os_atomic_add64 (volatile os_atomic_uint64_t *x, uint64_t v);
 VDDS_INLINE uint64_t os_atomic_add64_nv (volatile os_atomic_uint64_t *x, uint64_t v);
 VDDS_INLINE void os_atomic_sub64 (volatile os_atomic_uint64_t *x, uint64_t v);
@@ -160,6 +163,17 @@ VDDS_INLINE uint64_t os_atomic_dec64_nv (volatile os_atomic_uint64_t *x) {
 #endif
 VDDS_INLINE uintptr_t os_atomic_decptr_nv (volatile os_atomic_uintptr_t *x) {
   return __sync_sub_and_fetch (&x->v, 1);
+}
+VDDS_INLINE uint32_t os_atomic_dec32_ov (volatile os_atomic_uint32_t *x) {
+  return __sync_fetch_and_sub (&x->v, 1);
+}
+#if OS_ATOMIC64_SUPPORT
+VDDS_INLINE uint64_t os_atomic_dec64_ov (volatile os_atomic_uint64_t *x) {
+  return __sync_fetch_and_sub (&x->v, 1);
+}
+#endif
+VDDS_INLINE uintptr_t os_atomic_decptr_ov (volatile os_atomic_uintptr_t *x) {
+  return __sync_fetch_and_sub (&x->v, 1);
 }
 
 /* ADD */

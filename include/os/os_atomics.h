@@ -121,6 +121,11 @@ OS_API uint32_t os_atomic_dec32_nv (volatile os_atomic_uint32_t *x);
 OS_API uint64_t os_atomic_dec64_nv (volatile os_atomic_uint64_t *x);
 #endif
 OS_API uintptr_t os_atomic_decptr_nv (volatile os_atomic_uintptr_t *x);
+OS_API uint32_t os_atomic_dec32_ov (volatile os_atomic_uint32_t *x);
+#if OS_ATOMIC64_SUPPORT
+OS_API uint64_t os_atomic_dec64_ov (volatile os_atomic_uint64_t *x);
+#endif
+OS_API uintptr_t os_atomic_decptr_ov (volatile os_atomic_uintptr_t *x);
 /* ADD */
 OS_API void os_atomic_add32 (volatile os_atomic_uint32_t *x, uint32_t v);
 #if OS_ATOMIC64_SUPPORT

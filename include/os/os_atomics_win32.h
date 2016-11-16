@@ -138,6 +138,17 @@ OS_ATOMIC_API_INLINE os_uint64 os_atomic_dec64_nv (volatile os_atomic_uint64_t *
 OS_ATOMIC_API_INLINE os_address os_atomic_decptr_nv (volatile os_atomic_uintptr_t *x) {
   return OS_ATOMIC_PTROP (InterlockedDecrement) (&x->v);
 }
+OS_ATOMIC_API_INLINE os_uint32 os_atomic_dec32_ov (volatile os_atomic_uint32_t *x) {
+  return InterlockedDecrement (&x->v) + 1;
+}
+#if OS_ATOMIC64_SUPPORT
+OS_ATOMIC_API_INLINE os_uint64 os_atomic_dec64_ov (volatile os_atomic_uint64_t *x) {
+  return InterlockedDecrement64 (&x->v) + 1;
+}
+#endif
+OS_ATOMIC_API_INLINE os_address os_atomic_decptr_ov (volatile os_atomic_uintptr_t *x) {
+  return OS_ATOMIC_PTROP (InterlockedDecrement) (&x->v) + 1;
+}
 
 /* ADD */
 
