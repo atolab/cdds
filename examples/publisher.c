@@ -252,7 +252,7 @@ int main (int argc, char **argv)
         burstCount = 0;
       }
 
-      if (timeOut)
+      if (timeOut && (sample.count % 128) == 0)
       {
         now = dds_time ();
         deltaTv = now - pubStart;
