@@ -316,7 +316,7 @@ struct nn_xmsg *writer_hbcontrol_piggyback (struct writer *wr, nn_mtime_t tnow, 
             (hbc->tsched.v == T_NEVER) ? POS_INFINITY_DOUBLE : (double) (hbc->tsched.v - tnow.v) / 1e9,
             ut_avlIsEmpty (&wr->readers) ? -1 : root_rdmatch (wr)->min_seq,
             ut_avlIsEmpty (&wr->readers) || root_rdmatch (wr)->all_have_replied_to_hb ? "" : "!",
-            whc_empty (wr->whc) ? -1 : whc_max_seq (wr->whc), wr->seq_xmit));
+            whc_empty (wr->whc) ? -1 : whc_max_seq (wr->whc), READ_SEQ_XMIT(wr)));
   }
 
   return msg;
@@ -364,20 +364,22 @@ void add_Heartbeat (struct nn_xmsg *msg, struct writer *wr, int hbansreq, nn_ent
   }
   else
   {
+    seqno_t seq_xmit;
     min = whc_min_seq (wr->whc);
     max = wr->seq;
+    seq_xmit = READ_SEQ_XMIT(wr);
     assert (min <= max);
     /* Informing readers of samples that haven't even been transmitted makes little sense,
        but for transient-local data, we let the first heartbeat determine the time at which
        we trigger wait_for_historical_data, so it had better be correct */
-    if (!issync && wr->seq_xmit < max && !wr->handle_as_transient_local)
+    if (!issync && seq_xmit < max && !wr->handle_as_transient_local)
     {
       /* When: queue data ; queue heartbeat ; transmit data ; update
          seq_xmit, max may be < min.  But we must never advertise the
          minimum available sequence number incorrectly! */
-      if (wr->seq_xmit >= min) {
+      if (seq_xmit >= min) {
         /* Advertise some but not all data */
-        max = wr->seq_xmit;
+        max = seq_xmit;
       } else if (config.respond_to_rti_init_zero_ack_with_invalid_heartbeat) {
         /* if we can generate an empty heartbeat => do so. */
         max = min - 1;

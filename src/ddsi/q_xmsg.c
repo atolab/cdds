@@ -1083,17 +1083,7 @@ static void nn_xmsg_chain_release (struct nn_xmsg_chain *chain)
         assert (m->kindspecific.data.wrseq != 0);
         wrguid = m->kindspecific.data.wrguid;
         if ((wr = ephash_lookup_writer_guid (&m->kindspecific.data.wrguid)) != NULL)
-        {
-          os_mutexLock (&wr->e.lock);
-          if (m->kindspecific.data.wrseq > wr->seq_xmit)
-          {
-#if 0
-            TRACE (("seq(%x:%x:%x:%x -> %lld)", PGUID (m->kindspecific.data.wrguid), m->kindspecific.data.wrseq));
-#endif
-            wr->seq_xmit = m->kindspecific.data.wrseq;
-          }
-          os_mutexUnlock (&wr->e.lock);
-        }
+          UPDATE_SEQ_XMIT_UNLOCKED(wr, m->kindspecific.data.wrseq);
       }
     }
 

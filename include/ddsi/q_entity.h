@@ -181,6 +181,29 @@ enum writer_state {
   WRST_DELETING /* writer is actually being deleted (removed from hash table) */
 };
 
+#if OS_ATOMIC64_SUPPORT
+typedef os_atomic_uint64_t seq_xmit_t;
+#define INIT_SEQ_XMIT(wr, v) os_atomic_st64(&(wr)->seq_xmit, (uint64_t) (v))
+#define READ_SEQ_XMIT(wr) ((seqno_t) os_atomic_ld64(&(wr)->seq_xmit))
+#define UPDATE_SEQ_XMIT_LOCKED(wr, nv) do { uint64_t ov_; do { \
+  ov_ = os_atomic_ld64(&(wr)->seq_xmit); \
+  if ((uint64_t) nv <= ov_) break; \
+} while (!os_atomic_cas64(&(wr)->seq_xmit, ov_, (uint64_t) nv)); } while (0)
+#define UPDATE_SEQ_XMIT_UNLOCKED(sx, nv) UPDATE_SEQ_XMIT_LOCKED(sx, nv)
+#else
+typedef seqno_t seq_xmit_t;
+#define INIT_SEQ_XMIT(wr, v) ((wr)->seq_xmit = (v))
+#define READ_SEQ_XMIT(wr) ((wr)->seq_xmit)
+#define UPDATE_SEQ_XMIT_LOCKED(wr, nv) do { \
+  if ((v) > (wr)->seq_xmit) { (wr)->seq_xmit = (v); } \
+} while (0)
+#define UPDATE_SEQ_XMIT_UNLOCKED(wr, nv) do { \
+  os_mutexLock (&(wr)->e.lock); \
+  if ((v) > (wr)->seq_xmit) { (wr)->seq_xmit = (v); } \
+  os_mutexUnlock (&(wr)->e.lock); \
+} while (0)
+#endif
+
 struct writer
 {
   struct entity_common e;
@@ -190,7 +213,7 @@ struct writer
   os_cond throttle_cond; /* used to trigger a transmit thread blocked in throttle_writer() */
   seqno_t seq; /* last sequence number (transmitted seqs are 1 ... seq) */
   seqno_t cs_seq; /* 1st seq in coherent set (or 0) */
-  seqno_t seq_xmit; /* last sequence number actually transmitted */
+  seq_xmit_t seq_xmit; /* last sequence number actually transmitted */
   seqno_t min_local_readers_reject_seq; /* mimum of local_readers->last_deliv_seq */
   nn_count_t hbcount; /* last hb seq number */
   nn_count_t hbfragcount; /* last hb frag seq number */

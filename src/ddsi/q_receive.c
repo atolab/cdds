@@ -623,7 +623,8 @@ static void force_heartbeat_to_peer (struct writer *wr, struct proxy_reader *prd
     else
     {
       /* never sent anything, pretend we did */
-      seq = wr->seq = wr->seq_xmit = 1;
+      seq = wr->seq = 1;
+      UPDATE_SEQ_XMIT_LOCKED(wr, 1);
     }
     add_Gap (m, wr, prd, seq, seq+1, 1, &bits);
     add_Heartbeat (m, wr, hbansreq, prd->e.guid.entityid, 1);
@@ -643,10 +644,11 @@ static void force_heartbeat_to_peer (struct writer *wr, struct proxy_reader *prd
 static seqno_t grow_gap_to_next_seq (const struct writer *wr, seqno_t seq)
 {
   seqno_t next_seq = whc_next_seq (wr->whc, seq);
+  seqno_t seq_xmit = READ_SEQ_XMIT(wr);
   if (next_seq == MAX_SEQ_NUMBER) /* no next sample */
-    return wr->seq_xmit + 1;
-  else if (next_seq > wr->seq_xmit)  /* next is beyond last actually transmitted */
-    return wr->seq_xmit;
+    return seq_xmit + 1;
+  else if (next_seq > seq_xmit)  /* next is beyond last actually transmitted */
+    return seq_xmit;
   else /* next one is already visible in the outside world */
     return next_seq;
 }
@@ -704,6 +706,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_etime_t tnow, const Ac
   struct writer *wr;
   nn_guid_t src, dst;
   seqno_t seqbase;
+  seqno_t seq_xmit;
   nn_count_t *countp;
   seqno_t gapstart = -1, gapend = -1;
   unsigned gapnumbits = 0;
@@ -931,7 +934,8 @@ static int handle_AckNack (struct receiver_state *rst, nn_etime_t tnow, const Ac
      that issue; if it has, then the timing is terribly unlucky, but
      a future request'll fix it. */
   enqueued = 1;
-  for (i = 0; i < numbits && seqbase + i <= wr->seq_xmit && enqueued; i++)
+  seq_xmit = READ_SEQ_XMIT(wr);
+  for (i = 0; i < numbits && seqbase + i <= seq_xmit && enqueued; i++)
   {
     /* Accelerated schedule may run ahead of sequence number set
        contained in the acknack, and assumes all messages beyond the
@@ -1051,9 +1055,9 @@ static int handle_AckNack (struct receiver_state *rst, nn_etime_t tnow, const Ac
      less than the last sequence number transmitted by the writer,
      tell the peer to acknowledge quickly. Not sure if that helps, but
      it might ... [NB writer->seq is the last msg sent so far] */
-  if (msgs_sent && max_seq_in_reply < wr->seq_xmit)
+  if (msgs_sent && max_seq_in_reply < seq_xmit)
   {
-    TRACE ((" rexmit#%u maxseq:%"PRId64"<%lld<=%lld", msgs_sent, max_seq_in_reply, wr->seq_xmit, wr->seq));
+    TRACE ((" rexmit#%u maxseq:%"PRId64"<%lld<=%lld", msgs_sent, max_seq_in_reply, seq_xmit, wr->seq));
     force_heartbeat_to_peer (wr, prd, 1);
     hb_sent_in_response = 1;
 
@@ -1528,7 +1532,7 @@ static int handle_NackFrag (struct receiver_state *rst, nn_etime_t tnow, const N
       }
     }
   }
-  if (seq < wr->seq_xmit)
+  if (seq < READ_SEQ_XMIT(wr))
   {
     /* Not everything was retransmitted yet, so force a heartbeat out
        to give the reader a chance to nack the rest and make sure

@@ -2297,7 +2297,7 @@ static struct writer * new_writer_guid
   os_condInit (&wr->throttle_cond, &wr->e.lock, NULL);
   wr->seq = 0;
   wr->cs_seq = 0;
-  wr->seq_xmit = 0;
+  INIT_SEQ_XMIT(wr, 0);
   wr->hbcount = 0;
   wr->state = WRST_OPERATIONAL;
   wr->hbfragcount = 0;

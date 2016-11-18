@@ -204,7 +204,7 @@ static int print_participants (struct thread_state1 *self, ddsi_tran_conn_t conn
                   whc_unacked_bytes (w->whc),
                   w->throttling ? " THROTTLING" : "",
                   w->whc_low, w->whc_high,
-                  w->seq, w->seq_xmit, w->cs_seq);
+                  w->seq, READ_SEQ_XMIT(w), w->cs_seq);
         if (w->reliable)
         {
           x += cpf (conn, "    hb %u ackhb %lld hb %lld wr %lld sched %lld #rel %d\n",
