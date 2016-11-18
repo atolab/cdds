@@ -625,21 +625,14 @@ static int must_skip_frag (const char *frags_to_skip, unsigned frag)
 }
 #endif
 
-static int transmit_sample (struct nn_xpack *xp, struct writer *wr, seqno_t seq, const struct nn_plist *plist, serdata_t serdata, struct proxy_reader *prd, int isnew)
+static void transmit_sample_lgmsg_unlocked (struct nn_xpack *xp, struct writer *wr, seqno_t seq, const struct nn_plist *plist, serdata_t serdata, struct proxy_reader *prd, int isnew, unsigned nfrags)
 {
-  unsigned i, sz, nfrags;
+  unsigned i;
 #if 0
   const char *frags_to_skip = getenv ("SKIPFRAGS");
 #endif
   assert(xp);
 
-  sz = ddsi_serdata_size (serdata);
-  nfrags = (sz + config.fragment_size - 1) / config.fragment_size;
-  if (nfrags == 0)
-  {
-    /* end-of-transaction messages are empty, but still need to be sent */
-    nfrags = 1;
-  }
   for (i = 0; i < nfrags; i++)
   {
     struct nn_xmsg *fmsg = NULL;
@@ -687,8 +680,43 @@ static int transmit_sample (struct nn_xpack *xp, struct writer *wr, seqno_t seq,
         nn_xpack_send (xp);
     }
   }
+}
 
-  return 0;
+static void transmit_sample_unlocks_wr (struct nn_xpack *xp, struct writer *wr, seqno_t seq, const struct nn_plist *plist, serdata_t serdata, struct proxy_reader *prd, int isnew)
+{
+  /* on entry: &wr->e.lock held; on exit: lock no longer held */
+  struct nn_xmsg *fmsg, *hmsg;
+  int hbansreq = 0;
+  unsigned sz, nfrags;
+  assert(xp);
+
+  sz = ddsi_serdata_size (serdata);
+  nfrags = (sz + config.fragment_size - 1) / config.fragment_size;
+  if (nfrags > 1)
+  {
+    os_mutexUnlock (&wr->e.lock);
+    transmit_sample_lgmsg_unlocked (xp, wr, seq, plist, serdata, prd, isnew, nfrags);
+    return;
+  }
+
+  if (create_fragment_message (wr, seq, plist, serdata, 0, prd, &fmsg, isnew) < 0)
+  {
+    os_mutexUnlock (&wr->e.lock);
+    return;
+  }
+
+  /* Note: wr->heartbeat_xevent != NULL <=> wr is reliable */
+  if (wr->heartbeat_xevent)
+    hmsg = writer_hbcontrol_piggyback (wr, ddsi_serdata_twrite (serdata), nn_xpack_packetid (xp), &hbansreq);
+  else
+    hmsg = NULL;
+
+  os_mutexUnlock (&wr->e.lock);
+  nn_xpack_addmsg (xp, fmsg, 0);
+  if(hmsg)
+    nn_xpack_addmsg (xp, hmsg, 0);
+  if (hbansreq >= 2)
+    nn_xpack_send (xp);
 }
 
 int enqueue_sample_wrlock_held (struct writer *wr, seqno_t seq, const struct nn_plist *plist, serdata_t serdata, struct proxy_reader *prd, int isnew)
@@ -1008,8 +1036,7 @@ static int write_sample_eot (struct nn_xpack *xp, struct writer *wr, struct nn_p
         plist_copy = &plist_stk;
         nn_plist_copy (plist_copy, plist);
       }
-      os_mutexUnlock (&wr->e.lock);
-      transmit_sample (xp, wr, seq, plist_copy, serdata, NULL, 1);
+      transmit_sample_unlocks_wr (xp, wr, seq, plist_copy, serdata, NULL, 1);
       if (plist_copy)
         nn_plist_fini (plist_copy);
     }
