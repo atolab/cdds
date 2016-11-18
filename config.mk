@@ -27,6 +27,11 @@ ifeq "$(OS)" "darwin"
   A = .a
   SO = .dylib
   LIBPRE = lib
+  ifneq "$(LKST_HOME)" ""
+    CPPFLAGS += -I$(LKST_HOME) -DHAVE_LKST
+    LDFLAGS += -L$(LKST_HOME) -rpath $(LKST_HOME)
+    LDLIBS += -llkst
+  endif
 else
   ifeq "$(OS)" "linux"
     OSX += posix
