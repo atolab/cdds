@@ -460,13 +460,10 @@ static void whc_delete_one_intv (struct whc *whc, struct whc_intvnode **p_intv, 
     whcn->unacked = 0;
   }
 
-  /* Take it out of seqhash and out of the list ordered on
-     sequence numbers. */
+  /* Take it out of seqhash; deleting it from the list ordered on
+     sequence numbers is left to the caller (it has to be done unconditionally,
+     but remove_acked_messages defers it until the end or a skipped node). */
   remove_whcn_from_hash (whc, whcn);
-  if (whcn->prev_seq)
-    whcn->prev_seq->next_seq = whcn->next_seq;
-  if (whcn->next_seq)
-    whcn->next_seq->prev_seq = whcn->prev_seq;
 
   /* We may have introduced a hole & have to split the interval
      node, or we may have nibbled of the first one, or even the
@@ -546,6 +543,10 @@ static void whc_delete_one (struct whc *whc, struct whc_node *whcn)
   struct whc_intvnode *intv;
   intv = ut_avlLookupPredEq (&whc_seq_treedef, &whc->seq, &whcn->seq);
   assert (intv != NULL);
+  if (whcn->prev_seq)
+    whcn->prev_seq->next_seq = whcn->next_seq;
+  if (whcn->next_seq)
+    whcn->next_seq->prev_seq = whcn->prev_seq;
   whc_delete_one_intv (whc, &intv, &whcn);
   whc->seq_size--;
 }
@@ -554,6 +555,7 @@ unsigned whc_remove_acked_messages (struct whc *whc, seqno_t max_drop_seq)
 {
   struct whc_intvnode *intv;
   struct whc_node *whcn;
+  struct whc_node *prev_seq;
   unsigned ndropped = 0;
   assert (max_drop_seq < MAX_SEQ_NUMBER);
   assert (max_drop_seq >= whc->max_drop_seq);
@@ -574,6 +576,7 @@ unsigned whc_remove_acked_messages (struct whc *whc, seqno_t max_drop_seq)
   }
 
   whcn = find_nextseq_intv (&intv, whc, whc->max_drop_seq);
+  prev_seq = whcn ? whcn->prev_seq : NULL;
   while (whcn && whcn->seq <= max_drop_seq)
   {
     TRACE_WHC(("  whcn %p %"PRId64, (void *) whcn, whcn->seq));
@@ -590,6 +593,7 @@ unsigned whc_remove_acked_messages (struct whc *whc, seqno_t max_drop_seq)
 
       if (whcn == intv->last)
         intv = ut_avlFindSucc (&whc_seq_treedef, &whc->seq, intv);
+      prev_seq = whcn;
       whcn = whcn->next_seq;
     }
     else
@@ -600,6 +604,10 @@ unsigned whc_remove_acked_messages (struct whc *whc, seqno_t max_drop_seq)
     }
     TRACE_WHC(("\n"));
   }
+  if (prev_seq)
+    prev_seq->next_seq = whcn;
+  if (whcn)
+    whcn->prev_seq = prev_seq;
 
   /* If the history is deeper than durability_service.history (but not KEEP_ALL), then there
      may be old samples in this instance, samples that were retained because they were within
