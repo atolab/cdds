@@ -13,12 +13,43 @@
 #include "os/os.h"
 #include "kernel/q_osplser.h"
 
+#define REFC_DELETE 0x80000000
+#define REFC_MASK   0x0fffffff
+
 struct tkmap
 {
-  struct ut_hh * m_hh;
+  struct ut_chh * m_hh;
   os_mutex m_lock;
-  os_atomic_uint32_t m_refc;
+  os_cond m_cond;
 };
+
+static void gc_buckets_impl (struct gcreq *gcreq)
+{
+  os_free (gcreq->arg);
+  gcreq_free (gcreq);
+}
+
+static void gc_buckets (void *a)
+{
+  struct gcreq *gcreq = gcreq_new (gv.gcreq_queue, gc_buckets_impl);
+  gcreq->arg = a;
+  gcreq_enqueue (gcreq);
+}
+
+static void gc_tkmap_instance_impl (struct gcreq *gcreq)
+{
+  struct tkmap_instance *tk = gcreq->arg;
+  ddsi_serdata_unref (tk->m_sample);
+  dds_free (tk);
+  gcreq_free (gcreq);
+}
+
+static void gc_tkmap_instance (struct tkmap_instance *tk)
+{
+  struct gcreq *gcreq = gcreq_new (gv.gcreq_queue, gc_tkmap_instance_impl);
+  gcreq->arg = tk;
+  gcreq_enqueue (gcreq);
+}
 
 /* Fixed seed and length */
 
@@ -102,31 +133,34 @@ static int dds_tk_equals_void (const void *a, const void *b)
 struct tkmap * dds_tkmap_new (void)
 {
   struct tkmap *tkmap = dds_alloc (sizeof (*tkmap));
-  tkmap->m_hh = ut_hhNew (1, dds_tk_hash_void, dds_tk_equals_void);
+  tkmap->m_hh = ut_chhNew (1, dds_tk_hash_void, dds_tk_equals_void, gc_buckets);
   os_mutexInit (&tkmap->m_lock, NULL);
-  os_atomic_st32 (&tkmap->m_refc, 1);
+  os_condInit (&tkmap->m_cond, &tkmap->m_lock, NULL);
   return tkmap;
+}
+
+static void free_tkmap_instance (void *vtk, UNUSED_ARG(void *f_arg))
+{
+  struct tkmap_instance *tk = vtk;
+  ddsi_serdata_unref (tk->m_sample);
+  os_free (tk);
 }
 
 void dds_tkmap_free (struct tkmap * map)
 {
-  if (os_atomic_dec32_ov (&map->m_refc) == 1)
-  {
-    ut_hhFree (map->m_hh);
-    os_mutexDestroy (&map->m_lock);
-    dds_free (map);
-  }
+  ut_chhEnumUnsafe (map->m_hh, free_tkmap_instance, NULL);
+  ut_chhFree (map->m_hh);
+  os_condDestroy (&map->m_cond);
+  os_mutexDestroy (&map->m_lock);
+  dds_free (map);
 }
 
 uint64_t dds_tkmap_lookup (struct tkmap * map, const struct serdata * sd)
 {
   struct tkmap_instance dummy;
   struct tkmap_instance * tk;
-
-  os_mutexLock (&map->m_lock);
   dummy.m_sample = (struct serdata *) sd;
-  tk = ut_hhLookup (map->m_hh, &dummy);
-  os_mutexUnlock (&map->m_lock);
+  tk = ut_chhLookup (map->m_hh, &dummy);
   return (tk) ? tk->m_iid : DDS_HANDLE_NIL;
 }
 
@@ -153,7 +187,7 @@ bool dds_tkmap_get_key (struct tkmap * map, uint64_t iid, void * sample)
 {
   tkmap_get_key_arg arg = { iid, sample, false };
   os_mutexLock (&map->m_lock);
-  ut_hhEnum (map->m_hh, dds_tkmap_get_key_fn, &arg);
+  ut_chhEnumUnsafe (map->m_hh, dds_tkmap_get_key_fn, &arg);
   os_mutexUnlock (&map->m_lock);
   return arg.m_ret;
 }
@@ -171,16 +205,14 @@ static void dds_tkmap_get_inst_fn (void * vtk, void * varg)
   tkmap_get_inst_arg * arg = (tkmap_get_inst_arg*) varg;
   if (tk->m_iid == arg->m_iid)
   {
-    arg->m_inst = tk;;
+    arg->m_inst = tk;
   }
 }
 
 struct tkmap_instance * dds_tkmap_find_by_id (struct tkmap * map, uint64_t iid)
 {
   tkmap_get_inst_arg arg = { iid, NULL };
-  os_mutexLock (&map->m_lock);
-  ut_hhEnum (map->m_hh, dds_tkmap_get_inst_fn, &arg);
-  os_mutexUnlock (&map->m_lock);
+  ut_chhEnumUnsafe (map->m_hh, dds_tkmap_get_inst_fn, &arg);
   return arg.m_inst;
 }
 
@@ -248,26 +280,43 @@ struct tkmap_instance * dds_tkmap_find
     }
   }
 
-  os_mutexLock (&map->m_lock);
-  tk = ut_hhLookup (map->m_hh, &dummy);
-  if (tk)
+retry:
+  if ((tk = ut_chhLookup(map->m_hh, &dummy)) != NULL)
   {
-    os_atomic_inc32 (&tk->m_refc);
-  }
-  else
-  {
-    if (create)
+    uint32_t new;
+    new = os_atomic_inc32_nv(&tk->m_refc);
+    if (new & REFC_DELETE)
     {
-      tk = dds_alloc (sizeof (*tk));
-      tk->m_sample = ddsi_serdata_ref (sd);
-      tk->m_map = map;
-      os_atomic_st32 (&tk->m_refc, 1);
-      os_atomic_inc32 (&map->m_refc);
-      tk->m_iid = dds_iid_gen ();
-      ut_hhAdd (map->m_hh, tk);
+      /* for the unlikely case of spinning 2^31 times across all threads ... */
+      os_atomic_dec32(&tk->m_refc);
+
+      /* simplest action would be to just spin, but that can potentially take a long time;
+       we can block until someone signals some entry is removed from the map if we take
+       some lock & wait for some condition */
+      os_mutexLock(&map->m_lock);
+      while ((tk = ut_chhLookup(map->m_hh, &dummy)) != NULL && (os_atomic_ld32(&tk->m_refc) & REFC_DELETE))
+        os_condWait(&map->m_cond, &map->m_lock);
+      os_mutexUnlock(&map->m_lock);
+      goto retry;
     }
   }
-  os_mutexUnlock (&map->m_lock);
+  else if (create)
+  {
+    if ((tk = dds_alloc (sizeof (*tk))) == NULL)
+      return NULL;
+
+    tk->m_sample = ddsi_serdata_ref (sd);
+    tk->m_map = map;
+    os_atomic_st32 (&tk->m_refc, 1);
+    tk->m_iid = dds_iid_gen ();
+    if (!ut_chhAdd (map->m_hh, tk))
+    {
+      /* Lost a race from another thread, retry */
+      ddsi_serdata_unref (tk->m_sample);
+      dds_free (tk);
+      goto retry;
+    }
+  }
 
   if (tk && rd)
   {
@@ -300,15 +349,32 @@ void dds_tkmap_instance_ref (struct tkmap_instance *tk)
 
 void dds_tkmap_instance_unref (struct tkmap_instance * tk)
 {
-  if (os_atomic_dec32_ov (&tk->m_refc) == 1)
+  uint32_t old, new;
+  assert (vtime_awake_p(lookup_thread_state()->vtime));
+  do {
+    old = os_atomic_ld32(&tk->m_refc);
+    if (old == 1)
+      new = REFC_DELETE;
+    else
+    {
+      assert(!(old & REFC_DELETE));
+      new = old - 1;
+    }
+  } while (!os_atomic_cas32(&tk->m_refc, old, new));
+  if (new == REFC_DELETE)
   {
-    /* Remove from hash table */
+    struct tkmap *map = tk->m_map;
 
-    os_mutexLock (&tk->m_map->m_lock);
-    ut_hhRemove (tk->m_map->m_hh, tk);
-    os_mutexUnlock (&tk->m_map->m_lock);
-    ddsi_serdata_unref (tk->m_sample);
-    dds_tkmap_free (tk->m_map);
-    dds_free (tk);
+    /* Remove from hash table */
+    ut_chhRemove(map->m_hh, tk);
+
+    /* Signal any threads blocked in their retry loops in lookup */
+    os_mutexLock(&map->m_lock);
+    os_condBroadcast(&map->m_cond);
+    os_mutexUnlock(&map->m_lock);
+
+    /* Schedule freeing of memory until after all those who may have found a pointer have
+     progressed to where they no longer hold that pointer */
+    gc_tkmap_instance(tk);
   }
 }
