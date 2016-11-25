@@ -195,11 +195,11 @@ typedef seqno_t seq_xmit_t;
 #define INIT_SEQ_XMIT(wr, v) ((wr)->seq_xmit = (v))
 #define READ_SEQ_XMIT(wr) ((wr)->seq_xmit)
 #define UPDATE_SEQ_XMIT_LOCKED(wr, nv) do { \
-  if ((v) > (wr)->seq_xmit) { (wr)->seq_xmit = (v); } \
+  if ((nv) > (wr)->seq_xmit) { (wr)->seq_xmit = (nv); } \
 } while (0)
 #define UPDATE_SEQ_XMIT_UNLOCKED(wr, nv) do { \
   os_mutexLock (&(wr)->e.lock); \
-  if ((v) > (wr)->seq_xmit) { (wr)->seq_xmit = (v); } \
+  if ((nv) > (wr)->seq_xmit) { (wr)->seq_xmit = (nv); } \
   os_mutexUnlock (&(wr)->e.lock); \
 } while (0)
 #endif
