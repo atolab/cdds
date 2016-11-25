@@ -1049,6 +1049,7 @@ static void free_wr_rd_match (struct wr_rd_match *m)
 
 static void writer_drop_connection (const struct nn_guid * wr_guid, const struct proxy_reader * prd)
 {
+  struct whc_node *deferred_free_list;
   struct writer *wr;
   if ((wr = ephash_lookup_writer_guid (wr_guid)) != NULL)
   {
@@ -1058,7 +1059,7 @@ static void writer_drop_connection (const struct nn_guid * wr_guid, const struct
     {
       ut_avlDelete (&wr_readers_treedef, &wr->readers, m);
       rebuild_writer_addrset (wr);
-      remove_acked_messages (wr);
+      remove_acked_messages (wr, &deferred_free_list);
       wr->num_reliable_readers -= m->is_reliable;
       if (wr->status_cb)
       {
@@ -2244,13 +2245,13 @@ void writer_clear_retransmitting (struct writer *wr)
   os_condBroadcast (&wr->throttle_cond);
 }
 
-unsigned remove_acked_messages (struct writer *wr)
+unsigned remove_acked_messages (struct writer *wr, struct whc_node **deferred_free_list)
 {
   unsigned n;
   size_t n_unacked;
   assert (wr->e.guid.entityid.u != NN_ENTITYID_SPDP_BUILTIN_PARTICIPANT_WRITER);
   ASSERT_MUTEX_HELD (&wr->e.lock);
-  n = whc_remove_acked_messages (wr->whc, writer_max_drop_seq (wr));
+  n = whc_remove_acked_messages (wr->whc, writer_max_drop_seq (wr), deferred_free_list);
   /* when transitioning from >= low-water to < low-water, signal
      anyone waiting in throttle_writer() */
   n_unacked = whc_unacked_bytes (wr->whc);
@@ -2263,6 +2264,14 @@ unsigned remove_acked_messages (struct writer *wr)
     nn_log (LC_DISCOVERY, "remove_acked_messages: deleting lingering writer %x:%x:%x:%x\n", PGUID (wr->e.guid));
     delete_writer_nolinger_locked (wr);
   }
+  return n;
+}
+
+unsigned remove_acked_messages_and_free (struct writer *wr)
+{
+  struct whc_node *deferred_free_list;
+  unsigned n = remove_acked_messages (wr, &deferred_free_list);
+  whc_free_deferred_free_list (wr->whc, deferred_free_list);
   return n;
 }
 
@@ -2355,7 +2364,10 @@ static struct writer * new_writer_guid
      Which one to use depends on whether merge policies are in effect
      in durability. If yes, then durability will take care of all
      transient & persistent data; if no, DDSI discovery usually takes
-     too long and this'll save you. */
+     too long and this'll save you. 
+   
+     Note: may still be cleared, if it turns out we are not maintaining
+     an index at all (e.g., volatile KEEP_ALL) */
   if (config.startup_mode_full) {
     wr->startup_mode = gv.startup_mode &&
       (wr->xqos->durability.kind >= NN_TRANSIENT_DURABILITY_QOS ||
@@ -2481,6 +2493,11 @@ static struct writer * new_writer_guid
       tldepth = hdepth;
     } else {
       tldepth = 0;
+    }
+    if (hdepth == 0 && tldepth == 0)
+    {
+      /* no index at all - so no need to bother with startup mode */
+      wr->startup_mode = 0;
     }
     wr->whc = whc_new (wr->handle_as_transient_local, hdepth, tldepth, sample_overhead);
     if (hdepth > 0)
@@ -2715,7 +2732,7 @@ void writer_exit_startup_mode (struct writer *wr)
     assert (wr->e.guid.entityid.u != NN_ENTITYID_SPDP_BUILTIN_PARTICIPANT_WRITER);
     wr->startup_mode = 0;
     whc_downgrade_to_volatile (wr->whc);
-    n = remove_acked_messages (wr);
+    n = remove_acked_messages_and_free (wr);
     writer_clear_retransmitting (wr);
     TRACE (("  wr %x:%x:%x:%x dropped %u entr%s\n", PGUID (wr->e.guid), n, n == 1 ? "y" : "ies"));
   }
@@ -3876,7 +3893,7 @@ static void proxy_reader_set_delete_and_ack_all_messages (struct proxy_reader *p
       {
         m_wr->seq = MAX_SEQ_NUMBER;
         ut_avlAugmentUpdate (&wr_readers_treedef, m_wr);
-        remove_acked_messages (wr);
+        remove_acked_messages_and_free (wr);
         writer_clear_retransmitting (wr);
       }
       os_mutexUnlock (&wr->e.lock);

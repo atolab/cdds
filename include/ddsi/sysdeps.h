@@ -184,6 +184,7 @@ void log_stacktrace (const char *name, os_threadId tid);
   } os_atomic_lifo_t;
   void os_atomic_lifo_init (os_atomic_lifo_t *head);
   void os_atomic_lifo_push (os_atomic_lifo_t *head, void *elem, size_t linkoff);
+  void os_atomic_lifo_pushmany (os_atomic_lifo_t *head, void *first, void *last, size_t linkoff);
   void *os_atomic_lifo_pop (os_atomic_lifo_t *head, size_t linkoff);
 #endif
 

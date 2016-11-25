@@ -40,6 +40,7 @@
 #include "ddsi/q_entity.h"
 #include "ddsi/q_globals.h"
 #include "ddsi/q_ephash.h"
+#include "ddsi/q_freelist.h"
 #include "kernel/q_osplser.h"
 
 #include "ddsi/sysdeps.h"
@@ -47,21 +48,8 @@
 #define NN_XMSG_MAX_ALIGN 8
 #define NN_XMSG_CHUNK_SIZE 128
 
-#if HAVE_ATOMIC_LIFO && ! defined XMSGPOOL_STATISTICS
-#define USE_ATOMIC_LIFO 1
-#else
-#define USE_ATOMIC_LIFO 0
-#endif
-
 struct nn_xmsgpool {
-#if USE_ATOMIC_LIFO
-  os_atomic_lifo_t freelist;
-#else
-  os_mutex lock;
-  int nalloced;
-  int nfree;
-  struct nn_xmsg_chain_elem *freelist;
-#endif
+  struct nn_freelist freelist;
 };
 
 struct nn_xmsg_data {
@@ -255,34 +243,19 @@ struct nn_xmsgpool *nn_xmsgpool_new (void)
 {
   struct nn_xmsgpool *pool;
   pool = os_malloc (sizeof (*pool));
-#if USE_ATOMIC_LIFO
-  os_atomic_lifo_init (&pool->freelist);
-#else
-  os_mutexInit (&pool->lock, NULL);
-  pool->freelist = NULL;
-  pool->nalloced = 0;
-  pool->nfree = 0;
-#endif
+  nn_freelist_init (&pool->freelist, UINT32_MAX, offsetof (struct nn_xmsg, link.older));
   return pool;
+}
+
+static void nn_xmsg_realfree_wrap (void *elem)
+{
+  nn_xmsg_realfree (elem);
 }
 
 void nn_xmsgpool_free (struct nn_xmsgpool *pool)
 {
-#if USE_ATOMIC_LIFO
-  struct nn_xmsg *m;
-  while ((m = os_atomic_lifo_pop (&pool->freelist, offsetof (struct nn_xmsg, link.older))) != NULL)
-    nn_xmsg_realfree (m);
+  nn_freelist_fini (&pool->freelist, nn_xmsg_realfree_wrap);
   TRACE (("xmsgpool_free(%p)\n", pool));
-#else
-  while (pool->freelist)
-  {
-    struct nn_xmsg *m = (struct nn_xmsg *) ((char *) pool->freelist - offsetof (struct nn_xmsg, link));
-    pool->freelist = pool->freelist->older;
-    nn_xmsg_realfree (m);
-  }
-  os_mutexDestroy (&pool->lock);
-  TRACE (("xmsgpool_free(%p) nalloced %d nfree %d\n", (void*) pool, pool->nalloced, pool->nfree));
-#endif
   os_free (pool);
 }
 
@@ -352,29 +325,10 @@ static struct nn_xmsg *nn_xmsg_allocnew (struct nn_xmsgpool *pool, size_t expect
 struct nn_xmsg *nn_xmsg_new (struct nn_xmsgpool *pool, const nn_guid_prefix_t *src_guid_prefix, size_t expected_size, enum nn_xmsg_kind kind)
 {
   struct nn_xmsg *m;
-#if USE_ATOMIC_LIFO
-  if ((m = os_atomic_lifo_pop (&pool->freelist, offsetof (struct nn_xmsg, link.older))) != NULL)
+  if ((m = nn_freelist_pop (&pool->freelist)) != NULL)
     nn_xmsg_reinit (m, kind);
   else if ((m = nn_xmsg_allocnew (pool, expected_size, kind)) == NULL)
     return NULL;
-#else
-  os_mutexLock (&pool->lock);
-  if (pool->freelist)
-  {
-    m = (struct nn_xmsg *) ((char *) pool->freelist - offsetof (struct nn_xmsg, link));
-    pool->freelist = pool->freelist->older;
-    pool->nfree--;
-    os_mutexUnlock (&pool->lock);
-    nn_xmsg_reinit (m, kind);
-  }
-  else
-  {
-    pool->nalloced++;
-    os_mutexUnlock (&pool->lock);
-    if ((m = nn_xmsg_allocnew (pool, expected_size, kind)) == NULL)
-      return NULL;
-  }
-#endif
   m->data->src.guid_prefix = nn_hton_guid_prefix (*src_guid_prefix);
   return m;
 }
@@ -397,15 +351,8 @@ void nn_xmsg_free (struct nn_xmsg *m)
     unref_addrset (m->dstaddr.all.as);
     unref_addrset (m->dstaddr.all.as_group);
   }
-#if USE_ATOMIC_LIFO
-  os_atomic_lifo_push (&pool->freelist, m, offsetof (struct nn_xmsg, link.older));
-#else
-  os_mutexLock (&pool->lock);
-  m->link.older = pool->freelist;
-  pool->freelist = &m->link;
-  pool->nfree++;
-  os_mutexUnlock (&pool->lock);
-#endif
+  if (!nn_freelist_push (&pool->freelist, m))
+    nn_xmsg_realfree (m);
 }
 
 /************************************************/

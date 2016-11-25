@@ -719,6 +719,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_etime_t tnow, const Ac
   unsigned numbits;
   uint32_t msgs_sent, msgs_lost;
   seqno_t max_seq_in_reply;
+  struct whc_node *deferred_free_list = NULL;
   unsigned i;
   int hb_sent_in_response = 0;
   memset (gapbits, 0, sizeof (gapbits));
@@ -832,7 +833,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_etime_t tnow, const Ac
       rn->seq = wr->seq;
     }
     ut_avlAugmentUpdate (&wr_readers_treedef, rn);
-    n = remove_acked_messages (wr);
+    n = remove_acked_messages (wr, &deferred_free_list);
     TRACE ((" ACK%"PRId64" RM%u", n_ack, n));
   }
 
@@ -1075,6 +1076,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_etime_t tnow, const Ac
   TRACE ((")"));
  out:
   os_mutexUnlock (&wr->e.lock);
+  whc_free_deferred_free_list (wr->whc, deferred_free_list);
   return 1;
 }
 

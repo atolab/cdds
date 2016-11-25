@@ -12,6 +12,9 @@
 		033520481CEDD242003E7429 /* rpc-pong.c in Sources */ = {isa = PBXBuildFile; fileRef = 03E6CF431CCE0DAB00D73982 /* rpc-pong.c */; };
 		033520491CEDD244003E7429 /* rpc-pingpong.c in Sources */ = {isa = PBXBuildFile; fileRef = 0335203C1CEDD031003E7429 /* rpc-pingpong.c */; };
 		0335204A1CEDDC48003E7429 /* libvdds.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 03E6CEA91CCE0CA400D73982 /* libvdds.dylib */; };
+		034CF9311DE2FDF300DD6073 /* q_freelist.c in Sources */ = {isa = PBXBuildFile; fileRef = 034CF92F1DE2FDF300DD6073 /* q_freelist.c */; };
+		034CF9321DE2FDF300DD6073 /* q_freelist.h in Headers */ = {isa = PBXBuildFile; fileRef = 034CF9301DE2FDF300DD6073 /* q_freelist.h */; };
+		034CF9331DE3043A00DD6073 /* q_freelist.c in Sources */ = {isa = PBXBuildFile; fileRef = 034CF92F1DE2FDF300DD6073 /* q_freelist.c */; };
 		035877BB1DDB0F5B000F61E2 /* sysdeps.c in Sources */ = {isa = PBXBuildFile; fileRef = 03E6CF701CCE0DAB00D73982 /* sysdeps.c */; };
 		035877C61DDCA45B000F61E2 /* os_platform_errno.c in Sources */ = {isa = PBXBuildFile; fileRef = 035877BD1DDCA45B000F61E2 /* os_platform_errno.c */; };
 		035877C71DDCA45B000F61E2 /* os_platform_heap.c in Sources */ = {isa = PBXBuildFile; fileRef = 035877BE1DDCA45B000F61E2 /* os_platform_heap.c */; };
@@ -283,6 +286,8 @@
 		0335204B1CEF4B21003E7429 /* q_bitset_template.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = q_bitset_template.h; sourceTree = "<group>"; };
 		0335204C1CEF4B21003E7429 /* q_bswap_template.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = q_bswap_template.h; sourceTree = "<group>"; };
 		0335204D1CEF4B21003E7429 /* q_thread_template.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = q_thread_template.h; sourceTree = "<group>"; };
+		034CF92F1DE2FDF300DD6073 /* q_freelist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = q_freelist.c; sourceTree = "<group>"; };
+		034CF9301DE2FDF300DD6073 /* q_freelist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = q_freelist.h; sourceTree = "<group>"; };
 		035877B71DDB0A20000F61E2 /* lite.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = lite.xml; path = ../lite.xml; sourceTree = "<group>"; };
 		035877B81DDB0A20000F61E2 /* config.mk */ = {isa = PBXFileReference; explicitFileType = sourcecode.make; name = config.mk; path = ../config.mk; sourceTree = "<group>"; };
 		035877B91DDB0A20000F61E2 /* guess-config */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = "guess-config"; path = "../guess-config"; sourceTree = "<group>"; };
@@ -330,7 +335,7 @@
 		03E6CEBC1CCE0DAB00D73982 /* Throughput.idl */ = {isa = PBXFileReference; lastKnownFileType = text; path = Throughput.idl; sourceTree = "<group>"; };
 		03E6CEBD1CCE0DAB00D73982 /* ping.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ping.c; sourceTree = "<group>"; };
 		03E6CEBE1CCE0DAB00D73982 /* pong.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = pong.c; sourceTree = "<group>"; };
-		03E6CEBF1CCE0DAB00D73982 /* publisher.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = publisher.c; sourceTree = "<group>"; };
+		03E6CEBF1CCE0DAB00D73982 /* publisher.c */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.c.c; path = publisher.c; sourceTree = "<group>"; };
 		03E6CEC01CCE0DAB00D73982 /* subscriber.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = subscriber.c; sourceTree = "<group>"; };
 		03E6CEC31CCE0DAB00D73982 /* dds_public_alloc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dds_public_alloc.h; sourceTree = "<group>"; };
 		03E6CEC41CCE0DAB00D73982 /* dds_public_error.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dds_public_error.h; sourceTree = "<group>"; };
@@ -908,6 +913,7 @@
 				03E6CEFA1CCE0DAB00D73982 /* q_static_assert.h */,
 				0335204D1CEF4B21003E7429 /* q_thread_template.h */,
 				03E6CEFB1CCE0DAB00D73982 /* q_thread.h */,
+				034CF9301DE2FDF300DD6073 /* q_freelist.h */,
 				03E6CEFC1CCE0DAB00D73982 /* q_time.h */,
 				03E6CEFD1CCE0DAB00D73982 /* q_transmit.h */,
 				03E6CEFE1CCE0DAB00D73982 /* q_unused.h */,
@@ -1071,6 +1077,7 @@
 				03E6CF6E1CCE0DAB00D73982 /* q_xevent.c */,
 				03E6CF6F1CCE0DAB00D73982 /* q_xmsg.c */,
 				03E6CF701CCE0DAB00D73982 /* sysdeps.c */,
+				034CF92F1DE2FDF300DD6073 /* q_freelist.c */,
 			);
 			path = ddsi;
 			sourceTree = "<group>";
@@ -1214,6 +1221,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				035877E21DDCA54F000F61E2 /* os_platform_stdlib.h in Headers */,
+				034CF9321DE2FDF300DD6073 /* q_freelist.h in Headers */,
 				035877E41DDCA54F000F61E2 /* os_platform_thread.h in Headers */,
 				035877E11DDCA54F000F61E2 /* os_platform_socket.h in Headers */,
 				035877E51DDCA54F000F61E2 /* os_platform.h in Headers */,
@@ -1615,6 +1623,7 @@
 				03E6CFD81CCE0DD400D73982 /* q_bswap.c in Sources */,
 				03E6CFD91CCE0DD400D73982 /* q_bswap_inlines.c in Sources */,
 				03E6CFDB1CCE0DD400D73982 /* q_config.c in Sources */,
+				034CF9311DE2FDF300DD6073 /* q_freelist.c in Sources */,
 				03E6CFDC1CCE0DD400D73982 /* q_ddsi_discovery.c in Sources */,
 				03E6CFDD1CCE0DD400D73982 /* q_debmon.c in Sources */,
 				03E6CFDE1CCE0DD400D73982 /* q_entity.c in Sources */,
@@ -1680,6 +1689,7 @@
 				03E6D04B1CCE0EF100D73982 /* q_time.c in Sources */,
 				03E6D04C1CCE104600D73982 /* q_misc.c in Sources */,
 				03E6D04D1CCE104E00D73982 /* q_osplser.c in Sources */,
+				034CF9331DE3043A00DD6073 /* q_freelist.c in Sources */,
 				03E6D04E1CCE105600D73982 /* ddsi_ser.c in Sources */,
 				035877BB1DDB0F5B000F61E2 /* sysdeps.c in Sources */,
 			);

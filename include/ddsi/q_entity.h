@@ -485,7 +485,9 @@ struct reader * new_reader
   void * status_cb_arg
 );
 
-unsigned remove_acked_messages (struct writer *wr);
+struct whc_node;
+unsigned remove_acked_messages (struct writer *wr, struct whc_node **deferred_free_list);
+unsigned remove_acked_messages_and_free (struct writer *wr);
 seqno_t writer_max_drop_seq (const struct writer *wr);
 int writer_must_have_hb_scheduled (const struct writer *wr);
 void writer_set_retransmitting (struct writer *wr);

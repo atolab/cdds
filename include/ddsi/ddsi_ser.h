@@ -14,6 +14,7 @@
 
 #include "os/os.h"
 #include "ddsi/q_plist.h" /* for nn_prismtech_writer_info */
+#include "ddsi/q_freelist.h"
 #include "util/ut_avl.h"
 #include "sysdeps.h"
 
@@ -82,15 +83,7 @@ struct serstate
 
 struct serstatepool
 {
-#if HAVE_ATOMIC_LIFO
-  os_atomic_lifo_t freelist;
-  os_atomic_uint32_t approx_nfree;
-#else
-  os_mutex lock;
-  int nalloced;
-  int nfree;
-  serstate_t freelist;
-#endif
+  struct nn_freelist freelist;
 };
 
 

@@ -25,6 +25,7 @@
 #include "ddsi/q_md5.h"
 #include "ddsi/q_bswap.h"
 #include "ddsi/q_config.h"
+#include "ddsi/q_freelist.h"
 #include "kernel/q_osplser.h"
 
 #define MAX_POOL_SIZE 16384
@@ -43,40 +44,19 @@ serstatepool_t ddsi_serstatepool_new (void)
 {
   serstatepool_t pool;
   pool = os_malloc (sizeof (*pool));
-
-#if HAVE_ATOMIC_LIFO
-  os_atomic_lifo_init (&pool->freelist);
-  os_atomic_st32(&pool->approx_nfree, 0);
-#else
-  {
-    os_mutexInit (&pool->lock, NULL);
-    pool->freelist = NULL;
-    pool->nalloced = 0;
-    pool->nfree = 0;
-  }
-#endif
+  nn_freelist_init (&pool->freelist, MAX_POOL_SIZE, offsetof (struct serstate, next));
   return pool;
+}
+
+static void serstate_free_wrap (void *elem)
+{
+  serstate_free (elem);
 }
 
 void ddsi_serstatepool_free (serstatepool_t pool)
 {
-#if HAVE_ATOMIC_LIFO
-  serstate_t st;
-  while ((st = os_atomic_lifo_pop (&pool->freelist, offsetof (struct serstate, next))) != NULL)
-  {
-    serstate_free (st);
-  }
+  nn_freelist_fini (&pool->freelist, serstate_free_wrap);
   TRACE (("ddsi_serstatepool_free(%p)\n", pool));
-#else
-  while (pool->freelist)
-  {
-    serstate_t st = pool->freelist;
-    pool->freelist = st->next;
-    serstate_free (st);
-  }
-  os_mutexDestroy (&pool->lock);
-  nn_log (LC_TOPIC, "ddsi_serstatepool_free(%p) nalloced %d nfree %d\n", (void*)pool, pool->nalloced, pool->nfree);
-#endif
   os_free (pool);
 }
 
@@ -109,32 +89,10 @@ void ddsi_serdata_set_twrite (serdata_t serdata, nn_mtime_t twrite)
 serstate_t ddsi_serstate_new (serstatepool_t pool, const struct sertopic * topic)
 {
   serstate_t st;
-#if HAVE_ATOMIC_LIFO
-  if ((st = os_atomic_lifo_pop (&pool->freelist, offsetof (struct serstate, next))) != NULL)
-  {
-    os_atomic_dec32(&pool->approx_nfree);
+  if ((st = nn_freelist_pop (&pool->freelist)) != NULL)
     serstate_init (st, topic);
-  }
   else
-  {
     st = serstate_allocnew (pool, topic);
-  }
-#else
-  os_mutexLock (&pool->lock);
-  if (pool->freelist == NULL)
-  {
-    os_mutexUnlock (&pool->lock);
-    st = serstate_allocnew (pool, topic);
-  }
-  else
-  {
-    st = pool->freelist;
-    pool->freelist = st->next;
-    pool->nfree--;
-    os_mutexUnlock (&pool->lock);
-    serstate_init (st, topic);
-  }
-#endif
   return st;
 }
 
@@ -201,9 +159,6 @@ static serstate_t serstate_allocnew (serstatepool_t pool, const struct sertopic 
 
   memset (st, 0, sizeof (*st));
 
-#if ! HAVE_ATOMIC_LIFO
-  pool->nalloced++;
-#endif
   st->size = 128;
   st->pool = pool;
 
@@ -237,39 +192,8 @@ void ddsi_serstate_release (serstate_t st)
   {
     serstatepool_t pool = st->pool;
     sertopic_free ((sertopic_t) st->topic);
-#if HAVE_ATOMIC_LIFO
-    if (os_atomic_inc32_nv(&pool->approx_nfree) <= MAX_POOL_SIZE)
-      os_atomic_lifo_push (&pool->freelist, st, offsetof (struct serstate, next));
-    else
-    {
-      os_atomic_dec32(&pool->approx_nfree);
+    if (!nn_freelist_push (&pool->freelist, st))
       serstate_free (st);
-    }
-#else
-    os_mutexLock (&pool->lock);
-#if 0
-#ifndef NDEBUG
-    {
-      serstate_t b;
-      for (b = pool->freelist; b && b != st; b = b->next)
-        ;
-      assert (b == NULL);
-    }
-#endif
-#endif
-    if (pool->nfree >= MAX_POOL_SIZE)
-    {
-      os_mutexUnlock (&pool->lock);
-      serstate_free (st);
-    }
-    else
-    {
-      st->next = pool->freelist;
-      pool->freelist = st;
-      pool->nfree++;
-      os_mutexUnlock (&pool->lock);
-    }
-#endif /* HAVE_ATOMIC_LIFO */
   }
 }
 
