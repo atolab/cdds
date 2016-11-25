@@ -1331,7 +1331,7 @@ static void * xevent_thread (struct xeventq * xevq)
   struct thread_state1 *self = lookup_thread_state ();
   struct nn_xpack *xp;
 
-  xp = nn_xpack_new (xevq->tev_conn, xevq->auxiliary_bandwidth_limit);
+  xp = nn_xpack_new (xevq->tev_conn, xevq->auxiliary_bandwidth_limit, config.xpack_send_async);
 
   os_mutexLock (&xevq->lock);
   while (!xevq->terminate)
@@ -1343,7 +1343,7 @@ static void * xevent_thread (struct xeventq * xevq)
     /* Send to the network unlocked, as it may sleep due to bandwidth
        limitation */
     os_mutexUnlock (&xevq->lock);
-    nn_xpack_send (xp);
+    nn_xpack_send (xp, false);
     os_mutexLock (&xevq->lock);
 
     thread_state_asleep (self);
@@ -1379,7 +1379,7 @@ static void * xevent_thread (struct xeventq * xevq)
     }
   }
   os_mutexUnlock (&xevq->lock);
-  nn_xpack_send (xp);
+  nn_xpack_send (xp, false);
   nn_xpack_free (xp);
   return NULL;
 }

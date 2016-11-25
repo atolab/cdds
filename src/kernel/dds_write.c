@@ -165,7 +165,7 @@ int dds_write_impl
 
     if (! config.whc_batch)
     {
-      nn_xpack_send (writer->m_xp);
+      nn_xpack_send (writer->m_xp, false);
     }
 
     ret = DDS_RETCODE_OK;
@@ -264,7 +264,7 @@ int dds_writecdr_impl
 
     if (! config.whc_batch)
     {
-      nn_xpack_send (writer->m_xp);
+      nn_xpack_send (writer->m_xp, false);
     }
     ret = DDS_RETCODE_OK;
   }
@@ -309,7 +309,7 @@ void dds_write_flush (dds_entity_t wr)
     thread_state_awake (thr);
   }
   os_mutexLock (&wr->m_mutex);
-  nn_xpack_send (((dds_writer*) wr)->m_xp);
+  nn_xpack_send (((dds_writer*) wr)->m_xp, true);
   os_mutexUnlock (&wr->m_mutex);
   if (asleep)
   {

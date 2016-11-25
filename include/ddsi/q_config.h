@@ -242,7 +242,7 @@ struct config
   int forward_all_messages;
   int noprogress_log_stacktraces;
   int prioritize_retransmit;
-
+  int xpack_send_async;
 
   unsigned primary_reorder_maxsamples;
   unsigned secondary_reorder_maxsamples;

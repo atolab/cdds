@@ -277,6 +277,13 @@ struct q_globals {
      remove the need to include kernelModule.h) */
   uint32_t myNetworkId;
 
+  os_mutex sendq_lock;
+  os_cond sendq_cond;
+  unsigned sendq_length;
+  struct nn_xpack *sendq_head;
+  struct nn_xpack *sendq_tail;
+  int sendq_stop;
+  struct thread_state1 *sendq_ts;
 
 #ifdef DDSI_INCLUDE_ENCRYPTION
   /* Codecs needed for decoding incoming encrypted messages

@@ -138,12 +138,18 @@ int nn_xmsg_addpar_sentinel_ifparam (struct nn_xmsg *m);
 
 /* XPACK */
 
-struct nn_xpack * nn_xpack_new (ddsi_tran_conn_t conn, uint32_t bw_limit);
+struct nn_xpack * nn_xpack_new (ddsi_tran_conn_t conn, uint32_t bw_limit, bool async_mode);
 void nn_xpack_free (struct nn_xpack *xp);
-void nn_xpack_send (struct nn_xpack *xp);
+void nn_xpack_send (struct nn_xpack *xp, bool immediately /* unused */);
 int nn_xpack_addmsg (struct nn_xpack *xp, struct nn_xmsg *m, const uint32_t flags);
 int64_t nn_xpack_maxdelay (const struct nn_xpack *xp);
 unsigned nn_xpack_packetid (const struct nn_xpack *xp);
+
+/* SENDQ */
+void nn_xpack_sendq_init (void);
+void nn_xpack_sendq_start (void);
+void nn_xpack_sendq_stop (void);
+void nn_xpack_sendq_fini (void);
 
 #if defined (__cplusplus)
 }

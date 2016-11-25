@@ -186,6 +186,8 @@ static os_result os_sem_wait (os_sem_t *sem)
 
 struct nn_xpack
 {
+  struct nn_xpack *sendq_next;
+  bool async_mode;
   Header_t hdr;
   MsgLen_t msg_len;
   nn_guid_prefix_t *last_src;
@@ -1131,13 +1133,14 @@ static void nn_xpack_reinit (struct nn_xpack *xp)
   xp->packetid++;
 }
 
-struct nn_xpack * nn_xpack_new (ddsi_tran_conn_t conn , uint32_t bw_limit)
+struct nn_xpack * nn_xpack_new (ddsi_tran_conn_t conn, uint32_t bw_limit, bool async_mode)
 {
   const nn_vendorid_t myvendorid = MY_VENDOR_ID;
   struct nn_xpack *xp;
 
   xp = os_malloc (sizeof (*xp));
   memset (xp, 0, sizeof (*xp));
+  xp->async_mode = async_mode;
 
   /* Fixed header fields, initialized just once */
   xp->hdr.protocol.id[0] = 'R';
@@ -1157,7 +1160,8 @@ struct nn_xpack * nn_xpack_new (ddsi_tran_conn_t conn , uint32_t bw_limit)
   xp->conn = conn;
   nn_xpack_reinit (xp);
 
-  os_sem_init (&xp->sem, 0);
+  if (gv.thread_pool)
+    os_sem_init (&xp->sem, 0);
 
 #ifdef DDSI_INCLUDE_ENCRYPTION
   if (q_security_plugin.new_encoder)
@@ -1187,7 +1191,8 @@ void nn_xpack_free (struct nn_xpack *xp)
     (q_security_plugin.free_encoder) (xp->codec);
   }
 #endif
-  os_sem_destroy (&xp->sem);
+  if (gv.thread_pool)
+    os_sem_destroy (&xp->sem);
   os_free (xp);
 }
 
@@ -1310,7 +1315,7 @@ static void nn_xpack_send1_threaded (const nn_locator_t *loc, void * varg)
   ut_thread_pool_submit (gv.thread_pool, nn_xpack_send1_thread, arg);
 }
 
-void nn_xpack_send (struct nn_xpack * xp)
+static void nn_xpack_send_real (struct nn_xpack * xp)
 {
   size_t calls;
 
@@ -1383,6 +1388,99 @@ void nn_xpack_send (struct nn_xpack * xp)
   }
   nn_xmsg_chain_release (&xp->included_msgs);
   nn_xpack_reinit (xp);
+}
+
+#define SENDQ_MAX 200
+#define SENDQ_HW 10
+#define SENDQ_LW 0
+
+static void *nn_xpack_sendq_thread (UNUSED_ARG (void *arg))
+{
+  os_mutexLock (&gv.sendq_lock);
+  while (!(gv.sendq_stop && gv.sendq_head == NULL))
+  {
+    struct nn_xpack *xp;
+    if ((xp = gv.sendq_head) == NULL)
+    {
+      os_time to = { 0, 1000000 };
+      os_condTimedWait (&gv.sendq_cond, &gv.sendq_lock, &to);
+    }
+    else
+    {
+      gv.sendq_head = xp->sendq_next;
+      if (--gv.sendq_length == SENDQ_LW)
+        os_condBroadcast (&gv.sendq_cond);
+      os_mutexUnlock (&gv.sendq_lock);
+      nn_xpack_send (xp, true);
+      nn_xpack_free (xp);
+      os_mutexLock (&gv.sendq_lock);
+    }
+  }
+  os_mutexUnlock (&gv.sendq_lock);
+  return NULL;
+}
+
+void nn_xpack_sendq_init (void)
+{
+  gv.sendq_stop = 0;
+  gv.sendq_head = NULL;
+  gv.sendq_tail = NULL;
+  gv.sendq_length = 0;
+  os_mutexInit (&gv.sendq_lock, NULL);
+  os_condInit (&gv.sendq_cond, &gv.sendq_lock, NULL);
+}
+
+void nn_xpack_sendq_start (void)
+{
+  gv.sendq_ts = create_thread("sendq", nn_xpack_sendq_thread, NULL);
+}
+
+void nn_xpack_sendq_stop (void)
+{
+  os_mutexLock (&gv.sendq_lock);
+  gv.sendq_stop = 1;
+  os_condBroadcast (&gv.sendq_cond);
+  os_mutexUnlock (&gv.sendq_lock);
+}
+
+void nn_xpack_sendq_fini (void)
+{
+  assert (gv.sendq_head == NULL);
+  join_thread(gv.sendq_ts, NULL);
+  os_condDestroy(&gv.sendq_cond);
+  os_mutexDestroy(&gv.sendq_lock);
+}
+
+void nn_xpack_send (struct nn_xpack *xp, bool immediately)
+{
+  if (!xp->async_mode)
+  {
+    nn_xpack_send_real (xp);
+  }
+  else
+  {
+    struct nn_xpack *xp1 = os_malloc (sizeof (*xp));
+    memcpy (xp1, xp, sizeof (*xp1));
+    nn_xpack_reinit (xp);
+    xp1->sendq_next = NULL;
+    os_mutexLock (&gv.sendq_lock);
+    if (immediately || gv.sendq_length == SENDQ_HW)
+      os_condBroadcast (&gv.sendq_cond);
+    if (gv.sendq_length >= SENDQ_MAX)
+    {
+      while (gv.sendq_length > SENDQ_LW)
+        os_condWait (&gv.sendq_cond, &gv.sendq_lock);
+    }
+    if (gv.sendq_head)
+      gv.sendq_tail->sendq_next = xp1;
+    else
+    {
+      gv.sendq_head = xp1;
+    }
+    gv.sendq_tail = xp1;
+    gv.sendq_length++;
+    os_mutexUnlock (&gv.sendq_lock);
+  }
 }
 
 static void copy_addressing_info (struct nn_xpack *xp, const struct nn_xmsg *m)
@@ -1502,7 +1600,7 @@ int nn_xpack_addmsg (struct nn_xpack *xp, struct nn_xmsg *m, const uint32_t flag
   if (!nn_xpack_mayaddmsg (xp, m, flags))
   {
     assert (xp->niov > 0);
-    nn_xpack_send (xp);
+    nn_xpack_send (xp, false);
     assert (nn_xpack_mayaddmsg (xp, m, flags));
     result = 1;
   }
@@ -1662,7 +1760,7 @@ int nn_xpack_addmsg (struct nn_xpack *xp, struct nn_xmsg *m, const uint32_t flag
     TRACE ((" => now niov %d sz %"PRIuSIZE" > max_msg_size %u, nn_xpack_send niov %d sz %u now\n", (int) niov, sz, config.max_msg_size, (int) xpo_niov, xpo_sz));
     xp->msg_len.length = xpo_sz;
     xp->niov = xpo_niov;
-    nn_xpack_send (xp);
+    nn_xpack_send (xp, false);
     result = nn_xpack_addmsg (xp, m, flags); /* Retry on emptied xp */
   }
   else

@@ -1082,6 +1082,9 @@ int rtps_init (void)
     }
   }
 
+  nn_xpack_sendq_init();
+  nn_xpack_sendq_start();
+
 #ifdef DDSI_INCLUDE_NETWORK_CHANNELS
   /* Create a delivery queue and start tev for each channel */
   {
@@ -1363,6 +1366,9 @@ void rtps_term (void)
 #endif
 
   xeventq_free (gv.xevents);
+
+  nn_xpack_sendq_stop();
+  nn_xpack_sendq_fini();
 
 #ifdef DDSI_INCLUDE_NETWORK_CHANNELS
   chptr = config.channels;

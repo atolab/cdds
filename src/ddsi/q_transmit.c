@@ -399,6 +399,55 @@ void add_Heartbeat (struct nn_xmsg *msg, struct writer *wr, int hbansreq, nn_ent
   nn_xmsg_submsg_setnext (msg, sm_marker);
 }
 
+static int create_fragment_message_simple (struct writer *wr, seqno_t seq, struct serdata *serdata, struct nn_xmsg **pmsg)
+{
+  const size_t expected_inline_qos_size = 4+8+20+4 + 32;
+  struct nn_xmsg_marker sm_marker;
+  const unsigned char contentflag = (ddsi_serdata_is_empty (serdata) ? 0 : ddsi_serdata_is_key (serdata) ? DATA_FLAG_KEYFLAG : DATA_FLAG_DATAFLAG);
+  Data_t *data;
+
+  ASSERT_MUTEX_HELD (&wr->e.lock);
+
+  if ((*pmsg = nn_xmsg_new (gv.xmsgpool, &wr->e.guid.prefix, sizeof (InfoTimestamp_t) + sizeof (Data_t) + expected_inline_qos_size, NN_XMSG_KIND_DATA)) == NULL)
+    return ERR_OUT_OF_MEMORY;
+
+#ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
+  /* use the partition_id from the writer to select the proper encoder */
+  nn_xmsg_setencoderid (*pmsg, wr->partition_id);
+#endif
+
+  nn_xmsg_setdstN (*pmsg, wr->as, wr->as_group);
+  nn_xmsg_setmaxdelay (*pmsg, nn_from_ddsi_duration (wr->xqos->latency_budget.duration));
+  nn_xmsg_add_timestamp (*pmsg, serdata->v.msginfo.timestamp);
+  data = nn_xmsg_append (*pmsg, &sm_marker, sizeof (Data_t));
+
+  nn_xmsg_submsg_init (*pmsg, sm_marker, SMID_DATA);
+  data->x.smhdr.flags = (unsigned char) (data->x.smhdr.flags | contentflag);
+  data->x.extraFlags = 0;
+  data->x.readerId = to_entityid (NN_ENTITYID_UNKNOWN);
+  data->x.writerId = nn_hton_entityid (wr->e.guid.entityid);
+  data->x.writerSN = toSN (seq);
+  data->x.octetsToInlineQos = (unsigned short) ((char*) (data+1) - ((char*) &data->x.octetsToInlineQos + 2));
+
+  if (wr->reliable)
+    nn_xmsg_setwriterseq (*pmsg, &wr->e.guid, seq);
+
+  /* Adding parameters means potential reallocing, so sm, ddcmn now likely become invalid */
+  if (wr->include_keyhash)
+    nn_xmsg_addpar_keyhash (*pmsg, serdata);
+  if (serdata->v.msginfo.statusinfo)
+    nn_xmsg_addpar_statusinfo (*pmsg, serdata->v.msginfo.statusinfo);
+  if (nn_xmsg_addpar_sentinel_ifparam (*pmsg) > 0)
+  {
+    data = nn_xmsg_submsg_from_marker (*pmsg, sm_marker);
+    data->x.smhdr.flags |= DATAFRAG_FLAG_INLINE_QOS;
+  }
+
+  nn_xmsg_serdata (*pmsg, serdata, 0, ddsi_serdata_size (serdata));
+  nn_xmsg_submsg_setnext (*pmsg, sm_marker);
+  return 0;
+}
+
 int create_fragment_message (struct writer *wr, seqno_t seq, const struct nn_plist *plist, struct serdata *serdata, unsigned fragnum, struct proxy_reader *prd, struct nn_xmsg **pmsg, int isnew)
 {
   /* We always fragment into FRAGMENT_SIZEd fragments, which are near
@@ -677,7 +726,7 @@ static void transmit_sample_lgmsg_unlocked (struct nn_xpack *xp, struct writer *
     {
       nn_xpack_addmsg (xp, msg, 0);
       if (hbansreq >= 2)
-        nn_xpack_send (xp);
+        nn_xpack_send (xp, true);
     }
   }
 }
@@ -685,38 +734,42 @@ static void transmit_sample_lgmsg_unlocked (struct nn_xpack *xp, struct writer *
 static void transmit_sample_unlocks_wr (struct nn_xpack *xp, struct writer *wr, seqno_t seq, const struct nn_plist *plist, serdata_t serdata, struct proxy_reader *prd, int isnew)
 {
   /* on entry: &wr->e.lock held; on exit: lock no longer held */
-  struct nn_xmsg *fmsg, *hmsg;
-  int hbansreq = 0;
-  unsigned sz, nfrags;
+  struct nn_xmsg *fmsg;
+  unsigned sz;
   assert(xp);
 
   sz = ddsi_serdata_size (serdata);
-  nfrags = (sz + config.fragment_size - 1) / config.fragment_size;
-  if (nfrags > 1)
+  if (sz > config.fragment_size || !isnew || plist != NULL || prd != NULL)
   {
+    unsigned nfrags;
     os_mutexUnlock (&wr->e.lock);
+    nfrags = (sz + config.fragment_size - 1) / config.fragment_size;
     transmit_sample_lgmsg_unlocked (xp, wr, seq, plist, serdata, prd, isnew, nfrags);
     return;
   }
-
-  if (create_fragment_message (wr, seq, plist, serdata, 0, prd, &fmsg, isnew) < 0)
+  else if (create_fragment_message_simple (wr, seq, serdata, &fmsg) < 0)
   {
     os_mutexUnlock (&wr->e.lock);
     return;
   }
-
-  /* Note: wr->heartbeat_xevent != NULL <=> wr is reliable */
-  if (wr->heartbeat_xevent)
-    hmsg = writer_hbcontrol_piggyback (wr, ddsi_serdata_twrite (serdata), nn_xpack_packetid (xp), &hbansreq);
   else
-    hmsg = NULL;
+  {
+    int hbansreq = 0;
+    struct nn_xmsg *hmsg;
 
-  os_mutexUnlock (&wr->e.lock);
-  nn_xpack_addmsg (xp, fmsg, 0);
-  if(hmsg)
-    nn_xpack_addmsg (xp, hmsg, 0);
-  if (hbansreq >= 2)
-    nn_xpack_send (xp);
+    /* Note: wr->heartbeat_xevent != NULL <=> wr is reliable */
+    if (wr->heartbeat_xevent)
+      hmsg = writer_hbcontrol_piggyback (wr, ddsi_serdata_twrite (serdata), nn_xpack_packetid (xp), &hbansreq);
+    else
+      hmsg = NULL;
+
+    os_mutexUnlock (&wr->e.lock);
+    nn_xpack_addmsg (xp, fmsg, 0);
+    if(hmsg)
+      nn_xpack_addmsg (xp, hmsg, 0);
+    if (hbansreq >= 2)
+      nn_xpack_send (xp, true);
+  }
 }
 
 int enqueue_sample_wrlock_held (struct writer *wr, seqno_t seq, const struct nn_plist *plist, serdata_t serdata, struct proxy_reader *prd, int isnew)
@@ -891,7 +944,7 @@ static os_result throttle_writer (struct nn_xpack *xp, struct writer *wr)
     {
       nn_xpack_addmsg (xp, hbmsg, 0);
     }
-    nn_xpack_send (xp);
+    nn_xpack_send (xp, true);
     os_mutexLock (&wr->e.lock);
   }
 

@@ -206,7 +206,7 @@ void dds_entity_delete_impl (dds_entity_t e, bool child, bool recurse)
       case DDS_TYPE_WRITER:
       {
         dds_writer * wr = (dds_writer*) e;
-        nn_xpack_send (wr->m_xp);
+        nn_xpack_send (wr->m_xp, false);
         delete_writer (&e->m_guid);
         dds_entity_delete_wait (e, thr);
         nn_xpack_free (wr->m_xp);

@@ -432,6 +432,7 @@ static const struct cfgelem unsupp_cfgelems[] = {
   { LEAF ("AssumeMulticastCapable"), 1, "", ABSOFF (assumeMulticastCapable), 0, uf_string, ff_free, pf_string },
   { LEAF ("PrioritizeRetransmit"), 1, "true", ABSOFF (prioritize_retransmit), 0, uf_boolean, 0, pf_boolean },
   { LEAF ("UseMulticastIfMreqn"), 1, "0", ABSOFF (use_multicast_if_mreqn), 0, uf_int, 0, pf_int },
+  { LEAF ("SendAsync"), 1, "false", ABSOFF (xpack_send_async), 0, uf_boolean, 0, pf_boolean },
   { LEAF_W_ATTRS ("RediscoveryBlacklistDuration", rediscovery_blacklist_duration_attrs), 1, "10s", ABSOFF (prune_deleted_ppant.delay), 0, uf_duration_inf, 0, pf_duration },
   { MGROUP ("ControlTopic", control_topic_cfgelems, control_topic_cfgattrs), 1, 0, 0, 0, 0, 0, 0, 0 },
   { GROUP ("Test", unsupp_test_cfgelems) },

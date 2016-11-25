@@ -226,7 +226,7 @@ int dds_writer_create
   dds_entity_init (&wr->m_entity, pp_or_pub, DDS_TYPE_WRITER, wqos);
   wr->m_topic = tp;
   dds_entity_add_ref (topic);
-  wr->m_xp = nn_xpack_new (conn, 0);
+  wr->m_xp = nn_xpack_new (conn, 0, config.xpack_send_async);
   os_mutexInit (&wr->m_call_lock, NULL);
 
   /* Merge listener functions with those from parent */
