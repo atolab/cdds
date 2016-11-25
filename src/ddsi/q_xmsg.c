@@ -1411,7 +1411,7 @@ static void *nn_xpack_sendq_thread (UNUSED_ARG (void *arg))
       if (--gv.sendq_length == SENDQ_LW)
         os_condBroadcast (&gv.sendq_cond);
       os_mutexUnlock (&gv.sendq_lock);
-      nn_xpack_send (xp, true);
+      nn_xpack_send_real (xp);
       nn_xpack_free (xp);
       os_mutexLock (&gv.sendq_lock);
     }

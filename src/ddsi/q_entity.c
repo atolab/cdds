@@ -1799,6 +1799,8 @@ static enum entity_kind generic_do_match_mkind (enum entity_kind kind)
       assert(0);
       return EK_WRITER;
   }
+  assert(0);
+  return EK_WRITER;
 }
 
 static enum entity_kind generic_do_local_match_mkind (enum entity_kind kind)
@@ -1814,6 +1816,8 @@ static enum entity_kind generic_do_local_match_mkind (enum entity_kind kind)
       assert(0);
       return EK_WRITER;
   }
+  assert(0);
+  return EK_WRITER;
 }
 
 static const char *generic_do_match_kindstr_us (enum entity_kind kind)
@@ -1827,6 +1831,8 @@ static const char *generic_do_match_kindstr_us (enum entity_kind kind)
     case EK_PARTICIPANT: return "participant";
     case EK_PROXY_PARTICIPANT: return "proxy_participant";
   }
+  assert(0);
+  return "?";
 }
 
 static const char *generic_do_match_kindstr (enum entity_kind kind)
@@ -1840,6 +1846,8 @@ static const char *generic_do_match_kindstr (enum entity_kind kind)
     case EK_PARTICIPANT: return "participant";
     case EK_PROXY_PARTICIPANT: return "proxy participant";
   }
+  assert(0);
+  return "?";
 }
 
 static const char *generic_do_match_kindabbrev (enum entity_kind kind)
@@ -1853,6 +1861,8 @@ static const char *generic_do_match_kindabbrev (enum entity_kind kind)
     case EK_PARTICIPANT: return "pp";
     case EK_PROXY_PARTICIPANT: return "proxypp";
   }
+  assert(0);
+  return "?";
 }
 
 static int generic_do_match_isproxy (const struct entity_common *e)
