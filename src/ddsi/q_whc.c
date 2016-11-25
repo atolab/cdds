@@ -644,10 +644,10 @@ static unsigned whc_removed_acked_messages_noidx (struct whc *whc, seqno_t max_d
   unsigned ndropped = 0;
 
   /* In the trivial case of an empty WHC, get out quickly */
-  assert (max_drop_seq > whc->max_drop_seq);
-  if (whc->maxseq_node == NULL)
+  if (max_drop_seq <= whc->max_drop_seq || whc->maxseq_node == NULL)
   {
-    whc->max_drop_seq = max_drop_seq;
+    if (max_drop_seq > whc->max_drop_seq)
+      whc->max_drop_seq = max_drop_seq;
     *deferred_free_list = NULL;
     return 0;
   }
