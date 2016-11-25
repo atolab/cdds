@@ -16,21 +16,21 @@
  * totals and averages.
  */
 
-static dds_condition_t terminated;
+static volatile int terminated_flag;
 
 /* Functions to handle Ctrl-C presses. */
 
 #ifdef _WIN32
 static int CtrlHandler (DWORD fdwCtrlType)
 {
-  dds_guard_trigger (terminated);
+  terminated_flag = 1;
   return true; /* Don't let other handlers handle this key */
 }
 #else
 struct sigaction oldAction;
 static void CtrlHandler (int fdwCtrlType)
 {
-  dds_guard_trigger (terminated);
+  terminated_flag = 1;
 }
 #endif
 
@@ -126,7 +126,6 @@ int main (int argc, char **argv)
 
   status = dds_participant_create (&participant, DDS_DOMAIN_DEFAULT, NULL, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  terminated = dds_guardcondition_create ();
 
   /* A topic is created for our sample type on the domain participant. */
 
@@ -215,7 +214,7 @@ int main (int argc, char **argv)
     burstStart = pubStart;
     dds_instance_register (writer, &sample);
 
-    while (!dds_condition_triggered (terminated) && !timedOut)
+    while (!terminated_flag && !timedOut)
     {
       /* Write data until burst size has been reached */
 
@@ -264,7 +263,7 @@ int main (int argc, char **argv)
     }
     dds_write_flush (writer);
 
-    if (dds_condition_triggered (terminated))
+    if (terminated_flag)
     {
       printf ("Terminated, %llu samples written.\n", (long long) sample.count);
     }
@@ -297,7 +296,6 @@ int main (int argc, char **argv)
 #endif
   dds_free (sample.payload._buffer);
 
-  dds_condition_delete (terminated);
   dds_entity_delete (participant);
   dds_fini ();
 
