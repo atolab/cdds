@@ -164,6 +164,16 @@ done:
   dds_entity_callback_unlock (&wr->m_entity);
 }
 
+static uint32_t get_bandwidth_limit (nn_transport_priority_qospolicy_t transport_priority)
+{
+#ifdef DDSI_INCLUDE_NETWORK_CHANNELS
+  struct config_channel_listelem *channel = find_channel (transport_priority);
+  return channel->data_bandwidth_limit;
+#else
+  return 0;
+#endif
+}
+
 int dds_writer_create
 (
   dds_entity_t pp_or_pub,
@@ -226,7 +236,7 @@ int dds_writer_create
   dds_entity_init (&wr->m_entity, pp_or_pub, DDS_TYPE_WRITER, wqos);
   wr->m_topic = tp;
   dds_entity_add_ref (topic);
-  wr->m_xp = nn_xpack_new (conn, 0, config.xpack_send_async);
+  wr->m_xp = nn_xpack_new (conn, get_bandwidth_limit(wqos->transport_priority), config.xpack_send_async);
   os_mutexInit (&wr->m_call_lock, NULL);
 
   /* Merge listener functions with those from parent */

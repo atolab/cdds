@@ -1946,6 +1946,12 @@ static int deliver_user_data (const struct nn_rsample_info *sampleinfo, const st
   int need_keyhash;
   serdata_t payload;
 
+  if (pwr->ddsi2direct_cb)
+  {
+    pwr->ddsi2direct_cb (sampleinfo, fragchain, pwr->ddsi2direct_cbarg);
+    return 0;
+  }
+
   /* NOTE: pwr->e.lock need not be held for correct processing (though
      it may be useful to hold it for maintaining order all the way to
      v_groupWrite): guid is constant, set_vmsg_header() explains about

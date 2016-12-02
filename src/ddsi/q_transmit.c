@@ -47,11 +47,6 @@
 #define POS_INFINITY_DOUBLE 1e1000
 #endif
 
-static const int64_t const_hb_intv_sched = 100 * T_MILLISECOND;
-static const int64_t const_hb_intv_sched_min = 20 * T_MILLISECOND;
-static const int64_t const_hb_intv_sched_max = 8000 * T_MILLISECOND;
-static const int64_t const_hb_intv_min = 5 * T_MILLISECOND;
-
 static const struct wr_prd_match *root_rdmatch (const struct writer *wr)
 {
   return ut_avlRoot (&wr_readers_treedef, &wr->readers);
@@ -92,13 +87,13 @@ static void writer_hbcontrol_note_hb (struct writer *wr, nn_mtime_t tnow, int an
 int64_t writer_hbcontrol_intv (const struct writer *wr, UNUSED_ARG (nn_mtime_t tnow))
 {
   struct hbcontrol const * const hbc = &wr->hbcontrol;
-  int64_t ret = const_hb_intv_sched;
+  int64_t ret = config.const_hb_intv_sched;
   size_t n_unacked;
 
   if (hbc->hbs_since_last_write > 2)
   {
     unsigned cnt = hbc->hbs_since_last_write;
-    while (cnt-- > 2 && 2 * ret < const_hb_intv_sched_max)
+    while (cnt-- > 2 && 2 * ret < config.const_hb_intv_sched_max)
       ret *= 2;
   }
 
@@ -109,8 +104,8 @@ int64_t writer_hbcontrol_intv (const struct writer *wr, UNUSED_ARG (nn_mtime_t t
     ret /= 2;
   if (wr->throttling)
     ret /= 2;
-  if (ret < const_hb_intv_sched_min)
-    ret = const_hb_intv_sched_min;
+  if (ret < config.const_hb_intv_sched_min)
+    ret = config.const_hb_intv_sched_min;
   return ret;
 }
 
@@ -125,7 +120,7 @@ void writer_hbcontrol_note_asyncwrite (struct writer *wr, nn_mtime_t tnow)
 
   /* We know this is new data, so we want a heartbeat event after one
      base interval */
-  tnext.v = tnow.v + const_hb_intv_sched;
+  tnext.v = tnow.v + config.const_hb_intv_sched;
   if (tnext.v < hbc->tsched.v)
   {
     /* Insertion of a message with WHC locked => must now have at
@@ -236,7 +231,7 @@ struct nn_xmsg *writer_hbcontrol_create_heartbeat (struct writer *wr, nn_mtime_t
 static int writer_hbcontrol_ack_required_generic (const struct writer *wr, nn_mtime_t tlast, nn_mtime_t tnow, int piggyback)
 {
   struct hbcontrol const * const hbc = &wr->hbcontrol;
-  const int64_t hb_intv_ack = const_hb_intv_sched;
+  const int64_t hb_intv_ack = config.const_hb_intv_sched;
 
   if (piggyback)
   {
@@ -258,9 +253,9 @@ static int writer_hbcontrol_ack_required_generic (const struct writer *wr, nn_mt
 
   if (whc_unacked_bytes (wr->whc) >= wr->whc_low + (wr->whc_high - wr->whc_low) / 2)
   {
-    if (tnow.v >= hbc->t_of_last_ackhb.v + const_hb_intv_sched_min)
+    if (tnow.v >= hbc->t_of_last_ackhb.v + config.const_hb_intv_sched_min)
       return 2;
-    else if (tnow.v >= hbc->t_of_last_ackhb.v + const_hb_intv_min)
+    else if (tnow.v >= hbc->t_of_last_ackhb.v + config.const_hb_intv_min)
       return 1;
   }
 

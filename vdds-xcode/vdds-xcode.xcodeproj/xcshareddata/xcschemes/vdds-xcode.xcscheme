@@ -188,6 +188,20 @@
                ReferencedContainer = "container:vdds-xcode.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "036D25831DF15EB9009A18C5"
+               BuildableName = "ddpingpong"
+               BlueprintName = "ddpingpong"
+               ReferencedContainer = "container:vdds-xcode.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

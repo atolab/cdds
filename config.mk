@@ -73,7 +73,19 @@ else
 #        WINDOWSSDKDIR=/cygdrive/C/Program Files (x86)/Microsoft SDKs/Windows/v7.0A
 #      endif
     else
-      $(error "$(CONFIG): unsupported config")
+      ifeq "$(OS)" "wine"
+        export WINEDEBUG=-all
+        GEN = gen.wine
+        CC = wine cl
+        CPPFLAGS = -nologo -W3 -TC -analyze -D_WINNT=0x0604
+        X = .exe
+        O = .obj
+        A = .lib
+        SO = .dll
+        LIBPRE =
+      else
+        $(error "$(CONFIG): unsupported config")
+      endif
     endif
   endif
 endif
@@ -117,17 +129,22 @@ ifeq "$(CC)" "cl" # Windows
 #      LDFLAGS += '-libpath:$(N_VS_HOME)/VC/lib' '-libpath:$(N_WINDOWSSDKDIR)/lib'
 #    endif
 #  endif
-else # not Windows
-  OBJ_OFLAG = -o
-  EXE_OFLAG = -o
-  SHLIB_OFLAG = -o
-  ifeq "$(PROC)" "x86"
-    CFLAGS += -m32
-    LDFLAGS += -m32
-  endif
-  ifeq "$(PROC)" "x86_64"
-    CFLAGS += -m64
-    LDFLAGS += -m64
+else
+  ifeq "$(CC)" "wine cl"
+    OBJ_OFLAG =-Fo
+    CPPFLAGS += -D_CRT_SECURE_NO_WARNINGS
+  else # not Windows (-like)
+    OBJ_OFLAG = -o
+    EXE_OFLAG = -o
+    SHLIB_OFLAG = -o
+    ifeq "$(PROC)" "x86"
+      CFLAGS += -m32
+      LDFLAGS += -m32
+    endif
+    ifeq "$(PROC)" "x86_64"
+      CFLAGS += -m64
+      LDFLAGS += -m64
+    endif
   endif
 endif
 
@@ -135,10 +152,14 @@ ifeq "$(CC)" "cl"
   LDFLAGS += -libpath:$(N_PWD)/gen
   LIBDEP_SYS = kernel32 ws2_32
 else
-  LDFLAGS += -L$(N_PWD)/gen
-  LIBDEP_SYS =
+  ifeq "$(CC)" "wine cl"
+  else
+    LDFLAGS += -L$(N_PWD)/gen
+    LIBDEP_SYS =
+  endif
 endif
 
+getabspath=$(abspath $1)
 ifeq "$(OS)" "darwin"
   ifneq "$(findstring clang, $(CC))" ""
     define make_exe
@@ -190,10 +211,25 @@ else
 	lib $(MACHINE) /out:$@ $^
       endef
       define make_dep
-	$(CC) -E $(CPPFLAGS) $(CPPFLAGS) $< | grep "^#line.*\\\\ospl[io]\\\\" | cut -d '"' -f 2 | sort -u | sed -e 's@\([A-Za-z]\)\:@ /cygdrive/\1@' -e 's@\\\\@/@g' -e '$$!s@$$@ \\@' -e '1s@^@$*$O: @' >$@
+	$(CC) -E $(CPPFLAGS) $(CPPFLAGS) $< | grep "^#line.*\\\\vdds\\\\" | cut -d '"' -f 2 | sort -u | sed -e 's@\([A-Za-z]\)\:@ /cygdrive/\1@' -e 's@\\\\@/@g' -e '$$!s@$$@ \\@' -e '1s@^@$*$O: @' >$@
       endef
+    else
+      ifeq "$(OS)" "wine"
+        getabspath=$1
+        lc = $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
+        FAKEPWD = $(call lc,z:$(subst /,\\\\,$(PWD)))
+        define make_dep
+          $(CC) -E $(CPPFLAGS) $(CPPFLAGS) $< | grep "^#line.*\\\\vdds\\\\" | cut -d '"' -f 2 | sort -u | sed -e 's@$(FAKEPWD)\(\\\\\)*@ @' -e 's@\\\\@/@g' -e '$$!s@$$@ \\@' -e '1s@^@$*$O: @' >$@
+        endef
+      else
+        $(error "$(OS) not covered by build macros for")
+      endif
     endif
   endif
+endif
+
+ifeq "$(GEN)" ""
+  GEN = gen
 endif
 
 %$O:

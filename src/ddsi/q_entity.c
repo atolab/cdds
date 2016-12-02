@@ -494,6 +494,7 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
     pp->prismtech_bes |= NN_DISC_BUILTIN_ENDPOINT_CM_SUBSCRIBER_WRITER;
   }
 
+  if (config.do_topic_discovery)
   {
     /* TODO: make this one configurable, we don't want all participants to publish all topics (or even just those that they use themselves) */
     subguid.entityid = to_entityid (NN_ENTITYID_SEDP_BUILTIN_TOPIC_WRITER);
@@ -1477,6 +1478,11 @@ static void proxy_writer_add_connection (struct proxy_writer *pwr, struct reader
 
   if (pwr->c.topic == NULL && rd->topic)
     pwr->c.topic = rd->topic;
+  if (pwr->ddsi2direct_cb == 0 && rd->ddsi2direct_cb != 0)
+  {
+    pwr->ddsi2direct_cb = rd->ddsi2direct_cb;
+    pwr->ddsi2direct_cbarg = rd->ddsi2direct_cbarg;
+  }
 
   TRACE (("  proxy_writer_add_connection(pwr %x:%x:%x:%x rd %x:%x:%x:%x)",
           PGUID (pwr->e.guid), PGUID (rd->e.guid)));
@@ -2838,6 +2844,8 @@ static struct reader * new_reader_guid
     os_atomic_inc32 (&((struct sertopic *)topic)->refcount);
   }
   rd->topic = topic;
+  rd->ddsi2direct_cb = 0;
+  rd->ddsi2direct_cbarg = 0;
   rd->init_acknack_count = 0;
 #ifdef DDSI_INCLUDE_SSM
   rd->favours_ssm = 0;
@@ -3692,6 +3700,8 @@ int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, 
   }
   pwr->dqueue = dqueue;
   pwr->evq = evq;
+  pwr->ddsi2direct_cb = 0;
+  pwr->ddsi2direct_cbarg = 0;
 
   local_reader_ary_init (&pwr->rdary);
   ephash_insert_proxy_writer_guid (pwr);

@@ -9,6 +9,9 @@
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
 
+#include <string.h>
+#include "os/os.h"
+
 void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
 {
   dds_reader * rd = (dds_reader*) entity;
@@ -421,6 +424,49 @@ int dds_reader_create
   }
 
   return DDS_RETCODE_OK;
+}
+
+void dds_reader_ddsi2direct (dds_entity_t entity, ddsi2direct_directread_cb_t cb, void *cbarg)
+{
+  dds_reader *dds_rd = (dds_reader*) entity;
+  struct reader *rd = dds_rd->m_rd;
+
+  {
+    nn_guid_t pwrguid;
+    struct proxy_writer *pwr;
+    struct rd_pwr_match *m;
+    memset (&pwrguid, 0, sizeof (pwrguid));
+    os_mutexLock (&rd->e.lock);
+
+    rd->ddsi2direct_cb = cb;
+    rd->ddsi2direct_cbarg = cbarg;
+    while ((m = ut_avlLookupSuccEq (&rd_writers_treedef, &rd->writers, &pwrguid)) != NULL)
+    {
+      /* have to be careful walking the tree -- pretty is different, but
+       I want to check this before I write a lookup_succ function. */
+      struct rd_pwr_match *m_next;
+      nn_guid_t pwrguid_next;
+      pwrguid = m->pwr_guid;
+      if ((m_next = ut_avlFindSucc (&rd_writers_treedef, &rd->writers, m)) != NULL)
+        pwrguid_next = m_next->pwr_guid;
+      else
+      {
+        memset (&pwrguid_next, 0xff, sizeof (pwrguid_next));
+        pwrguid_next.entityid.u = (pwrguid_next.entityid.u & ~0xff) | NN_ENTITYID_KIND_WRITER_NO_KEY;
+      }
+      os_mutexUnlock (&rd->e.lock);
+      if ((pwr = ephash_lookup_proxy_writer_guid (&pwrguid)) != NULL)
+      {
+        os_mutexLock (&pwr->e.lock);
+        pwr->ddsi2direct_cb = cb;
+        pwr->ddsi2direct_cbarg = cbarg;
+        os_mutexUnlock (&pwr->e.lock);
+      }
+      pwrguid = pwrguid_next;
+      os_mutexLock (&rd->e.lock);
+    }
+    os_mutexUnlock (&rd->e.lock);
+  }
 }
 
 uint32_t dds_reader_lock_samples (dds_entity_t entity)

@@ -235,6 +235,10 @@ struct config
   int64_t spdp_response_delay_max;
   int64_t startup_mode_duration;
   int64_t lease_duration;
+  int64_t const_hb_intv_sched;
+  int64_t const_hb_intv_sched_min;
+  int64_t const_hb_intv_sched_max;
+  int64_t const_hb_intv_min;
   enum retransmit_merging retransmit_merging;
   int64_t retransmit_merging_period;
   int squash_participants;
@@ -260,6 +264,7 @@ struct config
   unsigned nw_queue_size;
 
   int buggy_datafrag_flags_mode;
+  int do_topic_discovery;
 
   uint32_t max_msg_size;
   uint32_t fragment_size;

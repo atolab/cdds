@@ -385,6 +385,13 @@ static const struct cfgelem rediscovery_blacklist_duration_attrs[] = {
   END_MARKER
 };
 
+static const struct cfgelem heartbeat_interval_attrs[] = {
+  { ATTR ("min"), 1, "5 ms", ABSOFF (const_hb_intv_min), 0, uf_duration_inf, 0, pf_duration },
+  { ATTR ("minsched"), 1, "20 ms", ABSOFF (const_hb_intv_sched_min), 0, uf_duration_inf, 0, pf_duration },
+  { ATTR ("max"), 1, "8 s", ABSOFF (const_hb_intv_sched_max), 0, uf_duration_inf, 0, pf_duration },
+  END_MARKER
+};
+
 static const struct cfgelem unsupp_cfgelems[] = {
   { MOVED ("MaxMessageSize", "General/MaxMessageSize") },
   { MOVED ("FragmentSize", "General/FragmentSize") },
@@ -405,6 +412,7 @@ static const struct cfgelem unsupp_cfgelems[] = {
   { LEAF ("AccelerateRexmitBlockSize"), 1, "0", ABSOFF (accelerate_rexmit_block_size), 0, uf_uint, 0, pf_uint },
   { LEAF ("RetransmitMerging"), 1, "adaptive", ABSOFF (retransmit_merging), 0, uf_retransmit_merging, 0, pf_retransmit_merging },
   { LEAF ("RetransmitMergingPeriod"), 1, "5 ms", ABSOFF (retransmit_merging_period), 0, uf_duration_us_1s, 0, pf_duration },
+  { LEAF_W_ATTRS ("HeartbeatInterval", heartbeat_interval_attrs), 1, "100 ms", ABSOFF (const_hb_intv_sched), 0, uf_duration_inf, 0, pf_duration },
   { LEAF ("MaxQueuedRexmitBytes"), 1, "50 kB", ABSOFF (max_queued_rexmit_bytes), 0, uf_memsize, 0, pf_memsize },
   { LEAF ("MaxQueuedRexmitMessages"), 1, "200", ABSOFF (max_queued_rexmit_msgs), 0, uf_uint, 0, pf_uint },
   { LEAF ("LeaseDuration"), 1, "10 s", ABSOFF (lease_duration), 0, uf_duration_ms_1hr, 0, pf_duration },
@@ -516,6 +524,7 @@ static const struct cfgelem discovery_cfgelems[] = {
   { LEAF ("SPDPMulticastAddress"), 1, "239.255.0.1", ABSOFF (spdpMulticastAddressString), 0, uf_ipv4, ff_free, pf_string },
   { LEAF ("SPDPInterval"), 1, "30 s", ABSOFF (spdp_interval), 0, uf_duration_ms_1hr, 0, pf_duration },
   { LEAF ("DefaultMulticastAddress"), 1, "auto", ABSOFF (defaultMulticastAddressString), 0, uf_networkAddress, 0, pf_networkAddress },
+  { LEAF ("EnableTopicDiscovery"), 1, "true", ABSOFF (do_topic_discovery), 0, uf_boolean, 0, pf_boolean },
   { GROUP ("Ports", discovery_ports_cfgelems) },
   END_MARKER
 };

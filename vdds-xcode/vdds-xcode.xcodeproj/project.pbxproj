@@ -40,6 +40,9 @@
 		035877E31DDCA54F000F61E2 /* os_platform_sync.h in Headers */ = {isa = PBXBuildFile; fileRef = 035877DC1DDCA54F000F61E2 /* os_platform_sync.h */; };
 		035877E41DDCA54F000F61E2 /* os_platform_thread.h in Headers */ = {isa = PBXBuildFile; fileRef = 035877DD1DDCA54F000F61E2 /* os_platform_thread.h */; };
 		035877E51DDCA54F000F61E2 /* os_platform.h in Headers */ = {isa = PBXBuildFile; fileRef = 035877DF1DDCA54F000F61E2 /* os_platform.h */; };
+		036D25861DF15EB9009A18C5 /* RoundTrip.c in Sources */ = {isa = PBXBuildFile; fileRef = 03E6CEB71CCE0DAB00D73982 /* RoundTrip.c */; };
+		036D25881DF15EB9009A18C5 /* libvdds.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 03E6CEA91CCE0CA400D73982 /* libvdds.dylib */; };
+		036D258E1DF15ECA009A18C5 /* ddpingpong.c in Sources */ = {isa = PBXBuildFile; fileRef = 036D25821DF15EAF009A18C5 /* ddpingpong.c */; };
 		03C96E9F1CCE5B8D0012F15D /* libvdds.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 03E6CEA91CCE0CA400D73982 /* libvdds.dylib */; };
 		03C96EA51CCE5B9F0012F15D /* server2.c in Sources */ = {isa = PBXBuildFile; fileRef = 03C96E9A1CCE5B800012F15D /* server2.c */; };
 		03C96EA71CCE5CD20012F15D /* libevent_pthreads-2.0.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 03C96EA61CCE5CD20012F15D /* libevent_pthreads-2.0.5.dylib */; };
@@ -188,6 +191,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		036D25891DF15EB9009A18C5 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		03C96EA01CCE5B8D0012F15D /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -307,6 +319,8 @@
 		035877DC1DDCA54F000F61E2 /* os_platform_sync.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = os_platform_sync.h; sourceTree = "<group>"; };
 		035877DD1DDCA54F000F61E2 /* os_platform_thread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = os_platform_thread.h; sourceTree = "<group>"; };
 		035877DF1DDCA54F000F61E2 /* os_platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = os_platform.h; sourceTree = "<group>"; };
+		036D25821DF15EAF009A18C5 /* ddpingpong.c */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.c.c; path = ddpingpong.c; sourceTree = "<group>"; };
+		036D258D1DF15EBA009A18C5 /* ddpingpong */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ddpingpong; sourceTree = BUILT_PRODUCTS_DIR; };
 		037D2E711CD2455A004434B2 /* os_platform_heap.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_heap.c; sourceTree = "<group>"; };
 		037D2E721CD2455A004434B2 /* os_platform_init.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_init.c; sourceTree = "<group>"; };
 		037D2E731CD2455A004434B2 /* os_platform_socket.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_platform_socket.c; sourceTree = "<group>"; };
@@ -568,6 +582,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		036D25871DF15EB9009A18C5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				036D25881DF15EB9009A18C5 /* libvdds.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		03C96E9E1CCE5B8D0012F15D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -751,6 +773,7 @@
 				03E6D0AD1CCE123A00D73982 /* rpc-pong */,
 				03C96EA41CCE5B8D0012F15D /* vdds-server2 */,
 				033520471CEDD22A003E7429 /* rpc-pingpong */,
+				036D258D1DF15EBA009A18C5 /* ddpingpong */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -758,6 +781,7 @@
 		03E6CEB51CCE0DAB00D73982 /* examples */ = {
 			isa = PBXGroup;
 			children = (
+				036D25821DF15EAF009A18C5 /* ddpingpong.c */,
 				03E6CEB61CCE0DAB00D73982 /* generated */,
 				03E6CEBD1CCE0DAB00D73982 /* ping.c */,
 				03E6CEBE1CCE0DAB00D73982 /* pong.c */,
@@ -1257,6 +1281,23 @@
 			productReference = 033520471CEDD22A003E7429 /* rpc-pingpong */;
 			productType = "com.apple.product-type.tool";
 		};
+		036D25831DF15EB9009A18C5 /* ddpingpong */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 036D258A1DF15EB9009A18C5 /* Build configuration list for PBXNativeTarget "ddpingpong" */;
+			buildPhases = (
+				036D25841DF15EB9009A18C5 /* Sources */,
+				036D25871DF15EB9009A18C5 /* Frameworks */,
+				036D25891DF15EB9009A18C5 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ddpingpong;
+			productName = ping;
+			productReference = 036D258D1DF15EBA009A18C5 /* ddpingpong */;
+			productType = "com.apple.product-type.tool";
+		};
 		03C96E9B1CCE5B8D0012F15D /* vdds-server2 */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 03C96EA11CCE5B8D0012F15D /* Build configuration list for PBXNativeTarget "vdds-server2" */;
@@ -1530,6 +1571,7 @@
 				03E6D0AC1CCE123A00D73982 /* rpc-pong */,
 				03C96E9B1CCE5B8D0012F15D /* vdds-server2 */,
 				0335203D1CEDD22A003E7429 /* rpc-pingpong */,
+				036D25831DF15EB9009A18C5 /* ddpingpong */,
 			);
 		};
 /* End PBXProject section */
@@ -1543,6 +1585,15 @@
 				033520481CEDD242003E7429 /* rpc-pong.c in Sources */,
 				033520491CEDD244003E7429 /* rpc-pingpong.c in Sources */,
 				033520401CEDD22A003E7429 /* RoundTrip.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		036D25841DF15EB9009A18C5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				036D258E1DF15ECA009A18C5 /* ddpingpong.c in Sources */,
+				036D25861DF15EB9009A18C5 /* RoundTrip.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1787,6 +1838,22 @@
 			name = Debug;
 		};
 		033520461CEDD22A003E7429 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		036D258B1DF15EB9009A18C5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		036D258C1DF15EB9009A18C5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -2107,6 +2174,15 @@
 			buildConfigurations = (
 				033520451CEDD22A003E7429 /* Debug */,
 				033520461CEDD22A003E7429 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		036D258A1DF15EB9009A18C5 /* Build configuration list for PBXNativeTarget "ddpingpong" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				036D258B1DF15EB9009A18C5 /* Debug */,
+				036D258C1DF15EB9009A18C5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

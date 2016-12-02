@@ -213,6 +213,7 @@ static int print_participants (struct thread_state1 *self, ddsi_tran_conn_t conn
                     w->hbcontrol.tsched, w->num_reliable_readers);
           x += cpf (conn, "    #acks %u #nacks %u #rexmit %u #lost %u #throttle %u\n",
                     w->num_acks_received, w->num_nacks_received, w->rexmit_count, w->rexmit_lost_count, w->throttle_count);
+          x += cpf (conn, "    max-drop-seq %lld\n", writer_max_drop_seq (w));
         }
         x += print_addrset_if_notempty (conn, "    as", w->as, "\n");
         for (m = ut_avlIterFirst (&wr_readers_treedef, &w->readers, &rdit); m; m = ut_avlIterNext (&rdit))

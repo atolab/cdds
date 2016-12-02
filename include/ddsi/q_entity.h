@@ -43,6 +43,7 @@ struct v_gid_s;
 
 struct proxy_group;
 struct proxy_endpoint_common;
+typedef void (*ddsi2direct_directread_cb_t) (const struct nn_rsample_info *sampleinfo, const struct nn_rdata *fragchain, void *arg);
 
 typedef struct status_cb_data
 {
@@ -275,6 +276,8 @@ struct reader
   const struct sertopic * topic; /* topic is NULL for built-in readers */
   ut_avlTree_t writers; /* all matching PROXY writers, see struct rd_pwr_match */
   ut_avlTree_t local_writers; /* all matching LOCAL writers, see struct rd_wr_match */
+  ddsi2direct_directread_cb_t ddsi2direct_cb;
+  void *ddsi2direct_cbarg;
 };
 
 struct proxy_participant
@@ -351,6 +354,8 @@ struct proxy_writer {
   struct nn_dqueue *dqueue; /* delivery queue for asynchronous delivery (historical data is always delivered asynchronously) */
   struct xeventq *evq; /* timed event queue to be used for ACK generation */
   struct local_reader_ary rdary; /* LOCAL readers for fast-pathing; if not fast-pathed, fall back to scanning local_readers */
+  ddsi2direct_directread_cb_t ddsi2direct_cb;
+  void *ddsi2direct_cbarg;
 };
 
 struct proxy_reader {
