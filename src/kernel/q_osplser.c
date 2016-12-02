@@ -124,15 +124,6 @@ void serstate_init (serstate_t st, const struct sertopic * topic)
 
 void serstate_free (serstate_t st)
 {
-#if ! HAVE_ATOMIC_LIFO
-#ifndef NDEBUG
-  {
-    serstate_t b;
-    for (b = st->pool->freelist; b && b != st; b = b->next);
-    assert (b == NULL);
-  }
-#endif
-#endif
   dds_free (st->data->v.keyhash.m_key_buff);
   dds_free (st->data);
   dds_free (st);

@@ -46,9 +46,9 @@ static void q_membar_autodecide (void)
 /* MISSING IN OS ABSTRACTION LAYER ------------------------------------- */
 
 #if ! SYSDEPS_HAVE_RECVMSG
-os_ssize_t recvmsg (os_handle fd, struct msghdr *message, int flags)
+ssize_t recvmsg (os_handle fd, struct msghdr *message, int flags)
 {
-  os_ssize_t ret;
+  ssize_t ret;
   assert (message->msg_iovlen == 1);
 #if SYSDEPS_MSGHDR_ACCRIGHTS
   assert (message->msg_accrightslen == 0);
@@ -79,11 +79,11 @@ os_ssize_t recvmsg (os_handle fd, struct msghdr *message, int flags)
 
 #if ! SYSDEPS_HAVE_SENDMSG
 #if !(defined _WIN32 && !defined WINCE)
-os_ssize_t sendmsg (os_handle fd, const struct msghdr *message, int flags)
+ssize_t sendmsg (os_handle fd, const struct msghdr *message, int flags)
 {
   char stbuf[3072], *buf;
-  os_ssize_t sz, ret;
-  os_size_t sent = 0;
+  ssize_t sz, ret;
+  size_t sent = 0;
   unsigned i;
 
 #if SYSDEPS_MSGHDR_ACCRIGHTS
@@ -131,7 +131,7 @@ os_ssize_t sendmsg (os_handle fd, const struct msghdr *message, int flags)
     {
       break;
     }
-    sent += (os_size_t) ret;
+    sent += (size_t) ret;
     if (sent == sz)
     {
       ret = sent;
@@ -146,12 +146,12 @@ os_ssize_t sendmsg (os_handle fd, const struct msghdr *message, int flags)
   return ret;
 }
 #else /* _WIN32 && !WINCE */
-os_ssize_t sendmsg (os_handle fd, const struct msghdr *message, int flags)
+ssize_t sendmsg (os_handle fd, const struct msghdr *message, int flags)
 {
   WSABUF stbufs[128], *bufs;
   DWORD sent;
   unsigned i;
-  os_ssize_t ret;
+  ssize_t ret;
 
 #if SYSDEPS_MSGHDR_ACCRIGHTS
   assert (message->msg_accrightslen == 0);
@@ -169,7 +169,7 @@ os_ssize_t sendmsg (os_handle fd, const struct msghdr *message, int flags)
     bufs[i].len = (unsigned) message->msg_iov[i].iov_len;
   }
   if (WSASendTo (fd, bufs, message->msg_iovlen, &sent, flags, (SOCKADDR *) message->msg_name, message->msg_namelen, NULL, NULL) == 0)
-    ret = (os_ssize_t) sent;
+    ret = (ssize_t) sent;
   else
     ret = -1;
   if (bufs != stbufs)

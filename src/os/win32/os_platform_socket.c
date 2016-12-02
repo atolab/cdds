@@ -91,7 +91,7 @@ os_result
 os_sockBind(
     os_socket s,
     const struct sockaddr *name,
-    os_uint namelen)
+    uint32_t namelen)
 {
     os_result result = os_resultSuccess;
 
@@ -105,7 +105,7 @@ os_result
 os_sockGetsockname(
     os_socket s,
     const struct sockaddr *name,
-    os_uint namelen)
+	uint32_t namelen)
 {
     os_result result = os_resultSuccess;
     int len = namelen;
@@ -164,10 +164,10 @@ os_sockRecvfrom(
 os_result
 os_sockGetsockopt(
     os_socket s,
-    os_int32 level,
-    os_int32 optname,
+	int32_t level,
+	int32_t optname,
     void *optval,
-    os_uint *optlen)
+    uint32_t *optlen)
 {
     os_result result = os_resultSuccess;
 
@@ -178,15 +178,15 @@ os_sockGetsockopt(
           || optname == IP_MULTICAST_LOOP ) )
     {
        int dwoptlen = sizeof( DWORD );
-       DWORD dwoptval = *((os_uchar *)optval);
+       DWORD dwoptval = *((unsigned char *)optval);
        if (getsockopt(s, level, optname, (char *)&dwoptval, &dwoptlen) == SOCKET_ERROR)
        {
           result = os_resultFail;
        }
 
        assert( dwoptlen == sizeof( DWORD ) );
-       *((os_uchar *)optval) = (os_uchar)dwoptval;
-       *optlen = sizeof( os_uchar );
+       *((unsigned char *)optval) = (unsigned char)dwoptval;
+       *optlen = sizeof( unsigned char );
     }
     else
     {
@@ -208,10 +208,10 @@ os_sockSetDscpValueWithTos(
     os_result result = os_resultSuccess;
 
     if (setsockopt(sock, IPPROTO_IP, IP_TOS, (char *)&value, (int)sizeof(value)) == SOCKET_ERROR) {
+		char errmsg[1024];
         int errNo = os_getErrno();
-        char *errorMessage = os_strError(errNo);
-        OS_REPORT(OS_WARNING, "os_sockSetDscpValue", 0,
-                   "Failed to set diffserv value to %ld: %d %s", value, errNo, errorMessage);
+        (void) os_strerror_r(errNo, errmsg, sizeof errmsg);
+        OS_REPORT(OS_WARNING, "os_sockSetDscpValue", 0, "Failed to set diffserv value to %ld: %d %s", value, errNo, errmsg);
         result = os_resultFail;
     }
 
@@ -352,7 +352,6 @@ os_sockSetDscpValueWithQos(
     BOOL qosResult;
     LONG trafficType;
     LONG defaultDscp;
-    char* errorMessage;
     int errNo;
     SOCKADDR_IN sin;
 
@@ -366,10 +365,10 @@ os_sockSetDscpValueWithQos(
     /* Get a handle to the QoS subsystem. */
     qosResult = (BOOL)qwaveQOSCreateHandleFunc(&version, &qosHandle);
     if (!qosResult) {
-        errNo = os_getErrno();
-        errorMessage = os_strError(errNo);
-        OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0,
-                "QOSCreateHandle failed: %d %s", errNo, errorMessage);
+		char errmsg[1024];
+		errNo = os_getErrno();
+		(void)os_strerror_r(errNo, errmsg, sizeof errmsg);
+        OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0, "QOSCreateHandle failed: %d %s", errNo, errmsg);
         goto err_create_handle;
     }
 
@@ -379,10 +378,10 @@ os_sockSetDscpValueWithQos(
     qosResult = (BOOL)qwaveQOSAddSocketToFlowFunc(qosHandle, sock, (PSOCKADDR)&sin,
             trafficType, OS_SOCK_QOS_NON_ADAPTIVE_FLOW, &qosFlowId);
     if (!qosResult) {
-        errNo = os_getErrno();
-        errorMessage = os_strError(errNo);
-        OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0,
-                "QOSAddSocketToFlow failed: %d %s", errNo, errorMessage);
+		char errmsg[1024];
+		errNo = os_getErrno();
+		(void)os_strerror_r(errNo, errmsg, sizeof errmsg);
+        OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0, "QOSAddSocketToFlow failed: %d %s", errNo, errmsg);
         qwaveQOSCloseHandleFunc(qosHandle);
         goto err_add_flow;
     }
@@ -406,9 +405,10 @@ os_sockSetDscpValueWithQos(
                         "Failed to set diffserv value to %ld value used is %d, not enough privileges",
                         value, defaultDscp);
             } else {
-                errorMessage = os_strError(errNo);
-                OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0,
-                        "QOSSetFlow failed: %d %s", errNo, errorMessage);
+				char errmsg[1024];
+				errNo = os_getErrno();
+				(void)os_strerror_r(errNo, errmsg, sizeof errmsg);
+                OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0, "QOSSetFlow failed: %d %s", errNo, errmsg);
             }
             goto err_set_flow;
         }
@@ -429,24 +429,13 @@ os_sockSetDscpValue(
     os_socket sock,
     DWORD value)
 {
-    os_result result = os_resultFail;
-    OSVERSIONINFO version;
+    os_result result;
 
-    version.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-
-    if (GetVersionEx(&version)) {
-        if (version.dwMajorVersion >= 6) {
-            if (os_sockLoadQwaveLibrary() == os_resultSuccess) {
-                result = os_sockSetDscpValueWithQos(sock, value, (version.dwMinorVersion != 0));
-            }
-        } else {
-            result = os_sockSetDscpValueWithTos(sock, value);
-        }
-    } else {
-        OS_REPORT(OS_WARNING, "os_sockSetDscpValue", 0,
-                  "Failed to get version information");
-        result = os_sockSetDscpValueWithTos(sock, value);
-    }
+	if (IsWindowsVistaOrGreater() && (os_sockLoadQwaveLibrary() == os_resultSuccess)) {
+		result = os_sockSetDscpValueWithQos(sock, value, IsWindows7OrGreater());
+	} else {
+		result = os_sockSetDscpValueWithTos(sock, value);
+	}
 
     return result;
 }
@@ -455,23 +444,23 @@ os_sockSetDscpValue(
 os_result
 os_sockSetsockopt(
     os_socket s,
-    os_int32 level,
-    os_int32 optname,
+    int32_t level,
+    int32_t optname,
     const void *optval,
-    os_uint optlen)
+    uint32_t optlen)
 {
     os_result result = os_resultSuccess;
     DWORD dwoptval;
 
     if ((level == IPPROTO_IP) && (optname == IP_TOS)) {
-        dwoptval = *((os_uchar *)optval);
+        dwoptval = *((unsigned char *)optval);
         if (dwoptval != 0) {
             result = os_sockSetDscpValue(s, dwoptval);
         }
     } else if ((optname == IP_MULTICAST_TTL) || (optname == IP_MULTICAST_LOOP)) {
         /* On win32 IP_MULTICAST_TTL and IP_MULTICAST_LOOP take DWORD * param
            rather than char * */
-        dwoptval = *((os_uchar *)optval);
+        dwoptval = *((unsigned char *)optval);
         optval = &dwoptval;
         optlen = sizeof( DWORD );
         if (setsockopt(s, level, optname, optval, (int)optlen) == SOCKET_ERROR) {
@@ -489,17 +478,15 @@ os_sockSetsockopt(
 os_result
 os_sockSetNonBlocking(
     os_socket s,
-    os_boolean nonblock)
+    bool nonblock)
 {
     int result;
     u_long mode;
     os_result r;
 
-    assert(nonblock == OS_FALSE || nonblock == OS_TRUE);
-
     /* If mode = 0, blocking is enabled,
      * if mode != 0, non-blocking is enabled. */
-    mode = (nonblock == OS_TRUE) ? 1 : 0;
+    mode = nonblock ? 1 : 0;
 
     result = ioctlsocket(s, FIONBIO, &mode);
     if (result != SOCKET_ERROR){
@@ -535,9 +522,9 @@ os_sockFree(
     return result;
 }
 
-os_int32
+int32_t
 os_sockSelect(
-    os_int32 nfds,
+    int32_t nfds,
     fd_set *readfds,
     fd_set *writefds,
     fd_set *errorfds,
@@ -589,7 +576,7 @@ static os_result
 addressToIndexAndMask(struct sockaddr *addr, unsigned int *ifIndex, struct sockaddr *mask )
 {
     os_result result = os_resultSuccess;
-    os_boolean found = OS_FALSE;
+    bool found = FALSE;
     PMIB_IPADDRTABLE pIPAddrTable = NULL;
     DWORD dwSize = 0;
     DWORD i;
@@ -600,19 +587,16 @@ addressToIndexAndMask(struct sockaddr *addr, unsigned int *ifIndex, struct socka
         if (pIPAddrTable != NULL) {
             if (GetIpAddrTable(pIPAddrTable, &dwSize, 0) != NO_ERROR) {
                 errNo = os_getErrno();
-                os_report(OS_ERROR, "addressToIndexAndMask", __FILE__, __LINE__, 0,
-                      "GetIpAddrTable failed: %d %s", errNo, os_strError (errNo));
+                os_report(OS_ERROR, "addressToIndexAndMask", __FILE__, __LINE__, 0, "GetIpAddrTable failed: %d", errNo);
                 result = os_resultFail;
             }
         } else {
-            os_report(OS_ERROR, "addressToIndexAndMask", __FILE__, __LINE__, 0,
-                "Failed to allocate %d bytes for IP address table", dwSize);
+            os_report(OS_ERROR, "addressToIndexAndMask", __FILE__, __LINE__, 0, "Failed to allocate %d bytes for IP address table", dwSize);
             result = os_resultFail;
         }
     } else {
         errNo = os_getErrno();
-        os_report(OS_ERROR, "addressToIndexAndMask", __FILE__, __LINE__, 0,
-                    "GetIpAddrTable failed: %d %s", errNo, os_strError (errNo));
+        os_report(OS_ERROR, "addressToIndexAndMask", __FILE__, __LINE__, 0, "GetIpAddrTable failed: %d", errNo);
         result = os_resultFail;
     }
 
@@ -621,7 +605,7 @@ addressToIndexAndMask(struct sockaddr *addr, unsigned int *ifIndex, struct socka
             if (((struct sockaddr_in* ) addr )->sin_addr.s_addr == pIPAddrTable->table[i].dwAddr) {
                 *ifIndex = pIPAddrTable->table[i].dwIndex;
                 ((struct sockaddr_in*) mask)->sin_addr.s_addr= pIPAddrTable->table[i].dwMask;
-                found = OS_TRUE;
+                found = TRUE;
             }
         }
     }
@@ -833,7 +817,7 @@ os_sockQueryIPv6Interfaces (
 
             /* Get interface flags. */
             ifList[listIndex].flags = getInterfaceFlags(pCurrAddress);
-            ifList[listIndex].interfaceIndexNo = (os_uint) pCurrAddress->Ipv6IfIndex;
+            ifList[listIndex].interfaceIndexNo = (uint32_t) pCurrAddress->Ipv6IfIndex;
 
             memcpy(&ifList[listIndex].address, pUnicast->Address.lpSockaddr, pUnicast->Address.iSockaddrLength);
             memcpy(&ifList[listIndex].broadcast_address, pUnicast->Address.lpSockaddr, pUnicast->Address.iSockaddrLength);
@@ -899,9 +883,9 @@ os_sockQueryIPv6Interfaces (
 static os_result
 os_sockGetInterfaceStatus (
     const char *ifName,
-    os_boolean *status)
+    bool *status)
 {
-    os_boolean result = os_resultSuccess;
+    bool result = os_resultSuccess;
     PIP_ADAPTER_ADDRESSES pAddresses = NULL;
     PIP_ADAPTER_ADDRESSES pCurrAddress = NULL;
     PIP_ADAPTER_UNICAST_ADDRESS pUnicast = NULL;
@@ -933,7 +917,7 @@ os_sockGetInterfaceStatus (
         snprintf(buffer, sizeof(buffer), "%wS", pCurrAddress->FriendlyName);
         if (strcmp(ifName, buffer) == 0) {
             if (pCurrAddress->OperStatus == IfOperStatusUp) {
-                *status = OS_TRUE;
+                *status = TRUE;
                 break;
             }
         }
@@ -1020,11 +1004,10 @@ os_sockQueryInterfaceStatusInit(
             info->hHandle = CreateEvent(NULL, FALSE, FALSE, NULL);
             if (info->hHandle == NULL) {
                 int errNo = os_getErrno();
-                char *errorMessage = os_strError(errNo);
-                os_report(OS_ERROR, "os_sockQueryInterfaceStatusInit", __FILE__, __LINE__, 0,
-                          "CreateEvent failed: %d %s", errNo, errorMessage);
-
-                os_sockQueryInterfaceStatusDeinit(info);
+				char errmsg[1024];
+                (void) os_strerror_r(errNo, errmsg, sizeof errmsg);
+                os_report(OS_ERROR, "os_sockQueryInterfaceStatusInit", __FILE__, __LINE__, 0, "CreateEvent failed: %d %s", errNo, errmsg);
+				os_sockQueryInterfaceStatusDeinit(info);
                 info = NULL;
             }
         }
@@ -1038,7 +1021,7 @@ os_result
 os_sockQueryInterfaceStatus(
     void *handle,
     os_time timeout,
-    os_boolean *status)
+    bool *status)
 {
     os_sockQueryInterfaceStatusInfo *info = (os_sockQueryInterfaceStatusInfo *) handle;
     os_result result = os_resultFail;
@@ -1046,7 +1029,7 @@ os_sockQueryInterfaceStatus(
     DWORD r;
     HANDLE hHandles[2];
 
-    *status = OS_FALSE;
+    *status = FALSE;
 
     if (info) {
         assert(timeout.tv_sec >= 0);
@@ -1083,10 +1066,10 @@ os_sockQueryInterfaceStatusSignal(
     if (info) {
         if (!SetEvent(info->hHandle)) {
             int errNo = os_getErrno();
-            char *errorMessage = os_strError(errNo);
-            os_report(OS_WARNING, "os_sockQueryInterfaceStatusSignal", __FILE__, __LINE__, 0,
-                    "SetEvent failed: %d %s",
-                    errNo, errorMessage);
+			char errmsg[1024];
+			
+			(void) os_strerror_r(errNo, errmsg, sizeof errmsg);
+            os_report(OS_WARNING, "os_sockQueryInterfaceStatusSignal", __FILE__, __LINE__, 0, "SetEvent failed: %d %s", errNo, errmsg);
         } else {
             result = os_resultSuccess;
         }

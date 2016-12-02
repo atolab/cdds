@@ -1,6 +1,9 @@
 #ifndef OS_PLATFORM_STDLIB_H
 #define OS_PLATFORM_STDLIB_H
 
+#include <sys/stat.h>
+#include <io.h>
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
@@ -34,13 +37,6 @@ extern "C" {
     typedef HANDLE os_os_dirHandle;
 
 #define MAXHOSTNAMELEN MAX_HOSTNAME_LEN
-
-    OS_API extern int snprintf(char *s, size_t n, const char *format, ...);
-
-    OS_API extern char *optarg;
-    OS_API extern int optind, opterr;
-
-    OS_API int getopt (int argc, char **argv, const char *options);
 
 #if defined (__cplusplus)
 }

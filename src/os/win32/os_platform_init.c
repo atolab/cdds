@@ -18,7 +18,6 @@
  *  \brief Initialization / Deinitialization
  */
 
-#include <assert.h>
 #include "os/os.h"
 
 /** \brief Counter that keeps track of number of times os-layer is initialized */

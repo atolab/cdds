@@ -77,7 +77,7 @@ else
         export WINEDEBUG=-all
         GEN = gen.wine
         CC = wine cl
-        CPPFLAGS = -nologo -W3 -TC -analyze -D_WINNT=0x0604
+        CPPFLAGS = -nologo -W3 -TC -analyze -D_WINNT=0x0604 -Drestrict=
         X = .exe
         O = .obj
         A = .lib

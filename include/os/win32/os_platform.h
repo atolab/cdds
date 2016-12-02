@@ -6,9 +6,11 @@
 #endif
 
 #include <windows.h>
+#include <VersionHelpers.h>
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <inttypes.h>
 
@@ -23,7 +25,7 @@ extern "C" {
 #define OS_WIN32 1
 #define OS_SOCKET_USE_FCNTL 0
 #define OS_SOCKET_USE_IOCTL 1
-#define OS_HAS_TSD_USING_THREAD_KEYWORD 1
+#define OS_HAS_TSD_USING_THREAD_KEYWORD 0 /* yes if using __declspec(thread), I believe */
 #define OS_FILESEPCHAR '/'
 #define OS_HAS_NO_SET_NAME_PRCTL 1
 #define OS_HAS_UCONTEXT_T 0
@@ -44,12 +46,16 @@ extern "C" {
     typedef double os_timeReal;
     typedef int os_timeSec;
     typedef int os_procId;
+	/* keep in sync with st_mode field def in struct stat in sys/stat.h */
+	typedef unsigned short os_mode_t;
+	typedef SSIZE_T ssize_t;
 
-#include "os_platform_socket.h"
-#include "os_platform_sync.h"
-#include "os_platform_thread.h"
-#include "os_platform_stdlib.h"
-#include "os_platform_time.h"
+#include "os/win32/os_platform_socket.h"
+#include "os/win32/os_platform_sync.h"
+#include "os/win32/os_platform_process.h"
+#include "os/win32/os_platform_thread.h"
+#include "os/win32/os_platform_stdlib.h"
+#include "os/win32/os_platform_time.h"
 
 #if defined (__cplusplus)
 }

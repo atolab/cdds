@@ -1,9 +1,15 @@
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <assert.h>
 #include <inttypes.h>
+#include <math.h>
 
 #include "ddsi/q_entity.h"
 #include "ddsi/q_ephash.h"
@@ -80,6 +86,7 @@ static ExampleTimeStats *exampleAddTimingToTimeStats
   if (stats->valuesSize > stats->valuesMax)
   {
     dds_time_t * temp = (dds_time_t*) realloc (stats->values, (stats->valuesMax + TIME_STATS_SIZE_INCREMENT) * sizeof (dds_time_t));
+    if (temp == NULL) abort();
     stats->values = temp;
     stats->valuesMax += TIME_STATS_SIZE_INCREMENT;
   }
@@ -111,7 +118,7 @@ static double exampleGetMedianFromTimeStats (ExampleTimeStats *stats)
 
   os_mutexLock(&statslock);
   if (stats->valuesSize == 0)
-    median = 1.0/0.0;
+    median = NAN;
   else
   {
     qsort (stats->values, stats->valuesSize, sizeof (dds_time_t), exampleCompareT);
@@ -583,7 +590,7 @@ int main (int argc, char *argv[])
   if (isdd)
   {
     dds_reader_ddsi2direct (reader, 0, NULL);
-    usleep(100000);
+    dds_sleepfor(DDS_MSECS(100));
   }
 
   /* Clean up */

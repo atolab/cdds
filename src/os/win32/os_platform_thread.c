@@ -24,7 +24,7 @@ typedef struct {
 } os_threadContext;
 
 typedef struct {
-    os_uint  protectCount;
+    unsigned protectCount;
 } os_threadProtectInfo;
 
 static DWORD tlsIndex;
@@ -61,20 +61,24 @@ os_threadHookExit(void)
     return;
 }
 
-static void
+static os_result
 os_threadMemInit(void)
 {
     void **tlsMemArray;
     BOOL result;
 
-    tlsMemArray = malloc (sizeof(void *) * OS_THREAD_MEM_ARRAY_SIZE);
-    if (tlsMemArray) {
-        memset(tlsMemArray, 0, sizeof(void *) * OS_THREAD_MEM_ARRAY_SIZE);
-        result = TlsSetValue(tlsIndex, tlsMemArray);
-        if (!result) {
-            OS_DEBUG("os_threadMemInit", "Failed to set TLS");
-        }
-    }
+    tlsMemArray = os_malloc (sizeof(void *) * OS_THREAD_MEM_ARRAY_SIZE);
+    memset(tlsMemArray, 0, sizeof(void *) * OS_THREAD_MEM_ARRAY_SIZE);
+    result = TlsSetValue(tlsIndex, tlsMemArray);
+	if (!result) {
+		OS_INIT_FAIL("os_threadMemInit: failed to set TLS");
+		goto err_setTls;
+	}
+	return os_resultSuccess;
+
+err_setTls:
+	os_free(tlsMemArray);
+	return os_resultFail;
 }
 
 static void
@@ -87,29 +91,12 @@ os_threadMemExit(void)
     if (tlsMemArray != NULL) {
         for (i = 0; i < OS_THREAD_MEM_ARRAY_SIZE; i++) {
             if (tlsMemArray[i] != NULL) {
-                free(tlsMemArray[i]);
+                os_free(tlsMemArray[i]);
             }
         }
-        free(tlsMemArray);
+        os_free(tlsMemArray);
         TlsSetValue(tlsIndex, NULL);
     }
-}
-
-/** \brief Initialize thread attributes
- *
- * - Set \b procAttr->schedClass to \b OS_SCHED_DEFAULT
- *   (take the platforms default scheduling class, Time-sharing for
- *   non realtime platforms, Real-time for realtime platforms)
- * - Set \b procAttr->schedPriority to \b 0
- */
-void
-os_threadAttrInit (
-    os_threadAttr *threadAttr)
-{
-    assert (threadAttr != NULL);
-    threadAttr->schedClass = OS_SCHED_DEFAULT;
-    threadAttr->schedPriority = 0;
-    threadAttr->stackSize = 1024*1024; /* 1MB */
 }
 
 /** \brief Initialize the thread module
@@ -117,14 +104,18 @@ os_threadAttrInit (
  * \b os_threadModuleInit initializes the thread module for the
  *    calling process
  */
-void
+os_result
 os_threadModuleInit(void)
 {
-   tlsIndex = TlsAlloc();
-   if (tlsIndex == 0xFFFFFFFF) {
-      OS_DEBUG_1("os_threadModuleInit", "Warning: could not allocate thread-local memory (System Error Code: %i)", os_getErrno ());
-   }
-   os_threadHookInit();
+    if ((tlsIndex = TlsAlloc()) == TLS_OUT_OF_INDEXES) {
+		OS_INIT_FAIL("os_threadModuleInit: could not allocate thread-local memory (System Error Code: %i)", os_getErrno());
+		goto err_tlsAllocFail;
+	}
+	os_threadHookInit();
+	return os_resultSuccess;
+
+err_tlsAllocFail:
+	return os_resultFail;
 }
 
 /** \brief Deinitialize the thread module
@@ -254,7 +245,7 @@ os_startRoutineWrapper(
     void *threadContext)
 {
     os_threadContext *context = threadContext;
-    void *resultValue;
+    void *resultValue = NULL;
     os_threadId id;
 
     /* allocate an array to store thread private memory references */
@@ -306,7 +297,7 @@ os_threadCreate(
     DWORD threadIdent;
     os_threadContext *threadContext;
 
-    os_int32 effective_priority;
+    int32_t effective_priority;
 
     assert(threadId != NULL);
     assert(name != NULL);
@@ -324,7 +315,7 @@ os_threadCreate(
         (LPVOID)threadContext,
         (DWORD)0, &threadIdent);
     if (threadHandle == 0) {
-        OS_DEBUG_1("os_threadCreate", "Failed with System Error Code: %i\n", os_getErrno ());
+        OS_REPORT(OS_WARNING, "os_threadCreate", os_getErrno(), "Failed with System Error Code: %i\n", os_getErrno ());
         return os_resultFail;
     }
 
@@ -365,7 +356,7 @@ os_threadCreate(
         }
     }
     if (SetThreadPriority (threadHandle, effective_priority) == 0) {
-      OS_DEBUG_1("os_threadCreate", "SetThreadPriority failed with %d", (int)os_getErrno());
+		OS_REPORT(OS_INFO, "os_threadCreate", os_getErrno(), "SetThreadPriority failed with %i", os_getErrno());
     }
 
    /* ES: dds2086: Close handle should not be performed here. Instead the handle
@@ -380,7 +371,7 @@ os_threadCreate(
  * Possible Results:
  * - returns the integer representation of the given thread ID
  */
-os_ulong_int
+unsigned long
 os_threadIdToInteger(os_threadId id)
 {
    return id.threadId;
@@ -419,21 +410,21 @@ os_threadWaitExit(
     BOOL status;
 
     if(threadId.handle == NULL){
-        OS_DEBUG("os_threadWaitExit", "Parameter threadId is null");
+        //OS_DEBUG("os_threadWaitExit", "Parameter threadId is null");
         return os_resultFail;
     }
 
     waitres = WaitForSingleObject(threadId.handle, INFINITE);
     if (waitres != WAIT_OBJECT_0) {
         err = os_getErrno();
-        OS_DEBUG_1("os_threadWaitExit", "WaitForSingleObject Failed %d", err);
+        //OS_DEBUG_1("os_threadWaitExit", "WaitForSingleObject Failed %d", err);
         return os_resultFail;
     }
 
     status = GetExitCodeThread(threadId.handle, &tr);
     if (!status) {
        err = os_getErrno();
-       OS_DEBUG_1("os_threadWaitExit", "GetExitCodeThread Failed %d", err);
+       //OS_DEBUG_1("os_threadWaitExit", "GetExitCodeThread Failed %d", err);
        return os_resultFail;
     }
 
@@ -455,12 +446,12 @@ os_threadWaitExit(
  * Possible Results:
  * - returns the actual length of threadIdentity
  */
-os_int32
+int
 os_threadFigureIdentity(
     char *threadIdentity,
-    os_uint threadIdentitySize)
+    size_t threadIdentitySize)
 {
-   os_int32 size;
+   int size;
    char* threadName;
 
    threadName = (char *)os_threadMemGet(OS_THREAD_NAME);
@@ -473,16 +464,16 @@ os_threadFigureIdentity(
    return size;
 }
 
-os_int32
+int
 os_threadGetThreadName(
-    os_char *buffer,
-    os_uint32 length)
+    char *buffer,
+    size_t length)
 {
-    os_char *name;
+    char *name;
 
     assert (buffer != NULL);
 
-    if ((name = (os_char *)os_threadMemGet(OS_THREAD_NAME)) == NULL) {
+    if ((name = os_threadMemGet(OS_THREAD_NAME)) == NULL) {
         name = "";
     }
 
@@ -511,8 +502,8 @@ os_threadGetThreadName(
  */
 void *
 os_threadMemMalloc(
-    os_int32 index,
-    os_size_t size)
+    int32_t index,
+    size_t size)
 {
    void **tlsMemArray;
    void *threadMemLoc = NULL;
@@ -525,10 +516,8 @@ os_threadMemMalloc(
         }
         if (tlsMemArray != NULL) {
             if (tlsMemArray[index] == NULL) {
-                threadMemLoc = malloc(size);
-                if (threadMemLoc != NULL) {
-                    tlsMemArray[index] = threadMemLoc;
-                }
+                threadMemLoc = os_malloc(size);
+                tlsMemArray[index] = threadMemLoc;
             }
         }
     }
@@ -549,7 +538,7 @@ os_threadMemMalloc(
  */
 void
 os_threadMemFree(
-    os_int32 index)
+    int32_t index)
 {
     void **tlsMemArray;
     void *threadMemLoc = NULL;
@@ -560,7 +549,7 @@ os_threadMemFree(
             threadMemLoc = tlsMemArray[index];
             if (threadMemLoc != NULL) {
                 tlsMemArray[index] = NULL;
-                free(threadMemLoc);
+                os_free(threadMemLoc);
             }
         }
     }
@@ -576,7 +565,7 @@ os_threadMemFree(
  */
 void *
 os_threadMemGet(
-    os_int32 index)
+    int32_t index)
 {
     void **tlsMemArray;
     void *data;

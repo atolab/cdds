@@ -145,41 +145,41 @@ struct nn_bw_limiter {
 
 ///////////////////////////
 typedef struct os_sem {
-  pthread_mutex_t mtx;
+  os_mutex mtx;
   uint32_t value;
-  pthread_cond_t cv;
+  os_cond cv;
 } os_sem_t;
 
 static os_result os_sem_init (os_sem_t * sem, uint32_t value)
 {
   sem->value = value;
-  pthread_mutex_init (&sem->mtx, NULL);
-  pthread_cond_init (&sem->cv, NULL);
+  os_mutexInit (&sem->mtx, NULL);
+  os_condInit (&sem->cv, &sem->mtx, NULL);
   return os_resultSuccess;
 }
 
 static os_result os_sem_destroy (os_sem_t *sem)
 {
-  pthread_mutex_destroy (&sem->mtx);
-  pthread_cond_destroy (&sem->cv);
+  os_condDestroy (&sem->cv);
+  os_mutexDestroy (&sem->mtx);
   return os_resultSuccess;
 }
 
 static os_result os_sem_post (os_sem_t *sem)
 {
-  pthread_mutex_lock (&sem->mtx);
+  os_mutexLock (&sem->mtx);
   if (sem->value++ == 0)
-    pthread_cond_signal (&sem->cv);
-  pthread_mutex_unlock (&sem->mtx);
+    os_condSignal (&sem->cv);
+  os_mutexUnlock (&sem->mtx);
   return os_resultSuccess;
 }
 
 static os_result os_sem_wait (os_sem_t *sem)
 {
-  pthread_mutex_lock (&sem->mtx);
+  os_mutexLock (&sem->mtx);
   while (sem->value == 0)
-    pthread_cond_wait (&sem->cv, &sem->mtx);
-  pthread_mutex_unlock (&sem->mtx);
+    os_condWait (&sem->cv, &sem->mtx);
+  os_mutexUnlock (&sem->mtx);
   return os_resultSuccess;
 }
 ///////////////////////////

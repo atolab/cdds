@@ -20,46 +20,23 @@
 #include <sys/timeb.h>
 #include <time.h>
 
-#include "os__debug.h"
-#include "os_win32incs.h"
-#include "os/os_errno.h"
-#include "os/os_thread.h"
-#include "os/os_report.h"
-#include "os/os_stdlib.h"
-#include "os/os_heap.h"
-#include "os__time.h"
-#include "../common/code/os_time.c"
-#include "../common/code/os_time_ctime.c"
+#include "os/os.h"
 
-/* #define OSPL_OS_TIME_SETCLOCKRES */
-#ifdef OSPL_OS_TIME_SETCLOCKRES
-/* In order to increase the timer resolution past 1ms, below NT-functions are
- * resolved dynamically (in the single-threaded os_timeModuleInit). */
-#ifdef STATUS_SUCCESS
-#define OS_NT_API_STATUS_SUCCESS  STATUS_SUCCESS
-#else
-#define OS_NT_API_STATUS_SUCCESS  (0x00000000L)
+/* NoGetSystemTimePreciseAsFileTime can be derived from the version set in 
+ * _WIN32_WINNT, but didn't bother doing so yet. */
+#if NoGetSystemTimePreciseAsFileTime
+/* GetSystemTimeAsFileTimeFunc is set when available (on Windows 8 and later). */
+static VOID (WINAPI *GetSystemTimePreciseAsFileTimeFunc) (_Out_ LPFILTETIME);
+static HANDLE Kernel32ModuleHandle;
 #endif
-static FARPROC NtQueryTimerResolutionFunc = NULL;
-static FARPROC NtSetTimerResolutionFunc = NULL;
-static HANDLE NTDLLModuleHandle = NULL;
-static ULONG timerRes100ns = 10000; /* 1ms, expressed in 100ns */
-#endif /* OSPL_OS_TIME_SETCLOCKRES */
-
-static FARPROC QueryUnbiasedInterruptTimeFunc;
-/* GetSystemTimeAsFileTimeFunc is set to the most precise time-function (that
- * returns filetime) available. Up until Windows 7 this is GetSystemTimeAsFileTime.
- * On Windows 8 and later this is GetSystemTimePreciseAsFileTime. */
-static FARPROC GetSystemTimeAsFileTimeFunc;
 
 /* GetSystemTimeAsFileTime returns the number of 100ns intervals that have elapsed
  * since January 1, 1601 (UTC). There are 11,644,473,600 seconds between 1601 and
  * the Unix epoch (January 1, 1970 (UTC)), which is the reference that is used for
  * os_time. */
 #define OS_TIME_FILETIME_UNIXEPOCH_OFFSET_SECS (11644473600)
-static HANDLE Kernel32ModuleHandle;
 
-static os_time
+os_time
 os__timeDefaultTimeGet(void)
 {
     FILETIME ft;
@@ -80,12 +57,19 @@ os__timeDefaultTimeGet(void)
      * then the actual resolution of this clock can be retrieved using the
      * GetSystemTimeAdjustment. See for example OSPL-4394.
      */
-    assert(GetSystemTimeAsFileTimeFunc);
-    GetSystemTimeAsFileTimeFunc(&ft);
+#if NoGetSystemTimePreciseAsFileTime
+	if (GetSystemTimePreciseAsFileTimeFunc) {
+		GetSystemTimePreciseAsFileTimeFunc(&ft);
+	} else {
+		GetSystemTimeAsFileTime(&ft);
+	}
+#else
+	GetSystemTimePreciseAsFileTime(&ft);
+#endif
     ns100.LowPart = ft.dwLowDateTime;
     ns100.HighPart = ft.dwHighDateTime;
     current_time.tv_sec = (os_timeSec)((ns100.QuadPart / 10000000) - OS_TIME_FILETIME_UNIXEPOCH_OFFSET_SECS);
-    current_time.tv_nsec = (os_int32)((ns100.QuadPart % 10000000) * 100);
+    current_time.tv_nsec = (int32_t)((ns100.QuadPart % 10000000) * 100);
 
     return current_time;
 }
@@ -93,6 +77,7 @@ os__timeDefaultTimeGet(void)
 void
 os_timeModuleInit(void)
 {
+#if NoGetSystemTimePreciseAsFileTime
     /* Resolve the time-functions from the Kernel32-library. */
 
     /* This os_timeModuleInit is currently called from DllMain. This means
@@ -103,118 +88,20 @@ os_timeModuleInit(void)
     Kernel32ModuleHandle = LoadLibrary("Kernel32.DLL");
     assert(Kernel32ModuleHandle);
 
-    GetSystemTimeAsFileTimeFunc = GetProcAddress(Kernel32ModuleHandle, "GetSystemTimePreciseAsFileTime");
-    if(GetSystemTimeAsFileTimeFunc == NULL){
-        /* Fallback to GetSystemTimeAsFileTime when Precise variant isn't
-         * available. */
-        GetSystemTimeAsFileTimeFunc = GetProcAddress(Kernel32ModuleHandle, "GetSystemTimeAsFileTime");
-    }
-    /* GetSystemTimeAsFileTimeFunc should be available since Windows 2000, so
-     * this can't fail. */
-    assert(GetSystemTimeAsFileTimeFunc);
-
-    /* Resolve the QueryUnbiasedInterruptTime function so it can be used
-     * for the monotonic continuous clock if available. Otherwise fall-back
-     * on QueryPerformanceCounter (losing the continuity during sleep/
-     * hibernate; QueryPerformanceCounter counts the time spent during
-     * sleep on all (and hibernate on some) platforms). */
-    QueryUnbiasedInterruptTimeFunc = GetProcAddress(Kernel32ModuleHandle, "QueryUnbiasedInterruptTime");
-
-#ifdef OSPL_OS_TIME_SETCLOCKRES
-    /* os_timeModuleInit is called before os_reportInit, currently not possible
-     * to do reporting before os_reportInit. See OSPL-6126. */
-    /* The default Windows scheduling resolution is 15.6ms. This isn't sufficient
-     * for networking configurations, so increase the resolution to the maximally
-     * supported resolution.
-     * TODO: Optimally this should be set based on knowledge regarding the
-     * actually required resolution. A machine may not perform optimally on its
-     * maximum resolution. */
-
-    if((NTDLLModuleHandle = LoadLibrary("NTDLL.DLL")) == NULL){
-        OS_REPORT(OS_WARNING, "os_timeModuleInit", 0,
-            "Failed to load NTDLL.DLL for increasing timer resolution; cannot increase timer resolution.");
-        goto err_load_ntdll;
-    }
-
-    /* Retrieve function pointers */
-    NtQueryTimerResolutionFunc = GetProcAddress(NTDLLModuleHandle, "NtQueryTimerResolution");
-    NtSetTimerResolutionFunc = GetProcAddress(NTDLLModuleHandle, "NtSetTimerResolution");
-
-    if((NtQueryTimerResolutionFunc == NULL) || (NtSetTimerResolutionFunc == NULL)) {
-        OS_REPORT(OS_WARNING, "os_timeModuleInit", 0,
-            "Failed to resolve entry point for NtQueryTimerResolution or NtQueryTimerResolution; cannot increase timer resolution");
-        goto err_resolve_funcs;
-    }
-
-    {
-        ULONG minRes, maxRes, actRes;
-
-        if(NtQueryTimerResolutionFunc(&minRes, &maxRes, &actRes) != OS_NT_API_STATUS_SUCCESS){
-            OS_REPORT(OS_WARNING, "os_timeModuleInit", 0,
-                "Failed to query timer device for maximum timer resolution. "\
-                 "Will try to set %.1fms resolution.", timerRes100ns / 10000.0f);
-        } else {
-            timerRes100ns = maxRes;
-        }
-
-        /* Set the resolution regardless of whether the current actual value is
-         * already OK. It is a global Windows setting and may change when another
-         * application is closed. */
-        if(NtSetTimerResolutionFunc(timerRes100ns, TRUE, &actRes) != OS_NT_API_STATUS_SUCCESS) {
-            OS_REPORT(OS_WARNING, "os_timeModuleInit", 0,
-                "Failed to set timer device resolution to %dms, actual resolution: %.1fms",
-                timerRes100ns / 10000.0f,
-                actRes / 10000.0f);
-        } else {
-            OS_REPORT(OS_INFO, "os_timeModuleInit", 0,
-                "Set timer device resolution to %.1fms", timerRes100ns / 10000.0f);
-        }
-    }
-    /* Initialize the elapsed start time and monotonic start time */
-    monotonicStartTime = os_timeGetMonotonic();
-    elapsedStartTime = os_timeGetElapsed();
-    return;
-
-err_resolve_funcs:
-    NtQueryTimerResolutionFunc = NULL;
-    NtSetTimerResolutionFunc = NULL;
-    FreeLibrary(NTDLLModuleHandle);
-    NTDLLModuleHandle = NULL;
-err_load_ntdll:
-    return;
-#endif /* OSPL_OS_TIME_SETCLOCKRES */
+    GetSystemTimePreciseAsFileTimeFunc = GetProcAddress(Kernel32ModuleHandle, "GetSystemTimePreciseAsFileTime");
+#endif
 }
 
 void
 os_timeModuleExit(void)
 {
-#ifdef OSPL_OS_TIME_SETCLOCKRES
-    /* os_timeModuleExit is called after os_reportExit, currently not possible
-     * to do reporting after os_reportExit. See OSPL-6126. */
-    /* On Windows the init- and exit are single-threaded */
-    if(NtSetTimerResolutionFunc){
-        ULONG actRes;
-        /* Restore the resolution. */
-        if(NtSetTimerResolutionFunc(timerRes100ns, FALSE, &actRes) != OS_NT_API_STATUS_SUCCESS) {
-            OS_REPORT(OS_WARNING, "os_timeModuleExit", 0,
-                "Failed to restore timer device resolution");
-        }
-    }
-
-    if(NTDLLModuleHandle){
-        NtQueryTimerResolutionFunc = NULL;
-        NtSetTimerResolutionFunc = NULL;
-        FreeLibrary(NTDLLModuleHandle);
-        NTDLLModuleHandle = NULL;
-    }
-#endif /* OSPL_OS_TIME_SETCLOCKRES */
-
+#if NoGetSystemTimePreciseAsFileTime
     if(Kernel32ModuleHandle){
-        QueryUnbiasedInterruptTimeFunc = NULL;
-        GetSystemTimeAsFileTimeFunc = NULL;
+		GetSystemTimePreciseAsFileTimeFunc = NULL;
         FreeLibrary(Kernel32ModuleHandle);
         Kernel32ModuleHandle = NULL;
     }
+#endif
 }
 
 /** \brief Suspend the execution of the calling thread for the specified time
@@ -227,7 +114,7 @@ os_timeModuleExit(void)
  */
 os_result
 os_nanoSleep (
-    os_time delay)
+    _In_ os_time delay)
 {
     os_result result = os_resultSuccess;
     DWORD dt;
@@ -252,20 +139,15 @@ os_nanoSleep (
 os_time
 os_timeGetMonotonic(void)
 {
-    if(QueryUnbiasedInterruptTimeFunc){
-        os_time current_time;
-        ULONGLONG ubit;
+    os_time current_time;
+    ULONGLONG ubit;
 
-        (void) QueryUnbiasedInterruptTimeFunc(&ubit); /* 100ns ticks */
+    (void) QueryUnbiasedInterruptTime(&ubit); /* 100ns ticks */
 
-        current_time.tv_sec = (os_timeSec)(ubit / 10000000);
-        current_time.tv_nsec = (os_int32)((ubit % 10000000) * 100);
+    current_time.tv_sec = (os_timeSec)(ubit / 10000000);
+    current_time.tv_nsec = (int32_t)((ubit % 10000000) * 100);
 
-        return current_time;
-    } else {
-        /* Fall-back on QueryPerformanceCounter. */
-        return os_timeGetElapsed();
-    }
+    return current_time;
 }
 
 /** \brief Get high resolution, elapsed time.
@@ -317,7 +199,7 @@ os_timeGetElapsed(void)
      * as done by EB for CAE). */
     QueryPerformanceCounter(&qpc);
     current_time.tv_sec = (os_timeSec)(qpc.QuadPart / qpc_freq);
-    current_time.tv_nsec = (os_int32)(((qpc.QuadPart % qpc_freq) * 1000000000) / qpc_freq);
+    current_time.tv_nsec = (int32_t)(((qpc.QuadPart % qpc_freq) * 1000000000) / qpc_freq);
 
     return current_time;
 }

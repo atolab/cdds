@@ -135,7 +135,7 @@ extern "C" {
 #if ! SYSDEPS_HAVE_IOVEC
 struct iovec {
   void *iov_base;
-  os_size_t iov_len;
+  size_t iov_len;
 };
 #endif
 
@@ -145,9 +145,9 @@ struct msghdr
   void *msg_name;
   socklen_t msg_namelen;
   struct iovec *msg_iov;
-  os_size_t msg_iovlen;
+  size_t msg_iovlen;
   void *msg_control;
-  os_size_t msg_controllen;
+  size_t msg_controllen;
   int msg_flags;
 };
 #endif
@@ -158,10 +158,10 @@ struct msghdr
 
 #if ! SYSDEPS_HAVE_RECVMSG
 /* Only implements iovec of length 1, no control */
-os_ssize_t recvmsg (os_handle fd, struct msghdr *message, int flags);
+ssize_t recvmsg (os_handle fd, struct msghdr *message, int flags);
 #endif
 #if ! SYSDEPS_HAVE_SENDMSG
-os_ssize_t sendmsg (os_handle fd, const struct msghdr *message, int flags);
+ssize_t sendmsg (os_handle fd, const struct msghdr *message, int flags);
 #endif
 #if ! SYSDEPS_HAVE_RANDOM
 long random (void);

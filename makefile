@@ -42,10 +42,10 @@ $(GEN)/vdds-server2$X: $(GEN)/server2$O | $(GEN)/$(LIBPRE)vdds$(SO)
 $(GEN)/publisher$O $(GEN)/subscriber$O $(GEN)/rpc-publisher$O $(GEN)/rpc-subscriber$O $(GEN)/ping$O $(GEN)/pong$O $(GEN)/ddpingpong$O $(GEN)/rpc-ping$O $(GEN)/rpc-pong$O $(GEN)/ppss$O: CPPFLAGS += -Iexamples/generated
 $(GEN)/publisher.d $(GEN)/subscriber.d $(GEN)/rpc-publisher.d $(GEN)/rpc-subscriber.d $(GEN)/ping.d $(GEN)/pong.d $(GEN)/ddpingpong.d $(GEN)/rpc-ping.d $(GEN)/rpc-pong.d $(GEN)/ppss.d: CPPFLAGS += -Iexamples/generated
 
-$(GEN)/ppss: LDLIBS += -lvdds
-$(GEN)/ddpingpong: LDLIBS += -lvdds
-$(GEN)/publisher $(GEN)/subscriber $(GEN)/ping $(GEN)/pong: LDLIBS += -lvdds
-$(GEN)/rpc-publisher $(GEN)/rpc-subscriber $(GEN)/rpc-ping $(GEN)/rpc-pong: LDLIBS += -lvdds-stubs
+$(GEN)/ppss$X: LDLIBS += -lvdds
+$(GEN)/ddpingpong$X: LDLIBS += -lvdds
+$(GEN)/publisher$X $(GEN)/subscriber $(GEN)/ping $(GEN)/pong: LDLIBS += -lvdds
+$(GEN)/rpc-publisher$X $(GEN)/rpc-subscriber $(GEN)/rpc-ping $(GEN)/rpc-pong: LDLIBS += -lvdds-stubs
 $(GEN)/ppss$X: $(GEN)/ppss$O $(GEN)/Throughput$O | $(GEN)/$(LIBPRE)vdds$(SO)
 	$(make_exe)
 $(GEN)/publisher$X: $(GEN)/publisher$O $(GEN)/Throughput$O | $(GEN)/$(LIBPRE)vdds$(SO)

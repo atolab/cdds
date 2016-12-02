@@ -17,4 +17,4 @@
  * by including the common implementation
  */
 
-#include "../../snippets/code/os_heap.c"
+#include "../snippets/code/os_heap.c"

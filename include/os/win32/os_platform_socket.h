@@ -15,10 +15,14 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <iphlpapi.h>
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
+
+#define OS_SOCK_VERSION         2
+#define OS_SOCK_REVISION        0
 
 /* Keep defines before common header */
 #define OS_SOCKET_HAS_IPV6      1
@@ -59,6 +63,9 @@ extern "C" {
 
     typedef SOCKET os_socket;
 #define OS_SOCKET_INVALID (-1)
+
+	void os_socketModuleInit(void);
+	void os_socketModuleExit(void);
 
 #if defined (__cplusplus)
 }
