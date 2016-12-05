@@ -25,12 +25,14 @@
 #include "ddsi/q_radmin.h"
 #include "ddsi/ddsi_ser.h"
 
+#include "os/os.h"
+
 #include "RoundTrip.h"
 #include "kernel/dds_reader.h"
 
 #define TIME_STATS_SIZE_INCREMENT 50000
 #define MAX_SAMPLES 100
-#define US_IN_ONE_SEC 1000000LL
+#define NS_IN_ONE_SEC 1000000000LL
 
 typedef struct ExampleTimeStats
 {
@@ -41,6 +43,7 @@ typedef struct ExampleTimeStats
   dds_time_t min;
   dds_time_t max;
   unsigned long count;
+  int skipcount; /* for warming up - certainly the first one typically takes a few ms */
 } ExampleTimeStats;
 
 RoundTripModule_DataType sub_data[MAX_SAMPLES];
@@ -60,6 +63,7 @@ static void exampleInitTimeStats (ExampleTimeStats *stats)
   stats->min = 0;
   stats->max = 0;
   stats->count = 0;
+  stats->skipcount = 10;
 }
 
 static void exampleResetTimeStats (ExampleTimeStats *stats)
@@ -83,23 +87,38 @@ static ExampleTimeStats *exampleAddTimingToTimeStats
   (ExampleTimeStats *stats, dds_time_t timing)
 {
   os_mutexLock(&statslock);
-  if (stats->valuesSize > stats->valuesMax)
+  if (stats->skipcount > 0)
+    stats->skipcount--;
+  else
   {
-    dds_time_t * temp = (dds_time_t*) realloc (stats->values, (stats->valuesMax + TIME_STATS_SIZE_INCREMENT) * sizeof (dds_time_t));
-    if (temp == NULL) abort();
-    stats->values = temp;
-    stats->valuesMax += TIME_STATS_SIZE_INCREMENT;
+    if (stats->valuesSize >= stats->valuesMax)
+    {
+      dds_time_t * temp = (dds_time_t*) realloc (stats->values, (stats->valuesMax + TIME_STATS_SIZE_INCREMENT) * sizeof (dds_time_t));
+      if (temp == NULL) abort();
+      stats->values = temp;
+      stats->valuesMax += TIME_STATS_SIZE_INCREMENT;
+    }
+    if (stats->valuesSize < stats->valuesMax)
+    {
+      stats->values[stats->valuesSize++] = timing;
+    }
+    stats->average = (stats->count * stats->average + timing) / (stats->count + 1);
+    stats->min = (stats->count == 0 || timing < stats->min) ? timing : stats->min;
+    stats->max = (stats->count == 0 || timing > stats->max) ? timing : stats->max;
+    stats->count++;
   }
-  if (stats->valuesSize < stats->valuesMax)
-  {
-    stats->values[stats->valuesSize++] = timing;
-  }
-  stats->average = (stats->count * stats->average + timing) / (stats->count + 1);
-  stats->min = (stats->count == 0 || timing < stats->min) ? timing : stats->min;
-  stats->max = (stats->count == 0 || timing > stats->max) ? timing : stats->max;
-  stats->count++;
   os_mutexUnlock(&statslock);
   return stats;
+}
+
+static void writeStats(uint32_t payloadSize, const ExampleTimeStats *stats, FILE *fp)
+{
+  unsigned long long i;
+  fprintf(fp,"{%u,{", payloadSize);
+  for (i = 0; i < stats->valuesSize; i++) {
+    fprintf(fp, "%s%lld", (i == 0) ? "" : ",", stats->values[i]);
+  }
+  fprintf(fp,"}}\n");
 }
 
 static int exampleCompareT (const void* a, const void* b)
@@ -138,16 +157,19 @@ static double exampleGetMedianFromTimeStats (ExampleTimeStats *stats)
 }
 
 static dds_condition_t terminated;
+static volatile sig_atomic_t terminated_flag;
 
 #ifdef _WIN32
 static bool CtrlHandler (DWORD fdwCtrlType)
 {
+  terminated_flag = 1;
   dds_guard_trigger (terminated);
   return true; //Don't let other handlers handle this key
 }
 #else
 static void CtrlHandler (int fdwCtrlType)
 {
+  terminated_flag = 1;
   dds_guard_trigger (terminated);
 }
 #endif
@@ -189,6 +211,8 @@ struct reader_cbarg {
   struct sertopic *tp;
   struct nn_xpack *xp;
   struct writer *wr;
+  dds_time_t tprint;
+  dds_time_t tstart;
   ExampleTimeStats *roundTrip;
   ExampleTimeStats *roundTripOverall;
 };
@@ -229,10 +253,19 @@ void reader_cb (const struct nn_rsample_info *sampleinfo, const struct nn_rdata 
     if (arg->roundTrip)
     {
       dds_time_t postTakeTime = dds_time ();
-      dds_time_t difference = (postTakeTime - sourcetime.v)/DDS_NSECS_IN_USEC;
+      dds_time_t difference = postTakeTime - sourcetime.v;
       exampleAddTimingToTimeStats (arg->roundTrip, difference);
       exampleAddTimingToTimeStats (arg->roundTripOverall, difference);
-      sourcetime.v = postTakeTime;
+
+      if (postTakeTime >= arg->tprint)
+      {
+        int64_t k = (postTakeTime - arg->tstart) / DDS_NSECS_IN_SEC;
+        printf("%9" PRIi64 " %9lu %8.0f %8"PRId64"\n", k, roundTrip.count, exampleGetMedianFromTimeStats (&roundTrip)/1000, roundTrip.min/1000);
+        exampleResetTimeStats (&roundTrip);
+        arg->tprint = postTakeTime + DDS_SECS(1);
+      }
+
+      sourcetime.v = dds_time ();
     }
 
     mustfree = defragment (&datap, fragchain, sampleinfo->size);
@@ -254,11 +287,10 @@ void reader_cb (const struct nn_rsample_info *sampleinfo, const struct nn_rdata 
 
 dds_entity_t writer;
 int isping = 1;
-int isdd = 0;
-int islistener = 0;
 
 static void data_available_handler (dds_entity_t reader)
 {
+  static dds_time_t tstart, tprint;
   dds_time_t postTakeTime, difference;
   int status = dds_take (reader, samples, MAX_SAMPLES, info, 0);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
@@ -266,9 +298,24 @@ static void data_available_handler (dds_entity_t reader)
 
   if (isping)
   {
-    difference = (postTakeTime - info[0].source_timestamp)/DDS_NSECS_IN_USEC;
+    difference = postTakeTime - info[0].source_timestamp;
     exampleAddTimingToTimeStats (&roundTrip, difference);
     exampleAddTimingToTimeStats (&roundTripOverall, difference);
+
+    if (postTakeTime >= tprint)
+    {
+      if (tprint != 0)
+      {
+        int64_t k = (postTakeTime - tstart) / DDS_NSECS_IN_SEC;
+        printf("%9" PRIi64 " %9lu %8.0f %8"PRId64"\n", k, roundTrip.count, exampleGetMedianFromTimeStats (&roundTrip)/1000, roundTrip.min/1000);
+        exampleResetTimeStats (&roundTrip);
+      }
+      if (tstart == 0)
+        tstart = postTakeTime;
+      tprint = postTakeTime + DDS_SECS(1);
+    }
+
+    postTakeTime = dds_time ();
     info[0].source_timestamp = postTakeTime;
   }
 
@@ -276,15 +323,23 @@ static void data_available_handler (dds_entity_t reader)
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 }
 
+void usage (const char *argv0)
+{
+  fprintf (stderr, "%s {ping|pong|ddping|ddpong|lping|lpong} [payloadSize]\n", argv0);
+  exit (1);
+}
+
 int main (int argc, char *argv[])
 {
-  dds_entity_t reader;
   dds_entity_t participant;
-  dds_entity_t topic;
+  dds_entity_t topic, addrtopic;
+  dds_entity_t reader, addrreader;
+  dds_entity_t addrwriter;
   dds_entity_t publisher;
   dds_entity_t subscriber;
   dds_waitset_t waitSet;
-  
+  enum mode { WAITSET, LISTENER, DIRECT, UDP } mode = LISTENER;
+
   const char *pubPartitions[1] = { "ping" };
   const char *subPartitions[1] = { "pong" };
   dds_qos_t *pubQos;
@@ -307,33 +362,54 @@ int main (int argc, char *argv[])
   dds_time_t waitTimeout = DDS_SECS (1);
   unsigned long i;
   int status;
-  bool invalid = false;
   dds_condition_t readCond;
   dds_readerlistener_t rd_listener;
+  int opt;
+  const char *logfile = NULL;
 
-  if (argc != 2 && argc != 3)
-    invalid = true;
-  if (strcmp (argv[1], "ping") == 0)
-    isping = 1;
-  else if (strcmp (argv[1], "pong") == 0)
-    isping = 0;
-  else if (strcmp (argv[1], "ddping") == 0)
-    isping = 1, isdd = 1;
-  else if (strcmp (argv[1], "ddpong") == 0)
-    isping = 0, isdd = 1;
-  else if (strcmp (argv[1], "lping") == 0)
-    isping = 1, islistener = 1;
-  else if (strcmp (argv[1], "lpong") == 0)
-    isping = 0, islistener = 1;
-  else
-    invalid = true;
-  if (argc >= 3 && (payloadSize = (uint32_t)atol (argv[1])) > 65536)
-    invalid = true;
-  if (invalid)
+  int udpsock;
+  struct sockaddr_in udpaddr;
+  socklen_t udpaddrsize = sizeof (udpaddr);
+
+  while ((opt = getopt (argc, argv, "f:")) != EOF)
   {
-    fprintf (stderr, "%s {ping|pong|ddping|ddpong|lping|lpong} [payloadSize]\n", argv[0]);
-    return 1;
+    switch (opt)
+    {
+      case 'f':
+        logfile = optarg;
+        break;
+      default:
+        usage (argv[0]);
+        break;
+    }
   }
+
+  if (argc - optind < 1 || argc - optind > 2 || strlen (argv[optind]) < 4)
+    usage (argv[0]);
+
+  {
+    const size_t modelen = strlen (argv[optind]) - 4;
+    const char *dirstr = argv[optind] + modelen;
+    if (strcmp (dirstr, "ping") == 0)
+      isping = 1;
+    else if (strcmp (dirstr, "pong") == 0)
+      isping = 0;
+    else
+      usage (argv[0]);
+    if (modelen == 0)
+      mode = WAITSET;
+    else if (modelen == 1 && strncmp (argv[optind], "l", modelen) == 0)
+      mode = LISTENER;
+    else if (modelen == 2 && strncmp (argv[optind], "dd", modelen) == 0)
+      mode = DIRECT;
+    else if (modelen == 3 && strncmp (argv[optind], "udp", modelen) == 0)
+      mode = UDP;
+    else
+      usage (argv[0]);
+  }
+
+  if (argc - optind >= 2 && (payloadSize = (uint32_t)atol (argv[2])) > 65536)
+    usage(argv[0]);
 
   if (isping) {
     pubPartitions[0] = "ping";
@@ -372,9 +448,24 @@ int main (int argc, char *argv[])
   status = dds_participant_create (&participant, DDS_DOMAIN_DEFAULT, NULL, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
+  if ((udpsock = socket (AF_INET, SOCK_DGRAM, 0)) == -1) {
+    perror ("create udp socket"); exit (1);
+  }
+  memset (&udpaddr, 0, sizeof (udpaddr));
+  udpaddr.sin_addr = ((struct sockaddr_in *) &gv.ownip)->sin_addr;
+  udpaddr.sin_family = AF_INET;
+  if (bind (udpsock, (struct sockaddr *)&udpaddr, sizeof (udpaddr)) == -1) {
+    perror ("bind udp socket"); exit (1);
+  }
+  if (getsockname (udpsock, (struct sockaddr *)&udpaddr, &udpaddrsize) == -1) {
+    perror ("getsockname on udp socket"); exit (1);
+  }
+
   /* A DDS_Topic is created for our sample type on the domain participant. */
-  status = dds_topic_create
-    (participant, &topic, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
+  status = dds_topic_create (participant, &topic, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
+  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+  status = dds_topic_create (participant, &addrtopic, &RoundTripModule_Address_desc, "UDPRoundTrip", NULL, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   /* A DDS_Publisher is created on the domain participant. */
@@ -393,7 +484,11 @@ int main (int argc, char *argv[])
   dds_qset_reliability (drQos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
   memset (&rd_listener, 0, sizeof (rd_listener));
   rd_listener.on_data_available = data_available_handler;
-  status = dds_reader_create (subscriber, &reader, topic, drQos, islistener ? &rd_listener : NULL);
+  status = dds_reader_create (subscriber, &reader, topic, drQos, (mode == LISTENER) ? &rd_listener : NULL);
+  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+  dds_qset_durability (drQos, DDS_DURABILITY_TRANSIENT_LOCAL);
+  status = dds_reader_create (subscriber, &addrreader, addrtopic, drQos, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (drQos);
 
@@ -407,12 +502,17 @@ int main (int argc, char *argv[])
   dds_qset_writer_data_lifecycle (dwQos, false);
   status = dds_writer_create (publisher, &writer, topic, dwQos, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+  dds_qset_writer_data_lifecycle (dwQos, true);
+  dds_qset_durability (dwQos, DDS_DURABILITY_TRANSIENT_LOCAL);
+  status = dds_writer_create (publisher, &addrwriter, addrtopic, dwQos, NULL);
+  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (dwQos);
   
   terminated = dds_guardcondition_create ();
   waitSet = dds_waitset_create ();
 
-  if (!islistener)
+  if (mode != LISTENER)
   {
     readCond = dds_readcondition_create (reader, DDS_ANY_STATE);
     status = dds_waitset_attach (waitSet, readCond, reader);
@@ -428,157 +528,223 @@ int main (int argc, char *argv[])
 
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  if (isdd)
+  if (mode == UDP)
   {
-    static struct reader_cbarg arg;
-    arg.tp = (struct sertopic *) ((struct dds_reader *)reader)->m_rd->topic;
-    arg.tk = get_tkmap_instance(arg.tp);
-    arg.xp = ((struct dds_writer *)writer)->m_xp;
-    arg.wr = ((struct dds_writer *)writer)->m_wr;
+    static char buf[65536];
+    struct RoundTripModule_Address addrsample;
+    struct sockaddr_in peeraddr;
+    socklen_t peeraddrlen = sizeof (peeraddr);
+    ssize_t sz;
     if (isping)
     {
-      arg.roundTrip = &roundTrip;
-      arg.roundTripOverall = &roundTripOverall;
+      void *addrsamples[] = { &addrsample };
+      dds_sample_info_t infos[1];
+      dds_time_t tprint, tsend;
+      printf ("# payloadSize: %"PRIu32" | numSamples: %llu | timeOut: %" PRIi64 "\n\n", payloadSize, numSamples, timeOut);
+      memset (buf, 0, sizeof (buf));
+      do {
+        status = dds_take (addrreader, addrsamples, 1, infos, 0);
+        DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+      } while (status != 1);
+      memset(&peeraddr, 0, sizeof(peeraddr));
+      peeraddr.sin_family = AF_INET;
+      if (!inet_pton(AF_INET, addrsample.ip, &peeraddr.sin_addr))
+        abort();
+
+      printf("# Round trip measurements (in us)\n");
+      printf("#             Round trip time [us]\n");
+      printf("# Seconds     Count   median      min\n");
+
+      peeraddr.sin_port = htons(addrsample.port);
+      tsend = dds_time();
+      tprint = tsend + DDS_SECS(1);
+      sendto(udpsock, buf, payloadSize, 0, (struct sockaddr *)&peeraddr, peeraddrlen);
+      while ((sz = recvfrom(udpsock, buf, sizeof(buf), 0, (struct sockaddr *)&peeraddr, &peeraddrlen)) == payloadSize && !terminated_flag)
+      {
+        dds_time_t trecv = dds_time();
+        exampleAddTimingToTimeStats (&roundTrip, trecv - tsend);
+        exampleAddTimingToTimeStats (&roundTripOverall, trecv - tsend);
+        if (trecv >= tprint)
+        {
+          printf("%9" PRIi64 " %9lu %8.0f %8"PRId64"\n", elapsed + 1, roundTrip.count, exampleGetMedianFromTimeStats (&roundTrip)/1000, roundTrip.min/1000);
+          exampleResetTimeStats (&roundTrip);
+          tprint = trecv + DDS_SECS(1);
+          elapsed++;
+        }
+        tsend = dds_time();
+        sendto(udpsock, buf, payloadSize, 0, (struct sockaddr *)&peeraddr, peeraddrlen);
+      }
     }
     else
     {
-      arg.roundTrip = NULL;
-      arg.roundTripOverall = NULL;
+      char ipstr[256];
+      inet_ntop(AF_INET, &udpaddr.sin_addr, ipstr, sizeof(ipstr));
+      addrsample.ip = ipstr;
+      addrsample.port = ntohs(udpaddr.sin_port);
+      dds_write(addrwriter, &addrsample);
+      while ((sz = recvfrom(udpsock, buf, sizeof(buf), 0, (struct sockaddr *)&peeraddr, &peeraddrlen)) >= 0 && !terminated_flag)
+        sendto(udpsock, buf, (size_t)sz, 0, (struct sockaddr *)&peeraddr, peeraddrlen);
     }
-    dds_reader_ddsi2direct (reader, reader_cb, &arg);
-  }
-
-  if (isping)
-  {
-    printf ("# payloadSize: %"PRIu32" | numSamples: %llu | timeOut: %" PRIi64 "\n\n", payloadSize, numSamples, timeOut);
-
-    pub_data.payload._length = payloadSize;
-    pub_data.payload._buffer = payloadSize ? dds_alloc (payloadSize) : NULL;
-    pub_data.payload._release = true;
-    pub_data.payload._maximum = 0;
-    for (i = 0; i < payloadSize; i++)
-    {
-      pub_data.payload._buffer[i] = 'a';
-    }
-
-    printf("# Round trip measurements (in us)\n");
-    printf("#             Round trip time [us]\n");
-    printf("# Seconds     Count   median      min\n");
-
-    startTime = dds_time ();
-    /* Write a sample that pong can send back */
-    status = dds_write (writer, &pub_data);
-    DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-    for (i = 0; !dds_condition_triggered (terminated) && (!numSamples || i < numSamples); i++)
-    {
-      /* Wait for response from pong */
-      status = dds_waitset_wait (waitSet, wsresults, wsresultsize, waitTimeout);
-      DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-      if (status != 0)
-      {
-        /* Take sample and check that it is valid */
-        status = dds_take (reader, samples, MAX_SAMPLES, info, 0);
-        DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-        postTakeTime = dds_time ();
-
-        if (!dds_condition_triggered (terminated))
-        {
-          if (status != 1)
-          {
-            fprintf (stdout, "%s%d%s", "ERROR: Ping received ", status,
-                     " samples but was expecting 1. Are multiple pong applications running?\n");
-
-            return (0);
-          }
-          else if (!info[0].valid_data)
-          {
-            printf ("ERROR: Ping received an invalid sample. Has pong terminated already?\n");
-            return (0);
-          }
-        }
-
-        /* Update stats */
-        difference = (postTakeTime - info[0].source_timestamp)/DDS_NSECS_IN_USEC;
-        exampleAddTimingToTimeStats (&roundTrip, difference);
-        exampleAddTimingToTimeStats (&roundTripOverall, difference);
-
-        /* Print stats each second */
-        difference = (postTakeTime - startTime)/DDS_NSECS_IN_USEC;
-        if (difference > US_IN_ONE_SEC || (i && i == numSamples))
-        {
-          printf("%9" PRIi64 " %9lu %8.0f %8"PRId64"\n", elapsed + 1, roundTrip.count, exampleGetMedianFromTimeStats (&roundTrip), roundTrip.min);
-          exampleResetTimeStats (&roundTrip);
-          startTime = dds_time ();
-          elapsed++;
-        }
-      }
-      else
-      {
-        elapsed += waitTimeout / DDS_NSECS_IN_SEC;
-      }
-
-      /* Write a sample that pong can send back */
-      if (!isdd && !islistener)
-      {
-        status = dds_write (writer, &pub_data);
-        DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-      }
-      else
-      {
-        dds_time_t tnow = dds_time();
-        difference = (tnow - startTime)/DDS_NSECS_IN_USEC;
-        if (difference > US_IN_ONE_SEC)
-        {
-          printf("%9" PRIi64 " %9lu %8.0f %8"PRId64"\n", elapsed + 1, roundTrip.count, exampleGetMedianFromTimeStats (&roundTrip), roundTrip.min);
-          exampleResetTimeStats (&roundTrip);
-          startTime = tnow;
-          elapsed++;
-        }
-      }
-
-      if (timeOut && elapsed == timeOut)
-      {
-        dds_guard_trigger (terminated);
-      }
-    }
-
-    printf("\n%9s %9lu %8.0f %8"PRId64"\n", "# Overall", roundTripOverall.count, exampleGetMedianFromTimeStats (&roundTripOverall), roundTripOverall.min);
   }
   else
   {
-    printf ("Waiting for samples from ping to send back...\n");
-    fflush (stdout);
-
-    while (!dds_condition_triggered (terminated))
+    if (mode == DIRECT)
     {
-      /* Wait for a sample from ping */
-      int samplecount;
-      int j;
+      static struct reader_cbarg arg;
+      arg.tp = (struct sertopic *) ((struct dds_reader *)reader)->m_rd->topic;
+      arg.tk = get_tkmap_instance(arg.tp);
+      arg.xp = ((struct dds_writer *)writer)->m_xp;
+      arg.wr = ((struct dds_writer *)writer)->m_wr;
+      arg.tstart = dds_time();
+      arg.tprint = arg.tstart + DDS_SECS(1);
+      if (isping)
+      {
+        arg.roundTrip = &roundTrip;
+        arg.roundTripOverall = &roundTripOverall;
+      }
+      else
+      {
+        arg.roundTrip = NULL;
+        arg.roundTripOverall = NULL;
+      }
+      dds_reader_ddsi2direct (reader, reader_cb, &arg);
+    }
 
-      status = dds_waitset_wait (waitSet, wsresults, wsresultsize, waitTimeout);
+    if (isping)
+    {
+      printf ("# payloadSize: %"PRIu32" | numSamples: %llu | timeOut: %" PRIi64 "\n\n", payloadSize, numSamples, timeOut);
+
+      pub_data.payload._length = payloadSize;
+      pub_data.payload._buffer = payloadSize ? dds_alloc (payloadSize) : NULL;
+      pub_data.payload._release = true;
+      pub_data.payload._maximum = 0;
+      for (i = 0; i < payloadSize; i++)
+      {
+        pub_data.payload._buffer[i] = 'a';
+      }
+
+      printf("# Round trip measurements (in us)\n");
+      printf("#             Round trip time [us]\n");
+      printf("# Seconds     Count   median      min\n");
+
+      startTime = dds_time ();
+      /* Write a sample that pong can send back */
+      status = dds_write (writer, &pub_data);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-      /* Take samples */
-      samplecount = dds_take (reader, samples, MAX_SAMPLES, info, 0);
-      DDS_ERR_CHECK (samplecount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-      for (j = 0; !dds_condition_triggered (terminated) && j < samplecount; j++)
+      for (i = 0; !dds_condition_triggered (terminated) && (!numSamples || i < numSamples); i++)
       {
-        /* If writer has been disposed terminate pong */
-
-        if (info[j].instance_state == DDS_IST_NOT_ALIVE_DISPOSED)
+        /* Wait for response from pong */
+        status = dds_waitset_wait (waitSet, wsresults, wsresultsize, (mode != WAITSET) ? DDS_INFINITY : waitTimeout);
+        DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+        if (status != 0)
         {
-          printf ("Received termination request. Terminating.\n");
-          dds_guard_trigger (terminated);
-          break;
-        }
-        else if (info[j].valid_data)
-        {
-          /* If sample is valid, send it back to ping */
-
-          RoundTripModule_DataType * valid_sample = &sub_data[j];
-          status = dds_write_ts (writer, valid_sample, info[j].source_timestamp);
+          /* Take sample and check that it is valid */
+          status = dds_take (reader, samples, MAX_SAMPLES, info, 0);
           DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+          postTakeTime = dds_time ();
+
+          if (!dds_condition_triggered (terminated))
+          {
+            if (status != 1)
+            {
+              fprintf (stdout, "%s%d%s", "ERROR: Ping received ", status,
+                       " samples but was expecting 1. Are multiple pong applications running?\n");
+
+              return (0);
+            }
+            else if (!info[0].valid_data)
+            {
+              printf ("ERROR: Ping received an invalid sample. Has pong terminated already?\n");
+              return (0);
+            }
+          }
+
+          /* Update stats */
+          if (status > 0)
+          {
+            difference = postTakeTime - info[0].source_timestamp;
+            exampleAddTimingToTimeStats (&roundTrip, difference);
+            exampleAddTimingToTimeStats (&roundTripOverall, difference);
+          }
+
+          /* Print stats each second */
+          difference = postTakeTime - startTime;
+          if (difference > NS_IN_ONE_SEC || (i && i == numSamples))
+          {
+            printf("%9" PRIi64 " %9lu %8.0f %8"PRId64"\n", elapsed + 1, roundTrip.count, exampleGetMedianFromTimeStats (&roundTrip)/1000, roundTrip.min/1000);
+            exampleResetTimeStats (&roundTrip);
+            startTime = dds_time ();
+            elapsed++;
+          }
+        }
+        else
+        {
+          elapsed ++;
+        }
+
+        /* Write a sample that pong can send back */
+        if (mode == WAITSET)
+        {
+          status = dds_write (writer, &pub_data);
+          DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+        }
+        else
+        {
+          dds_time_t tnow = dds_time();
+          difference = tnow - startTime;
+          if (difference > NS_IN_ONE_SEC)
+          {
+            //printf("%9" PRIi64 " %9lu %8.0f %8"PRId64"\n", elapsed + 1, roundTrip.count, exampleGetMedianFromTimeStats (&roundTrip)/1000, roundTrip.min/1000);
+            exampleResetTimeStats (&roundTrip);
+            startTime = tnow;
+            elapsed++;
+          }
+        }
+
+        if (timeOut && elapsed == timeOut)
+        {
+          dds_guard_trigger (terminated);
+        }
+      }
+
+      printf("\n%9s %9lu xxx %8"PRId64"\n", "# Overall", roundTripOverall.count, roundTripOverall.min);
+    }
+    else
+    {
+      printf ("Waiting for samples from ping to send back...\n");
+      fflush (stdout);
+
+      while (!dds_condition_triggered (terminated))
+      {
+        /* Wait for a sample from ping */
+        int samplecount;
+        int j;
+
+        status = dds_waitset_wait (waitSet, wsresults, wsresultsize, waitTimeout);
+        DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+        /* Take samples */
+        samplecount = dds_take (reader, samples, MAX_SAMPLES, info, 0);
+        DDS_ERR_CHECK (samplecount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+        for (j = 0; !dds_condition_triggered (terminated) && j < samplecount; j++)
+        {
+          /* If writer has been disposed terminate pong */
+
+          if (info[j].instance_state == DDS_IST_NOT_ALIVE_DISPOSED)
+          {
+            printf ("Received termination request. Terminating.\n");
+            dds_guard_trigger (terminated);
+            break;
+          }
+          else if (info[j].valid_data)
+          {
+            /* If sample is valid, send it back to ping */
+            
+            RoundTripModule_DataType * valid_sample = &sub_data[j];
+            status = dds_write_ts (writer, valid_sample, info[j].source_timestamp);
+            DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+          }
         }
       }
     }
@@ -587,13 +753,22 @@ int main (int argc, char *argv[])
   /* Disable callbacks */
 
   dds_status_set_enabled (reader, 0);
-  if (isdd)
+  if (mode == DIRECT)
   {
     dds_reader_ddsi2direct (reader, 0, NULL);
     dds_sleepfor(DDS_MSECS(100));
   }
 
   /* Clean up */
+
+  if (isping && logfile)
+  {
+    FILE *fp = fopen(logfile, "a");
+    if (fp) {
+      writeStats(payloadSize, &roundTripOverall, fp);
+      fclose (fp);
+    }
+  }
 
   exampleDeleteTimeStats (&roundTrip);
   exampleDeleteTimeStats (&roundTripOverall);
