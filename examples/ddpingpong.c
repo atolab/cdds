@@ -255,7 +255,8 @@ void reader_cb (const struct nn_rsample_info *sampleinfo, const struct nn_rdata 
       dds_time_t postTakeTime = dds_time ();
       dds_time_t difference = postTakeTime - sourcetime.v;
       exampleAddTimingToTimeStats (arg->roundTrip, difference);
-      exampleAddTimingToTimeStats (arg->roundTripOverall, difference);
+      if (arg->roundTripOverall)
+        exampleAddTimingToTimeStats (arg->roundTripOverall, difference);
 
       if (postTakeTime >= arg->tprint)
       {
@@ -288,6 +289,7 @@ void reader_cb (const struct nn_rsample_info *sampleinfo, const struct nn_rdata 
 struct data_available_handler_arg {
   dds_entity_t writer;
   int isping;
+  ExampleTimeStats *roundTripOverall;
   dds_time_t tstart;
   dds_time_t tprint;
 };
@@ -304,7 +306,8 @@ static void data_available_handler (dds_entity_t reader, void *varg)
   {
     difference = postTakeTime - info[0].source_timestamp;
     exampleAddTimingToTimeStats (&roundTrip, difference);
-    exampleAddTimingToTimeStats (&roundTripOverall, difference);
+    if (arg->roundTripOverall)
+      exampleAddTimingToTimeStats (&roundTripOverall, difference);
 
     if (postTakeTime >= arg->tprint)
     {
@@ -409,7 +412,7 @@ int main (int argc, char *argv[])
       usage (argv[0]);
   }
 
-  if (argc - optind >= 2 && (payloadSize = (uint32_t)atol (argv[2])) > 65536)
+  if (argc - optind >= 2 && (payloadSize = (uint32_t)atol (argv[optind+1])) > 65536)
     usage(argv[0]);
 
   if (isping) {
@@ -565,7 +568,8 @@ int main (int argc, char *argv[])
       {
         dds_time_t trecv = dds_time();
         exampleAddTimingToTimeStats (&roundTrip, trecv - tsend);
-        exampleAddTimingToTimeStats (&roundTripOverall, trecv - tsend);
+        if (logfile)
+          exampleAddTimingToTimeStats (&roundTripOverall, trecv - tsend);
         if (trecv >= tprint)
         {
           printf("%9" PRIi64 " %9lu %8.0f %8"PRId64"\n", elapsed + 1, roundTrip.count, exampleGetMedianFromTimeStats (&roundTrip)/1000, roundTrip.min/1000);
@@ -592,6 +596,7 @@ int main (int argc, char *argv[])
   {
     dah_arg.isping = isping;
     dah_arg.writer = writer;
+    dah_arg.roundTripOverall = logfile ? &roundTripOverall : NULL;
     dah_arg.tstart = dds_time();
     dah_arg.tprint = dah_arg.tstart + DDS_SECS(1);
 
@@ -607,7 +612,7 @@ int main (int argc, char *argv[])
       if (isping)
       {
         arg.roundTrip = &roundTrip;
-        arg.roundTripOverall = &roundTripOverall;
+        arg.roundTripOverall = logfile ? &roundTripOverall : NULL;
       }
       else
       {
@@ -672,7 +677,8 @@ int main (int argc, char *argv[])
           {
             difference = postTakeTime - info[0].source_timestamp;
             exampleAddTimingToTimeStats (&roundTrip, difference);
-            exampleAddTimingToTimeStats (&roundTripOverall, difference);
+            if (logfile)
+              exampleAddTimingToTimeStats (&roundTripOverall, difference);
           }
 
           /* Print stats each second */
@@ -715,7 +721,7 @@ int main (int argc, char *argv[])
         }
       }
 
-      printf("\n%9s %9lu xxx %8"PRId64"\n", "# Overall", roundTripOverall.count, roundTripOverall.min);
+      //printf("\n%9s %9lu xxx %8"PRId64"\n", "# Overall", roundTripOverall.count, roundTripOverall.min);
     }
     else
     {
