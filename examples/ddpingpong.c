@@ -327,7 +327,22 @@ static void data_available_handler (dds_entity_t reader, void *varg)
 
 void usage (const char *argv0)
 {
-  fprintf (stderr, "%s {ping|pong|ddping|ddpong|lping|lpong} [payloadSize]\n", argv0);
+  fprintf (stderr, "\
+%s [-f LOGFILE] MS [SIZE]\n\
+\n\
+-f LOGFILE         write all measurements to file LOGFILE (in a format easily\n\
+                   imported into Mathematica)\n\
+\n\
+MS is a combination of a mode and a side, where M is either nothing, l, dd or udp;\n\
+and where S is either ping or pong:\n\
+  ping/pong        waitset-based\n\
+  lping/lpong      listener-based\n\
+  ddping/ddpong    raw DDSI2-based\n\
+  udpping/udppong  plain UDP socket (addressing is handled using DDS topics)\n\
+\n\
+SIZE is the payload size, 0 to 65536 bytes (or however much will fit in a UDP\n\
+datagram and still get through, as there is no reliability in UDP)\n\
+", argv0);
   exit (1);
 }
 
@@ -555,12 +570,12 @@ int main (int argc, char *argv[])
       peeraddr.sin_family = AF_INET;
       if (!inet_pton(AF_INET, addrsample.ip, &peeraddr.sin_addr))
         abort();
+      peeraddr.sin_port = htons(addrsample.port);
 
       printf("# Round trip measurements (in us)\n");
       printf("#             Round trip time [us]\n");
       printf("# Seconds     Count   median      min\n");
 
-      peeraddr.sin_port = htons(addrsample.port);
       tsend = dds_time();
       tprint = tsend + DDS_SECS(1);
       sendto(udpsock, buf, payloadSize, 0, (struct sockaddr *)&peeraddr, peeraddrlen);
