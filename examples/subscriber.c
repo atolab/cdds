@@ -174,9 +174,10 @@ static bool data_available_handler (dds_entity_t reader)
   return samples_received > 0;
 }
 
-static void data_available_handler_listener (dds_entity_t reader)
+static void data_available_handler_listener (dds_entity_t reader, void *arg)
 {
-    (void) data_available_handler (reader);
+    (void)arg;
+    (void)data_available_handler (reader);
 }
 
 int main (int argc, char **argv)

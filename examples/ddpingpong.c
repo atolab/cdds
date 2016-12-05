@@ -285,41 +285,40 @@ void reader_cb (const struct nn_rsample_info *sampleinfo, const struct nn_rdata 
   }
 }
 
-dds_entity_t writer;
-int isping = 1;
+struct data_available_handler_arg {
+  dds_entity_t writer;
+  int isping;
+  dds_time_t tstart;
+  dds_time_t tprint;
+};
 
-static void data_available_handler (dds_entity_t reader)
+static void data_available_handler (dds_entity_t reader, void *varg)
 {
-  static dds_time_t tstart, tprint;
+  struct data_available_handler_arg *arg = varg;
   dds_time_t postTakeTime, difference;
   int status = dds_take (reader, samples, MAX_SAMPLES, info, 0);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   postTakeTime = dds_time ();
 
-  if (isping)
+  if (arg->isping)
   {
     difference = postTakeTime - info[0].source_timestamp;
     exampleAddTimingToTimeStats (&roundTrip, difference);
     exampleAddTimingToTimeStats (&roundTripOverall, difference);
 
-    if (postTakeTime >= tprint)
+    if (postTakeTime >= arg->tprint)
     {
-      if (tprint != 0)
-      {
-        int64_t k = (postTakeTime - tstart) / DDS_NSECS_IN_SEC;
-        printf("%9" PRIi64 " %9lu %8.0f %8"PRId64"\n", k, roundTrip.count, exampleGetMedianFromTimeStats (&roundTrip)/1000, roundTrip.min/1000);
-        exampleResetTimeStats (&roundTrip);
-      }
-      if (tstart == 0)
-        tstart = postTakeTime;
-      tprint = postTakeTime + DDS_SECS(1);
+      int64_t k = (postTakeTime - arg->tstart) / DDS_NSECS_IN_SEC;
+      printf("%9" PRIi64 " %9lu %8.0f %8"PRId64"\n", k, roundTrip.count, exampleGetMedianFromTimeStats (&roundTrip)/1000, roundTrip.min/1000);
+      exampleResetTimeStats (&roundTrip);
+      arg->tprint = postTakeTime + DDS_SECS(1);
     }
 
     postTakeTime = dds_time ();
     info[0].source_timestamp = postTakeTime;
   }
 
-  status = dds_write_ts (writer, &sub_data[0], info[0].source_timestamp);
+  status = dds_write_ts (arg->writer, &sub_data[0], info[0].source_timestamp);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 }
 
@@ -334,11 +333,12 @@ int main (int argc, char *argv[])
   dds_entity_t participant;
   dds_entity_t topic, addrtopic;
   dds_entity_t reader, addrreader;
-  dds_entity_t addrwriter;
+  dds_entity_t writer, addrwriter;
   dds_entity_t publisher;
   dds_entity_t subscriber;
   dds_waitset_t waitSet;
   enum mode { WAITSET, LISTENER, DIRECT, UDP } mode = LISTENER;
+  int isping = 0;
 
   const char *pubPartitions[1] = { "ping" };
   const char *subPartitions[1] = { "pong" };
@@ -366,6 +366,7 @@ int main (int argc, char *argv[])
   dds_readerlistener_t rd_listener;
   int opt;
   const char *logfile = NULL;
+  struct data_available_handler_arg dah_arg;
 
   int udpsock;
   struct sockaddr_in udpaddr;
@@ -484,6 +485,7 @@ int main (int argc, char *argv[])
   dds_qset_reliability (drQos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
   memset (&rd_listener, 0, sizeof (rd_listener));
   rd_listener.on_data_available = data_available_handler;
+  rd_listener.arg = &dah_arg;
   status = dds_reader_create (subscriber, &reader, topic, drQos, (mode == LISTENER) ? &rd_listener : NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
@@ -588,6 +590,11 @@ int main (int argc, char *argv[])
   }
   else
   {
+    dah_arg.isping = isping;
+    dah_arg.writer = writer;
+    dah_arg.tstart = dds_time();
+    dah_arg.tprint = dah_arg.tstart + DDS_SECS(1);
+
     if (mode == DIRECT)
     {
       static struct reader_cbarg arg;

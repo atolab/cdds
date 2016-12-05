@@ -183,19 +183,19 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
           break;
 #endif
         case DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS:
-          (listener.on_requested_incompatible_qos) (&rd->m_entity, &requested_incompatible_qos);
+          (listener.on_requested_incompatible_qos) (&rd->m_entity, &requested_incompatible_qos, listener.arg);
           break;
         case DDS_SAMPLE_LOST_STATUS:
-          (listener.on_sample_lost) (&rd->m_entity, &sample_lost);
+          (listener.on_sample_lost) (&rd->m_entity, &sample_lost, listener.arg);
           break;
         case DDS_SAMPLE_REJECTED_STATUS:
-          (listener.on_sample_rejected) (&rd->m_entity, &sample_rejected);
+          (listener.on_sample_rejected) (&rd->m_entity, &sample_rejected, listener.arg);
           break;
         case DDS_LIVELINESS_CHANGED_STATUS:
-          (listener.on_liveliness_changed) (&rd->m_entity, &liveliness_changed);
+          (listener.on_liveliness_changed) (&rd->m_entity, &liveliness_changed, listener.arg);
           break;
         case DDS_SUBSCRIPTION_MATCHED_STATUS:
-          (listener.on_subscription_matched) (&rd->m_entity, &subscription_matched);
+          (listener.on_subscription_matched) (&rd->m_entity, &subscription_matched, listener.arg);
           break;
         default: assert (0);
       }
@@ -273,7 +273,7 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
       {
         os_mutexUnlock (&sub->m_entity.m_mutex);
       }
-      (listener.on_data_available) (&rd->m_entity);
+      (listener.on_data_available) (&rd->m_entity, listener.arg);
       os_mutexLock (&rd->m_entity.m_mutex);
       rd->m_entity.m_scond->m_trigger &= ~DDS_DATA_AVAILABLE_STATUS;
       if (sub)

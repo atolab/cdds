@@ -191,13 +191,14 @@ dds_publisherlistener_t;
 /** \ref DCPS_Modules_Infrastructure_Listener  - DataReaderListener */
 typedef struct dds_readerlistener
 {
-  void (*on_requested_deadline_missed) (dds_entity_t reader, dds_requested_deadline_missed_status_t * status);
-  void (*on_requested_incompatible_qos) (dds_entity_t reader, dds_requested_incompatible_qos_status_t * status);
-  void (*on_sample_rejected) (dds_entity_t reader, dds_sample_rejected_status_t * status);
-  void (*on_liveliness_changed) (dds_entity_t reader, dds_liveliness_changed_status_t * status);
-  void (*on_data_available) (dds_entity_t reader);
-  void (*on_subscription_matched) (dds_entity_t reader, dds_subscription_matched_status_t * status);
-  void (*on_sample_lost) (dds_entity_t reader, dds_sample_lost_status_t * status);
+  void (*on_requested_deadline_missed) (dds_entity_t reader, dds_requested_deadline_missed_status_t * status, void *arg);
+  void (*on_requested_incompatible_qos) (dds_entity_t reader, dds_requested_incompatible_qos_status_t * status, void *arg);
+  void (*on_sample_rejected) (dds_entity_t reader, dds_sample_rejected_status_t * status, void *arg);
+  void (*on_liveliness_changed) (dds_entity_t reader, dds_liveliness_changed_status_t * status, void *arg);
+  void (*on_data_available) (dds_entity_t reader, void *arg);
+  void (*on_subscription_matched) (dds_entity_t reader, dds_subscription_matched_status_t * status, void *arg);
+  void (*on_sample_lost) (dds_entity_t reader, dds_sample_lost_status_t * status, void *arg);
+  void *arg;
 }
 dds_readerlistener_t;
 
