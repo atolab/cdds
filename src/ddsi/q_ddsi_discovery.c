@@ -313,7 +313,7 @@ int spdp_write (struct participant *pp)
   nn_plist_fini(&ps);
   nn_xmsg_free (mpayload);
 
-  return write_sample_notk (NULL, wr, serdata);
+  return write_sample_nogc_notk (NULL, wr, serdata);
 }
 
 int spdp_dispose_unregister (struct participant *pp)
@@ -349,7 +349,7 @@ int spdp_dispose_unregister (struct participant *pp)
   serdata = ddsi_serstate_fix (serstate);
   nn_xmsg_free (mpayload);
 
-  return write_sample_notk (NULL, wr, serdata);
+  return write_sample_nogc_notk (NULL, wr, serdata);
 }
 
 static unsigned pseudo_random_delay (const nn_guid_t *x, const nn_guid_t *y, nn_mtime_t tnow)
@@ -963,7 +963,7 @@ static int sedp_write_endpoint
   nn_xmsg_free (mpayload);
 
   TRACE (("sedp: write for %x:%x:%x:%x via %x:%x:%x:%x\n", PGUID (*epguid), PGUID (wr->e.guid)));
-  return write_sample_notk (NULL, wr, serdata);
+  return write_sample_nogc_notk (NULL, wr, serdata);
 }
 
 static struct writer *get_sedp_writer (const struct participant *pp, unsigned entityid)
@@ -1399,7 +1399,7 @@ int sedp_write_topic (struct participant *pp, const struct nn_plist *datap)
   nn_xmsg_free (mpayload);
 
   TRACE (("sedp: write topic %s via %x:%x:%x:%x\n", datap->qos.topic_name, PGUID (sedp_wr->e.guid)));
-  return write_sample_notk (NULL, sedp_wr, serdata);
+  return write_sample_nogc_notk (NULL, sedp_wr, serdata);
 }
 
 
@@ -1456,7 +1456,7 @@ int sedp_write_cm_participant (struct participant *pp, int alive)
   nn_xmsg_free (mpayload);
 
   TRACE (("sedp: write CMParticipant ST%x for %x:%x:%x:%x via %x:%x:%x:%x\n", statusinfo, PGUID (pp->e.guid), PGUID (sedp_wr->e.guid)));
-  return write_sample_notk (NULL, sedp_wr, serdata);
+  return write_sample_nogc_notk (NULL, sedp_wr, serdata);
 }
 
 static void handle_SEDP_CM (const struct receiver_state *rst, nn_entityid_t wr_entity_id, unsigned statusinfo, const void *vdata, unsigned len)
@@ -1565,7 +1565,7 @@ int sedp_write_cm_publisher (const struct nn_plist *datap, int alive)
   serdata = ddsi_serstate_fix (serstate);
   nn_xmsg_free (mpayload);
 
-  return write_sample_notk (NULL, sedp_wr, serdata);
+  return write_sample_nogc_notk (NULL, sedp_wr, serdata);
 }
 
 int sedp_write_cm_subscriber (const struct nn_plist *datap, int alive)
@@ -1620,7 +1620,7 @@ int sedp_write_cm_subscriber (const struct nn_plist *datap, int alive)
   serdata = ddsi_serstate_fix (serstate);
   nn_xmsg_free (mpayload);
 
-  return write_sample_notk (NULL, sedp_wr, serdata);
+  return write_sample_nogc_notk (NULL, sedp_wr, serdata);
 }
 
 static void handle_SEDP_GROUP_alive (nn_plist_t *datap /* note: potentially modifies datap */)

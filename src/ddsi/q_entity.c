@@ -2517,14 +2517,15 @@ static struct writer * new_writer_guid
       /* hdepth > 0 => "aggressive keep last", and in that case: why
          bother blocking for a slow receiver when the entire point of
          KEEP_LAST is to keep going (at least in a typical interpretation
-         of the spec */
-      wr->whc_low = wr->whc_high = 2147483647u;
+         of the spec. */
+      wr->whc_low = wr->whc_high = INT32_MAX;
     }
     else
     {
       wr->whc_low = config.whc_lowwater_mark;
       wr->whc_high = config.whc_init_highwater_mark.value;
     }
+    assert (!is_builtin_entityid(wr->e.guid.entityid, ownvendorid) || (wr->whc_low == wr->whc_high && wr->whc_low == INT32_MAX));
   }
 
   /* Connection admin */
@@ -2596,6 +2597,10 @@ static void gc_delete_writer (struct gcreq *gcreq)
   nn_log (LC_DISCOVERY, "gc_delete_writer(%p, %x:%x:%x:%x)\n", (void *) gcreq, PGUID (wr->e.guid));
   gcreq_free (gcreq);
 
+  /* We now allow GC while blocked on a full WHC, but we still don't allow deleting a writer while blocked on it. The writer's state must be DELETING by the time we get here, and that means the transmit path is no longer blocked. It doesn't imply that the write thread is no longer in throttle_writer(), just that if it is, it will soon return from there. Therefore, block until it isn't throttling anymore. We can safely lock the writer, as we're on the separate GC thread. */
+  assert (wr->state == WRST_DELETING);
+  assert (!wr->throttling);
+
   if (wr->heartbeat_xevent)
   {
     wr->hbcontrol.tsched.v = T_NEVER;
@@ -2642,6 +2647,19 @@ static void gc_delete_writer (struct gcreq *gcreq)
   sertopic_free ((struct sertopic *) wr->topic);
   endpoint_common_fini (&wr->e, &wr->c);
   os_free (wr);
+}
+
+static void gc_delete_writer_throttlewait (struct gcreq *gcreq)
+{
+  struct writer *wr = gcreq->arg;
+  nn_log (LC_DISCOVERY, "gc_delete_writer_throttlewait(%p, %x:%x:%x:%x)\n", (void *) gcreq, PGUID (wr->e.guid));
+  /* We now allow GC while blocked on a full WHC, but we still don't allow deleting a writer while blocked on it. The writer's state must be DELETING by the time we get here, and that means the transmit path is no longer blocked. It doesn't imply that the write thread is no longer in throttle_writer(), just that if it is, it will soon return from there. Therefore, block until it isn't throttling anymore. We can safely lock the writer, as we're on the separate GC thread. */
+  assert (wr->state == WRST_DELETING);
+  os_mutexLock (&wr->e.lock);
+  while (wr->throttling)
+    os_condWait (&wr->throttle_cond, &wr->e.lock);
+  os_mutexUnlock (&wr->e.lock);
+  gcreq_requeue (gcreq, gc_delete_writer);
 }
 
 static void writer_set_state (struct writer *wr, enum writer_state newstate)
@@ -3976,7 +3994,7 @@ static int gcreq_participant (struct participant *pp)
 
 static int gcreq_writer (struct writer *wr)
 {
-  struct gcreq *gcreq = gcreq_new (gv.gcreq_queue, gc_delete_writer);
+  struct gcreq *gcreq = gcreq_new (gv.gcreq_queue, wr->throttling ? gc_delete_writer_throttlewait : gc_delete_writer);
   gcreq->arg = wr;
   gcreq_enqueue (gcreq);
   return 0;

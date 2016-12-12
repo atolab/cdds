@@ -917,15 +917,16 @@ static os_result throttle_writer (struct nn_xpack *xp, struct writer *wr)
   const nn_mtime_t abstimeout = add_duration_to_mtime (tnow, nn_from_ddsi_duration (wr->xqos->reliability.max_blocking_time));
   size_t n_unacked = whc_unacked_bytes (wr->whc);
 
-  /* We don't _really_ need to hold the lock if we can decide whether
-     or not to throttle based on atomically updated state. Currently,
-     this is the case, and if it remains that way, maybe we should
-     eventually remove the precondition that the lock be held. */
-  ASSERT_MUTEX_HELD (&wr->e.lock);
-  assert (vtime_awake_p (lookup_thread_state ()->vtime));
+  {
+    nn_vendorid_t ownvendorid = MY_VENDOR_ID;
+    ASSERT_MUTEX_HELD (&wr->e.lock);
+    assert (wr->throttling == 0);
+    assert (vtime_awake_p (lookup_thread_state ()->vtime));
+    assert (!is_builtin_entityid(wr->e.guid.entityid, ownvendorid));
+  }
 
-  TRACE (("writer %x:%x:%x:%x waiting for whc to shrink below low-water mark (whc %"PRIuSIZE" low=%u high=%u)\n", PGUID (wr->e.guid), n_unacked, wr->whc_low, wr->whc_high));
-  wr->throttling++;
+  nn_log (LC_THROTTLE, "writer %x:%x:%x:%x waiting for whc to shrink below low-water mark (whc %"PRIuSIZE" low=%u high=%u)\n", PGUID (wr->e.guid), n_unacked, wr->whc_low, wr->whc_high);
+  wr->throttling = 1;
   wr->throttle_count++;
 
   /* Force any outstanding packet out: there will be a heartbeat
@@ -953,7 +954,9 @@ static os_result throttle_writer (struct nn_xpack *xp, struct writer *wr)
       os_time timeout;
       timeout.tv_sec = (int32_t) (reltimeout / T_SECOND);
       timeout.tv_nsec = (int32_t) (reltimeout % T_SECOND);
+      thread_state_asleep (lookup_thread_state());
       result = os_condTimedWait (&wr->throttle_cond, &wr->e.lock, &timeout);
+      thread_state_awake (lookup_thread_state());
     }
     if (result == os_resultTimeout)
     {
@@ -961,10 +964,15 @@ static os_result throttle_writer (struct nn_xpack *xp, struct writer *wr)
     }
   }
 
-  wr->throttling--;
+  wr->throttling = 0;
+  if (wr->state != WRST_OPERATIONAL)
+  {
+    /* gc_delete_writer may be waiting */
+    os_condBroadcast (&wr->throttle_cond);
+  }
 
   n_unacked = whc_unacked_bytes (wr->whc);
-  TRACE (("writer %x:%x:%x:%x done waiting for whc to shrink below low-water mark (whc %"PRIuSIZE" low=%u high=%u)\n", PGUID (wr->e.guid), n_unacked, wr->whc_low, wr->whc_high));
+  nn_log (LC_THROTTLE, "writer %x:%x:%x:%x done waiting for whc to shrink below low-water mark (whc %"PRIuSIZE" low=%u high=%u)\n", PGUID (wr->e.guid), n_unacked, wr->whc_low, wr->whc_high);
   return result;
 }
 
@@ -985,11 +993,14 @@ static int maybe_grow_whc (struct writer *wr)
   return 0;
 }
 
-static int write_sample_eot (struct nn_xpack *xp, struct writer *wr, struct nn_plist *plist, serdata_t serdata, struct tkmap_instance *tk, int end_of_txn)
+static int write_sample_eot (struct nn_xpack *xp, struct writer *wr, struct nn_plist *plist, serdata_t serdata, struct tkmap_instance *tk, int end_of_txn, int gc_allowed)
 {
   int r;
   seqno_t seq;
   nn_mtime_t tnow;
+
+  /* If GC not allowed, we must be sure to never block when writing.  That is only the case for (true, aggressive) KEEP_LAST writers, and also only if there is no limit to how much unacknowledged data the WHC may contain. */
+  assert(gc_allowed || (wr->xqos->history.kind == NN_KEEP_LAST_HISTORY_QOS && wr->aggressive_keep_last && wr->whc_low == INT32_MAX));
 
   if (ddsi_serdata_size (serdata) > config.max_sample_size)
   {
@@ -1017,24 +1028,26 @@ static int write_sample_eot (struct nn_xpack *xp, struct writer *wr, struct nn_p
   /* If WHC overfull, block. */
   {
     size_t unacked_bytes = whc_unacked_bytes (wr->whc);
-    os_result ores;
-    if (unacked_bytes <= wr->whc_high)
-      ores = os_resultSuccess;
-    else if (config.prioritize_retransmit && wr->retransmitting)
-      ores = throttle_writer (xp, wr);
-    else
+    if (unacked_bytes > wr->whc_high)
     {
-      maybe_grow_whc (wr);
-      if (unacked_bytes <= wr->whc_high)
-        ores = os_resultSuccess;
-      else
+      os_result ores;
+      assert(gc_allowed); /* also see beginning of the function */
+      if (config.prioritize_retransmit && wr->retransmitting)
         ores = throttle_writer (xp, wr);
-    }
-    if (ores == os_resultTimeout)
-    {
-      os_mutexUnlock (&wr->e.lock);
-      r = ERR_TIMEOUT;
-      goto drop;
+      else
+      {
+        maybe_grow_whc (wr);
+        if (unacked_bytes <= wr->whc_high)
+          ores = os_resultSuccess;
+        else
+          ores = throttle_writer (xp, wr);
+      }
+      if (ores == os_resultTimeout)
+      {
+        os_mutexUnlock (&wr->e.lock);
+        r = ERR_TIMEOUT;
+        goto drop;
+      }
     }
   }
 
@@ -1110,17 +1123,32 @@ drop:
   return r;
 }
 
-int write_sample (struct nn_xpack *xp, struct writer *wr, serdata_t serdata, struct tkmap_instance *tk)
+int write_sample_gc (struct nn_xpack *xp, struct writer *wr, serdata_t serdata, struct tkmap_instance *tk)
 {
-  return write_sample_eot (xp, wr, NULL, serdata, tk, 0);
+  return write_sample_eot (xp, wr, NULL, serdata, tk, 0, 1);
 }
 
-int write_sample_notk (struct nn_xpack *xp, struct writer *wr, serdata_t serdata)
+int write_sample_nogc (struct nn_xpack *xp, struct writer *wr, serdata_t serdata, struct tkmap_instance *tk)
+{
+  return write_sample_eot (xp, wr, NULL, serdata, tk, 0, 0);
+}
+
+int write_sample_gc_notk (struct nn_xpack *xp, struct writer *wr, serdata_t serdata)
 {
   struct tkmap_instance *tk;
   int res;
   tk = (ddsi_plugin.rhc_lookup_fn) (serdata);
-  res = write_sample_eot (xp, wr, NULL, serdata, tk, 0);
+  res = write_sample_eot (xp, wr, NULL, serdata, tk, 0, 1);
+  (ddsi_plugin.rhc_unref_fn) (tk);
+  return res;
+}
+
+int write_sample_nogc_notk (struct nn_xpack *xp, struct writer *wr, serdata_t serdata)
+{
+  struct tkmap_instance *tk;
+  int res;
+  tk = (ddsi_plugin.rhc_lookup_fn) (serdata);
+  res = write_sample_eot (xp, wr, NULL, serdata, tk, 0, 0);
   (ddsi_plugin.rhc_unref_fn) (tk);
   return res;
 }

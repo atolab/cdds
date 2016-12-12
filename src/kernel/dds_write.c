@@ -157,7 +157,7 @@ int dds_write_impl
   os_mutexLock (&writer->m_call_lock);
   ddsi_serdata_ref(d);
   tk = (ddsi_plugin.rhc_lookup_fn) (d);
-  ret = write_sample (writer->m_xp, ddsi_wr, d, tk);
+  ret = write_sample_gc (writer->m_xp, ddsi_wr, d, tk);
 
   if (ret >= 0)
   {
@@ -256,7 +256,7 @@ int dds_writecdr_impl
   os_mutexLock (&writer->m_call_lock);
   ddsi_serdata_ref(d);
   tk = (ddsi_plugin.rhc_lookup_fn) (d);
-  ret = write_sample (writer->m_xp, ddsi_wr, d, tk);
+  ret = write_sample_gc (writer->m_xp, ddsi_wr, d, tk);
 
   if (ret >= 0)
   {

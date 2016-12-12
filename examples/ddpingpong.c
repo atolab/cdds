@@ -280,7 +280,7 @@ void reader_cb (const struct nn_rsample_info *sampleinfo, const struct nn_rdata 
     ddsi_serstate_append_blob(st, 4, sampleinfo->size - 4, datap + 4);
     ddsi_serstate_set_msginfo(st, 0, sourcetime, NULL);
     d = ddsi_serstate_fix(st);
-    write_sample(arg->xp, arg->wr, d, arg->tk);
+    write_sample_gc(arg->xp, arg->wr, d, arg->tk);
     nn_xpack_send(arg->xp, true);
     if (mustfree) free (datap);
   }
