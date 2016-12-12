@@ -68,6 +68,15 @@ typedef struct {
   unsigned char address[16];
 } nn_locator_t;
 
+typedef struct nn_udpv4mcgen_address {
+  /* base IPv4 MC address is ipv4, host bits are bits base .. base+count-1, this machine is bit idx */
+  struct in_addr ipv4;
+  unsigned char base;
+  unsigned char count;
+  unsigned char idx; /* must be last: then sorting will put them consecutively */
+} nn_udpv4mcgen_address_t;
+
+
 struct cdrstring {
   unsigned length;
   unsigned char contents[1]; /* C90 does not support flex. array members */
@@ -107,6 +116,7 @@ struct cdrstring {
 #define NN_LOCATOR_KIND_UDPv6 2
 #define NN_LOCATOR_KIND_TCPv4 4
 #define NN_LOCATOR_KIND_TCPv6 8
+#define NN_LOCATOR_KIND_UDPv4MCGEN 0x4fff0000
 #define NN_LOCATOR_PORT_INVALID 0
 
 #define NN_VENDORID_UNKNOWN           {{ 0x00, 0x00 }}

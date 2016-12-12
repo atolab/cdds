@@ -40,7 +40,7 @@ static int compare_locators_vwrap (const void *va, const void *vb);
 static const ut_avlCTreedef_t addrset_treedef =
   UT_AVL_CTREEDEF_INITIALIZER (offsetof (struct addrset_node, avlnode), offsetof (struct addrset_node, loc), compare_locators_vwrap, 0);
 
-static int add_addresses_to_addrset_1 (struct addrset *as, const char *ip, int port_mode, const char *msgtag, int req_mc)
+static int add_addresses_to_addrset_1 (struct addrset *as, const char *ip, int port_mode, const char *msgtag, int req_mc, int mcgen_base, int mcgen_count, int mcgen_idx)
 {
   char buf[INET6_ADDRSTRLEN_EXTENDED];
   os_sockaddr_storage tmpaddr;
@@ -66,6 +66,27 @@ static int add_addresses_to_addrset_1 (struct addrset *as, const char *ip, int p
   if (req_mc && !is_mcaddr (&loc))
   {
     NN_ERROR2 ("%s: %s: not a multicast address\n", msgtag, ip);
+    return -1;
+  }
+
+  if (mcgen_base == -1 && mcgen_count == -1 && mcgen_idx == -1)
+    ;
+  else if (kind == NN_LOCATOR_KIND_UDPv4 && is_mcaddr(&loc) && mcgen_base >= 0 && mcgen_count > 0 && mcgen_base + mcgen_count < 28 && mcgen_idx >= 0 && mcgen_idx < mcgen_count)
+  {
+    nn_udpv4mcgen_address_t x;
+    memset(&x, 0, sizeof(x));
+    memcpy(&x.ipv4, loc.address + 12, 4);
+    x.base = (unsigned char) mcgen_base;
+    x.count = (unsigned char) mcgen_count;
+    x.idx = (unsigned char) mcgen_idx;
+    memset(loc.address, 0, sizeof(loc.address));
+    memcpy(loc.address, &x, sizeof(x));
+    loc.kind = NN_LOCATOR_KIND_UDPv4MCGEN;
+  }
+  else
+  {
+    NN_ERROR5 ("%s: %s,%d,%d,%d: IPv4 multicast address generator invalid or out of place\n",
+               msgtag, ip, mcgen_base, mcgen_count, mcgen_idx);
     return -1;
   }
 
@@ -120,10 +141,13 @@ int add_addresses_to_addrset (struct addrset *as, const char *addrs, int port_mo
   while ((a = os_strsep (&cursor, ",")) != NULL)
   {
     int port = 0, pos;
+    int mcgen_base = -1, mcgen_count = -1, mcgen_idx = -1;
     if (!config.useIpv6)
     {
       if (port_mode == -1 && sscanf (a, "%[^:]:%d%n", ip, &port, &pos) == 2 && a[pos] == 0)
         ; /* XYZ:PORT */
+      else if (sscanf (a, "%[^;];%d;%d;%d%n", ip, &mcgen_base, &mcgen_count, &mcgen_idx, &pos) == 4 && a[pos] == 0)
+        port = port_mode; /* XYZ;BASE;COUNT;IDX for IPv4 MC address generators */
       else if (sscanf (a, "%[^:]%n", ip, &pos) == 1 && a[pos] == 0)
         port = port_mode; /* XYZ */
       else { /* XY:Z -- illegal, but conversion routine should flag it */
@@ -144,7 +168,7 @@ int add_addresses_to_addrset (struct addrset *as, const char *addrs, int port_mo
     }
 
     if ((port > 0 && port <= 65535) || (port_mode == -1 && port == -1)) {
-      if (add_addresses_to_addrset_1 (as, ip, port, msgtag, req_mc) < 0)
+      if (add_addresses_to_addrset_1 (as, ip, port, msgtag, req_mc, mcgen_base, mcgen_count, mcgen_idx) < 0)
         goto error;
     } else {
       NN_ERROR3 ("%s: %s: port %d invalid\n", msgtag, a, port);
@@ -206,19 +230,24 @@ void unref_addrset (struct addrset *as)
 int is_mcaddr (const nn_locator_t *loc)
 {
   os_sockaddr_storage tmp;
-  nn_loc_to_address (&tmp, loc);
   switch (loc->kind)
   {
     case NN_LOCATOR_KIND_UDPv4: {
-      const os_sockaddr_in *x = (const os_sockaddr_in *) &tmp;
+      const os_sockaddr_in *x;
+      nn_loc_to_address (&tmp, loc);
+      x = (const os_sockaddr_in *) &tmp;
       return IN_MULTICAST (ntohl (x->sin_addr.s_addr));
     }
 #if OS_SOCKET_HAS_IPV6
     case NN_LOCATOR_KIND_UDPv6: {
-      const os_sockaddr_in6 *x = (const os_sockaddr_in6 *) &tmp;
+      const os_sockaddr_in6 *x;
+      nn_loc_to_address (&tmp, loc);
+      x = (const os_sockaddr_in6 *) &tmp;
       return IN6_IS_ADDR_MULTICAST (&x->sin6_addr);
     }
 #endif
+    case NN_LOCATOR_KIND_UDPv4MCGEN:
+      return 1;
     default: {
       return 0;
     }
@@ -244,16 +273,19 @@ int is_unspec_locator (const nn_locator_t *loc)
 int is_ssm_mcaddr (const nn_locator_t *loc)
 {
   os_sockaddr_storage tmp;
-  nn_loc_to_address (&tmp, loc);
   switch (loc->kind)
   {
     case NN_LOCATOR_KIND_UDPv4: {
-      const os_sockaddr_in *x = (const os_sockaddr_in *) &tmp;
+      const os_sockaddr_in *x;
+      nn_loc_to_address (&tmp, loc);
+      x = (const os_sockaddr_in *) &tmp;
       return (((uint32_t) ntohl (x->sin_addr.s_addr)) >> 24) == 232;
     }
 #if OS_SOCKET_HAS_IPV6
     case NN_LOCATOR_KIND_UDPv6: {
-      const os_sockaddr_in6 *x = (const os_sockaddr_in6 *) &tmp;
+      const os_sockaddr_in6 *x;
+      nn_loc_to_address (&tmp, loc);
+      x = (const os_sockaddr_in6 *) &tmp;
       return x->sin6_addr.s6_addr[0] == 0xff && (x->sin6_addr.s6_addr[1] & 0xf0) == 0x30;
     }
 #endif
@@ -446,6 +478,20 @@ size_t addrset_count_uc (const struct addrset *as)
     size_t count;
     LOCK (as);
     count = ut_avlCCount (&as->ucaddrs);
+    UNLOCK (as);
+    return count;
+  }
+}
+
+size_t addrset_count_mc (const struct addrset *as)
+{
+  if (as == NULL)
+    return 0;
+  else
+  {
+    size_t count;
+    LOCK (as);
+    count = ut_avlCCount (&as->mcaddrs);
     UNLOCK (as);
     return count;
   }

@@ -53,6 +53,7 @@ void copy_addrset_into_addrset (struct addrset *as, const struct addrset *asadd)
 
 size_t addrset_count (const struct addrset *as);
 size_t addrset_count_uc (const struct addrset *as);
+size_t addrset_count_mc (const struct addrset *as);
 int addrset_empty_uc (const struct addrset *as);
 int addrset_empty_mc (const struct addrset *as);
 int addrset_empty (const struct addrset *as);

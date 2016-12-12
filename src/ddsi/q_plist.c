@@ -986,6 +986,22 @@ static int do_locator
         return ERR_INVALID;
       }
       break;
+    case NN_LOCATOR_KIND_UDPv4MCGEN: {
+      const nn_udpv4mcgen_address_t *x = (const nn_udpv4mcgen_address_t *) loc.address;
+      if (config.useIpv6 || config.tcp_enable)
+        return 0;
+      if (loc.port <= 0 || loc.port > 65536)
+      {
+        TRACE (("plist/do_locator[kind=IPv4MCGEN]: invalid port (%d)\n", (int) loc.port));
+        return ERR_INVALID;
+      }
+      if ((int)x->base + x->count >= 28 || x->count == 0 || x->idx >= x->count)
+      {
+        TRACE (("plist/do_locator[kind=IPv4MCGEN]: invalid base/count/idx (%d,%d,%d)\n", x->base, x->count, x->idx));
+        return ERR_INVALID;
+      }
+      break;
+    }
     case NN_LOCATOR_KIND_INVALID:
       if (!locator_address_zero (&loc))
       {

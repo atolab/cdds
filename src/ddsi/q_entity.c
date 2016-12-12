@@ -884,51 +884,280 @@ struct writer *get_builtin_writer (const struct participant *pp, unsigned entity
    These are all located in a separate section because they are so
    very similar that co-locating them eases editing and checking. */
 
-static int rebuild_writer_addrset_addone_mc (struct addrset *as, const struct wr_prd_match *m
-#ifdef DDSI_INCLUDE_SSM
-                                             , int wr_supports_ssm
+struct rebuild_flatten_locs_arg {
+  nn_locator_t *locs;
+  int idx;
+#ifndef NDEBUG
+  int size;
 #endif
-                                             )
+};
+
+static void rebuild_flatten_locs(const nn_locator_t *loc, void *varg)
 {
-  /* prd->c.as better be constant, or else we need to do this sort of
-     thing also when the proxy reader's address set changes */
-  struct proxy_reader *prd;
-  nn_locator_t loc;
-  if ((prd = ephash_lookup_proxy_reader_guid (&m->prd_guid)) != NULL)
-  {
-#ifdef DDSI_INCLUDE_SSM
-    /* If writer supports SSM and the remote reader favours it, don't
-       add an address for this reader to the address set, but indicate
-       to the rebuild_writer_addrset that it should include the
-       writer's SSM address instead */
-    if (wr_supports_ssm && prd->favours_ssm)
-      return 1;
-    if (addrset_any_non_ssm_mc (prd->c.as, &loc))
-      add_to_addrset (as, &loc);
-#else
-    if (addrset_any_mc (prd->c.as, &loc))
-      add_to_addrset (as, &loc);
-#endif
-    else if (addrset_any_uc (prd->c.as, &loc))
-      add_to_addrset (as, &loc);
-  }
-  return 0;
+  struct rebuild_flatten_locs_arg *arg = varg;
+  assert(arg->idx < arg->size);
+  arg->locs[arg->idx++] = *loc;
 }
 
-static int rebuild_writer_addrset_addone_uc (struct addrset *as, const struct wr_prd_match *m)
+static int rebuild_compare_locs(const void *va, const void *vb)
 {
-  /* Returns 1 iff reader requires use of multicast, else 0. */
-  struct proxy_reader *prd;
-  nn_locator_t loc;
-  if ((prd = ephash_lookup_proxy_reader_guid (&m->prd_guid)) == NULL)
-    return 0;
-  else if (!addrset_any_uc (prd->c.as, &loc))
-    return 1;
+  const nn_locator_t *a = va;
+  const nn_locator_t *b = vb;
+  if (a->kind != b->kind || a->kind != NN_LOCATOR_KIND_UDPv4MCGEN)
+    return compare_locators(a, b);
   else
   {
-    add_to_addrset (as, &loc);
-    return 0;
+    nn_locator_t u = *a, v = *b;
+    nn_udpv4mcgen_address_t *u1 = (nn_udpv4mcgen_address_t *) u.address;
+    nn_udpv4mcgen_address_t *v1 = (nn_udpv4mcgen_address_t *) v.address;
+    u1->idx = v1->idx = 0;
+    return compare_locators(&u, &v);
   }
+}
+
+static struct addrset *rebuild_make_all_addrs (int *nreaders, struct writer *wr)
+{
+  struct addrset *all_addrs = new_addrset();
+  struct wr_prd_match *m;
+  ut_avlIter_t it;
+#ifdef DDSI_INCLUDE_SSM
+  if (wr->supports_ssm && wr->ssm_as)
+    copy_addrset_into_addrset_mc (all_addrs, wr->ssm_as);
+#endif
+  *nreaders = 0;
+  for (m = ut_avlIterFirst (&wr_readers_treedef, &wr->readers, &it); m; m = ut_avlIterNext (&it))
+  {
+    struct proxy_reader *prd;
+    if ((prd = ephash_lookup_proxy_reader_guid (&m->prd_guid)) == NULL)
+      continue;
+    (*nreaders)++;
+    copy_addrset_into_addrset(all_addrs, prd->c.as);
+  }
+  if (addrset_empty(all_addrs) || *nreaders == 0)
+  {
+    unref_addrset(all_addrs);
+    return NULL;
+  }
+  else
+  {
+    return all_addrs;
+  }
+}
+
+static void rebuild_make_locs(int *p_nlocs, nn_locator_t **p_locs, struct addrset *all_addrs)
+{
+  struct rebuild_flatten_locs_arg flarg;
+  int nlocs;
+  int i, j;
+  nn_locator_t *locs;
+  nlocs = (int)addrset_count(all_addrs);
+  locs = os_malloc((size_t)nlocs * sizeof(*locs));
+  flarg.locs = locs;
+  flarg.idx = 0;
+#ifndef NDEBUG
+  flarg.size = nlocs;
+#endif
+  addrset_forall(all_addrs, rebuild_flatten_locs, &flarg);
+  assert(flarg.idx == flarg.size);
+  qsort(locs, (size_t)nlocs, sizeof(*locs), rebuild_compare_locs);
+  /* We want MC gens just once for each IP,BASE,COUNT pair, not once for each node */
+  i = 0; j = 1;
+  while (j < nlocs)
+  {
+    if (rebuild_compare_locs(&locs[i], &locs[j]) != 0)
+      locs[++i] = locs[j];
+    j++;
+  }
+  nlocs = i+1;
+  nn_log(LC_DISCOVERY, "reduced nlocs=%d\n", nlocs);
+  *p_nlocs = nlocs;
+  *p_locs = locs;
+}
+
+static void rebuild_make_covered(char **covered, const struct writer *wr, int *nreaders, int nlocs, const nn_locator_t *locs)
+{
+  struct rebuild_flatten_locs_arg flarg;
+  struct wr_prd_match *m;
+  ut_avlIter_t it;
+  int rdidx, i, j;
+  char *cov = os_malloc((size_t) *nreaders * (size_t) nlocs);
+  memset(cov, 0xff, (size_t) *nreaders * (size_t) nlocs);
+  rdidx = 0;
+  flarg.locs = os_malloc((size_t) nlocs * sizeof(*flarg.locs));
+#ifndef NDEBUG
+  flarg.size = nlocs;
+#endif
+  for (m = ut_avlIterFirst (&wr_readers_treedef, &wr->readers, &it); m; m = ut_avlIterNext (&it))
+  {
+    struct proxy_reader *prd;
+    struct addrset *ass[] = { NULL, NULL, NULL };
+    if ((prd = ephash_lookup_proxy_reader_guid (&m->prd_guid)) == NULL)
+      continue;
+    ass[0] = prd->c.as;
+#ifdef DDSI_INCLUDE_SSM
+    if (prd->favours_ssm && wr->supports_ssm)
+      ass[1] = wr->ssm_as;
+#endif
+    for (i = 0; ass[i]; i++)
+    {
+      flarg.idx = 0;
+      addrset_forall(ass[i], rebuild_flatten_locs, &flarg);
+      for (j = 0; j < flarg.idx; j++)
+      {
+        /* all addresses should be in the combined set of addresses -- FIXME: this doesn't hold if the address sets can change */
+        const nn_locator_t *l = bsearch(&flarg.locs[j], locs, (size_t) nlocs, sizeof(*locs), rebuild_compare_locs);
+        int lidx;
+        char x;
+        assert(l != NULL);
+        lidx = (int) (l - locs);
+        if (l->kind != NN_LOCATOR_KIND_UDPv4MCGEN)
+          x = 0;
+        else
+        {
+          const nn_udpv4mcgen_address_t *l1 = (const nn_udpv4mcgen_address_t *) flarg.locs[j].address;
+          assert(l1->base + l1->idx <= 127);
+          x = (char) (l1->base + l1->idx);
+        }
+        cov[rdidx * nlocs + lidx] = x;
+      }
+    }
+    rdidx++;
+  }
+  os_free(flarg.locs);
+  *covered = cov;
+  *nreaders = rdidx;
+}
+
+static void rebuild_make_locs_nrds(int **locs_nrds, int nreaders, int nlocs, const char *covered)
+{
+  int i, j;
+  int *ln = os_malloc((size_t) nlocs * sizeof(*ln));
+  for (i = 0; i < nlocs; i++)
+  {
+    int n = 0;
+    for (j = 0; j < nreaders; j++)
+      if (covered[j * nlocs + i] >= 0)
+        n++;
+    ln[i] = n;
+  }
+  *locs_nrds = ln;
+}
+
+static void rebuild_trace_covered(int nreaders, int nlocs, const nn_locator_t *locs, const int *locs_nrds, const char *covered)
+{
+  int i, j;
+  for (i = 0; i < nlocs; i++)
+  {
+    char buf[INET6_ADDRSTRLEN_EXTENDED];
+    locator_to_string_with_port(buf, &locs[i]);
+    nn_log(LC_DISCOVERY, "  loc %2d = %-20s %2d {", i, buf, locs_nrds[i]);
+    for (j = 0; j < nreaders; j++)
+      if (covered[j * nlocs + i] >= 0)
+        nn_log(LC_DISCOVERY, " %d", covered[j * nlocs + i]);
+      else
+        nn_log(LC_DISCOVERY, " .");
+    nn_log(LC_DISCOVERY, " }\n");
+  }
+}
+
+static int rebuild_select(int nlocs, const nn_locator_t *locs, const int *locs_nrds)
+{
+  int i, j;
+  if (nlocs == 0)
+    return -1;
+  for (j = 0, i = 1; i < nlocs; i++) {
+    if (locs_nrds[i] > locs_nrds[j])
+      j = i; /* better coverage */
+    else if (locs_nrds[i] == locs_nrds[j])
+    {
+      if (locs_nrds[i] == 1 && !is_mcaddr(&locs[i]))
+        j = i; /* prefer unicast for single nodes */
+#if DDSI_INCLUDE_SSM
+      else if (is_ssm_mcaddr(&locs[i]))
+        j = i; /* "reader favours SSM": all else being equal, use SSM */
+#endif
+    }
+  }
+  return (locs_nrds[j] > 0) ? j : -1;
+}
+
+static void rebuild_add(struct addrset *newas, int locidx, int nreaders, int nlocs, const nn_locator_t *locs, const char *covered)
+{
+  char str[INET6_ADDRSTRLEN_EXTENDED];
+  if (locs[locidx].kind != NN_LOCATOR_KIND_UDPv4MCGEN)
+  {
+    locator_to_string_with_port(str, &locs[locidx]);
+    nn_log(LC_DISCOVERY, "  simple %s\n", str);
+    add_to_addrset(newas, &locs[locidx]);
+  }
+  else /* convert MC gen to the correct multicast address */
+  {
+    nn_locator_t l = locs[locidx];
+    nn_udpv4mcgen_address_t l1;
+    uint32_t iph, ipn;
+    int i;
+    memcpy(&l1, l.address, sizeof(l1));
+    l.kind = NN_LOCATOR_KIND_UDPv4;
+    memset(l.address, 0, 12);
+    iph = ntohl(l1.ipv4.s_addr);
+    for(i = 0; i < nreaders; i++)
+      if (covered[i * nlocs + locidx] >= 0)
+        iph |= 1u << covered[i * nlocs + locidx];
+    ipn = htonl(iph);
+    memcpy(l.address + 12, &ipn, 4);
+    locator_to_string_with_port(str, &l);
+    nn_log(LC_DISCOVERY, "  mcgen %s\n", str);
+    add_to_addrset(newas, &l);
+  }
+}
+
+static void rebuild_drop(int locidx, int nreaders, int nlocs, int *locs_nrds, char *covered)
+{
+  /* readers covered by this locator no longer matter */
+  int i, j;
+  for (i = 0; i < nreaders; i++)
+  {
+    if (covered[i * nlocs + locidx] < 0)
+      continue;
+    for (j = 0; j < nlocs; j++)
+      if (covered[i * nlocs + j] >= 0)
+      {
+        assert(locs_nrds[j] > 0);
+        locs_nrds[j]--;
+        covered[i * nlocs + j] = -1;
+      }
+  }
+}
+
+static void rebuild_writer_addrset_setcover(struct addrset *newas, struct writer *wr)
+{
+  struct addrset *all_addrs;
+  int nreaders, nlocs;
+  nn_locator_t *locs;
+  int *locs_nrds;
+  char *covered;
+  int best;
+  if ((all_addrs = rebuild_make_all_addrs(&nreaders, wr)) == NULL)
+    return;
+  nn_log_addrset(LC_DISCOVERY, "setcover: all_addrs", all_addrs); nn_log(LC_DISCOVERY, "\n");
+  rebuild_make_locs(&nlocs, &locs, all_addrs);
+  unref_addrset(all_addrs);
+  rebuild_make_covered(&covered, wr, &nreaders, nlocs, locs);
+  if (nreaders == 0)
+    goto done;
+  rebuild_make_locs_nrds(&locs_nrds, nreaders, nlocs, covered);
+  while ((best = rebuild_select(nlocs, locs, locs_nrds)) >= 0)
+  {
+    rebuild_trace_covered(nreaders, nlocs, locs, locs_nrds, covered);
+    nn_log(LC_DISCOVERY, "  best = %d\n", best);
+    rebuild_add(newas, best, nreaders, nlocs, locs, covered);
+    rebuild_drop(best, nreaders, nlocs, locs_nrds, covered);
+    assert (locs_nrds[best] == 0);
+  }
+  os_free(locs_nrds);
+ done:
+  os_free(locs);
+  os_free(covered);
 }
 
 static void rebuild_writer_addrset (struct writer *wr)
@@ -941,55 +1170,16 @@ static void rebuild_writer_addrset (struct writer *wr)
   ASSERT_MUTEX_HELD (&wr->e.lock);
 
   /* compute new addrset */
-  if (!ut_avlIsEmpty (&wr->readers))
-  {
-    struct wr_prd_match *m;
-    ut_avlIter_t it;
-    int need_mc = 0;
-    /* First try if we are happy with just unicast; if transmitting
-       multicasts is not an option, then we are by definition */
-    for (m = ut_avlIterFirst (&wr_readers_treedef, &wr->readers, &it); m; m = ut_avlIterNext (&it))
-      need_mc += rebuild_writer_addrset_addone_uc (newas, m);
-    if (config.allowMulticast & ~AMC_SPDP)
-    {
-      /* Try multicasting if there are readers that do not have a
-         unicast address (can that happen?) or if we need multiple
-         unicasts */
-      if (addrset_count_uc (newas) > 1 || need_mc)
-      {
-#ifdef DDSI_INCLUDE_SSM
-        int include_ssm = 0;
-#endif
-        addrset_purge (newas);
-        for (m = ut_avlIterFirst (&wr_readers_treedef, &wr->readers, &it); m; m = ut_avlIterNext (&it))
-        {
-#ifdef DDSI_INCLUDE_SSM
-          include_ssm += rebuild_writer_addrset_addone_mc (newas, m, wr->supports_ssm);
-#else
-          (void) rebuild_writer_addrset_addone_mc (newas, m);
-#endif
-        }
-#ifdef DDSI_INCLUDE_SSM
-        if (include_ssm && wr->ssm_as)
-        {
-          /* FIXME: If at least one reader favours SSM, include the SSM address. Suppose:
-             - R1 advertises G and favours SSM
-             - R2 advertises G but does not favour SSM
-             Then this will cause both ASM to G & SSM even though just an ASM to G would suffice. */
-          copy_addrset_into_addrset_mc (newas, wr->ssm_as);
-        }
-#endif
-      }
-    }
-  }
+  rebuild_writer_addrset_setcover(newas, wr);
+
   /* swap in new address set; this simple procedure is ok as long as
      wr->as is never accessed without the wr->e.lock held */
   wr->as = newas;
   unref_addrset (oldas);
 
-  TRACE (("rebuild_writer_addrset(%x:%x:%x:%x):", PGUID (wr->e.guid)));
-  nn_log_addrset (LC_TRACE, "", wr->as);
-  TRACE (("\n"));
+  nn_log (LC_DISCOVERY, "rebuild_writer_addrset(%x:%x:%x:%x):", PGUID (wr->e.guid));
+  nn_log_addrset (LC_DISCOVERY, "", wr->as);
+  nn_log (LC_DISCOVERY, "\n");
 }
 
 
@@ -2790,9 +2980,39 @@ static void join_mcast_helper (const nn_locator_t *n, void * varg)
   ddsi_tran_conn_t conn = (ddsi_tran_conn_t) varg;
   if (is_mcaddr (n))
   {
-    if (ddsi_conn_join_mc (conn, NULL, n) < 0)
+    if (n->kind != NN_LOCATOR_KIND_UDPv4MCGEN)
     {
-      nn_log (LC_WARNING, "failed to join network partition multicast group\n");
+      if (ddsi_conn_join_mc (conn, NULL, n) < 0)
+      {
+        nn_log (LC_WARNING, "failed to join network partition multicast group\n");
+      }
+    }
+    else /* join all addresses that include this node */
+    {
+      {
+        nn_locator_t l = *n;
+        nn_udpv4mcgen_address_t l1;
+        uint32_t iph;
+        unsigned i;
+        memcpy(&l1, l.address, sizeof(l1));
+        l.kind = NN_LOCATOR_KIND_UDPv4;
+        memset(l.address, 0, 12);
+        iph = ntohl(l1.ipv4.s_addr);
+        for (i = 1; i < (1u << l1.count); i++)
+        {
+          uint32_t ipn, iph1 = iph;
+          if (i & (1u << l1.idx))
+          {
+            iph1 |= (i << l1.base);
+            ipn = htonl(iph1);
+            memcpy(l.address + 12, &ipn, 4);
+            if (ddsi_conn_join_mc (conn, NULL, &l) < 0)
+            {
+              nn_log (LC_WARNING, "failed to join network partition multicast group\n");
+            }
+          }
+        }
+      }
     }
   }
 }
@@ -2802,9 +3022,39 @@ static void leave_mcast_helper (const nn_locator_t *n, void * varg)
   ddsi_tran_conn_t conn = (ddsi_tran_conn_t) varg;
   if (is_mcaddr (n))
   {
-    if (ddsi_conn_leave_mc (conn, NULL, n) < 0)
+    if (n->kind != NN_LOCATOR_KIND_UDPv4MCGEN)
     {
-      nn_log (LC_WARNING, "failed to leave network partition multicast group\n");
+      if (ddsi_conn_leave_mc (conn, NULL, n) < 0)
+      {
+        nn_log (LC_WARNING, "failed to leave network partition multicast group\n");
+      }
+    }
+    else /* join all addresses that include this node */
+    {
+      {
+        nn_locator_t l = *n;
+        nn_udpv4mcgen_address_t l1;
+        uint32_t iph;
+        unsigned i;
+        memcpy(&l1, l.address, sizeof(l1));
+        l.kind = NN_LOCATOR_KIND_UDPv4;
+        memset(l.address, 0, 12);
+        iph = ntohl(l1.ipv4.s_addr);
+        for (i = 1; i < (1u << l1.count); i++)
+        {
+          uint32_t ipn, iph1 = iph;
+          if (i & (1u << l1.idx))
+          {
+            iph1 |= (i << l1.base);
+            ipn = htonl(iph1);
+            memcpy(l.address + 12, &ipn, 4);
+            if (ddsi_conn_leave_mc (conn, NULL, &l) < 0)
+            {
+              nn_log (LC_WARNING, "failed to leave network partition multicast group\n");
+            }
+          }
+        }
+      }
     }
   }
 }

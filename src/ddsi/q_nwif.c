@@ -205,6 +205,9 @@ void nn_loc_to_address (os_sockaddr_storage *dst, const nn_locator_t *src)
       break;
     }
 #endif
+    case NN_LOCATOR_KIND_UDPv4MCGEN:
+      NN_ERROR1 ("nn_address_to_loc: kind %x unsupported\n", src->kind);
+      break;
     default:
       break;
   }
@@ -313,14 +316,30 @@ char *sockaddr_to_string_no_port (char addrbuf[INET6_ADDRSTRLEN_EXTENDED], const
 char *locator_to_string_with_port (char addrbuf[INET6_ADDRSTRLEN_EXTENDED], const nn_locator_t *loc)
 {
   os_sockaddr_storage addr;
-  nn_loc_to_address (&addr, loc);
+  nn_locator_t tmploc = *loc;
+  if (tmploc.kind == NN_LOCATOR_KIND_UDPv4MCGEN)
+  {
+    nn_udpv4mcgen_address_t *x = (nn_udpv4mcgen_address_t *) &tmploc.address;
+    memmove(tmploc.address + 12, &x->ipv4, 4);
+    memset(tmploc.address, 0, 12);
+    tmploc.kind = NN_LOCATOR_KIND_UDPv4;
+  }
+  nn_loc_to_address (&addr, &tmploc);
   return sockaddr_to_string_with_port (addrbuf, &addr);
 }
 
 char *locator_to_string_no_port (char addrbuf[INET6_ADDRSTRLEN_EXTENDED], const nn_locator_t *loc)
 {
   os_sockaddr_storage addr;
-  nn_loc_to_address (&addr, loc);
+  nn_locator_t tmploc = *loc;
+  if (tmploc.kind == NN_LOCATOR_KIND_UDPv4MCGEN)
+  {
+    nn_udpv4mcgen_address_t *x = (nn_udpv4mcgen_address_t *) &tmploc.address;
+    memmove(tmploc.address + 12, &x->ipv4, 4);
+    memset(tmploc.address, 0, 12);
+    tmploc.kind = NN_LOCATOR_KIND_UDPv4;
+  }
+  nn_loc_to_address (&addr, &tmploc);
   return sockaddr_to_string_no_port (addrbuf, &addr);
 }
 

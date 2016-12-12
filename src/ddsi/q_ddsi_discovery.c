@@ -55,6 +55,19 @@ static int get_locator (nn_locator_t *loc, const nn_locators_t *locs, int uc_sam
   memset (&first, 0, sizeof (first));
   memset (&samenet, 0, sizeof (samenet));
 
+  /* Special case UDPv4 MC address generators - there is a bit of an type mismatch between an address generator (i.e., a set of addresses) and an address ... Whoever uses them is supposed to know that that is what he wants, so we simply given them priority. */
+  if (!config.tcp_enable && !config.useIpv6)
+  {
+    for (l = locs->first; l != NULL; l = l->next)
+    {
+      if (l->loc.kind == NN_LOCATOR_KIND_UDPv4MCGEN)
+      {
+        *loc = l->loc;
+        return 1;
+      }
+    }
+  }
+
   /* Preferably an (the first) address that matches a network we are
      on; if none does, pick the first. No multicast locator ever will
      match, so the first one will be used. */
