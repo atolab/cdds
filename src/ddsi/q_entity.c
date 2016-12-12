@@ -313,11 +313,11 @@ int is_deleted_participant_guid (const struct nn_guid *guid, unsigned for_what)
 
 static void remove_deleted_participant_guid (const struct nn_guid *guid, unsigned for_what)
 {
-    struct deleted_participant *n;
+  struct deleted_participant *n;
   nn_log (LC_DISCOVERY, "remove_deleted_participant_guid(%x:%x:%x:%x for_what=%x)\n", PGUID (*guid), for_what);
-    os_mutexLock (&deleted_participants_lock);
-    if ((n = ut_avlLookup (&deleted_participants_treedef, &deleted_participants, guid)) != NULL)
-    {
+  os_mutexLock (&deleted_participants_lock);
+  if ((n = ut_avlLookup (&deleted_participants_treedef, &deleted_participants, guid)) != NULL)
+  {
     if (config.prune_deleted_ppant.enforce_delay)
     {
       n->t_prune = add_duration_to_mtime (now_mt (), config.prune_deleted_ppant.delay);
@@ -328,7 +328,7 @@ static void remove_deleted_participant_guid (const struct nn_guid *guid, unsigne
       if (n->for_what != 0)
       {
         /* For local participants (remove called with LOCAL, leaving
-           REMOTE blacklisted, and has to do with network briding) */
+         REMOTE blacklisted, and has to do with network briding) */
         n->t_prune = add_duration_to_mtime (now_mt (), config.prune_deleted_ppant.delay);
       }
       else
@@ -338,8 +338,7 @@ static void remove_deleted_participant_guid (const struct nn_guid *guid, unsigne
       }
     }
   }
-    os_mutexUnlock (&deleted_participants_lock);
-  }
+  os_mutexUnlock (&deleted_participants_lock);
 }
 
 
