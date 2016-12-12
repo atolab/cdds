@@ -385,6 +385,7 @@ struct config
   int enable_control_topic;
   int initial_deaf;
   int initial_mute;
+  int64_t initial_deaf_mute_reset;
   int use_multicast_if_mreqn;
   struct prune_deleted_ppant prune_deleted_ppant;
 
