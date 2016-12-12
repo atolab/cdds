@@ -63,7 +63,7 @@ struct ephash_enum
    at the protocol level slightly before the network reader can use it
    to transmit data. */
 
-struct ephash *ephash_new (uint32_t soft_limit);
+struct ephash *ephash_new (void);
 void ephash_free (struct ephash *ephash);
 
 void ephash_insert_participant_guid (struct participant *pp);

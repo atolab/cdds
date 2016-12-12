@@ -143,7 +143,6 @@ struct config_channel_listelem {
   struct config_channel_listelem *next;
   char   *name;
   int    priority;
-  unsigned  queue_size;
   int64_t resolution;
 #ifdef DDSI_INCLUDE_BANDWIDTH_LIMITING
   uint32_t data_bandwidth_limit;
@@ -256,12 +255,8 @@ struct config
   float servicelease_expiry_time;
   float servicelease_update_factor;
 
-  uint32_t guid_hash_softlimit;
-
   int enableLoopback;
   enum durability_cdr durability_cdr;
-
-  unsigned nw_queue_size;
 
   int buggy_datafrag_flags_mode;
   int do_topic_discovery;

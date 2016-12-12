@@ -558,8 +558,6 @@ int rtps_config_prep (struct cfgst *cfgst)
       size_t slen = strlen (chptr->name) + 5;
       char *thread_name = os_malloc (slen);
       snprintf (thread_name, slen, "tev.%s", chptr->name);
-      if (chptr->queue_size == 0)
-        chptr->queue_size = config.nw_queue_size;
 
       num_channels++;
       num_channel_threads += 2; /* xmit and dqueue */
@@ -829,7 +827,7 @@ int rtps_init (void)
   os_condInit (&gv.participant_set_cond, &gv.participant_set_lock, NULL);
   lease_management_init ();
   deleted_participants_admin_init ();
-  gv.guid_hash = ephash_new (config.guid_hash_softlimit);
+  gv.guid_hash = ephash_new ();
 
   os_mutexInit (&gv.privileged_pp_lock, NULL);
   gv.privileged_pp = NULL;

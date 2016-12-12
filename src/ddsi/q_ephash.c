@@ -76,11 +76,11 @@ static void gc_buckets (void *bs)
   gcreq_enqueue (gcreq);
 }
 
-struct ephash *ephash_new (uint32_t soft_limit)
+struct ephash *ephash_new (void)
 {
   struct ephash *ephash;
   ephash = os_malloc (sizeof (*ephash));
-  ephash->hash = ut_chhNew (soft_limit, hash_entity_guid_wrapper, entity_guid_eq_wrapper, gc_buckets);
+  ephash->hash = ut_chhNew (32, hash_entity_guid_wrapper, entity_guid_eq_wrapper, gc_buckets);
   if (ephash->hash == NULL) {
     os_free (ephash);
     return NULL;

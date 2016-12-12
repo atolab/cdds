@@ -109,48 +109,56 @@ static int cfgst_node_cmp (const void *va, const void *vb);
 static const ut_avlTreedef_t cfgst_found_treedef =
   UT_AVL_TREEDEF_INITIALIZER (offsetof (struct cfgst_node, avlnode), offsetof (struct cfgst_node, key), cfgst_node_cmp, 0);
 
-#define DU(fname) static int fname (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, int first, const char *value)
-DU (uf_networkAddress);
-DU (uf_networkAddresses);
-DU (uf_ipv4);
-DU (uf_allow_multicast);
-DU (uf_boolean);
-DU (uf_negated_boolean);
-DU (uf_string);
-DU (uf_tracingOutputFileName);
-DU (uf_verbosity);
-DU (uf_logcat);
-DU (uf_float);
-DU (uf_int);
-DU (uf_uint);
-DU (uf_int32);
-DU (uf_uint32);
-DU (uf_natint);
-DU (uf_natint_255);
-DU (uf_participantIndex);
-DU (uf_port);
-DU (uf_dyn_port);
-DU (uf_memsize);
-DU (uf_duration_inf);
-DU (uf_duration_ms_1hr);
-DU (uf_duration_ms_1s);
-DU (uf_duration_us_1s);
-DU (uf_standards_conformance);
-DU (uf_besmode);
-DU (uf_retransmit_merging);
-DU (uf_sched_prio_class);
-DU (uf_sched_class);
-DU (uf_maybe_memsize);
-DU (uf_maybe_int32);
+#define DU(fname) static int uf_##fname (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, int first, const char *value)
+#define PF(fname) static void pf_##fname (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, int is_default)
+#define DUPF(fname) DU(fname) ; PF(fname)
+PF   (nop);
+DUPF (networkAddress);
+DUPF (networkAddresses);
+DU   (ipv4);
+DUPF (allow_multicast);
+DUPF (boolean);
+DUPF (negated_boolean);
+DUPF (string);
+DU   (tracingOutputFileName);
+DU   (verbosity);
+DUPF (logcat);
+DUPF (float);
+DUPF (int);
+DUPF (uint);
+DUPF (int32);
+#if 0
+DUPF (uint32);
+#endif
+DU   (natint);
+DU   (natint_255);
+DUPF (participantIndex);
+DU   (port);
+DU   (dyn_port);
+DUPF (memsize);
+DU   (duration_inf);
+DU   (duration_ms_1hr);
+DU   (duration_ms_1s);
+DU   (duration_us_1s);
+PF   (duration);
+DUPF (standards_conformance);
+DUPF (besmode);
+DUPF (retransmit_merging);
+DUPF (sched_prio_class);
+DUPF (sched_class);
+DUPF (maybe_memsize);
+DUPF (maybe_int32);
 #ifdef DDSI_INCLUDE_ENCRYPTION
-DU (uf_cipher);
+DUPF (cipher);
 #endif
 #ifdef DDSI_INCLUDE_BANDWIDTH_LIMITING
-DU (uf_bandwidth);
+DUPF (bandwidth);
 #endif
-DU (uf_domainId);
-DU (uf_durability_cdr);
+DU   (domainId);
+DUPF (durability_cdr);
+#undef DUPF
 #undef DU
+#undef PF
 
 #define DF(fname) static void fname (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem)
 DF (ff_free);
@@ -172,40 +180,6 @@ DI (if_partition_mapping);
 DI (if_peer);
 DI (if_thread_properties);
 #undef DI
-
-#define PF(fname) static void fname (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, int is_default)
-PF (pf_nop);
-PF (pf_string);
-PF (pf_networkAddress);
-PF (pf_participantIndex);
-PF (pf_networkAddresses);
-PF (pf_memsize);
-PF (pf_duration);
-PF (pf_int);
-PF (pf_uint);
-PF (pf_int32);
-PF (pf_uint32);
-PF (pf_float);
-PF (pf_allow_multicast);
-PF (pf_boolean);
-PF (pf_negated_boolean);
-PF (pf_logcat);
-PF (pf_standards_conformance);
-PF (pf_besmode);
-PF (pf_retransmit_merging);
-PF (pf_sched_prio_class);
-PF (pf_sched_class);
-PF (pf_maybe_memsize);
-PF (pf_maybe_int32);
-PF (pf_durability_cdr);
-#ifdef DDSI_INCLUDE_ENCRYPTION
-PF (pf_cipher);
-PF (pf_key);
-#endif
-#ifdef DDSI_INCLUDE_BANDWIDTH_LIMITING
-PF (pf_bandwidth);
-#endif
-#undef PF
 
 #define CO(name) ((int) offsetof (struct config, name))
 #define ABSOFF(name) 0, CO (name)
@@ -363,8 +337,6 @@ static const struct cfgelem partitioning_cfgelems[] = {
 
 #ifdef DDSI_INCLUDE_NETWORK_CHANNELS
 static const struct cfgelem channel_cfgelems[] = {
-  { LEAF ("QueueSize"), 1, "0", RELOFF (config_channel_listelem, queue_size), 0, uf_natint, 0, pf_int,
-    "<p>This element specifies the number of messages the network queue for this channel can contain. The OpenSplice kernel writes data to be transmitted to the network queue, and DDSI2E takes them from this queue. If this queue is full when an application tries to write a sample, the sample will be dropped or the writer suspended, depending on the QoS settings of the writer. OpenSplice and its services are optimised for a well-balanced system design, where the queue never becomes full.</p>" },
 #ifdef DDSI_INCLUDE_BANDWIDTH_LIMITING
   { LEAF ("DataBandwidthLimit"), 1, "inf", RELOFF (config_channel_listelem, data_bandwidth_limit), 0, uf_bandwidth, 0, pf_bandwidth,
     "<p>This element specifies the maximum transmit rate of new samples and directly related data, for this channel. Bandwidth limiting uses a leaky bucket scheme. The default value \"inf\" means DDSI2E imposes no limitation, the underlying operating system and hardware will likely limit the maimum transmit rate.</p>" },
@@ -624,9 +596,6 @@ static const struct cfgelem sizing_cfgelems[] =
     "<p>This element sets the size of a single receive buffer. Many receive buffers may be needed. Their size must be greater than ReceiveBufferChunkSize by a modest amount.</p>" },
   { LEAF ("ReceiveBufferChunkSize"), 1, "128 KiB", ABSOFF (rmsg_chunk_size), 0, uf_memsize, 0, pf_memsize,
     "<p>This element specifies the size of one allocation unit in the receive buffer. Must be greater than the maximum packet size by a modest amount (too large packets are dropped). Each allocation is shrunk immediately after processing a message, or freed straightaway.</p>" },
-  { LEAF ("EndpointsInSystem"), 1, "200", ABSOFF (guid_hash_softlimit), 0, uf_uint32, 0, pf_uint32,
-    "<p>This endpoint specifies the expected maximum number of endpoints in the network. Underestimating this number will have a significant performance impact, but will not affect correctness; signficantly overestimating it will cause more memory to be used than necessary.</p>" },
-  { LEAF ("NetworkQueueSize"), 1, "10", ABSOFF (nw_queue_size), 0, uf_uint, 0, pf_uint },
   END_MARKER
 };
 
@@ -1871,6 +1840,7 @@ static int uf_int32 (struct cfgst *cfgst, void *parent, struct cfgelem const * c
   return 1;
 }
 
+#if 0
 static int uf_uint32 (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, UNUSED_ARG (int first), const char *value)
 {
   uint32_t *elem = cfg_address (cfgst, parent, cfgelem);
@@ -1883,6 +1853,7 @@ static int uf_uint32 (struct cfgst *cfgst, void *parent, struct cfgelem const * 
   *elem = (uint32_t) v;
   return 1;
 }
+#endif
 
 static int uf_uint (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, UNUSED_ARG (int first), const char *value)
 {
@@ -2160,11 +2131,13 @@ static void pf_int32 (struct cfgst *cfgst, void *parent, struct cfgelem const * 
   cfg_log (cfgst, "%d%s", *p, is_default ? " [def]" : "");
 }
 
+#if 0
 static void pf_uint32 (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, int is_default)
 {
   uint32_t *p = cfg_address (cfgst, parent, cfgelem);
   cfg_log (cfgst, "%u%s", *p, is_default ? " [def]" : "");
 }
+#endif
 
 static void pf_maybe_int32 (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, int is_default)
 {
@@ -2625,7 +2598,6 @@ static int set_default_channel (struct config *cfg)
     c->data_bandwidth_limit = 0;
     c->auxiliary_bandwidth_limit = 0;
 #endif
-    c->queue_size = 0;
     c->diffserv_field = 0;
     c->channel_reader_ts = NULL;
     c->queueId = 0;
