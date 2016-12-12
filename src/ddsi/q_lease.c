@@ -183,7 +183,7 @@ void check_and_handle_lease_expiration (UNUSED_ARG (struct thread_state1 *self),
       continue;
     }
 
-    TRACE (("lease expired: l %p guid %x:%x:%x:%x tend %"PRId64" < now %"PRId64"\n", (void *) l, PGUID (g), l->tend.v, tnowE.v));
+    nn_log (LC_DISCOVERY, "lease expired: l %p guid %x:%x:%x:%x tend %"PRId64" < now %"PRId64"\n", (void *) l, PGUID (g), l->tend.v, tnowE.v);
 
     /* If the proxy participant is relying on another participant for
        writing its discovery data (on the privileged participant,
@@ -216,8 +216,8 @@ void check_and_handle_lease_expiration (UNUSED_ARG (struct thread_state1 *self),
       if ((proxypp = ephash_lookup_proxy_participant_guid (&g)) != NULL &&
           ephash_lookup_proxy_participant_guid (&proxypp->privileged_pp_guid) != NULL)
       {
-        TRACE (("but postponing because privileged pp %x:%x:%x:%x is still live\n",
-                PGUID (proxypp->privileged_pp_guid)));
+        nn_log (LC_DISCOVERY, "but postponing because privileged pp %x:%x:%x:%x is still live\n",
+                PGUID (proxypp->privileged_pp_guid));
         l->tsched = l->tend = add_duration_to_etime (tnowE, 200 * T_MILLISECOND);
         unlock_lease (l);
         ut_fibheapInsert (&lease_fhdef, &gv.leaseheap, l);

@@ -42,7 +42,8 @@ extern "C" {
 #define LC_TCP 4096u
 #define LC_PLIST 8192u
 #define LC_WHC 16384u
-#define LC_ALLCATS (LC_FATAL | LC_ERROR | LC_WARNING | LC_CONFIG | LC_INFO | LC_DISCOVERY | LC_DATA | LC_TRACE | LC_TIMING | LC_TRAFFIC | LC_TCP)
+#define LC_THROTTLE 32768u
+#define LC_ALLCATS (LC_FATAL | LC_ERROR | LC_WARNING | LC_CONFIG | LC_INFO | LC_DISCOVERY | LC_DATA | LC_TRACE | LC_TIMING | LC_TRAFFIC | LC_TCP | LC_THROTTLE)
 
 typedef unsigned logcat_t;
 
@@ -93,6 +94,7 @@ void nn_log_set_tstamp (nn_wctime_t tnow);
 #define NN_ERROR2(fmt,a,b) nn_log (LC_ERROR, ("<Error> " fmt),a,b)
 #define NN_ERROR3(fmt,a,b,c) nn_log (LC_ERROR, ("<Error> " fmt),a,b,c)
 #define NN_ERROR4(fmt,a,b,c,d) nn_log (LC_ERROR, ("<Error> " fmt),a,b,c,d)
+#define NN_ERROR5(fmt,a,b,c,d,e) nn_log (LC_ERROR, ("<Error> " fmt),a,b,c,d,e)
 
 #define NN_FATAL0(fmt) nn_log (LC_FATAL, ("<Fatal> " fmt))
 #define NN_FATAL1(fmt,a) nn_log (LC_FATAL, ("<Fatal> " fmt),a)

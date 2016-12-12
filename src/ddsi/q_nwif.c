@@ -729,7 +729,7 @@ static int joinleave_mcgroup (os_socket socket, int join, const os_sockaddr_stor
 {
   char buf[256];
   int err;
-  TRACE (("%s\n", make_joinleave_msg (buf, sizeof(buf), socket, join, srcip, mcip, interf, 0)));
+  nn_log (LC_DISCOVERY, "%s\n", make_joinleave_msg (buf, sizeof(buf), socket, join, srcip, mcip, interf, 0));
 #ifdef DDSI_INCLUDE_SSM
   if (srcip)
     err = joinleave_ssm_mcgroup(socket, join, srcip, mcip, interf);

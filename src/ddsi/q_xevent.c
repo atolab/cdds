@@ -1168,7 +1168,7 @@ static void handle_xevk_end_startup_mode (UNUSED_ARG (struct nn_xpack *xp), stru
   struct ephash_enum_writer est;
   struct writer *wr;
   assert (gv.startup_mode);
-  TRACE (("end startup mode\n"));
+  nn_log (LC_DISCOVERY, "end startup mode\n");
   gv.startup_mode = 0;
   /* FIXME: MEMBAR needed for startup mode (or use a lock) */
   ephash_enum_writer_init (&est);
