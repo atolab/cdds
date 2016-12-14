@@ -562,6 +562,7 @@ int main (int argc, char *argv[])
       dds_time_t tprint, tsend;
       printf ("# payloadSize: %"PRIu32" | numSamples: %llu | timeOut: %" PRIi64 "\n\n", payloadSize, numSamples, timeOut);
       memset (buf, 0, sizeof (buf));
+      memset (&addrsample, 0, sizeof (addrsample));
       do {
         status = dds_take (addrreader, addrsamples, 1, infos, 0);
         DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
