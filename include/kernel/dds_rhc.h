@@ -25,11 +25,11 @@ uint32_t dds_rhc_samples (struct rhc * rhc);
 
 DDS_EXPORT bool dds_rhc_store
 (
-  struct rhc * restrict rhc, const struct nn_rsample_info * restrict sampleinfo,
-  struct serdata * restrict sample, struct tkmap_instance * restrict tk
+  struct rhc * __restrict rhc, const struct nn_rsample_info * __restrict sampleinfo,
+  struct serdata * __restrict sample, struct tkmap_instance * __restrict tk
 );
-void dds_rhc_unregister_wr (struct rhc * restrict rhc, const struct proxy_writer_info * restrict pwr_info);
-void dds_rhc_relinquish_ownership (struct rhc * restrict rhc, const uint64_t wr_iid);
+void dds_rhc_unregister_wr (struct rhc * __restrict rhc, const struct proxy_writer_info * __restrict pwr_info);
+void dds_rhc_relinquish_ownership (struct rhc * __restrict rhc, const uint64_t wr_iid);
 
 int dds_rhc_read 
 (

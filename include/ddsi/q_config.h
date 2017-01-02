@@ -411,12 +411,12 @@ struct ddsi_plugin
   void (*rhc_free_fn) (struct rhc *rhc);
   void (*rhc_fini_fn) (struct rhc *rhc);
   bool (*rhc_store_fn)
-    (struct rhc * restrict rhc, const struct nn_rsample_info * restrict sampleinfo,
-     struct serdata * restrict sample, struct tkmap_instance * restrict tk);
+    (struct rhc * __restrict rhc, const struct nn_rsample_info * __restrict sampleinfo,
+     struct serdata * __restrict sample, struct tkmap_instance * __restrict tk);
   void (*rhc_unregister_wr_fn)
-    (struct rhc * restrict rhc, const struct proxy_writer_info * restrict pwr_info);
+    (struct rhc * __restrict rhc, const struct proxy_writer_info * __restrict pwr_info);
   void (*rhc_relinquish_ownership_fn)
-    (struct rhc * restrict rhc, const uint64_t wr_iid);
+    (struct rhc * __restrict rhc, const uint64_t wr_iid);
   void (*rhc_set_qos_fn) (struct rhc * rhc, const struct nn_xqos * qos);
   struct tkmap_instance * (*rhc_lookup_fn) (struct serdata *serdata);
   void (*rhc_unref_fn) (struct tkmap_instance *tk);

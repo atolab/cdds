@@ -38,7 +38,7 @@ typedef struct dds_allocator
 }
 dds_allocator_t;
 
-OS_API void dds_set_allocator (const dds_allocator_t * restrict n, dds_allocator_t * restrict o);
+OS_API void dds_set_allocator (const dds_allocator_t * __restrict n, dds_allocator_t * __restrict o);
 
 typedef struct dds_aligned_allocator
 {
@@ -50,7 +50,7 @@ typedef struct dds_aligned_allocator
 }
 dds_aligned_allocator_t;
 
-OS_API void dds_set_aligned_allocator (const dds_aligned_allocator_t * restrict n, dds_aligned_allocator_t * restrict o);
+OS_API void dds_set_aligned_allocator (const dds_aligned_allocator_t * __restrict n, dds_aligned_allocator_t * __restrict o);
 
 OS_API void * dds_alloc (size_t size);
 OS_API void * dds_realloc (void * ptr, size_t size);

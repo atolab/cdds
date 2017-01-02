@@ -719,7 +719,7 @@ static int inst_accepts_sample
 static void update_inst
 (
   const struct rhc *rhc, struct rhc_instance *inst,
-  const struct proxy_writer_info * restrict pwr_info, nn_wctime_t tstamp)
+  const struct proxy_writer_info * __restrict pwr_info, nn_wctime_t tstamp)
 {
   if (inst->wr_iid != pwr_info->iid)
   {
@@ -913,7 +913,7 @@ static int rhc_unregister_isreg_w_sideeffects (struct rhc *rhc, const struct rhc
 static int rhc_unregister_updateinst
 (
   struct rhc *rhc, struct rhc_instance *inst,
-  const struct proxy_writer_info * restrict pwr_info, nn_wctime_t tstamp)
+  const struct proxy_writer_info * __restrict pwr_info, nn_wctime_t tstamp)
 {
   assert (inst->wrcount > 0);
 
@@ -973,7 +973,7 @@ static int rhc_unregister_updateinst
 static void dds_rhc_unregister
 (
   struct trigger_info *post, struct rhc *rhc, struct rhc_instance *inst,
-  const struct proxy_writer_info * restrict pwr_info, nn_wctime_t tstamp
+  const struct proxy_writer_info * __restrict pwr_info, nn_wctime_t tstamp
 )
 {
   /* 'post' always gets set; instance may have been freed upon return. */
@@ -1087,8 +1087,8 @@ static rhc_store_result_t rhc_store_new_instance
 
 bool dds_rhc_store
 (
-  struct rhc * restrict rhc, const struct nn_rsample_info * restrict sampleinfo,
-  struct serdata * restrict sample, struct tkmap_instance * restrict tk
+  struct rhc * __restrict rhc, const struct nn_rsample_info * __restrict sampleinfo,
+  struct serdata * __restrict sample, struct tkmap_instance * __restrict tk
 )
 {
   const uint64_t wr_iid = sampleinfo->pwr_info.iid;
@@ -1354,8 +1354,8 @@ error_or_nochange:
 
 void dds_rhc_unregister_wr
 (
-  struct rhc * restrict rhc,
-  const struct proxy_writer_info * restrict pwr_info
+  struct rhc * __restrict rhc,
+  const struct proxy_writer_info * __restrict pwr_info
 )
 {
   /* Only to be called when writer with ID WR_IID has died.
@@ -1429,7 +1429,7 @@ void dds_rhc_unregister_wr
   }
 }
 
-void dds_rhc_relinquish_ownership (struct rhc * restrict rhc, const uint64_t wr_iid)
+void dds_rhc_relinquish_ownership (struct rhc * __restrict rhc, const uint64_t wr_iid)
 {
   struct rhc_instance *inst;
   struct ut_hhIter iter;

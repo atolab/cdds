@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
+add_definitions(-DVDDS_BUILD=1)
 
 FUNCTION(PREPEND var prefix)
    SET(listVar "")

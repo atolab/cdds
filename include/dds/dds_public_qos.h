@@ -167,7 +167,7 @@ OS_API dds_qos_t * dds_qos_create (void);
  * Arguments :
  *   -# qos pointer to the structure
  */
-OS_API void dds_qos_delete (dds_qos_t * restrict qos);
+OS_API void dds_qos_delete (dds_qos_t * __restrict qos);
 
 /**
  * Description : This operation results in resetting the qos structure contents to 0
@@ -175,7 +175,7 @@ OS_API void dds_qos_delete (dds_qos_t * restrict qos);
  * Arguments :
  *   -# qos pointer to the structure
  */
-OS_API void dds_qos_reset (dds_qos_t * restrict qos);
+OS_API void dds_qos_reset (dds_qos_t * __restrict qos);
 
 /**
  * Description : Copy the qos policies from source to destination
@@ -184,7 +184,7 @@ OS_API void dds_qos_reset (dds_qos_t * restrict qos);
  *   -# dst The pointer to the destination qos structure, where the content is to copied
  *   -# src The pointer to the source qos structure to be copied
  */
-OS_API void dds_qos_copy (dds_qos_t * restrict dst, const dds_qos_t * restrict src);
+OS_API void dds_qos_copy (dds_qos_t * __restrict dst, const dds_qos_t * __restrict src);
 
 /**
  * Description : Copy the qos policies from source to destination, unless already set
@@ -193,7 +193,7 @@ OS_API void dds_qos_copy (dds_qos_t * restrict dst, const dds_qos_t * restrict s
  *   -# dst The pointer to the destination qos structure, where the content is merged
  *   -# src The pointer to the source qos structure to be copied
  */
-OS_API void dds_qos_merge (dds_qos_t * restrict dst, const dds_qos_t * restrict src);
+OS_API void dds_qos_merge (dds_qos_t * __restrict dst, const dds_qos_t * __restrict src);
 
 /**
  * Description : Retrieves the default value of the domain participant qos
@@ -201,7 +201,7 @@ OS_API void dds_qos_merge (dds_qos_t * restrict dst, const dds_qos_t * restrict 
  * Arguments :
  *   -# qos pointer that contains default values of the policies for participant
  */
-OS_API void dds_get_default_participant_qos (dds_qos_t * restrict qos);
+OS_API void dds_get_default_participant_qos (dds_qos_t * __restrict qos);
 
 /**
  * Description : Retrieves the default value of the topic qos
@@ -209,7 +209,7 @@ OS_API void dds_get_default_participant_qos (dds_qos_t * restrict qos);
  * Arguments :
  *   -# qos pointer that contains default values of the policies for topic
  */
-OS_API void dds_get_default_topic_qos (dds_qos_t * restrict qos);
+OS_API void dds_get_default_topic_qos (dds_qos_t * __restrict qos);
 
 /**
  * Description : Retrieves the default value of the publisher qos
@@ -217,7 +217,7 @@ OS_API void dds_get_default_topic_qos (dds_qos_t * restrict qos);
  * Arguments :
  *   -# qos pointer that contains default values of the policies for publisher
  */
-OS_API void dds_get_default_publisher_qos (dds_qos_t * restrict qos);
+OS_API void dds_get_default_publisher_qos (dds_qos_t * __restrict qos);
 
 /**
  * Description : Retrieves the default value of the subscriber qos
@@ -225,7 +225,7 @@ OS_API void dds_get_default_publisher_qos (dds_qos_t * restrict qos);
  * Arguments :
  *   -# qos pointer that contains default values of the policies for subscriber
  */
-OS_API void dds_get_default_subscriber_qos (dds_qos_t * restrict qos);
+OS_API void dds_get_default_subscriber_qos (dds_qos_t * __restrict qos);
 
 /**
  * Description : Retrieves the default value of the data writer qos
@@ -233,7 +233,7 @@ OS_API void dds_get_default_subscriber_qos (dds_qos_t * restrict qos);
  * Arguments :
  *   -# qos pointer that contains default values of the policies for data writer
  */
-OS_API void dds_get_default_writer_qos (dds_qos_t * restrict qos);
+OS_API void dds_get_default_writer_qos (dds_qos_t * __restrict qos);
 
 /**
  * Description : Retrieves the default value of the data reader qos
@@ -241,7 +241,7 @@ OS_API void dds_get_default_writer_qos (dds_qos_t * restrict qos);
  * Arguments :
  *   -# qos pointer that contains default values of the policies for data reader
  */
-OS_API void dds_get_default_reader_qos (dds_qos_t * restrict qos);
+OS_API void dds_get_default_reader_qos (dds_qos_t * __restrict qos);
 
 /* return values represent the Error codes if set call is unsuccessful
 */
@@ -255,7 +255,7 @@ OS_API void dds_get_default_reader_qos (dds_qos_t * restrict qos);
  *   -# value content of the user data
  *   -# sz size of the value passed in
  */
-OS_API void dds_qset_userdata (dds_qos_t * restrict qos, const void * restrict value, size_t sz);
+OS_API void dds_qset_userdata (dds_qos_t * __restrict qos, const void * __restrict value, size_t sz);
 
 /**
  * Description : Set the topicdata policy in the qos structure. This value will be validated and applied
@@ -266,7 +266,7 @@ OS_API void dds_qset_userdata (dds_qos_t * restrict qos, const void * restrict v
  *   -# value content of the topic data
  *   -# sz size of the value passed in
  */
-OS_API void dds_qset_topicdata (dds_qos_t * restrict qos, const void * restrict value, size_t sz);
+OS_API void dds_qset_topicdata (dds_qos_t * __restrict qos, const void * __restrict value, size_t sz);
 
 /**
  * Description : Set the groupdata policy in the qos structure. This value will be validated and applied
@@ -277,7 +277,7 @@ OS_API void dds_qset_topicdata (dds_qos_t * restrict qos, const void * restrict 
  *   -# value content of the group data
  *   -# sz size of the value passed in
  */
-OS_API void dds_qset_groupdata (dds_qos_t * restrict qos, const void * restrict value, size_t sz);
+OS_API void dds_qset_groupdata (dds_qos_t * __restrict qos, const void * __restrict value, size_t sz);
 
 /**
  * Description : Set the durability policy in the qos structure. This value will be validated and applied
@@ -400,7 +400,7 @@ OS_API void dds_qset_time_based_filter (dds_qos_t *qos, dds_duration_t minimum_s
  *   -# n The partition number
  *   -# ps The logical name to the partition to create \ref DCPS_QoS_Partition
  */
-OS_API void dds_qset_partition (dds_qos_t * restrict qos, uint32_t n, const char ** ps);
+OS_API void dds_qset_partition (dds_qos_t * __restrict qos, uint32_t n, const char ** ps);
 
 /**
  * Description : Set the reliability policy in the qos structure. This value will be validated

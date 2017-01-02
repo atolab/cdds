@@ -10,7 +10,7 @@
 
 #define CHANGEABLE_QOS_BIT_MASK (QP_LATENCY_BUDGET | QP_OWNERSHIP_STRENGTH)
 
-static void dds_qos_data_copy_in (nn_octetseq_t * data, const void * restrict value, size_t sz)
+static void dds_qos_data_copy_in (nn_octetseq_t * data, const void * __restrict value, size_t sz)
 {
   if (data->value)
   {
@@ -300,7 +300,7 @@ int dds_qos_set (dds_entity_t e, const dds_qos_t * qos)
 
 /* set qos to default values */
 
-static void dds_qos_init_defaults (dds_qos_t * restrict qos)
+static void dds_qos_init_defaults (dds_qos_t * __restrict qos)
 {
   assert (qos);
   memset (qos, 0, sizeof (*qos));
@@ -340,14 +340,14 @@ dds_qos_t * dds_qos_create (void)
   return qos;
 }
 
-void dds_qos_reset (dds_qos_t * restrict qos)
+void dds_qos_reset (dds_qos_t * __restrict qos)
 {
   assert (qos);
   nn_xqos_fini (qos);
   dds_qos_init_defaults (qos);
 }
 
-void dds_qos_delete (dds_qos_t * restrict qos)
+void dds_qos_delete (dds_qos_t * __restrict qos)
 {
   if (qos)
   {
@@ -356,7 +356,7 @@ void dds_qos_delete (dds_qos_t * restrict qos)
   }
 }
 
-void dds_qos_copy (dds_qos_t * restrict dst, const dds_qos_t * restrict src)
+void dds_qos_copy (dds_qos_t * __restrict dst, const dds_qos_t * __restrict src)
 {
   assert (src);
   assert (dst);
@@ -364,7 +364,7 @@ void dds_qos_copy (dds_qos_t * restrict dst, const dds_qos_t * restrict src)
   nn_xqos_copy (dst, src);
 }
 
-void dds_qos_merge (dds_qos_t * restrict dst, const dds_qos_t * restrict src)
+void dds_qos_merge (dds_qos_t * __restrict dst, const dds_qos_t * __restrict src)
 {
   assert (src);
   assert (dst);
@@ -373,7 +373,7 @@ void dds_qos_merge (dds_qos_t * restrict dst, const dds_qos_t * restrict src)
   nn_xqos_mergein_missing (dst, src);
 }
 
-void dds_get_default_participant_qos (dds_qos_t * restrict qos)
+void dds_get_default_participant_qos (dds_qos_t * __restrict qos)
 {
   assert (qos);
   dds_qos_init_defaults (qos);
@@ -385,31 +385,31 @@ void dds_get_default_participant_qos (dds_qos_t * restrict qos)
   qos->entity_factory.autoenable_created_entities = 0;
 }
 
-void dds_get_default_topic_qos (dds_qos_t * restrict qos)
+void dds_get_default_topic_qos (dds_qos_t * __restrict qos)
 {
   assert (qos);
   nn_xqos_init_default_topic (qos);
 }
 
-void dds_get_default_publisher_qos (dds_qos_t * restrict qos)
+void dds_get_default_publisher_qos (dds_qos_t * __restrict qos)
 {
   assert (qos);
   nn_xqos_init_default_publisher (qos);
 }
 
-void dds_get_default_subscriber_qos (dds_qos_t * restrict qos)
+void dds_get_default_subscriber_qos (dds_qos_t * __restrict qos)
 {
   assert (qos);
   nn_xqos_init_default_subscriber (qos);
 }
 
-void dds_get_default_writer_qos (dds_qos_t * restrict qos)
+void dds_get_default_writer_qos (dds_qos_t * __restrict qos)
 {
   assert (qos);
   nn_xqos_init_default_writer (qos);
 }
 
-void dds_get_default_reader_qos (dds_qos_t * restrict qos)
+void dds_get_default_reader_qos (dds_qos_t * __restrict qos)
 {
   assert (qos);
   nn_xqos_init_default_reader (qos);
@@ -419,7 +419,7 @@ void dds_get_default_reader_qos (dds_qos_t * restrict qos)
 /* NOTE: Lite Impln: userdata, topicdata and groupdata should contain valid value and size
    Deviation from Spec, which says default value is empty zero-sized sequence !! 
 */
-void dds_qset_userdata (dds_qos_t * restrict qos, const void * restrict value, size_t sz)
+void dds_qset_userdata (dds_qos_t * __restrict qos, const void * __restrict value, size_t sz)
 {
   assert (qos);
   assert (value);
@@ -429,7 +429,7 @@ void dds_qset_userdata (dds_qos_t * restrict qos, const void * restrict value, s
   qos->present |= QP_USER_DATA;
 }
 
-void dds_qset_topicdata (dds_qos_t * restrict qos, const void * restrict value, size_t sz)
+void dds_qset_topicdata (dds_qos_t * __restrict qos, const void * __restrict value, size_t sz)
 {
   assert (qos);
   assert (value);
@@ -439,7 +439,7 @@ void dds_qset_topicdata (dds_qos_t * restrict qos, const void * restrict value, 
   qos->present |= QP_TOPIC_DATA;
 }
 
-void dds_qset_groupdata (dds_qos_t * restrict qos, const void * restrict value, size_t sz)
+void dds_qset_groupdata (dds_qos_t * __restrict qos, const void * __restrict value, size_t sz)
 {
   assert (qos);
   assert (value);
@@ -547,7 +547,7 @@ void dds_qset_time_based_filter (dds_qos_t *qos, dds_duration_t minimum_separati
   qos->present |= QP_TIME_BASED_FILTER;
 }
 
-void dds_qset_partition (dds_qos_t * restrict qos, uint32_t n, const char ** ps)
+void dds_qset_partition (dds_qos_t * __restrict qos, uint32_t n, const char ** ps)
 {
   uint32_t i;
   size_t len;
