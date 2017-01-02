@@ -33,4 +33,9 @@
 #error "Platform missing from os_public.h list"
 #endif
 
+#ifndef OS_API_EXPORT
+#define OS_API_EXPORT
+#define OS_API_IMPORT
+#endif
+
 #endif

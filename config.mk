@@ -74,10 +74,13 @@ else
 #      endif
     else
       ifeq "$(OS)" "wine"
-        export WINEDEBUG=-all
+        export WINEDEBUG=-all,file
         GEN = gen.wine
         CC = wine cl
+        LD = wine link
         CPPFLAGS = -nologo -W3 -TC -analyze -D_WINNT=0x0604 -Drestrict=
+        CFLAGS += $(CPPFLAGS)
+        LDFLAGS += -nologo -incremental:no -subsystem:console -debug
         X = .exe
         O = .obj
         A = .lib
@@ -132,6 +135,8 @@ ifeq "$(CC)" "cl" # Windows
 else
   ifeq "$(CC)" "wine cl"
     OBJ_OFLAG =-Fo
+    EXE_OFLAG = -out:
+    SHLIB_OFLAG = -out:
     CPPFLAGS += -D_CRT_SECURE_NO_WARNINGS
   else # not Windows (-like)
     OBJ_OFLAG = -o
@@ -155,7 +160,7 @@ else
   ifeq "$(CC)" "wine cl"
   else
     LDFLAGS += -L$(N_PWD)/gen
-    LIBDEP_SYS =
+    LIBDEP_SYS = kernel32 ws2_32
   endif
 endif
 
@@ -205,7 +210,7 @@ else
 	$(LD) $(LDFLAGS) $(EXE_OFLAG)$@ $^ $(LDLIBS)
       endef
       define make_shlib
-	$(LD) $(LDFLAGS) $(SH_OFLAG)$@ $^ $(LDLIBS)
+	$(LD) $(LDFLAGS) $(SHLIB_OFLAG)$@ $^ $(LDLIBS)
       endef
       define make_archive
 	lib $(MACHINE) /out:$@ $^
@@ -215,9 +220,19 @@ else
       endef
     else
       ifeq "$(OS)" "wine"
+        COMPILE_MANY_ATONCE=true
         getabspath=$1
         lc = $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
         FAKEPWD = $(call lc,z:$(subst /,\\\\,$(PWD)))
+        define make_exe
+	  $(LD) $(LDFLAGS) $(EXE_OFLAG)$@ $^ $(LDLIBS)
+        endef
+        define make_shlib
+	  $(LD) $(LDFLAGS) $(SHLIB_OFLAG)$@ $^ $(LDLIBS)
+        endef
+        define make_archive
+	  lib $(MACHINE) /out:$@ $^
+        endef
         define make_dep
           $(CC) -E $(CPPFLAGS) $(CPPFLAGS) $< | grep "^#line.*\\\\vdds\\\\" | cut -d '"' -f 2 | sort -u | sed -e 's@$(FAKEPWD)\(\\\\\)*@ @' -e 's@\\\\@/@g' -e '$$!s@$$@ \\@' -e '1s@^@$*$O: @' >$@
         endef

@@ -25,9 +25,6 @@ extern "C" {
 #define OS_FILESEPCHAR '/'
 #define OS_HAS_NO_SET_NAME_PRCTL 1
 
-#define OS_API_EXPORT
-#define OS_API_IMPORT
-
 #define OS_ENDIANNESS OS_LITTLE_ENDIAN
 
 #ifdef _LP64

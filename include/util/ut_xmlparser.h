@@ -4,9 +4,9 @@
  *   This software and documentation are Copyright 2006 to TO_YEAR PrismTech
  *   Limited and its licensees. All rights reserved. See file:
  *
- *                     $OSPL_HOME/LICENSE 
+ *                     $OSPL_HOME/LICENSE
  *
- *   for full copyright notice and license terms. 
+ *   for full copyright notice and license terms.
  *
  */
 #ifndef UT_XMLPARSER_H
@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#ifdef OSPL_BUILD_CORE
+#if VDDS_BUILD
 #define OS_API OS_API_EXPORT
 #else
 #define OS_API OS_API_IMPORT
@@ -48,7 +48,7 @@ extern "C" {
     OS_API int ut_xmlUnescapeInsitu (char *buffer, size_t *n);
 
 #undef OS_API
-    
+
 #if defined (__cplusplus)
 }
 #endif

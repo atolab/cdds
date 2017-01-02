@@ -4,28 +4,23 @@
 /** @file log.h
  *  @brief Vortex Lite logging support
  */
- 
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
 
-#undef DDS_EXPORT
-#ifdef _WIN32_DLL_
-  #if defined VL_BUILD_DDS_DLL
-    #define DDS_EXPORT extern __declspec (dllexport)
-  #else
-    #define DDS_EXPORT extern __declspec (dllimport)
-  #endif
+#if VDDS_BUILD
+#define OS_API OS_API_EXPORT
 #else
-  #define DDS_EXPORT extern
+#define OS_API OS_API_IMPORT
 #endif
 
-DDS_EXPORT void dds_log_info (const char * fmt, ...);
-DDS_EXPORT void dds_log_warn (const char * fmt, ...);
-DDS_EXPORT void dds_log_error (const char * fmt, ...);
-DDS_EXPORT void dds_log_fatal (const char * fmt, ...);
+OS_API void dds_log_info (const char * fmt, ...);
+OS_API void dds_log_warn (const char * fmt, ...);
+OS_API void dds_log_error (const char * fmt, ...);
+OS_API void dds_log_fatal (const char * fmt, ...);
 
-#undef DDS_EXPORT
+#undef OS_API
 #if defined (__cplusplus)
 }
 #endif

@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#ifdef OSPL_BUILD_DDSI2
+#if VDDS_BUILD
 #define OS_API OS_API_EXPORT
 #else
 #define OS_API OS_API_IMPORT

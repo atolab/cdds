@@ -18,14 +18,14 @@
 #include "util/ut_avl.h"
 #include "sysdeps.h"
 
-#ifdef OSPL_BUILD_DDSI2
+#include "dds.h"
+#include "kernel/dds_topic.h"
+
+#if VDDS_BUILD
 #define OS_API OS_API_EXPORT
 #else
 #define OS_API OS_API_IMPORT
 #endif
-
-#include "dds.h"
-#include "kernel/dds_topic.h"
 
 #ifndef PLATFORM_IS_LITTLE_ENDIAN
 #  if OS_ENDIANNESS == OS_BIG_ENDIAN

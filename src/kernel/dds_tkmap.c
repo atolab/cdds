@@ -63,7 +63,7 @@ static void gc_tkmap_instance (struct tkmap_instance *tk)
  MurmurHash3_x86_32
 */
 
-DDS_INLINE static uint32_t dds_mh3 (const void * key)
+static uint32_t dds_mh3 (const void * key)
 {
   const uint8_t *data = (const uint8_t *) key;
   const intptr_t nblocks = (intptr_t) (DDS_MH3_LEN / 4);

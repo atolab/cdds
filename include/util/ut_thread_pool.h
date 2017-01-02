@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#ifdef OSPL_BUILD_CORE
+#if VDDS_BUILD
 #define OS_API OS_API_EXPORT
 #else
 #define OS_API OS_API_IMPORT
@@ -27,14 +27,14 @@ extern "C" {
 
 typedef struct ut_thread_pool_s *ut_thread_pool;
 
-/* 
+/*
   ut_thread_pool_new: Creates a new thread pool. Returns NULL if
-  cannot create initial set of threads. Threads are created with 
+  cannot create initial set of threads. Threads are created with
   the optional atribute argument. Additional threads may be created
   on demand up to max_threads.
 */
 
-OS_API ut_thread_pool ut_thread_pool_new 
+OS_API ut_thread_pool ut_thread_pool_new
 (
   uint32_t threads,     /* Initial number of threads in pool (can be 0) */
   uint32_t max_threads, /* Maximum number of threads in pool (0 == infinite) */
@@ -50,7 +50,7 @@ OS_API void ut_thread_pool_free (ut_thread_pool pool);
 
 OS_API void ut_thread_pool_purge (ut_thread_pool pool);
 
-/* 
+/*
   ut_thread_pool_submit: Submit a thread function and associated argument
   to be invoked by a thread from the pool. If no threads are available a
   new thread will be created on demand to handle the function unless the

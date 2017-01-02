@@ -18,7 +18,7 @@
 
 #include "os/os_defs.h"
 
-#ifdef OSPL_BUILD_CORE
+#if VDDS_BUILD
 #define OS_API OS_API_EXPORT
 #else
 #define OS_API OS_API_IMPORT

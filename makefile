@@ -22,10 +22,24 @@ LIBVDDS_DIRS := src/ddsi src/kernel src/util src/os $(OSX:%=src/os/%)
 vpath %.c $(LIBVDDS_DIRS) vdds-server examples examples/generated rpc-examples
 
 LIBVDDS := $(notdir $(patsubst %.c, %, $(filter-out %_template.c, $(wildcard $(LIBVDDS_DIRS:%=%/*.c)))))
+$(GEN)/$(LIBPRE)vdds$(SO): CPPFLAGS += -DVDDS_BUILD=1
+
+ifneq "$(COMPILE_MANY_ATONCE)" "true"
 $(GEN)/$(LIBPRE)vdds$(SO): $(LIBVDDS:%=$(GEN)/%$O)
 	$(make_shlib)
+else # /Fo bit is MSVC specific
+$(GEN)/$(LIBPRE)vdds$(SO): $(LIBVDDS:%=%.c)
+	xs="" ;\
+	  for x in $(foreach x, $^, $(call getabspath, $x)) ; do \
+	    [ $$x -nt $(GEN)/`basename $$x .c`$O ] && xs="$$xs $$x" ; \
+          done ; \
+	  echo "compile: $$xs" ; \
+	  [ -z "$$xs" ] || $(CC) $(CPPFLAGS) -MP8 -Fo.\\$(GEN)\\ -c $$xs
+	$(LD) $(LDFLAGS) $(SHLIB_OFLAG)$@ $(LIBVDDS:%=$(GEN)/%$O) $(LDLIBS)
+endif
 
 LIBVDDS_STUBS := $(patsubst %.c, %, $(notdir $(wildcard src/os/*.c $(OSX:%=src/os/%/*.c)))) vdds-stubs dds_alloc dds_time dds_stream dds_key dds_err dds_qos q_bswap q_bswap_inlines q_md5 q_plist q_time q_misc q_osplser ddsi_ser q_freelist sysdeps
+$(GEN)/$(LIBPRE)vdds-stubs$(SO): CPPFLAGS += -DVDDS_BUILD=1
 $(GEN)/$(LIBPRE)vdds-stubs$(SO): $(LIBVDDS_STUBS:%=$(GEN)/%$O)
 	$(make_shlib)
 

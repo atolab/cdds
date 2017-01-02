@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-#ifdef OSPL_BUILD_CORE
+#if VDDS_BUILD
 #define OS_API OS_API_EXPORT
 #else
 #define OS_API OS_API_IMPORT
@@ -328,7 +328,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
                             bool valid,
                             os_report_context_callback callback,
                             void *arg);
-    
+
     /**
      * The os_report_flush_context_unconditional operation removes the report message
      * from the stack and writes them into the report device.
@@ -340,7 +340,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
     os_report_flush_context_unconditional(
                                           os_report_context_callback callback,
                                           void *arg);
-    
+
     /**
      * The os_report_get_context operation returns the context information
      * saved in the report stack
@@ -350,8 +350,8 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
                           const char **file,
                           int *lineno,
                           const char **signature);
-    
-    
+
+
     /**
      * The os_report_dumpStack operation removes the report messages from the stack
      * and writes them into the report device, regardless of the state the stack is
@@ -366,14 +366,14 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
                         const char *context,
                         const char *file,
                         const int line);
-    
+
     /**
      * The os_report_stack_size operation returns the number of messages in the report stack.
      * This operation will return -1 when no stack is active.
      */
     OS_API int32_t
     os_report_stack_size(void);
-    
+
     /**
      * The os_report_read operation returns the report message specified by a given index in the stack.
      * This operation will return a null pointer when the index is out of range.
@@ -381,9 +381,9 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
     OS_API os_reportEventV1
     os_report_read(
                    int32_t index);
-    
+
 #undef OS_API
-    
+
 #if defined (__cplusplus)
 }
 #endif

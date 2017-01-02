@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-#ifdef OSPL_BUILD_CORE
+#if VDDS_BUILD
 #define OS_API OS_API_EXPORT
 #else
 #define OS_API OS_API_IMPORT
@@ -729,17 +729,17 @@ extern "C" {
      * This function is equivalent to POSIX remove(3)
      *
      */
-    
+
     OS_API os_result os_remove (const char *name);
-    
+
     /** \brief Renames a file or directory
      *
      * This function is equivalent to POSIX rename(3)
      *
      */
-    
+
     OS_API os_result os_rename (const char *oldpath, const char *newpath);
-    
+
     /** \brief Transforms the given filepath into a platform specific filepath.
      *
      * This translation function will replace any platform file seperator into
@@ -755,7 +755,7 @@ extern "C" {
     OS_API char *
     os_fileNormalize(
                      const char *filepath);
-    
+
     /**
      * \brief Flushes the internal buffers associated with the file handle to disk
      *
@@ -769,7 +769,7 @@ extern "C" {
     OS_API os_result
     os_fsync(
              FILE *fHandle);
-    
+
     /**
      * \brief returns the location of the temporary files used by OpenSplice.
      * This may be the key file describing the shared memory or the shared
@@ -784,7 +784,7 @@ extern "C" {
      */
     OS_API const char *
     os_getTempDir(void);
-    
+
     /**
      * \brief writes up to count bytes from the buffer pointed buf to the file referred to by the file descriptor fd.
      *
@@ -799,7 +799,7 @@ extern "C" {
      */
     OS_API ssize_t
     os_write(int fd, const void *buf, size_t count);
-    
+
     /**
      * \brief binary search algorithm on an already sorted list.
      *
@@ -815,9 +815,9 @@ extern "C" {
     OS_API void *
     os_bsearch(const void *key, const void *base, size_t nmemb, size_t size,
                int (*compar) (const void *, const void *));
-    
+
 #undef OS_API
-    
+
 #if defined (__cplusplus)
 }
 #endif

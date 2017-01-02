@@ -659,7 +659,7 @@ static int handle_SPDP_alive (const struct receiver_state *rst, const nn_plist_t
      zero the prefix. */
   privileged_pp_guid.prefix = rst->src_guid_prefix;
   privileged_pp_guid.entityid.u = NN_ENTITYID_PARTICIPANT;
-  if (0 && (builtin_endpoint_set & bes_sedp_announcer_mask) != bes_sedp_announcer_mask &&
+  if ((builtin_endpoint_set & bes_sedp_announcer_mask) != bes_sedp_announcer_mask &&
       memcmp (&privileged_pp_guid, &datap->participant_guid, sizeof (nn_guid_t)) != 0)
   {
     nn_log (LC_DISCOVERY, " (depends on %x:%x:%x:%x)", PGUID (privileged_pp_guid));

@@ -7,7 +7,6 @@
 #include "dds.h"
 #include "ddsi/q_rtps.h"
 #include "util/ut_avl.h"
-#include "kernel/dds_export.h"
 
 #if defined (__cplusplus)
 extern "C" {

@@ -25,9 +25,6 @@ extern "C" {
 #define OS_FILESEPCHAR '/'
 #define OS_HAS_NO_SET_NAME_PRCTL 1
 
-#define OS_API_EXPORT
-#define OS_API_IMPORT
-
 #if __DARWIN_BYTE_ORDER == __DARWIN_LITTLE_ENDIAN
 #define OS_ENDIANNESS OS_LITTLE_ENDIAN
 #else

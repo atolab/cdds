@@ -4,20 +4,15 @@
 /** @file error.h
  *  @brief Vortex Lite Error defines header
  */
- 
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
 
-#undef DDS_EXPORT
-#ifdef _WIN32_DLL_
-  #if defined VL_BUILD_DDS_DLL
-    #define DDS_EXPORT extern __declspec (dllexport)
-  #else
-    #define DDS_EXPORT extern __declspec (dllimport)
-  #endif
+#if VDDS_BUILD
+#define OS_API OS_API_EXPORT
 #else
-  #define DDS_EXPORT extern
+#define OS_API OS_API_IMPORT
 #endif
 
 /* Error masks for returned status values */
@@ -62,7 +57,7 @@ extern "C" {
 
 #define DDS_SUCCESS DDS_RETCODE_OK
 
-/** @name DDS_Error_Type 
+/** @name DDS_Error_Type
   @{**/
 #define DDS_CHECK_REPORT 0x01
 #define DDS_CHECK_FAIL 0x02
@@ -86,34 +81,34 @@ extern "C" {
 /**
  * Description : This operation takes the error value and outputs a string
  * corresponding to it.
- * 
+ *
  * Arguments :
  *   -# err Error value to be converted to a string
  *   -# Returns a string corresponding to the error value
  */
-DDS_EXPORT const char * dds_err_str (int err);
+OS_API const char * dds_err_str (int err);
 
 /**
  * Description : This operation takes the error value and returns the module name
  * corresponding to it.
- * 
+ *
  * Arguments :
  *   -# err Error value
  *   -# Returns the module name corresponding to the value
  */
-DDS_EXPORT const char * dds_err_mod_str (int err);
+OS_API const char * dds_err_mod_str (int err);
 
 /**
  * Description : This operation takes the error number, error type and filename and line number and formats it to
  * a string which can be used for debugging.
- * 
+ *
  * Arguments :
  *   -# err Error number
  *   -# flags that indicates Fail, Exit or Report
  *   -# where file and line number
  */
 
-DDS_EXPORT bool dds_err_check (int err, unsigned flags, const char * where);
+OS_API bool dds_err_check (int err, unsigned flags, const char * where);
 
 /**
  * Macro that defines dds_err_check function
@@ -134,30 +129,30 @@ typedef void (*dds_fail_fn) (const char *, const char *);
 
 /**
  * Description : Set the failure function
- * 
+ *
  * Arguments :
  *   -# fn The pointer to the failure function
  */
-DDS_EXPORT void dds_fail_set (dds_fail_fn fn);
+OS_API void dds_fail_set (dds_fail_fn fn);
 
 /**
  * Description : Get the failure function
- * 
+ *
  * Arguments :
  *   -# Returns the failure function set
  */
-DDS_EXPORT dds_fail_fn dds_fail_get (void);
+OS_API dds_fail_fn dds_fail_get (void);
 
 /**
  * Description : This operation handles failure through an installed failure handler
- * 
+ *
  * Arguments :
  *   -# msg The pointer to the failure message
  *   -# where The pointer to the file and location
  */
-DDS_EXPORT void dds_fail (const char * msg, const char * where);
+OS_API void dds_fail (const char * msg, const char * where);
 
-#undef DDS_EXPORT
+#undef OS_API
 
 #if defined (__cplusplus)
 }

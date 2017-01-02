@@ -30,9 +30,6 @@ extern "C" {
 #define OS_HAS_NO_SET_NAME_PRCTL 1
 #define OS_HAS_UCONTEXT_T 0
 
-#define OS_API_EXPORT __declspec(dllimport)
-#define OS_API_IMPORT __declspec(dllexport)
-
 #ifdef __BIG_ENDIAN
 #define OS_ENDIANNESS OS_BIG_ENDIAN
 #else
@@ -46,9 +43,9 @@ extern "C" {
     typedef double os_timeReal;
     typedef int os_timeSec;
     typedef int os_procId;
-	/* keep in sync with st_mode field def in struct stat in sys/stat.h */
-	typedef unsigned short os_mode_t;
-	typedef SSIZE_T ssize_t;
+        /* keep in sync with st_mode field def in struct stat in sys/stat.h */
+        typedef unsigned short os_mode_t;
+        typedef SSIZE_T ssize_t;
 
 #include "os/win32/os_platform_socket.h"
 #include "os/win32/os_platform_sync.h"

@@ -24,7 +24,7 @@ extern "C" {
 
 #include <errno.h> /* Required on Windows platforms too */
 
-#ifdef OSPL_BUILD_CORE
+#if VDDS_BUILD
 #define OS_API OS_API_EXPORT
 #else
 #define OS_API OS_API_IMPORT
@@ -55,9 +55,9 @@ extern "C" {
      */
     OS_API int
     os_strerror_r (int err, char *buf, size_t bufsz);
-    
+
 #undef OS_API
-    
+
 #if defined (__cplusplus)
 }
 #endif

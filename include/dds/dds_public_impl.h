@@ -123,7 +123,7 @@ dds_condition_seq;
 #define DDS_OP_VAL_UNI 0x09
 #define DDS_OP_VAL_STU 0x0a
 
-#define DDS_OP_TYPE_1BY (DDS_OP_VAL_1BY << 16) 
+#define DDS_OP_TYPE_1BY (DDS_OP_VAL_1BY << 16)
 #define DDS_OP_TYPE_2BY (DDS_OP_VAL_2BY << 16)
 #define DDS_OP_TYPE_4BY (DDS_OP_VAL_4BY << 16)
 #define DDS_OP_TYPE_8BY (DDS_OP_VAL_8BY << 16)
@@ -134,7 +134,7 @@ dds_condition_seq;
 #define DDS_OP_TYPE_STU (DDS_OP_VAL_STU << 16)
 #define DDS_OP_TYPE_BST (DDS_OP_VAL_BST << 16)
 
-#define DDS_OP_SUBTYPE_1BY (DDS_OP_VAL_1BY << 8) 
+#define DDS_OP_SUBTYPE_1BY (DDS_OP_VAL_1BY << 8)
 #define DDS_OP_SUBTYPE_2BY (DDS_OP_VAL_2BY << 8)
 #define DDS_OP_SUBTYPE_4BY (DDS_OP_VAL_4BY << 8)
 #define DDS_OP_SUBTYPE_8BY (DDS_OP_VAL_8BY << 8)
@@ -148,15 +148,10 @@ dds_condition_seq;
 #define DDS_OP_FLAG_KEY 0x01
 #define DDS_OP_FLAG_DEF 0x02
 
-#undef DDS_EXPORT
-#ifdef _WIN32_DLL_
-  #if defined VL_BUILD_DDS_DLL
-    #define DDS_EXPORT extern __declspec (dllexport)
-  #else
-    #define DDS_EXPORT extern __declspec (dllimport)
-  #endif
+#if VDDS_BUILD
+#define OS_API OS_API_EXPORT
 #else
-  #define DDS_EXPORT extern
+#define OS_API OS_API_IMPORT
 #endif
 
 /**
@@ -166,18 +161,7 @@ dds_condition_seq;
  * Arguments :
  *   -# enable Enables or disables write batching for all writers.
  */
-DDS_EXPORT void dds_write_set_batch (bool enable);
-
-#undef DDS_EXPORT
-#ifdef _WIN32_DLL_
-  #if defined VL_BUILD_DDS_SSL_DLL
-    #define DDS_EXPORT extern __declspec (dllexport)
-  #else
-    #define DDS_EXPORT extern __declspec (dllimport)
-  #endif
-#else
-  #define DDS_EXPORT extern
-#endif
+OS_API void dds_write_set_batch (bool enable);
 
 /**
  * Description : Install tcp/ssl and encryption support. Depends on openssl.
@@ -185,18 +169,7 @@ DDS_EXPORT void dds_write_set_batch (bool enable);
  * Arguments :
  *   -# None
  */
-DDS_EXPORT void dds_ssl_plugin (void);
-
-#undef DDS_EXPORT
-#ifdef _WIN32_DLL_
-  #if defined VL_BUILD_DDS_DUR_DLL
-    #define DDS_EXPORT extern __declspec (dllexport)
-  #else
-    #define DDS_EXPORT extern __declspec (dllimport)
-  #endif
-#else
-  #define DDS_EXPORT extern
-#endif
+OS_API void dds_ssl_plugin (void);
 
 /**
  * Description : Install client durability support. Depends on OSPL server.
@@ -204,9 +177,9 @@ DDS_EXPORT void dds_ssl_plugin (void);
  * Arguments :
  *   -# None
  */
-DDS_EXPORT void dds_durability_plugin (void);
+OS_API void dds_durability_plugin (void);
 
-#undef DDS_EXPORT
+#undef OS_API
 #if defined (__cplusplus)
 }
 #endif
