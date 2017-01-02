@@ -23,7 +23,7 @@
 #ifdef _WIN32_WCE
 #include "wince/os_platform.h"
 #else
-#include "win32/os_platform.h"
+#include "windows/os_platform.h"
 #endif
 #elif defined __APPLE__
 #include "darwin/os_platform.h"

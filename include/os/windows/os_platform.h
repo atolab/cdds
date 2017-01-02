@@ -47,12 +47,12 @@ extern "C" {
         typedef unsigned short os_mode_t;
         typedef SSIZE_T ssize_t;
 
-#include "os/win32/os_platform_socket.h"
-#include "os/win32/os_platform_sync.h"
-#include "os/win32/os_platform_process.h"
-#include "os/win32/os_platform_thread.h"
-#include "os/win32/os_platform_stdlib.h"
-#include "os/win32/os_platform_time.h"
+#include "os/windows/os_platform_socket.h"
+#include "os/windows/os_platform_sync.h"
+#include "os/windows/os_platform_process.h"
+#include "os/windows/os_platform_thread.h"
+#include "os/windows/os_platform_stdlib.h"
+#include "os/windows/os_platform_time.h"
 
 #if defined (__cplusplus)
 }

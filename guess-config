@@ -11,10 +11,10 @@ case `uname -m`.`uname -s` in
         cfg="armv7l.linux"
         ;;
      i686.CYGWIN*)
-         cfg="x86.win32"
+         cfg="x86.windows"
          ;;
      x86_64.CYGWIN*)
-         cfg="x86_64.win32"
+         cfg="x86_64.windows"
          ;;
      *)
          echo "$0: unknown configuration"

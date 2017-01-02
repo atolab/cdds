@@ -50,7 +50,7 @@ else
     SO = .so
     LIBPRE = lib
   else
-    ifeq "$(OS)" "win32"
+    ifeq "$(OS)" "windows"
       CC = cl
       LD = link
       # OPT = -O2 -DNDEBUG
@@ -75,11 +75,11 @@ else
     else
       ifeq "$(OS)" "wine"
         export WINEDEBUG=-all
-        OSX = win32
+        OSX = windows
         GEN = gen.wine
         CC = wine cl
         LD = wine link
-        CPPFLAGS = -nologo -W3 -TC -analyze -D_WINNT=0x0604 -Drestrict=
+        CPPFLAGS = -nologo -W3 -TC -analyze
         CFLAGS += $(CPPFLAGS)
         LDFLAGS += -nologo -incremental:no -subsystem:console -debug
         X = .exe
@@ -206,7 +206,7 @@ else
 	$(CC) -M $(CPPFLAGS) $< | sed 's|[a-zA-Z0-9_-]*\.o|gen/&|' > $@ || { rm $@ ; exit 1 ; }
     endef
   else
-    ifeq "$(OS)" "win32"
+    ifeq "$(OS)" "windows"
       define make_exe
 	$(LD) $(LDFLAGS) $(EXE_OFLAG)$@ $^ $(LDLIBS)
       endef
