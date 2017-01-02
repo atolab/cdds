@@ -74,7 +74,8 @@ else
 #      endif
     else
       ifeq "$(OS)" "wine"
-        export WINEDEBUG=-all,file
+        export WINEDEBUG=-all
+        OSX = win32
         GEN = gen.wine
         CC = wine cl
         LD = wine link

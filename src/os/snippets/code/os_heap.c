@@ -32,22 +32,12 @@
 #include <stdio.h>
 #endif
 
-#include <pthread.h>
-
-
-static void *(* ptr_malloc)(size_t) = malloc;
-static void (* ptr_free)(void *) = free;
-static void *(* ptr_realloc)(void *,size_t) = realloc;
-
 #ifdef OSPL_STRICT_MEM
 static pa_uint32_t alloccnt = { 0ULL };
 #endif
 
 /** \brief Allocate memory from heap
  *
- * \b os_malloc calls \b ptr_malloc which is a function pointer
- * which defaults to \b malloc, but can be redefined via
- * \b os_heapSetService.
  */
 void *
 os_malloc (
@@ -59,7 +49,7 @@ os_malloc (
 
 #ifdef OSPL_STRICT_MEM
     /* Allow 24 bytes so we can store the allocation size, magic number and malloc count, ( and keep alignement ) */
-    ptr = ptr_malloc((size_t)size+24);
+    ptr = malloc((size_t)size+24);
     if ( ptr != NULL )
     {
        *((size_t *)ptr) = size;
@@ -69,14 +59,14 @@ os_malloc (
        *(((uint64_t*)ptr)-2) = pa_inc32_nv(&alloccnt);
     }
 #else
-    ptr = ptr_malloc(size);
+    ptr = malloc(size);
 #endif
 
     if(size == 0 && !ptr) {
         /* os_malloc() should never return NULL. Although it is not allowed to
          * pass size 0, this fallback assures code continues to run if the
          * os_malloc(0) isn't caught in a DEV-build. */
-        ptr = ptr_malloc(1);
+        ptr = malloc(1);
     }
 
     if(ptr == NULL) {
@@ -120,7 +110,7 @@ os_realloc(
     }
 #endif
 
-    ptr = ptr_realloc(ptr, size);
+    ptr = realloc(ptr, size);
 
 #ifdef OSPL_STRICT_MEM
     if ( size > 0 && ptr != NULL )
@@ -146,7 +136,7 @@ os_realloc(
 
 /** \brief Free memory to heap
  *
- * \b os_free calls \b ptr_free which is a function pointer
+ * \b os_free calls \b free which is a function pointer
  * which defaults to \b free, but can be redefined via
  * \b os_heapSetService.
  */
@@ -175,7 +165,7 @@ os_free (
           ptr = cptr - 24;
         }
 #endif
-        ptr_free (((char *)ptr));
+        free (((char *)ptr));
     }
     return;
 }
