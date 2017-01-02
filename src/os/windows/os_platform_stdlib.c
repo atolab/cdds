@@ -9,6 +9,7 @@
 *   for full copyright notice and license terms.
 *
 */
+#include <assert.h>
 
 #include "os/os.h"
 
@@ -17,6 +18,7 @@
 #include "../snippets/code/os_stdlib_strtod.c"
 #include "../snippets/code/os_stdlib_strtol.c"
 #include "../snippets/code/os_stdlib_strtok_r.c"
+
 
 static int32_t
 os_ensurePathExists(

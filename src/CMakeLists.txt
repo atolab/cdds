@@ -29,4 +29,7 @@ PREPEND(srcs_kernel kernel dds_alloc.c dds_iid.c dds_participant.c dds_reader.c 
 set(srcs ${srcs_os} ${srcs_util} ${srcs_ddsi} ${srcs_kernel})
 
 add_library(vdds SHARED ${srcs})
+if(WIN32)
+  target_link_libraries(vdds wsock32 ws2_32 Iphlpapi)
+endif()
 #target_include_directories(vdds PUBLIC ../include)

@@ -17,6 +17,7 @@
 #include "os/os.h"
 
 #include <process.h>
+#include <assert.h>
 
 /* List of exithandlers */
 struct _ospl_handlerList_t {

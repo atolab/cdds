@@ -12,6 +12,8 @@
 
 #include "os/os.h"
 
+#include <assert.h>
+
 /* WSAGetLastError, GetLastError and errno
 
 Windows supports errno (The Microsoft c Run-Time Library for Windows CE

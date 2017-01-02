@@ -17,6 +17,8 @@
 
 #include "os/os.h"
 
+#include <assert.h>
+
 typedef struct {
     char *threadName;
     void *arguments;
@@ -71,7 +73,7 @@ os_threadMemInit(void)
     memset(tlsMemArray, 0, sizeof(void *) * OS_THREAD_MEM_ARRAY_SIZE);
     result = TlsSetValue(tlsIndex, tlsMemArray);
 	if (!result) {
-		OS_INIT_FAIL("os_threadMemInit: failed to set TLS");
+		//OS_INIT_FAIL("os_threadMemInit: failed to set TLS");
 		goto err_setTls;
 	}
 	return os_resultSuccess;
@@ -108,7 +110,7 @@ os_result
 os_threadModuleInit(void)
 {
     if ((tlsIndex = TlsAlloc()) == TLS_OUT_OF_INDEXES) {
-		OS_INIT_FAIL("os_threadModuleInit: could not allocate thread-local memory (System Error Code: %i)", os_getErrno());
+		//OS_INIT_FAIL("os_threadModuleInit: could not allocate thread-local memory (System Error Code: %i)", os_getErrno());
 		goto err_tlsAllocFail;
 	}
 	os_threadHookInit();
@@ -449,7 +451,7 @@ os_threadWaitExit(
 int
 os_threadFigureIdentity(
     char *threadIdentity,
-    size_t threadIdentitySize)
+	uint32_t threadIdentitySize)
 {
    int size;
    char* threadName;
@@ -467,7 +469,7 @@ os_threadFigureIdentity(
 int
 os_threadGetThreadName(
     char *buffer,
-    size_t length)
+	uint32_t length)
 {
     char *name;
 

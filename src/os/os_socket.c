@@ -568,9 +568,13 @@ os_sockaddrAddressToString(const os_sockaddr* sa,
                    0,
                    NI_NUMERICHOST))
     {
+		char errmsg[1024];
+		int errNo = os_getErrno();
+		(void)os_strerror_r(errNo, errmsg, sizeof errmsg);
+
         OS_REPORT(OS_ERROR,"os_sockaddrAddressToString", 0,
                 "error calling getnameinfo to stringify network address. Error: %d (%s)",
-                os_getErrno(), os_strError(os_getErrno()));
+                errNo, errmsg);
     }
 #else
     assert (buflen <= 0x7fffffff);

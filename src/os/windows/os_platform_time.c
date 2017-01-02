@@ -22,6 +22,8 @@
 
 #include "os/os.h"
 
+#include <assert.h>
+
 /* NoGetSystemTimePreciseAsFileTime can be derived from the version set in 
  * _WIN32_WINNT, but didn't bother doing so yet. */
 #if NoGetSystemTimePreciseAsFileTime

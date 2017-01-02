@@ -16,6 +16,8 @@
  */
 #include "os/os.h"
 
+#include <assert.h>
+
 #define WORKING_BUFFER_SIZE 15000
 #define MAX_TRIES 3
 
