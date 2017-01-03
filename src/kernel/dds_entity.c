@@ -265,8 +265,8 @@ void dds_entity_init
 
   e->m_status_enable = dds_status_masks [kind & DDS_TYPE_INDEX_MASK];
 
-  os_mutexInit (&e->m_mutex, NULL);
-  os_condInit (&e->m_cond, &e->m_mutex, NULL);
+  os_mutexInit (&e->m_mutex);
+  os_condInit (&e->m_cond, &e->m_mutex);
 
   /* alloc status condition */
 

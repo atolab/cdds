@@ -188,16 +188,11 @@ struct nn_servicelease *nn_servicelease_new (void (*renew_cb) (void *arg), void 
     goto fail_vtimes;
   /* service lease update thread initializes av_ary */
 
-  if (os_mutexInit (&sl->lock, NULL) != os_resultSuccess)
-    goto fail_lock;
-
-  if (os_condInit (&sl->cond, &sl->lock, NULL) != os_resultSuccess)
-    goto fail_cond;
+  os_mutexInit (&sl->lock);
+  os_condInit (&sl->cond, &sl->lock);
   return sl;
 
- fail_cond:
   os_mutexDestroy (&sl->lock);
- fail_lock:
   os_free (sl->av_ary);
  fail_vtimes:
   os_free (sl);

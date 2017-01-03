@@ -50,7 +50,7 @@ void dds_iid_init (void)
   union { uint64_t u64; uint32_t u32[2]; } tmp;
   nn_wctime_t tnow = now ();
 
-  os_mutexInit (&dds_iid_lock_g, NULL);
+  os_mutexInit (&dds_iid_lock_g);
 
   dds_iid_g.key[0] = (uint32_t) ((uintptr_t) &dds_iid_g);
   dds_iid_g.key[1] = (uint32_t) tnow.v;

@@ -351,8 +351,7 @@ struct nn_rbufpool *nn_rbufpool_new (uint32_t rbuf_size, uint32_t max_rmsg_size)
   rbp->owner_tid = os_threadIdSelf ();
 #endif
 
-  if (os_mutexInit (&rbp->lock, NULL) != os_resultSuccess)
-    goto fail_lock;
+  os_mutexInit (&rbp->lock);
 
   rbp->rbuf_size = rbuf_size;
   rbp->max_rmsg_size = max_rmsg_size;
@@ -370,7 +369,6 @@ struct nn_rbufpool *nn_rbufpool_new (uint32_t rbuf_size, uint32_t max_rmsg_size)
   VALGRIND_DESTROY_MEMPOOL (rbp);
 #endif
   os_mutexDestroy (&rbp->lock);
- fail_lock:
   os_free (rbp);
  fail_rbp:
   return NULL;
@@ -2531,11 +2529,8 @@ struct nn_dqueue *nn_dqueue_new (const char *name, uint32_t max_samples, nn_dque
   q->handler_arg = arg;
   q->sc.first = q->sc.last = NULL;
 
-  if (os_mutexInit (&q->lock, NULL) != os_resultSuccess)
-    goto fail_lock;
-
-  if (os_condInit (&q->cond, &q->lock, NULL) != os_resultSuccess)
-    goto fail_cond;
+  os_mutexInit (&q->lock);
+  os_condInit (&q->cond, &q->lock);
 
   if ((thrname = os_malloc (3 + strlen (name) + 1)) == NULL)
     goto fail_thrname;
@@ -2549,9 +2544,7 @@ struct nn_dqueue *nn_dqueue_new (const char *name, uint32_t max_samples, nn_dque
   os_free (thrname);
  fail_thrname:
   os_condDestroy (&q->cond);
- fail_cond:
   os_mutexDestroy (&q->lock);
- fail_lock:
   os_free (q->name);
  fail_name:
   os_free (q);

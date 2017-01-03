@@ -128,8 +128,8 @@ ut_thread_pool ut_thread_pool_new (uint32_t threads, uint32_t max_threads, uint3
     pool->m_thread_max = max_threads;
     pool->m_job_max = max_queue;
     os_threadAttrInit (&pool->m_attr);
-    os_mutexInit (&pool->m_mutex, NULL);
-    os_condInit (&pool->m_cv, &pool->m_mutex, NULL);
+    os_mutexInit (&pool->m_mutex);
+    os_condInit (&pool->m_cv, &pool->m_mutex);
 
     if (attr)
     {
@@ -243,33 +243,33 @@ os_result ut_thread_pool_submit (ut_thread_pool pool, void (*fn) (void *arg), vo
         }
         pool->m_jobs_tail = job;
         pool->m_job_count++;
-        
+
         /* Allocate thread if more jobs than waiting threads and within maximum */
-        
+
         if (pool->m_waiting < pool->m_job_count)
         {
             if ((pool->m_thread_max == 0) || (pool->m_threads < pool->m_thread_max))
             {
                 /* OK if fails as have queued job */
-                
+
                 ut_thread_pool_new_thread (pool);
             }
         }
-        
+
         /* Wakeup processing thread */
-        
+
         os_condSignal (&pool->m_cv);
     }
-    
+
     os_mutexUnlock (&pool->m_mutex);
-    
+
     return res;
 }
 
 void ut_thread_pool_purge (ut_thread_pool pool)
 {
     uint32_t total;
-    
+
     os_mutexLock (&pool->m_mutex);
     total = pool->m_threads;
     while (pool->m_waiting && (total > pool->m_thread_min))

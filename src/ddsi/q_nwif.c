@@ -103,10 +103,7 @@ static ut_avlTreedef_t mship_td = UT_AVL_TREEDEF_INITIALIZER(offsetof (struct nn
 struct nn_group_membership *new_group_membership (void)
 {
   struct nn_group_membership *mship = os_malloc (sizeof (*mship));
-  if (os_mutexInit (&mship->lock, NULL) != os_resultSuccess) {
-    os_free (mship);
-    return NULL;
-  }
+  os_mutexInit (&mship->lock);
   ut_avlInit (&mship_td, &mship->mships);
   return mship;
 }

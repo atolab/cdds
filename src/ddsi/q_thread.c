@@ -58,7 +58,7 @@ void thread_states_init (unsigned maxthreads)
 {
   unsigned i;
 
-  os_mutexInit (&thread_states.lock, NULL);
+  os_mutexInit (&thread_states.lock);
   thread_states.nthreads = maxthreads;
   thread_states.ts =
     os_malloc_aligned_cacheline (maxthreads * sizeof (*thread_states.ts));
@@ -138,7 +138,7 @@ int thread_exists (const char *name)
 {
   unsigned i;
   int present = 0;
-  
+
   for (i = 0; i < thread_states.nthreads; i++)
   {
     if (thread_states.ts[i].name != NULL)
@@ -150,8 +150,8 @@ int thread_exists (const char *name)
       }
     }
   }
-  
-  return present;  
+
+  return present;
 }
 
 void upgrade_main_thread (void)
@@ -184,16 +184,16 @@ struct thread_state1 * init_thread_state (const char *tname)
 {
   int cand;
   struct thread_state1 *ts;
-  
+
   if ((cand = find_free_slot (tname)) < 0)
     return NULL;
-  
+
   ts = &thread_states.ts[cand];
   if (ts->state == THREAD_STATE_ZERO)
     assert (vtime_asleep_p (ts->vtime));
   ts->name = os_strdup (tname);
   ts->state = THREAD_STATE_ALIVE;
-  
+
   return ts;
 }
 
@@ -206,7 +206,7 @@ struct thread_state1 *create_thread (const char *name, void * (*f) (void *arg), 
   struct thread_context *ctxt;
   ctxt = os_malloc (sizeof (*ctxt));
   os_mutexLock (&thread_states.lock);
-  
+
   ts1 = init_thread_state (name);
 
   if (ts1 == NULL)
@@ -294,7 +294,7 @@ struct thread_state1 *get_thread_state (os_threadId id)
 {
   unsigned i;
   struct thread_state1 *ts = NULL;
-  
+
   for (i = 0; i < thread_states.nthreads; i++)
   {
     if (os_threadEqual (thread_states.ts[i].extTid, id))

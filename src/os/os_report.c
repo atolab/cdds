@@ -566,24 +566,13 @@ os_reportInit(bool forceReInit)
 {
     static bool doneOnce = false;
     char *envValue;
-    os_result osr;
 
     if (!doneOnce || forceReInit)
     {
         if (!doneOnce)
         {
-            osr = os_mutexInit(&reportMutex, NULL);
-            if(osr != os_resultSuccess)
-            {
-                OS_REPORT(OS_WARNING, "os_reportInit", 0,
-                        "Unable to create report mutex");
-            }
-            osr = os_mutexInit(&reportPluginMutex, NULL);
-            if(osr != os_resultSuccess)
-            {
-                OS_REPORT(OS_WARNING, "os_reportInit", 0,
-                        "Unable to create report plugin mutex");
-            }
+            os_mutexInit(&reportMutex);
+            os_mutexInit(&reportPluginMutex);
         }
 
         doneOnce = true;
@@ -1125,7 +1114,7 @@ static char *os_strrchrs (const char *str, const char *chrs, bool inc)
             ptr = (char *)str + i;
         }
     }
-    
+
     return ptr;
 }
 

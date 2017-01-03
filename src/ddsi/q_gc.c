@@ -157,8 +157,8 @@ struct gcreq_queue *gcreq_queue_new (void)
   q->first = q->last = NULL;
   q->terminate = 0;
   q->count = 0;
-  os_mutexInit (&q->lock, NULL);
-  os_condInit (&q->cond, &q->lock, NULL);
+  os_mutexInit (&q->lock);
+  os_condInit (&q->cond, &q->lock);
   q->ts = create_thread ("gc", (void * (*) (void *)) gcreq_queue_thread, q);
   assert (q->ts);
   return q;

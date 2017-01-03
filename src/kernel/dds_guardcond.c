@@ -10,7 +10,7 @@ dds_condition_t dds_guardcondition_create (void)
 {
   dds_guardcond * guard = dds_alloc (sizeof (*guard));
   guard->m_cond.m_kind = DDS_TYPE_COND_GUARD;
-  os_mutexInit (&guard->m_lock, NULL);
+  os_mutexInit (&guard->m_lock);
   guard->m_cond.m_lock = &guard->m_lock;
   return (dds_condition_t) guard;
 }

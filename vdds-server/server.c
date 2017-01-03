@@ -685,8 +685,8 @@ int main(int argc, char **argv)
 
     dds_init(argc, argv);
     dds_init_impl(DDS_DOMAIN_DEFAULT);
-    os_mutexInit(&clients_lock, NULL);
-    os_condInit(&clients_cond, &clients_lock, NULL);
+    os_mutexInit(&clients_lock);
+    os_condInit(&clients_cond, &clients_lock);
 
     pollfd[0].fd = sock;
     pollfd[0].events = POLLIN;

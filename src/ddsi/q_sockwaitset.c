@@ -59,7 +59,7 @@ os_sockWaitset os_sockWaitsetNew (void)
   ws->ctx.events[0] = WSACreateEvent ();
   ws->ctx.n = 1;
   ws->ctx.index = -1;
-  os_mutexInit (&ws->mutex, NULL);
+  os_mutexInit (&ws->mutex);
   return ws;
 }
 
@@ -421,7 +421,7 @@ os_sockWaitset os_sockWaitsetNew (void)
   ws->fdmax_plus_1 = ws->set.fds[0] + 1;
 #endif
 
-  os_mutexInit (&ws->mutex, NULL);
+  os_mutexInit (&ws->mutex);
 
   return ws;
 }

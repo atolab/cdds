@@ -67,10 +67,10 @@ static __declspec(thread) int freelist_inner_idx = -1;
 void nn_freelist_init (struct nn_freelist *fl, uint32_t max, off_t linkoff)
 {
   int i;
-  os_mutexInit (&fl->lock, NULL);
+  os_mutexInit (&fl->lock);
   for (i = 0; i < NN_FREELIST_NPAR; i++)
   {
-    os_mutexInit (&fl->inner[i].lock, NULL);
+    os_mutexInit (&fl->inner[i].lock);
     fl->inner[i].count = 0;
     fl->inner[i].m = os_malloc (sizeof (*fl->inner[i].m));
   }

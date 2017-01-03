@@ -153,8 +153,8 @@ typedef struct os_sem {
 static os_result os_sem_init (os_sem_t * sem, uint32_t value)
 {
   sem->value = value;
-  os_mutexInit (&sem->mtx, NULL);
-  os_condInit (&sem->cv, &sem->mtx, NULL);
+  os_mutexInit (&sem->mtx);
+  os_condInit (&sem->cv, &sem->mtx);
   return os_resultSuccess;
 }
 
@@ -1426,8 +1426,8 @@ void nn_xpack_sendq_init (void)
   gv.sendq_head = NULL;
   gv.sendq_tail = NULL;
   gv.sendq_length = 0;
-  os_mutexInit (&gv.sendq_lock, NULL);
-  os_condInit (&gv.sendq_cond, &gv.sendq_lock, NULL);
+  os_mutexInit (&gv.sendq_lock);
+  os_condInit (&gv.sendq_cond, &gv.sendq_lock);
 }
 
 void nn_xpack_sendq_start (void)

@@ -237,7 +237,7 @@ int dds_writer_create
   wr->m_topic = tp;
   dds_entity_add_ref (topic);
   wr->m_xp = nn_xpack_new (conn, get_bandwidth_limit(wqos->transport_priority), config.xpack_send_async);
-  os_mutexInit (&wr->m_call_lock, NULL);
+  os_mutexInit (&wr->m_call_lock);
 
   /* Merge listener functions with those from parent */
 

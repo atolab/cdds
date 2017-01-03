@@ -823,13 +823,13 @@ int rtps_init (void)
   make_builtin_endpoint_xqos (&gv.builtin_endpoint_xqos_rd, &gv.default_xqos_rd);
   make_builtin_endpoint_xqos (&gv.builtin_endpoint_xqos_wr, &gv.default_xqos_wr);
 
-  os_mutexInit (&gv.participant_set_lock, NULL);
-  os_condInit (&gv.participant_set_cond, &gv.participant_set_lock, NULL);
+  os_mutexInit (&gv.participant_set_lock);
+  os_condInit (&gv.participant_set_cond, &gv.participant_set_lock);
   lease_management_init ();
   deleted_participants_admin_init ();
   gv.guid_hash = ephash_new ();
 
-  os_mutexInit (&gv.privileged_pp_lock, NULL);
+  os_mutexInit (&gv.privileged_pp_lock);
   gv.privileged_pp = NULL;
 
   /* Template PP guid -- protected by privileged_pp_lock for simplicity */
@@ -838,8 +838,8 @@ int rtps_init (void)
   gv.next_ppguid.prefix.u[2] = 1;
   gv.next_ppguid.entityid.u = NN_ENTITYID_PARTICIPANT;
 
-  os_mutexInit (&gv.lock, NULL);
-  os_mutexInit (&gv.spdp_lock, NULL);
+  os_mutexInit (&gv.lock);
+  os_mutexInit (&gv.spdp_lock);
   gv.spdp_defrag = nn_defrag_new (NN_DEFRAG_DROP_OLDEST, config.defrag_unreliable_maxsamples);
   gv.spdp_reorder = nn_reorder_new (NN_REORDER_MODE_ALWAYS_DELIVER, config.primary_reorder_maxsamples);
 
@@ -895,7 +895,7 @@ int rtps_init (void)
     gv.pcap_fp = new_pcap_file (config.pcap_file);
     if (gv.pcap_fp)
     {
-      os_mutexInit (&gv.pcap_lock, NULL);
+      os_mutexInit (&gv.pcap_lock);
     }
   }
   else
@@ -1069,7 +1069,7 @@ int rtps_init (void)
   }
 
   gv.rtps_keepgoing = 1;
-  os_rwlockInit (&gv.qoslock, NULL);
+  os_rwlockInit (&gv.qoslock);
 
   {
     int r;
@@ -1253,8 +1253,8 @@ void rtps_term (void)
      deleting them */
   {
     struct dq_builtins_ready_arg arg;
-    os_mutexInit (&arg.lock, NULL);
-    os_condInit (&arg.cond, &arg.lock, NULL);
+    os_mutexInit (&arg.lock);
+    os_condInit (&arg.cond, &arg.lock);
     arg.ready = 0;
     nn_dqueue_enqueue_callback(gv.builtins_dqueue, builtins_dqueue_ready_cb, &arg);
     os_mutexLock (&arg.lock);

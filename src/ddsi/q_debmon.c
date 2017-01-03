@@ -375,10 +375,8 @@ struct debug_monitor *new_debug_monitor (int port)
     nn_log (LC_CONFIG, "debmon at %s\n", sockaddr_to_string_with_port (buf, &addr));
   }
 
-  if (os_mutexInit (&dm->lock, NULL) != os_resultSuccess)
-    goto err_mutex;
-  if (os_condInit (&dm->cond, &dm->lock, NULL) != os_resultSuccess)
-    goto err_cond;
+  os_mutexInit (&dm->lock);
+  os_condInit (&dm->cond, &dm->lock);
   if (ddsi_listener_listen (dm->servsock) < 0)
     goto err_listen;
   dm->stop = 0;
@@ -387,9 +385,7 @@ struct debug_monitor *new_debug_monitor (int port)
 
 err_listen:
   os_condDestroy(&dm->cond);
-err_cond:
   os_mutexDestroy(&dm->lock);
-err_mutex:
   ddsi_listener_free(dm->servsock);
 err_servsock:
   os_free(dm);

@@ -12,12 +12,10 @@
 #include <assert.h>
 #include "os/os.h"
 
-os_result os_mutexInit(
-        _Out_ os_mutex *mutex,
-        _In_opt_ const os_mutexAttr *mutexAttr)
+void os_mutexInit(
+        _Out_ os_mutex *mutex)
 {
         assert(mutex != NULL);
-        assert(mutexAttr == NULL || mutexAttr->scopeAttr == OS_SCOPE_PRIVATE);
 #ifdef OSPL_STRICT_MEM
         assert(mutex->signature != OS_MUTEX_MAGIC_SIG);
 #endif
@@ -25,7 +23,6 @@ os_result os_mutexInit(
 #ifdef OSPL_STRICT_MEM
         mutex->signature = OS_MUTEX_MAGIC_SIG;
 #endif
-        return os_resultSuccess;
 }
 
 void os_mutexDestroy(
@@ -82,14 +79,12 @@ void os_mutexUnlock(
         ReleaseSRWLockExclusive(&mutex->lock);
 }
 
-os_result os_condInit(
+void os_condInit(
         _Out_ os_cond *cond,
-        _In_ os_mutex *dummymtx,
-        _In_opt_ const os_condAttr *condAttr)
+        _In_ os_mutex *dummymtx)
 {
         assert(cond != NULL);
         assert(dummymtx != NULL);
-        assert(condAttr == NULL || condAttr->scopeAttr == OS_SCOPE_PRIVATE);
 #ifdef OSPL_STRICT_MEM
         assert(cond->signature != OS_COND_MAGIC_SIG);
 #endif
@@ -98,7 +93,6 @@ os_result os_condInit(
 #ifdef OSPL_STRICT_MEM
         cond->signature = OS_COND_MAGIC_SIG;
 #endif
-        return os_resultSuccess;
 }
 
 void os_condDestroy(
@@ -162,11 +156,9 @@ void os_condBroadcast(os_cond *cond)
         WakeAllConditionVariable(&cond->cond);
 }
 
-os_result os_rwlockInit(_Out_ os_rwlock *rwlock,
-                        _In_opt_ const os_rwlockAttr *rwlockAttr)
+void os_rwlockInit(_Out_ os_rwlock *rwlock)
 {
         assert(rwlock);
-        assert(rwlockAttr == NULL || rwlockAttr->scopeAttr == OS_SCOPE_PRIVATE);
 #ifdef OSPL_STRICT_MEM
         assert(rwlock->signature != OS_RWLOCK_MAGIC_SIG);
 #endif
@@ -175,7 +167,6 @@ os_result os_rwlockInit(_Out_ os_rwlock *rwlock,
 #ifdef OSPL_STRICT_MEM
         rwlock->signature = OS_RWLOCK_MAGIC_SIG;
 #endif
-        return os_resultSuccess;
 }
 
 void os_rwlockDestroy(_Inout_ _Post_invalid_ os_rwlock *rwlock)

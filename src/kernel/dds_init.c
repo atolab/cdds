@@ -42,7 +42,7 @@ extern void ddsi_impl_init (void);
 
 static int dds_impl_init (void)
 {
-  os_mutexInit (&gv.attach_lock, NULL);
+  os_mutexInit (&gv.attach_lock);
   dds_iid_init ();
   if (dds_global.m_dur_init) (dds_global.m_dur_init) ();
   return 0;
@@ -116,9 +116,9 @@ extern int dds_init (int argc, char ** argv)
 
   gv.static_logbuf_lock_inited = 0;
   logbuf_init (&gv.static_logbuf);
-  os_mutexInit (&gv.static_logbuf_lock, NULL);
+  os_mutexInit (&gv.static_logbuf_lock);
   gv.static_logbuf_lock_inited = 1;
-  os_mutexInit (&dds_global.m_mutex, NULL);
+  os_mutexInit (&dds_global.m_mutex);
 
   dds_cfgst = config_init (uri);
   if (dds_cfgst == NULL)

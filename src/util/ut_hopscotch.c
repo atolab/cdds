@@ -78,37 +78,16 @@ static int ut_chhInit (struct ut_chh *rt, uint32_t init_size, uint32_t (*hash) (
 
     for (i = 0; i < N_BACKING_LOCKS; i++) {
         struct ut_chhBackingLock *s = &rt->backingLocks[i];
-        if (os_mutexInit (&s->lock, NULL) != os_resultSuccess) {
-            while (i-- > 0) os_mutexDestroy (&rt->backingLocks[i].lock);
-            goto err_locks;
-        }
+        os_mutexInit (&s->lock);
     }
     for (i = 0; i < N_BACKING_LOCKS; i++) {
         struct ut_chhBackingLock *s = &rt->backingLocks[i];
-        if (os_condInit (&s->cv, &s->lock, NULL) != os_resultSuccess) {
-            while (i-- > 0) os_condDestroy (&rt->backingLocks[i].cv);
-            goto err_conds;
-        }
+        os_condInit (&s->cv, &s->lock);
     }
     for (i = 0; i < N_RESIZE_LOCKS; i++) {
-        if (os_rwlockInit (&rt->resize_locks[i], NULL) != os_resultSuccess) {
-            while (i-- > 0) os_rwlockDestroy (&rt->resize_locks[i]);
-            goto err_rwlocks;
-        }
+        os_rwlockInit (&rt->resize_locks[i]);
     }
     return 0;
-
-err_rwlocks:
-    for (i = 0; i < N_BACKING_LOCKS; i++) {
-        os_condDestroy (&rt->backingLocks[i].cv);
-    }
-err_conds:
-    for (i = 0; i < N_BACKING_LOCKS; i++) {
-        os_mutexDestroy (&rt->backingLocks[i].lock);
-    }
-err_locks:
-    os_free (buckets);
-    return -1;
 }
 
 static void ut_chhFini (struct ut_chh *rt)

@@ -134,8 +134,8 @@ struct tkmap * dds_tkmap_new (void)
 {
   struct tkmap *tkmap = dds_alloc (sizeof (*tkmap));
   tkmap->m_hh = ut_chhNew (1, dds_tk_hash_void, dds_tk_equals_void, gc_buckets);
-  os_mutexInit (&tkmap->m_lock, NULL);
-  os_condInit (&tkmap->m_cond, &tkmap->m_lock, NULL);
+  os_mutexInit (&tkmap->m_lock);
+  os_condInit (&tkmap->m_cond, &tkmap->m_lock);
   return tkmap;
 }
 

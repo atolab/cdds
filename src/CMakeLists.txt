@@ -18,7 +18,7 @@ ENDIF()
 
 PREPEND(srcs_platform ${platform} os_platform_errno.c os_platform_heap.c os_platform_init.c os_platform_process.c os_platform_socket.c os_platform_stdlib.c os_platform_sync.c os_platform_thread.c os_platform_time.c)
 
-PREPEND(srcs_os os os_atomics.c os_init.c os_report.c os_socket.c os_sync.c os_thread.c os_time.c ${srcs_platform})
+PREPEND(srcs_os os os_atomics.c os_init.c os_report.c os_socket.c os_thread.c os_time.c ${srcs_platform})
 
 PREPEND(srcs_util util ut_avl.c ut_crc.c ut_expand_envvars.c ut_fibheap.c ut_hopscotch.c ut_thread_pool.c ut_xmlparser.c)
 

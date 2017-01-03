@@ -65,9 +65,9 @@ static int compare_lease_tsched (const void *va, const void *vb)
 void lease_management_init (void)
 {
   int i;
-  os_mutexInit (&gv.leaseheap_lock, NULL);
+  os_mutexInit (&gv.leaseheap_lock);
   for (i = 0; i < N_LEASE_LOCKS; i++)
-    os_mutexInit (&gv.lease_locks[i], NULL);
+    os_mutexInit (&gv.lease_locks[i]);
   ut_fibheapInit (&lease_fhdef, &gv.leaseheap);
 }
 

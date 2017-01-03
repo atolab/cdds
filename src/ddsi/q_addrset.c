@@ -201,7 +201,7 @@ struct addrset *new_addrset (void)
 {
   struct addrset *as = os_malloc (sizeof (*as));
   os_atomic_st32 (&as->refc, 1);
-  os_mutexInit (&as->lock, NULL);
+  os_mutexInit (&as->lock);
   ut_avlCInit (&addrset_treedef, &as->ucaddrs);
   ut_avlCInit (&addrset_treedef, &as->mcaddrs);
   return as;

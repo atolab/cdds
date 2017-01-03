@@ -494,8 +494,8 @@ struct xeventq * xeventq_new
   evq->queued_rexmit_bytes = 0;
   evq->queued_rexmit_msgs = 0;
   evq->tev_conn = conn;
-  os_mutexInit (&evq->lock, NULL);
-  os_condInit (&evq->cond, &evq->lock, NULL);
+  os_mutexInit (&evq->lock);
+  os_condInit (&evq->cond, &evq->lock);
   return evq;
 }
 

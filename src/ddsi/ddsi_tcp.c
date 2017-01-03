@@ -823,7 +823,7 @@ static ddsi_tcp_conn_t ddsi_tcp_new_conn (os_socket sock, bool server, os_sockad
 
   memset (conn, 0, sizeof (*conn));
   ddsi_tcp_base_init (&conn->m_base);
-  os_mutexInit (&conn->m_mutex, NULL);
+  os_mutexInit (&conn->m_mutex);
   conn->m_sock = Q_INVALID_SOCKET;
   conn->m_peer_addr = *peer;
   conn->m_peer_port = sockaddr_get_port (peer);
@@ -1048,7 +1048,7 @@ int ddsi_tcp_init (void)
 #endif
 
     ut_avlInit (&ddsi_tcp_treedef, &ddsi_tcp_cache_g);
-    os_mutexInit (&ddsi_tcp_cache_lock_g, NULL);
+    os_mutexInit (&ddsi_tcp_cache_lock_g);
 
     nn_log (LC_INFO | LC_CONFIG, "%s initialized\n", ddsi_name);
   }

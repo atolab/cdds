@@ -152,7 +152,7 @@ static double exampleGetMedianFromTimeStats (ExampleTimeStats *stats)
     }
   }
   os_mutexUnlock(&statslock);
-  
+
   return median;
 }
 
@@ -460,7 +460,7 @@ int main (int argc, char *argv[])
     samples[i] = &sub_data[i];
   }
 
-  os_mutexInit(&statslock, NULL);
+  os_mutexInit(&statslock);
 
   status = dds_init (argc, argv);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
@@ -528,7 +528,7 @@ int main (int argc, char *argv[])
   status = dds_writer_create (publisher, &addrwriter, addrtopic, dwQos, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (dwQos);
-  
+
   terminated = dds_guardcondition_create ();
   waitSet = dds_waitset_create ();
 
@@ -769,7 +769,7 @@ int main (int argc, char *argv[])
           else if (info[j].valid_data)
           {
             /* If sample is valid, send it back to ping */
-            
+
             RoundTripModule_DataType * valid_sample = &sub_data[j];
             status = dds_write_ts (writer, valid_sample, info[j].source_timestamp);
             DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);

@@ -11,20 +11,6 @@ extern "C" {
 #define OS_API OS_API_IMPORT
 #endif
 
-    /** \brief Definition of the mutex attributes
-     */
-    typedef struct os_mutexAttr {
-        /**
-         * - OS_SCOPE_SHARED The scope of the mutex *   is system wide
-         * - OS_SCOPE_PRIVATE The scope of the mutex *   is process wide
-         */
-        os_scopeAttr    scopeAttr;
-
-        /* - OS_ERRORCHECKING_DISABLED The mutex operations aren't checked
-         * - OS_ERRORCHECKING_ENABLED The mutex operations are checked */
-        os_errorCheckingAttr errorCheckingAttr;
-    } os_mutexAttr;
-
     /** \brief Sets the priority inheritance mode for mutexes
      *   that are created after this call. (only effective on
      *   platforms that support priority inheritance)
@@ -38,21 +24,18 @@ extern "C" {
     os_mutexSetPriorityInheritanceMode(
             bool enabled);
 
-    /** \brief Initialize the mutex taking the mutex attributes
-     *         into account
+    /** \brief Initialize the mutex
      *
      * Possible Results:
-     * - assertion failure: mutex = NULL || mutexAttr = NULL
+     * - assertion failure: mutex = NULL
      * - returns os_resultSuccess if
      *     mutex is successfuly initialized
      * - returns os_resultFail if
      *     mutex is not initialized because of a failure
      */
-    _Check_return_
-    OS_API os_result
+    OS_API void
     os_mutexInit(
-            _Out_ _When_(return != os_resultSuccess, _Post_invalid_) os_mutex *mutex,
-            _In_opt_ const os_mutexAttr *mutexAttr)
+            _Out_ os_mutex *mutex)
         __nonnull((1));
 
     /** \brief Destroy the mutex
@@ -130,38 +113,7 @@ extern "C" {
             _Inout_ os_mutex *mutex)
     __nonnull_all__;
 
-    /** \brief Set the default mutex attributes
-     *
-     * Postcondition:
-     * - mutex scope attribute is OS_SCOPE_PRIVATE
-     * - mutex errorChecking attribute is OS_ERRORCHECKING_DISABLED
-     *
-     * Precondition:
-     * - mutexAttr is a valid object
-     */
-    _Post_satisfies_(mutexAttr->scopeAttr == OS_SCOPE_PRIVATE)
-    _Post_satisfies_(mutexAttr->errorCheckingAttr == OS_ERRORCHECKING_DISABLED)
-    OS_API void
-    os_mutexAttrInit(
-            _Out_ os_mutexAttr *mutexAttr)
-    __nonnull_all__;
-
-    /** \brief Definition of the condition variable attributes
-     */
-    typedef struct os_condAttr {
-        /**
-         * - OS_SCOPE_SHARED The scope of the condition variable
-         *   is system wide
-         * - OS_SCOPE_PRIVATE The scope of the condition variable
-         *   is process wide
-         */
-        os_scopeAttr    scopeAttr;
-    } os_condAttr;
-
-    /** \brief Initialize the condition variable taking the conition
-     *         attributes into account
-     * If condAttr == NULL, result is as if os_condInit was invoked
-     * with the default os_condAttr as after os_condAttrInit.
+    /** \brief Initialize the condition variable
      *
      * Possible Results:
      * - returns os_resultSuccess if
@@ -169,14 +121,10 @@ extern "C" {
      * - returns os_resultFail if
      *     cond is not initialized and can not be used
      */
-    _Check_return_
-    _When_(condAttr == NULL, _Pre_satisfies_(mutex->scope == OS_SCOPE_PRIVATE))
-        _When_(condAttr != NULL, _Pre_satisfies_(mutex->scope == condAttr->scopeAttr))
-        OS_API os_result
-        os_condInit(
-                _Out_ _When_(return != os_resultSuccess, _Post_invalid_) os_cond *cond,
-                _In_ os_mutex *mutex,
-                _In_opt_ const os_condAttr *condAttr)
+     OS_API void
+     os_condInit(
+                _Out_ os_cond *cond,
+                _In_ os_mutex *mutex)
         __nonnull((1,2));
 
     /** \brief Destroy the condition variable
@@ -257,43 +205,18 @@ extern "C" {
             os_cond *cond)
         __nonnull_all__;
 
-    /** \brief Set the default condition variable attributes
-     *
-     * Postcondition:
-     * - condition scope attribute is OS_SCOPE_SHARED
-     *
-     * Precondition:
-     * - condAttr is a valid object
-     */
-    _Post_satisfies_(condAttr->scopeAttr == OS_SCOPE_PRIVATE)
-    OS_API void
-    os_condAttrInit(
-            _Out_ os_condAttr *condAttr)
-    __nonnull_all__;
-
-    typedef struct os_rwlockAttr {
-        /**
-         * - OS_SCOPE_SHARED The scope of the multiple reader writer lock
-         *   is system wide
-         * - OS_SCOPE_PRIVATE The scope of the multiple reader writer lock
-         *   is process wide
-         */
-        os_scopeAttr    scopeAttr;
-    } os_rwlockAttr;
-
-    /** \brief Initialize the rwlock taking the rwlock attributes into account
+    /** \brief Initialize the rwloc
      *
      * Possible Results:
-     * - assertion failure: rwlock = NULL || rwlockAttr = NULL
+     * - assertion failure: rwlock = NULL
      * - returns os_resultSuccess if
      *     rwlock is successfuly initialized
      * - returns os_resultFail
      *     rwlock is not initialized and can not be used
      */
-    OS_API os_result
+    OS_API void
     os_rwlockInit(
-            os_rwlock *rwlock,
-            const os_rwlockAttr *rwlockAttr);
+            _Out_ os_rwlock *rwlock);
 
     /** \brief Destroy the rwlock
      *
@@ -308,7 +231,7 @@ extern "C" {
      */
     OS_API void
     os_rwlockDestroy(
-            os_rwlock *rwlock);
+            _Inout_ _Post_invalid_ os_rwlock *rwlock);
 
     /** \brief Acquire the rwlock while intending to read only
      *
@@ -411,17 +334,6 @@ extern "C" {
     OS_API void
     os_rwlockUnlock(
             os_rwlock *rwlock);
-
-    /** \brief Set the default rwlock attributes
-     *
-     * Postcondition:
-     * - rwlock scope attribute is OS_SCOPE_PRIVATE
-     */
-    _Post_satisfies_(rwlockAttr->scopeAttr == OS_SCOPE_PRIVATE)
-    OS_API void
-    os_rwlockAttrInit(
-            _Out_ os_rwlockAttr *rwlockAttr)
-    __nonnull_all__;
 
 #undef OS_API
 

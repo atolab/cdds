@@ -378,8 +378,8 @@ struct rhc * dds_rhc_new (dds_reader * reader, const struct sertopic * topic)
   struct rhc * rhc = dds_alloc (sizeof (*rhc));
 
   lwregs_init (&rhc->registrations);
-  os_mutexInit (&rhc->lock, NULL);
-  os_mutexInit (&rhc->conds_lock, NULL);
+  os_mutexInit (&rhc->lock);
+  os_mutexInit (&rhc->conds_lock);
   rhc->instances = ut_hhNew (1, instance_iid_hash, instance_iid_eq);
   rhc->topic = topic;
   rhc->reader = reader;

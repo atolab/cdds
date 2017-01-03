@@ -177,7 +177,7 @@ static void entity_common_init (struct entity_common *e, const struct nn_guid *g
   e->kind = kind;
   e->name = os_strdup (name ? name : "");
   e->iid = (ddsi_plugin.iidgen_fn) ();
-  os_mutexInit (&e->lock, NULL);
+  os_mutexInit (&e->lock);
 }
 
 static void entity_common_fini (struct entity_common *e)
@@ -188,7 +188,7 @@ static void entity_common_fini (struct entity_common *e)
 
 void local_reader_ary_init (struct local_reader_ary *x)
 {
-  os_mutexInit (&x->rdary_lock, NULL);
+  os_mutexInit (&x->rdary_lock);
   x->valid = 1;
   x->fastpath_ok = 1;
   x->n_readers = 0;
@@ -242,7 +242,7 @@ void local_reader_ary_setinvalid (struct local_reader_ary *x)
 
 int deleted_participants_admin_init (void)
 {
-  os_mutexInit (&deleted_participants_lock, NULL);
+  os_mutexInit (&deleted_participants_lock);
   ut_avlInit (&deleted_participants_treedef, &deleted_participants);
   return 0;
 }
@@ -409,7 +409,7 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
   pp->builtin_refc = 0;
   pp->builtins_deleted = 0;
   pp->is_ddsi2_pp = (flags & (RTPS_PF_PRIVILEGED_PP | RTPS_PF_IS_DDSI2_PP)) ? 1 : 0;
-  os_mutexInit (&pp->refc_lock, NULL);
+  os_mutexInit (&pp->refc_lock);
   pp->next_entityid = NN_ENTITYID_ALLOCSTEP;
   pp->lease_duration = config.lease_duration;
   pp->plist = os_malloc (sizeof (*pp->plist));
@@ -2504,7 +2504,7 @@ static struct writer * new_writer_guid
 
   endpoint_common_init (&wr->e, &wr->c, EK_WRITER, guid, group_guid, pp);
 
-  os_condInit (&wr->throttle_cond, &wr->e.lock, NULL);
+  os_condInit (&wr->throttle_cond, &wr->e.lock);
   wr->seq = 0;
   wr->cs_seq = 0;
   INIT_SEQ_XMIT(wr, 0);
@@ -2566,8 +2566,8 @@ static struct writer * new_writer_guid
      Which one to use depends on whether merge policies are in effect
      in durability. If yes, then durability will take care of all
      transient & persistent data; if no, DDSI discovery usually takes
-     too long and this'll save you. 
-   
+     too long and this'll save you.
+
      Note: may still be cleared, if it turns out we are not maintaining
      an index at all (e.g., volatile KEEP_ALL) */
   if (config.startup_mode_full) {

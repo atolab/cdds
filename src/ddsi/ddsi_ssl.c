@@ -44,7 +44,7 @@ static int ddsi_ssl_verify (int ok, X509_STORE_CTX * store)
 
     /* Check if allowing self-signed certificates */
 
-    if 
+    if
     (
       config.ssl_self_signed &&
       ((err == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT) ||
@@ -56,7 +56,7 @@ static int ddsi_ssl_verify (int ok, X509_STORE_CTX * store)
     else
     {
       X509_NAME_oneline (X509_get_issuer_name (cert), issuer, sizeof (issuer));
-      nn_log 
+      nn_log
       (
         LC_ERROR,
         "tcp/ssl failed to verify certificate from %s : %s\n",
@@ -194,7 +194,7 @@ static CRYPTO_dynlock_value * ddsi_ssl_dynlock_create (const char * file, int li
 
   (void) file;
   (void) line;
-  os_mutexInit (&val->m_mutex, NULL);
+  os_mutexInit (&val->m_mutex);
   return val;
 }
 
@@ -227,7 +227,7 @@ static SSL_CTX * ddsi_ssl_ctx_init (void)
 
   if (! SSL_CTX_use_certificate_file (ctx, config.ssl_keystore, SSL_FILETYPE_PEM))
   {
-    nn_log 
+    nn_log
     (
       LC_ERROR | LC_CONFIG,
       "tcp/ssl failed to load certificate from file: %s\n",
@@ -244,7 +244,7 @@ static SSL_CTX * ddsi_ssl_ctx_init (void)
 
   if (! SSL_CTX_use_PrivateKey_file (ctx, config.ssl_keystore, SSL_FILETYPE_PEM))
   {
-    nn_log 
+    nn_log
     (
       LC_ERROR | LC_CONFIG,
       "tcp/ssl failed to load private key from file: %s\n",
@@ -257,7 +257,7 @@ static SSL_CTX * ddsi_ssl_ctx_init (void)
 
   if (! SSL_CTX_load_verify_locations (ctx, config.ssl_keystore, 0))
   {
-    nn_log 
+    nn_log
     (
       LC_ERROR | LC_CONFIG,
       "tcp/ssl failed to load CA from file: %s\n",
@@ -270,7 +270,7 @@ static SSL_CTX * ddsi_ssl_ctx_init (void)
 
   if (! SSL_CTX_set_cipher_list (ctx, config.ssl_ciphers))
   {
-    nn_log 
+    nn_log
     (
       LC_ERROR | LC_CONFIG,
       "tcp/ssl failed to set ciphers: %s\n",
@@ -285,7 +285,7 @@ static SSL_CTX * ddsi_ssl_ctx_init (void)
   {
     if (! RAND_load_file (config.ssl_rand_file, 4096))
     {
-      nn_log 
+      nn_log
       (
         LC_ERROR | LC_CONFIG,
         "tcp/ssl failed to load random seed from file: %s\n",
@@ -325,7 +325,7 @@ static SSL * ddsi_ssl_connect (os_socket sock)
   SSL * ssl;
   int err;
 
-  /* Connect SSL over connected socket */ 
+  /* Connect SSL over connected socket */
 
   ssl = ddsi_ssl_new ();
   SSL_set_fd (ssl, sock);
@@ -377,7 +377,7 @@ static c_bool ddsi_ssl_init (void)
   ddsi_ssl_locks = os_malloc (sizeof (CRYPTO_dynlock_value) * locks);
   for (i = 0; i < locks; i++)
   {
-    os_mutexInit (&ddsi_ssl_locks[i].m_mutex, NULL);
+    os_mutexInit (&ddsi_ssl_locks[i].m_mutex);
   }
   ERR_load_BIO_strings ();
   SSL_load_error_strings ();

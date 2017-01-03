@@ -227,8 +227,8 @@ int dds_waitset_remove_condition_locked (dds_waitset * ws, dds_condition * cond)
 dds_waitset_t dds_waitset_create_cont (void (*block) (dds_waitset_t ws, void *arg, dds_time_t abstimeout), void (*cont) (dds_waitset_t ws, void *arg, int ret), size_t contsize)
 {
   dds_waitset * waitset = dds_alloc (sizeof (*waitset) + contsize);
-  os_mutexInit (&waitset->conds_lock, NULL);
-  os_condInit (&waitset->cv, &waitset->conds_lock, NULL);
+  os_mutexInit (&waitset->conds_lock);
+  os_condInit (&waitset->cv, &waitset->conds_lock);
   waitset->block = block;
   waitset->cont = cont;
   waitset->trp_xs = NULL;

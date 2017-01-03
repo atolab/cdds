@@ -150,22 +150,6 @@ extern "C" {
 #define OS_ATOMIC_UINTPTR_INIT(v) { (v) }
 #define OS_ATOMIC_VOIDP_INIT(v) { (uintptr_t) (v) }
 
-    /** \brief Definition of the scope attribute */
-    typedef enum os_scopeAttr {
-        /** The scope of the service is system wide */
-        OS_SCOPE_SHARED,
-        /** The scope of the service is process wide */
-        OS_SCOPE_PRIVATE
-    } os_scopeAttr;
-
-    /** \brief Definition of the error-checking attribute */
-    typedef enum os_errorCheckingAttr {
-        /** Error checking is disabled. */
-        OS_ERRORCHECKING_DISABLED,
-        /** Error checking is enabled. */
-        OS_ERRORCHECKING_ENABLED
-    } os_errorCheckingAttr;
-
     /** \brief Definition of the service return values */
     typedef enum os_result {
         /** The service is successfully completed */

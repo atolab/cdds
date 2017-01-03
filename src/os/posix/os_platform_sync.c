@@ -75,32 +75,14 @@ os_result os_mutexSetPriorityInheritanceMode(bool enabled)
   return os_resultSuccess;
 }
 
-os_result os_mutexInit (os_mutex *mutex, const os_mutexAttr *mutexAttr)
+void os_mutexInit (os_mutex *mutex)
 {
   int shared;
-  os_mutexAttr defAttr;
   assert (mutex != NULL);
 #ifdef OSPL_STRICT_MEM
   assert (mutex->signature != OS_MUTEX_MAGIC_SIG);
 #endif
-  if(!mutexAttr) {
-    os_mutexAttrInit(&defAttr);
-    mutexAttr = &defAttr;
-  }
-  if (mutexAttr->scopeAttr != OS_SCOPE_SHARED)
-  {
-    pthread_mutex_init (&mutex->mutex, NULL);
-    shared = 0;
-  }
-  else
-  {
-    pthread_mutexattr_t ma;
-    pthread_mutexattr_init (&ma);
-    pthread_mutexattr_setpshared (&ma, PTHREAD_PROCESS_SHARED);
-    pthread_mutex_init (&mutex->mutex, &ma);
-    pthread_mutexattr_destroy (&ma);
-    shared = 1;
-  }
+  pthread_mutex_init (&mutex->mutex, NULL);
 #if HAVE_LKST
   if (ospl_lkst_enabled)
     lkst_track_init (mutex, shared ? LKST_MF_SHARED : 0);
@@ -110,7 +92,6 @@ os_result os_mutexInit (os_mutex *mutex, const os_mutexAttr *mutexAttr)
 #ifdef OSPL_STRICT_MEM
   mutex->signature = OS_MUTEX_MAGIC_SIG;
 #endif
-  return os_resultSuccess;
 }
 
 void os_mutexDestroy (os_mutex *mutex)
@@ -225,34 +206,16 @@ void os_mutexUnlock (os_mutex *mutex)
     abort();
 }
 
-os_result os_condInit (os_cond *cond, os_mutex *dummymtx __attribute__ ((unused)), const os_condAttr *condAttr)
+void os_condInit (os_cond *cond, os_mutex *dummymtx __attribute__ ((unused)))
 {
-  os_condAttr defAttr;
   assert (cond != NULL);
 #ifdef OSPL_STRICT_MEM
   assert(cond->signature != OS_COND_MAGIC_SIG);
 #endif
-
-  if(!condAttr) {
-    os_condAttrInit(&defAttr);
-    condAttr = &defAttr;
-  }
-  if (condAttr->scopeAttr != OS_SCOPE_SHARED)
-  {
-    pthread_cond_init (&cond->cond, NULL);
-  }
-  else
-  {
-    pthread_condattr_t ca;
-    pthread_condattr_init (&ca);
-    pthread_condattr_setpshared (&ca, PTHREAD_PROCESS_SHARED);
-    pthread_cond_init (&cond->cond, &ca);
-    pthread_condattr_destroy (&ca);
-  }
+  pthread_cond_init (&cond->cond, NULL);
 #ifdef OSPL_STRICT_MEM
   cond->signature = OS_COND_MAGIC_SIG;
 #endif
-  return os_resultSuccess;
 }
 
 void os_condDestroy (os_cond *cond)
@@ -355,15 +318,9 @@ void os_condBroadcast (os_cond *cond)
     abort();
 }
 
-os_result os_rwlockInit (os_rwlock *rwlock, const os_rwlockAttr *rwlockAttr)
+void os_rwlockInit (os_rwlock *rwlock)
 {
-  os_mutexAttr mutexAttr;
-
-  os_mutexAttrInit(&mutexAttr);
-  if(rwlockAttr) {
-    mutexAttr.scopeAttr = rwlockAttr->scopeAttr;
-  }
-  return os_mutexInit (&rwlock->mutex, &mutexAttr);
+  os_mutexInit (&rwlock->mutex);
 }
 
 void os_rwlockDestroy (os_rwlock *rwlock)
