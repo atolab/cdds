@@ -180,7 +180,7 @@ os_procCreate(
         OS_REPORT(OS_ERROR,
                 "os_procCreate", 1,
                 "GetEnvironmentStrings failed, environment will be inherited from parent-process without modifications.", os_getErrno());
-		environmentCopy = NULL;
+                environmentCopy = NULL;
     }
 
     if (CreateProcess(executable_file,
@@ -311,7 +311,7 @@ _Post_satisfies_(procAttr->schedPriority == THREAD_PRIORITY_NORMAL)
 _Post_satisfies_(procAttr->activeRedirect == 0)
 void
 os_procAttrInit(
-	_Out_ os_procAttr *procAttr)
+        _Out_ os_procAttr *procAttr)
 {
     assert(procAttr != NULL);
     procAttr->schedClass = OS_SCHED_DEFAULT;
@@ -430,9 +430,9 @@ os_procGetProcessName(
                 if (exec) {
                     /* skip all before the last '\' */
                     exec++;
-                    snprintf(processName, _OS_PROC_PROCES_NAME_LEN, "%s", exec);
+                    (void) snprintf(processName, _OS_PROC_PROCES_NAME_LEN, "%s", exec);
                 } else {
-                    snprintf(processName, _OS_PROC_PROCES_NAME_LEN, "%s", process_name);
+                    (void) snprintf(processName, _OS_PROC_PROCES_NAME_LEN, "%s", process_name);
                 }
                 os_free(process_name);
             }

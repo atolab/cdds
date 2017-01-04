@@ -15,16 +15,38 @@
  * Implements socket management for WIN32
  */
 #include "os/os.h"
+#include <Qos2.h>
 
 #include <assert.h>
 
 #define WORKING_BUFFER_SIZE 15000
 #define MAX_TRIES 3
 
-static FARPROC qwaveQOSCreateHandleFunc = NULL;
-static FARPROC qwaveQOSCloseHandleFunc = NULL;
-static FARPROC qwaveQOSAddSocketToFlowFunc = NULL;
-static FARPROC qwaveQOSSetFlowFunc = NULL;
+typedef BOOL (WINAPI *qwaveQOSCreateHandleFuncT) (_In_ PQOS_VERSION Version, _Out_ PHANDLE QOSHandle);
+typedef BOOL (WINAPI *qwaveQOSCloseHandleFuncT) (_In_ HANDLE QOSHandle);
+typedef BOOL (WINAPI *qwaveQOSAddSocketToFlowFuncT) (
+  _In_     HANDLE           QOSHandle,
+  _In_     SOCKET           Socket,
+  _In_opt_ PSOCKADDR        DestAddr,
+  _In_     QOS_TRAFFIC_TYPE TrafficType,
+  _In_opt_ DWORD            Flags,
+  _Inout_  PQOS_FLOWID      FlowId
+);
+typedef BOOL (WINAPI *qwaveQOSSetFlowFuncT) (
+  _In_       HANDLE       QOSHandle,
+  _In_       QOS_FLOWID   FlowId,
+  _In_       QOS_SET_FLOW Operation,
+  _In_       ULONG        Size,
+  _In_       PVOID        Buffer,
+  _Reserved_ DWORD        Flags,
+  _Out_opt_  LPOVERLAPPED Overlapped
+);
+
+static qwaveQOSCreateHandleFuncT qwaveQOSCreateHandleFunc;
+static qwaveQOSCloseHandleFuncT qwaveQOSCloseHandleFunc;
+static qwaveQOSAddSocketToFlowFuncT qwaveQOSAddSocketToFlowFunc;
+static qwaveQOSSetFlowFuncT qwaveQOSSetFlowFunc;
+
 static HANDLE qwaveDLLModuleHandle = NULL;
 static HANDLE qwaveDLLModuleLock = NULL;
 
@@ -107,7 +129,7 @@ os_result
 os_sockGetsockname(
     os_socket s,
     const struct sockaddr *name,
-	uint32_t namelen)
+        uint32_t namelen)
 {
     os_result result = os_resultSuccess;
     int len = namelen;
@@ -166,8 +188,8 @@ os_sockRecvfrom(
 os_result
 os_sockGetsockopt(
     os_socket s,
-	int32_t level,
-	int32_t optname,
+        int32_t level,
+        int32_t optname,
     void *optval,
     uint32_t *optlen)
 {
@@ -210,7 +232,7 @@ os_sockSetDscpValueWithTos(
     os_result result = os_resultSuccess;
 
     if (setsockopt(sock, IPPROTO_IP, IP_TOS, (char *)&value, (int)sizeof(value)) == SOCKET_ERROR) {
-		char errmsg[1024];
+                char errmsg[1024];
         int errNo = os_getErrno();
         (void) os_strerror_r(errNo, errmsg, sizeof errmsg);
         OS_REPORT(OS_WARNING, "os_sockSetDscpValue", 0, "Failed to set diffserv value to %ld: %d %s", value, errNo, errmsg);
@@ -238,13 +260,13 @@ os_sockLoadQwaveLibrary(void)
             goto err_load_lib;
         }
 
-        qwaveQOSCreateHandleFunc = GetProcAddress(qwaveDLLModuleHandle, "QOSCreateHandle");
-        qwaveQOSCloseHandleFunc = GetProcAddress(qwaveDLLModuleHandle, "QOSCloseHandle");
-        qwaveQOSAddSocketToFlowFunc = GetProcAddress(qwaveDLLModuleHandle, "QOSAddSocketToFlow");
-        qwaveQOSSetFlowFunc = GetProcAddress(qwaveDLLModuleHandle, "QOSSetFlow");
+        qwaveQOSCreateHandleFunc = (qwaveQOSCreateHandleFuncT) GetProcAddress(qwaveDLLModuleHandle, "QOSCreateHandle");
+        qwaveQOSCloseHandleFunc = (qwaveQOSCloseHandleFuncT) GetProcAddress(qwaveDLLModuleHandle, "QOSCloseHandle");
+        qwaveQOSAddSocketToFlowFunc = (qwaveQOSAddSocketToFlowFuncT) GetProcAddress(qwaveDLLModuleHandle, "QOSAddSocketToFlow");
+        qwaveQOSSetFlowFunc = (qwaveQOSSetFlowFuncT) GetProcAddress(qwaveDLLModuleHandle, "QOSSetFlow");
 
-        if ((qwaveQOSCreateHandleFunc == NULL) || (qwaveQOSCloseHandleFunc == NULL) ||
-                (qwaveQOSAddSocketToFlowFunc == NULL) || (qwaveQOSSetFlowFunc == NULL)) {
+        if ((qwaveQOSCreateHandleFunc == 0) || (qwaveQOSCloseHandleFunc == 0) ||
+            (qwaveQOSAddSocketToFlowFunc == 0) || (qwaveQOSSetFlowFunc == 0)) {
             OS_REPORT(OS_WARNING, "os_sockLoadQwaveLibrary", 0,
                     "Failed to resolve entry points for using diffserv on outgoing IP packets");
             goto err_find_func;
@@ -261,11 +283,6 @@ err_lock:
 
     return os_resultFail;
 }
-
-struct qos_version {
-    USHORT MajorVersion;
-    USHORT MinorVersion;
-};
 
 /* To set the DSCP value on Windows 7 or higher the following functions are used.
  *
@@ -348,7 +365,7 @@ os_sockSetDscpValueWithQos(
     BOOL setDscpSupported)
 {
     os_result result = os_resultSuccess;
-    struct qos_version version;
+    QOS_VERSION version;
     HANDLE qosHandle = NULL;
     ULONG qosFlowId = 0; /* Flow Id must be 0. */
     BOOL qosResult;
@@ -365,11 +382,11 @@ os_sockSetDscpValueWithQos(
     version.MinorVersion = 0;
 
     /* Get a handle to the QoS subsystem. */
-    qosResult = (BOOL)qwaveQOSCreateHandleFunc(&version, &qosHandle);
+    qosResult = qwaveQOSCreateHandleFunc(&version, &qosHandle);
     if (!qosResult) {
-		char errmsg[1024];
-		errNo = os_getErrno();
-		(void)os_strerror_r(errNo, errmsg, sizeof errmsg);
+                char errmsg[1024];
+                errNo = os_getErrno();
+                (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
         OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0, "QOSCreateHandle failed: %d %s", errNo, errmsg);
         goto err_create_handle;
     }
@@ -377,12 +394,12 @@ os_sockSetDscpValueWithQos(
     os_sockGetTrafficType(value, &trafficType, &defaultDscp);
 
     /*  Add socket to flow. */
-    qosResult = (BOOL)qwaveQOSAddSocketToFlowFunc(qosHandle, sock, (PSOCKADDR)&sin,
+    qosResult = qwaveQOSAddSocketToFlowFunc(qosHandle, sock, (PSOCKADDR)&sin,
             trafficType, OS_SOCK_QOS_NON_ADAPTIVE_FLOW, &qosFlowId);
     if (!qosResult) {
-		char errmsg[1024];
-		errNo = os_getErrno();
-		(void)os_strerror_r(errNo, errmsg, sizeof errmsg);
+                char errmsg[1024];
+                errNo = os_getErrno();
+                (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
         OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0, "QOSAddSocketToFlow failed: %d %s", errNo, errmsg);
         qwaveQOSCloseHandleFunc(qosHandle);
         goto err_add_flow;
@@ -398,7 +415,7 @@ os_sockSetDscpValueWithQos(
         }
 
         /* Try to set DSCP value. Requires administrative rights to succeed */
-        qosResult = (BOOL)qwaveQOSSetFlowFunc(qosHandle, qosFlowId, OS_SOCK_QOS_SET_OUTGOING_DSCP_VALUE,
+        qosResult = qwaveQOSSetFlowFunc(qosHandle, qosFlowId, OS_SOCK_QOS_SET_OUTGOING_DSCP_VALUE,
                 sizeof(value), &value, 0, NULL);
         if (!qosResult) {
             errNo = os_getErrno();
@@ -407,9 +424,9 @@ os_sockSetDscpValueWithQos(
                         "Failed to set diffserv value to %ld value used is %d, not enough privileges",
                         value, defaultDscp);
             } else {
-				char errmsg[1024];
-				errNo = os_getErrno();
-				(void)os_strerror_r(errNo, errmsg, sizeof errmsg);
+                                char errmsg[1024];
+                                errNo = os_getErrno();
+                                (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
                 OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0, "QOSSetFlow failed: %d %s", errNo, errmsg);
             }
             goto err_set_flow;
@@ -433,11 +450,11 @@ os_sockSetDscpValue(
 {
     os_result result;
 
-	if (IsWindowsVistaOrGreater() && (os_sockLoadQwaveLibrary() == os_resultSuccess)) {
-		result = os_sockSetDscpValueWithQos(sock, value, IsWindows7OrGreater());
-	} else {
-		result = os_sockSetDscpValueWithTos(sock, value);
-	}
+        if (IsWindowsVistaOrGreater() && (os_sockLoadQwaveLibrary() == os_resultSuccess)) {
+                result = os_sockSetDscpValueWithQos(sock, value, IsWindows7OrGreater());
+        } else {
+                result = os_sockSetDscpValueWithTos(sock, value);
+        }
 
     return result;
 }
@@ -700,7 +717,7 @@ os_sockQueryInterfaces(
                 continue;
             }
 
-            snprintf(ifList[listIndex].name, OS_IFNAMESIZE, "%wS", pCurrAddress->FriendlyName);
+            (void)snprintf(ifList[listIndex].name, OS_IFNAMESIZE, "%wS", pCurrAddress->FriendlyName);
 
             /* Get interface flags. */
             ifList[listIndex].flags = getInterfaceFlags(pCurrAddress);
@@ -720,7 +737,7 @@ os_sockQueryInterfaces(
 
     for (pCurrAddress = pAddresses; pCurrAddress; pCurrAddress = pCurrAddress->Next) {
         if (pCurrAddress->OperStatus != IfOperStatusUp) {
-            snprintf(ifList[listIndex].name, OS_IFNAMESIZE, "%wS", pCurrAddress->FriendlyName);
+            (void)snprintf(ifList[listIndex].name, OS_IFNAMESIZE, "%wS", pCurrAddress->FriendlyName);
 
             /* Get interface flags. */
             ifList[listIndex].flags = getInterfaceFlags(pCurrAddress);
@@ -815,7 +832,7 @@ os_sockQueryIPv6Interfaces (
                 continue;
             }
 
-            snprintf(ifList[listIndex].name, OS_IFNAMESIZE, "%wS", pCurrAddress->FriendlyName);
+            (void)snprintf(ifList[listIndex].name, OS_IFNAMESIZE, "%wS", pCurrAddress->FriendlyName);
 
             /* Get interface flags. */
             ifList[listIndex].flags = getInterfaceFlags(pCurrAddress);
@@ -860,7 +877,7 @@ os_sockQueryIPv6Interfaces (
 
     for (pCurrAddress = pAddresses; pCurrAddress; pCurrAddress = pCurrAddress->Next) {
         if (pCurrAddress->OperStatus != IfOperStatusUp) {
-            snprintf(ifList[listIndex].name, OS_IFNAMESIZE, "%wS", pCurrAddress->FriendlyName);
+            (void) snprintf(ifList[listIndex].name, OS_IFNAMESIZE, "%wS", pCurrAddress->FriendlyName);
 
               /* Get interface flags. */
               ifList[listIndex].flags = getInterfaceFlags(pCurrAddress);
@@ -916,7 +933,7 @@ os_sockGetInterfaceStatus (
 
     for (pCurrAddress = pAddresses; pCurrAddress; pCurrAddress = pCurrAddress->Next) {
         char buffer[OS_IFNAMESIZE];
-        snprintf(buffer, sizeof(buffer), "%wS", pCurrAddress->FriendlyName);
+        (void) snprintf(buffer, sizeof(buffer), "%wS", pCurrAddress->FriendlyName);
         if (strcmp(ifName, buffer) == 0) {
             if (pCurrAddress->OperStatus == IfOperStatusUp) {
                 *status = TRUE;
@@ -1006,10 +1023,10 @@ os_sockQueryInterfaceStatusInit(
             info->hHandle = CreateEvent(NULL, FALSE, FALSE, NULL);
             if (info->hHandle == NULL) {
                 int errNo = os_getErrno();
-				char errmsg[1024];
+                                char errmsg[1024];
                 (void) os_strerror_r(errNo, errmsg, sizeof errmsg);
                 os_report(OS_ERROR, "os_sockQueryInterfaceStatusInit", __FILE__, __LINE__, 0, "CreateEvent failed: %d %s", errNo, errmsg);
-				os_sockQueryInterfaceStatusDeinit(info);
+                                os_sockQueryInterfaceStatusDeinit(info);
                 info = NULL;
             }
         }
@@ -1068,9 +1085,9 @@ os_sockQueryInterfaceStatusSignal(
     if (info) {
         if (!SetEvent(info->hHandle)) {
             int errNo = os_getErrno();
-			char errmsg[1024];
-			
-			(void) os_strerror_r(errNo, errmsg, sizeof errmsg);
+                        char errmsg[1024];
+
+                        (void) os_strerror_r(errNo, errmsg, sizeof errmsg);
             os_report(OS_WARNING, "os_sockQueryInterfaceStatusSignal", __FILE__, __LINE__, 0, "SetEvent failed: %d %s", errNo, errmsg);
         } else {
             result = os_resultSuccess;

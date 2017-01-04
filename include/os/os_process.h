@@ -245,9 +245,12 @@ os_procGetProcessName(
  * Possible Results:
  * - assertion failure: procAttr = NULL
  */
+_Post_satisfies_(procAttr->schedClass == OS_SCHED_DEFAULT)
+_Post_satisfies_(procAttr->schedPriority == THREAD_PRIORITY_NORMAL)
+_Post_satisfies_(procAttr->activeRedirect == 0)
 OS_API void
 os_procAttrInit(
-        os_procAttr *procAttr)
+        _Out_ os_procAttr *procAttr)
     __nonnull_all__;
 
 /** \brief Get the process effective scheduling class

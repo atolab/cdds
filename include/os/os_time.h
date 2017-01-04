@@ -189,7 +189,7 @@ extern "C" {
    */
   OS_API os_result
   os_nanoSleep(
-          os_time delay);
+          _In_ os_time delay);
 
   /** \brief Translate calendar time into a readable string representation
    *

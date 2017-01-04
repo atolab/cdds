@@ -622,13 +622,13 @@ os_sockWaitsetCtx os_sockWaitsetWait (os_sockWaitset ws)
     if (FD_ISSET (dst->fds[0], rdset))
     {
       char buf;
-      int n;
+      int n1;
 #if defined (_WIN32)
-      n = recv (dst->fds[0], &buf, 1, 0);
+      n1 = recv (dst->fds[0], &buf, 1, 0);
 #else
-      n = (int) read (dst->fds[0], &buf, 1);
+      n1 = (int) read (dst->fds[0], &buf, 1);
 #endif
-      if (n != 1)
+      if (n1 != 1)
       {
         err = os_getErrno ();
         NN_WARNING1 ("os_sockWaitsetWait: read failed on trigger pipe, errno = %d", err);

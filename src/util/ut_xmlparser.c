@@ -646,7 +646,7 @@ static int parse_element (struct ut_xmlpState *st, uintptr_t parentinfo)
                     PE_ERROR ("invalid character sequence", 0);
                 } else if (content != NULL) {
                     if(*content != '\0') {
-                        int ret = st->cb.elem_data (st->varg, eleminfo, content);
+                        ret = st->cb.elem_data (st->varg, eleminfo, content);
                         os_free (content);
                         if (ret < 0) {
                             PE_ERROR ("failed in data callback", 0);
@@ -672,7 +672,7 @@ static int parse_element (struct ut_xmlpState *st, uintptr_t parentinfo)
 err:
     if (!st->error) {
         char msg[512];
-        snprintf (msg, sizeof (msg), "%s (%s%s%s)", errc, errc1 ? errc1 : "", errc1 && errc2 ? ", " : "", errc2 ? errc2 : "");
+        (void) snprintf (msg, sizeof (msg), "%s (%s%s%s)", errc, errc1 ? errc1 : "", errc1 && errc2 ? ", " : "", errc2 ? errc2 : "");
         st->cb.error (st->varg, msg, st->prevline);
         st->error = 1;
     }

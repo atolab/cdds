@@ -78,7 +78,7 @@ bool dds_err_check (int err, unsigned flags, const char * where)
     if (flags & (DDS_CHECK_REPORT | DDS_CHECK_FAIL))
     {
       char msg[DDS_ERR_MSG_MAX];
-      snprintf (msg, DDS_ERR_MSG_MAX, "Error %s:%s:M%u", dds_err_mod_str (err), dds_err_str (err), dds_err_minor (err));
+      (void) snprintf (msg, DDS_ERR_MSG_MAX, "Error %s:%s:M%u", dds_err_mod_str (err), dds_err_str (err), (unsigned) dds_err_minor (err));
       if (flags & DDS_CHECK_REPORT)
       {
         printf ("%s: %s\n", where, msg);

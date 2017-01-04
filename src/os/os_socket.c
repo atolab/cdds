@@ -568,9 +568,9 @@ os_sockaddrAddressToString(const os_sockaddr* sa,
                    0,
                    NI_NUMERICHOST))
     {
-		char errmsg[1024];
-		int errNo = os_getErrno();
-		(void)os_strerror_r(errNo, errmsg, sizeof errmsg);
+                char errmsg[1024];
+                int errNo = os_getErrno();
+                (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
 
         OS_REPORT(OS_ERROR,"os_sockaddrAddressToString", 0,
                 "error calling getnameinfo to stringify network address. Error: %d (%s)",
@@ -610,8 +610,7 @@ os_sockaddrAddressPortToString(
     case AF_INET:
       os_sockaddrAddressToString (sa, buffer, buflen);
       pos = strlen (buffer);
-      snprintf (buffer + pos, buflen - pos,
-                ":%hu", ntohs (((os_sockaddr_in *) sa)->sin_port));
+      (void) snprintf (buffer + pos, buflen - pos, ":%hu", ntohs (((os_sockaddr_in *) sa)->sin_port));
       break;
 #if OS_SOCKET_HAS_IPV6
     case AF_INET6:
@@ -619,13 +618,12 @@ os_sockaddrAddressPortToString(
           buffer[0] = '[';
           os_sockaddrAddressToString (sa, buffer + 1, buflen - 1);
           pos = strlen (buffer);
-          snprintf (buffer + pos, buflen - pos,
-                    "]:%hu", ntohs (((os_sockaddr_in6 *) sa)->sin6_port));
+          (void) snprintf (buffer + pos, buflen - pos, "]:%hu", ntohs (((os_sockaddr_in6 *) sa)->sin6_port));
       }
       break;
 #endif
     default:
-      snprintf(buffer, buflen, "Unknown address family");
+      (void) snprintf(buffer, buflen, "Unknown address family");
       break;
   }
   return buffer;

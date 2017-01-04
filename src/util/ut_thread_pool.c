@@ -88,11 +88,11 @@ static os_result ut_thread_pool_new_thread (ut_thread_pool pool)
 {
     static unsigned char pools = 0; /* Pool counter - TODO make atomic */
 
-    char name [16];
+    char name [64];
     os_threadId id;
     os_result res;
 
-    snprintf (name, 16, "OSPL-%u-%u", pools++, pool->m_count++);
+    (void) snprintf (name, sizeof (name), "OSPL-%u-%u", pools++, pool->m_count++);
     res = os_threadCreate (&id, name, &pool->m_attr, ut_thread_start_fn, pool);
 
     if (res == os_resultSuccess)

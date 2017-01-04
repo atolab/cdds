@@ -811,7 +811,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_etime_t tnow, const Ac
       else if (config.enabled_logcats & LC_INFO)
       {
         char tagbuf[2*(4*8+3) + 4 + 1];
-        snprintf (tagbuf, sizeof (tagbuf), "%x:%x:%x:%x -> %x:%x:%x:%x", PGUID (src), PGUID (dst));
+        (void) snprintf (tagbuf, sizeof (tagbuf), "%x:%x:%x:%x -> %x:%x:%x:%x", PGUID (src), PGUID (dst));
         if (nn_lat_estim_log (LC_INFO, tagbuf, &rn->hb_to_ack_latency))
           nn_log (LC_INFO, "\n");
       }
@@ -2527,7 +2527,7 @@ static void malformed_packet_received_nosubmsg
   size_t pos;
 
   /* Show beginning of message (as hex dumps) */
-  pos = (size_t) snprintf (tmp, sizeof (tmp), "malformed packet received from vendor %d.%d state %s <", vendorid.id[0], vendorid.id[1], state);
+  pos = (size_t) snprintf (tmp, sizeof (tmp), "malformed packet received from vendor %u.%u state %s <", vendorid.id[0], vendorid.id[1], state);
   for (i = 0; i < 32 && i < len && pos < sizeof (tmp); i++)
     pos += (size_t) snprintf (tmp + pos, sizeof (tmp) - pos, "%s%02x", (i > 0 && (i%4) == 0) ? " " : "", msg[i]);
   if (pos < sizeof (tmp))
@@ -2551,7 +2551,7 @@ static void malformed_packet_received
   assert (submsg >= msg && submsg < msg + len);
 
   /* Show beginning of message and of submessage (as hex dumps) */
-  pos = (size_t) snprintf (tmp, sizeof (tmp), "malformed packet received from vendor %d.%d state %s <", vendorid.id[0], vendorid.id[1], state);
+  pos = (size_t) snprintf (tmp, sizeof (tmp), "malformed packet received from vendor %u.%u state %s <", vendorid.id[0], vendorid.id[1], state);
   for (i = 0; i < 32 && i < len && msg + i < submsg && pos < sizeof (tmp); i++)
     pos += (size_t) snprintf (tmp + pos, sizeof (tmp) - pos, "%s%02x", (i > 0 && (i%4) == 0) ? " " : "", msg[i]);
   if (pos < sizeof (tmp))
@@ -2570,7 +2570,7 @@ static void malformed_packet_received
       if (smsize >= sizeof (AckNack_t))
       {
         const AckNack_t *x = (const AckNack_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%"PRId64",%u}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%u},%x,%x,%"PRId64",%u}",
                          x->smhdr.submessageId, x->smhdr.flags, x->smhdr.octetsToNextHeader,
                          x->readerId.u, x->writerId.u, fromSN (x->readerSNState.bitmap_base),
                          x->readerSNState.numbits);
@@ -2580,7 +2580,7 @@ static void malformed_packet_received
       if (smsize >= sizeof (Heartbeat_t))
       {
         const Heartbeat_t *x = (const Heartbeat_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%"PRId64",%"PRId64"}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%u},%x,%x,%"PRId64",%"PRId64"}",
                          x->smhdr.submessageId, x->smhdr.flags, x->smhdr.octetsToNextHeader,
                          x->readerId.u, x->writerId.u, fromSN (x->firstSN), fromSN (x->lastSN));
       }
@@ -2589,7 +2589,7 @@ static void malformed_packet_received
       if (smsize >= sizeof (Gap_t))
       {
         const Gap_t *x = (const Gap_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%"PRId64",%"PRId64",%u}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%u},%x,%x,%"PRId64",%"PRId64",%u}",
                          x->smhdr.submessageId, x->smhdr.flags, x->smhdr.octetsToNextHeader,
                          x->readerId.u, x->writerId.u, fromSN (x->gapStart),
                          fromSN (x->gapList.bitmap_base), x->gapList.numbits);
@@ -2599,7 +2599,7 @@ static void malformed_packet_received
       if (smsize >= sizeof (NackFrag_t))
       {
         const NackFrag_t *x = (const NackFrag_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%"PRId64",%u,%u}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%u},%x,%x,%"PRId64",%u,%u}",
                          x->smhdr.submessageId, x->smhdr.flags, x->smhdr.octetsToNextHeader,
                          x->readerId.u, x->writerId.u, fromSN (x->writerSN),
                          x->fragmentNumberState.bitmap_base, x->fragmentNumberState.numbits);
@@ -2609,7 +2609,7 @@ static void malformed_packet_received
       if (smsize >= sizeof (HeartbeatFrag_t))
       {
         const HeartbeatFrag_t *x = (const HeartbeatFrag_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%x,%"PRId64",%u}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%u},%x,%x,%"PRId64",%u}",
                          x->smhdr.submessageId, x->smhdr.flags, x->smhdr.octetsToNextHeader,
                          x->readerId.u, x->writerId.u, fromSN (x->writerSN),
                          x->lastFragmentNum);
@@ -2619,7 +2619,7 @@ static void malformed_packet_received
       if (smsize >= sizeof (Data_t))
       {
         const Data_t *x = (const Data_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%d,%x,%x,%"PRId64"}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%u},%x,%u,%x,%x,%"PRId64"}",
                          x->x.smhdr.submessageId, x->x.smhdr.flags, x->x.smhdr.octetsToNextHeader,
                          x->x.extraFlags, x->x.octetsToInlineQos,
                          x->x.readerId.u, x->x.writerId.u, fromSN (x->x.writerSN));
@@ -2629,7 +2629,7 @@ static void malformed_packet_received
       if (smsize >= sizeof (DataFrag_t))
       {
         const DataFrag_t *x = (const DataFrag_t *) submsg;
-        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%d},%x,%d,%x,%x,%"PRId64",%u,%u,%u,%u}",
+        (void) snprintf (tmp + pos, sizeof (tmp) - pos, " {{%x,%x,%u},%x,%u,%x,%x,%"PRId64",%u,%u,%u,%u}",
                          x->x.smhdr.submessageId, x->x.smhdr.flags, x->x.smhdr.octetsToNextHeader,
                          x->x.extraFlags, x->x.octetsToInlineQos,
                          x->x.readerId.u, x->x.writerId.u, fromSN (x->x.writerSN),

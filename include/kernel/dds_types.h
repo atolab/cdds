@@ -97,6 +97,7 @@ dds_entity_kind_t;
 
 #define DDS_ENTITY_NUM 6
 #define DDS_TYPE_INDEX_MASK 0x0000000f /* To use entity kind as an array index */
+#define DDS_TYPE_INDEX_COUNT (DDS_TYPE_INDEX_MASK + 1)
 
 typedef enum dds_cond_kind
 {
@@ -157,7 +158,7 @@ typedef struct dds_readcond
   uint32_t m_instance_states;
   nn_guid_t m_rd_guid;
   struct dds_readcond * m_rhc_next;
-  struct 
+  struct
   {
     void * m_cxx_ctx;
     union

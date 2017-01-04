@@ -278,14 +278,16 @@ void sockaddr_set_port (os_sockaddr_storage *addr, unsigned short port)
 char *sockaddr_to_string_with_port (char addrbuf[INET6_ADDRSTRLEN_EXTENDED], const os_sockaddr_storage *src)
 {
   size_t pos;
+  int n;
   switch (src->ss_family)
   {
     case AF_INET:
       os_sockaddrAddressToString ((const os_sockaddr *) src, addrbuf, INET6_ADDRSTRLEN);
       pos = strlen (addrbuf);
       assert(pos <= INET6_ADDRSTRLEN_EXTENDED);
-      snprintf (addrbuf + pos, INET6_ADDRSTRLEN_EXTENDED - pos,
-                ":%u", ntohs (((os_sockaddr_in *) src)->sin_port));
+      n = snprintf (addrbuf + pos, INET6_ADDRSTRLEN_EXTENDED - pos, ":%u", ntohs (((os_sockaddr_in *) src)->sin_port));
+      assert (n < INET6_ADDRSTRLEN_EXTENDED);
+      (void)n;
       break;
 #if OS_SOCKET_HAS_IPV6
     case AF_INET6:
@@ -293,8 +295,9 @@ char *sockaddr_to_string_with_port (char addrbuf[INET6_ADDRSTRLEN_EXTENDED], con
       os_sockaddrAddressToString ((const os_sockaddr *) src, addrbuf + 1, INET6_ADDRSTRLEN);
       pos = strlen (addrbuf);
       assert(pos <= INET6_ADDRSTRLEN_EXTENDED);
-      snprintf (addrbuf + pos, INET6_ADDRSTRLEN_EXTENDED - pos,
-                "]:%u", ntohs (((os_sockaddr_in6 *) src)->sin6_port));
+      n = snprintf (addrbuf + pos, INET6_ADDRSTRLEN_EXTENDED - pos, "]:%u", ntohs (((os_sockaddr_in6 *) src)->sin6_port));
+      assert (n < INET6_ADDRSTRLEN_EXTENDED);
+      (void)n;
       break;
 #endif
     default:
@@ -737,7 +740,7 @@ static char *make_joinleave_msg (char *buf, size_t bufsz, os_socket socket, int 
     (void) snprintf (interfstr, sizeof (interfstr), "(default)");
   n = err ? snprintf (buf, bufsz, "error %d in ", err) : 0;
   if ((size_t) n  < bufsz)
-    snprintf (buf + n, bufsz - (size_t) n, "%s socket %lu for (%s, %s) interface %s", join ? "join" : "leave", (unsigned long) socket, mcstr, srcstr, interfstr);
+    (void) snprintf (buf + n, bufsz - (size_t) n, "%s socket %lu for (%s, %s) interface %s", join ? "join" : "leave", (unsigned long) socket, mcstr, srcstr, interfstr);
   return buf;
 }
 
@@ -962,6 +965,7 @@ int find_own_ip (const char *requested_address)
   }
 
   gv.n_interfaces = 0;
+  last_if_name[0] = 0;
   for (i = 0; i < (int) nif; i++, sep = ", ")
   {
     os_sockaddr_storage tmpip, tmpmask;

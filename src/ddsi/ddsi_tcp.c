@@ -382,6 +382,15 @@ static bool ddsi_tcp_select (os_socket sock, bool read, size_t pos)
   return (ret > 0);
 }
 
+static int err_is_AGAIN_or_WOULDBLOCK (int err)
+{
+  if (err == os_sockEAGAIN)
+    return 1;
+  if (err == os_sockEWOULDBLOCK)
+    return 1;
+  return 0;
+}
+
 static ssize_t ddsi_tcp_conn_read (ddsi_tran_conn_t conn, unsigned char * buf, size_t len)
 {
   ddsi_tcp_conn_t tcp = (ddsi_tcp_conn_t) conn;
@@ -417,7 +426,7 @@ static ssize_t ddsi_tcp_conn_read (ddsi_tran_conn_t conn, unsigned char * buf, s
     {
       if (err != os_sockEINTR)
       {
-        if (err == os_sockEAGAIN || err == os_sockEWOULDBLOCK)
+        if (err_is_AGAIN_or_WOULDBLOCK (err))
         {
           if (ddsi_tcp_select (tcp->m_sock, true, pos) == false)
           {
@@ -484,7 +493,7 @@ static ssize_t ddsi_tcp_block_write
     {
       if (err != os_sockEINTR)
       {
-        if (err == os_sockEAGAIN || err == os_sockEWOULDBLOCK)
+        if (err_is_AGAIN_or_WOULDBLOCK (err))
         {
           if (ddsi_tcp_select (conn->m_sock, false, pos) == false)
           {
@@ -590,7 +599,7 @@ static ssize_t ddsi_tcp_conn_write (ddsi_tran_conn_t base, const struct msghdr *
     while ((ret == -1) && (err == os_sockEINTR));
     if (ret == -1)
     {
-      if (err == os_sockEAGAIN || err == os_sockEWOULDBLOCK)
+      if (err_is_AGAIN_or_WOULDBLOCK (err))
       {
         piecewise = 1;
         ret = 0;

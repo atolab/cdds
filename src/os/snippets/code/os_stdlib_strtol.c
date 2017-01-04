@@ -95,7 +95,7 @@ os_strtoll(
 
     assert (str != NULL);
 
-    for (; isspace(str[cnt]); cnt++) {
+    for (; isspace((unsigned char)str[cnt]); cnt++) {
         /* ignore leading whitespace */
     }
 
@@ -128,7 +128,7 @@ os_strtoull (
 
     assert (str != NULL);
 
-    for (; isspace(str[cnt]); cnt++) {
+    for (; isspace((unsigned char)str[cnt]); cnt++) {
         /* ignore leading whitespace */
     }
 

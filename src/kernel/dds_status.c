@@ -1,7 +1,7 @@
 #include <assert.h>
 #include "kernel/dds_status.h"
 
-const uint32_t dds_status_masks [DDS_ENTITY_NUM] =
+const uint32_t dds_status_masks [DDS_TYPE_INDEX_COUNT] =
 {
   DDS_TOPIC_STATUS_MASK, DDS_PARTICIPANT_STATUS_MASK,
   DDS_READER_STATUS_MASK, DDS_WRITER_STATUS_MASK,
@@ -17,7 +17,7 @@ int dds_status_check (dds_entity_kind_t kind, uint32_t mask)
     DDS_RETCODE_OK;
 }
 
-/* 
+/*
   Set boolean on readers that indicates state of DATA_ON_READERS
   status on parent subscriber
 */
@@ -107,7 +107,7 @@ int dds_status_set_enabled (dds_entity_t e, uint32_t mask)
     os_mutexLock (&e->m_mutex);
     e->m_status_enable = mask;
     e->m_scond->m_trigger &= mask;
-    
+
     if (mask && (e->m_kind == DDS_TYPE_SUBSCRIBER))
     {
       dds_status_data_on_readers (e, true);
@@ -291,7 +291,7 @@ int dds_get_sample_rejected_status (dds_entity_t entity, dds_sample_rejected_sta
     ret = DDS_RETCODE_OK;
   }
   os_mutexUnlock (&entity->m_mutex);
-  
+
   return ret;
 }
 
@@ -315,7 +315,7 @@ int dds_get_sample_lost_status (dds_entity_t entity, dds_sample_lost_status_t * 
     ret = DDS_RETCODE_OK;
   }
   os_mutexUnlock (&entity->m_mutex);
-  
+
   return ret;
 }
 
@@ -339,8 +339,8 @@ int dds_get_requested_deadline_missed_status (dds_entity_t entity, dds_requested
     ret = DDS_RETCODE_OK;
   }
   os_mutexUnlock (&entity->m_mutex);
-  
-  return ret; 
+
+  return ret;
 }
 
 int dds_get_requested_incompatible_qos_status (dds_entity_t entity, dds_requested_incompatible_qos_status_t * status)

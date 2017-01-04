@@ -6,7 +6,7 @@
 
 #if FREELIST_TYPE == FREELIST_ATOMIC_LIFO
 
-void nn_freelist_init (struct nn_freelist *fl, uint32_t max, off_t linkoff)
+void nn_freelist_init (_Out_ struct nn_freelist *fl, uint32_t max, off_t linkoff)
 {
   os_atomic_lifo_init (&fl->x);
   os_atomic_st32(&fl->count, 0);
@@ -14,14 +14,14 @@ void nn_freelist_init (struct nn_freelist *fl, uint32_t max, off_t linkoff)
   fl->linkoff = linkoff;
 }
 
-void nn_freelist_fini (struct nn_freelist *fl, void (*free) (void *))
+void nn_freelist_fini (_Inout_ _Post_invalid_ struct nn_freelist *fl, _In_ void (*free) (void *elem))
 {
   void *e;
   while ((e = os_atomic_lifo_pop (&fl->x, fl->linkoff)) != NULL)
     free (e);
 }
 
-bool nn_freelist_push (struct nn_freelist *fl, void *elem)
+_Check_return_ bool nn_freelist_push (_Inout_ struct nn_freelist *fl, _Inout_ _When_ (return != 0, _Post_invalid_) void *elem)
 {
   if (os_atomic_inc32_nv (&fl->count) <= fl->max)
   {
@@ -35,14 +35,14 @@ bool nn_freelist_push (struct nn_freelist *fl, void *elem)
   }
 }
 
-void *nn_freelist_pushmany (struct nn_freelist *fl, void *first, void *last, uint32_t n)
+_Check_return_ _Ret_opt_ void *nn_freelist_pushmany (_Inout_ struct nn_freelist *fl, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *first, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *last, uint32_t n)
 {
   os_atomic_add32 (&fl->count, n);
   os_atomic_lifo_pushmany (&fl->x, first, last, fl->linkoff);
   return NULL;
 }
 
-void *nn_freelist_pop (struct nn_freelist *fl)
+_Check_return_ _Ret_opt_ void *nn_freelist_pop (_Inout_ struct nn_freelist *fl)
 {
   void *e;
   if ((e = os_atomic_lifo_pop (&fl->x, fl->linkoff)) != NULL)
@@ -64,7 +64,7 @@ static __thread int freelist_inner_idx = -1;
 static __declspec(thread) int freelist_inner_idx = -1;
 #endif
 
-void nn_freelist_init (struct nn_freelist *fl, uint32_t max, off_t linkoff)
+void nn_freelist_init (_Out_ struct nn_freelist *fl, uint32_t max, off_t linkoff)
 {
   int i;
   os_mutexInit (&fl->lock);
@@ -87,9 +87,10 @@ static void *get_next (const struct nn_freelist *fl, const void *e)
   return *((void **) ((char *)e + fl->linkoff));
 }
 
-void nn_freelist_fini (struct nn_freelist *fl, void (*xfree) (void *))
+void nn_freelist_fini (_Inout_ _Post_invalid_ struct nn_freelist *fl, _In_ void (*xfree) (void *))
 {
-  int i, j;
+  int i;
+  uint32_t j;
   struct nn_freelistM *m;
   os_mutexDestroy (&fl->lock);
   for (i = 0; i < NN_FREELIST_NPAR; i++)
@@ -145,7 +146,7 @@ static int lock_inner (struct nn_freelist *fl)
   return k;
 }
 
-bool nn_freelist_push (struct nn_freelist *fl, void *elem)
+_Check_return_ bool nn_freelist_push (_Inout_ struct nn_freelist *fl, _Inout_ _When_ (return != 0, _Post_invalid_) void *elem)
 {
   int k = lock_inner (fl);
   if (fl->inner[k].count < NN_FREELIST_MAGSIZE)
@@ -182,19 +183,21 @@ bool nn_freelist_push (struct nn_freelist *fl, void *elem)
   }
 }
 
-void *nn_freelist_pushmany (struct nn_freelist *fl, void *first, void *last, uint32_t n)
+_Check_return_ _Ret_opt_ void *nn_freelist_pushmany (_Inout_ struct nn_freelist *fl, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *first, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *last, uint32_t n)
 {
   void *m = first;
   while (m)
   {
     void *mnext = get_next (fl, m);
-    nn_freelist_push (fl, m);
+    if (!nn_freelist_push (fl, m)) {
+      return m;
+    }
     m = mnext;
   }
-  return m;
+  return NULL;
 }
 
-void *nn_freelist_pop (struct nn_freelist *fl)
+_Check_return_ _Ret_opt_ void *nn_freelist_pop (_Inout_ struct nn_freelist *fl)
 {
   int k = lock_inner (fl);
   if (fl->inner[k].count > 0)

@@ -131,7 +131,7 @@ static char *expand_envsimple (const char **src, expand_fn expand)
 {
     const char *start = *src;
     char *name, *x;
-    while (**src && (isalnum (**src) || **src == '_')) {
+    while (**src && (isalnum ((unsigned char) **src) || **src == '_')) {
         (*src)++;
     }
     assert (*src > start);
@@ -177,7 +177,7 @@ char *ut_expand_envvars_sh (const char *src0)
                 return NULL;
             } else if (*src == '{') {
                 x = expand_envbrace (&src, &ut_expand_envvars_sh);
-            } else if (isalnum (*src) || *src == '_') {
+            } else if (isalnum ((unsigned char) *src) || *src == '_') {
                 x = expand_envsimple (&src, &ut_expand_envvars_sh);
             } else {
                 x = expand_envchar (&src, &ut_expand_envvars_sh);

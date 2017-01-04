@@ -256,9 +256,9 @@ struct rhc
   /* Instance/Sample maximums from resource limits QoS */
 
   os_atomic_uint32_t n_cbs;                /* # callbacks in progress */
-  int32_t max_instances;
-  int32_t max_samples;
-  int32_t max_samples_per_instance;
+  int32_t max_instances; /* FIXME: probably better as uint32_t with MAX_UINT32 for unlimited */
+  int32_t max_samples;   /* FIXME: probably better as uint32_t with MAX_UINT32 for unlimited */
+  int32_t max_samples_per_instance; /* FIXME: probably better as uint32_t with MAX_UINT32 for unlimited */
 
   uint32_t n_instances;             /* # instances, including empty [NOT USED] */
   uint32_t n_nonempty_instances;    /* # non-empty instances */
@@ -321,7 +321,7 @@ static int instance_iid_eq (const void *va, const void *vb)
   return (a->iid == b->iid);
 }
 
-static void add_inst_to_nonempty_list (struct rhc *rhc, struct rhc_instance *inst)
+static void add_inst_to_nonempty_list (_Inout_ struct rhc *rhc, _Inout_ struct rhc_instance *inst)
 {
   if (rhc->nonempty_instances == NULL)
   {
@@ -604,7 +604,7 @@ static bool add_sample
   {
     /* Check if resource max_samples QoS exceeded */
 
-    if (rhc->reader && rhc->max_samples != DDS_LENGTH_UNLIMITED && rhc->n_vsamples >= rhc->max_samples)
+    if (rhc->reader && rhc->max_samples != DDS_LENGTH_UNLIMITED && rhc->n_vsamples >= (uint32_t) rhc->max_samples)
     {
       cb_data->status = DDS_SAMPLE_REJECTED_STATUS;
       cb_data->extra = DDS_REJECTED_BY_SAMPLES_LIMIT;
@@ -615,7 +615,7 @@ static bool add_sample
 
     /* Check if resource max_samples_per_instance QoS exceeded */
 
-    if (rhc->reader && rhc->max_samples_per_instance != DDS_LENGTH_UNLIMITED && inst->nvsamples >= rhc->max_samples_per_instance)
+    if (rhc->reader && rhc->max_samples_per_instance != DDS_LENGTH_UNLIMITED && inst->nvsamples >= (uint32_t) rhc->max_samples_per_instance)
     {
       cb_data->status = DDS_SAMPLE_REJECTED_STATUS;
       cb_data->extra = DDS_REJECTED_BY_SAMPLES_PER_INSTANCE_LIMIT;
@@ -698,7 +698,7 @@ static int inst_accepts_sample
   }
   if (rhc->exclusive_ownership && inst->wr_iid != sampleinfo->pwr_info.iid)
   {
-    int32_t strength = sampleinfo->pwr_info.ownership_strength;
+    uint32_t strength = sampleinfo->pwr_info.ownership_strength;
     if (strength > inst->strength) {
       /* ok */
     } else if (strength < inst->strength) {
@@ -1054,7 +1054,7 @@ static rhc_store_result_t rhc_store_new_instance
   }
   /* Check if resource max_instances QoS exceeded */
 
-  if (rhc->reader && rhc->max_instances != DDS_LENGTH_UNLIMITED && rhc->n_instances >= rhc->max_instances)
+  if (rhc->reader && rhc->max_instances != DDS_LENGTH_UNLIMITED && rhc->n_instances >= (uint32_t) rhc->max_instances)
   {
     cb_data->status = DDS_SAMPLE_REJECTED_STATUS;
     cb_data->extra = DDS_REJECTED_BY_INSTANCES_LIMIT;
@@ -1550,13 +1550,13 @@ static void set_sample_info_invsample (dds_sample_info_t *si, const struct rhc_i
   si->reception_timestamp = 0;
 }
 
-static void patch_generations (dds_sample_info_t *si, int last_of_inst)
+static void patch_generations (dds_sample_info_t *si, uint32_t last_of_inst)
 {
   if (last_of_inst > 0)
   {
     const unsigned ref =
       si[last_of_inst].disposed_generation_count + si[last_of_inst].no_writers_generation_count;
-    int i;
+    uint32_t i;
     assert (si[last_of_inst].sample_rank == 0);
     assert (si[last_of_inst].generation_rank == 0);
     for (i = 0; i < last_of_inst; i++)
@@ -1574,7 +1574,7 @@ static int dds_rhc_read_w_qminv
 )
 {
   bool trigger_waitsets = false;
-  int n = 0;
+  uint32_t n = 0;
   const struct dds_topic_descriptor * desc = (const struct dds_topic_descriptor *) rhc->topic->type;
 
   if (lock)
@@ -1601,12 +1601,12 @@ static int dds_rhc_read_w_qminv
           /* samples present & instance, view state matches */
           struct trigger_info pre, post;
           const unsigned nread = INST_NREAD (inst);
-          const int n_first = n;
+          const uint32_t n_first = n;
           get_trigger_info (&pre, inst, true);
 
           if (inst->latest)
           {
-            struct rhc_sample *sample = inst->latest->next, * const end = sample;
+            struct rhc_sample *sample = inst->latest->next, * const end1 = sample;
             do
             {
               if ((QMASK_OF_SAMPLE (sample) & qminv) == 0)
@@ -1643,7 +1643,7 @@ static int dds_rhc_read_w_qminv
               }
               sample = sample->next;
             }
-            while (sample != end);
+            while (sample != end1);
           }
 
           if (inst->inv_exists && n < max_samples && (QMASK_OF_INVSAMPLE (inst) & qminv) == 0)
@@ -2361,14 +2361,16 @@ static int rhc_check_counts_locked (struct rhc *rhc, bool check_conds)
       assert (n_vsamples_in_instance == inst->nvsamples);
       assert (a_sample_free == inst->a_sample_free);
 
-      dds_readcond * iter = rhc->conds;
-      for (i = 0; i < (rhc->nconds < CHECK_MAX_CONDS ? rhc->nconds : CHECK_MAX_CONDS); i++)
       {
-        if (iter->m_cond.m_kind == DDS_TYPE_COND_READ)
+        dds_readcond * rciter = rhc->conds;
+        for (i = 0; i < (rhc->nconds < CHECK_MAX_CONDS ? rhc->nconds : CHECK_MAX_CONDS); i++)
         {
-          cond_match_count[i] += rhc_get_cond_trigger (inst, iter);
+          if (rciter->m_cond.m_kind == DDS_TYPE_COND_READ)
+          {
+            cond_match_count[i] += rhc_get_cond_trigger (inst, rciter);
+          }
+          rciter = rciter->m_rhc_next;
         }
-        iter = iter->m_rhc_next;
       }
     }
   }
@@ -2385,14 +2387,14 @@ static int rhc_check_counts_locked (struct rhc *rhc, bool check_conds)
 
   if (check_conds)
   {
-    dds_readcond * iter = rhc->conds;
+    dds_readcond * rciter = rhc->conds;
     for (i = 0; i < (rhc->nconds < CHECK_MAX_CONDS ? rhc->nconds : CHECK_MAX_CONDS); i++)
     {
-      if (iter->m_cond.m_kind == DDS_TYPE_COND_READ)
+      if (rciter->m_cond.m_kind == DDS_TYPE_COND_READ)
       {
-        assert (cond_match_count[i] == iter->m_cond.m_trigger);
+        assert (cond_match_count[i] == rciter->m_cond.m_trigger);
       }
-      iter = iter->m_rhc_next;
+      rciter = rciter->m_rhc_next;
     }
   }
 

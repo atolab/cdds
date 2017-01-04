@@ -45,20 +45,20 @@
  * spaces tail the double). This isn't that bad, because the call
  * to strtod itself will handle these extra characters properly.
  */
-#define VALID_DOUBLE_CHAR(c) ( (isspace(c)            ) || /* (leading) whitespaces   */ \
-                               (isxdigit(c)           ) || /* (hexa)decimal digits    */ \
-                               (c == '.'              ) || /* ospl LC_NUMERIC         */ \
-                               (c == os_lcNumericGet()) || /* locale LC_NUMERIC       */ \
-                               (c == '+') || (c == '-') || /* signs                   */ \
-                               (c == 'x') || (c == 'X') || /* hexadecimal indication  */ \
-                               (c == 'e') || (c == 'E') || /* exponent chars          */ \
-                               (c == 'p') || (c == 'P') || /* binary exponent chars   */ \
-                               (c == 'a') || (c == 'A') || /* char for NaN            */ \
-                               (c == 'n') || (c == 'N') || /* char for NaN & INFINITY */ \
-                               (c == 'i') || (c == 'I') || /* char for INFINITY       */ \
-                               (c == 'f') || (c == 'F') || /* char for INFINITY       */ \
-                               (c == 't') || (c == 'T') || /* char for INFINITY       */ \
-                               (c == 'y') || (c == 'Y') )  /* char for INFINITY       */
+#define VALID_DOUBLE_CHAR(c) ( (isspace((unsigned char)(c)))  || /* (leading) whitespaces   */ \
+                               (isxdigit((unsigned char)(c))) || /* (hexa)decimal digits    */ \
+                               ((c) == '.')                   || /* ospl LC_NUMERIC         */ \
+                               ((c) == os_lcNumericGet())     || /* locale LC_NUMERIC       */ \
+                               ((c) == '+') || ((c) == '-')   || /* signs                   */ \
+                               ((c) == 'x') || ((c) == 'X')   || /* hexadecimal indication  */ \
+                               ((c) == 'e') || ((c) == 'E')   || /* exponent chars          */ \
+                               ((c) == 'p') || ((c) == 'P')   || /* binary exponent chars   */ \
+                               ((c) == 'a') || ((c) == 'A')   || /* char for NaN            */ \
+                               ((c) == 'n') || ((c) == 'N')   || /* char for NaN & INFINITY */ \
+                               ((c) == 'i') || ((c) == 'I')   || /* char for INFINITY       */ \
+                               ((c) == 'f') || ((c) == 'F')   || /* char for INFINITY       */ \
+                               ((c) == 't') || ((c) == 'T')   || /* char for INFINITY       */ \
+                               ((c) == 'y') || ((c) == 'Y'))     /* char for INFINITY       */
 
 
 
@@ -74,7 +74,7 @@ os_lcNumericGet(void)
         /* There could be multiple threads here, but it is still save and works.
          * Only side effect is that possibly multiple os_reports are traced. */
         char num[] = { '\0', '\0', '\0', '\0' };
-        snprintf(num, 4, "%3f", 2.2);
+        (void) snprintf(num, 4, "%3f", 2.2);
         lcNumeric = num [1];
         if (lcNumeric != '.') {
             OS_REPORT(OS_WARNING, "os_stdlib", 0,

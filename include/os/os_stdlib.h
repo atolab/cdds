@@ -797,8 +797,10 @@ extern "C" {
      * nothing was written). On error, -1 is returned
      *
      */
-    OS_API ssize_t
-    os_write(int fd, const void *buf, size_t count);
+    OS_API ssize_t os_write(
+        _In_ int fd,
+        _In_reads_bytes_(count) void const* buf,
+        _In_ size_t count);
 
     /**
      * \brief binary search algorithm on an already sorted list.

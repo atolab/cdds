@@ -220,6 +220,7 @@ void * ddsi_serstate_append_aligned (serstate_t st, size_t n, size_t a)
 
 static size_t alignup_size (size_t x, size_t a)
 {
+  size_t m = a-1;
   assert (ispowerof2_size (a));
-  return -((-x) & (-a));
+  return (x+m) & ~m;
 }

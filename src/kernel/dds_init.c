@@ -210,7 +210,7 @@ extern int dds_init_impl (dds_domainid_t domain)
   else
   {
     gv.default_plist_pp.exec_name = dds_string_alloc (32);
-    snprintf (gv.default_plist_pp.exec_name, 32, "Lite:%u", gv.default_plist_pp.process_id);
+    (void) snprintf (gv.default_plist_pp.exec_name, 32, "Lite:%u", gv.default_plist_pp.process_id);
   }
   len = (uint32_t) (13 + strlen (gv.default_plist_pp.exec_name));
   gv.default_plist_pp.present |= PP_PRISMTECH_EXEC_NAME;
@@ -220,7 +220,7 @@ extern int dds_init_impl (dds_domainid_t domain)
     gv.default_plist_pp.present |= PP_PRISMTECH_NODE_NAME;
   }
   gv.default_plist_pp.entity_name = dds_alloc (len);
-  snprintf (gv.default_plist_pp.entity_name, len, "%s<%u>", dds_init_exe ? dds_init_exe : "", gv.default_plist_pp.process_id);
+  (void) snprintf (gv.default_plist_pp.entity_name, len, "%s<%u>", dds_init_exe ? dds_init_exe : "", gv.default_plist_pp.process_id);
   gv.default_plist_pp.present |= PP_ENTITY_NAME;
 
   return DDS_RETCODE_OK;

@@ -557,7 +557,7 @@ int rtps_config_prep (struct cfgst *cfgst)
     {
       size_t slen = strlen (chptr->name) + 5;
       char *thread_name = os_malloc (slen);
-      snprintf (thread_name, slen, "tev.%s", chptr->name);
+      (void) snprintf (thread_name, slen, "tev.%s", chptr->name);
 
       num_channels++;
       num_channel_threads += 2; /* xmit and dqueue */
@@ -626,7 +626,7 @@ int rtps_config_prep (struct cfgst *cfgst)
       size_t slen = strlen (np->name) + sizeof (msgtag_fixed);
       char * msgtag = os_malloc (slen);
       int rc;
-      snprintf (msgtag, slen, "%s%s", np->name, msgtag_fixed);
+      (void) snprintf (msgtag, slen, "%s%s", np->name, msgtag_fixed);
       np->as = new_addrset ();
       rc = add_addresses_to_addrset (np->as, np->address_string, port, msgtag, 1);
       os_free (msgtag);
@@ -834,7 +834,7 @@ int rtps_init (void)
 
   /* Template PP guid -- protected by privileged_pp_lock for simplicity */
   gv.next_ppguid.prefix.u[0] = sockaddr_to_hopefully_unique_uint32 (&gv.ownip);
-  gv.next_ppguid.prefix.u[1] = (unsigned) getpid (); /* FIXME! OS abstraction */
+  gv.next_ppguid.prefix.u[1] = (unsigned) os_procIdSelf ();
   gv.next_ppguid.prefix.u[2] = 1;
   gv.next_ppguid.entityid.u = NN_ENTITYID_PARTICIPANT;
 
@@ -980,7 +980,7 @@ int rtps_init (void)
     {
       size_t slen = strlen (chptr->name) + 5;
       char * tname = os_malloc (slen);
-      snprintf (tname, slen, "tev.%s", chptr->name);
+      (void) snprintf (tname, slen, "tev.%s", chptr->name);
 
       /* Only actually create new connection if diffserv set */
 

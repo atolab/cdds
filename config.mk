@@ -138,7 +138,7 @@ else
     OBJ_OFLAG =-Fo
     EXE_OFLAG = -out:
     SHLIB_OFLAG = -out:
-    CPPFLAGS += -D_CRT_SECURE_NO_WARNINGS
+    CPPFLAGS += -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS
   else # not Windows (-like)
     OBJ_OFLAG = -o
     EXE_OFLAG = -o

@@ -184,29 +184,53 @@ OS_ATOMIC_API_INLINE void *os_atomic_addvoidp_nv (volatile os_atomic_voidp_t *x,
 /* SUB */
 
 OS_ATOMIC_API_INLINE void os_atomic_sub32 (volatile os_atomic_uint32_t *x, uint32_t v) {
+  /* disable unary minus applied to unsigned type, result still unsigned */
+#pragma warning (push)
+#pragma warning (disable: 4146)
   InterlockedExchangeAdd (&x->v, -v);
+#pragma warning (pop)
 }
 #if OS_ATOMIC64_SUPPORT
 OS_ATOMIC_API_INLINE void os_atomic_sub64 (volatile os_atomic_uint64_t *x, uint64_t v) {
+  /* disable unary minus applied to unsigned type, result still unsigned */
+#pragma warning (push)
+#pragma warning (disable: 4146)
   InterlockedExchangeAdd64 (&x->v, -v);
+#pragma warning (pop)
 }
 #endif
 OS_ATOMIC_API_INLINE void os_atomic_subptr (volatile os_atomic_uintptr_t *x, uintptr_t v) {
+  /* disable unary minus applied to unsigned type, result still unsigned */
+#pragma warning (push)
+#pragma warning (disable: 4146)
   OS_ATOMIC_PTROP (InterlockedExchangeAdd) (&x->v, -v);
+#pragma warning (pop)
 }
 OS_ATOMIC_API_INLINE void os_atomic_subvoidp (volatile os_atomic_voidp_t *x, ptrdiff_t v) {
   os_atomic_subptr ((volatile os_atomic_uintptr_t *) x, (uintptr_t) v);
 }
 OS_ATOMIC_API_INLINE uint32_t os_atomic_sub32_nv (volatile os_atomic_uint32_t *x, uint32_t v) {
+  /* disable unary minus applied to unsigned type, result still unsigned */
+#pragma warning (push)
+#pragma warning (disable: 4146)
   return InterlockedExchangeAdd (&x->v, -v) - v;
+#pragma warning (pop)
 }
 #if OS_ATOMIC64_SUPPORT
 OS_ATOMIC_API_INLINE uint64_t os_atomic_sub64_nv (volatile os_atomic_uint64_t *x, uint64_t v) {
+  /* disable unary minus applied to unsigned type, result still unsigned */
+#pragma warning (push)
+#pragma warning (disable: 4146)
   return InterlockedExchangeAdd64 (&x->v, -v) - v;
+#pragma warning (pop)
 }
 #endif
 OS_ATOMIC_API_INLINE uintptr_t os_atomic_subptr_nv (volatile os_atomic_uintptr_t *x, uintptr_t v) {
+  /* disable unary minus applied to unsigned type, result still unsigned */
+#pragma warning (push)
+#pragma warning (disable: 4146)
   return OS_ATOMIC_PTROP (InterlockedExchangeAdd) (&x->v, -v) - v;
+#pragma warning (pop)
 }
 OS_ATOMIC_API_INLINE void *os_atomic_subvoidp_nv (volatile os_atomic_voidp_t *x, ptrdiff_t v) {
   return (void *) os_atomic_subptr_nv ((volatile os_atomic_uintptr_t *) x, (uintptr_t) v);
@@ -391,8 +415,14 @@ OS_ATOMIC_API_INLINE void os_atomic_orptr (volatile os_atomic_uintptr_t *x, uint
 /* FENCES */
 
 OS_ATOMIC_API_INLINE void os_atomic_fence (void) {
+  /* 28113: accessing a local variable tmp via an Interlocked
+     function: This is an unusual usage which could be reconsidered.
+     It is too heavyweight, true, but it does the trick. */
+#pragma warning (push)
+#pragma warning (disable: 28113)
   volatile LONG tmp = 0;
   InterlockedExchange (&tmp, 0);
+#pragma warning (pop)
 }
 OS_ATOMIC_API_INLINE void os_atomic_fence_acq (void) {
   os_atomic_fence ();

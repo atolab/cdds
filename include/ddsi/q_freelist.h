@@ -57,10 +57,10 @@ struct nn_freelist {
 
 #endif
 
-void nn_freelist_init (struct nn_freelist *fl, uint32_t max, off_t linkoff);
-void nn_freelist_fini (struct nn_freelist *fl, void (*free) (void *elem));
-bool nn_freelist_push (struct nn_freelist *fl, void *elem);
-void *nn_freelist_pushmany (struct nn_freelist *fl, void *first, void *last, uint32_t n);
-void *nn_freelist_pop (struct nn_freelist *fl);
+void nn_freelist_init (_Out_ struct nn_freelist *fl, uint32_t max, off_t linkoff);
+void nn_freelist_fini (_Inout_ _Post_invalid_ struct nn_freelist *fl, _In_ void (*free) (void *elem));
+_Check_return_ bool nn_freelist_push (_Inout_ struct nn_freelist *fl, _Inout_ _When_ (return != 0, _Post_invalid_) void *elem);
+_Check_return_ _Ret_opt_ void *nn_freelist_pushmany (_Inout_ struct nn_freelist *fl, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *first, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *last, uint32_t n);
+_Check_return_ _Ret_opt_ void *nn_freelist_pop (_Inout_ struct nn_freelist *fl);
 
 #endif /* NN_FREELIST_H */

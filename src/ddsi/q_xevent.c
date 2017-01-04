@@ -508,7 +508,7 @@ int xeventq_start (struct xeventq *evq, const char *name)
   {
     size_t slen = strlen (name) + 5;
     evqname = os_malloc (slen);
-    snprintf (evqname, slen, "tev.%s", name);
+    (void) snprintf (evqname, slen, "tev.%s", name);
   }
 
   evq->terminate = 0;

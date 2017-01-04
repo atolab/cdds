@@ -913,7 +913,7 @@ static os_result throttle_writer (struct nn_xpack *xp, struct writer *wr)
      writer. */
 
   os_result result = os_resultSuccess;
-  const nn_mtime_t tnow = now_mt ();
+  nn_mtime_t tnow = now_mt ();
   const nn_mtime_t abstimeout = add_duration_to_mtime (tnow, nn_from_ddsi_duration (wr->xqos->reliability.max_blocking_time));
   size_t n_unacked = whc_unacked_bytes (wr->whc);
 
@@ -946,8 +946,9 @@ static os_result throttle_writer (struct nn_xpack *xp, struct writer *wr)
 
   while (gv.rtps_keepgoing && !writer_may_continue (wr))
   {
-    const nn_mtime_t tnow = now_mt ();
-    const int64_t reltimeout = abstimeout.v - tnow.v;
+    int64_t reltimeout;
+    tnow = now_mt ();
+    reltimeout = abstimeout.v - tnow.v;
     result = os_resultTimeout;
     if (reltimeout > 0)
     {

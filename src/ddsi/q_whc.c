@@ -687,7 +687,7 @@ static unsigned whc_removed_acked_messages_noidx (struct whc *whc, seqno_t max_d
   whcn->next_seq = NULL;
 
   assert (whcn->total_bytes - (*deferred_free_list)->total_bytes + (*deferred_free_list)->size <= whc->unacked_bytes);
-  whc->unacked_bytes -= whcn->total_bytes - (*deferred_free_list)->total_bytes + (*deferred_free_list)->size;
+  whc->unacked_bytes -= (size_t) (whcn->total_bytes - (*deferred_free_list)->total_bytes + (*deferred_free_list)->size);
   for (whcn = *deferred_free_list; whcn; whcn = whcn->next_seq)
   {
     remove_whcn_from_hash (whc, whcn);
@@ -777,7 +777,7 @@ static unsigned whc_remove_acked_messages_full (struct whc *whc, seqno_t max_dro
       struct whc_idxnode * const idxn = whcn->idxnode;
       unsigned cnt, idx;
 
-      TRACE_WHC(("  whcn %p %"PRId64" idxn %p prune_seq %"PRId64":", (void *)whcn, whcn->seq, (void *)idxn, idxn ? idxn->prune_seq : (seqno_t)-1));
+      TRACE_WHC(("  whcn %p %"PRId64" idxn %p prune_seq %"PRId64":", (void *)whcn, whcn->seq, (void *)idxn, idxn->prune_seq));
 
       assert(whcn_in_tlidx(whc, idxn, whcn->idxnode_pos));
       assert (idxn->prune_seq <= max_drop_seq);
