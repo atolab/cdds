@@ -2394,7 +2394,7 @@ seqno_t writer_max_drop_seq (const struct writer *wr)
   const struct wr_prd_match *n;
   if (ut_avlIsEmpty (&wr->readers))
     return wr->seq;
-  n = ut_avlRoot (&wr_readers_treedef, &wr->readers);
+  n = ut_avlRootNonEmpty (&wr_readers_treedef, &wr->readers);
   return (n->min_seq == MAX_SEQ_NUMBER) ? wr->seq : n->min_seq;
 }
 
@@ -2411,7 +2411,7 @@ int writer_must_have_hb_scheduled (const struct writer *wr)
        a heartbeat if no data is available. */
     return 0;
   }
-  else if (!((const struct wr_prd_match *) ut_avlRoot (&wr_readers_treedef, &wr->readers))->all_have_replied_to_hb)
+  else if (!((const struct wr_prd_match *) ut_avlRootNonEmpty (&wr_readers_treedef, &wr->readers))->all_have_replied_to_hb)
   {
     /* Labouring under the belief that heartbeats must be sent
        regardless of ack state */
@@ -2800,16 +2800,17 @@ static void gc_delete_writer (struct gcreq *gcreq)
   /* Tear down connections -- no proxy reader can be adding/removing
       us now, because we can't be found via guid_hash anymore.  We
       therefore need not take lock. */
+
   while (!ut_avlIsEmpty (&wr->readers))
   {
-    struct wr_prd_match *m = ut_avlRoot (&wr_readers_treedef, &wr->readers);
+    struct wr_prd_match *m = ut_avlRootNonEmpty (&wr_readers_treedef, &wr->readers);
     ut_avlDelete (&wr_readers_treedef, &wr->readers, m);
     proxy_reader_drop_connection (&m->prd_guid, wr);
     free_wr_prd_match (m);
   }
   while (!ut_avlIsEmpty (&wr->local_readers))
   {
-    struct wr_rd_match *m = ut_avlRoot (&wr_local_readers_treedef, &wr->local_readers);
+    struct wr_rd_match *m = ut_avlRootNonEmpty (&wr_local_readers_treedef, &wr->local_readers);
     ut_avlDelete (&wr_local_readers_treedef, &wr->local_readers, m);
     reader_drop_local_connection (&m->rd_guid, wr);
     free_wr_rd_match (m);
@@ -3234,14 +3235,14 @@ static void gc_delete_reader (struct gcreq *gcreq)
 
   while (!ut_avlIsEmpty (&rd->writers))
   {
-    struct rd_pwr_match *m = ut_avlRoot (&rd_writers_treedef, &rd->writers);
+    struct rd_pwr_match *m = ut_avlRootNonEmpty (&rd_writers_treedef, &rd->writers);
     ut_avlDelete (&rd_writers_treedef, &rd->writers, m);
     proxy_writer_drop_connection (&m->pwr_guid, rd);
     free_rd_pwr_match (m);
   }
   while (!ut_avlIsEmpty (&rd->local_writers))
   {
-    struct rd_wr_match *m = ut_avlRoot (&rd_local_writers_treedef, &rd->local_writers);
+    struct rd_wr_match *m = ut_avlRootNonEmpty (&rd_local_writers_treedef, &rd->local_writers);
     ut_avlDelete (&rd_local_writers_treedef, &rd->local_writers, m);
     writer_drop_local_connection (&m->wr_guid, rd);
     free_rd_wr_match (m);
@@ -4069,7 +4070,7 @@ static void gc_delete_proxy_writer (struct gcreq *gcreq)
 
   while (!ut_avlIsEmpty (&pwr->readers))
   {
-    struct pwr_rd_match *m = ut_avlRoot (&pwr_readers_treedef, &pwr->readers);
+    struct pwr_rd_match *m = ut_avlRootNonEmpty (&pwr_readers_treedef, &pwr->readers);
     ut_avlDelete (&pwr_readers_treedef, &pwr->readers, m);
     reader_drop_connection (&m->rd_guid, pwr);
     update_reader_init_acknack_count (&m->rd_guid, m->count);
@@ -4197,7 +4198,7 @@ static void gc_delete_proxy_reader (struct gcreq *gcreq)
 
   while (!ut_avlIsEmpty (&prd->writers))
   {
-    struct prd_wr_match *m = ut_avlRoot (&prd_writers_treedef, &prd->writers);
+    struct prd_wr_match *m = ut_avlRootNonEmpty (&prd_writers_treedef, &prd->writers);
     ut_avlDelete (&prd_writers_treedef, &prd->writers, m);
     writer_drop_connection (&m->wr_guid, prd);
     free_prd_wr_match (m);

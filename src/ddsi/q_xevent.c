@@ -630,8 +630,8 @@ static void handle_xevk_heartbeat (struct nn_xpack *xp, struct xevent *ev, nn_mt
           hbansreq ? "" : " final",
           msg ? "sent" : "suppressed",
           (t_next.v == T_NEVER) ? POS_INFINITY_DOUBLE : (double)(t_next.v - tnow.v) / 1e9,
-          ut_avlIsEmpty (&wr->readers) ? (seqno_t) -1 : ((struct wr_prd_match *) ut_avlRoot (&wr_readers_treedef, &wr->readers))->min_seq,
-          ut_avlIsEmpty (&wr->readers) || ((struct wr_prd_match *) ut_avlRoot (&wr_readers_treedef, &wr->readers))->all_have_replied_to_hb ? "" : "!",
+          ut_avlIsEmpty (&wr->readers) ? (seqno_t) -1 : ((struct wr_prd_match *) ut_avlRootNonEmpty (&wr_readers_treedef, &wr->readers))->min_seq,
+          ut_avlIsEmpty (&wr->readers) || ((struct wr_prd_match *) ut_avlRootNonEmpty (&wr_readers_treedef, &wr->readers))->all_have_replied_to_hb ? "" : "!",
           whc_empty (wr->whc) ? (seqno_t) -1 : whc_max_seq (wr->whc), READ_SEQ_XMIT(wr)));
   resched_xevent_if_earlier (ev, t_next);
   wr->hbcontrol.tsched = t_next;

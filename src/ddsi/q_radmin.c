@@ -1146,14 +1146,14 @@ static void rsample_convert_defrag_to_reorder (struct nn_rsample *sample)
      self-respecting compiler will optimise them away, and any
      self-respecting CPU would need to copy them via registers anyway
      because it uses a load-store architecture. */
-  struct nn_defrag_iv *iv = ut_avlRoot (&rsample_defrag_fragtree_treedef, &sample->u.defrag.fragtree);
+  struct nn_defrag_iv *iv = ut_avlRootNonEmpty (&rsample_defrag_fragtree_treedef, &sample->u.defrag.fragtree);
   struct nn_rdata *fragchain = iv->first;
   struct nn_rsample_info *sampleinfo = sample->u.defrag.sampleinfo;
   struct nn_rsample_chain_elem *sce;
   seqno_t seq = sample->u.defrag.seq;
 
   /* re-use memory fragment interval node for sample chain */
-  sce = (struct nn_rsample_chain_elem *) ut_avlRoot (&rsample_defrag_fragtree_treedef, &sample->u.defrag.fragtree);
+  sce = (struct nn_rsample_chain_elem *) ut_avlRootNonEmpty (&rsample_defrag_fragtree_treedef, &sample->u.defrag.fragtree);
   sce->fragchain = fragchain;
   sce->next = NULL;
   sce->sampleinfo = sampleinfo;
@@ -1176,6 +1176,8 @@ static struct nn_rsample *defrag_add_fragment (struct nn_rsample *sample, struct
   assert (min < maxp1);
   /* and it must concern this message */
   assert (dfsample->seq == sampleinfo->seq);
+  /* there must be a last fragment */
+  assert (dfsample->lastfrag);
   /* relatively expensive test: lastfrag, tree must be consistent */
   assert (dfsample->lastfrag == ut_avlFindMax (&rsample_defrag_fragtree_treedef, &dfsample->fragtree));
 
@@ -1195,6 +1197,7 @@ static struct nn_rsample *defrag_add_fragment (struct nn_rsample *sample, struct
   {
     /* Slow path: find preceding fragment by tree search */
     predeq = ut_avlLookupPredEq (&rsample_defrag_fragtree_treedef, &dfsample->fragtree, &min);
+    assert (predeq);
     TRACE_RADMIN (("  slow path: predeq = lookup %u => %p [%u..%u)\n",
                    min, (void *) predeq, predeq->min, predeq->maxp1));
   }
@@ -1306,6 +1309,7 @@ static int defrag_limit_samples (struct nn_defrag *defrag, seqno_t seq, seqno_t 
     case NN_DEFRAG_DROP_OLDEST:
       TRACE_RADMIN (("  drop mode = DROP_OLDEST\n"));
       sample_to_drop = ut_avlFindMin (&defrag_sampletree_treedef, &defrag->sampletree);
+      assert (sample_to_drop);
       if (seq < sample_to_drop->u.defrag.seq)
       {
         TRACE_RADMIN (("  new sample is new oldest => discarding it\n"));

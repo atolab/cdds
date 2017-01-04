@@ -1378,7 +1378,7 @@ static int handle_HeartbeatFrag (struct receiver_state *rst, UNUSED_ARG(nn_etime
          assuming a reliable writer -> unreliable reader is rare, and
          so scanning the readers is acceptable if the first guess
          fails */
-      m = ut_avlRoot (&pwr_readers_treedef, &pwr->readers);
+      m = ut_avlRootNonEmpty (&pwr_readers_treedef, &pwr->readers);
       if (m->acknack_xevent == NULL)
       {
         m = ut_avlFindMin (&pwr_readers_treedef, &pwr->readers);

@@ -534,7 +534,7 @@ int addrset_any_uc (const struct addrset *as, nn_locator_t *dst)
   }
   else
   {
-    const struct addrset_node *n = ut_avlCRoot (&addrset_treedef, &as->ucaddrs);
+    const struct addrset_node *n = ut_avlCRootNonEmpty (&addrset_treedef, &as->ucaddrs);
     *dst = n->loc;
     UNLOCK (as);
     return 1;
@@ -551,7 +551,7 @@ int addrset_any_mc (const struct addrset *as, nn_locator_t *dst)
   }
   else
   {
-    const struct addrset_node *n = ut_avlCRoot (&addrset_treedef, &as->mcaddrs);
+    const struct addrset_node *n = ut_avlCRootNonEmpty (&addrset_treedef, &as->mcaddrs);
     *dst = n->loc;
     UNLOCK (as);
     return 1;
@@ -645,8 +645,8 @@ static int addrset_eq_onesidederr1 (const ut_avlCTree_t *at, const ut_avlCTree_t
   if (ut_avlCIsEmpty (at) && ut_avlCIsEmpty (bt)) {
     return 1;
   } else if (ut_avlCIsSingleton (at) && ut_avlCIsSingleton (bt)) {
-    const struct addrset_node *a = ut_avlCRoot (&addrset_treedef, at);
-    const struct addrset_node *b = ut_avlCRoot (&addrset_treedef, bt);
+    const struct addrset_node *a = ut_avlCRootNonEmpty (&addrset_treedef, at);
+    const struct addrset_node *b = ut_avlCRootNonEmpty (&addrset_treedef, bt);
     return compare_locators (&a->loc, &b->loc) == 0;
   } else {
     return 0;

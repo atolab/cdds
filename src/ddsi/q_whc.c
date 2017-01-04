@@ -123,7 +123,7 @@ static struct whc_node *whc_findmax_procedurally (const struct whc *whc)
   else
   {
     struct whc_intvnode *intv = ut_avlFindPred (&whc_seq_treedef, &whc->seq, whc->open_intv);
-    assert (intv->first);
+    assert (intv && intv->first);
     return intv->last;
   }
 }
@@ -161,6 +161,7 @@ static void check_whc (const struct whc *whc)
     struct whc_node *cur;
     seqno_t prevseq = 0;
     firstintv = ut_avlFindMin (&whc_seq_treedef, &whc->seq);
+    assert (firstintv);
     cur = firstintv->first;
     while (cur)
     {
@@ -316,6 +317,7 @@ seqno_t whc_min_seq (const struct whc *whc)
   check_whc (whc);
   assert (!whc_empty (whc));
   intv = ut_avlFindMin (&whc_seq_treedef, &whc->seq);
+  assert (intv);
   /* not empty, open node may be anything but is (by definition)
      findmax, and whc is claimed to be non-empty, so min interval
      can't be empty */

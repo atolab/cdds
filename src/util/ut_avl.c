@@ -102,18 +102,18 @@ static void treedef_init_common (ut_avlTreedef_t *td, size_t avlnodeoffset, size
     td->flags = flags;
 }
 
-void ut_avlTreedefInit (ut_avlTreedef_t *td, size_t avlnodeoffset, size_t keyoffset, ut_avlCompare_t comparekk, ut_avlAugment_t augment, uint32_t flags)
+void ut_avlTreedefInit (_Out_ ut_avlTreedef_t *td, size_t avlnodeoffset, size_t keyoffset, _In_ ut_avlCompare_t comparekk, _In_opt_ ut_avlAugment_t augment, uint32_t flags)
 {
     treedef_init_common (td, avlnodeoffset, keyoffset, (int (*) (void)) comparekk, augment, flags);
 }
 
-void ut_avlTreedefInit_r (ut_avlTreedef_t *td, size_t avlnodeoffset, size_t keyoffset, ut_avlCompare_r_t comparekk_r, void *cmp_arg, ut_avlAugment_t augment, uint32_t flags)
+void ut_avlTreedefInit_r (_Out_ ut_avlTreedef_t *td, size_t avlnodeoffset, size_t keyoffset, _In_ ut_avlCompare_r_t comparekk_r, _Inout_opt_ void *cmp_arg, ut_avlAugment_t augment, uint32_t flags)
 {
     td->cmp_arg = cmp_arg;
     treedef_init_common (td, avlnodeoffset, keyoffset, (int (*) (void)) comparekk_r, augment, flags | UT_AVL_TREEDEF_FLAG_R);
 }
 
-void ut_avlInit (const ut_avlTreedef_t *td, ut_avlTree_t *tree)
+void ut_avlInit (_In_ const ut_avlTreedef_t *td, _Out_ ut_avlTree_t *tree)
 {
     tree->root = NULL;
     (void) td;
@@ -143,7 +143,7 @@ static void treedestroy_arg (const ut_avlTreedef_t *td, ut_avlNode_t *n, void (*
     }
 }
 
-void ut_avlFree (const ut_avlTreedef_t *td, ut_avlTree_t *tree, void (*freefun) (void *node))
+void ut_avlFree (_In_ const ut_avlTreedef_t *td, _Inout_ _Post_invalid_ ut_avlTree_t *tree, _In_opt_ void (*freefun) (_Inout_ void *node))
 {
     ut_avlNode_t *n = tree->root;
     tree->root = NULL;
@@ -152,7 +152,7 @@ void ut_avlFree (const ut_avlTreedef_t *td, ut_avlTree_t *tree, void (*freefun) 
     }
 }
 
-void ut_avlFreeArg (const ut_avlTreedef_t *td, ut_avlTree_t *tree, void (*freefun) (void *node, void *arg), void *arg)
+void ut_avlFreeArg (_In_ const ut_avlTreedef_t *td, _Inout_ _Post_invalid_ ut_avlTree_t *tree, _In_opt_ void (*freefun) (_Inout_ void *node, _Inout_opt_ void *arg), _Inout_opt_ void *arg)
 {
     ut_avlNode_t *n = tree->root;
     tree->root = NULL;
@@ -161,7 +161,7 @@ void ut_avlFreeArg (const ut_avlTreedef_t *td, ut_avlTree_t *tree, void (*freefu
     }
 }
 
-static void augment (const ut_avlTreedef_t *td, ut_avlNode_t *n)
+static void augment (_In_ const ut_avlTreedef_t *td, _Inout_ ut_avlNode_t *n)
 {
     td->augment (onode_from_node (td, n), conode_from_node (td, n->cs[0]), conode_from_node (td, n->cs[1]));
 }
@@ -324,7 +324,7 @@ static void rebalance_nopath (const ut_avlTreedef_t *td, ut_avlTree_t *tree, ut_
     }
 }
 
-void *ut_avlLookup (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key)
+_Ret_opt_ void *ut_avlLookup (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
 {
     const ut_avlNode_t *cursor = tree->root;
     int c;
@@ -335,7 +335,7 @@ void *ut_avlLookup (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const v
     return (void *) conode_from_node (td, cursor);
 }
 
-static const ut_avlNode_t *lookup_path (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key, ut_avlPath_t *path)
+static const ut_avlNode_t *lookup_path (_In_ const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key, ut_avlPath_t *path)
 {
     const ut_avlNode_t *cursor = tree->root;
     const ut_avlNode_t *prev = NULL;
@@ -353,13 +353,13 @@ static const ut_avlNode_t *lookup_path (const ut_avlTreedef_t *td, const ut_avlT
     return cursor;
 }
 
-void *ut_avlLookupDPath (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key, ut_avlDPath_t *path)
+_Ret_opt_ void *ut_avlLookupDPath (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key, _Out_ ut_avlDPath_t *path)
 {
     const ut_avlNode_t *node = lookup_path (td, tree, key, &path->p);
     return (void *) conode_from_node (td, node);
 }
 
-void *ut_avlLookupIPath (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key, ut_avlIPath_t *path)
+_Ret_opt_ void *ut_avlLookupIPath (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key, _Out_ ut_avlIPath_t *path)
 {
     const ut_avlNode_t *node = lookup_path (td, tree, key, &path->p);
     /* If no duplicates allowed, path may not be used for insertion,
@@ -385,7 +385,7 @@ void *ut_avlLookupIPath (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, co
     return (void *) conode_from_node (td, node);
 }
 
-void ut_avlInsertIPath (const ut_avlTreedef_t *td, ut_avlTree_t *tree, void *vnode, ut_avlIPath_t *path)
+void ut_avlInsertIPath (_In_ const ut_avlTreedef_t *td, ut_avlTree_t *tree, _Inout_ void *vnode, _Inout_ _Post_invalid_ ut_avlIPath_t *path)
 {
     ut_avlNode_t *node = node_from_onode (td, vnode);
     (void) tree;
@@ -403,7 +403,7 @@ void ut_avlInsertIPath (const ut_avlTreedef_t *td, ut_avlTree_t *tree, void *vno
     rebalance_path (td, &path->p, node->parent);
 }
 
-void ut_avlInsert (const ut_avlTreedef_t *td, ut_avlTree_t *tree, void *vnode)
+void ut_avlInsert (_In_ const ut_avlTreedef_t *td, _Inout_ ut_avlTree_t *tree, _Inout_ void *vnode)
 {
     const void *node = cnode_from_onode (td, vnode);
     const void *key;
@@ -417,7 +417,7 @@ void ut_avlInsert (const ut_avlTreedef_t *td, ut_avlTree_t *tree, void *vnode)
     ut_avlInsertIPath (td, tree, vnode, &path);
 }
 
-static void delete_generic (const ut_avlTreedef_t *td, ut_avlTree_t *tree, void *vnode, ut_avlDPath_t *path)
+static void delete_generic (_In_ const ut_avlTreedef_t *td, ut_avlTree_t *tree, void *vnode, ut_avlDPath_t *path)
 {
     ut_avlNode_t *node = node_from_onode (td, vnode);
     ut_avlNode_t **pnode;
@@ -500,18 +500,18 @@ static void delete_generic (const ut_avlTreedef_t *td, ut_avlTree_t *tree, void 
     }
 }
 
-void ut_avlDeleteDPath (const ut_avlTreedef_t *td, ut_avlTree_t *tree, void *vnode, ut_avlDPath_t *path)
+void ut_avlDeleteDPath (_In_ const ut_avlTreedef_t *td, _Inout_ ut_avlTree_t *tree, _Inout_ void *vnode, _Inout_ _Post_invalid_ ut_avlDPath_t *path)
 {
     (void) tree;
     delete_generic (td, NULL, vnode, path);
 }
 
-void ut_avlDelete (const ut_avlTreedef_t *td, ut_avlTree_t *tree, void *vnode)
+void ut_avlDelete (_In_ const ut_avlTreedef_t *td, _Inout_ ut_avlTree_t *tree, _Inout_ void *vnode)
 {
     delete_generic (td, tree, vnode, NULL);
 }
 
-void ut_avlSwapNode (const ut_avlTreedef_t *td, ut_avlTree_t *tree, void *vold, void *vnew)
+void ut_avlSwapNode (_In_ const ut_avlTreedef_t *td, _Inout_ ut_avlTree_t *tree, _Inout_ void *vold, _Inout_ void *vnew)
 {
     ut_avlNode_t *old = node_from_onode (td, vold);
     ut_avlNode_t *new = node_from_onode (td, vnew);
@@ -561,17 +561,17 @@ static ut_avlNode_t *find_extremum (const ut_avlTree_t *tree, int dir)
     return (ut_avlNode_t *) n;
 }
 
-void *ut_avlFindMin (const ut_avlTreedef_t *td, const ut_avlTree_t *tree)
+_Ret_opt_ void *ut_avlFindMin (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree)
 {
     return (void *) conode_from_node (td, find_extremum (tree, 0));
 }
 
-void *ut_avlFindMax (const ut_avlTreedef_t *td, const ut_avlTree_t *tree)
+_Ret_opt_ void *ut_avlFindMax (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree)
 {
     return (void *) conode_from_node (td, find_extremum (tree, 1));
 }
 
-void *ut_avlFindPred (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *vnode)
+_Ret_opt_ void *ut_avlFindPred (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_opt_ const void *vnode)
 {
     const ut_avlNode_t *n = cnode_from_onode (td, vnode);
     if (n == NULL) {
@@ -581,7 +581,7 @@ void *ut_avlFindPred (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const
     }
 }
 
-void *ut_avlFindSucc (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *vnode)
+_Ret_opt_ void *ut_avlFindSucc (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_opt_ const void *vnode)
 {
     const ut_avlNode_t *n = cnode_from_onode (td, vnode);
     if (n == NULL) {
@@ -605,7 +605,7 @@ static void avl_iter_downleft (ut_avlIter_t *iter)
     }
 }
 
-void *ut_avlIterFirst (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, ut_avlIter_t *iter)
+_Ret_opt_ void *ut_avlIterFirst (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlIter_t *iter)
 {
     iter->td = td;
     iter->todop = iter->todo+1;
@@ -614,7 +614,7 @@ void *ut_avlIterFirst (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, ut_a
     return onode_from_node (td, *iter->todop);
 }
 
-void *ut_avlIterNext (ut_avlIter_t *iter)
+_Ret_opt_ void *ut_avlIterNext (_Inout_ _When_ (return == 0, _Post_invalid_) ut_avlIter_t *iter)
 {
     if (iter->todop-- > iter->todo+1 && iter->right == NULL) {
         iter->right = (*iter->todop)->cs[1];
@@ -626,7 +626,7 @@ void *ut_avlIterNext (ut_avlIter_t *iter)
     return onode_from_node (iter->td, *iter->todop);
 }
 
-void ut_avlWalk (const ut_avlTreedef_t *td, ut_avlTree_t *tree, ut_avlWalk_t f, void *a)
+void ut_avlWalk (_In_ const ut_avlTreedef_t *td, _In_ ut_avlTree_t *tree, _In_ ut_avlWalk_t f, _Inout_opt_ void *a)
 {
     const ut_avlNode_t *todo[1+UT_AVL_MAX_TREEHEIGHT];
     const ut_avlNode_t **todop = todo+1;
@@ -652,24 +652,24 @@ void ut_avlWalk (const ut_avlTreedef_t *td, ut_avlTree_t *tree, ut_avlWalk_t f, 
     }
 }
 
-void ut_avlConstWalk (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, ut_avlConstWalk_t f, void *a)
+void ut_avlConstWalk (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ ut_avlConstWalk_t f, _Inout_opt_ void *a)
 {
     ut_avlWalk (td, (ut_avlTree_t *) tree, (ut_avlWalk_t) f, a);
 }
 
-int ut_avlIsEmpty (const ut_avlTree_t *tree)
+int ut_avlIsEmpty (_In_ const ut_avlTree_t *tree)
 {
     return tree->root == NULL;
 }
 
-int ut_avlIsSingleton (const ut_avlTree_t *tree)
+int ut_avlIsSingleton (_In_ const ut_avlTree_t *tree)
 {
     int r = (tree->root && tree->root->height == 1);
     assert (!r || (tree->root->cs[0] == NULL && tree->root->cs[1] == NULL));
     return r;
 }
 
-void ut_avlAugmentUpdate (const ut_avlTreedef_t *td, void *vnode)
+void ut_avlAugmentUpdate (_In_ const ut_avlTreedef_t *td, _Inout_ void *vnode)
 {
     if (td->augment) {
         ut_avlNode_t *node = node_from_onode (td, vnode);
@@ -680,7 +680,7 @@ void ut_avlAugmentUpdate (const ut_avlTreedef_t *td, void *vnode)
     }
 }
 
-static const ut_avlNode_t *fixup_predsucceq (const ut_avlTreedef_t *td, const void *key, const ut_avlNode_t *tmp, const ut_avlNode_t *cand, int dir)
+static const ut_avlNode_t *fixup_predsucceq (_In_ const ut_avlTreedef_t *td, const void *key, const ut_avlNode_t *tmp, const ut_avlNode_t *cand, int dir)
 {
     if (tmp == NULL) {
         return cand;
@@ -703,7 +703,7 @@ static const ut_avlNode_t *fixup_predsucceq (const ut_avlTreedef_t *td, const vo
     }
 }
 
-static const ut_avlNode_t *lookup_predeq (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key)
+static const ut_avlNode_t *lookup_predeq (_In_ const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key)
 {
     const ut_avlNode_t *tmp = tree->root;
     const ut_avlNode_t *cand = NULL;
@@ -719,7 +719,7 @@ static const ut_avlNode_t *lookup_predeq (const ut_avlTreedef_t *td, const ut_av
     return fixup_predsucceq (td, key, tmp, cand, 0);
 }
 
-static const ut_avlNode_t *lookup_succeq (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key)
+static const ut_avlNode_t *lookup_succeq (_In_ const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key)
 {
     const ut_avlNode_t *tmp = tree->root;
     const ut_avlNode_t *cand = NULL;
@@ -735,7 +735,7 @@ static const ut_avlNode_t *lookup_succeq (const ut_avlTreedef_t *td, const ut_av
     return fixup_predsucceq (td, key, tmp, cand, 1);
 }
 
-static const ut_avlNode_t *fixup_predsucc (const ut_avlTreedef_t *td, const void *key, const ut_avlNode_t *tmp, const ut_avlNode_t *cand, int dir)
+static const ut_avlNode_t *fixup_predsucc (_In_ const ut_avlTreedef_t *td, const void *key, const ut_avlNode_t *tmp, const ut_avlNode_t *cand, int dir)
 {
     /* dir=0: pred, dir=1: succ */
     if (tmp == NULL || tmp->cs[dir] == NULL) {
@@ -764,7 +764,7 @@ static const ut_avlNode_t *fixup_predsucc (const ut_avlTreedef_t *td, const void
     }
 }
 
-static const ut_avlNode_t *lookup_pred (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key)
+static const ut_avlNode_t *lookup_pred (_In_ const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key)
 {
     const ut_avlNode_t *tmp = tree->root;
     const ut_avlNode_t *cand = NULL;
@@ -780,7 +780,7 @@ static const ut_avlNode_t *lookup_pred (const ut_avlTreedef_t *td, const ut_avlT
     return fixup_predsucc (td, key, tmp, cand, 0);
 }
 
-static const ut_avlNode_t *lookup_succ (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key)
+static const ut_avlNode_t *lookup_succ (_In_ const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key)
 {
     const ut_avlNode_t *tmp = tree->root;
     const ut_avlNode_t *cand = NULL;
@@ -796,27 +796,27 @@ static const ut_avlNode_t *lookup_succ (const ut_avlTreedef_t *td, const ut_avlT
     return fixup_predsucc (td, key, tmp, cand, 1);
 }
 
-void *ut_avlLookupSuccEq (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key)
+_Ret_opt_ void *ut_avlLookupSuccEq (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
 {
     return (void *) conode_from_node (td, lookup_succeq (td, tree, key));
 }
 
-void *ut_avlLookupPredEq (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key)
+_Ret_opt_ void *ut_avlLookupPredEq (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
 {
     return (void *) conode_from_node (td, lookup_predeq (td, tree, key));
 }
 
-void *ut_avlLookupSucc (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key)
+_Ret_opt_ void *ut_avlLookupSucc (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
 {
     return (void *) conode_from_node (td, lookup_succ (td, tree, key));
 }
 
-void *ut_avlLookupPred (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *key)
+_Ret_opt_ void *ut_avlLookupPred (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
 {
     return (void *) conode_from_node (td, lookup_pred (td, tree, key));
 }
 
-void *ut_avlIterSuccEq (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, ut_avlIter_t *iter, const void *key)
+_Ret_opt_ void *ut_avlIterSuccEq (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlIter_t *iter, _In_ const void *key)
 {
     const ut_avlNode_t *tmp = tree->root;
     int c;
@@ -854,7 +854,7 @@ void *ut_avlIterSuccEq (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, ut_
     }
 }
 
-void *ut_avlIterSucc (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, ut_avlIter_t *iter, const void *key)
+_Ret_opt_ void *ut_avlIterSucc (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlIter_t *iter, _In_ const void *key)
 {
     const ut_avlNode_t *tmp = tree->root;
     int c;
@@ -897,7 +897,7 @@ void *ut_avlIterSucc (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, ut_av
     }
 }
 
-void ut_avlWalkRange (const ut_avlTreedef_t *td, ut_avlTree_t *tree, const void *min, const void *max, ut_avlWalk_t f, void *a)
+void ut_avlWalkRange (_In_ const ut_avlTreedef_t *td, _In_ ut_avlTree_t *tree, _In_ const void *min, _In_ const void *max, _In_ ut_avlWalk_t f, _Inout_opt_ void *a)
 {
     ut_avlNode_t *n, *nn;
     n = (ut_avlNode_t *) lookup_succeq (td, tree, min);
@@ -908,12 +908,12 @@ void ut_avlWalkRange (const ut_avlTreedef_t *td, ut_avlTree_t *tree, const void 
     }
 }
 
-void ut_avlConstWalkRange (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *min, const void *max, ut_avlConstWalk_t f, void *a)
+void ut_avlConstWalkRange (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *min, _In_ const void *max, _In_ ut_avlConstWalk_t f, _Inout_opt_ void *a)
 {
     ut_avlWalkRange (td, (ut_avlTree_t *) tree, min, max, (ut_avlWalk_t) f, a);
 }
 
-void ut_avlWalkRangeReverse (const ut_avlTreedef_t *td, ut_avlTree_t *tree, const void *min, const void *max, ut_avlWalk_t f, void *a)
+void ut_avlWalkRangeReverse (_In_ const ut_avlTreedef_t *td, ut_avlTree_t *tree, _In_ const void *min, _In_ const void *max, _In_ ut_avlWalk_t f, _Inout_opt_ void *a)
 {
     ut_avlNode_t *n, *nn;
     n = (ut_avlNode_t *) lookup_predeq (td, tree, max);
@@ -924,13 +924,19 @@ void ut_avlWalkRangeReverse (const ut_avlTreedef_t *td, ut_avlTree_t *tree, cons
     }
 }
 
-void ut_avlConstWalkRangeReverse (const ut_avlTreedef_t *td, const ut_avlTree_t *tree, const void *min, const void *max, ut_avlConstWalk_t f, void *a)
+void ut_avlConstWalkRangeReverse (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *min, _In_ const void *max, _In_ ut_avlConstWalk_t f, _Inout_opt_ void *a)
 {
     ut_avlWalkRangeReverse (td, (ut_avlTree_t *) tree, min, max, (ut_avlWalk_t) f, a);
 }
 
-void *ut_avlRoot (const ut_avlTreedef_t *td, const ut_avlTree_t *tree)
+_Ret_opt_ void *ut_avlRoot (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree)
 {
+    return (void *) conode_from_node (td, tree->root);
+}
+
+_Ret_ void *ut_avlRootNonEmpty (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree)
+{
+    assert (tree->root);
     return (void *) conode_from_node (td, tree->root);
 }
 
@@ -940,192 +946,197 @@ void *ut_avlRoot (const ut_avlTreedef_t *td, const ut_avlTree_t *tree)
  ****
  **************************************************************************************/
 
-void ut_avlCTreedefInit (ut_avlCTreedef_t *td, size_t avlnodeoffset, size_t keyoffset, ut_avlCompare_t comparekk, ut_avlAugment_t augment, uint32_t flags)
+void ut_avlCTreedefInit (_Out_ ut_avlCTreedef_t *td, size_t avlnodeoffset, size_t keyoffset, _In_ ut_avlCompare_t comparekk, _In_opt_ ut_avlAugment_t augment, uint32_t flags)
 {
     treedef_init_common (&td->t, avlnodeoffset, keyoffset, (int (*) (void)) comparekk, augment, flags);
 }
 
-void ut_avlCTreedefInit_r (ut_avlCTreedef_t *td, size_t avlnodeoffset, size_t keyoffset, ut_avlCompare_r_t comparekk_r, void *cmp_arg, ut_avlAugment_t augment, uint32_t flags)
+void ut_avlCTreedefInit_r (_Out_ ut_avlCTreedef_t *td, size_t avlnodeoffset, size_t keyoffset, _In_ ut_avlCompare_r_t comparekk_r, _Inout_opt_ void *cmp_arg, _In_opt_ ut_avlAugment_t augment, uint32_t flags)
 {
     td->t.cmp_arg = cmp_arg;
     treedef_init_common (&td->t, avlnodeoffset, keyoffset, (int (*) (void)) comparekk_r, augment, flags | UT_AVL_TREEDEF_FLAG_R);
 }
 
-void ut_avlCInit (const ut_avlCTreedef_t *td, ut_avlCTree_t *tree)
+void ut_avlCInit (_In_ const ut_avlCTreedef_t *td, _Out_ ut_avlCTree_t *tree)
 {
     ut_avlInit (&td->t, &tree->t);
     tree->count = 0;
 }
 
-void ut_avlCFree (const ut_avlCTreedef_t *td, ut_avlCTree_t *tree, void (*freefun) (void *node))
+void ut_avlCFree (_In_ const ut_avlCTreedef_t *td, _Inout_ _Post_invalid_ ut_avlCTree_t *tree, _In_opt_ void (*freefun) (_Inout_ void *node))
 {
     tree->count = 0;
     ut_avlFree (&td->t, &tree->t, freefun);
 }
 
-void ut_avlCFreeArg (const ut_avlCTreedef_t *td, ut_avlCTree_t *tree, void (*freefun) (void *node, void *arg), void *arg)
+void ut_avlCFreeArg (_In_ const ut_avlCTreedef_t *td, _Inout_ _Post_invalid_ ut_avlCTree_t *tree, _In_opt_ void (*freefun) (_Inout_ void *node, _Inout_opt_ void *arg), _Inout_opt_ void *arg)
 {
     tree->count = 0;
     ut_avlFreeArg (&td->t, &tree->t, freefun, arg);
 }
 
-void *ut_avlCRoot (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree)
+_Ret_opt_ void *ut_avlCRoot (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree)
 {
     return ut_avlRoot (&td->t, &tree->t);
 }
 
-void *ut_avlCLookup (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, const void *key)
+_Ret_ void *ut_avlCRootNonEmpty (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree)
+{
+    return ut_avlRootNonEmpty (&td->t, &tree->t);
+}
+
+_Ret_opt_ void *ut_avlCLookup (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
 {
     return ut_avlLookup (&td->t, &tree->t, key);
 }
 
-void *ut_avlCLookupIPath (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, const void *key, ut_avlIPath_t *path)
+_Ret_opt_ void *ut_avlCLookupIPath (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key, _Out_ ut_avlIPath_t *path)
 {
     return ut_avlLookupIPath (&td->t, &tree->t, key, path);
 }
 
-void *ut_avlCLookupDPath (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, const void *key, ut_avlDPath_t *path)
+_Ret_opt_ void *ut_avlCLookupDPath (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key, _Out_ ut_avlDPath_t *path)
 {
     return ut_avlLookupDPath (&td->t, &tree->t, key, path);
 }
 
-void *ut_avlCLookupPredEq (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, const void *key)
+_Ret_opt_ void *ut_avlCLookupPredEq (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
 {
     return ut_avlLookupPredEq (&td->t, &tree->t, key);
 }
 
-void *ut_avlCLookupSuccEq (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, const void *key)
+_Ret_opt_ void *ut_avlCLookupSuccEq (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
 {
     return ut_avlLookupSuccEq (&td->t, &tree->t, key);
 }
 
-void *ut_avlCLookupPred (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, const void *key)
+_Ret_opt_ void *ut_avlCLookupPred (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
 {
     return ut_avlLookupPred (&td->t, &tree->t, key);
 }
 
-void *ut_avlCLookupSucc (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, const void *key)
+_Ret_opt_ void *ut_avlCLookupSucc (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
 {
     return ut_avlLookupSucc (&td->t, &tree->t, key);
 }
 
-void ut_avlCInsert (const ut_avlCTreedef_t *td, ut_avlCTree_t *tree, void *node)
+void ut_avlCInsert (_In_ const ut_avlCTreedef_t *td, _Inout_ ut_avlCTree_t *tree, _Inout_ void *node)
 {
     tree->count++;
     ut_avlInsert (&td->t, &tree->t, node);
 }
 
-void ut_avlCDelete (const ut_avlCTreedef_t *td, ut_avlCTree_t *tree, void *node)
+void ut_avlCDelete (_In_ const ut_avlCTreedef_t *td, _Inout_ ut_avlCTree_t *tree, _Inout_ void *node)
 {
     assert (tree->count > 0);
     tree->count--;
     ut_avlDelete (&td->t, &tree->t, node);
 }
 
-void ut_avlCInsertIPath (const ut_avlCTreedef_t *td, ut_avlCTree_t *tree, void *node, ut_avlIPath_t *path)
+void ut_avlCInsertIPath (_In_ const ut_avlCTreedef_t *td, _Inout_ ut_avlCTree_t *tree, _Inout_ void *node, _Inout_ _Post_invalid_ ut_avlIPath_t *path)
 {
     tree->count++;
     ut_avlInsertIPath (&td->t, &tree->t, node, path);
 }
 
-void ut_avlCDeleteDPath (const ut_avlCTreedef_t *td, ut_avlCTree_t *tree, void *node, ut_avlDPath_t *path)
+void ut_avlCDeleteDPath (_In_ const ut_avlCTreedef_t *td, _Inout_ ut_avlCTree_t *tree, _Inout_ void *node, _Inout_ _Post_invalid_ ut_avlDPath_t *path)
 {
     assert (tree->count > 0);
     tree->count--;
     ut_avlDeleteDPath (&td->t, &tree->t, node, path);
 }
 
-void ut_avlCSwapNode (const ut_avlCTreedef_t *td, ut_avlCTree_t *tree, void *old, void *new)
+void ut_avlCSwapNode (_In_ const ut_avlCTreedef_t *td, _Inout_ ut_avlCTree_t *tree, _Inout_ void *old, _Inout_ void *new)
 {
     ut_avlSwapNode (&td->t, &tree->t, old, new);
 }
 
-void ut_avlCAugmentUpdate (const ut_avlCTreedef_t *td, void *node)
+void ut_avlCAugmentUpdate (_In_ const ut_avlCTreedef_t *td, _Inout_ void *node)
 {
     ut_avlAugmentUpdate (&td->t, node);
 }
 
-int ut_avlCIsEmpty (const ut_avlCTree_t *tree)
+int ut_avlCIsEmpty (_In_ const ut_avlCTree_t *tree)
 {
     return ut_avlIsEmpty (&tree->t);
 }
 
-int ut_avlCIsSingleton (const ut_avlCTree_t *tree)
+int ut_avlCIsSingleton (_In_ const ut_avlCTree_t *tree)
 {
     return ut_avlIsSingleton (&tree->t);
 }
 
-size_t ut_avlCCount (const ut_avlCTree_t *tree)
+size_t ut_avlCCount (_In_ const ut_avlCTree_t *tree)
 {
     return tree->count;
 }
 
-void *ut_avlCFindMin (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree)
+_Ret_opt_ void *ut_avlCFindMin (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree)
 {
     return ut_avlFindMin (&td->t, &tree->t);
 }
 
-void *ut_avlCFindMax (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree)
+_Ret_opt_ void *ut_avlCFindMax (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree)
 {
     return ut_avlFindMax (&td->t, &tree->t);
 }
 
-void *ut_avlCFindPred (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, const void *vnode)
+_Ret_opt_ void *ut_avlCFindPred (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *vnode)
 {
     return ut_avlFindPred (&td->t, &tree->t, vnode);
 }
 
-void *ut_avlCFindSucc (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, const void *vnode)
+_Ret_opt_ void *ut_avlCFindSucc (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *vnode)
 {
     return ut_avlFindSucc (&td->t, &tree->t, vnode);
 }
 
-void ut_avlCWalk (const ut_avlCTreedef_t *td, ut_avlCTree_t *tree, ut_avlWalk_t f, void *a)
+void ut_avlCWalk (_In_ const ut_avlCTreedef_t *td, _In_ ut_avlCTree_t *tree, _In_ ut_avlWalk_t f, _Inout_opt_ void *a)
 {
     ut_avlWalk (&td->t, &tree->t, f, a);
 }
 
-void ut_avlCConstWalk (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, ut_avlConstWalk_t f, void *a)
+void ut_avlCConstWalk (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ ut_avlConstWalk_t f, _Inout_opt_ void *a)
 {
     ut_avlConstWalk (&td->t, &tree->t, f, a);
 }
 
-void ut_avlCWalkRange (const ut_avlCTreedef_t *td, ut_avlCTree_t *tree, const void *min, const void *max, ut_avlWalk_t f, void *a)
+void ut_avlCWalkRange (_In_ const ut_avlCTreedef_t *td, _In_ ut_avlCTree_t *tree, _In_ const void *min, _In_ const void *max, _In_ ut_avlWalk_t f, _Inout_opt_ void *a)
 {
     ut_avlWalkRange (&td->t, &tree->t, min, max, f, a);
 }
 
-void ut_avlCConstWalkRange (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, const void *min, const void *max, ut_avlConstWalk_t f, void *a)
+void ut_avlCConstWalkRange (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *min, _In_ const void *max, _In_ ut_avlConstWalk_t f, _Inout_opt_ void *a)
 {
     ut_avlConstWalkRange (&td->t, &tree->t, min, max, f, a);
 }
 
-void ut_avlCWalkRangeReverse (const ut_avlCTreedef_t *td, ut_avlCTree_t *tree, const void *min, const void *max, ut_avlWalk_t f, void *a)
+void ut_avlCWalkRangeReverse (_In_ const ut_avlCTreedef_t *td, _In_ ut_avlCTree_t *tree, _In_ const void *min, _In_ const void *max, _In_ ut_avlWalk_t f, _Inout_opt_ void *a)
 {
     ut_avlWalkRangeReverse (&td->t, &tree->t, min, max, f, a);
 }
 
-void ut_avlCConstWalkRangeReverse (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, const void *min, const void *max, ut_avlConstWalk_t f, void *a)
+void ut_avlCConstWalkRangeReverse (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *min, _In_ const void *max, _In_ ut_avlConstWalk_t f, _Inout_opt_ void *a)
 {
     ut_avlConstWalkRangeReverse (&td->t, &tree->t, min, max, f, a);
 }
 
-void *ut_avlCIterFirst (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, ut_avlCIter_t *iter)
+_Ret_opt_ void *ut_avlCIterFirst (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlCIter_t *iter)
 {
     return ut_avlIterFirst (&td->t, &tree->t, &iter->t);
 }
 
-void *ut_avlCIterSuccEq (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, ut_avlCIter_t *iter, const void *key)
+_Ret_opt_ void *ut_avlCIterSuccEq (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlCIter_t *iter, _In_ const void *key)
 {
     return ut_avlIterSuccEq (&td->t, &tree->t, &iter->t, key);
 }
 
-void *ut_avlCIterSucc (const ut_avlCTreedef_t *td, const ut_avlCTree_t *tree, ut_avlCIter_t *iter, const void *key)
+_Ret_opt_ void *ut_avlCIterSucc (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlCIter_t *iter, _In_ const void *key)
 {
     return ut_avlIterSucc (&td->t, &tree->t, &iter->t, key);
 }
 
-void *ut_avlCIterNext (ut_avlCIter_t *iter)
+_Ret_opt_ void *ut_avlCIterNext (_Inout_ _When_ (return == 0, _Post_invalid_) ut_avlCIter_t *iter)
 {
     return ut_avlIterNext (&iter->t);
 }
