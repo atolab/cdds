@@ -60,7 +60,7 @@ struct nn_freelist {
 void nn_freelist_init (_Out_ struct nn_freelist *fl, uint32_t max, off_t linkoff);
 void nn_freelist_fini (_Inout_ _Post_invalid_ struct nn_freelist *fl, _In_ void (*free) (void *elem));
 _Check_return_ bool nn_freelist_push (_Inout_ struct nn_freelist *fl, _Inout_ _When_ (return != 0, _Post_invalid_) void *elem);
-_Check_return_ _Ret_opt_ void *nn_freelist_pushmany (_Inout_ struct nn_freelist *fl, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *first, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *last, uint32_t n);
-_Check_return_ _Ret_opt_ void *nn_freelist_pop (_Inout_ struct nn_freelist *fl);
+_Check_return_ _Ret_maybenull_ void *nn_freelist_pushmany (_Inout_ struct nn_freelist *fl, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *first, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *last, uint32_t n);
+_Check_return_ _Ret_maybenull_ void *nn_freelist_pop (_Inout_ struct nn_freelist *fl);
 
 #endif /* NN_FREELIST_H */

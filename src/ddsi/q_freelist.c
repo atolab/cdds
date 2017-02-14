@@ -35,14 +35,14 @@ _Check_return_ bool nn_freelist_push (_Inout_ struct nn_freelist *fl, _Inout_ _W
   }
 }
 
-_Check_return_ _Ret_opt_ void *nn_freelist_pushmany (_Inout_ struct nn_freelist *fl, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *first, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *last, uint32_t n)
+_Check_return_ _Ret_maybenull_ void *nn_freelist_pushmany (_Inout_ struct nn_freelist *fl, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *first, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *last, uint32_t n)
 {
   os_atomic_add32 (&fl->count, n);
   os_atomic_lifo_pushmany (&fl->x, first, last, fl->linkoff);
   return NULL;
 }
 
-_Check_return_ _Ret_opt_ void *nn_freelist_pop (_Inout_ struct nn_freelist *fl)
+_Check_return_ _Ret_maybenull_ void *nn_freelist_pop (_Inout_ struct nn_freelist *fl)
 {
   void *e;
   if ((e = os_atomic_lifo_pop (&fl->x, fl->linkoff)) != NULL)
@@ -183,7 +183,7 @@ _Check_return_ bool nn_freelist_push (_Inout_ struct nn_freelist *fl, _Inout_ _W
   }
 }
 
-_Check_return_ _Ret_opt_ void *nn_freelist_pushmany (_Inout_ struct nn_freelist *fl, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *first, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *last, uint32_t n)
+_Check_return_ _Ret_maybenull_ void *nn_freelist_pushmany (_Inout_ struct nn_freelist *fl, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *first, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *last, uint32_t n)
 {
   void *m = first;
   while (m)
@@ -197,7 +197,7 @@ _Check_return_ _Ret_opt_ void *nn_freelist_pushmany (_Inout_ struct nn_freelist 
   return NULL;
 }
 
-_Check_return_ _Ret_opt_ void *nn_freelist_pop (_Inout_ struct nn_freelist *fl)
+_Check_return_ _Ret_maybenull_ void *nn_freelist_pop (_Inout_ struct nn_freelist *fl)
 {
   int k = lock_inner (fl);
   if (fl->inner[k].count > 0)

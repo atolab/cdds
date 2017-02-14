@@ -324,7 +324,7 @@ static void rebalance_nopath (const ut_avlTreedef_t *td, ut_avlTree_t *tree, ut_
     }
 }
 
-_Ret_opt_ void *ut_avlLookup (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlLookup (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
 {
     const ut_avlNode_t *cursor = tree->root;
     int c;
@@ -353,13 +353,13 @@ static const ut_avlNode_t *lookup_path (_In_ const ut_avlTreedef_t *td, const ut
     return cursor;
 }
 
-_Ret_opt_ void *ut_avlLookupDPath (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key, _Out_ ut_avlDPath_t *path)
+_Check_return_ _Ret_maybenull_ void *ut_avlLookupDPath (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key, _Out_ ut_avlDPath_t *path)
 {
     const ut_avlNode_t *node = lookup_path (td, tree, key, &path->p);
     return (void *) conode_from_node (td, node);
 }
 
-_Ret_opt_ void *ut_avlLookupIPath (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key, _Out_ ut_avlIPath_t *path)
+_Check_return_ _Ret_maybenull_ void *ut_avlLookupIPath (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key, _Out_ ut_avlIPath_t *path)
 {
     const ut_avlNode_t *node = lookup_path (td, tree, key, &path->p);
     /* If no duplicates allowed, path may not be used for insertion,
@@ -561,17 +561,17 @@ static ut_avlNode_t *find_extremum (const ut_avlTree_t *tree, int dir)
     return (ut_avlNode_t *) n;
 }
 
-_Ret_opt_ void *ut_avlFindMin (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree)
+_Check_return_ _Ret_maybenull_ void *ut_avlFindMin (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree)
 {
     return (void *) conode_from_node (td, find_extremum (tree, 0));
 }
 
-_Ret_opt_ void *ut_avlFindMax (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree)
+_Check_return_ _Ret_maybenull_ void *ut_avlFindMax (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree)
 {
     return (void *) conode_from_node (td, find_extremum (tree, 1));
 }
 
-_Ret_opt_ void *ut_avlFindPred (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_opt_ const void *vnode)
+_Check_return_ _Ret_maybenull_ void *ut_avlFindPred (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_opt_ const void *vnode)
 {
     const ut_avlNode_t *n = cnode_from_onode (td, vnode);
     if (n == NULL) {
@@ -581,7 +581,7 @@ _Ret_opt_ void *ut_avlFindPred (_In_ const ut_avlTreedef_t *td, _In_ const ut_av
     }
 }
 
-_Ret_opt_ void *ut_avlFindSucc (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_opt_ const void *vnode)
+_Check_return_ _Ret_maybenull_ void *ut_avlFindSucc (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_opt_ const void *vnode)
 {
     const ut_avlNode_t *n = cnode_from_onode (td, vnode);
     if (n == NULL) {
@@ -605,7 +605,7 @@ static void avl_iter_downleft (ut_avlIter_t *iter)
     }
 }
 
-_Ret_opt_ void *ut_avlIterFirst (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlIter_t *iter)
+_Check_return_ _Ret_maybenull_ void *ut_avlIterFirst (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlIter_t *iter)
 {
     iter->td = td;
     iter->todop = iter->todo+1;
@@ -614,7 +614,7 @@ _Ret_opt_ void *ut_avlIterFirst (_In_ const ut_avlTreedef_t *td, _In_ const ut_a
     return onode_from_node (td, *iter->todop);
 }
 
-_Ret_opt_ void *ut_avlIterNext (_Inout_ _When_ (return == 0, _Post_invalid_) ut_avlIter_t *iter)
+_Check_return_ _Ret_maybenull_ void *ut_avlIterNext (_Inout_ _When_ (return == 0, _Post_invalid_) ut_avlIter_t *iter)
 {
     if (iter->todop-- > iter->todo+1 && iter->right == NULL) {
         iter->right = (*iter->todop)->cs[1];
@@ -796,27 +796,27 @@ static const ut_avlNode_t *lookup_succ (_In_ const ut_avlTreedef_t *td, const ut
     return fixup_predsucc (td, key, tmp, cand, 1);
 }
 
-_Ret_opt_ void *ut_avlLookupSuccEq (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlLookupSuccEq (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
 {
     return (void *) conode_from_node (td, lookup_succeq (td, tree, key));
 }
 
-_Ret_opt_ void *ut_avlLookupPredEq (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlLookupPredEq (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
 {
     return (void *) conode_from_node (td, lookup_predeq (td, tree, key));
 }
 
-_Ret_opt_ void *ut_avlLookupSucc (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlLookupSucc (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
 {
     return (void *) conode_from_node (td, lookup_succ (td, tree, key));
 }
 
-_Ret_opt_ void *ut_avlLookupPred (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlLookupPred (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key)
 {
     return (void *) conode_from_node (td, lookup_pred (td, tree, key));
 }
 
-_Ret_opt_ void *ut_avlIterSuccEq (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlIter_t *iter, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlIterSuccEq (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlIter_t *iter, _In_ const void *key)
 {
     const ut_avlNode_t *tmp = tree->root;
     int c;
@@ -854,7 +854,7 @@ _Ret_opt_ void *ut_avlIterSuccEq (_In_ const ut_avlTreedef_t *td, _In_ const ut_
     }
 }
 
-_Ret_opt_ void *ut_avlIterSucc (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlIter_t *iter, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlIterSucc (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlIter_t *iter, _In_ const void *key)
 {
     const ut_avlNode_t *tmp = tree->root;
     int c;
@@ -929,12 +929,12 @@ void ut_avlConstWalkRangeReverse (_In_ const ut_avlTreedef_t *td, _In_ const ut_
     ut_avlWalkRangeReverse (td, (ut_avlTree_t *) tree, min, max, (ut_avlWalk_t) f, a);
 }
 
-_Ret_opt_ void *ut_avlRoot (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree)
+_Check_return_ _Ret_maybenull_ void *ut_avlRoot (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree)
 {
     return (void *) conode_from_node (td, tree->root);
 }
 
-_Ret_ void *ut_avlRootNonEmpty (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree)
+_Ret_notnull_ void *ut_avlRootNonEmpty (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree)
 {
     assert (tree->root);
     return (void *) conode_from_node (td, tree->root);
@@ -975,7 +975,7 @@ void ut_avlCFreeArg (_In_ const ut_avlCTreedef_t *td, _Inout_ _Post_invalid_ ut_
     ut_avlFreeArg (&td->t, &tree->t, freefun, arg);
 }
 
-_Ret_opt_ void *ut_avlCRoot (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree)
+_Check_return_ _Ret_maybenull_ void *ut_avlCRoot (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree)
 {
     return ut_avlRoot (&td->t, &tree->t);
 }
@@ -985,37 +985,37 @@ _Ret_ void *ut_avlCRootNonEmpty (_In_ const ut_avlCTreedef_t *td, _In_ const ut_
     return ut_avlRootNonEmpty (&td->t, &tree->t);
 }
 
-_Ret_opt_ void *ut_avlCLookup (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlCLookup (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
 {
     return ut_avlLookup (&td->t, &tree->t, key);
 }
 
-_Ret_opt_ void *ut_avlCLookupIPath (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key, _Out_ ut_avlIPath_t *path)
+_Check_return_ _Ret_maybenull_ void *ut_avlCLookupIPath (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key, _Out_ ut_avlIPath_t *path)
 {
     return ut_avlLookupIPath (&td->t, &tree->t, key, path);
 }
 
-_Ret_opt_ void *ut_avlCLookupDPath (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key, _Out_ ut_avlDPath_t *path)
+_Check_return_ _Ret_maybenull_ void *ut_avlCLookupDPath (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key, _Out_ ut_avlDPath_t *path)
 {
     return ut_avlLookupDPath (&td->t, &tree->t, key, path);
 }
 
-_Ret_opt_ void *ut_avlCLookupPredEq (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlCLookupPredEq (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
 {
     return ut_avlLookupPredEq (&td->t, &tree->t, key);
 }
 
-_Ret_opt_ void *ut_avlCLookupSuccEq (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlCLookupSuccEq (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
 {
     return ut_avlLookupSuccEq (&td->t, &tree->t, key);
 }
 
-_Ret_opt_ void *ut_avlCLookupPred (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlCLookupPred (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
 {
     return ut_avlLookupPred (&td->t, &tree->t, key);
 }
 
-_Ret_opt_ void *ut_avlCLookupSucc (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlCLookupSucc (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key)
 {
     return ut_avlLookupSucc (&td->t, &tree->t, key);
 }
@@ -1071,22 +1071,22 @@ size_t ut_avlCCount (_In_ const ut_avlCTree_t *tree)
     return tree->count;
 }
 
-_Ret_opt_ void *ut_avlCFindMin (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree)
+_Check_return_ _Ret_maybenull_ void *ut_avlCFindMin (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree)
 {
     return ut_avlFindMin (&td->t, &tree->t);
 }
 
-_Ret_opt_ void *ut_avlCFindMax (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree)
+_Check_return_ _Ret_maybenull_ void *ut_avlCFindMax (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree)
 {
     return ut_avlFindMax (&td->t, &tree->t);
 }
 
-_Ret_opt_ void *ut_avlCFindPred (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *vnode)
+_Check_return_ _Ret_maybenull_ void *ut_avlCFindPred (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *vnode)
 {
     return ut_avlFindPred (&td->t, &tree->t, vnode);
 }
 
-_Ret_opt_ void *ut_avlCFindSucc (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *vnode)
+_Check_return_ _Ret_maybenull_ void *ut_avlCFindSucc (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *vnode)
 {
     return ut_avlFindSucc (&td->t, &tree->t, vnode);
 }
@@ -1121,22 +1121,22 @@ void ut_avlCConstWalkRangeReverse (_In_ const ut_avlCTreedef_t *td, _In_ const u
     ut_avlConstWalkRangeReverse (&td->t, &tree->t, min, max, f, a);
 }
 
-_Ret_opt_ void *ut_avlCIterFirst (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlCIter_t *iter)
+_Check_return_ _Ret_maybenull_ void *ut_avlCIterFirst (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlCIter_t *iter)
 {
     return ut_avlIterFirst (&td->t, &tree->t, &iter->t);
 }
 
-_Ret_opt_ void *ut_avlCIterSuccEq (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlCIter_t *iter, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlCIterSuccEq (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlCIter_t *iter, _In_ const void *key)
 {
     return ut_avlIterSuccEq (&td->t, &tree->t, &iter->t, key);
 }
 
-_Ret_opt_ void *ut_avlCIterSucc (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlCIter_t *iter, _In_ const void *key)
+_Check_return_ _Ret_maybenull_ void *ut_avlCIterSucc (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _Out_ _When_ (return == 0, _Post_invalid_) ut_avlCIter_t *iter, _In_ const void *key)
 {
     return ut_avlIterSucc (&td->t, &tree->t, &iter->t, key);
 }
 
-_Ret_opt_ void *ut_avlCIterNext (_Inout_ _When_ (return == 0, _Post_invalid_) ut_avlCIter_t *iter)
+_Check_return_ _Ret_maybenull_ void *ut_avlCIterNext (_Inout_ _When_ (return == 0, _Post_invalid_) ut_avlCIter_t *iter)
 {
     return ut_avlIterNext (&iter->t);
 }
