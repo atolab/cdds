@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
 add_definitions(-DVDDS_BUILD=1)
 
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+find_package(Threads REQUIRED)
+
 FUNCTION(PREPEND var prefix)
    SET(listVar "")
    FOREACH(f ${ARGN})
@@ -30,6 +33,8 @@ set(srcs ${srcs_os} ${srcs_util} ${srcs_ddsi} ${srcs_kernel})
 
 add_library(vdds SHARED ${srcs})
 if(WIN32)
-  target_link_libraries(vdds wsock32 ws2_32 Iphlpapi)
+  set(OS_LIBS wsock32 ws2_32 Iphlpapi)
 endif()
+
+target_link_libraries(vdds Threads::Threads ${OS_LIBS})
 #target_include_directories(vdds PUBLIC ../include)
