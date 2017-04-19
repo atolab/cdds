@@ -1058,7 +1058,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_etime_t tnow, const Ac
      it might ... [NB writer->seq is the last msg sent so far] */
   if (msgs_sent && max_seq_in_reply < seq_xmit)
   {
-    TRACE ((" rexmit#%u maxseq:%"PRId64"<%lld<=%lld", msgs_sent, max_seq_in_reply, seq_xmit, wr->seq));
+    TRACE ((" rexmit#%"PRIu32" maxseq:%"PRId64"<%"PRId64"<=%"PRId64"", msgs_sent, max_seq_in_reply, seq_xmit, wr->seq));
     force_heartbeat_to_peer (wr, prd, 1);
     hb_sent_in_response = 1;
 

@@ -116,7 +116,7 @@ static void writeStats(uint32_t payloadSize, const ExampleTimeStats *stats, FILE
   unsigned long long i;
   fprintf(fp,"{%u,{", payloadSize);
   for (i = 0; i < stats->valuesSize; i++) {
-    fprintf(fp, "%s%lld", (i == 0) ? "" : ",", stats->values[i]);
+    fprintf(fp, "%s%"PRId64"", (i == 0) ? "" : ",", stats->values[i]);
   }
   fprintf(fp,"}}\n");
 }
