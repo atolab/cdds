@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(VortexDDS)
 
+enable_testing()
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 find_package(Abstraction QUIET REQUIRED)
 
