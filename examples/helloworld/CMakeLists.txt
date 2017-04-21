@@ -4,8 +4,10 @@ add_executable(ddhelloworld ddhelloworld.c)
 target_link_libraries(ddhelloworld vdds)
 add_dependencies(ddhelloworld vdds)
 
-
-add_subdirectory(test)
+if (CMAKE_TEST_EXAMPLES)
+    message(STATUS "Include helloworld example test")
+    add_subdirectory(test)
+endif()
 
 add_test(helloworld_test1 test/test1)
 
