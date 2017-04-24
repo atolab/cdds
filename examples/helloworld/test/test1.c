@@ -1,6 +1,6 @@
 #include "dds.h"
 #include "CUnit/CUnit.h"
-#include "CUnit/Basic.h"
+#include "CUnit/Automated.h"
 
 /* Pointer to the file used by the tests. */
 static FILE* temp_file = NULL;
@@ -68,9 +68,10 @@ int main (int argc, char *argv[])
    }
 
 
-   /* Run all tests using the CUnit Basic interface */ 
-   CU_basic_set_mode(CU_BRM_VERBOSE);
-   CU_basic_run_tests();
+   /* Run all tests using the CUnit Automated interface */
+   CU_set_output_filename ("cunit");
+   CU_list_tests_to_file ();
+   CU_automated_run_tests ();
  
    /* cleanup registry */
    CU_cleanup_registry();
