@@ -28,6 +28,10 @@ PREPEND(srcs_kernel kernel dds_alloc.c dds_iid.c dds_participant.c dds_reader.c 
 set(srcs ${srcs_os} ${srcs_util} ${srcs_ddsi} ${srcs_kernel})
 
 add_library(vdds ${srcs})
+# Create a psuedo-target that other targets (i.e. examples, tests) can depend on and can also be
+# provided as import-target by a package-file when building those targets outside the regular
+# Vortex build-tree (i.e. the installed tree)
+add_library(Vortex::DDSC99 ALIAS vdds)
 
 target_link_libraries(vdds Abstraction)
 

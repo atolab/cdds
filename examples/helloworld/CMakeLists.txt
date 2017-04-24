@@ -1,14 +1,7 @@
-cmake_minimum_required(VERSION 3.5)
-
 add_executable(ddhelloworld ddhelloworld.c)
-target_link_libraries(ddhelloworld vdds)
-add_dependencies(ddhelloworld vdds)
+target_link_libraries(ddhelloworld Vortex::DDSC99)
 
 if (CMAKE_TEST_EXAMPLES)
     message(STATUS "Include helloworld example test")
     add_subdirectory(test)
 endif()
-
-add_test(helloworld_test1 test/test1)
-
-
