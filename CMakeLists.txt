@@ -3,6 +3,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 project(VortexDDS)
 
 find_package(Abstraction QUIET REQUIRED)
+find_package(CUnit QUIET)
 
 enable_testing()
 
