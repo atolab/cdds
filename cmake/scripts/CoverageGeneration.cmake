@@ -12,6 +12,10 @@ message(STATUS "Source directory: ${SOURCE_DIR}")
 message(STATUS "Test directory:   ${TEST_DIR}")
 message(STATUS "Output directory: ${OUTPUT_DIR}")
 
+# Do not include the test and example directories.
+set(EXAMPLES_DIR "examples")
+set(TESTS_DIR    "examples")
+
 # Add this flag when you want to suppress LCOV and ctest output.
 #set(QUIET_FLAG "--quiet")
 
@@ -112,7 +116,7 @@ if(GENERATE_COVERAGE_HTML)
 
     execute_process(COMMAND ${LCOV_PATH} ${QUIET_FLAG} --directory . --capture --output-file ${COVERAGE_INFO}
                     WORKING_DIRECTORY ${TEST_DIR})
-    execute_process(COMMAND ${LCOV_PATH} ${QUIET_FLAG} --remove ${COVERAGE_INFO} 'tests/*' '/usr/*' --output-file ${COVERAGE_CLEANED}
+    execute_process(COMMAND ${LCOV_PATH} ${QUIET_FLAG} --remove ${COVERAGE_INFO} "${EXAMPLES_DIR}/*" "${TESTS_DIR}/*" "/usr/*" --output-file ${COVERAGE_CLEANED}
                     WORKING_DIRECTORY ${TEST_DIR})
     execute_process(COMMAND ${GENHTML_PATH}  ${QUIET_FLAG} -o ${COVERAGE_HTML_OUTPUT} ${COVERAGE_CLEANED}
                     WORKING_DIRECTORY ${TEST_DIR})
@@ -130,7 +134,7 @@ endif()
 ###############################################################################
 if(GENERATE_COVERAGE_COBERTURA)
     message(STATUS "Generating Cobertura report")
-    execute_process(COMMAND ${GCOVR_PATH} -x -r ${SOURCE_DIR} -e '${SOURCE_DIR}/tests/' -o ${OUTPUT_DIR}/cobertura.xml
+    execute_process(COMMAND ${GCOVR_PATH} -x -r ${SOURCE_DIR} -e "${SOURCE_DIR}/${EXAMPLES_DIR}/" -e "${SOURCE_DIR}/${TESTS_DIR}/" -o ${OUTPUT_DIR}/cobertura.xml
                     WORKING_DIRECTORY ${TEST_DIR})
     message(STATUS "The Cobertura report can be found here: ${OUTPUT_DIR}/cobertura.xml")
 endif()
