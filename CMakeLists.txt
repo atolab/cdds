@@ -15,9 +15,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Coverage")
     include(CoverageTarget)
 endif()
 
-enable_testing()
-
 find_package(Abstraction QUIET REQUIRED)
+find_package(CUnit QUIET)
+
+enable_testing()
 
 include_directories(include)
 add_subdirectory(src)
