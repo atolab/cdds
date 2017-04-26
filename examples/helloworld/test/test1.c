@@ -26,15 +26,6 @@ void testcase_1(void) {
 }
 
 
-/* This test demonstrates a failing test */
-void testcase_2(void) {
-
-  int status;
-
-  status = 1;
-  CU_ASSERT(status == 3);
-}
-
 
 int main (int argc, char *argv[])
 {
@@ -58,11 +49,6 @@ int main (int argc, char *argv[])
 
    /* add test cases to the test suite */ 
    if (NULL == CU_add_test(pSuite, "dds_participant_create", testcase_1)) {
-      CU_cleanup_registry();
-      return CU_get_error();
-   }
-
-   if (NULL == CU_add_test(pSuite, "bogus_failing_testcase_2", testcase_2)) {
       CU_cleanup_registry();
       return CU_get_error();
    }
