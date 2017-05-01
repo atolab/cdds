@@ -8,6 +8,7 @@ find_package(CUnit QUIET)
 enable_testing()
 
 include_directories(include)
+add_subdirectory(idlc)
 add_subdirectory(src)
 #add_subdirectory(vdds-server)
 add_subdirectory(examples)

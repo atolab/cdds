@@ -1,0 +1,25 @@
+@ echo off
+
+if "%LITE_HOME%"=="" goto error
+
+IF %LITE_HOME:~-1%==\ SET LITE_HOME=%LITE_HOME:~0,-1%
+
+set CLASSPATH=%LITE_HOME%\lib\java\dds_idlc.jar
+set CLASSPATH=%LITE_HOME%\lib\java\antlr-3.5.2-complete.jar;%CLASSPATH%
+set CLASSPATH=%LITE_HOME%\lib\java\antlr-4.4-complete.jar;%CLASSPATH%
+set CLASSPATH=%LITE_HOME%\lib\java\idtpp.jar;%CLASSPATH%
+set CLASSPATH=%LITE_HOME%\lib\java\lic.jar;%CLASSPATH%
+
+IF NOT "%JAVA_HOME%"=="" set PATH=%PATH%;%JAVA_HOME%\bin
+
+java -DLITE_HOME="%LITE_HOME%" -DLITE_HOST="%LITE_HOST%" com.prismtech.lite.compilers.Idlcpp %*
+goto end
+
+:error
+  echo "LITE_HOME environnment variable not defined - see documentation"
+@echo on
+@exit /B 1
+
+:end
+@ echo on
+@exit /B %ERRORLEVEL%

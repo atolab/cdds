@@ -1,0 +1,29 @@
+#!/bin/sh
+
+if [ -z "$LITE_HOME" ]
+then
+  echo "LITE_HOME environment variable not defined"
+  exit
+fi
+
+DELIM=":"
+OS_TYPE=`uname`
+
+case $OS_TYPE in
+  CYGWIN_NT*)
+    LITE_HOME=`cygpath -w $LITE_HOME`
+    DELIM=";"
+  ;;
+  Interix)
+    DELIM=";"
+  ;;
+  *)
+esac
+
+CLASSPATH="$LITE_HOME/lib/java/dds_idlc.jar"
+CLASSPATH="$LITE_HOME/lib/java/antlr-3.5.2-complete.jar$DELIM$CLASSPATH"
+CLASSPATH="$LITE_HOME/lib/java/antlr-4.4-complete.jar$DELIM$CLASSPATH"
+CLASSPATH="$LITE_HOME/lib/java/idtpp.jar$DELIM$CLASSPATH"
+CLASSPATH="$LITE_HOME/lib/java/lic.jar$DELIM$CLASSPATH"
+
+java -DLITE_HOME="$LITE_HOME" -DLITE_HOST="$LITE_HOST" -Dprismtech_LICENSE="$prismtech_LICENSE" -DRLM_LICENSE="$RLM_LICENSE" -classpath $CLASSPATH com.prismtech.lite.compilers.Idlc "$@"
