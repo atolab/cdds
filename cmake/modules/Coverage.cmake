@@ -31,5 +31,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Coverage")
         CMAKE_CXX_FLAGS_COVERAGE
         CMAKE_EXE_LINKER_FLAGS_COVERAGE
         CMAKE_SHARED_LINKER_FLAGS_COVERAGE)
+
+    configure_file(cmake/coverage_config.cmake.in CoverageConfig.cmake)
 endif()
 

@@ -3,20 +3,25 @@
 # It will generate the HTML output from the gcov results.
 #
 # Example usage:
-# $ cmake -DSOURCE_DIR=<cham src> -DTEST_DIR=<cham bld> -DOUTPUT_DIR=<output dir> -P <cham src>/cmake/scripts/CoveragePreHtml.cmake
+# $ cmake -DCOVERAGE_CONFIG=<cham bld>/CoverageConfig.cmake -P <cham src>/cmake/scripts/CoveragePreHtml.cmake
 # $ ctest -T test
 # $ ctest -T coverage
-# $ ctest -DSOURCE_DIR=<cham src> -DTEST_DIR=<cham bld> -DOUTPUT_DIR=<output dir> -P <cham src>/cmake/scripts/CoveragePostHtml.cmake
+# $ ctest -DCOVERAGE_CONFIG=<cham bld>/CoverageConfig.cmake -P <cham src>/cmake/scripts/CoveragePostHtml.cmake
+# If you start the scripts while in <cham bld> then you don't have to provide the COVERAGE_CONFIG file.
+#
 cmake_minimum_required(VERSION 3.5)
 
+# Get Coverage configuration file
+if(NOT COVERAGE_CONFIG)
+    set(COVERAGE_CONFIG ${CMAKE_CURRENT_BINARY_DIR}/CoverageConfig.cmake)
+endif()
+include(${COVERAGE_CONFIG})
+
 # Some debug
-message(STATUS "Source directory: ${SOURCE_DIR}")
-message(STATUS "Test directory:   ${TEST_DIR}")
-message(STATUS "Output directory: ${OUTPUT_DIR}")
-
-# Add this flag when you want to suppress LCOV output.
-#set(QUIET_FLAG "--quiet")
-
+#message(STATUS "Config file:      ${COVERAGE_CONFIG}")
+#message(STATUS "Source directory: ${COVERAGE_SOURCE_DIR}")
+#message(STATUS "Test directory:   ${COVERAGE_RUN_DIR}")
+#message(STATUS "Output directory: ${COVERAGE_OUTPUT_DIR}")
 
 # Find tools to generate HTML coverage results
 find_program(LCOV_PATH lcov PARENT_SCOPE)
@@ -29,28 +34,25 @@ if(NOT GENHTML_PATH)
 endif()
 
 # Create location to put the result file.
-set(COVERAGE_HTML_OUTPUT  "${OUTPUT_DIR}/html")
+file(MAKE_DIRECTORY ${COVERAGE_OUTPUT_DIR})
+set(COVERAGE_HTML_OUTPUT  "${COVERAGE_OUTPUT_DIR}/html")
 file(MAKE_DIRECTORY ${COVERAGE_HTML_OUTPUT})
 
 # Setup tmp analysis files
 set(COVERAGE_INFO    "${COVERAGE_HTML_OUTPUT}/coverage_html.info")
 set(COVERAGE_CLEANED "${COVERAGE_INFO}.cleaned")
 
-# Do not include the test and example directories.
-set(EXAMPLES_DIR "examples")
-set(TESTS_DIR    "examples")
-
 # Execute lcov and genhtml commands to get HTML results
-execute_process(COMMAND ${LCOV_PATH} ${QUIET_FLAG} --directory . --capture --output-file ${COVERAGE_INFO}
-                WORKING_DIRECTORY ${TEST_DIR})
-execute_process(COMMAND ${LCOV_PATH} ${QUIET_FLAG} --remove ${COVERAGE_INFO} "${EXAMPLES_DIR}/*" "${TESTS_DIR}/*" "/usr/*" --output-file ${COVERAGE_CLEANED}
-                WORKING_DIRECTORY ${TEST_DIR})
-execute_process(COMMAND ${GENHTML_PATH}  ${QUIET_FLAG} -o ${COVERAGE_HTML_OUTPUT} ${COVERAGE_CLEANED}
-                WORKING_DIRECTORY ${TEST_DIR})
+execute_process(COMMAND ${LCOV_PATH} ${COVERAGE_QUIET_FLAG} --directory . --capture --output-file ${COVERAGE_INFO}
+                WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
+execute_process(COMMAND ${LCOV_PATH} ${COVERAGE_QUIET_FLAG} --remove ${COVERAGE_INFO} "${COVERAGE_EXCLUDE_DIR1}/*" "${COVERAGE_EXCLUDE_DIR2}/*" "/usr/*" --output-file ${COVERAGE_CLEANED}
+                WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
+execute_process(COMMAND ${GENHTML_PATH}  ${COVERAGE_QUIET_FLAG} -o ${COVERAGE_HTML_OUTPUT} ${COVERAGE_CLEANED}
+                WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
 
 # Remove tmp analysis files
 execute_process(COMMAND ${CMAKE_COMMAND} -E remove ${COVERAGE_INFO} ${COVERAGE_CLEANED}
-                WORKING_DIRECTORY ${TEST_DIR})
+                WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
 
 
 message(STATUS "The HTML coverage report can be found here: ${COVERAGE_HTML_OUTPUT}/index.html")

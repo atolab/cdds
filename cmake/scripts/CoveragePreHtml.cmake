@@ -3,20 +3,25 @@
 # It can be used to setup the environment needed to get proper HTML coverage results.
 #
 # Example usage:
-# $ cmake -DSOURCE_DIR=<cham src> -DTEST_DIR=<cham bld> -DOUTPUT_DIR=<output dir> -P <cham src>/cmake/scripts/CoveragePreHtml.cmake
+# $ cmake -DCOVERAGE_CONFIG=<cham bld>/CoverageConfig.cmake -P <cham src>/cmake/scripts/CoveragePreHtml.cmake
 # $ ctest -T test
 # $ ctest -T coverage
-# $ ctest -DSOURCE_DIR=<cham src> -DTEST_DIR=<cham bld> -DOUTPUT_DIR=<output dir> -P <cham src>/cmake/scripts/CoveragePostHtml.cmake
+# $ ctest -DCOVERAGE_CONFIG=<cham bld>/CoverageConfig.cmake -P <cham src>/cmake/scripts/CoveragePostHtml.cmake
+# If you start the scripts while in <cham bld> then you don't have to provide the COVERAGE_CONFIG file.
+#
 cmake_minimum_required(VERSION 3.5)
 
+# Get Coverage configuration file
+if(NOT COVERAGE_CONFIG)
+    set(COVERAGE_CONFIG ${CMAKE_CURRENT_BINARY_DIR}/CoverageConfig.cmake)
+endif()
+include(${COVERAGE_CONFIG})
+
 # Some debug
-message(STATUS "Source directory: ${SOURCE_DIR}")
-message(STATUS "Test directory:   ${TEST_DIR}")
-message(STATUS "Output directory: ${OUTPUT_DIR}")
-
-# Add this flag when you want to suppress LCOV output.
-#set(QUIET_FLAG "--quiet")
-
+#message(STATUS "Config file:      ${COVERAGE_CONFIG}")
+#message(STATUS "Source directory: ${COVERAGE_SOURCE_DIR}")
+#message(STATUS "Test directory:   ${COVERAGE_RUN_DIR}")
+#message(STATUS "Output directory: ${COVERAGE_OUTPUT_DIR}")
 
 # Find tools to generate HTML coverage results
 find_program(LCOV_PATH lcov PARENT_SCOPE)
@@ -29,7 +34,7 @@ if(NOT GENHTML_PATH)
 endif()
 
 # Reset LCOV environment
-execute_process(COMMAND ${LCOV_PATH}  ${QUIET_FLAG} --directory . --zerocounters
-                WORKING_DIRECTORY ${TEST_DIR})
+execute_process(COMMAND ${LCOV_PATH}  ${COVERAGE_QUIET_FLAG} --directory . --zerocounters
+                WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
 
 

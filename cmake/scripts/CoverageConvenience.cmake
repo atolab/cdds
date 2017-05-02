@@ -1,21 +1,24 @@
 #
 # This script will run all tests and generates various coverage reports.
 #
-# Example usage
+# Example usage:
+# $ cmake -DCOVERAGE_CONFIG=<cham bld>/CoverageConfig.cmake -P <cham src>/cmake/scripts/CoverageConvenience.cmake
+# If you start the scripts while in <cham bld> then you don't have to provide the COVERAGE_CONFIG file.
 #
-#cmake -DSOURCE_DIR=<cham src> -DTEST_DIR=<cham bld> -DOUTPUT_DIR=<output dir> -P <cham src>/cmake/scripts/CoverageConvenience.cmake
-
 cmake_minimum_required(VERSION 3.5)
 
-#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
-message(STATUS "Source directory: ${SOURCE_DIR}")
-message(STATUS "Test directory:   ${TEST_DIR}")
-message(STATUS "Output directory: ${OUTPUT_DIR}")
+# Get Coverage configuration file
+if(NOT COVERAGE_CONFIG)
+    set(COVERAGE_CONFIG ${CMAKE_CURRENT_BINARY_DIR}/CoverageConfig.cmake)
+endif()
+include(${COVERAGE_CONFIG})
 
-# Do not include the test and example directories.
-set(EXAMPLES_DIR "examples")
-set(TESTS_DIR    "examples")
+message(STATUS "Config file:      ${COVERAGE_CONFIG}")
+message(STATUS "Source directory: ${COVERAGE_SOURCE_DIR}")
+message(STATUS "Test directory:   ${COVERAGE_RUN_DIR}")
+message(STATUS "Output directory: ${COVERAGE_OUTPUT_DIR}")
 
+set(COVERAGE_SCRIPTS_DIR "${COVERAGE_SOURCE_DIR}/cmake/scripts")
 
 ###############################################################################
 #
@@ -80,13 +83,14 @@ endif()
 ###############################################################################
 message(STATUS "Setup environment")
 if(GENERATE_COVERAGE_HTML)
-    execute_process(COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${SOURCE_DIR} -DTEST_DIR=${TEST_DIR} -DOUTPUT_DIR=${OUTPUT_DIR} -P ${SOURCE_DIR}/cmake/scripts/CoveragePreHtml.cmake
-                    WORKING_DIRECTORY ${TEST_DIR})
+    execute_process(COMMAND ${CMAKE_COMMAND} -DCOVERAGE_CONFIG=${COVERAGE_CONFIG} -P ${COVERAGE_SCRIPTS_DIR}/CoveragePreHtml.cmake
+                    WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
 endif()
 if(GENERATE_COVERAGE_COBERTURA)
-    execute_process(COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${SOURCE_DIR} -DTEST_DIR=${TEST_DIR} -DOUTPUT_DIR=${OUTPUT_DIR} -P ${SOURCE_DIR}/cmake/scripts/CoveragePreCobertura.cmake
-                    WORKING_DIRECTORY ${TEST_DIR})
+    execute_process(COMMAND ${CMAKE_COMMAND} -DCOVERAGE_CONFIG=${COVERAGE_CONFIG} -P ${COVERAGE_SCRIPTS_DIR}/CoveragePreCobertura.cmake
+                    WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
 endif()
+
 
 
 ###############################################################################
@@ -95,10 +99,10 @@ endif()
 #
 ###############################################################################
 message(STATUS "Run all test to get coverage")
-execute_process(COMMAND ctest ${QUIET_FLAG} -T test
-                WORKING_DIRECTORY ${TEST_DIR})
-execute_process(COMMAND ctest ${QUIET_FLAG} -T coverage
-                WORKING_DIRECTORY ${TEST_DIR})
+execute_process(COMMAND ctest ${COVERAGE_QUIET_FLAG} -T test
+                WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
+execute_process(COMMAND ctest ${COVERAGE_QUIET_FLAG} -T coverage
+                WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
 
 
 
@@ -108,11 +112,11 @@ execute_process(COMMAND ctest ${QUIET_FLAG} -T coverage
 #
 ###############################################################################
 if(GENERATE_COVERAGE_HTML)
-    execute_process(COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${SOURCE_DIR} -DTEST_DIR=${TEST_DIR} -DOUTPUT_DIR=${OUTPUT_DIR} -P ${SOURCE_DIR}/cmake/scripts/CoveragePostHtml.cmake
-                    WORKING_DIRECTORY ${TEST_DIR})
+    execute_process(COMMAND ${CMAKE_COMMAND} -DCOVERAGE_CONFIG=${COVERAGE_CONFIG} -P ${COVERAGE_SCRIPTS_DIR}/CoveragePostHtml.cmake
+                    WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
 endif()
 if(GENERATE_COVERAGE_COBERTURA)
-    execute_process(COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${SOURCE_DIR} -DTEST_DIR=${TEST_DIR} -DOUTPUT_DIR=${OUTPUT_DIR} -P ${SOURCE_DIR}/cmake/scripts/CoveragePostCobertura.cmake
-                    WORKING_DIRECTORY ${TEST_DIR})
+    execute_process(COMMAND ${CMAKE_COMMAND} -DCOVERAGE_CONFIG=${COVERAGE_CONFIG} -P ${COVERAGE_SCRIPTS_DIR}/CoveragePostCobertura.cmake
+                    WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
 endif()
 

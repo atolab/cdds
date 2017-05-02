@@ -3,10 +3,13 @@
 # It can be used to setup the environment needed to get proper Cobertura coverage results.
 #
 # Example usage:
-# $ cmake -DSOURCE_DIR=<cham src> -DTEST_DIR=<cham bld> -DOUTPUT_DIR=<output dir> -P <cham src>/cmake/scripts/CoveragePreCobertura.cmake
+# $ cmake -DCOVERAGE_CONFIG=<cham bld>/CoverageConfig.cmake -P <cham src>/cmake/scripts/CoveragePreCobertura.cmake
 # $ ctest -T test
 # $ ctest -T coverage
-# $ ctest -DSOURCE_DIR=<cham src> -DTEST_DIR=<cham bld> -DOUTPUT_DIR=<output dir> -P <cham src>/cmake/scripts/CoveragePostCobertura.cmake
+# $ ctest -DCOVERAGE_CONFIG=<cham bld>/CoverageConfig.cmake -P <cham src>/cmake/scripts/CoveragePostCobertura.cmake
+# If you start the scripts while in <cham bld> then you don't have to provide the COVERAGE_CONFIG file.
+#
+cmake_minimum_required(VERSION 3.5)
 
 #
 # Nothing to do really.
