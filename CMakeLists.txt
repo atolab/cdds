@@ -5,6 +5,7 @@ project(VortexDDS)
 find_package(Abstraction QUIET REQUIRED)
 find_package(CUnit QUIET)
 
+include(CTest)
 enable_testing()
 
 include_directories(include)
