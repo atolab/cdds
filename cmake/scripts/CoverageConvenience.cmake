@@ -3,11 +3,11 @@
 #
 # Example usage
 #
-#cmake -DSOURCE_DIR=<cham src> -DTEST_DIR=<cham bld> -DOUTPUT_DIR=<output dir> -P <cham src>/cmake/scripts/CoverageGeneration.cmake
+#cmake -DSOURCE_DIR=<cham src> -DTEST_DIR=<cham bld> -DOUTPUT_DIR=<output dir> -P <cham src>/cmake/scripts/CoverageConvenience.cmake
 
 cmake_minimum_required(VERSION 3.5)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
+#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 message(STATUS "Source directory: ${SOURCE_DIR}")
 message(STATUS "Test directory:   ${TEST_DIR}")
 message(STATUS "Output directory: ${OUTPUT_DIR}")
@@ -15,10 +15,6 @@ message(STATUS "Output directory: ${OUTPUT_DIR}")
 # Do not include the test and example directories.
 set(EXAMPLES_DIR "examples")
 set(TESTS_DIR    "examples")
-
-# Add this flag when you want to suppress LCOV and ctest output.
-#set(QUIET_FLAG "--quiet")
-
 
 
 ###############################################################################
@@ -83,11 +79,12 @@ endif()
 #
 ###############################################################################
 message(STATUS "Setup environment")
-file(MAKE_DIRECTORY ${OUTPUT_DIR})
 if(GENERATE_COVERAGE_HTML)
-    set(COVERAGE_HTML_OUTPUT  "${OUTPUT_DIR}/html")
-    file(MAKE_DIRECTORY ${COVERAGE_HTML_OUTPUT})
-    execute_process(COMMAND ${LCOV_PATH}  ${QUIET_FLAG} --directory . --zerocounters
+    execute_process(COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${SOURCE_DIR} -DTEST_DIR=${TEST_DIR} -DOUTPUT_DIR=${OUTPUT_DIR} -P ${SOURCE_DIR}/cmake/scripts/CoveragePreHtml.cmake
+                    WORKING_DIRECTORY ${TEST_DIR})
+endif()
+if(GENERATE_COVERAGE_COBERTURA)
+    execute_process(COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${SOURCE_DIR} -DTEST_DIR=${TEST_DIR} -DOUTPUT_DIR=${OUTPUT_DIR} -P ${SOURCE_DIR}/cmake/scripts/CoveragePreCobertura.cmake
                     WORKING_DIRECTORY ${TEST_DIR})
 endif()
 
@@ -100,42 +97,22 @@ endif()
 message(STATUS "Run all test to get coverage")
 execute_process(COMMAND ctest ${QUIET_FLAG} -T test
                 WORKING_DIRECTORY ${TEST_DIR})
+execute_process(COMMAND ctest ${QUIET_FLAG} -T coverage
+                WORKING_DIRECTORY ${TEST_DIR})
 
 
 
 ###############################################################################
 #
-# Generate HTML report when possible
+# Generate coverage reports
 #
 ###############################################################################
 if(GENERATE_COVERAGE_HTML)
-    message(STATUS "Generating HTML report")
-
-    set(COVERAGE_INFO    "${COVERAGE_HTML_OUTPUT}/coverage_html.info")
-    set(COVERAGE_CLEANED "${COVERAGE_INFO}.cleaned")
-
-    execute_process(COMMAND ${LCOV_PATH} ${QUIET_FLAG} --directory . --capture --output-file ${COVERAGE_INFO}
+    execute_process(COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${SOURCE_DIR} -DTEST_DIR=${TEST_DIR} -DOUTPUT_DIR=${OUTPUT_DIR} -P ${SOURCE_DIR}/cmake/scripts/CoveragePostHtml.cmake
                     WORKING_DIRECTORY ${TEST_DIR})
-    execute_process(COMMAND ${LCOV_PATH} ${QUIET_FLAG} --remove ${COVERAGE_INFO} "${EXAMPLES_DIR}/*" "${TESTS_DIR}/*" "/usr/*" --output-file ${COVERAGE_CLEANED}
-                    WORKING_DIRECTORY ${TEST_DIR})
-    execute_process(COMMAND ${GENHTML_PATH}  ${QUIET_FLAG} -o ${COVERAGE_HTML_OUTPUT} ${COVERAGE_CLEANED}
-                    WORKING_DIRECTORY ${TEST_DIR})
-    execute_process(COMMAND ${CMAKE_COMMAND} -E remove ${COVERAGE_INFO} ${COVERAGE_CLEANED}
-                    WORKING_DIRECTORY ${TEST_DIR})
-    message(STATUS "The HTML report can be found here: ${COVERAGE_HTML_OUTPUT}/index.html")
 endif()
-
-
-
-###############################################################################
-#
-# Generate Cobertura report when possible
-#
-###############################################################################
 if(GENERATE_COVERAGE_COBERTURA)
-    message(STATUS "Generating Cobertura report")
-    execute_process(COMMAND ${GCOVR_PATH} -x -r ${SOURCE_DIR} -e "${SOURCE_DIR}/${EXAMPLES_DIR}/" -e "${SOURCE_DIR}/${TESTS_DIR}/" -o ${OUTPUT_DIR}/cobertura.xml
+    execute_process(COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${SOURCE_DIR} -DTEST_DIR=${TEST_DIR} -DOUTPUT_DIR=${OUTPUT_DIR} -P ${SOURCE_DIR}/cmake/scripts/CoveragePostCobertura.cmake
                     WORKING_DIRECTORY ${TEST_DIR})
-    message(STATUS "The Cobertura report can be found here: ${OUTPUT_DIR}/cobertura.xml")
 endif()
 
