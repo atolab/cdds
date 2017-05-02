@@ -33,7 +33,7 @@ endif()
 # all listed REQUIRED_VARS are TRUE
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Vortex
-    REQUIRED_VARS VORTEX_DDSC99_LIBRARY VORTEX_INCLUDE_DIR)
+    REQUIRED_VARS VORTEX_INCLUDE_DIR VORTEX_DDSC99_LIBRARY)
 
 if (VORTEX_FOUND AND NOT TARGET Vortex::DDSC99)
     add_library(Vortex::DDSC99 UNKNOWN IMPORTED)
