@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 
-set(COVERAGE_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
-set(COVERAGE_RUN_DIR    "${CMAKE_BINARY_DIR}")
-set(COVERAGE_OUTPUT_DIR "${CMAKE_BINARY_DIR}/coverage")
+set(COVERAGE_SOURCE_DIR "@CMAKE_SOURCE_DIR@")
+set(COVERAGE_RUN_DIR    "@CMAKE_BINARY_DIR@")
+set(COVERAGE_OUTPUT_DIR "@CMAKE_BINARY_DIR@/coverage")
 
 # TODO: Make this a list instead of separate variables when more directories
 #       need to be excluded. Currently there's actually only one directory to

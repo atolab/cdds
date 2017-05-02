@@ -3,22 +3,22 @@
 # It will generate the HTML output from the gcov results.
 #
 # Example usage:
-# $ cmake -DCOVERAGE_CONFIG=<cham bld>/CoverageConfig.cmake -P <cham src>/cmake/scripts/CoveragePreHtml.cmake
+# $ cmake -DCOVERAGE_SETTINGS=<cham bld>/CoverageSettings.cmake -P <cham src>/cmake/scripts/CoveragePreHtml.cmake
 # $ ctest -T test
 # $ ctest -T coverage
-# $ ctest -DCOVERAGE_CONFIG=<cham bld>/CoverageConfig.cmake -P <cham src>/cmake/scripts/CoveragePostHtml.cmake
-# If you start the scripts while in <cham bld> then you don't have to provide the COVERAGE_CONFIG file.
+# $ ctest -DCOVERAGE_SETTINGS=<cham bld>/CoverageSettings.cmake -P <cham src>/cmake/scripts/CoveragePostHtml.cmake
+# If you start the scripts while in <cham bld> then you don't have to provide the COVERAGE_SETTINGS file.
 #
 cmake_minimum_required(VERSION 3.5)
 
 # Get Coverage configuration file
-if(NOT COVERAGE_CONFIG)
-    set(COVERAGE_CONFIG ${CMAKE_CURRENT_BINARY_DIR}/CoverageConfig.cmake)
+if(NOT COVERAGE_SETTINGS)
+    set(COVERAGE_SETTINGS ${CMAKE_CURRENT_BINARY_DIR}/CoverageSettings.cmake)
 endif()
-include(${COVERAGE_CONFIG})
+include(${COVERAGE_SETTINGS})
 
 # Some debug
-#message(STATUS "Config file:      ${COVERAGE_CONFIG}")
+#message(STATUS "Config file:      ${COVERAGE_SETTINGS}")
 #message(STATUS "Source directory: ${COVERAGE_SOURCE_DIR}")
 #message(STATUS "Test directory:   ${COVERAGE_RUN_DIR}")
 #message(STATUS "Output directory: ${COVERAGE_OUTPUT_DIR}")

@@ -32,6 +32,8 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Coverage")
         CMAKE_EXE_LINKER_FLAGS_COVERAGE
         CMAKE_SHARED_LINKER_FLAGS_COVERAGE)
 
-    configure_file(cmake/CoverageConfig.cmake.in CoverageConfig.cmake)
+    configure_file(${CMAKE_MODULE_PATH}/../CoverageSettings.cmake.in CoverageSettings.cmake)
+
+    message(STATUS "Coverage build type available")
 endif()
 
