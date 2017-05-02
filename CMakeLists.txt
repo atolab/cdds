@@ -7,10 +7,6 @@ project(VortexDDS)
 # Include Coverage before CTest so that COVERAGE_COMMAND can be modified
 # in the Coverage module should that ever be necessary.
 include(Coverage)
-
-find_package(Abstraction QUIET REQUIRED)
-find_package(CUnit QUIET)
-
 include(CTest)
 enable_testing()
 

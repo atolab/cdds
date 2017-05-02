@@ -5,6 +5,7 @@ endif()
 # Verify that the library actually exists; should be the case on any normal Windows
 find_library(IPHLPAPI_LIB iphlpapi)
 
+include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(IPHelper DEFAULT_MSG IPHLPAPI_LIB)
 
 if(IPHelper_FOUND AND NOT TARGET IPHelper)

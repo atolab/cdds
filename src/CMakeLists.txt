@@ -1,5 +1,7 @@
 add_definitions(-DVDDS_BUILD=1)
 
+find_package(Abstraction REQUIRED)
+
 FUNCTION(PREPEND var prefix)
    SET(listVar "")
    FOREACH(f ${ARGN})
