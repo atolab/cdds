@@ -45,17 +45,17 @@ typedef struct c99_listener dds_listener_t;
 /**
  * @brief Allocate memory and initializes to default values (::DDS_LUNSET) of a listener
  *
- * @return Returns a pointer to the allocated memory for dds_listener_t structure, NULL if memory
- * allocation failed.
+ * @return Returns a pointer to the allocated memory for dds_listener_t structure.
  */
+_Ret_notnull_
 DDS_EXPORT dds_listener_t* dds_listener_create (void);
 
 /**
  * @brief Delete the memory allocated to listener structure
  *
- * @param[in,out] listener pointer to the listener struct to delete
+ * @param[in] listener pointer to the listener struct to delete
  */
-DDS_EXPORT void dds_listener_delete (_Inout_ dds_listener_t * restrict listener);
+DDS_EXPORT void dds_listener_delete (_In_ _Post_invalid_ dds_listener_t * restrict listener);
 
 /**
  * @brief Reset the listener structure contents to ::DDS_LUNSET
@@ -203,7 +203,7 @@ DDS_EXPORT void dds_lset_subscription_matched (_Inout_ dds_listener_t * restrict
  * @param[in] listener The pointer to the listener structure, where the callback will be retrieved from
  * @param[in,out] callback Pointer where the retrieved callback can be stored; can be NULL, ::DDS_LUNSET or a valid callback pointer
  */
-DDS_EXPORT void dds_lget_inconsistent_topic (_In_ dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_inconsistent_topic_fn *callback);
+DDS_EXPORT void dds_lget_inconsistent_topic (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_inconsistent_topic_fn *callback);
 
 /**
  * @brief Get the liveliness_lost callback from the listener structure.
@@ -211,7 +211,7 @@ DDS_EXPORT void dds_lget_inconsistent_topic (_In_ dds_listener_t * restrict list
  * @param[in] listener The pointer to the listener structure, where the callback will be retrieved from
  * @param[in,out] callback Pointer where the retrieved callback can be stored; can be NULL, ::DDS_LUNSET or a valid callback pointer
  */
-DDS_EXPORT void dds_lget_liveliness_lost (_In_ dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_liveliness_lost_fn *callback);
+DDS_EXPORT void dds_lget_liveliness_lost (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_liveliness_lost_fn *callback);
 
 /**
  * @brief Get the offered_deadline_missed callback from the listener structure.
@@ -219,7 +219,7 @@ DDS_EXPORT void dds_lget_liveliness_lost (_In_ dds_listener_t * restrict listene
  * @param[in] listener The pointer to the listener structure, where the callback will be retrieved from
  * @param[in,out] callback Pointer where the retrieved callback can be stored; can be NULL, ::DDS_LUNSET or a valid callback pointer
  */
-DDS_EXPORT void dds_lget_offered_deadline_missed (_In_ dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_offered_deadline_missed_fn *callback);
+DDS_EXPORT void dds_lget_offered_deadline_missed (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_offered_deadline_missed_fn *callback);
 
 /**
  * @brief Get the offered_incompatible_qos callback from the listener structure.
@@ -227,7 +227,7 @@ DDS_EXPORT void dds_lget_offered_deadline_missed (_In_ dds_listener_t * restrict
  * @param[in] listener The pointer to the listener structure, where the callback will be retrieved from
  * @param[in,out] callback Pointer where the retrieved callback can be stored; can be NULL, ::DDS_LUNSET or a valid callback pointer
  */
-DDS_EXPORT void dds_lget_offered_incompatible_qos (_In_ dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_offered_incompatible_qos_fn *callback);
+DDS_EXPORT void dds_lget_offered_incompatible_qos (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_offered_incompatible_qos_fn *callback);
 
 /**
  * @brief Get the data_on_readers callback from the listener structure.
@@ -235,7 +235,7 @@ DDS_EXPORT void dds_lget_offered_incompatible_qos (_In_ dds_listener_t * restric
  * @param[in] listener The pointer to the listener structure, where the callback will be retrieved from
  * @param[in,out] callback Pointer where the retrieved callback can be stored; can be NULL, ::DDS_LUNSET or a valid callback pointer
  */
-DDS_EXPORT void dds_lget_data_on_readers (_In_ dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_data_on_readers_fn *callback);
+DDS_EXPORT void dds_lget_data_on_readers (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_data_on_readers_fn *callback);
 
 /**
  * @brief Get the sample_lost callback from the listener structure.
@@ -243,7 +243,7 @@ DDS_EXPORT void dds_lget_data_on_readers (_In_ dds_listener_t * restrict listene
  * @param[in] listener The pointer to the listener structure, where the callback will be retrieved from
  * @param[in,out] callback Pointer where the retrieved callback can be stored; can be NULL, ::DDS_LUNSET or a valid callback pointer
  */
-DDS_EXPORT void dds_lget_sample_lost (_In_ dds_listener_t *restrict listener, _Outptr_result_maybenull_ dds_on_sample_lost_fn *callback);
+DDS_EXPORT void dds_lget_sample_lost (_In_ const dds_listener_t *restrict listener, _Outptr_result_maybenull_ dds_on_sample_lost_fn *callback);
 
 /**
  * @brief Get the data_available callback from the listener structure.
@@ -251,7 +251,7 @@ DDS_EXPORT void dds_lget_sample_lost (_In_ dds_listener_t *restrict listener, _O
  * @param[in] listener The pointer to the listener structure, where the callback will be retrieved from
  * @param[in,out] callback Pointer where the retrieved callback can be stored; can be NULL, ::DDS_LUNSET or a valid callback pointer
  */
-DDS_EXPORT void dds_lget_data_available (_In_ dds_listener_t *restrict listener, _Outptr_result_maybenull_ dds_on_data_available_fn *callback);
+DDS_EXPORT void dds_lget_data_available (_In_ const dds_listener_t *restrict listener, _Outptr_result_maybenull_ dds_on_data_available_fn *callback);
 
 /**
  * @brief Get the sample_rejected callback from the listener structure.
@@ -259,7 +259,7 @@ DDS_EXPORT void dds_lget_data_available (_In_ dds_listener_t *restrict listener,
  * @param[in] listener The pointer to the listener structure, where the callback will be retrieved from
  * @param[in,out] callback Pointer where the retrieved callback can be stored; can be NULL, ::DDS_LUNSET or a valid callback pointer
  */
-DDS_EXPORT void dds_lget_sample_rejected (_In_ dds_listener_t  *restrict listener, _Outptr_result_maybenull_ dds_on_sample_rejected_fn *callback);
+DDS_EXPORT void dds_lget_sample_rejected (_In_ const dds_listener_t  *restrict listener, _Outptr_result_maybenull_ dds_on_sample_rejected_fn *callback);
 
 /**
  * @brief Get the liveliness_changed callback from the listener structure.
@@ -267,7 +267,7 @@ DDS_EXPORT void dds_lget_sample_rejected (_In_ dds_listener_t  *restrict listene
  * @param[in] listener The pointer to the listener structure, where the callback will be retrieved from
  * @param[in,out] callback Pointer where the retrieved callback can be stored; can be NULL, ::DDS_LUNSET or a valid callback pointer
  */
-DDS_EXPORT void dds_lget_liveliness_changed (_In_ dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_liveliness_changed_fn *callback);
+DDS_EXPORT void dds_lget_liveliness_changed (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_liveliness_changed_fn *callback);
 
 /**
  * @brief Get the requested_deadline_missed callback from the listener structure.
@@ -275,7 +275,7 @@ DDS_EXPORT void dds_lget_liveliness_changed (_In_ dds_listener_t * restrict list
  * @param[in] listener The pointer to the listener structure, where the callback will be retrieved from
  * @param[in,out] callback Pointer where the retrieved callback can be stored; can be NULL, ::DDS_LUNSET or a valid callback pointer
  */
-DDS_EXPORT void dds_lget_requested_deadline_missed (_In_ dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_requested_deadline_missed_fn *callback);
+DDS_EXPORT void dds_lget_requested_deadline_missed (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_requested_deadline_missed_fn *callback);
 
 /**
  * @brief Get the requested_incompatible_qos callback from the listener structure.
@@ -283,7 +283,7 @@ DDS_EXPORT void dds_lget_requested_deadline_missed (_In_ dds_listener_t * restri
  * @param[in] listener The pointer to the listener structure, where the callback will be retrieved from
  * @param[in,out] callback Pointer where the retrieved callback can be stored; can be NULL, ::DDS_LUNSET or a valid callback pointer
  */
-DDS_EXPORT void dds_lget_requested_incompatible_qos (_In_ dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_requested_incompatible_qos_fn *callback);
+DDS_EXPORT void dds_lget_requested_incompatible_qos (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_requested_incompatible_qos_fn *callback);
 
 /**
  * @brief Get the publication_matched callback from the listener structure.
@@ -291,7 +291,7 @@ DDS_EXPORT void dds_lget_requested_incompatible_qos (_In_ dds_listener_t * restr
  * @param[in] listener The pointer to the listener structure, where the callback will be retrieved from
  * @param[in,out] callback Pointer where the retrieved callback can be stored; can be NULL, ::DDS_LUNSET or a valid callback pointer
  */
-DDS_EXPORT void dds_lget_publication_matched (_In_ dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_publication_matched_fn *callback);
+DDS_EXPORT void dds_lget_publication_matched (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_publication_matched_fn *callback);
 
 /**
  * @brief Get the subscription_matched callback from the listener structure.
@@ -299,7 +299,7 @@ DDS_EXPORT void dds_lget_publication_matched (_In_ dds_listener_t * restrict lis
  * @param[in] callback Pointer where the retrieved callback can be stored; can be NULL, ::DDS_LUNSET or a valid callback pointer
  * @param[in,out] listener The pointer to the listener structure, where the callback will be retrieved from
  */
-DDS_EXPORT void dds_lget_subscription_matched (_In_ dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_subscription_matched_fn *callback);
+DDS_EXPORT void dds_lget_subscription_matched (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_subscription_matched_fn *callback);
 
 
 #if defined (__cplusplus)
