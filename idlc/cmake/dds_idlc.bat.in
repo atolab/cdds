@@ -1,0 +1,10 @@
+@echo off
+
+if "%CLASSPATH%"=="" (
+    set CLASSPATH=@IDLC_JAR@
+) else (
+    set CLASSPATH=@IDLC_JAR@;%CLASSPATH%
+)
+
+java com.prismtech.lite.compilers.Idlc %*
+

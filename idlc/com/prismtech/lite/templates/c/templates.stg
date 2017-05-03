@@ -1,0 +1,36 @@
+import "banner.st"
+import "file.st"
+import "dlldef.st"
+import "module.st"
+import "struct.st"
+
+scopedname (scope, name) ::= <<
+<if(scope)><scope;separator="_">_<endif><name>
+>>
+
+colonscopedname (scope, name) ::= << <if(scope)><scope;separator="::">::<endif><name>
+>>
+
+member (name, arraydim, scope, type, str_size) ::= <<
+>>
+
+scalar_typedef (namescope, name, scope, type, arraydim, str_size) ::= <<
+>>
+
+enum (name, scope, values) ::= <<
+>>
+
+const (name, scope, expression) ::= <<
+>>
+
+union (name, scope, disc, discscope, fields, declarations) ::= <<
+>>
+
+keyfield (name, offset) ::= <<
+>>
+
+seqdef (name, scope, type, typescope) ::= <<
+>>
+
+seqdef_base (name, scope, type, arraydim, str_size) ::= <<
+>>
