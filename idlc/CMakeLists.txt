@@ -1,5 +1,3 @@
-# Verify JDK is available
-find_package(Java REQUIRED COMPONENTS Development)
 # Verify Maven is available
 find_program(MAVEN_COMMAND mvn)
 if(NOT MAVEN_COMMAND)
@@ -20,16 +18,20 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     mark_as_advanced(EXTENSION)
 endif()
 
+set(IDLC_JAR "${CMAKE_CURRENT_BINARY_DIR}/target/idlc-jar-with-dependencies.jar")
+mark_as_advanced(IDLC_JAR)
+
 configure_file(
-    "dds_idlc${EXTENSION}.in"
+    "cmake/dds_idlc${EXTENSION}.in"
     "dds_idlc${EXTENSION}"
     @ONLY
     NEWLINE_STYLE ${LINE_ENDINGS})
-configure_file(
-    "dds_idlcpp${EXTENSION}.in"
-    "dds_idlcpp${EXTENSION}"
-    @ONLY
-    NEWLINE_STYLE ${LINE_ENDINGS})
+# FIXME: C++ IDL compiler depends idlpp. Leave it disabled for now.
+#configure_file(
+#    "cmake/dds_idlcpp${EXTENSION}.in"
+#    "dds_idlcpp${EXTENSION}"
+#    @ONLY
+#    NEWLINE_STYLE ${LINE_ENDINGS})
 
 # Maven is executed within the idlc directory located in the build directory
 # and generated sources are stored in idlc/target. Non-generated sources,
@@ -43,31 +45,16 @@ set(basedir "${CMAKE_CURRENT_SOURCE_DIR}")
 mark_as_advanced(basedir)
 configure_file("pom.xml" "pom.xml")
 
-
 if(NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows"))
     execute_process(COMMAND chmod +x "idlc/dds_idlc${EXTENSION}")
-    execute_process(COMMAND chmod +x "idlc/dds_idlcpp${EXTENSION}")
 endif()
-
-set(IDLC_JAR "target/idlc.jar")
-# The jar in the local repository could be used in the script, but it is
-# versioned. The user can check out a different branch while the target has
-# been built. Since that could cause undefined behavior, it's better to
-# prevent that from happening by copying the archive into the build-tree.
-set(IDLPP_JAR "target/idlpp.jar")
-set(PREPROCESSOR_JAR "${CMAKE_CURRENT_SOURCE_DIR}/repository/com/prismtech/idt/imports/idl/preprocessor/VLITE-01/preprocessor-VLITE-01.jar")
-mark_as_advanced(IDLC_JAR IDLPP_JAR PREPROCESSOR_JAR)
 
 add_custom_command(
     OUTPUT "${IDLC_JAR}"
     COMMAND "${MAVEN_COMMAND}" package)
 
-add_custom_command(
-    OUTPUT "${IDLPP_JAR}"
-    COMMAND "${CMAKE_COMMAND}" -E copy "${PREPROCESSOR_JAR}" "${IDLPP_JAR}")
-
 add_custom_target(
     idlc ALL
-    DEPENDS "${IDLC_JAR}" "${IDLPP_JAR}"
+    DEPENDS "${IDLC_JAR}"
     SOURCES ${IDLC_G4_SOURCES} ${IDLC_JAVA_SOURCES} ${IDLC_ST_SOURCES})
 
