@@ -41,10 +41,10 @@ install(TARGETS vdds
         DESTINATION lib
         COMPONENT lib)
 install(FILES ${CMAKE_SOURCE_DIR}/include/dds.h
-        DESTINATION ${INSTALL_PATH}/include
+        DESTINATION include
         COMPONENT dev)
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/dds
-        DESTINATION ${INSTALL_PATH}/include
+        DESTINATION include
         COMPONENT dev)
 
 #target_include_directories(vdds PUBLIC ../include)
