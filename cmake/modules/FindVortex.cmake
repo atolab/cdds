@@ -8,21 +8,26 @@
 # The current implementation uses find_* to dynamically lookup the details of the
 # vdds library. For the time being (until we have a separate c99 target) the target
 # is named 'DDSC99'. Other targets should be added as the need arises.
-message(STATUS "Loading Vortex exported targets")
 
 # Allow a user-override, i.e. when Vortex is not installed in any of the system default locations
-if(EXISTS "$ENV{VORTEX_HOME}")
-    file(TO_CMAKE_PATH "$ENV{VORTEX_HOME}" VORTEX_HOME)
-    set(VORTEX_HOME "${VORTEX_HOME}" CACHE PATH "Prefix of VortexDDS installation.")
+
+if (NOT TARGET Vortex::DDSC99)
+  if(EXISTS "$ENV{VORTEX_HOME}")
+      file(TO_CMAKE_PATH "$ENV{VORTEX_HOME}" VORTEX_HOME)
+      set(VORTEX_HOME "${VORTEX_HOME}" CACHE PATH "Prefix of VortexDDS installation.")
+  endif()
+
+  find_path(VORTEX_INCLUDE_DIR
+      NAMES dds.h
+      HINTS ${VORTEX_HOME}/include)
+
+  find_library(VORTEX_DDSC99_LIBRARY
+      NAMES vdds
+      HINTS ${VORTEX_HOME}/lib)
+else()
+  get_target_property(VORTEX_DDSC99_LIBRARY Vortex::DDSC99 NAME)
+  get_target_property(VORTEX_INCLUDE_DIR Vortex::DDSC99 INCLUDE_DIRECTORIES)
 endif()
-
-find_path(VORTEX_INCLUDE_DIR
-    NAMES dds.h
-    HINTS ${VORTEX_HOME}/include)
-
-find_library(VORTEX_DDSC99_LIBRARY
-    NAMES vdds
-    HINTS ${VORTEX_HOME}/lib)
 
 # Convenience macro to handle the QUIETLY and REQUIRED arguments and set Vortex_FOUND to TRUE if
 # all listed REQUIRED_VARS are TRUE
@@ -30,7 +35,7 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Vortex
     REQUIRED_VARS VORTEX_INCLUDE_DIR VORTEX_DDSC99_LIBRARY)
 
-if (Vortex_FOUND)
+if (VORTEX_FOUND AND NOT TARGET Vortex::DDSC99)
     add_library(Vortex::DDSC99 UNKNOWN IMPORTED)
     set_target_properties(Vortex::DDSC99 PROPERTIES
       IMPORTED_LOCATION                 "${VORTEX_DDSC99_LIBRARY}"

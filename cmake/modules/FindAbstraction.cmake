@@ -1,4 +1,3 @@
-message(STATUS "Loading platform abstraction package")
 
 add_library(Abstraction INTERFACE)
 
