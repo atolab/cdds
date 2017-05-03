@@ -38,3 +38,5 @@ add_library(Vortex::DDSC99 ALIAS vdds)
 target_link_libraries(vdds Abstraction)
 
 #target_include_directories(vdds PUBLIC ../include)
+
+add_subdirectory(c99)
