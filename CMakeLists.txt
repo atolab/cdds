@@ -11,7 +11,7 @@ include(CTest)
 enable_testing()
 
 include_directories(include)
-add_subdirectory(idlc)
+#add_subdirectory(idlc)
 add_subdirectory(src)
 #add_subdirectory(vdds-server)
 add_subdirectory(examples)
