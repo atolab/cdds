@@ -1,22 +1,12 @@
-# Find the CUnit headers and libraries
-#
-#  CUNIT_INCLUDE_DIRS - The CUnit include directory (directory where CUnit/CUnit.h was found)
-#  CUNIT_LIBRARIES    - The libraries needed to use CUnit
-#  CUNIT_FOUND        - True if CUnit found in system
-#
-# This piece of code is inspired by https://gist.github.com/adobkin/1073354
-
-
-message(STATUS "Lookup CUnit package")
-
-find_path(CUNIT_INCLUDE_DIR NAMES CUnit/CUnit.h)
-find_library(CUNIT_LIBRARY NAMES cunit libcunit cunitlib)
+find_path(CUNIT_INC CUnit/CUnit.h)
+find_library(CUNIT_LIB cunit)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(CUNIT DEFAULT_MSG CUNIT_LIBRARY CUNIT_INCLUDE_DIR)
+find_package_handle_standard_args(CUnit DEFAULT_MSG CUNIT_LIB CUNIT_INC)
 
-IF(CUNIT_FOUND)
-  message(STATUS "Loading CUnit libraries")
-  SET(CUNIT_LIBRARIES ${CUNIT_LIBRARY})
-  SET(CUNIT_INCLUDE_DIRS ${CUNIT_INCLUDE_DIR})
-ENDIF(CUNIT_FOUND)
+if(CUNIT_FOUND AND NOT TARGET CUnit)
+  add_library(CUnit INTERFACE IMPORTED)
+
+  set_property(TARGET CUnit PROPERTY INTERFACE_LINK_LIBRARIES "${CUNIT_LIB}")
+  set_property(TARGET CUnit PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CUNIT_INC}")
+endif()
