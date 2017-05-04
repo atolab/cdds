@@ -192,8 +192,6 @@ struct nn_servicelease *nn_servicelease_new (void (*renew_cb) (void *arg), void 
   os_condInit (&sl->cond, &sl->lock);
   return sl;
 
-  os_mutexDestroy (&sl->lock);
-  os_free (sl->av_ary);
  fail_vtimes:
   os_free (sl);
   return NULL;
