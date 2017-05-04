@@ -302,19 +302,18 @@ os_procCreate(
 #if __APPLE__
             char **environ = *_NSGetEnviron ();
 #endif
-            if (execve(executable_file, argv, environ) == -1) {
-                OS_REPORT(OS_WARNING, "os_procCreate", 1, "execve failed with error %d (%s)", os_getErrno(), executable_file);
-            }
+            execve(executable_file, argv, environ); /* Will only return on error */
+            OS_REPORT(OS_WARNING, "os_procCreate", 1, "execve failed with error %d (%s)", os_getErrno(), executable_file);
             /* if executing this, something has gone wrong */
             rv = os_resultFail; /* Just to fool QAC */
             os_procExit(OS_EXIT_FAILURE);
         } else {
             /* parent process */
-            os_free(argv[0]);
-            os_free(argin);
             *procId = pid;
             rv = os_resultSuccess;
         }
+        os_free(argv[0]);
+        os_free(argin);
     }
 #endif
 
