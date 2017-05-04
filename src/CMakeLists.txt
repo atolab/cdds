@@ -1,5 +1,3 @@
-add_definitions(-DVDDS_BUILD=1)
-
 find_package(Abstraction REQUIRED)
 
 FUNCTION(PREPEND var prefix)
@@ -23,6 +21,7 @@ PREPEND(srcs_kernel kernel dds_alloc.c dds_iid.c dds_participant.c dds_reader.c 
 # The vdds target depends on the OSAbstraction target
 add_library(vdds ${srcs_util} ${srcs_ddsi} ${srcs_kernel})
 target_link_libraries(vdds PRIVATE INTERFACE OSAbstraction)
+target_compile_definitions(vdds PRIVATE VDDS_BUILD)
 
 # Create a psuedo-target that other targets (i.e. examples, tests) can depend on and can also be
 # provided as import-target by a package-file when building those targets outside the regular

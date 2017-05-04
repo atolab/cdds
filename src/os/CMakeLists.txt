@@ -1,5 +1,3 @@
-add_definitions(-DVDDS_BUILD=1)
-
 string(TOLOWER ${CMAKE_SYSTEM_NAME} platform)
 
 # For posix platforms include the files in the posix/ directory.
@@ -12,6 +10,6 @@ PREPEND(srcs_platform ${platform} os_platform_errno.c os_platform_heap.c os_plat
 
 # Recipe for the OSAbstraction target
 PREPEND(srcs_os "${CMAKE_SOURCE_DIR}/src/os" os_atomics.c os_init.c os_report.c os_socket.c os_thread.c os_time.c ${srcs_platform})
-add_library(OSAbstraction INTERFACE)
-target_sources(OSAbstraction INTERFACE ${srcs_os})
+add_library(OSAbstraction ${srcs_os})
+target_compile_definitions(OSAbstraction PRIVATE VDDS_BUILD)
 target_link_libraries(OSAbstraction INTERFACE Abstraction)
