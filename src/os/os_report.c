@@ -378,34 +378,35 @@ static FILE * open_socket (char *host, unsigned short port)
     FILE * file = NULL;
     struct sockaddr_in sa;
     os_socket sock;
+    char msg[64];
+    const char *errstr;
 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        char msg[64];
-        os_strerror_r(os_getErrno(), msg, sizeof(msg));
-        os__report_fprintf(stderr, "socket: %s\n", msg);
-        return NULL;
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        errstr = "socket";
+        goto err_socket;
     }
 
     memset((char *)&sa, 0, sizeof(sa));
     sa.sin_family = AF_INET;
     sa.sin_port = htons(port);
     sa.sin_addr.s_addr = inet_addr (host);
-
-    if (connect (sock, (struct sockaddr *)&sa, sizeof(sa)) < 0)
-    {
-        char msg[64];
-        os_strerror_r(os_getErrno(), msg, sizeof(msg));
-        os__report_fprintf(stderr, "connect: %s\n", msg);
-        return NULL;
+    if (connect (sock, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
+        errstr = "connect";
+        goto err_connect;
     }
-#ifdef WINCE
-    file = _wfdopen ((int)sock, L"w");
-#else
+
     file = fdopen ((int)sock, "w");
-#endif
 
     return file;
+
+/* Error handling */
+err_connect:
+    (void) close(sock);
+err_socket:
+    os_strerror_r(os_getErrno(), msg, sizeof(msg));
+    os__report_fprintf(stderr, "%s: %s\n", errstr, msg);
+
+    return NULL;
 }
 
 static FILE *
