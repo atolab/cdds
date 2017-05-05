@@ -226,7 +226,7 @@ int main (int argc, char **argv)
       if (burstCount < burstSize)
       {
         status = dds_write (writer, &sample);
-        if (dds_err_no (status) == DDS_RETCODE_TIMEOUT)
+        if (dds_err_nr (status) == DDS_RETCODE_TIMEOUT)
         {
           timedOut = true;
         }
@@ -294,7 +294,7 @@ int main (int argc, char **argv)
   /* Cleanup */
 #if 0
   status = dds_instance_dispose (writer, &sample);
-  if (dds_err_no (status) != DDS_RETCODE_TIMEOUT)
+  if (dds_err_nr (status) != DDS_RETCODE_TIMEOUT)
   {
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   }

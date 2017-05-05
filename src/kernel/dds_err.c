@@ -6,7 +6,7 @@
 #define DDS_ERR_MOD_NUM 14
 #define DDS_ERR_MSG_MAX 128
 
-#define DDS_ERR_NO_INDEX(e) (((-e) & DDS_ERR_NO_MASK) -1)
+#define DDS_ERR_NR_INDEX(e) (((-e) & DDS_ERR_NR_MASK) -1)
 #define DDS_ERR_MOD_INDEX(e) ((((-e) & DDS_ERR_MOD_MASK) >> 8) -1)
 
 static const char * dds_err_code_array[DDS_ERR_CODE_NUM] =
@@ -47,7 +47,7 @@ static const char * dds_err_module_array[DDS_ERR_MOD_NUM] =
 
 const char * dds_err_str (int err)
 {
-  unsigned index = DDS_ERR_NO_INDEX (err);
+  unsigned index = DDS_ERR_NR_INDEX (err);
   if (err >= 0)
   {
     return "Success";
