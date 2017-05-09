@@ -562,7 +562,7 @@ void dds_qset_partition (dds_qos_t * __restrict qos, uint32_t n, const char ** p
   {
     len = strlen (ps[i]) + 1;
     qos->partition.strs[i] = dds_alloc (len);
-    strncpy (qos->partition.strs[i], ps[i], len);
+    os_strncpy (qos->partition.strs[i], ps[i], len);
   }
   qos->present |= QP_PARTITION;
 }
@@ -770,7 +770,7 @@ void dds_qget_partition (const dds_qos_t * qos, uint32_t *n, char *** ps)
       {
         len = strlen (qos->partition.strs[i]) + 1;
         (*ps)[i] = dds_alloc (len);
-        strncpy ((*ps)[i], qos->partition.strs[i], len);
+        os_strncpy ((*ps)[i], qos->partition.strs[i], len);
       }
     }
   }
