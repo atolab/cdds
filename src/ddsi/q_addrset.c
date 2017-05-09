@@ -151,7 +151,7 @@ int add_addresses_to_addrset (struct addrset *as, const char *addrs, int port_mo
       else if (sscanf (a, "%[^:]%n", ip, &pos) == 1 && a[pos] == 0)
         port = port_mode; /* XYZ */
       else { /* XY:Z -- illegal, but conversion routine should flag it */
-        strcpy (ip, a);
+        os_strcpy (ip, a);
         port = 0;
       }
     }
@@ -162,7 +162,7 @@ int add_addresses_to_addrset (struct addrset *as, const char *addrs, int port_mo
       else if (sscanf (a, "[%[^]]]%n", ip, &pos) == 1 && a[pos] == 0)
         port = port_mode; /* [XYZ] */
       else { /* XYZ -- let conversion routines handle errors */
-        strcpy (ip, a);
+        os_strcpy (ip, a);
         port = 0;
       }
     }

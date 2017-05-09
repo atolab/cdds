@@ -302,7 +302,7 @@ char *sockaddr_to_string_with_port (char addrbuf[INET6_ADDRSTRLEN_EXTENDED], con
 #endif
     default:
       NN_WARNING0 ("sockaddr_to_string_with_port: unknown address family\n");
-      strcpy (addrbuf, "???");
+      os_strcpy (addrbuf, "???");
       break;
   }
   return addrbuf;
@@ -728,10 +728,10 @@ static char *make_joinleave_msg (char *buf, size_t bufsz, os_socket socket, int 
   if (srcip)
     sockaddr_to_string_no_port(srcstr, srcip);
   else
-    strcpy (srcstr, "*");
+    os_strcpy (srcstr, "*");
 #else
   OS_UNUSED_ARG (srcip);
-  strcpy (srcstr, "*");
+  os_strcpy (srcstr, "*");
 #endif
   sockaddr_to_string_no_port (mcstr, mcip);
   if (interf)

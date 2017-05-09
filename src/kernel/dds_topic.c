@@ -182,7 +182,7 @@ int dds_topic_create
 
   typename = desc->m_typename;
   key = (char*) dds_alloc (strlen (name) + strlen (typename) + 2);
-  strcpy (key, name);
+  os_strcpy (key, name);
   strcat (key, "/");
   strcat (key, typename);
 
@@ -206,9 +206,9 @@ int dds_topic_create
   st->status_cb_entity = top;
   st->name_typename = key;
   st->name = dds_alloc (strlen (name) + 1);
-  strcpy (st->name, name);
+  os_strcpy (st->name, name);
   st->typename = dds_alloc (strlen (typename) + 1);
-  strcpy (st->typename, typename);
+  os_strcpy (st->typename, typename);
   st->nkeys = desc->m_nkeys;
   st->keys = desc->m_keys;
   st->id = next_topicid++;
