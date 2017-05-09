@@ -7,7 +7,7 @@ project(VortexDDS)
 # Include Coverage before CTest so that COVERAGE_COMMAND can be modified
 # in the Coverage module should that ever be necessary.
 include(Coverage)
-set(MEMORYCHECK_COMMAND_OPTIONS "--track-origins=yes --leak-check=full --xml=yes --xml-file=TestResultValgrind.xml")
+set(MEMORYCHECK_COMMAND_OPTIONS "--track-origins=yes --leak-check=full --xml=yes --xml-file=TestResultValgrind.xml --tool=memcheck --show-reachable=yes --leak-resolution=high")
 include (CTest)
 enable_testing()
 
