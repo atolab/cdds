@@ -109,59 +109,6 @@ os_strdup(
     return dup;
 }
 
-char *
-os_strcat(
-    char *s1,
-    const char *s2)
-{
-    return strcat(s1, s2);
-}
-
-char *
-os_strncat(
-    char *s1,
-    const char *s2,
-    size_t n)
-{
-   return strncat(s1, s2, n);
-}
-
-char *
-os_strcpy(
-    char *s1,
-    const char *s2)
-{
-   return strcpy(s1, s2);
-}
-
-char *
-os_strncpy(
-    char *s1,
-    const char *s2,
-    size_t num)
-{
-   return strncpy(s1, s2, num);
-}
-
-
-int
-os_sprintf(
-    char *s,
-    const char *format,
-    ...)
-{
-   int result;
-   va_list args;
-
-   va_start(args, format);
-
-   result = vsprintf(s, format, args);
-
-   va_end(args);
-
-   return result;
-}
-
 int
 os_vsnprintf(
    char *str,

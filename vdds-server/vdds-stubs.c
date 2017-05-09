@@ -102,7 +102,7 @@ int dds_init(int argc, char ** argv)
     struct reqhdr hello;
     int fd;
     address.sun_family = AF_UNIX;
-    os_strcpy(address.sun_path, VDDS_SOCKET_NAME);
+    strcpy(address.sun_path, VDDS_SOCKET_NAME);
     if ((fd = socket(PF_LOCAL, SOCK_STREAM, 0)) == -1)
     {
         perror ("socket");
@@ -179,9 +179,9 @@ struct sertopic *make_sertopic(const char *name, const char *typename, const dds
     st->status_cb_entity = 0;
     st->name_typename = key;
     st->name = dds_alloc(strlen (name) + 1);
-    os_strcpy (st->name, name);
+    strcpy (st->name, name);
     st->typename = dds_alloc(strlen (typename) + 1);
-    os_strcpy (st->typename, typename);
+    strcpy (st->typename, typename);
     st->nkeys = desc->m_nkeys;
     st->keys = desc->m_keys;
     st->id = next_topicid++;

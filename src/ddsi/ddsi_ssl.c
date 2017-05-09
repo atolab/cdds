@@ -214,7 +214,7 @@ static int ddsi_ssl_password (char * buf, int num, int rwflag, void * udata)
   {
     return (0);
   }
-  os_strcpy (buf, config.ssl_key_pass);
+  strcpy (buf, config.ssl_key_pass);
   return (int) strlen (config.ssl_key_pass);
 }
 

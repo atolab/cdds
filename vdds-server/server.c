@@ -671,7 +671,7 @@ int main(int argc, char **argv)
         goto err_socket;
     }
     addr.sun_family = AF_UNIX;
-    os_strcpy(addr.sun_path, VDDS_SOCKET_NAME);
+    strcpy(addr.sun_path, VDDS_SOCKET_NAME);
     if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
         perror("bind");
         goto err_bind;

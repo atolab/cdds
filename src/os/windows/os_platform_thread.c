@@ -231,7 +231,7 @@ void os_threadSetThreadName( DWORD dwThreadID, char* threadName)
     if (tssThreadName == NULL)
     {
         tssThreadName = (char *)os_threadMemMalloc(OS_THREAD_NAME, (strlen(threadName) + 1));
-        os_strcpy(tssThreadName, threadName);
+        strcpy(tssThreadName, threadName);
     }
 }
 

@@ -280,101 +280,6 @@ extern "C" {
     __attribute_returns_nonnull__
     __attribute_warn_unused_result__;
 
-    /** \brief strcat wrapper
-     *
-     * Microsoft generates deprected warnings for strcat,
-     * wrapper removes warnings for win32
-     *
-     * Precondition:
-     *   None
-     * Postcondition:
-     *   None
-     *
-     * Possible results:
-     * - return s1
-     * - append a copy of s2 onto end of s1
-     *   overwriting the null byte at end of s1.
-     */
-    OS_API char *
-    os_strcat(
-              char *s1,
-              const char *s2);
-
-    /** \brief stnrcat wrapper
-     *
-     * Microsoft generates deprected warnings for strncat,
-     * wrapper removes warnings for win32
-     *
-     * Precondition:
-     *   None
-     * Postcondition:
-     *   None
-     *
-     * Possible results:
-     * - return s1
-     * - append n bytes of s2 onto end of s1,
-     *   overwriting the null byte at end of s1.
-     */
-    OS_API char *
-    os_strncat(
-               char *s1,
-               const char *s2,
-               size_t n);
-
-    /** \brief strcpy wrapper
-     *
-     * Microsoft generates deprected warnings for strcpy,
-     * wrapper removes warnings for win32
-     *
-     * Precondition:
-     *   None
-     * Postcondition:
-     *   None
-     *
-     * Possible results:
-     * - return s1
-     * - copy string s2 to s1
-     */
-    OS_API char *
-    os_strcpy(
-              char *s1,
-              const char *s2);
-
-    /** \brief strncpy wrapper
-     *
-     * Microsoft generates deprected warnings for strncpy,
-     * wrapper removes warnings for win32
-     *
-     * Precondition:
-     *   None
-     * Postcondition:
-     *   None
-     *
-     * Possible results:
-     * - return s1
-     * - copy num chars from string s2 to s1
-     */
-    OS_API char *
-    os_strncpy(
-               char *s1,
-               const char *s2,
-               size_t num);
-
-    /** \brief os_strnlen wrapper
-     *
-     * Precondition:
-     *   None
-     * Postcondition:
-     *   None
-     *
-     * Possible results:
-     * - return as strnlen
-     */
-    OS_API size_t
-    os_strnlen(
-               const char *ptr,
-               size_t maxlen);
-
     /** \brief os_strsep wrapper
      *
      * See strsep()
@@ -383,30 +288,6 @@ extern "C" {
     os_strsep(
               char **stringp,
               const char *delim);
-
-
-    /** \brief sprintf wrapper
-     *
-     * Microsoft generates deprected warnings for sprintf,
-     * wrapper removes warnings for win32
-     *
-     * Precondition:
-     *   None
-     * Postcondition:
-     *   None
-     *
-     * Possible results:
-     * - return
-     *   Upon successful completion will return the number of
-     *   bytes written to s, excluding the terminating null byte,
-     *   or a negative value if an error occured.
-     * - Writes formatted output to s.
-     */
-    OS_API int
-    os_sprintf(
-               char *s,
-               const char *format,
-               ...);
 
     /** \brief os_vsnprintf wrapper
      *

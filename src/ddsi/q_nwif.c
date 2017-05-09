@@ -302,7 +302,7 @@ char *sockaddr_to_string_with_port (char addrbuf[INET6_ADDRSTRLEN_EXTENDED], con
 #endif
     default:
       NN_WARNING0 ("sockaddr_to_string_with_port: unknown address family\n");
-      os_strcpy (addrbuf, "???");
+      strcpy (addrbuf, "???");
       break;
   }
   return addrbuf;
@@ -728,10 +728,10 @@ static char *make_joinleave_msg (char *buf, size_t bufsz, os_socket socket, int 
   if (srcip)
     sockaddr_to_string_no_port(srcstr, srcip);
   else
-    os_strcpy (srcstr, "*");
+    strcpy (srcstr, "*");
 #else
   OS_UNUSED_ARG (srcip);
-  os_strcpy (srcstr, "*");
+  strcpy (srcstr, "*");
 #endif
   sockaddr_to_string_no_port (mcstr, mcip);
   if (interf)
@@ -972,12 +972,12 @@ int find_own_ip (const char *requested_address)
     char if_name[sizeof (last_if_name)];
     int q = 0;
 
-    os_strncpy (if_name, ifs[i].name, sizeof (if_name) - 1);
+    strncpy (if_name, ifs[i].name, sizeof (if_name) - 1);
     if_name[sizeof (if_name) - 1] = 0;
 
     if (strcmp (if_name, last_if_name))
       nn_log (LC_CONFIG, "%s%s", sep, if_name);
-    os_strcpy (last_if_name, if_name);
+    strcpy (last_if_name, if_name);
 
     /* interface must be up */
     if ((ifs[i].flags & IFF_UP) == 0)

@@ -11,6 +11,14 @@ if(WIN32)
   find_package(Winsock2 REQUIRED)
   find_package(IPHelper REQUIRED)
   target_link_libraries(Abstraction INTERFACE Winsock2 IPHelper)
+
+  # Many of the secure versions provided by Microsoft have failure modes
+  # which are not supported by our abstraction layer, so efforts trying
+  # to use the _s versions aren't typically the proper solution and C11
+  # (which contains most of the secure versions) is 'too new'. So we rely
+  # on static detection of misuse instead of runtime detection, so all
+  # these warnings can be disabled on Windows.
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 elseif(UNIX AND NOT APPLE)
   find_package(GetTime REQUIRED)
   target_link_libraries(Abstraction INTERFACE GetTime)

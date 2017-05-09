@@ -20,7 +20,7 @@ void dds_log_warn (const char * fmt, ...)
   va_list args;
   char fmt2 [DDS_FMT_MAX];
 
-  os_strcpy (fmt2, "<Warning> ");
+  strcpy (fmt2, "<Warning> ");
   strncat (fmt2, fmt, DDS_FMT_MAX - 11);
   fmt2[DDS_FMT_MAX-1] = 0;
   fmt = fmt2;
@@ -35,7 +35,7 @@ void dds_log_error (const char * fmt, ...)
   va_list args;
   char fmt2 [DDS_FMT_MAX];
 
-  os_strcpy (fmt2, "<Error> ");
+  strcpy (fmt2, "<Error> ");
   strncat (fmt2, fmt, DDS_FMT_MAX - 9);
   fmt2[DDS_FMT_MAX-1] = 0;
   fmt = fmt2;
@@ -50,7 +50,7 @@ void dds_log_fatal (const char * fmt, ...)
   va_list args;
   char fmt2 [DDS_FMT_MAX];
 
-  os_strcpy (fmt2, "<Fatal> ");
+  strcpy (fmt2, "<Fatal> ");
   strncat (fmt2, fmt, DDS_FMT_MAX - 9);
   fmt2[DDS_FMT_MAX-1] = 0;
   fmt = fmt2;
