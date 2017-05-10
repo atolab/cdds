@@ -33,9 +33,7 @@
 #include <signal.h>
 #endif
 #include <stdio.h>
-#ifndef VXWORKS_RTP
 #include <pthread.h>
-#endif
 
 static char* processName = NULL;
 /** \brief pointer to environment variables */
@@ -121,7 +119,7 @@ os_procExit(
 }
 #endif
 
-#if !defined VXWORKS_RTP && !defined __QNX__
+#if !defined __VXWORKS__ && !defined __QNX__
 /** \brief Create a process that is an instantiation of a program
  *
  * First an argument list is built from \b arguments.
@@ -427,7 +425,7 @@ os_procFigureIdentity(
 #undef _OS_PROCESS_PROCFS_PATH_FMT_
 #undef _OS_PROCESS_DEFAULT_NAME_LEN_
 #ifndef INTEGRITY
-#if !defined (VXWORKS_RTP) && !defined (PIKEOS_POSIX)
+#if !defined (__VXWORKS__) && !defined (PIKEOS_POSIX)
 
 /* os_procServiceDestroy will need an alternative for VXWORKS when ospl
  * extended to include VXWORKS - function not called by 'old' (vxworks) ospl
@@ -680,7 +678,7 @@ os_procDestroy(
 }
 
 
-#if !defined VXWORKS_RTP && !defined OS_RTEMS_DEFS_H  && !defined PIKEOS_POSIX
+#if !defined OS_RTEMS_DEFS_H  && !defined PIKEOS_POSIX
 /** \brief Get the process effective scheduling class
  *
  * Possible Results:

@@ -51,7 +51,7 @@ extern "C" {
 #include "os_atomics_integrity.h"
 #endif
 
-#if ! OS_ATOMIC_SUPPORT && defined _VX_CPU_FAMILY
+#if ! OS_ATOMIC_SUPPORT && defined __VXWORKS__
 #include "os_atomics_vxworks.h"
 #endif
 

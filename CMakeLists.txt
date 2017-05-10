@@ -10,6 +10,10 @@ include(Coverage)
 include(CTest)
 enable_testing()
 
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "VxWorks")
+add_definitions(-std=c99)
+endif()
+
 include_directories(include)
 #add_subdirectory(idlc)
 add_subdirectory(src)
