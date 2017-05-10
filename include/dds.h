@@ -11,6 +11,9 @@
 
 /* Sub components */
 
+/* TODO: See what documentation is available in the new dds.h. */
+typedef int dds_result_t;
+
 #include "os/os_public.h"
 #include "dds/dds_public_stream.h"
 #include "dds/dds_public_impl.h"
@@ -37,14 +40,14 @@ extern "C" {
 #endif
 
 /**
- * Description : Initialization function, called from main. This operation 
+ * Description : Initialization function, called from main. This operation
  * initializes all the required DDS resources,
- * handles configuration of domainid based on the input passed, parses and 
+ * handles configuration of domainid based on the input passed, parses and
  * configures middleware from a xml file and initializes required resources.
- * 
+ *
  * Arguments :
- *   -# argc, argv - specifies the domainId 
- *   -# Returns 0 on success or a non-zero error status 
+ *   -# argc, argv - specifies the domainId
+ *   -# Returns 0 on success or a non-zero error status
  */
 
 DDS_EXPORT int dds_init (int argc, char ** argv);
@@ -54,7 +57,7 @@ DDS_EXPORT int dds_init (int argc, char ** argv);
 /**
  * Description : Finalization function, called from main. This operation
  * releases all the resources used by DDS.
- * 
+ *
  * Arguments :
  *   -# None
  */
@@ -63,7 +66,7 @@ DDS_EXPORT void dds_fini (void);
 /**
  * Description : Returns the default DDS domain id. This can be configured
  * in xml or set as an evironment variable (LITE_DOMAIN).
- * 
+ *
  * Arguments :
  *   -# None
  *   -# Returns the default domain id
@@ -87,8 +90,9 @@ DDS_EXPORT dds_domainid_t dds_domain_default (void);
 #define DDS_SUBSCRIPTION_MATCHED_STATUS        16384u
 /** @}*/
 
+
 /**
- * dds_sample_state_t 
+ * dds_sample_state_t
  * \brief defines the state for a data value
  * -# DDS_SST_READ - DataReader has already accessed the sample by read
  * -# DDS_SST_NOT_READ - DataReader has not accessed that sample before
@@ -101,7 +105,7 @@ typedef enum dds_sample_state
 dds_sample_state_t;
 
 /**
- * dds_view_state_t 
+ * dds_view_state_t
  * \brief defines the view state of an instance relative to the samples
  * -# DDS_VST_NEW - DataReader is accessing the sample for the first time when the
  *                  instance is alive
@@ -114,8 +118,8 @@ typedef enum dds_view_state
 }
 dds_view_state_t;
 
-/** 
- * dds_instance_state_t 
+/**
+ * dds_instance_state_t
  * \brief defines the state of the instance
  * -# DDS_IST_ALIVE - Samples received for the instance from the live data writers
  * -# DDS_IST_NOT_ALIVE_DISPOSED - Instance was explicitly disposed by the data writer
@@ -141,16 +145,16 @@ dds_instance_state_t;
  * -# source_timestamp - timestamp of a data instance when it is written
  * -# instance_handle - handle to the data instance
  * -# publication_handle - handle to the publisher
- * -# disposed_generation_count - count of instance state change from 
+ * -# disposed_generation_count - count of instance state change from
  *    NOT_ALIVE_DISPOSED to ALIVE
- * -# no_writers_generation_count - count of instance state change from 
+ * -# no_writers_generation_count - count of instance state change from
  *    NOT_ALIVE_NO_WRITERS to ALIVE
  * -# sample_rank - indicates the number of samples of the same instance
  *    that follow the current one in the collection
- * -# generation_rank - difference in generations between the sample and most recent sample 
+ * -# generation_rank - difference in generations between the sample and most recent sample
  *    of the same instance that appears in the returned collection
  * -# absolute_generation_rank - difference in generations between the sample and most recent sample
- *    of the same instance when read/take was called  
+ *    of the same instance when read/take was called
  * -# reception_timestamp - timestamp of a data instance when it is added to a read queue
  */
 typedef struct dds_sample_info
@@ -188,6 +192,18 @@ dds_sample_info_t;
  */
 DDS_EXPORT void dds_entity_delete (dds_entity_t e);
 
+/* TODO: See what documentation is available in the new dds.h. */
+DDS_EXPORT dds_entity_t dds_get_parent(dds_entity_t e);
+DDS_EXPORT dds_result_t dds_get_children(dds_entity_t e, dds_entity_t *children, size_t size);
+DDS_EXPORT dds_entity_t dds_get_participant(dds_entity_t e);
+DDS_EXPORT dds_entity_t dds_get_publisher(dds_entity_t wr);
+DDS_EXPORT dds_entity_t dds_get_subscriber(dds_entity_t rd);
+DDS_EXPORT dds_entity_t dds_get_datareader(dds_entity_t readcond);
+DDS_EXPORT dds_result_t dds_enable(dds_entity_t e);
+DDS_EXPORT dds_result_t dds_get_listener(dds_entity_t e, dds_listener_cham65_t ** listener);
+DDS_EXPORT dds_result_t dds_set_listener(dds_entity_t e, dds_listener_cham65_t *listener);
+DDS_EXPORT dds_result_t dds_instancehandle_get(dds_entity_t e, dds_instance_handle_t *i);
+
 /*
   All entities have a set of "status conditions" (following the DCPS
   spec), read peeks, take reads & resets (analogously to read & take
@@ -204,10 +220,10 @@ DDS_EXPORT void dds_entity_delete (dds_entity_t e);
  *   -# e Entity on which the status has to be read
  *   -# status Returns the status set on the entity, based on the enabled status
  *   -# mask Filter the status condition to be read (can be NULL)
- *   -# Returns 0 on success, or a non-zero error value if the mask does not 
- *      correspond to the entity      
+ *   -# Returns 0 on success, or a non-zero error value if the mask does not
+ *      correspond to the entity
  */
-DDS_EXPORT int dds_status_read (dds_entity_t e, uint32_t * status, uint32_t mask);
+DDS_EXPORT dds_result_t dds_read_status (dds_entity_t e, uint32_t * status, uint32_t mask);
 
 /**
  * Description : Read the status(es) set for the entity based on the enabled
@@ -218,9 +234,9 @@ DDS_EXPORT int dds_status_read (dds_entity_t e, uint32_t * status, uint32_t mask
  *   -# status Returns the status set on the entity, based on the enabled status
  *   -# mask Filter the status condition to be read (can be NULL)
  *   -# Returns 0 on success, or a non-zero error value if the mask does not
- *      correspond to the entity      
+ *      correspond to the entity
  */
-DDS_EXPORT int dds_status_take (dds_entity_t e, uint32_t * status, uint32_t mask);
+DDS_EXPORT dds_result_t dds_take_status (dds_entity_t e, uint32_t * status, uint32_t mask);
 
 /**
  * Description : Returns the status changes since they were last read.
@@ -229,16 +245,16 @@ DDS_EXPORT int dds_status_take (dds_entity_t e, uint32_t * status, uint32_t mask
  *   -# e Entity on which the statuses are read
  *   -# Returns the curent set of triggered statuses.
  */
-DDS_EXPORT uint32_t dds_status_changes (dds_entity_t e);
+DDS_EXPORT dds_result_t dds_get_status_changes (dds_entity_t e, uint32_t * status);
 
 /**
  * Description : This operation returns the status enabled on the entity
  *
  * Arguments :
  *   -# e Entity to get the status
- *   -# Returns the status that are enabled for the entity     
+ *   -# Returns the status that are enabled for the entity
  */
-DDS_EXPORT uint32_t dds_status_get_enabled (dds_entity_t e);
+DDS_EXPORT dds_result_t dds_get_enabled_status (dds_entity_t e, uint32_t * status);
 
 
 /**
@@ -247,10 +263,10 @@ DDS_EXPORT uint32_t dds_status_get_enabled (dds_entity_t e);
  * Arguments :
  *   -# e Entity to enable the status
  *   -# mask Status value that indicates the status to be enabled
- *   -# Returns 0 on success, or a non-zero error value indicating failure if the mask 
- *      does not correspond to the entity.     
+ *   -# Returns 0 on success, or a non-zero error value indicating failure if the mask
+ *      does not correspond to the entity.
  */
-DDS_EXPORT int dds_status_set_enabled (dds_entity_t e, uint32_t mask);
+DDS_EXPORT dds_result_t dds_set_enabled_status (dds_entity_t e, uint32_t mask);
 
 /*
   Almost all entities have get/set qos operations defined on them,
@@ -267,7 +283,8 @@ DDS_EXPORT int dds_status_set_enabled (dds_entity_t e, uint32_t mask);
  *   -# e Entity on which to get qos
  *   -# qos pointer to the qos structure that returns the set policies.
  */
-DDS_EXPORT void dds_qos_get (dds_entity_t e, dds_qos_t * qos);
+/* TODO: See what the new dds.h provides (also as doc). */
+DDS_EXPORT dds_result_t dds_get_qos (dds_entity_t e, dds_qos_t * qos);
 
 
 /**
@@ -277,12 +294,13 @@ DDS_EXPORT void dds_qos_get (dds_entity_t e, dds_qos_t * qos);
  * Arguments :
  *   -# e Entity to apply QoS
  *   -# qos pointer to the qos structure with a set of policies to be applied
- *   -# Returns 0 on success, or a non-zero error value to indicate immutable QoS 
+ *   -# Returns 0 on success, or a non-zero error value to indicate immutable QoS
  *      is set or the values set are incorrect, which cannot be applied.
  *
- * NOTE: Latency Budget and Ownership Strength are changeable QoS that can be set for LITE   
+ * NOTE: Latency Budget and Ownership Strength are changeable QoS that can be set for LITE
  */
-DDS_EXPORT int dds_qos_set (dds_entity_t e, const dds_qos_t * qos);
+/* TODO: See what the new dds.h provides (also as doc). */
+DDS_EXPORT dds_result_t dds_set_qos (dds_entity_t e, const dds_qos_t * qos);
 
 /*
   Get or set listener associated with an entity, type of listener
@@ -302,7 +320,7 @@ DDS_EXPORT void dds_listener_get (dds_entity_t e, dds_listener_t listener);
 
 /**
  * Description : This operation installs the listener on the entity.
- * If a listener is set, Call to this will replace with the new one. 
+ * If a listener is set, Call to this will replace with the new one.
  *
  * Arguments :
  *   -# e Entity to set listener
@@ -348,23 +366,7 @@ DDS_EXPORT int dds_participant_create
   const dds_participantlistener_t * listener
 );
 
-/**
- * Description : Returns the participant for an entity.
- *
- * Arguments :
- *   -# entity The entity
- *   -# Returns The participant
- */
-DDS_EXPORT dds_entity_t dds_participant_get (dds_entity_t entity);
-
-/**
- * Description : Returns the domain id for a participant.
- *
- * Arguments :
- *   -# pp The participant entity
- *   -# Returns The participant domain id
- */
-DDS_EXPORT dds_domainid_t dds_participant_get_domain_id (dds_entity_t pp);
+DDS_EXPORT dds_result_t dds_get_domainid (dds_entity_t pp, dds_domainid_t *id);
 
 /**
  * Description : Returns a participant created on a domain. Note that if
@@ -379,7 +381,7 @@ DDS_EXPORT dds_entity_t dds_participant_lookup (dds_domainid_t domain_id);
 
 /**
  * Description : Creates a new DDS topic. The type name for the topic
- * is taken from the generated descriptor. Topic matching is done on a 
+ * is taken from the generated descriptor. Topic matching is done on a
  * combination of topic name and type name.
  *
  * Arguments :
@@ -710,15 +712,6 @@ DDS_EXPORT void dds_write_flush (dds_entity_t wr);
   The DCPS "query" condition is not currently supported.
 */
 
-/**
- * Description : Return the status condition set by an entity
- *
- * Arguments :
- *   -# pp - The entity which has a status condition
- *   -# Returns status condition enabled by an entity
- */
-DDS_EXPORT dds_condition_t dds_statuscondition_get (dds_entity_t pp);
-
 
 /**
  * Description : Create a specific condition.
@@ -851,7 +844,7 @@ DDS_EXPORT int dds_waitset_detach (dds_waitset_t ws, dds_condition_t e);
 /*
   The "dds_waitset_wait" operation blocks until the some of the
   attached entities has an enabled and set status condition, or
-  "reltimeout" has elapsed. The "dds_waitset_wait_until" operation 
+  "reltimeout" has elapsed. The "dds_waitset_wait_until" operation
   is the same as the "dds_wait" except that it takes an absolute timeout.
 
   Upon successful return, the array "xs" is filled with 0 < M <= nxs
@@ -874,7 +867,7 @@ DDS_EXPORT int dds_waitset_detach (dds_waitset_t ws, dds_condition_t e);
  *               attached condition(s) is triggered or 'reltimeout' has elapsed.
  *               On successful return, the array xs is filled with the value corresponding
  *               to triggered entities as specified in the attach, and nxs with count.
- *               
+ *
  *
  * Arguments :
  *   -# ws pointer to a waitset
@@ -920,13 +913,13 @@ DDS_EXPORT int dds_waitset_wait_until (dds_waitset_t ws, dds_attach_t *xs, size_
 */
 
 /**
- * Description : Access the collection of data values (of same type) and sample info from the 
+ * Description : Access the collection of data values (of same type) and sample info from the
  *               data reader based on the mask set.
  *               Return value provides information about number of samples read, which will
  *               be <= maxs. Based on the count, the buffer will contain data to be read only
  *               when valid_data bit in sample info structure is set.
  *               The buffer required for data values, could be allocated explicitly or can
- *               use the memory from data reader to prevent copy. In the latter case, buffer and 
+ *               use the memory from data reader to prevent copy. In the latter case, buffer and
  *               sample_info should be returned back, once it is no longer using the Data.
  *               Data values once read will remain in the buffer with the sample_state set to READ
  *               and view_state set to NOT_NEW.
@@ -972,14 +965,14 @@ DDS_EXPORT int dds_read_instance
 );
 
 /**
- * Description : Access the collection of data values (of same type) and sample info from the data reader 
- *               based on the criteria specified in the read condition. 
- *               Read condition must be attached to the data reader before associating with data read. 
+ * Description : Access the collection of data values (of same type) and sample info from the data reader
+ *               based on the criteria specified in the read condition.
+ *               Read condition must be attached to the data reader before associating with data read.
  *               Return value provides information about number of samples read, which will
  *               be <= maxs. Based on the count, the buffer will contain data to be read only
  *               when valid_data bit in sample info structure is set.
  *               The buffer required for data values, could be allocated explicitly or can
- *               use the memory from data reader to prevent copy. In the latter case, buffer and 
+ *               use the memory from data reader to prevent copy. In the latter case, buffer and
  *               sample_info should be returned back, once it is no longer using the Data.
  *               Data values once read will remain in the buffer with the sample_state set to READ
  *               and view_state set to NOT_NEW.
@@ -1009,7 +1002,7 @@ DDS_EXPORT int dds_read_cond
  *               be <= maxs. Based on the count, the buffer will contain data to be read only
  *               when valid_data bit in sample info structure is set.
  *               The buffer required for data values, could be allocated explicitly or can
- *               use the memory from data reader to prevent copy. In the latter case, buffer and 
+ *               use the memory from data reader to prevent copy. In the latter case, buffer and
  *               sample_info should be returned back, once it is no longer using the Data.
  *
  * Arguments :
@@ -1061,14 +1054,14 @@ DDS_EXPORT int dds_take_instance
 
 /**
  * Description : Access the collection of data values (of same type) and sample info from the data reader
- *               based on the read condition set. Data value once read is removed from the Data Reader 
+ *               based on the read condition set. Data value once read is removed from the Data Reader
  *               cannot to 'read' or 'taken' again.
- *               Read condition must be attached to the data reader before associating with data_take. 
+ *               Read condition must be attached to the data reader before associating with data_take.
  *               Return value provides information about number of samples read, which will
  *               be <= maxs. Based on the count, the buffer will contain data to be read only
  *               when valid_data bit in sample info structure is set.
  *               The buffer required for data values, could be allocated explicitly or can
- *               use the memory from data reader to prevent copy. In the latter case, buffer and 
+ *               use the memory from data reader to prevent copy. In the latter case, buffer and
  *               sample_info should be returned back, once it is no longer using the Data.
  *
  * Arguments :
@@ -1088,7 +1081,7 @@ DDS_EXPORT int dds_take_cond
   dds_condition_t cond
 );
 
-/* 
+/*
   The read/take next functions return a single sample. The returned sample
   has a sample state of NOT_READ, a view state of ANY_VIEW_STATE and an
   instance state of ANY_INSTANCE_STATE.
@@ -1098,7 +1091,7 @@ DDS_EXPORT int dds_take_cond
  * Description : This operation copies the next, non-previously accessed data value and corresponding
  *               sample info and removes from the data reader.
  *
- * Arguments : 
+ * Arguments :
  * -# rd Reader entity
  * -# buf an array of pointers to samples into which data is read (pointers can be NULL)
  * -# si pointer to \ref dds_sample_info_t returned for a data value
@@ -1110,7 +1103,7 @@ DDS_EXPORT int dds_take_next (dds_entity_t rd, void ** buf, dds_sample_info_t * 
  * Description : This operation copies the next, non-previously accessed data value and corresponding
  *               sample info.
  *
- * Arguments : 
+ * Arguments :
  * -# rd Reader entity
  * -# buf an array of pointers to samples into which data is read (pointers can be NULL)
  * -# si pointer to \ref dds_sample_info_t returned for a data value
@@ -1119,13 +1112,13 @@ DDS_EXPORT int dds_take_next (dds_entity_t rd, void ** buf, dds_sample_info_t * 
 DDS_EXPORT int dds_read_next (dds_entity_t rd, void ** buf, dds_sample_info_t * si);
 
 /**
- * Description : This operation is used to return loaned samples from a data reader 
+ * Description : This operation is used to return loaned samples from a data reader
  *               returned from a read/take operation. This function is used where the samples
  *               returned by a read/take operation have been allocated by DDS (an array
  *               of NULL pointers was provided as the buffer for the read/take operation
  *               of size maxs).
  *
- * Arguments : 
+ * Arguments :
  * -# rd Reader entity
  * -# buf An array of pointers used by read/take operation
  * -# maxs The maximum number of samples provided to the read/take operation
@@ -1148,7 +1141,7 @@ DDS_EXPORT void dds_return_loan (dds_entity_t rd, void ** buf, uint32_t maxs);
  * Description : This operation takes a sample and returns an instance handle to be used for
  * subsequent operations.
  *
- * Arguments : 
+ * Arguments :
  * -# e Reader or Writer entity
  * -# data sample with a key fields set
  * -# Returns instance handle or DDS_HANDLE_NIL if instance could not be found from key
@@ -1158,9 +1151,9 @@ DDS_EXPORT dds_instance_handle_t dds_instance_lookup (dds_entity_t e, const void
 /**
  * Description : This operation takes an instance handle and return a key-value corresponding to it.
  *
- * Arguments : 
+ * Arguments :
  * -# e Reader or Writer entity
- * -# inst Instance handle 
+ * -# inst Instance handle
  * -# data pointer to an instance, to which the key ID corresponding to the instance handle will be
  *    returned, the sample in the instance should be ignored.
  * -# Returns 0 on successful operation, or a non-zero value to indicate an error if the instance
@@ -1169,8 +1162,8 @@ DDS_EXPORT dds_instance_handle_t dds_instance_lookup (dds_entity_t e, const void
 DDS_EXPORT int dds_instance_get_key (dds_entity_t e, dds_instance_handle_t inst, void * data);
 
 /**
- * Description : This operation stores the thread state for the thread created. 
- * 
+ * Description : This operation stores the thread state for the thread created.
+ *
  * Arguments :
  * -# name Thread name
  * -# Returns 0 on successful thread creation, else a non-zero value to indicate an error,
@@ -1179,11 +1172,42 @@ DDS_EXPORT int dds_instance_get_key (dds_entity_t e, dds_instance_handle_t inst,
 DDS_EXPORT int dds_thread_init (const char * name);
 
 /**
- * Description : This operation frees the thread state stored 
+ * Description : This operation frees the thread state stored
  *
- * Note: This function should be called from the same thread context before exiting 
+ * Note: This function should be called from the same thread context before exiting
  */
 DDS_EXPORT void dds_thread_fini (void);
+/* TODO: Merge the CHAM-65 Listener stuff. */
+typedef void (*dds_on_inconsistent_topic_fn) (dds_entity_t topic, const dds_inconsistent_topic_status_t status);
+typedef void (*dds_on_liveliness_lost_fn) (dds_entity_t writer, const dds_liveliness_lost_status_t status);
+typedef void (*dds_on_offered_deadline_missed_fn) (dds_entity_t writer, const dds_offered_deadline_missed_status_t status);
+typedef void (*dds_on_offered_incompatible_qos_fn) (dds_entity_t writer, const dds_offered_incompatible_qos_status_t status);
+typedef void (*dds_on_data_on_readers_fn) (dds_entity_t subscriber);
+typedef void (*dds_on_sample_lost_fn) (dds_entity_t reader, const dds_sample_lost_status_t status);
+typedef void (*dds_on_data_available_fn) (dds_entity_t reader);
+typedef void (*dds_on_sample_rejected_fn) (dds_entity_t reader, const dds_sample_rejected_status_t status);
+typedef void (*dds_on_liveliness_changed_fn) (dds_entity_t reader, const dds_liveliness_changed_status_t status);
+typedef void (*dds_on_requested_deadline_missed_fn) (dds_entity_t reader, const dds_requested_deadline_missed_status_t status);
+typedef void (*dds_on_requested_incompatible_qos_fn) (dds_entity_t reader, const dds_requested_incompatible_qos_status_t status);
+typedef void (*dds_on_publication_matched_fn) (dds_entity_t writer, const dds_publication_matched_status_t  status);
+typedef void (*dds_on_subscription_matched_fn) (dds_entity_t reader, const dds_subscription_matched_status_t  status);
+typedef void (*dds_on_any_fn) (); /**< Empty parameter list on purpose; should be assignable without cast to all of the above. @todo check with an actual compiler; I'm a sloppy compiler */
+typedef struct c99_listener_cham65 {
+    dds_on_inconsistent_topic_fn on_inconsistent_topic;
+    dds_on_liveliness_lost_fn on_liveliness_lost;
+    dds_on_offered_deadline_missed_fn on_offered_deadline_missed;
+    dds_on_offered_incompatible_qos_fn on_offered_incompatible_qos;
+    dds_on_data_on_readers_fn on_data_on_readers;
+    dds_on_sample_lost_fn on_sample_lost;
+    dds_on_data_available_fn on_data_available;
+    dds_on_sample_rejected_fn on_sample_rejected;
+    dds_on_liveliness_changed_fn on_liveliness_changed;
+    dds_on_requested_deadline_missed_fn on_requested_deadline_missed;
+    dds_on_requested_incompatible_qos_fn on_requested_incompatible_qos;
+    dds_on_publication_matched_fn on_publication_matched;
+    dds_on_subscription_matched_fn on_subscription_matched;
+    //os_mutex m_mutex;
+} c99_listener_cham65_t;
 
 #if defined (__cplusplus)
 }

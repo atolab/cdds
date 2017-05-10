@@ -3,7 +3,7 @@
 #include "kernel/dds_types.h"
 
 #define DDS_ERR_CODE_NUM 12
-#define DDS_ERR_MOD_NUM 14
+#define DDS_ERR_MOD_NUM 16
 #define DDS_ERR_MSG_MAX 128
 
 #define DDS_ERR_NR_INDEX(e) (((-e) & DDS_ERR_NR_MASK) -1)
@@ -42,7 +42,9 @@ static const char * dds_err_module_array[DDS_ERR_MOD_NUM] =
   "Status",
   "Thread",
   "Instance",
-  "Participant"
+  "Participant",
+  "Entity",
+  "Topic"
 };
 
 const char * dds_err_str (int err)

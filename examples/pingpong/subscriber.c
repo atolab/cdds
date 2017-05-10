@@ -372,7 +372,7 @@ int main (int argc, char **argv)
 
     /* Disable callbacks */
 
-    dds_status_set_enabled (reader, 0);
+    dds_set_enabled_status (reader, 0);
 
     /* Output totals and averages */
 

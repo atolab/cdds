@@ -150,7 +150,7 @@ int main (int argc, char **argv)
     {
       status = dds_reader_create (sub, &rds[i], topic, qos, NULL);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-      dds_status_set_enabled(rds[i], 0);
+      dds_set_enabled_status(rds[i], 0);
     }
     dds_qos_delete (qos);
   }

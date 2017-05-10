@@ -47,7 +47,7 @@ void dds_listener_set_unl (dds_entity_t e, const dds_listener_t l)
   }
 }
 
-/* 
+/*
   dds_listener_merge: Merge "dst" listener functions with those of "src". Only merge function
   pointers that are not already set in "dst".
 */
@@ -119,3 +119,67 @@ void dds_listener_merge (dds_listener_t dst, const dds_listener_t src, dds_entit
 
 #undef DDS_LMERGE
 }
+
+
+
+/* TODO: Merge the CHAM-65 Listener stuff. */
+
+#define DDS_LUNSET ((dds_on_any_fn)1) /**< Callback indicating a callback isn't set */
+dds_listener_cham65_t*
+dds_listener_create(void)
+{
+    dds_listener_cham65_t *l = dds_alloc(sizeof(*l));
+    l->on_data_available = DDS_LUNSET;
+    l->on_data_on_readers = DDS_LUNSET;
+    l->on_inconsistent_topic = DDS_LUNSET;
+    l->on_liveliness_changed = DDS_LUNSET;
+    l->on_liveliness_lost = DDS_LUNSET;
+    l->on_offered_deadline_missed = DDS_LUNSET;
+    l->on_offered_incompatible_qos = DDS_LUNSET;
+    l->on_publication_matched = DDS_LUNSET;
+    l->on_requested_deadline_missed = DDS_LUNSET;
+    l->on_requested_incompatible_qos = DDS_LUNSET;
+    l->on_sample_lost = DDS_LUNSET;
+    l->on_sample_rejected = DDS_LUNSET;
+    l->on_subscription_matched = DDS_LUNSET;
+    //os_mutexInit (&l->m_mutex);
+    return l;
+}
+
+void dds_listener_lock (_In_ _Post_invalid_ dds_listener_t * restrict l)
+{
+    c99_listener_cham65_t *listener = (c99_listener_cham65_t*)l;
+    assert(listener);
+    //os_mutexLock (&listener->m_mutex);
+}
+
+void dds_listener_unlock (_In_ _Post_invalid_ dds_listener_t * restrict l)
+{
+    c99_listener_cham65_t *listener = (c99_listener_cham65_t*)l;
+    assert(listener);
+    //os_mutexLock (&listener->m_mutex);
+}
+
+void
+dds_listener_copy(_Inout_ dds_listener_cham65_t * restrict dst, _In_ const dds_listener_cham65_t * restrict src)
+{
+    if (src && dst) {
+        const c99_listener_cham65_t *srcl = src;
+        c99_listener_cham65_t *dstl = dst;
+
+        dstl->on_data_available = srcl->on_data_available;
+        dstl->on_data_on_readers = srcl->on_data_on_readers;
+        dstl->on_inconsistent_topic = srcl->on_inconsistent_topic;
+        dstl->on_liveliness_changed = srcl->on_liveliness_changed;
+        dstl->on_liveliness_lost = srcl->on_liveliness_lost;
+        dstl->on_offered_deadline_missed = srcl->on_offered_deadline_missed;
+        dstl->on_offered_incompatible_qos = srcl->on_offered_incompatible_qos;
+        dstl->on_publication_matched = srcl->on_publication_matched;
+        dstl->on_requested_deadline_missed = srcl->on_requested_deadline_missed;
+        dstl->on_requested_incompatible_qos = srcl->on_requested_incompatible_qos;
+        dstl->on_sample_lost = srcl->on_sample_lost;
+        dstl->on_sample_rejected = srcl->on_sample_rejected;
+        dstl->on_subscription_matched = srcl->on_subscription_matched;
+    }
+}
+
