@@ -1,5 +1,6 @@
 
 #include <assert.h>
+#include "dds.h"
 #include "kernel/dds_listener.h"
 
 
@@ -11,7 +12,7 @@ typedef void (*dds_on_any_fn) (); /**< Empty parameter list on purpose; should b
 dds_listener_t
 dds_listener_create(void)
 {
-    dds_listener_cham65_t *l = dds_alloc(sizeof(dds_listener_cham65_t));
+    c99_listener_cham65_t *l = dds_alloc(sizeof(c99_listener_cham65_t));
     l->on_data_available = DDS_LUNSET;
     l->on_data_on_readers = DDS_LUNSET;
     l->on_inconsistent_topic = DDS_LUNSET;

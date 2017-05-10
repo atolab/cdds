@@ -92,8 +92,8 @@ void test_entity_qos(void)
 void test_entity_listeners(void)
 {
     dds_result_t status;
-    dds_listener_cham65_t *l1 = NULL;
-    dds_listener_cham65_t *l2 = dds_listener_create();
+    c99_listener_cham65_t *l1 = NULL;
+    c99_listener_cham65_t *l2 = dds_listener_create();
 
     /* Don't check actual workings of the listeners. That's a job
      * for the specific entity children, not for the generic part. */

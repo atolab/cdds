@@ -342,7 +342,7 @@ void dds_entity_init
 (
   dds_entity * e, dds_entity * parent,
   dds_entity_kind_t kind, dds_qos_t * qos,
-  dds_listener_cham65_t * listener,
+  c99_listener_cham65_t * listener,
   uint32_t mask
 )
 {
@@ -461,8 +461,9 @@ dds_result_t dds_set_qos (dds_entity_t e, const dds_qos_t * qos)
     return ret;
 }
 
-dds_result_t dds_get_listener (dds_entity_t e, dds_listener_cham65_t ** listener)
+dds_result_t dds_get_listener (dds_entity_t e, dds_listener_t ** l)
 {
+    c99_listener_cham65_t **listener = (c99_listener_cham65_t**)l;
     dds_result_t ret = (dds_result_t)(DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, 0));
     if ((e > 0) && (listener != NULL)) {
         ret = DDS_RETCODE_OK;
@@ -473,8 +474,9 @@ dds_result_t dds_get_listener (dds_entity_t e, dds_listener_cham65_t ** listener
     return ret;
 }
 
-dds_result_t dds_set_listener (dds_entity_t e, dds_listener_cham65_t *listener)
+dds_result_t dds_set_listener (dds_entity_t e, dds_listener_t *l)
 {
+    c99_listener_cham65_t *listener = (c99_listener_cham65_t*)l;
     dds_result_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, 0);
     if ((e > 0) && (listener != NULL)) {
         ret = DDS_RETCODE_OK;

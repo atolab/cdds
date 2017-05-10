@@ -12,7 +12,7 @@ void dds_entity_init
 (
   dds_entity * e, dds_entity * parent,
   dds_entity_kind_t kind, dds_qos_t * qos,
-  dds_listener_cham65_t * listener,
+  c99_listener_cham65_t * listener,
   uint32_t mask
 );
 

@@ -84,8 +84,7 @@ typedef int32_t dds_domainid_t;
 typedef struct dds_waitset * dds_waitset_t;
 
 /* TODO: Replace dds_listener_cham65_t with new listener implementation. */
-typedef struct c99_listener_cham65 dds_listener_cham65_t;
-dds_listener_cham65_t* dds_listener_create(void);
+dds_listener_t dds_listener_create(void);
 
 
 typedef struct dds_condition_seq
