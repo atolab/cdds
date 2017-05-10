@@ -38,4 +38,6 @@
 #define OS_API_IMPORT
 #endif
 
+#include "os/os_decl_attributes.h"
+
 #endif
