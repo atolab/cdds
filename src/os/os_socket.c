@@ -557,7 +557,7 @@ os_sockaddrAddressToString(const os_sockaddr* sa,
     socklen_t structLength;
     int errorCode;
 
-    os_strncpy(buffer, "Unknown address family", buflen);
+    strncpy(buffer, "Unknown address family", buflen);
 
     structLength = (sa->sa_family == AF_INET6 ? sizeof (os_sockaddr_in6) : sizeof (os_sockaddr_in));
     if (errorCode = getnameinfo(sa,

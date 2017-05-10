@@ -426,7 +426,7 @@ os_threadCreate (
           /* Take over the thread context: name, start routine and argument */
           threadContext = os_malloc (sizeof (os_threadContext));
           threadContext->threadName = os_malloc (strlen (name)+1);
-          os_strncpy (threadContext->threadName, name, strlen (name)+1);
+          strncpy (threadContext->threadName, name, strlen (name)+1);
           threadContext->startRoutine = start_routine;
           threadContext->arguments = arg;
 

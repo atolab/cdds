@@ -23,7 +23,7 @@ os_gethostname(
         if ((strlen(hostnamebuf)+1) > buffersize) {
             result = os_resultFail;
         } else {
-            os_strncpy (hostname, hostnamebuf, buffersize);
+            strncpy (hostname, hostnamebuf, buffersize);
             result = os_resultSuccess;
         }
     } else {

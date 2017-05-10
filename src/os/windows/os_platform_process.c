@@ -111,10 +111,10 @@ os_procCreate(
 
     inargs = (char*)os_malloc(strlen (name) + strlen (arguments) + 4);
 
-    os_strcpy(inargs, "\"");
-    os_strcat(inargs, name);
-    os_strcat(inargs, "\" ");
-    os_strcat(inargs, arguments);
+    strcpy(inargs, "\"");
+    strcat(inargs, name);
+    strcat(inargs, "\" ");
+    strcat(inargs, arguments);
 
     memset(&si, 0, sizeof(STARTUPINFO));
     si.cb = sizeof(STARTUPINFO);
