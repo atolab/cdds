@@ -31,7 +31,7 @@ dds_listener_create(void)
 }
 
 void
-dds_listener_delete(_In_ _Post_invalid_ dds_listener_t __restrict l)
+dds_listener_delete(_In_ _Post_invalid_ dds_listener_t l)
 {
     c99_listener_cham65_t *listener = (c99_listener_cham65_t*)l;
     if (listener) {
@@ -40,7 +40,7 @@ dds_listener_delete(_In_ _Post_invalid_ dds_listener_t __restrict l)
     }
 }
 
-void dds_listener_lock (_In_ _Post_invalid_ dds_listener_t __restrict l)
+void dds_listener_lock (_In_ _Post_invalid_ dds_listener_t l)
 {
     c99_listener_cham65_t *listener = (c99_listener_cham65_t*)l;
     assert(listener);
@@ -48,33 +48,11 @@ void dds_listener_lock (_In_ _Post_invalid_ dds_listener_t __restrict l)
 }
 
 /* TODO: Lock/unlock listener when setting callback functions. */
-void dds_listener_unlock (_In_ _Post_invalid_ dds_listener_t __restrict l)
+void dds_listener_unlock (_In_ _Post_invalid_ dds_listener_t l)
 {
     c99_listener_cham65_t *listener = (c99_listener_cham65_t*)l;
     assert(listener);
     os_mutexLock (&listener->m_mutex);
 }
 
-void
-dds_listener_copy(_Inout_ dds_listener_t __restrict dst, _In_ const dds_listener_t __restrict src)
-{
-    if (src && dst) {
-        const c99_listener_cham65_t *srcl = src;
-        c99_listener_cham65_t *dstl = dst;
-
-        dstl->on_data_available = srcl->on_data_available;
-        dstl->on_data_on_readers = srcl->on_data_on_readers;
-        dstl->on_inconsistent_topic = srcl->on_inconsistent_topic;
-        dstl->on_liveliness_changed = srcl->on_liveliness_changed;
-        dstl->on_liveliness_lost = srcl->on_liveliness_lost;
-        dstl->on_offered_deadline_missed = srcl->on_offered_deadline_missed;
-        dstl->on_offered_incompatible_qos = srcl->on_offered_incompatible_qos;
-        dstl->on_publication_matched = srcl->on_publication_matched;
-        dstl->on_requested_deadline_missed = srcl->on_requested_deadline_missed;
-        dstl->on_requested_incompatible_qos = srcl->on_requested_incompatible_qos;
-        dstl->on_sample_lost = srcl->on_sample_lost;
-        dstl->on_sample_rejected = srcl->on_sample_rejected;
-        dstl->on_subscription_matched = srcl->on_subscription_matched;
-    }
-}
 

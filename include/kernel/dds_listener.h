@@ -11,9 +11,9 @@ extern "C" {
 #define dds_listener_get_unl(a, b); /* Deprecated */
 #define dds_listener_merge(a, b,c); /* Deprecated */
 
-void dds_listener_delete (_In_ _Post_invalid_ dds_listener_t __restrict listener);
-void dds_listener_lock (_In_ _Post_invalid_ dds_listener_t __restrict listener);
-void dds_listener_unlock (_In_ _Post_invalid_ dds_listener_t __restrict listener);
+void dds_listener_delete (_In_ _Post_invalid_ dds_listener_t listener);
+void dds_listener_lock (_In_ _Post_invalid_ dds_listener_t listener);
+void dds_listener_unlock (_In_ _Post_invalid_ dds_listener_t listener);
 
 
 
