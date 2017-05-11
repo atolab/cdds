@@ -33,4 +33,4 @@ add_library(Vortex::DDSC99 ALIAS vdds)
 add_subdirectory(c99)
 
 # TODO: improve test inclusion.
-#add_subdirectory(kernel/tests)
+add_subdirectory(kernel/tests)
