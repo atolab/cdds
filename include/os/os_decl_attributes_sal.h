@@ -86,7 +86,7 @@
 #define _COM_Outptr_result_maybenull_
 #endif
 #ifndef _Check_return_
-#define _Check_return_
+#define _Check_return_ __attribute_warn_unused_result__
 #endif
 #ifndef _Const_
 #define _Const_
@@ -293,7 +293,7 @@
 #define _Maybenull_
 #endif
 #ifndef _Must_inspect_result_
-#define _Must_inspect_result_
+#define _Must_inspect_result_ __attribute_warn_unused_result__
 #endif
 #ifndef _No_competing_thread_
 #define _No_competing_thread_
@@ -644,7 +644,7 @@
 #define _Result_zeroonfailure_
 #endif
 #ifndef _Ret_
-#define _Ret_
+#define _Ret_ __attribute_returns_nonnull__
 #endif
 #ifndef _Ret_maybenull_
 #define _Ret_maybenull_
@@ -653,7 +653,7 @@
 #define _Ret_maybenull_z_
 #endif
 #ifndef _Ret_notnull_
-#define _Ret_notnull_
+#define _Ret_notnull_ __attribute_returns_nonnull__
 #endif
 #ifndef _Ret_null_
 #define _Ret_null_
@@ -662,19 +662,19 @@
 #define _Ret_range_(l,h)
 #endif
 #ifndef _Ret_valid_
-#define _Ret_valid_
+#define _Ret_valid_ __attribute_returns_nonnull__
 #endif
 #ifndef _Ret_writes_
-#define _Ret_writes_(s)
+#define _Ret_writes_(s) __attribute_returns_nonnull__
 #endif
 #ifndef _Ret_writes_bytes_
-#define _Ret_writes_bytes_(s)
+#define _Ret_writes_bytes_(s) __attribute_returns_nonnull__
 #endif
 #ifndef _Ret_writes_bytes_maybenull_
 #define _Ret_writes_bytes_maybenull_(s)
 #endif
 #ifndef _Ret_writes_bytes_to_
-#define _Ret_writes_bytes_to_(s,c)
+#define _Ret_writes_bytes_to_(s,c) __attribute_returns_nonnull__
 #endif
 #ifndef _Ret_writes_bytes_to_maybenull_
 #define _Ret_writes_bytes_to_maybenull_(s,c)
@@ -686,22 +686,22 @@
 #define _Ret_writes_maybenull_z_(s)
 #endif
 #ifndef _Ret_writes_to_
-#define _Ret_writes_to_(s,c)
+#define _Ret_writes_to_(s,c) __attribute_returns_nonnull__
 #endif
 #ifndef _Ret_writes_to_maybenull_
 #define _Ret_writes_to_maybenull_(s,c)
 #endif
 #ifndef _Ret_writes_to_ptr_
-#define _Ret_writes_to_ptr_(p)
+#define _Ret_writes_to_ptr_(p) __attribute_returns_nonnull__
 #endif
 #ifndef _Ret_writes_to_ptr_z_
-#define _Ret_writes_to_ptr_z_(p)
+#define _Ret_writes_to_ptr_z_(p) __attribute_returns_nonnull__
 #endif
 #ifndef _Ret_writes_z_
-#define _Ret_writes_z_(s)
+#define _Ret_writes_z_(s) __attribute_returns_nonnull__
 #endif
 #ifndef _Ret_z_
-#define _Ret_z_
+#define _Ret_z_ __attribute_returns_nonnull__
 #endif
 #ifndef _Return_type_success_
 #define _Return_type_success_(c)

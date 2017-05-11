@@ -13,8 +13,6 @@
 #ifndef OS_DECL_ATTRIBUTES_H
 #define OS_DECL_ATTRIBUTES_H
 
-#include "os/os_decl_attributes_sal.h"
-
 #define OS_GNUC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 
 #ifndef __has_attribute
@@ -125,6 +123,8 @@
 #  define __attribute_assume_aligned__(params) /* Ignore. */
 # endif
 #endif
+
+#include "os/os_decl_attributes_sal.h"
 
 #undef OS_GNUC_VERSION
 #endif
