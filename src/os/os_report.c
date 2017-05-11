@@ -739,9 +739,9 @@ os_report_file_path(char * default_file, char * override_variable, enum os_repor
         if (type == OS_REPORT_INFO)
         {
             full_file_path = (char*) os_malloc(strlen(file_dir) + 1 + strlen(file_name) + 1 );
-            os_strcpy(full_file_path, file_dir);
-            os_strcat(full_file_path, "/");
-            os_strcat(full_file_path, file_name);
+            strcpy(full_file_path, file_dir);
+            strcat(full_file_path, "/");
+            strcat(full_file_path, file_name);
             if (os_report_is_local_file(full_file_path,&full_file_path))
             {
                 logfile = fopen (full_file_path, "a");
@@ -949,7 +949,7 @@ os_headerReport(
     }
     else
     {
-        os_strcpy(node, "UnkownNode");
+        strcpy(node, "UnkownNode");
     }
 
     os_mutexLock(&reportMutex);
@@ -1057,7 +1057,7 @@ os_defaultReport(
     }
     else
     {
-        os_strcpy(node, "UnkownNode");
+        strcpy(node, "UnkownNode");
     }
 
     os_mutexLock(&reportMutex);

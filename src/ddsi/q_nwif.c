@@ -972,12 +972,12 @@ int find_own_ip (const char *requested_address)
     char if_name[sizeof (last_if_name)];
     int q = 0;
 
-    os_strncpy (if_name, ifs[i].name, sizeof (if_name) - 1);
+    strncpy (if_name, ifs[i].name, sizeof (if_name) - 1);
     if_name[sizeof (if_name) - 1] = 0;
 
     if (strcmp (if_name, last_if_name))
       nn_log (LC_CONFIG, "%s%s", sep, if_name);
-    os_strcpy (last_if_name, if_name);
+    strcpy (last_if_name, if_name);
 
     /* interface must be up */
     if ((ifs[i].flags & IFF_UP) == 0)

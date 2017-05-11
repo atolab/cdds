@@ -201,9 +201,9 @@ os_procCreate(
     } else {
         /* first translate the input string into an argv structured list */
         argin = os_malloc(strlen(arguments) + 1);
-        os_strcpy(argin, arguments);
+        strcpy(argin, arguments);
         argv[0] = os_malloc(strlen(name) + 1);
-        argv[0] = os_strcpy(argv[0], name);
+        argv[0] = strcpy(argv[0], name);
         while (go_on && (unsigned int)argc <= (sizeof(argv)/(sizeof(char *)))) {
             while (argin[i] == ' ' || argin[i] == '\t' ) {
                 i++;

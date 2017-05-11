@@ -71,7 +71,7 @@ os_gethostname(
                         result = os_resultFail;
                 }
                 else {
-                        os_strcpy(hostname, hostnamebuf);
+                        strcpy(hostname, hostnamebuf);
                         result = os_resultSuccess;
                 }
         }
@@ -166,56 +166,11 @@ os_strdup(
         len = strlen(s1) + 1;
         dup = os_malloc(len);
         if (dup) {
-                os_strcpy(dup, s1);
+                strcpy(dup, s1);
         }
 
         return dup;
 }
-
-#pragma warning( disable : 4996 )
-char *
-os_strcat(
-        char *s1,
-        const char *s2)
-{
-        return strcat(s1, s2);
-}
-#pragma warning( default : 4996 )
-
-#pragma warning( disable : 4996 )
-char *
-os_strncat(
-        char *s1,
-        const char *s2,
-        size_t n)
-{
-        return strncat(s1, s2, n);
-}
-#pragma warning( default : 4996 )
-
-char *
-os_strcpy(
-        char *s1,
-        const char *s2)
-{
-        size_t size = strlen(s2) + 1;
-
-        strcpy_s(s1, size, s2);
-        return s1;
-}
-
-#pragma warning( disable : 4996 )
-char *
-os_strncpy(
-        char *s1,
-        const char *s2,
-        size_t num)
-{
-        strncpy(s1, s2, num);
-
-        return s1;
-}
-#pragma warning( default : 4996 )
 
 char *
 os_strsep(char **str, const char *sep)
@@ -232,25 +187,6 @@ os_strsep(char **str, const char *sep)
                 (*str)++;
         }
         return ret;
-}
-
-#pragma warning( disable : 4996 )
-int
-os_sprintf(
-        char *s,
-        const char *format,
-        ...)
-{
-        int result;
-        va_list args;
-
-        va_start(args, format);
-
-        result = vsprintf(s, format, args);
-
-        va_end(args);
-
-        return result;
 }
 
 #pragma warning( disable : 4996 )

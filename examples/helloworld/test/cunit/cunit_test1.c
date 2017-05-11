@@ -65,3 +65,4 @@ int main (int argc, char *argv[])
   /* ctest requires the test executable to return 0 when succuss, non-null when fail */
   return CU_get_error();
 }
+
