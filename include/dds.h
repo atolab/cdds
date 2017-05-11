@@ -53,7 +53,7 @@ extern "C" {
  *   -# Returns 0 on success or a non-zero error status
  */
 
-DDS_EXPORT int dds_init (int argc, char ** argv);
+DDS_EXPORT int dds_init ();
 
 /* Finalization function, called from main */
 
@@ -373,12 +373,11 @@ DDS_EXPORT dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_ const dds_li
  *   -# mask Communication status notification mask
  *   -# Returns a status, 0 on success or non-zero value to indicate an error
  */
-DDS_EXPORT int dds_participant_create
+DDS_EXPORT dds_entity_t dds_create_participant
 (
-  dds_entity_t * pp,
-  const dds_domainid_t domain,
-  const dds_qos_t * qos,
-  const dds_participantlistener_t * listener
+  _In_ const dds_domainid_t domain,
+  _In_opt_ const dds_qos_t * qos,
+  _In_opt_ const dds_listener_t * listener
 );
 /**
  * Description : Returns the parent for an entity.

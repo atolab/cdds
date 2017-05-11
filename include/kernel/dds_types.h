@@ -265,7 +265,7 @@ extern const ut_avlTreedef_t dds_topictree_def;
 typedef struct dds_participant
 {
   struct dds_entity m_entity;
-  dds_participantlistener_t m_listener;
+  dds_listener_t m_listener;
   struct dds_entity * m_dur_reader;
   struct dds_entity * m_dur_writer;
 }

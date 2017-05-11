@@ -2,63 +2,23 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
-/* Note:
-   By default, cr_log_info() messages are not displayed.
-   To have these messages displayed you can set the environment variable CRITERION_VERBOSITY_LEVEL.
-   A value 0 or 1 should enable the display of these messages.
-*/
+Test(ts, test_1) {
 
+  dds_entity_t participant, participant2, participant3;
 
-/* Placeholder */
-void setup(void) {
-  cr_log_info("Runs before the test");
-}
+  participant = dds_participant_create (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_neq(participant, NULL, "dds_participant_create");
 
-/* Placeholder */
-void teardown(void) {
-    cr_log_info("Runs after the test");
-}
-
-
-Test(ts, test_2, .init = setup, .fini = teardown) {
-
-  dds_entity_t participant;
-  int status;
-
-  cr_log_info("Starting test %d", 2);
-  status = dds_init (0, NULL);
-  cr_assert_eq(status, DDS_RETCODE_OK, "dds_init");
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  status = dds_participant_create (&participant, DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_eq(status, DDS_RETCODE_OK, "dds_participant_create");
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  cr_log_info("Stopping test %d", 2);
-
+  participant2 = dds_participant_create (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_neq(participant2, NULL, "dds_participant_create");
 
   dds_delete (participant);
+  dds_delete (participant2);
 
-  dds_fini ();
+  participant3 = dds_participant_create (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_neq(participant3, NULL, "dds_participant_create");
+
+  dds_delete (participant3);
+
 }
-
-#if 1
-Test(ts, test_3, .init = setup, .fini = teardown) {
-
-  dds_entity_t participant;
-  int status;
-
-  cr_log_info("Starting test %d", 3);
-  status = dds_init (0, NULL);
-  cr_assert_eq(status, DDS_RETCODE_OK, "dds_init");
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  status = dds_participant_create (&participant, DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_eq(status, DDS_RETCODE_OK, "dds_participant_create");
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  cr_log_info("Stopping test %d", 3);
-
-
-  dds_delete (participant);
-
-  dds_fini ();
-}
-#endif
 

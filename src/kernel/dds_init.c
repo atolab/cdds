@@ -98,9 +98,10 @@ static void dds_set_report_level (void)
   }
 }
 
-extern int dds_init (int argc, char ** argv)
+extern int dds_init ()
 {
   const char * uri;
+  char tmp[50];
 
   if (os_atomic_inc32_nv (&dds_global.m_init_count) > 1)
   {
@@ -133,11 +134,8 @@ extern int dds_init (int argc, char ** argv)
   }
   dds_set_report_level ();
 
-  if (argc)
-  {
-    char * tmp = strrchr (argv[0], '/');
-    dds_init_exe = dds_string_dup (tmp ? ++tmp : argv[0]);
-  }
+  os_procGetProcessName(tmp, sizeof(tmp));
+  dds_init_exe = dds_string_dup (tmp);
 
   return DDS_RETCODE_OK;
 }

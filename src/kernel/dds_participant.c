@@ -32,6 +32,9 @@ static void dds_participant_delete(dds_entity_t e, bool recurse)
     if (asleep) {
       thread_state_asleep(thr);
     }
+    if(dds_pp_head == NULL){
+  	  dds_fini();
+    }
 }
 
 static dds_return_t dds_participant_instance_hdl(dds_entity_t e, dds_instance_handle_t *i)
@@ -73,21 +76,24 @@ static dds_return_t dds_participant_qos_set (dds_entity_t e, const dds_qos_t *qo
     return ret;
 }
 
-int dds_participant_create
+dds_entity_t dds_participant_create
 (
-  dds_entity_t * e,
-  const dds_domainid_t domain,
-  const dds_qos_t * qos,
-  const dds_participantlistener_t * listener
+  _In_ const dds_domainid_t domain,
+  _In_opt_ const dds_qos_t * qos,
+  _In_opt_ const dds_listener_t * listener
 )
 {
   int ret;
+  dds_entity_t e;
   nn_guid_t guid;
   dds_participant * pp;
   nn_plist_t plist;
   dds_qos_t * new_qos = NULL;
   struct thread_state1 * thr;
   bool asleep;
+  if(dds_pp_head == NULL){
+	  dds_init();
+  }
 
   nn_plist_init_empty (&plist);
 
@@ -139,7 +145,7 @@ int dds_participant_create
   pp = dds_alloc (sizeof (*pp));
   dds_entity_init (&pp->m_entity, NULL, DDS_TYPE_PARTICIPANT, new_qos, NULL, DDS_PARTICIPANT_STATUS_MASK);
   pp->m_entity.m_guid = guid;
-  *e = &pp->m_entity;
+  e = &pp->m_entity;
   pp->m_entity.m_domain = dds_domain_create (config.domainId);
   pp->m_entity.m_domainid = config.domainId;
   pp->m_entity.m_deriver.delete = dds_participant_delete;
@@ -162,7 +168,7 @@ fail:
 
   nn_plist_fini (&plist);
 
-  return ret;
+  return e;
 }
 
 dds_entity_t dds_participant_lookup (dds_domainid_t domain_id)
