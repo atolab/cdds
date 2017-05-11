@@ -34,3 +34,4 @@ add_subdirectory(c99)
 
 # TODO: improve test inclusion.
 add_subdirectory(kernel/test)
+
