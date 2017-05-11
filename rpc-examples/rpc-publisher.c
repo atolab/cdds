@@ -185,7 +185,7 @@ int main (int argc, char **argv)
 
   dds_free (sample.payload._buffer);
 
-  dds_entity_delete (participant);
+  dds_delete (participant);
   dds_fini ();
   return result;
 }

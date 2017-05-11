@@ -34,7 +34,7 @@ static void dds_participant_delete(dds_entity_t e, bool recurse)
     }
 }
 
-static dds_result_t dds_participant_instance_hdl(dds_entity_t e, dds_instance_handle_t *i)
+static dds_return_t dds_participant_instance_hdl(dds_entity_t e, dds_instance_handle_t *i)
 {
     assert(e);
     assert(i);
@@ -42,9 +42,9 @@ static dds_result_t dds_participant_instance_hdl(dds_entity_t e, dds_instance_ha
     return DDS_RETCODE_OK;
 }
 
-static dds_result_t dds_participant_qos_validate (const dds_qos_t *qos, bool enabled)
+static dds_return_t dds_participant_qos_validate (const dds_qos_t *qos, bool enabled)
 {
-    dds_result_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_PPANT, 0);
+    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_PPANT, 0);
     bool consistent;
     assert(qos);
     /* Check consistency. */
@@ -60,6 +60,18 @@ static dds_result_t dds_participant_qos_validate (const dds_qos_t *qos, bool ena
     return ret;
 }
 
+
+static dds_return_t dds_participant_qos_set (dds_entity_t e, const dds_qos_t *qos, bool enabled)
+{
+    dds_return_t ret = dds_participant_qos_validate(qos, enabled);
+    if (ret == DDS_RETCODE_OK) {
+        if (enabled) {
+            /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
+            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_KERNEL, DDS_ERR_M1));
+        }
+    }
+    return ret;
+}
 
 int dds_participant_create
 (
@@ -131,7 +143,7 @@ int dds_participant_create
   pp->m_entity.m_domain = dds_domain_create (config.domainId);
   pp->m_entity.m_domainid = config.domainId;
   pp->m_entity.m_deriver.delete = dds_participant_delete;
-  pp->m_entity.m_deriver.validate_qos = dds_participant_qos_validate;
+  pp->m_entity.m_deriver.set_qos = dds_participant_qos_set;
   pp->m_entity.m_deriver.get_instance_hdl = dds_participant_instance_hdl;
 
   if (listener)

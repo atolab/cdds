@@ -2,19 +2,20 @@
 #define DDS_H
 
 /** @file dds.h
- *  @brief Vortex Lite core DDS header
+ *  @brief C99v2 DDS header
  */
 
 #if defined (__cplusplus)
 #define restrict
 #endif
 
+#include "os/os_public.h"
+
+/* TODO: Move to appropriate location */
+typedef _Return_type_success_(return >= 0) uintptr_t dds_return_t;
+
 /* Sub components */
 
-/* TODO: See what documentation is available in the new dds.h. */
-typedef int dds_result_t;
-
-#include "os/os_public.h"
 #include "dds/dds_public_stream.h"
 #include "dds/dds_public_impl.h"
 #include "dds/dds_public_alloc.h"
@@ -29,6 +30,7 @@ extern "C" {
 #endif
 
 #undef DDS_EXPORT
+    /* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc. */
 #ifdef _WIN32_DLL_
   #if defined VL_BUILD_DDS_DLL
     #define DDS_EXPORT extern __declspec (dllexport)
@@ -38,6 +40,7 @@ extern "C" {
 #else
   #define DDS_EXPORT extern
 #endif
+
 
 /**
  * Description : Initialization function, called from main. This operation
@@ -89,7 +92,6 @@ DDS_EXPORT dds_domainid_t dds_domain_default (void);
 #define DDS_PUBLICATION_MATCHED_STATUS         8192u
 #define DDS_SUBSCRIPTION_MATCHED_STATUS        16384u
 /** @}*/
-
 
 /**
  * dds_sample_state_t
@@ -177,6 +179,21 @@ dds_sample_info_t;
 
 /*
   All entities are represented by a process-private handle, with one
+  call to enable an entity when it was created disabled.
+  An entity is created enabled by default.
+  Note: disabled creation is currently not supported.
+*/
+
+/**
+ * Description : Enable an entity that was created disabled.
+ *
+ * Arguments :
+ *   -# e Entity to enable
+ */
+DDS_EXPORT dds_return_t dds_enable (_In_ dds_entity_t e);
+
+/*
+  All entities are represented by a process-private handle, with one
   call to delete an entity and all entities it logically contains.
   That is, it is equivalent to combination of
   delete_contained_entities and delete_xxx in the DCPS API.
@@ -190,19 +207,19 @@ dds_sample_info_t;
  * Arguments :
  *   -# e Entity to delete
  */
-DDS_EXPORT void dds_entity_delete (dds_entity_t e);
+DDS_EXPORT dds_return_t dds_delete (_In_ dds_entity_t e);
 
-/* TODO: See what documentation is available in the new dds.h. */
-DDS_EXPORT dds_entity_t dds_get_parent(dds_entity_t e);
-DDS_EXPORT dds_result_t dds_get_children(dds_entity_t e, dds_entity_t *children, size_t size);
-DDS_EXPORT dds_entity_t dds_get_participant(dds_entity_t e);
-DDS_EXPORT dds_entity_t dds_get_publisher(dds_entity_t wr);
-DDS_EXPORT dds_entity_t dds_get_subscriber(dds_entity_t rd);
-DDS_EXPORT dds_entity_t dds_get_datareader(dds_entity_t readcond);
-DDS_EXPORT dds_result_t dds_enable(dds_entity_t e);
-DDS_EXPORT dds_result_t dds_get_listener(dds_entity_t e, dds_listener_t ** listener);
-DDS_EXPORT dds_result_t dds_set_listener(dds_entity_t e, dds_listener_t *listener);
-DDS_EXPORT dds_result_t dds_instancehandle_get(dds_entity_t e, dds_instance_handle_t *i);
+/* TODO: document. */
+DDS_EXPORT dds_entity_t dds_get_publisher(_In_ dds_entity_t wr);
+
+/* TODO: document. */
+DDS_EXPORT dds_entity_t dds_get_subscriber(_In_ dds_entity_t rd);
+
+/* TODO: document. */
+DDS_EXPORT dds_entity_t dds_get_datareader(_In_ dds_entity_t readcond);
+
+/* TODO: document. */
+DDS_EXPORT dds_return_t dds_instancehandle_get(_In_ dds_entity_t e, _Out_ dds_instance_handle_t *i);
 
 /*
   All entities have a set of "status conditions" (following the DCPS
@@ -223,7 +240,7 @@ DDS_EXPORT dds_result_t dds_instancehandle_get(dds_entity_t e, dds_instance_hand
  *   -# Returns 0 on success, or a non-zero error value if the mask does not
  *      correspond to the entity
  */
-DDS_EXPORT dds_result_t dds_read_status (dds_entity_t e, uint32_t * status, uint32_t mask);
+DDS_EXPORT dds_return_t dds_read_status (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
 
 /**
  * Description : Read the status(es) set for the entity based on the enabled
@@ -236,7 +253,7 @@ DDS_EXPORT dds_result_t dds_read_status (dds_entity_t e, uint32_t * status, uint
  *   -# Returns 0 on success, or a non-zero error value if the mask does not
  *      correspond to the entity
  */
-DDS_EXPORT dds_result_t dds_take_status (dds_entity_t e, uint32_t * status, uint32_t mask);
+DDS_EXPORT dds_return_t dds_take_status (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
 
 /**
  * Description : Returns the status changes since they were last read.
@@ -245,7 +262,7 @@ DDS_EXPORT dds_result_t dds_take_status (dds_entity_t e, uint32_t * status, uint
  *   -# e Entity on which the statuses are read
  *   -# Returns the curent set of triggered statuses.
  */
-DDS_EXPORT dds_result_t dds_get_status_changes (dds_entity_t e, uint32_t * status);
+DDS_EXPORT dds_return_t dds_get_status_changes (_In_ dds_entity_t e, _Out_ uint32_t * status);
 
 /**
  * Description : This operation returns the status enabled on the entity
@@ -254,7 +271,7 @@ DDS_EXPORT dds_result_t dds_get_status_changes (dds_entity_t e, uint32_t * statu
  *   -# e Entity to get the status
  *   -# Returns the status that are enabled for the entity
  */
-DDS_EXPORT dds_result_t dds_get_enabled_status (dds_entity_t e, uint32_t * status);
+DDS_EXPORT dds_return_t dds_get_enabled_status (_In_ dds_entity_t e, _Out_ uint32_t * status);
 
 
 /**
@@ -266,7 +283,7 @@ DDS_EXPORT dds_result_t dds_get_enabled_status (dds_entity_t e, uint32_t * statu
  *   -# Returns 0 on success, or a non-zero error value indicating failure if the mask
  *      does not correspond to the entity.
  */
-DDS_EXPORT dds_result_t dds_set_enabled_status (dds_entity_t e, uint32_t mask);
+DDS_EXPORT dds_return_t dds_set_enabled_status (_In_ dds_entity_t e, _In_ uint32_t mask);
 
 /*
   Almost all entities have get/set qos operations defined on them,
@@ -283,8 +300,7 @@ DDS_EXPORT dds_result_t dds_set_enabled_status (dds_entity_t e, uint32_t mask);
  *   -# e Entity on which to get qos
  *   -# qos pointer to the qos structure that returns the set policies.
  */
-/* TODO: See what the new dds.h provides (also as doc). */
-DDS_EXPORT dds_result_t dds_get_qos (dds_entity_t e, dds_qos_t * qos);
+DDS_EXPORT dds_return_t dds_get_qos (_In_ dds_entity_t e, _Out_ dds_qos_t * qos);
 
 
 /**
@@ -297,10 +313,9 @@ DDS_EXPORT dds_result_t dds_get_qos (dds_entity_t e, dds_qos_t * qos);
  *   -# Returns 0 on success, or a non-zero error value to indicate immutable QoS
  *      is set or the values set are incorrect, which cannot be applied.
  *
- * NOTE: Latency Budget and Ownership Strength are changeable QoS that can be set for LITE
+ * NOTE: Latency Budget and Ownership Strength are changeable QoS that can be set.
  */
-/* TODO: See what the new dds.h provides (also as doc). */
-DDS_EXPORT dds_result_t dds_set_qos (dds_entity_t e, const dds_qos_t * qos);
+DDS_EXPORT dds_return_t dds_set_qos (_In_ dds_entity_t e, _In_ const dds_qos_t * qos);
 
 /*
   Get or set listener associated with an entity, type of listener
@@ -315,7 +330,7 @@ DDS_EXPORT dds_result_t dds_set_qos (dds_entity_t e, const dds_qos_t * qos);
  *   -# e Entity to get the listener set
  *   -# listener pointer to the listener set on the entity
  */
-DDS_EXPORT void dds_listener_get (dds_entity_t e, dds_listener_t listener);
+DDS_EXPORT dds_return_t dds_get_listener (_In_ dds_entity_t e, _Out_ dds_listener_t ** listener);
 
 
 /**
@@ -327,7 +342,7 @@ DDS_EXPORT void dds_listener_get (dds_entity_t e, dds_listener_t listener);
  *   -# listener pointer to the listener (can be NULL)
  *
  */
-DDS_EXPORT void dds_listener_set (dds_entity_t e, const dds_listener_t listener);
+DDS_EXPORT dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_ const dds_listener_t * listener);
 
 /*
   Creation functions for various entities. Creating a subscriber or
@@ -365,8 +380,48 @@ DDS_EXPORT int dds_participant_create
   const dds_qos_t * qos,
   const dds_participantlistener_t * listener
 );
+/**
+ * Description : Returns the parent for an entity.
+ *
+ * Arguments :
+ *   -# entity The entity
+ *   -# Returns The parent
+ */
+DDS_EXPORT dds_entity_t dds_get_parent (_In_ dds_entity_t entity);
 
-DDS_EXPORT dds_result_t dds_get_domainid (dds_entity_t pp, dds_domainid_t *id);
+
+/**
+ * Description : Returns the participant for an entity.
+ *
+ * Arguments :
+ *   -# entity The entity
+ *   -# Returns The participant
+ */
+DDS_EXPORT dds_entity_t dds_get_participant (_In_ dds_entity_t entity);
+
+
+/**
+ * Description : Provides a list of child entities.
+ *
+ * Arguments :
+ *   -# entity The entity
+ *   -# children Pre-allocated list to contain the found children.
+ *   -# size The size of the pre-allocated list.
+ *   -# Returns The number of found children. That can be larger than
+ *              'size'. Negative when an error occured.
+ */
+DDS_EXPORT dds_return_t dds_get_children(dds_entity_t entity, dds_entity_t *children, size_t size);
+
+
+/**
+ * Description : Returns the domain id for a participant.
+ *
+ * Arguments :
+ *   -# pp The participant entity
+ *   -# Returns The participant domain id
+ */
+//DDS_EXPORT dds_domainid_t dds_get_domainid (_In_ dds_entity_t pp);
+DDS_EXPORT dds_return_t dds_get_domainid (dds_entity_t pp, dds_domainid_t *id);
 
 /**
  * Description : Returns a participant created on a domain. Note that if
@@ -377,6 +432,7 @@ DDS_EXPORT dds_result_t dds_get_domainid (dds_entity_t pp, dds_domainid_t *id);
  *   -# domain_id The domain id
  *   -# Returns Pariticant for domain
  */
+/* TODO: This dds_participant_lookup will be removed in favor of a domain type on which you can do 'dds_get_children'. */
 DDS_EXPORT dds_entity_t dds_participant_lookup (dds_domainid_t domain_id);
 
 /**
@@ -405,7 +461,7 @@ DDS_EXPORT int dds_topic_create
 
 /**
  * Description : Finds a named topic. Returns NULL if does not exist.
- * The returned topic should be released with dds_entity_delete.
+ * The returned topic should be released with dds_delete.
  *
  * Arguments :
  *   -# pp The participant on which to find the topic
@@ -1177,7 +1233,6 @@ DDS_EXPORT int dds_thread_init (const char * name);
  * Note: This function should be called from the same thread context before exiting
  */
 DDS_EXPORT void dds_thread_fini (void);
-
 
 #if defined (__cplusplus)
 }

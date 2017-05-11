@@ -23,7 +23,7 @@ const ut_avlTreedef_t dds_topictree_def = UT_AVL_TREEDEF_INITIALIZER_INDKEY
   0
 );
 
-static dds_result_t dds_topic_status_validate (uint32_t mask)
+static dds_return_t dds_topic_status_validate (uint32_t mask)
 {
     return (mask & ~(DDS_TOPIC_STATUS_MASK)) ?
                      DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_TOPIC, 0) :
@@ -50,17 +50,20 @@ static void dds_topic_status_cb (struct dds_topic * topic)
      * This is done from the top to bottom to prevent possible deadlocks.
      * We can't really lock the entities because they have to be possibly
      * accessable from listener callbacks. */
-    dds_entity_hierarchy_busy_start((dds_entity_t)topic);
+    if (!dds_entity_cb_propagate_begin((dds_entity_t)topic)) {
+        /* An entity in the hierarchy is probably being deleted. */
+        return;
+    }
 
     /* Is anybody interrested within the entity hierarchy through listeners? */
-    call = dds_entity_hierarchy_callback((dds_entity_t)topic,
-                                         (dds_entity_t)topic,
-                                         DDS_INCONSISTENT_TOPIC_STATUS,
-                                         (void*)&(topic->m_inconsistent_topic_status),
-                                         true);
+    call = dds_entity_cp_propagate_call((dds_entity_t)topic,
+                                        (dds_entity_t)topic,
+                                        DDS_INCONSISTENT_TOPIC_STATUS,
+                                        (void*)&(topic->m_inconsistent_topic_status),
+                                        true);
 
     /* Let possible waits continue. */
-    dds_entity_hierarchy_busy_end((dds_entity_t)topic);
+    dds_entity_cb_propagate_end((dds_entity_t)topic);
 
     if (call) {
         /* Event was eaten by a listener. */
@@ -151,9 +154,9 @@ static void dds_topic_delete(dds_entity_t e, bool recurse)
     dds_topic_free(e->m_domainid, ((dds_topic*) e)->m_stopic);
 }
 
-static dds_result_t dds_topic_qos_validate (const dds_qos_t *qos, bool enabled)
+static dds_return_t dds_topic_qos_validate (const dds_qos_t *qos, bool enabled)
 {
-    dds_result_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_READER, 0);
+    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_TOPIC, 0);
     bool consistent = true;
     assert(qos);
     /* Check consistency. */
@@ -167,8 +170,21 @@ static dds_result_t dds_topic_qos_validate (const dds_qos_t *qos, bool enabled)
         if (enabled) {
             /* TODO: Improve/check immutable check. */
             if (qos->present != QP_LATENCY_BUDGET) {
-                ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, DDS_MOD_READER, DDS_ERR_M1);
+                ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, DDS_MOD_TOPIC, DDS_ERR_M1);
             }
+        }
+    }
+    return ret;
+}
+
+
+static dds_return_t dds_topic_qos_set (dds_entity_t e, const dds_qos_t *qos, bool enabled)
+{
+    dds_return_t ret = dds_topic_qos_validate(qos, enabled);
+    if (ret == DDS_RETCODE_OK) {
+        if (enabled) {
+            /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
+            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_TOPIC, DDS_ERR_M1));
         }
     }
     return ret;
@@ -245,7 +261,7 @@ int dds_topic_create
   dds_entity_init (&top->m_entity, pp, DDS_TYPE_TOPIC, new_qos, NULL, DDS_TOPIC_STATUS_MASK);
   *topic = &top->m_entity;
   top->m_entity.m_deriver.delete = dds_topic_delete;
-  top->m_entity.m_deriver.validate_qos = dds_topic_qos_validate;
+  top->m_entity.m_deriver.set_qos = dds_topic_qos_set;
   top->m_entity.m_deriver.validate_status = dds_topic_status_validate;
 
   st = dds_alloc (sizeof (*st));
@@ -280,14 +296,10 @@ int dds_topic_create
 
   dds_topic_add (pp->m_domainid, st);
 
-  /* Merge listener functions with those from parent */
-
   if (listener)
   {
     top->m_listener = *listener;
   }
-  dds_listener_get_unl (pp, &l);
-  dds_listener_merge (&top->m_listener, &l.topiclistener, DDS_TYPE_TOPIC);
 
   nn_plist_init_empty (&plist);
   if (new_qos)
@@ -420,9 +432,9 @@ char * dds_topic_get_type_name (dds_entity_t topic)
   return dds_string_dup (((dds_topic*) topic)->m_stopic->typename);
 }
 
-dds_result_t dds_get_inconsistent_topic_status (dds_entity_t entity, dds_inconsistent_topic_status_t * status)
+dds_return_t dds_get_inconsistent_topic_status (dds_entity_t entity, dds_inconsistent_topic_status_t * status)
 {
-    dds_result_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_TOPIC, 0);
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_TOPIC, 0);
     if (dds_entity_is_a(entity, DDS_TYPE_TOPIC) && (status != NULL)) {
         ret = DDS_ERRNO (DDS_RETCODE_PRECONDITION_NOT_MET, DDS_MOD_TOPIC, 0);
 

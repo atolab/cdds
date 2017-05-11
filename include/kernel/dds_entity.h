@@ -12,15 +12,15 @@ void dds_entity_init
 (
   dds_entity * e, dds_entity * parent,
   dds_entity_kind_t kind, dds_qos_t * qos,
-  c99_listener_cham65_t * listener,
+  dds_listener_t listener,
   uint32_t mask
 );
 
 void dds_entity_add_ref (dds_entity * e);
 
-bool dds_entity_hierarchy_busy_start(dds_entity *e);
-void dds_entity_hierarchy_busy_end(dds_entity *e);
-bool dds_entity_hierarchy_callback(dds_entity *e, dds_entity *src, uint32_t status, void *metrics, bool propagate);
+bool dds_entity_cb_propagate_begin(dds_entity *e);
+void dds_entity_cb_propagate_end(dds_entity *e);
+bool dds_entity_cp_propagate_call(dds_entity *e, dds_entity *src, uint32_t status, void *metrics, bool propagate);
 
 void dds_entity_delete_signal (dds_entity_t e);
 void dds_entity_delete_impl (dds_entity_t e, bool child, bool recurse);

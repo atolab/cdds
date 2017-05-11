@@ -281,7 +281,7 @@ int rd_string(struct client *cl, char **str)
 int db_entity_delete(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
-    dds_entity_delete(req->u.entity_delete.entity);
+    dds_delete(req->u.entity_delete.entity);
     rep.code = VDDSREP_NOTHING;
     rep.status = DDS_RETCODE_OK;
     return reply(cl, &rep);
@@ -592,7 +592,7 @@ int serve_one(struct client *cl)
 error:
     printf("sock%d: disconnect\n", cl->ib.fd);
     if (cl->ppant != DDS_HANDLE_NIL) {
-        dds_entity_delete(cl->ppant);
+        dds_delete(cl->ppant);
     }
 
     {

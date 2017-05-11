@@ -384,7 +384,7 @@ int ping_main (int argc, char *argv[])
 
   status = dds_waitset_delete (waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  dds_entity_delete (participant);
+  dds_delete (participant);
 
   for (i = 0; i < MAX_SAMPLES; i++)
   {

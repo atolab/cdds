@@ -20,7 +20,7 @@ void testcase_1(void) {
   CU_ASSERT(status == DDS_RETCODE_OK);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-  dds_entity_delete (participant);
+  dds_delete (participant);
 
   dds_fini ();
 }
@@ -47,7 +47,7 @@ int main (int argc, char *argv[])
       return CU_get_error();
    }
 
-   /* add test cases to the test suite */ 
+   /* add test cases to the test suite */
    if (NULL == CU_add_test(pSuite, "dds_participant_create", testcase_1)) {
       CU_cleanup_registry();
       return CU_get_error();
@@ -58,7 +58,7 @@ int main (int argc, char *argv[])
    CU_set_output_filename ("cunit");
    CU_list_tests_to_file ();
    CU_automated_run_tests ();
- 
+
    /* cleanup registry */
    CU_cleanup_registry();
 

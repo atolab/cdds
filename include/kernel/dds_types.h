@@ -213,7 +213,6 @@ dds_guardcond;
 
 /* Entity flag values */
 
-#define DDS_ENTITY_BUSY         0x0001
 #define DDS_ENTITY_DELETED      0x0002
 #define DDS_ENTITY_ENABLED      0x0004
 #define DDS_ENTITY_DDSI_DELETED 0x0010
@@ -229,10 +228,10 @@ dds_domain;
 
 typedef struct dds_entity_deriver {
     void (*delete)(dds_entity_t e, bool recurse);
-    dds_result_t (*validate_qos)(const dds_qos_t *qos, bool enabled);
-    dds_result_t (*validate_status)(uint32_t mask);
-    dds_result_t (*propagate_status)(dds_entity_t e, uint32_t mask, bool set);
-    dds_result_t (*get_instance_hdl)(dds_entity_t e, dds_instance_handle_t *i);
+    dds_return_t (*set_qos)(dds_entity_t e, const dds_qos_t *qos, bool enabled);
+    dds_return_t (*validate_status)(uint32_t mask);
+    dds_return_t (*propagate_status)(dds_entity_t e, uint32_t mask, bool set);
+    dds_return_t (*get_instance_hdl)(dds_entity_t e, dds_instance_handle_t *i);
 }
 dds_entity_deriver;
 
@@ -253,10 +252,11 @@ typedef struct dds_entity
   nn_guid_t m_guid;
   uint32_t m_status_enable;
   uint32_t m_flags;
-  uint32_t m_waiting;
+  uint32_t m_cb_waiting;
+  uint32_t m_cb_count;
   os_mutex m_mutex;
   os_cond m_cond;
-  c99_listener_cham65_t *m_listener;
+  dds_listener_t *m_listener;
 }
 dds_entity;
 

@@ -301,7 +301,7 @@ int main (int argc, char **argv)
 #endif
   dds_free (sample.payload._buffer);
 
-  dds_entity_delete (participant);
+  dds_delete (participant);
   dds_fini ();
 
 #ifdef _WIN32

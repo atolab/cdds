@@ -7,7 +7,7 @@
 #define DDS_SUBSCRIBER_STATUS_MASK                               \
                         DDS_DATA_ON_READERS_STATUS
 
-static dds_result_t dds_subscriber_instance_hdl(dds_entity_t e, dds_instance_handle_t *i)
+static dds_return_t dds_subscriber_instance_hdl(dds_entity_t e, dds_instance_handle_t *i)
 {
     assert(e);
     assert(i);
@@ -15,9 +15,9 @@ static dds_result_t dds_subscriber_instance_hdl(dds_entity_t e, dds_instance_han
     return DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_KERNEL, 0);
 }
 
-static dds_result_t dds_subscriber_qos_validate (const dds_qos_t *qos, bool enabled)
+static dds_return_t dds_subscriber_qos_validate (const dds_qos_t *qos, bool enabled)
 {
-    dds_result_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_KERNEL, 0);
+    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_KERNEL, 0);
     bool consistent = true;
     assert(qos);
     /* Check consistency. */
@@ -26,7 +26,7 @@ static dds_result_t dds_subscriber_qos_validate (const dds_qos_t *qos, bool enab
     if (consistent) {
         if (enabled) {
             /* TODO: Improve/check immutable check. */
-            ret = DDS_ERRNO (DDS_RETCODE_IMMUTABLE_POLICY, DDS_MOD_PPANT, 0);
+            ret = DDS_ERRNO (DDS_RETCODE_IMMUTABLE_POLICY, DDS_MOD_KERNEL, 0);
         } else {
             ret = DDS_RETCODE_OK;
         }
@@ -34,7 +34,19 @@ static dds_result_t dds_subscriber_qos_validate (const dds_qos_t *qos, bool enab
     return ret;
 }
 
-static dds_result_t dds_subscriber_status_validate (uint32_t mask)
+static dds_return_t dds_subscriber_qos_set (dds_entity_t e, const dds_qos_t *qos, bool enabled)
+{
+    dds_return_t ret = dds_subscriber_qos_validate(qos, enabled);
+    if (ret == DDS_RETCODE_OK) {
+        if (enabled) {
+            /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
+            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_KERNEL, DDS_ERR_M1));
+        }
+    }
+    return ret;
+}
+
+static dds_return_t dds_subscriber_status_validate (uint32_t mask)
 {
     return (mask & ~(DDS_SUBSCRIBER_STATUS_MASK)) ?
                      DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_KERNEL, 0) :
@@ -45,7 +57,7 @@ static dds_result_t dds_subscriber_status_validate (uint32_t mask)
   Set boolean on readers that indicates state of DATA_ON_READERS
   status on parent subscriber
 */
-static dds_result_t dds_subscriber_status_propagate (dds_entity_t sub, uint32_t mask, bool set)
+static dds_return_t dds_subscriber_status_propagate (dds_entity_t sub, uint32_t mask, bool set)
 {
     if (mask & DDS_DATA_ON_READERS_STATUS) {
         dds_entity_t iter = sub->m_children;
@@ -96,19 +108,15 @@ int dds_subscriber_create
   sub = dds_alloc (sizeof (*sub));
   dds_entity_init (&sub->m_entity, pp, DDS_TYPE_SUBSCRIBER, new_qos, NULL, DDS_SUBSCRIBER_STATUS_MASK);
   *subscriber = &sub->m_entity;
-  sub->m_entity.m_deriver.validate_qos = dds_subscriber_qos_validate;
+  sub->m_entity.m_deriver.set_qos = dds_subscriber_qos_set;
   sub->m_entity.m_deriver.validate_status = dds_subscriber_status_validate;
   sub->m_entity.m_deriver.propagate_status = dds_subscriber_status_propagate;
   sub->m_entity.m_deriver.get_instance_hdl = dds_subscriber_instance_hdl;
-
-  /* Merge listener with those from parent */
 
   if (listener)
   {
     sub->m_listener = *listener;
   }
-  dds_listener_get_unl (pp, &l);
-  dds_listener_merge (&sub->m_listener, &l.subscriberlistener, DDS_TYPE_SUBSCRIBER);
 
 fail:
 

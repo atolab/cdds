@@ -35,7 +35,7 @@ Test(ts, test_1, .init = setup, .fini = teardown) {
   cr_log_info("Starting test %d", 1);
 
 
-  dds_entity_delete (participant);
+  dds_delete (participant);
 
   dds_fini ();
 }

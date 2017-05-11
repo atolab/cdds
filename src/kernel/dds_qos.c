@@ -133,7 +133,7 @@ void dds_qos_delete (dds_qos_t * __restrict qos)
   }
 }
 
-dds_result_t dds_qos_copy (dds_qos_t * __restrict dst, const dds_qos_t * __restrict src)
+dds_return_t dds_qos_copy (dds_qos_t * __restrict dst, const dds_qos_t * __restrict src)
 {
   assert (src);
   assert (dst);

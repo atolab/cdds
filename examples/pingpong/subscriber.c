@@ -397,7 +397,7 @@ int main (int argc, char **argv)
   dds_condition_delete (terminated);
   status = dds_waitset_delete (waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  dds_entity_delete (participant);
+  dds_delete (participant);
   dds_fini ();
 
 #ifdef _WIN32

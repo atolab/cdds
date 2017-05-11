@@ -11,7 +11,7 @@ int dds_thread_init (const char* tname)
   int ret = DDS_RETCODE_OK;
   struct thread_state1 *ts;
   os_threadId tid = os_threadIdSelf ();
-  
+
   if (thread_exists (tname))
   {
     ret = DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER, DDS_MOD_THREAD, DDS_ERR_M1);
@@ -40,7 +40,7 @@ void dds_thread_fini (void)
 {
   struct thread_state1 * ts;
   ts = get_thread_state (os_threadIdSelf ());
-  
+
   assert (ts->state == THREAD_STATE_ALIVE);
   assert (vtime_asleep_p (ts->vtime));
   reset_thread_state (ts);

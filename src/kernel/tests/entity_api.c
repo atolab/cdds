@@ -24,7 +24,7 @@ static bool force_assert = false;
 /* tests */
 void test_entity_creation(void)
 {
-    dds_result_t status;
+    dds_return_t status;
 
     /* Use participant as entity in the tests. */
     status = dds_participant_create (&entity, DDS_DOMAIN_DEFAULT, NULL, NULL);
@@ -33,7 +33,7 @@ void test_entity_creation(void)
 
 void test_entity_enabling(void)
 {
-    dds_result_t status;
+    dds_return_t status;
 
     /* Check enabling with bad parameters. */
     status = dds_enable(NULL);
@@ -52,7 +52,7 @@ void test_entity_enabling(void)
 
 void test_entity_qos(void)
 {
-    dds_result_t status;
+    dds_return_t status;
     dds_qos_t *qos1 = dds_qos_create();
     dds_qos_t *qos2 = dds_qos_create();
 
@@ -91,9 +91,9 @@ void test_entity_qos(void)
 
 void test_entity_listeners(void)
 {
-    dds_result_t status;
-    c99_listener_cham65_t *l1 = NULL;
-    c99_listener_cham65_t *l2 = dds_listener_create();
+    dds_return_t status;
+    dds_listener_t *l1 = NULL;
+    dds_listener_t *l2 = dds_listener_create();
 
     /* Don't check actual workings of the listeners. That's a job
      * for the specific entity children, not for the generic part. */
@@ -131,7 +131,7 @@ void test_entity_listeners(void)
 
 void test_entity_status(void)
 {
-    dds_result_t status;
+    dds_return_t status;
     uint32_t s1 = 0;
 
     /* Don't check actual bad statusses. That's a job
@@ -183,7 +183,7 @@ void test_entity_status(void)
 
 void test_entity_handle(void)
 {
-    dds_result_t status;
+    dds_return_t status;
     dds_instance_handle_t hdl;
 
     /* Don't check actual handle contents. That's a job
@@ -205,7 +205,7 @@ void test_entity_handle(void)
 
 void test_entity_get_entities(void)
 {
-    dds_result_t status;
+    dds_return_t status;
     dds_entity_t par = NULL;
     dds_entity_t child;
 
@@ -271,8 +271,7 @@ void test_entity_get_domainid(void)
 
 void test_entity_deletion(void)
 {
-    /* TODO: Deletion will be different?? */
-    dds_entity_delete (entity);
+    dds_delete (entity);
     entity = NULL;
 }
 
