@@ -29,7 +29,7 @@ dds_condition_t dds_readcondition_create (dds_entity_t rd, uint32_t mask)
 
 dds_entity_t dds_get_datareader(dds_entity_t rc)
 {
-    assert(dds_entity_is_a(rc, DDS_TYPE_COND_READ));
+    /* TODO: CHAM-104: Return actual errors when dds_entity_t became an handle iso a pointer (see header). */
     if (dds_entity_is_a(rc, DDS_TYPE_COND_READ)) {
         return dds_get_parent(rc);
     }

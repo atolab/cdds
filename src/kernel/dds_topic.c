@@ -40,22 +40,28 @@ static void dds_topic_status_cb (struct dds_topic * topic)
     bool call = false;
     void *metrics = NULL;
 
-    /* Update status metrics. */
     os_mutexLock (&topic->m_entity.m_mutex);
+
+    /* Reset the status for possible Listener call.
+     * When a listener is not called, the status will be set (again). */
+    dds_entity_status_reset((dds_entity_t)topic, DDS_INCONSISTENT_TOPIC_STATUS);
+
+    /* Update status metrics. */
     topic->m_inconsistent_topic_status.total_count++;
     topic->m_inconsistent_topic_status.total_count_change++;
+
     os_mutexUnlock (&topic->m_entity.m_mutex);
 
     /* Indicate to the entity hierarchy that we're busy with a callback.
      * This is done from the top to bottom to prevent possible deadlocks.
      * We can't really lock the entities because they have to be possibly
-     * accessable from listener callbacks. */
+     * accessible from listener callbacks. */
     if (!dds_entity_cb_propagate_begin((dds_entity_t)topic)) {
         /* An entity in the hierarchy is probably being deleted. */
         return;
     }
 
-    /* Is anybody interrested within the entity hierarchy through listeners? */
+    /* Is anybody interested within the entity hierarchy through listeners? */
     call = dds_entity_cp_propagate_call((dds_entity_t)topic,
                                         (dds_entity_t)topic,
                                         DDS_INCONSISTENT_TOPIC_STATUS,
@@ -69,15 +75,12 @@ static void dds_topic_status_cb (struct dds_topic * topic)
         /* Event was eaten by a listener. */
         os_mutexLock (&topic->m_entity.m_mutex);
 
-        /* Reset the status. */
-        dds_entity_status_reset((dds_entity_t)topic, DDS_INCONSISTENT_TOPIC_STATUS);
-
         /* Reset the change counts of the metrics. */
         topic->m_inconsistent_topic_status.total_count_change = 0;
 
         os_mutexUnlock (&topic->m_entity.m_mutex);
     } else {
-        /* Nobody was interrested through a listener. Set the status to maybe force a trigger. */
+        /* Nobody was interested through a listener. Set the status to maybe force a trigger. */
         dds_entity_status_set((dds_entity_t)topic, DDS_INCONSISTENT_TOPIC_STATUS);
         dds_entity_status_signal((dds_entity_t)topic);
     }

@@ -344,6 +344,7 @@ void dds_entity_init
 
 dds_return_t dds_delete (dds_entity_t e)
 {
+    /* TODO: CHAM-104: Return more different errors when dds_entity_t became an handle iso a pointer (see header). */
     if (e) {
         dds_entity_delete_impl (e, false, true);
         return DDS_RETCODE_OK;
@@ -353,6 +354,7 @@ dds_return_t dds_delete (dds_entity_t e)
 
 dds_entity_t dds_get_parent(dds_entity_t e)
 {
+    /* TODO: CHAM-104: Return actual errors when dds_entity_t became an handle iso a pointer (see header). */
     if (e > 0) {
         return (dds_entity_t)(e->m_parent);
     }
@@ -361,6 +363,7 @@ dds_entity_t dds_get_parent(dds_entity_t e)
 
 dds_entity_t dds_get_participant(dds_entity_t e)
 {
+    /* TODO: CHAM-104: Return actual errors when dds_entity_t became an handle iso a pointer (see header). */
     if (e > 0) {
         return (dds_entity_t)(e->m_participant);
     }
@@ -369,25 +372,31 @@ dds_entity_t dds_get_participant(dds_entity_t e)
 
 dds_return_t dds_get_children(dds_entity_t e, dds_entity_t *children, size_t size)
 {
+    /* TODO: CHAM-104: Return more different errors when dds_entity_t became an handle iso a pointer (see header). */
     dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, 0);
-    if ((e > 0) && (children != NULL) && (size > 0)) {
-        os_mutexLock(&e->m_mutex);
-        ret = 0;
-        dds_entity* iter = e->m_children;
-        while (iter) {
-            if (ret < size) {
-                children[ret] = (dds_entity_t)iter;
+    if (e > 0) {
+        if (((children != NULL) && (size  > 0)) ||
+            ((children == NULL) && (size == 0)) ){
+
+            os_mutexLock(&e->m_mutex);
+            ret = 0;
+            dds_entity* iter = e->m_children;
+            while (iter) {
+                if (ret < size) {
+                    children[ret] = (dds_entity_t)iter;
+                }
+                ret++;
+                iter = iter->m_next;
             }
-            ret++;
-            iter = iter->m_next;
+            os_mutexUnlock(&e->m_mutex);
         }
-        os_mutexUnlock(&e->m_mutex);
     }
     return ret;
 }
 
 dds_return_t dds_get_qos (dds_entity_t e, dds_qos_t * qos)
 {
+    /* TODO: CHAM-104: Return more different errors when dds_entity_t became an handle iso a pointer (see header). */
     dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, 0);
     if ((e > 0) && (qos != NULL)) {
         os_mutexLock(&e->m_mutex);
@@ -402,6 +411,7 @@ dds_return_t dds_get_qos (dds_entity_t e, dds_qos_t * qos)
 /* Interface called whenever a changeable qos is modified */
 dds_return_t dds_set_qos (dds_entity_t e, const dds_qos_t * qos)
 {
+    /* TODO: CHAM-104: Return more different errors when dds_entity_t became an handle iso a pointer (see header). */
     dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, 0);
     if ((e > 0) && (qos != NULL)) {
         ret = DDS_RETCODE_OK;
@@ -425,6 +435,7 @@ dds_return_t dds_set_qos (dds_entity_t e, const dds_qos_t * qos)
 
 dds_return_t dds_get_listener (_In_ dds_entity_t e, _Out_ dds_listener_t * listener)
 {
+    /* TODO: CHAM-104: Return more different errors when dds_entity_t became an handle iso a pointer (see header). */
     dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, 0);
     if ((e > 0) && (listener != NULL)) {
         ret = DDS_RETCODE_OK;
@@ -435,8 +446,9 @@ dds_return_t dds_get_listener (_In_ dds_entity_t e, _Out_ dds_listener_t * liste
     return ret;
 }
 
-dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_ const dds_listener_t * listener)
+dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_opt_ const dds_listener_t * listener)
 {
+    /* TODO: CHAM-104: Return more different errors when dds_entity_t became an handle iso a pointer (see header). */
     dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, 0);
     if (e > 0) {
         ret = DDS_RETCODE_OK;
@@ -453,16 +465,17 @@ dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_ const dds_listener_t * 
 
 dds_return_t dds_enable(dds_entity_t e)
 {
+    /* TODO: CHAM-104: Return more different errors when dds_entity_t became an handle iso a pointer (see header). */
     dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, 0);
     if (e > 0) {
         os_mutexLock(&e->m_mutex);
+        ret = DDS_RETCODE_OK;
         if (e->m_flags & DDS_ENTITY_ENABLED) {
             /* Already enabled. */
-            ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, DDS_MOD_ENTITY, 0);
         } else {
             /* TODO: CHAM-96: Really enable. */
             e->m_flags |= DDS_ENTITY_ENABLED;
-            ret = DDS_RETCODE_OK;
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_ENTITY, 0);
         }
 
         os_mutexUnlock(&e->m_mutex);

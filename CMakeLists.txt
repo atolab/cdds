@@ -13,6 +13,18 @@ set(MEMORYCHECK_COMMAND_OPTIONS "--track-origins=yes --leak-check=full --xml=yes
 include (CTest)
 enable_testing()
 
+# todo sphinx+breathe to replace doxygen
+find_package(Doxygen)
+if(Doxygen_FOUND)
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in
+        ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+    add_custom_target(docs
+        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Executing Doxygen for document generation"
+        VERBATIM)
+endif()
+
 include_directories(include)
 #add_subdirectory(idlc)
 add_subdirectory(src)

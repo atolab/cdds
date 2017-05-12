@@ -1,3 +1,12 @@
+/** @file
+ *
+ * @brief DDS C99 Communication Status API
+ *
+ * @todo add copyright header?
+ *
+ * This header file defines the public API of the Communication Status in the
+ * VortexDDS C99 language binding.
+ */
 #ifndef DDS_STATUS_H
 #define DDS_STATUS_H
 
@@ -11,9 +20,6 @@ extern "C" {
 #define OS_API OS_API_IMPORT
 #endif
 
-/** @file status.h
- *  @brief Vortex Lite Communication Status header
- */
 
 /*
   Listeners implemented as structs containing callback functions

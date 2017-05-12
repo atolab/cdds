@@ -108,8 +108,13 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
         return;
     }
 
-    /* Update status metrics. */
     os_mutexLock (&rd->m_entity.m_mutex);
+
+    /* Reset the status for possible Listener call.
+     * When a listener is not called, the status will be set (again). */
+    dds_entity_status_reset(entity, data->status);
+
+    /* Update status metrics. */
     switch (data->status) {
         case DDS_REQUESTED_DEADLINE_MISSED_STATUS: {
             rd->m_requested_deadline_missed_status.total_count++;
@@ -180,7 +185,7 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
     /* Indicate to the entity hierarchy that we're busy with a callback.
      * This is done from the top to bottom to prevent possible deadlocks.
      * We can't really lock the entities because they have to be possibly
-     * accessable from listener callbacks. */
+     * accessible from listener callbacks. */
     if (!dds_entity_cb_propagate_begin(entity)) {
         /* An entity in the hierarchy is probably being deleted. */
         return;
@@ -192,17 +197,17 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
         call = dds_entity_cp_propagate_call(rd->m_entity.m_parent, entity, DDS_DATA_ON_READERS_STATUS, NULL, true);
 
         if (!call) {
-            /* No parent was interrested. What about myself with DDS_DATA_AVAILABLE_STATUS? */
+            /* No parent was interested. What about myself with DDS_DATA_AVAILABLE_STATUS? */
             call = dds_entity_cp_propagate_call(entity, entity, DDS_DATA_AVAILABLE_STATUS, NULL, false);
         }
 
         if (!call) {
-            /* Nobody was interrested. Set the status to maybe force a trigger on the subscriber. */
+            /* Nobody was interested. Set the status to maybe force a trigger on the subscriber. */
             dds_entity_status_set(rd->m_entity.m_parent, DDS_DATA_ON_READERS_STATUS);
             dds_entity_status_signal(rd->m_entity.m_parent);
         }
     } else {
-        /* Is anybody interrested within the entity hierarchy through listeners? */
+        /* Is anybody interested within the entity hierarchy through listeners? */
         call = dds_entity_cp_propagate_call(entity, entity, data->status, metrics, true);
     }
 
@@ -212,9 +217,6 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
     if (call) {
         /* Event was eaten by a listener. */
         os_mutexLock (&rd->m_entity.m_mutex);
-
-        /* Reset the status. */
-        dds_entity_status_reset(entity, data->status);
 
         /* Reset the change counts of the metrics. */
         switch (data->status) {
@@ -252,7 +254,7 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
         }
         os_mutexUnlock (&rd->m_entity.m_mutex);
     } else {
-        /* Nobody was interrested through a listener. Set the status to maybe force a trigger. */
+        /* Nobody was interested through a listener. Set the status to maybe force a trigger. */
         dds_entity_status_set(entity, data->status);
         dds_entity_status_signal(entity);
     }
@@ -440,9 +442,12 @@ int dds_reader_wait_for_historical_data
 
 dds_entity_t dds_get_subscriber(dds_entity_t rd)
 {
-    assert(dds_entity_is_a(rd, DDS_TYPE_READER));
+    /* TODO: CHAM-104: Return actual errors when dds_entity_t became an handle iso a pointer (see header). */
     if (dds_entity_is_a(rd, DDS_TYPE_READER)) {
         return dds_get_parent(rd);
+    }
+    if (dds_entity_is_a(rd, DDS_TYPE_COND_READ)) {
+        return dds_get_parent(dds_get_parent(rd));
     }
     return NULL;
 }

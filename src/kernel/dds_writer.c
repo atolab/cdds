@@ -52,8 +52,13 @@ static void dds_writer_status_cb (void * entity, const status_cb_data_t * data)
         return;
     }
 
-    /* Update status metrics. */
     os_mutexLock (&wr->m_entity.m_mutex);
+
+    /* Reset the status for possible Listener call.
+     * When a listener is not called, the status will be set (again). */
+    dds_entity_status_reset(entity, data->status);
+
+    /* Update status metrics. */
     switch (data->status) {
         case DDS_OFFERED_DEADLINE_MISSED_STATUS: {
             wr->m_offered_deadline_missed_status.total_count++;
@@ -97,13 +102,13 @@ static void dds_writer_status_cb (void * entity, const status_cb_data_t * data)
     /* Indicate to the entity hierarchy that we're busy with a callback.
      * This is done from the top to bottom to prevent possible deadlocks.
      * We can't really lock the entities because they have to be possibly
-     * accessable from listener callbacks. */
+     * accessible from listener callbacks. */
     if (!dds_entity_cb_propagate_begin(entity)) {
         /* An entity in the hierarchy is probably being deleted. */
         return;
     }
 
-    /* Is anybody interrested within the entity hierarchy through listeners? */
+    /* Is anybody interested within the entity hierarchy through listeners? */
     call = dds_entity_cp_propagate_call(entity, entity, data->status, metrics, true);
 
     /* Let possible waits continue. */
@@ -139,7 +144,7 @@ static void dds_writer_status_cb (void * entity, const status_cb_data_t * data)
         }
         os_mutexUnlock (&wr->m_entity.m_mutex);
     } else {
-        /* Nobody was interrested through a listener. Set the status to maybe force a trigger. */
+        /* Nobody was interested through a listener. Set the status to maybe force a trigger. */
         dds_entity_status_set(entity, data->status);
         dds_entity_status_signal(entity);
     }
@@ -346,7 +351,7 @@ int dds_writer_create
 
 dds_entity_t dds_get_publisher(dds_entity_t wr)
 {
-    assert(dds_entity_is_a(wr, DDS_TYPE_WRITER));
+    /* TODO: CHAM-104: Return actual errors when dds_entity_t became an handle iso a pointer (see header). */
     if (dds_entity_is_a(wr, DDS_TYPE_WRITER)) {
         return dds_get_parent(wr);
     }

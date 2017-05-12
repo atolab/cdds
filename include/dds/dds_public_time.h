@@ -1,3 +1,12 @@
+/** @file
+ *
+ * @brief DDS C99 Time support API
+ *
+ * @todo add copyright header?
+ *
+ * This header file defines the public API of the in the
+ * VortexDDS C99 language binding.
+ */
 #ifndef DDS_TIME_H
 #define DDS_TIME_H
 
@@ -10,10 +19,6 @@ extern "C" {
 #else
 #define OS_API OS_API_IMPORT
 #endif
-
-/** @file time.h
- *  @brief Vlite Timer support Interface header
- */
 
 /*
   Times are represented using a 64-bit signed integer, encoding

@@ -23,11 +23,7 @@ void entity_enabling()
 
     /* Check enabling with bad parameters. */
     status = dds_enable(NULL);
-    {
-        int s1 = dds_err_nr(status);
-        int s2 = dds_err_nr(DDS_RETCODE_BAD_PARAMETER);
-        cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_enable (NULL)");
-    }
+    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_enable (NULL)");
 
     /* Check actual enabling. */
     /* TODO: CHAM-96: Check enabling.
@@ -35,9 +31,9 @@ void entity_enabling()
     cr_assert_status_eq(status, dds_err_nr(DDS_RETCODE_OK), "dds_enable (delayed enable)");
     */
 
-    /* Check re-enabling. */
+    /* Check re-enabling (should be a noop). */
     status = dds_enable(entity);
-    cr_assert_status_eq(status, DDS_RETCODE_PRECONDITION_NOT_MET, "dds_enable (already enabled)");
+    cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_enable (already enabled)");
 }
 
 void entity_qos()
@@ -69,7 +65,7 @@ void entity_qos()
     status = dds_set_qos (NULL, qos2);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_qos(NULL, qos)");
 
-    /* Entity (partitition) is enabled, so we shouldn't be able to set QoS. */
+    /* Entity (partition) is enabled, so we shouldn't be able to set QoS. */
     /* Checking all QoS internals (also related to enabled/disabled) should be
      * done by a QoS test and specific 'child' entities. */
     status = dds_set_qos (entity, qos2);
@@ -166,7 +162,7 @@ void entity_status(void)
     dds_return_t status;
     uint32_t s1 = 0;
 
-    /* Don't check actual bad statusses. That's a job
+    /* Don't check actual bad statuses. That's a job
      * for the specific entity children, not for the generic part. */
 
     /* Check getting Status with bad parameters. */
@@ -186,7 +182,7 @@ void entity_status(void)
     status = dds_set_enabled_status (NULL, 0);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_enabled_status(NULL, 0)");
 
-    /* I shouldn't be able to set statusses on a participant. */
+    /* I shouldn't be able to set statuses on a participant. */
     status = dds_set_enabled_status (entity, 0);
     cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_set_enabled_status(entity, 0)");
     status = dds_set_enabled_status (entity, DDS_DATA_AVAILABLE_STATUS);
@@ -268,24 +264,28 @@ void entity_get_entities(void)
 
     /* Check getting Children with bad parameters. */
     status = dds_get_children (NULL, &child, 1);
-    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(NULL, child, 1)");
+    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_children(NULL, child, 1)");
     status = dds_get_children (entity, NULL, 1);
-    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(entity, NULL, 1)");
+    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_children(entity, NULL, 1)");
     status = dds_get_children (entity, &child, 0);
-    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(entity, child, 0)");
+    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_children(entity, child, 0)");
     status = dds_get_children (NULL, NULL, 1);
-    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(NULL, NULL, 1)");
+    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_children(NULL, NULL, 1)");
     status = dds_get_children (NULL, &child, 0);
-    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(NULL, child, 0)");
-    status = dds_get_children (entity, NULL, 0);
-    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(entity, NULL, 0)");
+    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_children(NULL, child, 0)");
 
-    /* Get Childrent, of which there are currently none. */
-    status = dds_get_children (entity, &child, 1);
-    if (status < 0) {
-        cr_assert_eq(status, 0, "Children were returned while none were expected");
+    /* Get Children, of which there are currently none. */
+    status = dds_get_children (entity, NULL, 0);
+    if (status > 0) {
+        cr_assert("dds_get_children(entity, NULL, 0) un-expectantly found children");
     } else {
-        cr_assert("dds_get_children(entity, child, 1) failed");
+        cr_assert_eq(status, 0, "dds_get_children(entity, NULL, 0) failed");
+    }
+    status = dds_get_children (entity, &child, 1);
+    if (status > 0) {
+        cr_assert("dds_get_children(entity, child, 1) un-expectantly returned children");
+    } else {
+        cr_assert_eq(status, 0, "dds_get_children(entity, child, 1) failed");
     }
 }
 

@@ -1,9 +1,14 @@
+/** @file
+ *
+ * @brief DDS C99 QoS API
+ *
+ * @todo add copyright header?
+ *
+ * This header file defines the public API of QoS and Policies in the
+ * VortexDDS C99 language binding.
+ */
 #ifndef DDS_QOS_H
 #define DDS_QOS_H
-
-/** @file qos.h
- *  @brief Vortex Lite QoS header
- */
 
 #if defined (__cplusplus)
 extern "C" {
