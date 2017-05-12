@@ -1,7 +1,7 @@
 #include "CUnit/CUnit.h"
 #include "CUnit/Automated.h"
 
-#include "dds_listener.h"
+#include "dds.h"
 
 #define ASSERT_CALLBACK_EQUAL(fntype, listener, expected) \
     do { \

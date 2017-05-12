@@ -29,9 +29,6 @@ target_compile_definitions(vdds PRIVATE VDDS_BUILD)
 add_library(Vortex::DDSC99 ALIAS vdds)
 
 
-#target_include_directories(vdds PUBLIC ../include)
-add_subdirectory(c99)
-
 # TODO: improve test inclusion.
 add_subdirectory(kernel/test)
 

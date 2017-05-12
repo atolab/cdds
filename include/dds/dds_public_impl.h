@@ -78,13 +78,9 @@ dds_topic_descriptor_t;
 
 typedef struct dds_entity * dds_entity_t;
 typedef struct dds_condition * dds_condition_t;
-typedef void * dds_listener_t;
 typedef uint64_t dds_instance_handle_t;
 typedef int32_t dds_domainid_t;
 typedef struct dds_waitset * dds_waitset_t;
-
-/* TODO: Replace dds_listener_cham65_t with new listener implementation. */
-dds_listener_t dds_listener_create(void);
 
 
 typedef struct dds_condition_seq

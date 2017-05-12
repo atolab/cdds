@@ -1,15 +1,6 @@
 #include <assert.h>
 #include <string.h>
-#include "ddsi/q_entity.h"
-#include "ddsi/q_thread.h"
-#include "ddsi/q_xmsg.h"
-#include "kernel/q_osplser.h"
 #include "kernel/dds_entity.h"
-#include "kernel/dds_rhc.h"
-#include "kernel/dds_tkmap.h"
-#include "kernel/dds_topic.h"
-#include "kernel/dds_domain.h"
-#include "kernel/dds_participant.h"
 #include "kernel/dds_condition.h"
 #include "kernel/dds_listener.h"
 #include "os/os_report.h"
@@ -32,18 +23,13 @@ bool dds_entity_cb_propagate_begin(dds_entity *e)
         ok = dds_entity_cb_propagate_begin(e->m_parent);
 
         if (ok) {
-            /* Lock the listener. Unlock it when the callback is done.
-             * This has the following effect:
-             * - Entity deletion will wait while the cb is in progress.
-             * - Setting a listener on the entity will wait while the cb is in progress.
-             * - Setting functions on the listener will wait while the cb is in progress.
-             */
-            /* Indicate that I'm busy, so that a parrallel delete/set_listener will wait. */
             os_mutexLock(&e->m_mutex);
             if (e->m_flags |= DDS_ENTITY_DELETED) {
-                /* Deletion in progress. */
+                /* Entity deletion in progress: break off the callback process. */
                 ok = false;
             } else {
+                /* Indicate that a callback will be in progress, so that a parrallel
+                 * delete/set_listener will wait. */
                 e->m_cb_count++;
             }
             os_mutexUnlock(&e->m_mutex);
@@ -78,94 +64,91 @@ bool dds_entity_cp_propagate_call(dds_entity *e, dds_entity *src, uint32_t statu
 {
     bool called = false;
     if (e) {
+        dds_listener_t *l = (dds_listener_t *)(&e->m_listener);
+
         /* We should be busy at this point. */
         assert(e->m_cb_count > 0);
 
-        c99_listener_cham65_t *l = (c99_listener_cham65_t*)(e->m_listener);
-        if (l) {
-            dds_listener_lock((dds_listener_t*)l);
-            switch (status) {
-                case DDS_INCONSISTENT_TOPIC_STATUS:
-                    if (l->on_inconsistent_topic) {
-                        l->on_inconsistent_topic(src, *((dds_inconsistent_topic_status_t*)metrics));
-                        called = true;
-                    }
-                    break;
-                case DDS_OFFERED_DEADLINE_MISSED_STATUS:
-                    if (l->on_offered_deadline_missed) {
-                        l->on_offered_deadline_missed(src, *((dds_offered_deadline_missed_status_t*)metrics));
-                        called = true;
-                    }
-                    break;
-                case DDS_REQUESTED_DEADLINE_MISSED_STATUS:
-                    if (l->on_requested_deadline_missed) {
-                        l->on_requested_deadline_missed(src, *((dds_requested_deadline_missed_status_t*)metrics));
-                        called = true;
-                    }
-                    break;
-                case DDS_OFFERED_INCOMPATIBLE_QOS_STATUS:
-                    if (l->on_offered_incompatible_qos) {
-                        l->on_offered_incompatible_qos(src, *((dds_offered_incompatible_qos_status_t*)metrics));
-                        called = true;
-                    }
-                    break;
-                case DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS:
-                    if (l->on_requested_incompatible_qos) {
-                        l->on_requested_incompatible_qos(src, *((dds_requested_incompatible_qos_status_t*)metrics));
-                        called = true;
-                    }
-                    break;
-                case DDS_SAMPLE_LOST_STATUS:
-                    if (l->on_sample_lost) {
-                        l->on_sample_lost(src, *((dds_sample_lost_status_t*)metrics));
-                        called = true;
-                    }
-                    break;
-                case DDS_SAMPLE_REJECTED_STATUS:
-                    if (l->on_sample_rejected) {
-                        l->on_sample_rejected(src, *((dds_sample_rejected_status_t*)metrics));
-                        called = true;
-                    }
-                    break;
-                case DDS_DATA_ON_READERS_STATUS:
-                    if (l->on_data_on_readers) {
-                        l->on_data_on_readers(src);
-                        called = true;
-                    }
-                    break;
-                case DDS_DATA_AVAILABLE_STATUS:
-                    if (l->on_data_available) {
-                        l->on_data_available(src);
-                        called = true;
-                    }
-                    break;
-                case DDS_LIVELINESS_LOST_STATUS:
-                    if (l->on_liveliness_lost) {
-                        l->on_liveliness_lost(src, *((dds_liveliness_lost_status_t*)metrics));
-                        called = true;
-                    }
-                    break;
-                case DDS_LIVELINESS_CHANGED_STATUS:
-                    if (l->on_liveliness_changed) {
-                        l->on_liveliness_changed(src, *((dds_liveliness_changed_status_t*)metrics));
-                        called = true;
-                    }
-                    break;
-                case DDS_PUBLICATION_MATCHED_STATUS:
-                    if (l->on_publication_matched) {
-                        l->on_publication_matched(src, *((dds_publication_matched_status_t*)metrics));
-                        called = true;
-                    }
-                    break;
-                case DDS_SUBSCRIPTION_MATCHED_STATUS:
-                    if (l->on_subscription_matched) {
-                        l->on_subscription_matched(src, *((dds_subscription_matched_status_t*)metrics));
-                        called = true;
-                    }
-                    break;
-                default: assert (0);
-            }
-            dds_listener_unlock((dds_listener_t*)l);
+        switch (status) {
+            case DDS_INCONSISTENT_TOPIC_STATUS:
+                if (l->on_inconsistent_topic != DDS_LUNSET) {
+                    l->on_inconsistent_topic(src, *((dds_inconsistent_topic_status_t*)metrics));
+                    called = true;
+                }
+                break;
+            case DDS_OFFERED_DEADLINE_MISSED_STATUS:
+                if (l->on_offered_deadline_missed != DDS_LUNSET) {
+                    l->on_offered_deadline_missed(src, *((dds_offered_deadline_missed_status_t*)metrics));
+                    called = true;
+                }
+                break;
+            case DDS_REQUESTED_DEADLINE_MISSED_STATUS:
+                if (l->on_requested_deadline_missed != DDS_LUNSET) {
+                    l->on_requested_deadline_missed(src, *((dds_requested_deadline_missed_status_t*)metrics));
+                    called = true;
+                }
+                break;
+            case DDS_OFFERED_INCOMPATIBLE_QOS_STATUS:
+                if (l->on_offered_incompatible_qos != DDS_LUNSET) {
+                    l->on_offered_incompatible_qos(src, *((dds_offered_incompatible_qos_status_t*)metrics));
+                    called = true;
+                }
+                break;
+            case DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS:
+                if (l->on_requested_incompatible_qos != DDS_LUNSET) {
+                    l->on_requested_incompatible_qos(src, *((dds_requested_incompatible_qos_status_t*)metrics));
+                    called = true;
+                }
+                break;
+            case DDS_SAMPLE_LOST_STATUS:
+                if (l->on_sample_lost != DDS_LUNSET) {
+                    l->on_sample_lost(src, *((dds_sample_lost_status_t*)metrics));
+                    called = true;
+                }
+                break;
+            case DDS_SAMPLE_REJECTED_STATUS:
+                if (l->on_sample_rejected != DDS_LUNSET) {
+                    l->on_sample_rejected(src, *((dds_sample_rejected_status_t*)metrics));
+                    called = true;
+                }
+                break;
+            case DDS_DATA_ON_READERS_STATUS:
+                if (l->on_data_on_readers != DDS_LUNSET) {
+                    l->on_data_on_readers(src);
+                    called = true;
+                }
+                break;
+            case DDS_DATA_AVAILABLE_STATUS:
+                if (l->on_data_available != DDS_LUNSET) {
+                    l->on_data_available(src);
+                    called = true;
+                }
+                break;
+            case DDS_LIVELINESS_LOST_STATUS:
+                if (l->on_liveliness_lost != DDS_LUNSET) {
+                    l->on_liveliness_lost(src, *((dds_liveliness_lost_status_t*)metrics));
+                    called = true;
+                }
+                break;
+            case DDS_LIVELINESS_CHANGED_STATUS:
+                if (l->on_liveliness_changed != DDS_LUNSET) {
+                    l->on_liveliness_changed(src, *((dds_liveliness_changed_status_t*)metrics));
+                    called = true;
+                }
+                break;
+            case DDS_PUBLICATION_MATCHED_STATUS:
+                if (l->on_publication_matched != DDS_LUNSET) {
+                    l->on_publication_matched(src, *((dds_publication_matched_status_t*)metrics));
+                    called = true;
+                }
+                break;
+            case DDS_SUBSCRIPTION_MATCHED_STATUS:
+                if (l->on_subscription_matched != DDS_LUNSET) {
+                    l->on_subscription_matched(src, *((dds_subscription_matched_status_t*)metrics));
+                    called = true;
+                }
+                break;
+            default: assert (0);
         }
 
         if (!called && propagate) {
@@ -235,7 +218,7 @@ void dds_entity_delete_impl (dds_entity_t e, bool child, bool recurse)
 
     e->m_flags |= DDS_ENTITY_DELETED;
     e->m_status_enable = 0;
-    e->m_listener = NULL;
+    dds_listener_reset(&e->m_listener);
 
     dds_entity_cb_wait_unlock(e);
 
@@ -314,7 +297,7 @@ void dds_entity_init
 (
   dds_entity * e, dds_entity * parent,
   dds_entity_kind_t kind, dds_qos_t * qos,
-  dds_listener_t listener,
+  dds_listener_t *listener,
   uint32_t mask
 )
 {
@@ -324,7 +307,6 @@ void dds_entity_init
     e->m_parent = parent;
     e->m_kind = kind;
     e->m_qos = qos;
-    e->m_listener = listener;
     e->m_cb_waiting = 0;
     e->m_cb_count = 0;
 
@@ -351,6 +333,12 @@ void dds_entity_init
     } else {
         assert (kind == DDS_TYPE_PARTICIPANT);
         e->m_participant = e;
+    }
+
+    if (listener) {
+        dds_listener_copy(&e->m_listener, listener);
+    } else {
+        dds_listener_reset(&e->m_listener);
     }
 }
 
@@ -435,26 +423,29 @@ dds_return_t dds_set_qos (dds_entity_t e, const dds_qos_t * qos)
     return ret;
 }
 
-dds_return_t dds_get_listener (dds_entity_t e, dds_listener_t **listener)
-{
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, 0);
-    if ((e > 0) && (listener != NULL)) {
-        ret = DDS_RETCODE_OK;
-        os_mutexLock(&e->m_mutex);
-        *listener = e->m_listener;
-        os_mutexUnlock(&e->m_mutex);
-    }
-    return ret;
-}
-
-dds_return_t dds_set_listener (dds_entity_t e, const dds_listener_t *listener)
+dds_return_t dds_get_listener (_In_ dds_entity_t e, _Out_ dds_listener_t * listener)
 {
     dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, 0);
     if ((e > 0) && (listener != NULL)) {
         ret = DDS_RETCODE_OK;
         dds_entity_cb_wait_lock(e);
-        /* TODO: CHAM-65: Actually set listeners, not just copy it (or is setting them enough?). */
-        e->m_listener = (dds_listener_t *)listener;
+        dds_listener_copy (listener, &e->m_listener);
+        dds_entity_cb_wait_unlock(e);
+    }
+    return ret;
+}
+
+dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_ const dds_listener_t * listener)
+{
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, 0);
+    if (e > 0) {
+        ret = DDS_RETCODE_OK;
+        dds_entity_cb_wait_lock(e);
+        if (listener) {
+            dds_listener_copy(&e->m_listener, listener);
+        } else {
+            dds_listener_reset(&e->m_listener);
+        }
         dds_entity_cb_wait_unlock(e);
     }
     return ret;

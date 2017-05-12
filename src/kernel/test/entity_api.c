@@ -82,41 +82,83 @@ void entity_qos()
 void entity_listeners(void)
 {
     dds_return_t status;
-    dds_listener_t *l1 = NULL;
+    dds_listener_t *l1 = dds_listener_create();
     dds_listener_t *l2 = dds_listener_create();
+    void *cb1;
+    void *cb2;
 
     /* Don't check actual workings of the listeners. That's a job
      * for the specific entity children, not for the generic part. */
+
+    /* Set some random values for the l2 listener callbacks.
+     * I know for sure that these will not be called within this test.
+     * Otherwise, the following would let everything crash.
+     * We just set them to know for sure that we got what we set. */
+    dds_lset_liveliness_changed(l2,         (dds_on_liveliness_changed_fn)          1234);
+    dds_lset_requested_deadline_missed(l2,  (dds_on_requested_deadline_missed_fn)   5678);
+    dds_lset_requested_incompatible_qos(l2, (dds_on_requested_incompatible_qos_fn)  8765);
+    dds_lset_publication_matched(l2,        (dds_on_publication_matched_fn)         4321);
 
     /* Check getting Listener with bad parameters. */
     status = dds_get_listener (NULL, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_listener(NULL, NULL)");
     status = dds_get_listener (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_listener(entity, NULL)");
-    status = dds_get_listener (NULL, &l1);
+    status = dds_get_listener (NULL, l1);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_listener(NULL, listener)");
 
-    /* Get Listener, which should be NULL. */
-    status = dds_get_listener (entity, &l1);
+    /* Get Listener, which should be unset. */
+    status = dds_get_listener (entity, l1);
     cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_listener(entity, listener)");
-    cr_assert_eq(l1, NULL, "Listener is not NULL");
+    dds_lget_liveliness_changed (l1, (dds_on_liveliness_changed_fn*)&cb1);
+    cr_assert_eq(cb1, DDS_LUNSET, "Listener not initialized to NULL");
+    dds_lget_requested_deadline_missed (l1, (dds_on_requested_deadline_missed_fn*)&cb1);
+    cr_assert_eq(cb1, DDS_LUNSET, "Listener not initialized to NULL");
+    dds_lget_requested_incompatible_qos (l1, (dds_on_requested_incompatible_qos_fn*)&cb1);
+    cr_assert_eq(cb1, DDS_LUNSET, "Listener not initialized to NULL");
+    dds_lget_publication_matched (l1, (dds_on_publication_matched_fn*)&cb1);
+    cr_assert_eq(cb1, DDS_LUNSET, "Listener not initialized to NULL");
 
     /* Check setting Listener with bad parameters. */
     status = dds_set_listener (NULL, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_listener(NULL, NULL)");
-    status = dds_set_listener (entity, NULL);
-    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_listener(entity, NULL)");
     status = dds_set_listener (NULL, l2);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_listener(NULL, listener)");
 
     /* Getting after setting should return set listener. */
     status = dds_set_listener (entity, l2);
     cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_set_listener(entity, listener)");
-    status = dds_get_listener (entity, &l1);
+    status = dds_get_listener (entity, l1);
     cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_listener(entity, listener)");
-    cr_assert_eq(l1, l2, "Listeners are not equal");
+    dds_lget_liveliness_changed (l1, (dds_on_liveliness_changed_fn*)&cb1);
+    dds_lget_liveliness_changed (l2, (dds_on_liveliness_changed_fn*)&cb2);
+    cr_assert_eq(cb1, cb2, "Listeners are not equal");
+    dds_lget_requested_deadline_missed (l1, (dds_on_requested_deadline_missed_fn*)&cb1);
+    dds_lget_requested_deadline_missed (l2, (dds_on_requested_deadline_missed_fn*)&cb2);
+    cr_assert_eq(cb1, cb2, "Listeners are not equal");
+    dds_lget_requested_incompatible_qos (l1, (dds_on_requested_incompatible_qos_fn*)&cb1);
+    dds_lget_requested_incompatible_qos (l2, (dds_on_requested_incompatible_qos_fn*)&cb2);
+    cr_assert_eq(cb1, cb2, "Listeners are not equal");
+    dds_lget_publication_matched (l1, (dds_on_publication_matched_fn*)&cb1);
+    dds_lget_publication_matched (l2, (dds_on_publication_matched_fn*)&cb2);
+    cr_assert_eq(cb1, cb2, "Listeners are not equal");
+
+    /* Reset listener. */
+    status = dds_set_listener (entity, NULL);
+    cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_set_listener(entity, NULL)");
+    status = dds_get_listener (entity, l2);
+    cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_listener(entity, listener)");
+    dds_lget_liveliness_changed (l2, (dds_on_liveliness_changed_fn*)&cb2);
+    cr_assert_eq(cb2, DDS_LUNSET, "Listener not reset");
+    dds_lget_requested_deadline_missed (l2, (dds_on_requested_deadline_missed_fn*)&cb2);
+    cr_assert_eq(cb2, DDS_LUNSET, "Listener not reset");
+    dds_lget_requested_incompatible_qos (l2, (dds_on_requested_incompatible_qos_fn*)&cb2);
+    cr_assert_eq(cb2, DDS_LUNSET, "Listener not reset");
+    dds_lget_publication_matched (l2, (dds_on_publication_matched_fn*)&cb2);
+    cr_assert_eq(cb2, DDS_LUNSET, "Listener not reset");
 
     dds_free(l2);
+    dds_free(l1);
 }
 
 void entity_status(void)

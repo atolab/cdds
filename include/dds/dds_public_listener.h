@@ -7,14 +7,24 @@
  * This header file defines the public API of listeners in the VortexDDS C99 language binding.
  */
 
-#ifndef _DDS_LISTENER_H_
-#define _DDS_LISTENER_H_
+#ifndef _DDS_PUBLIC_LISTENER_H_
+#define _DDS_PUBLIC_LISTENER_H_
 
-#include "kernel/dds_types.h"
+#include "dds.h"
+#include "dds/dds_public_impl.h"
+#include "dds/dds_public_status.h"
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
+
+#undef DDS_EXPORT
+#if VDDS_BUILD
+#define DDS_EXPORT OS_API_EXPORT
+#else
+#define DDS_EXPORT OS_API_IMPORT
+#endif
+
 
 /* Listener callbacks */
 typedef void (*dds_on_inconsistent_topic_fn) (dds_entity_t topic, const dds_inconsistent_topic_status_t status);
@@ -30,16 +40,16 @@ typedef void (*dds_on_requested_deadline_missed_fn) (dds_entity_t reader, const 
 typedef void (*dds_on_requested_incompatible_qos_fn) (dds_entity_t reader, const dds_requested_incompatible_qos_status_t status);
 typedef void (*dds_on_publication_matched_fn) (dds_entity_t writer, const dds_publication_matched_status_t  status);
 typedef void (*dds_on_subscription_matched_fn) (dds_entity_t reader, const dds_subscription_matched_status_t  status);
+
+#if 0
+/* TODO: Why use (*dds_on_any_fn) (); and DDS_LUNSET? Why not just set the callbacks to NULL? */
 typedef void (*dds_on_any_fn) (); /**< Empty parameter list on purpose; should be assignable without cast to all of the above. @todo check with an actual compiler; I'm a sloppy compiler */
-
 #define DDS_LUNSET ((dds_on_any_fn)1) /**< Callback indicating a callback isn't set */
+#else
+#define DDS_LUNSET (NULL)
+#endif
 
-/**
- * @brief Listener structure
- *
- * The opaque dds_listener_t struct.
- * @see ::c99_listener for implementation of the listener struct
- */
+struct c99_listener;
 typedef struct c99_listener dds_listener_t;
 
 /**
@@ -301,9 +311,10 @@ DDS_EXPORT void dds_lget_publication_matched (_In_ const dds_listener_t * restri
  */
 DDS_EXPORT void dds_lget_subscription_matched (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_subscription_matched_fn *callback);
 
+#undef DDS_EXPORT
 
 #if defined (__cplusplus)
 }
 #endif
 
-#endif /*_DDS_LISTENER_H_*/
+#endif /*_DDS_PUBLIC_LISTENER_H_*/

@@ -23,6 +23,7 @@ typedef _Return_type_success_(return >= 0) uintptr_t dds_return_t;
 #include "dds/dds_public_qos.h"
 #include "dds/dds_public_error.h"
 #include "dds/dds_public_status.h"
+#include "dds/dds_public_listener.h"
 #include "dds/dds_public_log.h"
 
 #if defined (__cplusplus)
@@ -330,7 +331,7 @@ DDS_EXPORT dds_return_t dds_set_qos (_In_ dds_entity_t e, _In_ const dds_qos_t *
  *   -# e Entity to get the listener set
  *   -# listener pointer to the listener set on the entity
  */
-DDS_EXPORT dds_return_t dds_get_listener (_In_ dds_entity_t e, _Out_ dds_listener_t ** listener);
+DDS_EXPORT dds_return_t dds_get_listener (_In_ dds_entity_t e, _Out_ dds_listener_t * listener);
 
 
 /**

@@ -33,5 +33,6 @@ endfunction()
 #################################################################################
 add_dds_test(basic                    CUnit          basic.c)
 add_dds_test(entity_api               Criterion      entity_api.c)
+add_dds_test(listener                 CUnit          listener.c)
 add_dds_test(participant_creation     Criterion      participant_creation.c)
 
