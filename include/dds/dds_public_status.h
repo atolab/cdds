@@ -10,6 +10,8 @@
 #ifndef DDS_STATUS_H
 #define DDS_STATUS_H
 
+#include "os/os_public.h"
+
 #if defined (__cplusplus)
 extern "C" {
 #endif

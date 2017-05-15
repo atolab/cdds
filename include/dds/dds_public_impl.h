@@ -13,6 +13,7 @@
 
 #include "dds/dds_public_alloc.h"
 #include "dds/dds_public_stream.h"
+#include "os/os_public.h"
 
 #if defined (__cplusplus)
 extern "C" {

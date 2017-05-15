@@ -11,6 +11,8 @@
 #ifndef DDS_LOG_H
 #define DDS_LOG_H
 
+#include "os/os_public.h"
+
 #if defined (__cplusplus)
 extern "C" {
 #endif

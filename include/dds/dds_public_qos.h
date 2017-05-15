@@ -10,6 +10,8 @@
 #ifndef DDS_QOS_H
 #define DDS_QOS_H
 
+#include "os/os_public.h"
+
 #if defined (__cplusplus)
 extern "C" {
 #endif

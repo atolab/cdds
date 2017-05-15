@@ -10,6 +10,8 @@
 #ifndef DDS_ERROR_H
 #define DDS_ERROR_H
 
+#include "os/os_public.h"
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
