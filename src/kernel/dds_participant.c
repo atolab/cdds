@@ -76,7 +76,7 @@ static dds_return_t dds_participant_qos_set (dds_entity_t e, const dds_qos_t *qo
     return ret;
 }
 
-dds_entity_t dds_participant_create
+dds_entity_t dds_create_participant
 (
   _In_ const dds_domainid_t domain,
   _In_opt_ const dds_qos_t * qos,

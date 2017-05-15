@@ -6,16 +6,16 @@ Test(ts, test_1) {
 
   dds_entity_t participant, participant2, participant3;
 
-  participant = dds_participant_create (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   cr_assert_neq(participant, NULL, "dds_participant_create");
 
-  participant2 = dds_participant_create (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  participant2 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   cr_assert_neq(participant2, NULL, "dds_participant_create");
 
   dds_delete (participant);
   dds_delete (participant2);
 
-  participant3 = dds_participant_create (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   cr_assert_neq(participant3, NULL, "dds_participant_create");
 
   dds_delete (participant3);
