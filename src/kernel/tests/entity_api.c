@@ -10,11 +10,9 @@ static dds_entity_t entity = NULL;
 
 void entity_creation()
 {
-    dds_return_t status;
-
     /* Use participant as entity in the tests. */
-    status = dds_participant_create (&entity, DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_participant_create");
+    entity = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_neq(entity, NULL, "dds_create_participant");
 }
 
 void entity_enabling()

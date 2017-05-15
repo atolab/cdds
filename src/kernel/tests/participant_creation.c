@@ -2,7 +2,7 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
-Test(ts, test_1) {
+Test(ts, pc) {
 
   dds_entity_t participant, participant2, participant3;
 
