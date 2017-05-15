@@ -464,7 +464,7 @@ int main (int argc, char *argv[])
 
   status = dds_init (argc, argv);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  status = dds_participant_create (&participant, DDS_DOMAIN_DEFAULT, NULL, NULL);
+  participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   if ((udpsock = socket (AF_INET, SOCK_DGRAM, 0)) == -1) {
