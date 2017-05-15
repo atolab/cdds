@@ -254,5 +254,6 @@ extern void dds_fini (void)
     os_osExit ();
     dds_string_free (dds_init_exe);
     dds_sleepfor (DDS_MSECS (500));
+    dds_global.m_default_domain = DDS_DOMAIN_DEFAULT;
   }
 }
