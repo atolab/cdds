@@ -2,27 +2,23 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
-/* Add --verbose command line argument to get the cr_log_info traces (if there are any). */
+Test(ts, test_1) {
 
+  dds_entity_t participant, participant2, participant3;
 
-Test(c99, participant_creation)
-{
-    dds_entity_t participant;
-    int status;
+  participant = dds_participant_create (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_neq(participant, NULL, "dds_participant_create");
 
-    /* TODO: Replace with proper tests. */
+  participant2 = dds_participant_create (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_neq(participant2, NULL, "dds_participant_create");
 
-    cr_log_info("Starting test %d", 2);
-    status = dds_init (0, NULL);
-    cr_assert_eq(status, DDS_RETCODE_OK, "dds_init");
-    DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-    status = dds_participant_create (&participant, DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_eq(status, DDS_RETCODE_OK, "dds_participant_create");
-    DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-    cr_log_info("Stopping test %d", 2);
-    status = dds_delete (participant);
-    cr_assert_eq(status, DDS_RETCODE_OK, "dds_participant_delete");
-    dds_fini ();
+  dds_delete (participant);
+  dds_delete (participant2);
+
+  participant3 = dds_participant_create (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_neq(participant3, NULL, "dds_participant_create");
+
+  dds_delete (participant3);
+
 }
-
 
