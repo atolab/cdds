@@ -8,9 +8,7 @@ target_link_libraries(Abstraction INTERFACE Threads::Threads)
 
 if(WIN32)
   # Link with WIN32 core-libraries
-  find_package(Winsock2 REQUIRED)
-  find_package(IPHelper REQUIRED)
-  target_link_libraries(Abstraction INTERFACE Winsock2 IPHelper)
+  target_link_libraries(Abstraction INTERFACE wsock32 ws2_32 iphlpapi)
 
   # Many of the secure versions provided by Microsoft have failure modes
   # which are not supported by our abstraction layer, so efforts trying
