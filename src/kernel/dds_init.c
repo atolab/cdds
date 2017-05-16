@@ -15,15 +15,7 @@
 #include "ddsi/q_thread.h"
 
 #ifdef _WRS_KERNEL
-
-#include "os_library.h"
-os_dynamicLoad_plugin *os_dynamicLibPlugin = &os_dynamicLibPluginImpl;
 char *os_environ[] = { NULL };
-struct os_librarySymbols os_staticLibraries[] =
-{
-  { NULL, (os_entryPoint[]) { {NULL, NULL } } }
-};
-
 #endif
 
 struct q_globals gv;

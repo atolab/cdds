@@ -8,7 +8,11 @@
 #include <string.h>
 #include <signal.h>
 #include <assert.h>
+#ifdef _WRS_KERNEL
+#include <st_inttypes.h>
+#else
 #include <inttypes.h>
+#endif /* __VXWORKS__ */
 #include <math.h>
 
 #include "ddsi/q_entity.h"

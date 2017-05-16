@@ -5,12 +5,8 @@
 
 #if __linux__ == 1
 #include "posix/os_platform_public.h"
-#elif __vxworks == 1
-#if __RTP__ == 1
-#include "vxworks_rtp/os_platform_public.h"
-#else
-#include "vxworks_km/os_platform_public.h"
-#endif
+#elif defined(__VXWORKS__)
+#include "posix/os_platform_public.h"
 #elif __sun == 1
 #include "solaris/os_platform_public.h"
 #elif defined(__INTEGRITY)

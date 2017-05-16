@@ -13,6 +13,11 @@
 #ifndef OS_PLATFORM_SOCKET_H
 #define OS_PLATFORM_SOCKET_H
 
+#ifdef __VXWORKS__
+#include <vxWorks.h>
+#include <sockLib.h>
+#include <ioLib.h>
+#endif /* __VXWORKS__ */
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -24,7 +29,7 @@
 #include <sys/select.h>
 #ifdef __APPLE__
 #include <sys/sockio.h>
-#endif
+#endif /* __APPLE__ */
 #include <unistd.h>
 
 #include <ifaddrs.h>
