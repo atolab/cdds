@@ -161,7 +161,7 @@ extern int dds_init_impl (dds_domainid_t domain)
     return DDS_RETCODE_OK;
   }
 
-  /* If domain not set check envirionment variable */
+  /* If domain not set check environment variable */
 
   if (domain == DDS_DOMAIN_DEFAULT)
   {

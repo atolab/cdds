@@ -24,11 +24,11 @@ bool dds_entity_cb_propagate_begin(dds_entity *e)
 
         if (ok) {
             os_mutexLock(&e->m_mutex);
-            if (e->m_flags |= DDS_ENTITY_DELETED) {
+            if (e->m_flags & DDS_ENTITY_DELETED) {
                 /* Entity deletion in progress: break off the callback process. */
                 ok = false;
             } else {
-                /* Indicate that a callback will be in progress, so that a parrallel
+                /* Indicate that a callback will be in progress, so that a parallel
                  * delete/set_listener will wait. */
                 e->m_cb_count++;
             }
