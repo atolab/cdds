@@ -590,15 +590,15 @@ DDS_EXPORT dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_opt_ const dd
  *
  *
  * @param[in]  domain - The domain in which to create the participant (can be DDS_DOMAIN_DEFAULT)
- *
  * @param[in]  qos - The QoS to set on the new participant (can be NULL)
  * @param[in]  listener - Any listener functions associated with the new participant (can be NULL)
- * @returns >0 - Success (valid entity handle).
+
+ * @returns >0 - Success (valid handle of a participant entity).
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
- * @retval A status, 0 on success or non-zero value to indicate an error
- **/
-
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ */
 DDS_EXPORT dds_entity_t dds_create_participant
 (
   _In_ const dds_domainid_t domain,

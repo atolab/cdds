@@ -16,7 +16,6 @@ int dds_init_impl (dds_domainid_t domain);
  *configures middleware from a xml file and initializes required resources.
  *
  *Arguments :
- *-# argc, argv - specifies the domainId
  *-# Returns 0 on success or a non-zero error status
  **/
 
