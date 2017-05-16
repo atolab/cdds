@@ -899,14 +899,44 @@ DDS_EXPORT dds_return_t dds_read_mask_wl /* With loan */
  *   -# mask filter the data value based on the set sample, view and instance state
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-DDS_EXPORT int dds_read_instance
+DDS_EXPORT dds_return_t dds_read_instance
 (
-  dds_entity_t rd,
-  void ** buf,
-  uint32_t maxs,
-  dds_sample_info_t * si,
-  dds_instance_handle_t handle,
-  uint32_t mask
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ size_t bufsz,
+  _In_ uint32_t maxs,
+  _In_ dds_instance_handle_t handle
+);
+
+DDS_EXPORT dds_return_t dds_read_instance_wl
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ uint32_t maxs,
+  _In_ dds_instance_handle_t handle
+);
+
+DDS_EXPORT dds_return_t dds_read_instance_mask
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ size_t bufsz,
+  _In_ uint32_t maxs,
+  _In_ dds_instance_handle_t handle,
+  _In_ uint32_t mask
+);
+
+DDS_EXPORT dds_return_t dds_read_instance_mask_wl
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ uint32_t maxs,
+  _In_ dds_instance_handle_t handle,
+  _In_ uint32_t mask
 );
 
 /**
@@ -958,23 +988,41 @@ DDS_EXPORT int dds_read_instance
  *   -# mask filter the data value based on the set sample, view and instance state
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-DDS_EXPORT int dds_take
+DDS_EXPORT dds_return_t dds_take
 (
-  dds_entity_t rd,
-  void ** buf,
-  uint32_t maxs,
-  dds_sample_info_t * si
+    _In_ dds_entity_t rd_or_cnd,
+    _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+    _Out_ dds_sample_info_t * si,
+    _In_ size_t bufsz,
+    _In_ uint32_t maxs,
 );
 
-DDS_EXPORT int dds_take_mask
+DDS_EXPORT dds_return_t dds_take_wl
 (
-  dds_entity_t rd,
-  void ** buf,
-  uint32_t maxs,
-  dds_sample_info_t * si,
-  uint32_t mask
+    _In_ dds_entity_t rd_or_cnd,
+    _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+    _Out_ dds_sample_info_t * si,
+    _In_ uint32_t maxs,
 );
 
+DDS_EXPORT dds_return_t dds_take_mask
+(
+    _In_ dds_entity_t rd_or_cnd,
+    _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+    _Out_ dds_sample_info_t * si,
+    _In_ size_t bufsz,
+    _In_ uint32_t maxs,
+    _In_ uint32_t mask
+);
+
+DDS_EXPORT dds_return_t dds_take_mask_wl
+(
+    _In_ dds_entity_t rd_or_cnd,
+    _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+    _Out_ dds_sample_info_t * si,
+    _In_ uint32_t maxs,
+    _In_ uint32_t mask
+);
 
 struct serdata;
 int dds_takecdr
@@ -996,14 +1044,44 @@ int dds_takecdr
  *   -# handle the instance handle identifying the instance from which to take
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-DDS_EXPORT int dds_take_instance
+DDS_EXPORT dds_return_t dds_take_instance
 (
-  dds_entity_t rd,
-  void ** buf,
-  uint32_t maxs,
-  dds_sample_info_t * si,
-  dds_instance_handle_t handle,
-  uint32_t mask
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ size_t bufsz,
+  _In_ uint32_t maxs,
+  _In_ dds_instance_handle_t handle
+);
+
+DDS_EXPORT dds_return_t dds_take_instance_wl
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ uint32_t maxs,
+  _In_ dds_instance_handle_t handle
+);
+
+DDS_EXPORT dds_return_t dds_take_instance_mask
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ size_t bufsz,
+  _In_ uint32_t maxs,
+  _In_ dds_instance_handle_t handle,
+  _In_ uint32_t mask
+);
+
+DDS_EXPORT dds_return_t dds_take_instance_mask_wl
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ uint32_t maxs,
+  _In_ dds_instance_handle_t handle,
+  _In_ uint32_t mask
 );
 
 
@@ -1023,7 +1101,8 @@ DDS_EXPORT int dds_take_instance
  * -# si pointer to \ref dds_sample_info_t returned for a data value
  * -# Returns 1 on successful operation, else 0 if there is no data to be read.
  */
-DDS_EXPORT dds_return_t dds_take_next (dds_entity_t rd, void ** buf, dds_sample_info_t * si);
+DDS_EXPORT dds_return_t dds_take_next (_In_ dds_entity_t rd_or_cnd, _Out_ void ** buf, _Out_ dds_sample_info_t * si);
+DDS_EXPORT dds_return_t dds_take_next_wl (_In_ dds_entity_t rd_or_cnd, _Out_ void ** buf, _Out_ dds_sample_info_t * si);
 
 /**
  * Description : This operation copies the next, non-previously accessed data value and corresponding
@@ -1035,7 +1114,8 @@ DDS_EXPORT dds_return_t dds_take_next (dds_entity_t rd, void ** buf, dds_sample_
  * -# si pointer to \ref dds_sample_info_t returned for a data value
  * -# Returns 1 on successful operation, else 0 if there is no data to be read.
  */
-DDS_EXPORT dds_return_t dds_read_next (dds_entity_t rd, void ** buf, dds_sample_info_t * si);
+DDS_EXPORT dds_return_t dds_read_next (_In_ dds_entity_t rd_or_cnd, _Out_ void ** buf, _Out_ dds_sample_info_t * si);
+DDS_EXPORT dds_return_t dds_read_next_wl (_In_ dds_entity_t rd_or_cnd, _Out_ void ** buf, _Out_ dds_sample_info_t * si);
 
 /**
  * Description : This operation is used to return loaned samples from a data reader
@@ -1049,7 +1129,7 @@ DDS_EXPORT dds_return_t dds_read_next (dds_entity_t rd, void ** buf, dds_sample_
  * -# buf An array of pointers used by read/take operation
  * -# maxs The maximum number of samples provided to the read/take operation
  */
-DDS_EXPORT dds_return_t dds_return_loan (dds_entity_t rd, void ** buf, uint32_t maxs);
+DDS_EXPORT dds_return_t dds_return_loan (_In_ dds_entity_t rd, _In_ _Post_invalid_ void ** buf, _In_ uint32_t maxs);
 
 /*
   Instance handle <=> key value mapping.
@@ -1072,7 +1152,7 @@ DDS_EXPORT dds_return_t dds_return_loan (dds_entity_t rd, void ** buf, uint32_t 
  * -# data sample with a key fields set
  * -# Returns instance handle or DDS_HANDLE_NIL if instance could not be found from key
  */
-DDS_EXPORT dds_return_t dds_lookup_instance (dds_entity_t e, dds_instance_handle_t *, const void * data);
+DDS_EXPORT dds_return_t dds_lookup_instance (_In_ dds_entity_t e, _Out_ dds_instance_handle_t *, _In_ const void * data);
 
 /**
  * Description : This operation takes an instance handle and return a key-value corresponding to it.
@@ -1085,7 +1165,7 @@ DDS_EXPORT dds_return_t dds_lookup_instance (dds_entity_t e, dds_instance_handle
  * -# Returns 0 on successful operation, or a non-zero value to indicate an error if the instance
  *    passed doesn't have a key-value
  */
-DDS_EXPORT int dds_instance_get_key (dds_entity_t e, dds_instance_handle_t inst, void * data);
+DDS_EXPORT dds_return_t dds_instance_get_key (_In_ dds_entity_t e, _In_ dds_instance_handle_t inst, _Out_ void * data);
 
 #if defined (__cplusplus)
 }
