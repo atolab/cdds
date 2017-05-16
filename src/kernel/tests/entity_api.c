@@ -324,9 +324,6 @@ void entity_deletion(void)
 
 Test(c99, entity_api)
 {
-    /* TODO: Remove dds_init (deprecated). */
-    dds_init(0, NULL);
-
     entity_creation();
     entity_enabling();
     entity_qos();
@@ -337,7 +334,5 @@ Test(c99, entity_api)
     entity_get_domainid();
     entity_deletion();
 
-    /* TODO: Remove dds_init (deprecated). */
-    dds_fini();
 }
 

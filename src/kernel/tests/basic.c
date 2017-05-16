@@ -23,9 +23,6 @@ int main (int argc, char *argv[])
 {
     CU_pSuite pSuite = NULL;
 
-    /* TODO: Remove dds_init (deprecated). */
-    dds_init(0, NULL);
-
     /* initialize the CUnit test registry */
     if (CUE_SUCCESS != CU_initialize_registry()) {
         return CU_get_error();
@@ -52,9 +49,6 @@ int main (int argc, char *argv[])
 
     /* cleanup registry */
     CU_cleanup_registry();
-
-    /* TODO: Remove dds_fini (deprecated). */
-    dds_fini();
 
     /* ctest requires the test executable to return 0 when succuss, non-null when fail */
     return CU_get_error();

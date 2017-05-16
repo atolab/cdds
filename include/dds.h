@@ -43,31 +43,6 @@ extern "C" {
   #define DDS_EXPORT extern
 #endif
 
-
-/**
- * Description : Initialization function, called from main. This operation
- * initializes all the required DDS resources,
- * handles configuration of domainid based on the input passed, parses and
- * configures middleware from a xml file and initializes required resources.
- *
- * Arguments :
- *   -# argc, argv - specifies the domainId
- *   -# Returns 0 on success or a non-zero error status
- */
-
-DDS_EXPORT int dds_init ();
-
-/* Finalization function, called from main */
-
-/**
- * Description : Finalization function, called from main. This operation
- * releases all the resources used by DDS.
- *
- * Arguments :
- *   -# None
- */
-DDS_EXPORT void dds_fini (void);
-
 /**
  * Description : Returns the default DDS domain id. This can be configured
  * in xml or set as an evironment variable (LITE_DOMAIN).
@@ -606,20 +581,24 @@ DDS_EXPORT dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_opt_ const dd
 */
 
 /**
- * Description : Creates a new instance of a DDS participant in a domain. If domain
- * is set (not DDS_DOMAIN_DEFAULT) then it must match if the domain has also
+ * @brief Creates a new instance of a DDS participant in a domain
+ *
+ * If domain is set (not DDS_DOMAIN_DEFAULT) then it must match if the domain has also
  * been configured or an error status will be returned. Currently only a single domain
  * can be configured by setting the environment variable LITE_DOMAIN, if this is not set
  * the the default domain is 0. Valid values for domain id are between 0 and 230.
  *
- * Arguments :
- *   -# pp The created participant entity
- *   -# domain The domain in which to create the participant (can be DDS_DOMAIN_DEFAULT)
- *   -# qos The QoS to set on the new participant (can be NULL)
- *   -# listener Any listener functions associated with the new participant (can be NULL)
- *   -# mask Communication status notification mask
- *   -# Returns a status, 0 on success or non-zero value to indicate an error
- */
+ *
+ * @param[in]  domain - The domain in which to create the participant (can be DDS_DOMAIN_DEFAULT)
+ *
+ * @param[in]  qos - The QoS to set on the new participant (can be NULL)
+ * @param[in]  listener - Any listener functions associated with the new participant (can be NULL)
+ * @returns >0 - Success (valid entity handle).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval A status, 0 on success or non-zero value to indicate an error
+ **/
+
 DDS_EXPORT dds_entity_t dds_create_participant
 (
   _In_ const dds_domainid_t domain,

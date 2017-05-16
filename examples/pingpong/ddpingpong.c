@@ -462,8 +462,6 @@ int main (int argc, char *argv[])
 
   os_mutexInit(&statslock);
 
-  status = dds_init (argc, argv);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
@@ -821,8 +819,6 @@ int main (int argc, char *argv[])
     RoundTripModule_DataType_free (&sub_data[i], DDS_FREE_CONTENTS);
   }
   RoundTripModule_DataType_free (&pub_data, DDS_FREE_CONTENTS);
-
-  dds_fini ();
 
   return 0;
 }
