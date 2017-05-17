@@ -32,7 +32,7 @@ dds_listener_delete(_In_ _Post_invalid_ dds_listener_t * __restrict listener)
 
 
 void
-dds_listener_reset(_Inout_ dds_listener_t * restrict listener)
+dds_listener_reset(_Inout_ dds_listener_t * __restrict listener)
 {
     if (listener) {
         c99_listener_t *l = listener;
@@ -53,7 +53,7 @@ dds_listener_reset(_Inout_ dds_listener_t * restrict listener)
 }
 
 void
-dds_listener_copy(_Inout_ dds_listener_t * restrict dst, _In_ const dds_listener_t * restrict src)
+dds_listener_copy(_Inout_ dds_listener_t * __restrict dst, _In_ const dds_listener_t * __restrict src)
 {
     if (src && dst) {
         const c99_listener_t *srcl = src;
@@ -76,7 +76,7 @@ dds_listener_copy(_Inout_ dds_listener_t * restrict dst, _In_ const dds_listener
 }
 
 void
-dds_listener_merge (_Inout_ dds_listener_t * restrict dst, _In_ const dds_listener_t * restrict src)
+dds_listener_merge (_Inout_ dds_listener_t * __restrict dst, _In_ const dds_listener_t * __restrict src)
 {
     if (src && dst) {
         const c99_listener_t *srcl = src;
@@ -103,7 +103,7 @@ dds_listener_merge (_Inout_ dds_listener_t * restrict dst, _In_ const dds_listen
  ************************************************************************************************/
 
 void
-dds_lset_data_available (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_on_data_available_fn callback)
+dds_lset_data_available (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_data_available_fn callback)
 {
     if (listener) {
         ((c99_listener_t*)listener)->on_data_available = callback;
@@ -111,7 +111,7 @@ dds_lset_data_available (_Inout_ dds_listener_t * restrict listener, _In_opt_ dd
 }
 
 void
-dds_lset_data_on_readers (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_on_data_on_readers_fn callback)
+dds_lset_data_on_readers (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_data_on_readers_fn callback)
 {
     if (listener) {
         ((c99_listener_t*)listener)->on_data_on_readers = callback;
@@ -119,7 +119,7 @@ dds_lset_data_on_readers (_Inout_ dds_listener_t * restrict listener, _In_opt_ d
 }
 
 void
-dds_lset_inconsistent_topic (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_on_inconsistent_topic_fn callback)
+dds_lset_inconsistent_topic (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_inconsistent_topic_fn callback)
 {
     if (listener) {
         ((c99_listener_t*)listener)->on_inconsistent_topic = callback;
@@ -127,7 +127,7 @@ dds_lset_inconsistent_topic (_Inout_ dds_listener_t * restrict listener, _In_opt
 }
 
 void
-dds_lset_liveliness_changed (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_on_liveliness_changed_fn callback)
+dds_lset_liveliness_changed (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_liveliness_changed_fn callback)
 {
     if (listener) {
         ((c99_listener_t*)listener)->on_liveliness_changed = callback;
@@ -135,7 +135,7 @@ dds_lset_liveliness_changed (_Inout_ dds_listener_t * restrict listener, _In_opt
 }
 
 void
-dds_lset_liveliness_lost (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_on_liveliness_lost_fn callback)
+dds_lset_liveliness_lost (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_liveliness_lost_fn callback)
 {
     if (listener) {
         ((c99_listener_t*)listener)->on_liveliness_lost = callback;
@@ -143,7 +143,7 @@ dds_lset_liveliness_lost (_Inout_ dds_listener_t * restrict listener, _In_opt_ d
 }
 
 void
-dds_lset_offered_deadline_missed (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_on_offered_deadline_missed_fn callback)
+dds_lset_offered_deadline_missed (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_offered_deadline_missed_fn callback)
 {
     if (listener) {
         ((c99_listener_t*)listener)->on_offered_deadline_missed = callback;
@@ -151,7 +151,7 @@ dds_lset_offered_deadline_missed (_Inout_ dds_listener_t * restrict listener, _I
 }
 
 void
-dds_lset_offered_incompatible_qos (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_on_offered_incompatible_qos_fn callback)
+dds_lset_offered_incompatible_qos (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_offered_incompatible_qos_fn callback)
 {
     if (listener) {
         ((c99_listener_t*)listener)->on_offered_incompatible_qos = callback;
@@ -159,7 +159,7 @@ dds_lset_offered_incompatible_qos (_Inout_ dds_listener_t * restrict listener, _
 }
 
 void
-dds_lset_publication_matched (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_on_publication_matched_fn callback)
+dds_lset_publication_matched (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_publication_matched_fn callback)
 {
     if (listener) {
         ((c99_listener_t*)listener)->on_publication_matched = callback;
@@ -167,7 +167,7 @@ dds_lset_publication_matched (_Inout_ dds_listener_t * restrict listener, _In_op
 }
 
 void
-dds_lset_requested_deadline_missed (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_on_requested_deadline_missed_fn callback)
+dds_lset_requested_deadline_missed (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_requested_deadline_missed_fn callback)
 {
     if (listener) {
         ((c99_listener_t*)listener)->on_requested_deadline_missed = callback;
@@ -175,7 +175,7 @@ dds_lset_requested_deadline_missed (_Inout_ dds_listener_t * restrict listener, 
 }
 
 void
-dds_lset_requested_incompatible_qos (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_on_requested_incompatible_qos_fn callback)
+dds_lset_requested_incompatible_qos (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_requested_incompatible_qos_fn callback)
 {
     if (listener) {
         ((c99_listener_t*)listener)->on_requested_incompatible_qos = callback;
@@ -183,7 +183,7 @@ dds_lset_requested_incompatible_qos (_Inout_ dds_listener_t * restrict listener,
 }
 
 void
-dds_lset_sample_lost (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_on_sample_lost_fn callback)
+dds_lset_sample_lost (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_sample_lost_fn callback)
 {
     if (listener) {
         ((c99_listener_t*)listener)->on_sample_lost = callback;
@@ -191,7 +191,7 @@ dds_lset_sample_lost (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_o
 }
 
 void
-dds_lset_sample_rejected (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_on_sample_rejected_fn callback)
+dds_lset_sample_rejected (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_sample_rejected_fn callback)
 {
     if (listener) {
         ((c99_listener_t*)listener)->on_sample_rejected = callback;
@@ -199,7 +199,7 @@ dds_lset_sample_rejected (_Inout_ dds_listener_t * restrict listener, _In_opt_ d
 }
 
 void
-dds_lset_subscription_matched (_Inout_ dds_listener_t * restrict listener, _In_opt_ dds_on_subscription_matched_fn callback)
+dds_lset_subscription_matched (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_subscription_matched_fn callback)
 {
     if (listener) {
         ((c99_listener_t*)listener)->on_subscription_matched = callback;
@@ -211,7 +211,7 @@ dds_lset_subscription_matched (_Inout_ dds_listener_t * restrict listener, _In_o
  ************************************************************************************************/
 
 void
-dds_lget_data_available (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_data_available_fn *callback)
+dds_lget_data_available (_In_ const dds_listener_t * __restrict listener, _Outptr_result_maybenull_ dds_on_data_available_fn *callback)
 {
     if (callback && listener) {
         *callback = ((c99_listener_t*)listener)->on_data_available;
@@ -219,14 +219,14 @@ dds_lget_data_available (_In_ const dds_listener_t * restrict listener, _Outptr_
 }
 
 void
-dds_lget_data_on_readers (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_data_on_readers_fn *callback)
+dds_lget_data_on_readers (_In_ const dds_listener_t * __restrict listener, _Outptr_result_maybenull_ dds_on_data_on_readers_fn *callback)
 {
     if (callback && listener) {
         *callback = ((c99_listener_t*)listener)->on_data_on_readers;
     }
 }
 
-void dds_lget_inconsistent_topic (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_inconsistent_topic_fn *callback)
+void dds_lget_inconsistent_topic (_In_ const dds_listener_t * __restrict listener, _Outptr_result_maybenull_ dds_on_inconsistent_topic_fn *callback)
 {
     if (callback && listener) {
         *callback = ((c99_listener_t*)listener)->on_inconsistent_topic;
@@ -234,7 +234,7 @@ void dds_lget_inconsistent_topic (_In_ const dds_listener_t * restrict listener,
 }
 
 void
-dds_lget_liveliness_changed (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_liveliness_changed_fn *callback)
+dds_lget_liveliness_changed (_In_ const dds_listener_t * __restrict listener, _Outptr_result_maybenull_ dds_on_liveliness_changed_fn *callback)
 {
     if (callback && listener) {
         *callback = ((c99_listener_t*)listener)->on_liveliness_changed;
@@ -242,7 +242,7 @@ dds_lget_liveliness_changed (_In_ const dds_listener_t * restrict listener, _Out
 }
 
 void
-dds_lget_liveliness_lost (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_liveliness_lost_fn *callback)
+dds_lget_liveliness_lost (_In_ const dds_listener_t * __restrict listener, _Outptr_result_maybenull_ dds_on_liveliness_lost_fn *callback)
 {
     if (callback && listener) {
         *callback = ((c99_listener_t*)listener)->on_liveliness_lost;
@@ -250,7 +250,7 @@ dds_lget_liveliness_lost (_In_ const dds_listener_t * restrict listener, _Outptr
 }
 
 void
-dds_lget_offered_deadline_missed (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_offered_deadline_missed_fn *callback)
+dds_lget_offered_deadline_missed (_In_ const dds_listener_t * __restrict listener, _Outptr_result_maybenull_ dds_on_offered_deadline_missed_fn *callback)
 {
     if (callback && listener) {
         *callback = ((c99_listener_t*)listener)->on_offered_deadline_missed;
@@ -258,7 +258,7 @@ dds_lget_offered_deadline_missed (_In_ const dds_listener_t * restrict listener,
 }
 
 void
-dds_lget_offered_incompatible_qos (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_offered_incompatible_qos_fn *callback)
+dds_lget_offered_incompatible_qos (_In_ const dds_listener_t * __restrict listener, _Outptr_result_maybenull_ dds_on_offered_incompatible_qos_fn *callback)
 {
     if (callback && listener) {
         *callback = ((c99_listener_t*)listener)->on_offered_incompatible_qos;
@@ -266,7 +266,7 @@ dds_lget_offered_incompatible_qos (_In_ const dds_listener_t * restrict listener
 }
 
 void
-dds_lget_publication_matched (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_publication_matched_fn *callback)
+dds_lget_publication_matched (_In_ const dds_listener_t * __restrict listener, _Outptr_result_maybenull_ dds_on_publication_matched_fn *callback)
 {
     if (callback && listener) {
         *callback = ((c99_listener_t*)listener)->on_publication_matched;
@@ -274,7 +274,7 @@ dds_lget_publication_matched (_In_ const dds_listener_t * restrict listener, _Ou
 }
 
 void
-dds_lget_requested_deadline_missed (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_requested_deadline_missed_fn *callback)
+dds_lget_requested_deadline_missed (_In_ const dds_listener_t * __restrict listener, _Outptr_result_maybenull_ dds_on_requested_deadline_missed_fn *callback)
 {
     if (callback && listener) {
         *callback = ((c99_listener_t*)listener)->on_requested_deadline_missed;
@@ -282,7 +282,7 @@ dds_lget_requested_deadline_missed (_In_ const dds_listener_t * restrict listene
 }
 
 void
-dds_lget_requested_incompatible_qos (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_requested_incompatible_qos_fn *callback)
+dds_lget_requested_incompatible_qos (_In_ const dds_listener_t * __restrict listener, _Outptr_result_maybenull_ dds_on_requested_incompatible_qos_fn *callback)
 {
     if (callback && listener) {
         *callback = ((c99_listener_t*)listener)->on_requested_incompatible_qos;
@@ -290,7 +290,7 @@ dds_lget_requested_incompatible_qos (_In_ const dds_listener_t * restrict listen
 }
 
 void
-dds_lget_sample_lost (_In_ const dds_listener_t *restrict listener, _Outptr_result_maybenull_ dds_on_sample_lost_fn *callback)
+dds_lget_sample_lost (_In_ const dds_listener_t *__restrict listener, _Outptr_result_maybenull_ dds_on_sample_lost_fn *callback)
 {
     if (callback && listener) {
         *callback = ((c99_listener_t*)listener)->on_sample_lost;
@@ -298,7 +298,7 @@ dds_lget_sample_lost (_In_ const dds_listener_t *restrict listener, _Outptr_resu
 }
 
 void
-dds_lget_sample_rejected (_In_ const dds_listener_t  *restrict listener, _Outptr_result_maybenull_ dds_on_sample_rejected_fn *callback)
+dds_lget_sample_rejected (_In_ const dds_listener_t  *__restrict listener, _Outptr_result_maybenull_ dds_on_sample_rejected_fn *callback)
 {
     if (callback && listener) {
         *callback = ((c99_listener_t*)listener)->on_sample_rejected;
@@ -306,7 +306,7 @@ dds_lget_sample_rejected (_In_ const dds_listener_t  *restrict listener, _Outptr
 }
 
 void
-dds_lget_subscription_matched (_In_ const dds_listener_t * restrict listener, _Outptr_result_maybenull_ dds_on_subscription_matched_fn *callback)
+dds_lget_subscription_matched (_In_ const dds_listener_t * __restrict listener, _Outptr_result_maybenull_ dds_on_subscription_matched_fn *callback)
 {
     if (callback && listener) {
         *callback = ((c99_listener_t*)listener)->on_subscription_matched;
