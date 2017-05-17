@@ -265,7 +265,7 @@ int dds_writer_create
   dds_entity_t * writer,
   dds_entity_t topic,
   const dds_qos_t * qos,
-  const dds_writerlistener_t * listener
+  const dds_listener_t * listener
 )
 {
   dds_qos_t * wqos;
@@ -318,7 +318,7 @@ int dds_writer_create
   /* Create writer */
   wr = dds_alloc (sizeof (*wr));
   *writer = &wr->m_entity;
-  dds_entity_init (&wr->m_entity, pp_or_pub, DDS_TYPE_WRITER, wqos, NULL, DDS_WRITER_STATUS_MASK);
+  dds_entity_init (&wr->m_entity, pp_or_pub, DDS_TYPE_WRITER, wqos, listener, DDS_WRITER_STATUS_MASK);
   wr->m_topic = tp;
   dds_entity_add_ref (topic);
   wr->m_xp = nn_xpack_new (conn, get_bandwidth_limit(wqos->transport_priority), config.xpack_send_async);
@@ -328,11 +328,6 @@ int dds_writer_create
   wr->m_entity.m_deriver.validate_status = dds_writer_status_validate;
   wr->m_entity.m_deriver.get_instance_hdl = dds_writer_instance_hdl;
 
-
-  if (listener)
-  {
-    wr->m_listener = *listener;
-  }
   os_mutexUnlock (&pp_or_pub->m_mutex);
 
   if (asleep)

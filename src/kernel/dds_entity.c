@@ -72,79 +72,79 @@ bool dds_entity_cp_propagate_call(dds_entity *e, dds_entity *src, uint32_t statu
         switch (status) {
             case DDS_INCONSISTENT_TOPIC_STATUS:
                 if (l->on_inconsistent_topic != DDS_LUNSET) {
-                    l->on_inconsistent_topic(src, *((dds_inconsistent_topic_status_t*)metrics));
+                    l->on_inconsistent_topic(src, *((dds_inconsistent_topic_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_OFFERED_DEADLINE_MISSED_STATUS:
                 if (l->on_offered_deadline_missed != DDS_LUNSET) {
-                    l->on_offered_deadline_missed(src, *((dds_offered_deadline_missed_status_t*)metrics));
+                    l->on_offered_deadline_missed(src, *((dds_offered_deadline_missed_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_REQUESTED_DEADLINE_MISSED_STATUS:
                 if (l->on_requested_deadline_missed != DDS_LUNSET) {
-                    l->on_requested_deadline_missed(src, *((dds_requested_deadline_missed_status_t*)metrics));
+                    l->on_requested_deadline_missed(src, *((dds_requested_deadline_missed_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_OFFERED_INCOMPATIBLE_QOS_STATUS:
                 if (l->on_offered_incompatible_qos != DDS_LUNSET) {
-                    l->on_offered_incompatible_qos(src, *((dds_offered_incompatible_qos_status_t*)metrics));
+                    l->on_offered_incompatible_qos(src, *((dds_offered_incompatible_qos_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS:
                 if (l->on_requested_incompatible_qos != DDS_LUNSET) {
-                    l->on_requested_incompatible_qos(src, *((dds_requested_incompatible_qos_status_t*)metrics));
+                    l->on_requested_incompatible_qos(src, *((dds_requested_incompatible_qos_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_SAMPLE_LOST_STATUS:
                 if (l->on_sample_lost != DDS_LUNSET) {
-                    l->on_sample_lost(src, *((dds_sample_lost_status_t*)metrics));
+                    l->on_sample_lost(src, *((dds_sample_lost_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_SAMPLE_REJECTED_STATUS:
                 if (l->on_sample_rejected != DDS_LUNSET) {
-                    l->on_sample_rejected(src, *((dds_sample_rejected_status_t*)metrics));
+                    l->on_sample_rejected(src, *((dds_sample_rejected_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_DATA_ON_READERS_STATUS:
                 if (l->on_data_on_readers != DDS_LUNSET) {
-                    l->on_data_on_readers(src);
+                    l->on_data_on_readers(src, l->arg);
                     called = true;
                 }
                 break;
             case DDS_DATA_AVAILABLE_STATUS:
                 if (l->on_data_available != DDS_LUNSET) {
-                    l->on_data_available(src);
+                    l->on_data_available(src, l->arg);
                     called = true;
                 }
                 break;
             case DDS_LIVELINESS_LOST_STATUS:
                 if (l->on_liveliness_lost != DDS_LUNSET) {
-                    l->on_liveliness_lost(src, *((dds_liveliness_lost_status_t*)metrics));
+                    l->on_liveliness_lost(src, *((dds_liveliness_lost_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_LIVELINESS_CHANGED_STATUS:
                 if (l->on_liveliness_changed != DDS_LUNSET) {
-                    l->on_liveliness_changed(src, *((dds_liveliness_changed_status_t*)metrics));
+                    l->on_liveliness_changed(src, *((dds_liveliness_changed_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_PUBLICATION_MATCHED_STATUS:
                 if (l->on_publication_matched != DDS_LUNSET) {
-                    l->on_publication_matched(src, *((dds_publication_matched_status_t*)metrics));
+                    l->on_publication_matched(src, *((dds_publication_matched_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_SUBSCRIPTION_MATCHED_STATUS:
                 if (l->on_subscription_matched != DDS_LUNSET) {
-                    l->on_subscription_matched(src, *((dds_subscription_matched_status_t*)metrics));
+                    l->on_subscription_matched(src, *((dds_subscription_matched_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
@@ -152,7 +152,7 @@ bool dds_entity_cp_propagate_call(dds_entity *e, dds_entity *src, uint32_t statu
         }
 
         if (!called && propagate) {
-            /* See if the parent is interrested. */
+            /* See if the parent is interested. */
             called = dds_entity_cp_propagate_call(e->m_parent, src, status, metrics, propagate);
         }
     }
@@ -297,7 +297,7 @@ void dds_entity_init
 (
   dds_entity * e, dds_entity * parent,
   dds_entity_kind_t kind, dds_qos_t * qos,
-  dds_listener_t *listener,
+  const dds_listener_t *listener,
   uint32_t mask
 )
 {

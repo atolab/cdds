@@ -381,7 +381,7 @@ int main (int argc, char *argv[])
   unsigned long i;
   int status;
   dds_condition_t readCond;
-  dds_readerlistener_t rd_listener;
+  dds_listener_t rd_listener;
   int opt;
   const char *logfile = NULL;
   struct data_available_handler_arg dah_arg;

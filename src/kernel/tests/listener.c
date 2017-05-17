@@ -26,19 +26,19 @@
     } while (0)
 
 /* dummy callbacks */
-static void inconsistent_topic_cb(dds_entity_t topic, const dds_inconsistent_topic_status_t status) {}
-static void liveliness_lost_cb(dds_entity_t writer, const dds_liveliness_lost_status_t status) {}
-static void offered_deadline_missed_cb(dds_entity_t writer, const dds_offered_deadline_missed_status_t status) {}
-static void offered_incompatible_qos_cb(dds_entity_t writer, const dds_offered_incompatible_qos_status_t status) {}
-static void data_on_readers_cb(dds_entity_t subscriber) {}
-static void sample_lost_cb(dds_entity_t reader, const dds_sample_lost_status_t status) {}
-static void data_available_cb(dds_entity_t reader) {}
-static void sample_rejected_cb(dds_entity_t reader, const dds_sample_rejected_status_t status) {}
-static void liveliness_changed_cb(dds_entity_t reader, const dds_liveliness_changed_status_t status) {}
-static void requested_deadline_missed_cb(dds_entity_t reader, const dds_requested_deadline_missed_status_t status) {}
-static void requested_incompatible_qos_cb(dds_entity_t reader, const dds_requested_incompatible_qos_status_t status) {}
-static void publication_matched_cb(dds_entity_t writer, const dds_publication_matched_status_t status) {}
-static void subscription_matched_cb(dds_entity_t reader, const dds_subscription_matched_status_t status) {}
+static void inconsistent_topic_cb(dds_entity_t topic, const dds_inconsistent_topic_status_t status, void* arg) {}
+static void liveliness_lost_cb(dds_entity_t writer, const dds_liveliness_lost_status_t status, void* arg) {}
+static void offered_deadline_missed_cb(dds_entity_t writer, const dds_offered_deadline_missed_status_t status, void* arg) {}
+static void offered_incompatible_qos_cb(dds_entity_t writer, const dds_offered_incompatible_qos_status_t status, void* arg) {}
+static void data_on_readers_cb(dds_entity_t subscriber, void* arg) {}
+static void sample_lost_cb(dds_entity_t reader, const dds_sample_lost_status_t status, void* arg) {}
+static void data_available_cb(dds_entity_t reader, void* arg) {}
+static void sample_rejected_cb(dds_entity_t reader, const dds_sample_rejected_status_t status, void* arg) {}
+static void liveliness_changed_cb(dds_entity_t reader, const dds_liveliness_changed_status_t status, void* arg) {}
+static void requested_deadline_missed_cb(dds_entity_t reader, const dds_requested_deadline_missed_status_t status, void* arg) {}
+static void requested_incompatible_qos_cb(dds_entity_t reader, const dds_requested_incompatible_qos_status_t status, void* arg) {}
+static void publication_matched_cb(dds_entity_t writer, const dds_publication_matched_status_t status, void* arg) {}
+static void subscription_matched_cb(dds_entity_t reader, const dds_subscription_matched_status_t status, void* arg) {}
 
 
 /* tests */
@@ -46,7 +46,7 @@ void test_create_and_delete(void)
 {
     /* Verify create doesn't return null */
     dds_listener_t *listener;
-    listener = dds_listener_create();
+    listener = dds_listener_create(NULL);
     CU_ASSERT_PTR_NOT_NULL(listener);
 
     /* Check default cb's are set */
@@ -70,7 +70,7 @@ void test_create_and_delete(void)
 void test_reset(void)
 {
     dds_listener_t *listener;
-    listener = dds_listener_create();
+    listener = dds_listener_create(NULL);
     CU_ASSERT_PTR_NOT_NULL(listener);
 
     /* Set a listener cb to a non-default value */
@@ -87,8 +87,8 @@ void test_reset(void)
 void test_copy(void)
 {
     dds_listener_t *listener1 = NULL, *listener2 = NULL;
-    listener1 = dds_listener_create();
-    listener2 = dds_listener_create();
+    listener1 = dds_listener_create(NULL);
+    listener2 = dds_listener_create(NULL);
     CU_ASSERT_PTR_NOT_NULL(listener1);
     CU_ASSERT_PTR_NOT_NULL(listener2);
 
@@ -114,8 +114,8 @@ void test_copy(void)
 void test_merge(void)
 {
     dds_listener_t *listener1 = NULL, *listener2 = NULL;
-    listener1 = dds_listener_create();
-    listener2 = dds_listener_create();
+    listener1 = dds_listener_create(NULL);
+    listener2 = dds_listener_create(NULL);
     CU_ASSERT_PTR_NOT_NULL(listener1);
     CU_ASSERT_PTR_NOT_NULL(listener2);
 
@@ -141,7 +141,7 @@ void test_merge(void)
 void test_getters_setters(void)
 {
     /* test all individual cb get/set methods */
-    dds_listener_t *listener = dds_listener_create();
+    dds_listener_t *listener = dds_listener_create(NULL);
     CU_ASSERT_PTR_NOT_NULL(listener);
 
     TEST_GET_SET(listener, inconsistent_topic, inconsistent_topic_cb);

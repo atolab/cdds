@@ -82,8 +82,8 @@ void entity_qos()
 void entity_listeners(void)
 {
     dds_return_t status;
-    dds_listener_t *l1 = dds_listener_create();
-    dds_listener_t *l2 = dds_listener_create();
+    dds_listener_t *l1 = dds_listener_create(NULL);
+    dds_listener_t *l2 = dds_listener_create(NULL);
     void *cb1;
     void *cb2;
 

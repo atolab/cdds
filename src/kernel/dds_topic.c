@@ -200,7 +200,7 @@ int dds_topic_create
   const dds_topic_descriptor_t * desc,
   const char * name,
   const dds_qos_t * qos,
-  const dds_topiclistener_t * listener
+  const dds_listener_t * listener
 )
 {
   static uint32_t next_topicid = 0;
@@ -211,7 +211,6 @@ int dds_topic_create
   int ret = DDS_RETCODE_OK;
   dds_topic * top;
   dds_qos_t * new_qos = NULL;
-  dds_participantlistener_t l;
   nn_plist_t plist;
   struct participant * ddsi_pp;
   struct thread_state1 * const thr = lookup_thread_state ();
@@ -261,7 +260,7 @@ int dds_topic_create
 
   top = dds_alloc (sizeof (*top));
   top->m_descriptor = desc;
-  dds_entity_init (&top->m_entity, pp, DDS_TYPE_TOPIC, new_qos, NULL, DDS_TOPIC_STATUS_MASK);
+  dds_entity_init (&top->m_entity, pp, DDS_TYPE_TOPIC, new_qos, listener, DDS_TOPIC_STATUS_MASK);
   *topic = &top->m_entity;
   top->m_entity.m_deriver.delete = dds_topic_delete;
   top->m_entity.m_deriver.set_qos = dds_topic_qos_set;
@@ -298,11 +297,6 @@ int dds_topic_create
   /* Add topic to extent */
 
   dds_topic_add (pp->m_domainid, st);
-
-  if (listener)
-  {
-    top->m_listener = *listener;
-  }
 
   nn_plist_init_empty (&plist);
   if (new_qos)

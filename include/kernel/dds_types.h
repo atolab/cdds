@@ -195,6 +195,7 @@ typedef struct c99_listener {
     dds_on_requested_incompatible_qos_fn on_requested_incompatible_qos;
     dds_on_publication_matched_fn on_publication_matched;
     dds_on_subscription_matched_fn on_subscription_matched;
+    void *arg;
 } c99_listener_t;
 
 /* Entity flag values */
@@ -263,7 +264,6 @@ typedef struct dds_reader
   struct dds_entity m_entity;
   const struct dds_topic * m_topic;
   struct reader * m_rd;
-  dds_readerlistener_t m_listener;
   bool m_data_on_readers;
   bool m_loan_out;
   char * m_loan;
@@ -286,7 +286,6 @@ typedef struct dds_writer
   const struct dds_topic * m_topic;
   struct nn_xpack * m_xp;
   struct writer * m_wr;
-  dds_writerlistener_t m_listener;
   os_mutex m_call_lock;
 
   /* Status metrics */
@@ -301,14 +300,12 @@ dds_writer;
 typedef struct dds_subscriber
 {
   struct dds_entity m_entity;
-  dds_subscriberlistener_t m_listener;
 }
 dds_subscriber;
 
 typedef struct dds_publisher
 {
   struct dds_entity m_entity;
-  dds_publisherlistener_t m_listener;
 }
 dds_publisher;
 
@@ -317,7 +314,6 @@ typedef struct dds_topic
   struct dds_entity m_entity;
   struct sertopic * m_stopic;
   const dds_topic_descriptor_t * m_descriptor;
-  dds_topiclistener_t m_listener;
 
   /* Status metrics */
 

@@ -14,10 +14,11 @@
 
 _Ret_notnull_
 dds_listener_t*
-dds_listener_create(void)
+dds_listener_create(_In_opt_ void* arg)
 {
     c99_listener_t *l = dds_alloc(sizeof(*l));
     dds_listener_reset(l);
+    l->arg = arg;
     return l;
 }
 

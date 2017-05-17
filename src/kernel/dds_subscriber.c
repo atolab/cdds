@@ -76,13 +76,12 @@ int dds_subscriber_create
   dds_entity_t pp,
   dds_entity_t * subscriber,
   const dds_qos_t * qos,
-  const dds_subscriberlistener_t * listener
+  const dds_listener_t * listener
 )
 {
   int ret = DDS_RETCODE_OK;
   dds_subscriber * sub;
   dds_qos_t * new_qos = NULL;
-  dds_participantlistener_t l;
 
   assert (pp);
   assert (pp->m_kind == DDS_TYPE_PARTICIPANT);
@@ -106,17 +105,12 @@ int dds_subscriber_create
   /* Create subscriber */
 
   sub = dds_alloc (sizeof (*sub));
-  dds_entity_init (&sub->m_entity, pp, DDS_TYPE_SUBSCRIBER, new_qos, NULL, DDS_SUBSCRIBER_STATUS_MASK);
+  dds_entity_init (&sub->m_entity, pp, DDS_TYPE_SUBSCRIBER, new_qos, listener, DDS_SUBSCRIBER_STATUS_MASK);
   *subscriber = &sub->m_entity;
   sub->m_entity.m_deriver.set_qos = dds_subscriber_qos_set;
   sub->m_entity.m_deriver.validate_status = dds_subscriber_status_validate;
   sub->m_entity.m_deriver.propagate_status = dds_subscriber_status_propagate;
   sub->m_entity.m_deriver.get_instance_hdl = dds_subscriber_instance_hdl;
-
-  if (listener)
-  {
-    sub->m_listener = *listener;
-  }
 
 fail:
 

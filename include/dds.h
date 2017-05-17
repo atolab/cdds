@@ -759,7 +759,7 @@ DDS_EXPORT int dds_topic_create
   const dds_topic_descriptor_t * descriptor,
   const char * name,
   const dds_qos_t * qos,
-  const dds_topiclistener_t * listener
+  const dds_listener_t * listener
 );
 
 /**
@@ -830,7 +830,7 @@ DDS_EXPORT int dds_subscriber_create
   dds_entity_t pp,
   dds_entity_t * subscriber,
   const dds_qos_t * qos,
-  const dds_subscriberlistener_t * listener
+  const dds_listener_t * listener
 );
 
 /**
@@ -848,7 +848,7 @@ DDS_EXPORT int dds_publisher_create
   dds_entity_t pp,
   dds_entity_t *  publisher,
   const dds_qos_t * qos,
-  const dds_publisherlistener_t * listener
+  const dds_listener_t * listener
 );
 
 /**
@@ -868,7 +868,7 @@ DDS_EXPORT int dds_reader_create
   dds_entity_t * reader,
   dds_entity_t topic,
   const dds_qos_t * qos,
-  const dds_readerlistener_t * listener
+  const dds_listener_t * listener
 );
 
 /**
@@ -925,7 +925,7 @@ DDS_EXPORT int dds_writer_create
   dds_entity_t * writer,
   dds_entity_t topic,
   const dds_qos_t * qos,
-  const dds_writerlistener_t * listener
+  const dds_listener_t * listener
 );
 
 /*

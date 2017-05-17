@@ -266,7 +266,7 @@ int dds_reader_create
   dds_entity_t * reader,
   dds_entity_t topic,
   const dds_qos_t * qos,
-  const dds_readerlistener_t * listener
+  const dds_listener_t * listener
 )
 {
   dds_qos_t * rqos;
@@ -320,7 +320,7 @@ int dds_reader_create
   /* Create reader and associated read cache */
   rd = dds_alloc (sizeof (*rd));
   *reader = &rd->m_entity;
-  dds_entity_init (&rd->m_entity, pp_or_sub, DDS_TYPE_READER, rqos, NULL, DDS_READER_STATUS_MASK);
+  dds_entity_init (&rd->m_entity, pp_or_sub, DDS_TYPE_READER, rqos, listener, DDS_READER_STATUS_MASK);
   rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
   rd->m_topic = tp;
   dds_entity_add_ref (topic);
@@ -330,10 +330,6 @@ int dds_reader_create
   rd->m_entity.m_deriver.validate_status = dds_reader_status_validate;
   rd->m_entity.m_deriver.get_instance_hdl = dds_reader_instance_hdl;
 
-  if (listener)
-  {
-    rd->m_listener = *listener;
-  }
   os_mutexUnlock (&pp_or_sub->m_mutex);
 
   if (asleep)

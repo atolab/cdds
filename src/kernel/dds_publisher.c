@@ -50,13 +50,12 @@ int dds_publisher_create
   dds_entity_t pp,
   dds_entity_t * publisher,
   const dds_qos_t * qos,
-  const dds_publisherlistener_t * listener
+  const dds_listener_t * listener
 )
 {
   int ret = DDS_RETCODE_OK;
   dds_publisher * pub;
   dds_qos_t * new_qos = NULL;
-  dds_participantlistener_t l;
 
   assert (pp);
   assert (pp->m_kind == DDS_TYPE_PARTICIPANT);
@@ -82,16 +81,10 @@ int dds_publisher_create
   /* Create publisher */
 
   pub = dds_alloc (sizeof (*pub));
-  dds_entity_init (&pub->m_entity, pp, DDS_TYPE_PUBLISHER, new_qos, NULL, DDS_PUBLISHER_STATUS_MASK);
+  dds_entity_init (&pub->m_entity, pp, DDS_TYPE_PUBLISHER, new_qos, listener, DDS_PUBLISHER_STATUS_MASK);
   *publisher = &pub->m_entity;
   pub->m_entity.m_deriver.set_qos = dds_publisher_qos_set;
   pub->m_entity.m_deriver.get_instance_hdl = dds_publisher_instance_hdl;
-
-
-  if (listener)
-  {
-    pub->m_listener = *listener;
-  }
 
 fail:
 

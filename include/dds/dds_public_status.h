@@ -166,62 +166,6 @@ typedef struct dds_inconsistent_topic_status
 }
 dds_inconsistent_topic_status_t;
 
-/* Listener types */
-/** \ref DCPS_Modules_Infrastructure_Listener  - TopicListener */
-typedef struct dds_topiclistener
-{
-  void (*on_inconsistent_topic) (dds_entity_t topic, dds_inconsistent_topic_status_t * status);
-}
-dds_topiclistener_t;
-
-/** \ref DCPS_Modules_Infrastructure_Listener  - DataWriterListener */
-typedef struct dds_writerlistener
-{
-  void (*on_offered_deadline_missed) (dds_entity_t writer, dds_offered_deadline_missed_status_t * status);
-  void (*on_offered_incompatible_qos) (dds_entity_t writer, dds_offered_incompatible_qos_status_t * status);
-  void (*on_liveliness_lost) (dds_entity_t writer, dds_liveliness_lost_status_t * status);
-  void (*on_publication_matched) (dds_entity_t writer, dds_publication_matched_status_t * status);
-}
-dds_writerlistener_t;
-
-/** \ref DCPS_Modules_Infrastructure_Listener  - PublisherListener */
-typedef struct dds_publisherlistener
-{
-  dds_writerlistener_t writerlistener;
-}
-dds_publisherlistener_t;
-
-/** \ref DCPS_Modules_Infrastructure_Listener  - DataReaderListener */
-typedef struct dds_readerlistener
-{
-  void (*on_requested_deadline_missed) (dds_entity_t reader, dds_requested_deadline_missed_status_t * status, void *arg);
-  void (*on_requested_incompatible_qos) (dds_entity_t reader, dds_requested_incompatible_qos_status_t * status, void *arg);
-  void (*on_sample_rejected) (dds_entity_t reader, dds_sample_rejected_status_t * status, void *arg);
-  void (*on_liveliness_changed) (dds_entity_t reader, dds_liveliness_changed_status_t * status, void *arg);
-  void (*on_data_available) (dds_entity_t reader, void *arg);
-  void (*on_subscription_matched) (dds_entity_t reader, dds_subscription_matched_status_t * status, void *arg);
-  void (*on_sample_lost) (dds_entity_t reader, dds_sample_lost_status_t * status, void *arg);
-  void *arg;
-}
-dds_readerlistener_t;
-
-/** \ref DCPS_Modules_Infrastructure_Listener  - SubscriberListener */
-typedef struct dds_subscriberlistener
-{
-  dds_readerlistener_t readerlistener;
-  void (*on_data_readers) (dds_entity_t subscriber);
-}
-dds_subscriberlistener_t;
-
-/** \ref DCPS_Modules_Infrastructure_Listener  - DomainParticipantListener */
-typedef struct dds_participantlistener
-{
-  dds_topiclistener_t topiclistener;
-  dds_publisherlistener_t publisherlistener;
-  dds_subscriberlistener_t subscriberlistener;
-}
-dds_participantlistener_t;
-
 
 /* TODO: Move the get_<status> APIs from this file to a more appropriate place. */
 

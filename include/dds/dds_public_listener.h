@@ -27,19 +27,19 @@ extern "C" {
 
 
 /* Listener callbacks */
-typedef void (*dds_on_inconsistent_topic_fn) (dds_entity_t topic, const dds_inconsistent_topic_status_t status);
-typedef void (*dds_on_liveliness_lost_fn) (dds_entity_t writer, const dds_liveliness_lost_status_t status);
-typedef void (*dds_on_offered_deadline_missed_fn) (dds_entity_t writer, const dds_offered_deadline_missed_status_t status);
-typedef void (*dds_on_offered_incompatible_qos_fn) (dds_entity_t writer, const dds_offered_incompatible_qos_status_t status);
-typedef void (*dds_on_data_on_readers_fn) (dds_entity_t subscriber);
-typedef void (*dds_on_sample_lost_fn) (dds_entity_t reader, const dds_sample_lost_status_t status);
-typedef void (*dds_on_data_available_fn) (dds_entity_t reader);
-typedef void (*dds_on_sample_rejected_fn) (dds_entity_t reader, const dds_sample_rejected_status_t status);
-typedef void (*dds_on_liveliness_changed_fn) (dds_entity_t reader, const dds_liveliness_changed_status_t status);
-typedef void (*dds_on_requested_deadline_missed_fn) (dds_entity_t reader, const dds_requested_deadline_missed_status_t status);
-typedef void (*dds_on_requested_incompatible_qos_fn) (dds_entity_t reader, const dds_requested_incompatible_qos_status_t status);
-typedef void (*dds_on_publication_matched_fn) (dds_entity_t writer, const dds_publication_matched_status_t  status);
-typedef void (*dds_on_subscription_matched_fn) (dds_entity_t reader, const dds_subscription_matched_status_t  status);
+typedef void (*dds_on_inconsistent_topic_fn) (dds_entity_t topic, const dds_inconsistent_topic_status_t status, void* arg);
+typedef void (*dds_on_liveliness_lost_fn) (dds_entity_t writer, const dds_liveliness_lost_status_t status, void* arg);
+typedef void (*dds_on_offered_deadline_missed_fn) (dds_entity_t writer, const dds_offered_deadline_missed_status_t status, void* arg);
+typedef void (*dds_on_offered_incompatible_qos_fn) (dds_entity_t writer, const dds_offered_incompatible_qos_status_t status, void* arg);
+typedef void (*dds_on_data_on_readers_fn) (dds_entity_t subscriber, void* arg);
+typedef void (*dds_on_sample_lost_fn) (dds_entity_t reader, const dds_sample_lost_status_t status, void* arg);
+typedef void (*dds_on_data_available_fn) (dds_entity_t reader, void* arg);
+typedef void (*dds_on_sample_rejected_fn) (dds_entity_t reader, const dds_sample_rejected_status_t status, void* arg);
+typedef void (*dds_on_liveliness_changed_fn) (dds_entity_t reader, const dds_liveliness_changed_status_t status, void* arg);
+typedef void (*dds_on_requested_deadline_missed_fn) (dds_entity_t reader, const dds_requested_deadline_missed_status_t status, void* arg);
+typedef void (*dds_on_requested_incompatible_qos_fn) (dds_entity_t reader, const dds_requested_incompatible_qos_status_t status, void* arg);
+typedef void (*dds_on_publication_matched_fn) (dds_entity_t writer, const dds_publication_matched_status_t  status, void* arg);
+typedef void (*dds_on_subscription_matched_fn) (dds_entity_t reader, const dds_subscription_matched_status_t  status, void* arg);
 
 #if 0
 /* TODO: Why use (*dds_on_any_fn) (); and DDS_LUNSET? Why not just set the callbacks to NULL? */
@@ -56,11 +56,13 @@ typedef struct c99_listener dds_listener_t;
 /**
  * @brief Allocate memory and initializes to default values (::DDS_LUNSET) of a listener
  *
+ * @param[in] arg optional pointer that will be passed on to the listener callbacks
+ *
  * @return Returns a pointer to the allocated memory for dds_listener_t structure.
  */
 #endif
 _Ret_notnull_
-OS_API dds_listener_t* dds_listener_create (void);
+OS_API dds_listener_t* dds_listener_create (_In_opt_ void* arg);
 
 /**
  * @brief Delete the memory allocated to listener structure
