@@ -12,7 +12,7 @@
 
 static dds_entity_t entity = NULL;
 
-#define cr_assert_status_eq(s1, s2, info) cr_assert_eq(dds_err_nr(s1), s2, info)
+#define cr_assert_status_eq(s1, s2, ...) cr_assert_eq(dds_err_nr(s1), s2, __VA_ARGS__)
 
 void entity_creation()
 {
@@ -40,11 +40,28 @@ void entity_enabling()
     cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_enable (already enabled)");
 }
 
+void entity_qos_get_set(dds_entity_t e, const char* info)
+{
+    dds_return_t status;
+    dds_qos_t *qos = dds_qos_create();
+
+    /* Get QoS. */
+    status = dds_get_qos (entity, qos);
+    cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_qos(entity, qos) %s", info);
+
+    /* Entity (partition) is enabled, so we shouldn't be able to set QoS. */
+    /* Checking all QoS internals (also related to enabled/disabled) should be
+     * done by a QoS test and specific 'child' entities. */
+    status = dds_set_qos (entity, qos);
+    cr_assert_status_eq(status, DDS_RETCODE_IMMUTABLE_POLICY, "dds_set_qos(entity, qos) %s", info);
+
+    dds_qos_delete(qos);
+}
+
 void entity_qos()
 {
     dds_return_t status;
-    dds_qos_t *qos1 = dds_qos_create();
-    dds_qos_t *qos2 = dds_qos_create();
+    dds_qos_t *qos = dds_qos_create();
 
     /* Don't check inconsistent and immutable policies. That's a job
      * for the specific entity children, not for the generic part. */
@@ -54,29 +71,29 @@ void entity_qos()
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_qos(NULL, NULL)");
     status = dds_get_qos (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_qos(entity, NULL)");
-    status = dds_get_qos (NULL, qos1);
+    status = dds_get_qos (NULL, qos);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_qos(NULL, qos)");
-
-    /* Get QoS. */
-    status = dds_get_qos (entity, qos1);
-    cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_qos(entity, qos)");
 
     /* Check setting QoS with bad parameters. */
     status = dds_set_qos (NULL, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_qos(NULL, NULL)");
     status = dds_set_qos (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_qos(entity, NULL)");
-    status = dds_set_qos (NULL, qos2);
+    status = dds_set_qos (NULL, qos);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_qos(NULL, qos)");
 
-    /* Entity (partition) is enabled, so we shouldn't be able to set QoS. */
-    /* Checking all QoS internals (also related to enabled/disabled) should be
-     * done by a QoS test and specific 'child' entities. */
-    status = dds_set_qos (entity, qos2);
-    cr_assert_status_eq(status, DDS_RETCODE_IMMUTABLE_POLICY, "dds_set_qos(entity, qos)");
+    /* Check set/get with entity without initial qos. */
+    entity_qos_get_set(entity, "{without initial qos}");
 
-    dds_qos_delete(qos1);
-    dds_qos_delete(qos2);
+    /* Check set/get with entity with initial qos. */
+    {
+        dds_entity_t par = dds_create_participant (DDS_DOMAIN_DEFAULT, qos, NULL);
+        entity_qos_get_set(par, "{with initial qos}");
+        dds_delete(par);
+    }
+
+    /* Delete qos. */
+    dds_qos_delete(qos);
 }
 
 void entity_listeners(void)

@@ -416,17 +416,17 @@ dds_return_t dds_set_qos (dds_entity_t e, const dds_qos_t * qos)
     if ((e > 0) && (qos != NULL)) {
         ret = DDS_RETCODE_OK;
         os_mutexLock(&e->m_mutex);
-        if (e->m_qos) {
-            if (e->m_deriver.set_qos) {
-                ret = e->m_deriver.set_qos(e, qos, e->m_flags & DDS_ENTITY_ENABLED);
-            } else {
-                ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_ENTITY, DDS_ERR_M1);
+        if (e->m_deriver.set_qos) {
+            ret = e->m_deriver.set_qos(e, qos, e->m_flags & DDS_ENTITY_ENABLED);
+        } else {
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_ENTITY, DDS_ERR_M1);
+        }
+        if (ret == DDS_RETCODE_OK) {
+            /* Remember this QoS. */
+            if (e->m_qos == NULL) {
+                e->m_qos = dds_qos_create();
             }
-
-            if (ret == DDS_RETCODE_OK) {
-                /* Remember this QoS. */
-                ret = dds_qos_copy (e->m_qos, qos);
-            }
+            ret = dds_qos_copy (e->m_qos, qos);
         }
         os_mutexUnlock(&e->m_mutex);
     }
