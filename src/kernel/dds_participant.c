@@ -33,7 +33,7 @@ static void dds_participant_delete(dds_entity_t e, bool recurse)
       thread_state_asleep(thr);
     }
     if(dds_pp_head == NULL){
-  	  dds_fini();
+      dds_fini();
     }
 }
 
@@ -92,7 +92,7 @@ dds_entity_t dds_create_participant
   struct thread_state1 * thr;
   bool asleep;
   if(dds_pp_head == NULL){
-	  dds_init();
+    dds_init();
   }
 
   nn_plist_init_empty (&plist);
@@ -143,7 +143,7 @@ dds_entity_t dds_create_participant
   }
 
   pp = dds_alloc (sizeof (*pp));
-  dds_entity_init (&pp->m_entity, NULL, DDS_TYPE_PARTICIPANT, new_qos, NULL, DDS_PARTICIPANT_STATUS_MASK);
+  dds_entity_init (&pp->m_entity, NULL, DDS_TYPE_PARTICIPANT, new_qos, listener, DDS_PARTICIPANT_STATUS_MASK);
   pp->m_entity.m_guid = guid;
   e = &pp->m_entity;
   pp->m_entity.m_domain = dds_domain_create (config.domainId);
@@ -151,11 +151,6 @@ dds_entity_t dds_create_participant
   pp->m_entity.m_deriver.delete = dds_participant_delete;
   pp->m_entity.m_deriver.set_qos = dds_participant_qos_set;
   pp->m_entity.m_deriver.get_instance_hdl = dds_participant_instance_hdl;
-
-  if (listener)
-  {
-    pp->m_listener = *listener;
-  }
 
   /* Add participant to extent */
 
