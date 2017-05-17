@@ -17,6 +17,9 @@
     do { \
         /* Initially expect DDS_LUNSET on a newly created listener */ \
         ASSERT_CALLBACK_EQUAL(fntype, listener, DDS_LUNSET); \
+        /* Using listener NULL, shouldn't crash */ \
+        dds_lset_##fntype(NULL, NULL); \
+        dds_lget_##fntype(NULL, NULL); \
         /* Set to NULL, get to confirm it succeeds */ \
         dds_lset_##fntype(listener, NULL); \
         ASSERT_CALLBACK_EQUAL(fntype, listener, NULL); \
@@ -65,6 +68,7 @@ void test_create_and_delete(void)
     ASSERT_CALLBACK_EQUAL(data_available, listener, DDS_LUNSET);
 
     dds_listener_delete(listener);
+    dds_listener_delete(NULL);
 }
 
 void test_reset(void)
@@ -133,6 +137,11 @@ void test_merge(void)
     dds_listener_merge(listener2, listener1);
     ASSERT_CALLBACK_EQUAL(data_available, listener2, data_available_cb);
     ASSERT_CALLBACK_EQUAL(sample_lost, listener2, sample_lost_cb);
+
+    /* This shouldn't crash. */
+    dds_listener_merge(listener2, NULL);
+    dds_listener_merge(NULL, listener1);
+    dds_listener_merge(NULL, NULL);
 
     dds_listener_delete(listener1);
     dds_listener_delete(listener2);
