@@ -339,14 +339,6 @@ DDS_EXPORT dds_entity_t dds_create_participant
 DDS_EXPORT dds_entity_t dds_get_parent (_In_ dds_entity_t entity);
 
 
-/**
- * Description : Returns the participant for an entity.
- *
- * Arguments :
- *   -# entity The entity
- *   -# Returns The participant
- */
-DDS_EXPORT dds_entity_t dds_get_participant (_In_ dds_entity_t entity);
 
 /**
  * Description : Returns the domain id for a participant.
@@ -1232,7 +1224,7 @@ DDS_EXPORT dds_entity_t dds_get_domain(_In_ dds_domainid_t id);
  * -# Returns the number of available matched publications or subscriptions. If return > nofHandles
  *    the resulting set is truncated. Handles are only initialized up to min(return, nofHandles).
  */
-DDS_EXPORT dds_return_t dds_get_matched(_In_ dds_entity_t wr_or_r, _Out_writes_to_(nofHandles, return) dds_instancehandle_t *handles, _In_ size_t nofHandles);
+DDS_EXPORT dds_return_t dds_get_matched(_In_ dds_entity_t wr_or_r, _Out_writes_to_(nofHandles, return) dds_instance_handle_t *handles, _In_ size_t nofHandles);
 
 /**
  * Description : Asserts the liveliness of the entity
@@ -1241,14 +1233,6 @@ DDS_EXPORT dds_return_t dds_get_matched(_In_ dds_entity_t wr_or_r, _Out_writes_t
  * -# e Entity
  */
 DDS_EXPORT dds_return_t dds_assert_liveliness(_In_ dds_entity_t e);
-
-/**
- * Description : Retrieves the topic of a Writer or Reader
- *
- * Arguments :
- * -# wr_or_r Writer or Reader
- */
-DDS_EXPORT dds_entity_t dds_get_topic(_In_ dds_entity_t wr_or_r);
 
 /**
  * Description : Waits at most for the duration timeout for acks for data in the publisher or writer.
@@ -1302,7 +1286,7 @@ DDS_EXPORT dds_entity_t dds_lookup_topic(_In_ dds_entity_t pp, _In_z_ const char
  * -# pp Participant
  * -# handle Instance-handle of entity to be ignored.
  */
-DDS_EXPORT dds_return_t dds_ignore(_In_ dds_entity_t pp, _In_ dds_instancehandle_t handle);
+DDS_EXPORT dds_return_t dds_ignore(_In_ dds_entity_t pp, _In_ dds_instance_handle_t handle);
 
 /**
  * Description : Retrieve the topic on which the content-filtered-topic is based
@@ -1346,7 +1330,7 @@ DDS_EXPORT dds_entity_t dds_get_participant(_In_ dds_entity_t e); /* Convenience
 DDS_EXPORT dds_entity_t dds_get_publisher(_In_ dds_entity_t wr); /* Convenience-wrapper for (multiple) get_parent on Writer*/
 DDS_EXPORT dds_entity_t dds_get_subscriber(_In_ dds_entity_t e); /* Convenience-wrapper for (multiple) get_parent on Reader or its children*/
 DDS_EXPORT dds_entity_t dds_get_topic(_In_ dds_entity_t e); /* Convenience-wrapper for (multiple) get_parent on Writer or Reader or their children*/
-DDS_EXPORT dds_entity_t dds_get_datareader(_In_ dds_entity_t qc); /* Convenience-wrapper for get_parent on QueryCondition*/
+DDS_EXPORT dds_entity_t dds_get_datareader(_In_ dds_entity_t qc); /* Convenience-wrapper for get_parent on QueryCondition and ReadCondition*/
 
 #if defined (__cplusplus)
 }
