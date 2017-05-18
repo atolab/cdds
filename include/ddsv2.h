@@ -202,7 +202,7 @@ DDS_EXPORT dds_return_t dds_read_status (_In_ dds_entity_t e, _Out_ uint32_t * s
  *   -# Returns 0 on success, or a non-zero error value if the mask does not
  *      correspond to the entity
  */
-DDS_EXPORT dds_return_t dds_take_status_take (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
+DDS_EXPORT dds_return_t dds_take_status (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
 
 /**
  * Description : Returns the status changes since they were last read.
@@ -1166,6 +1166,187 @@ DDS_EXPORT dds_return_t dds_lookup_instance (_In_ dds_entity_t e, _Out_ dds_inst
  *    passed doesn't have a key-value
  */
 DDS_EXPORT dds_return_t dds_instance_get_key (_In_ dds_entity_t e, _In_ dds_instance_handle_t inst, _Out_ void * data);
+
+/**
+ * Description : Begin coherent publishing or begin accessing a coherent set in a subscriber
+ *
+ * Invoking on a Writer or Reader behaves as if dds_begin_coherent was invoked on its parent
+ * Publisher or Subscriber respectively.
+ *
+ * Arguments :
+ * -# e Publisher, Writer, Subscriber or Reader
+ */
+DDS_EXPORT dds_return_t dds_begin_coherent(_In_ dds_entity_t e);
+
+/**
+ * Description : End coherent publishing or end accessing a coherent set in a subscriber
+ *
+ * Invoking on a Writer or Reader behaves as if dds_end_coherent was invoked on its parent
+ * Publisher or Subscriber respectively.
+ *
+ * Arguments :
+ * -# e Publisher, Writer, Subscriber or Reader
+ */
+DDS_EXPORT dds_return_t dds_end_coherent(_In_ dds_entity_t e);
+
+/**
+ * Description : Generates DATA_AVAILABLE trigger on all readers of the Subscriber
+ *
+ * Arguments :
+ * -# sub Subscriber
+ */
+DDS_EXPORT dds_return_t dds_notify_readers(_In_ dds_entity_t sub);
+
+/**
+ * Description : Suspends the publications of the Publisher
+ *
+ * Arguments :
+ * -# pub Publisher
+ */
+DDS_EXPORT dds_return_t dds_suspend(_In_ dds_entity_t pub);
+
+/**
+ * Description : Resumes the publications of the Publisher
+ *
+ * Arguments :
+ * -# pub Publisher
+ */
+DDS_EXPORT dds_return_t dds_resume(_In_ dds_entity_t pub);
+
+/**
+ * Description : Resolves the domain-entity identified by id if it exists
+ *
+ * Arguments :
+ * -# id
+ */
+DDS_EXPORT dds_entity_t dds_get_domain(_In_ dds_domainid_t id);
+
+/**
+ * Description : Retrieves the matched publications (for a given Reader) or subscriptions (for a given Writer)
+ *
+ * Arguments :
+ * -# wr_or_r Writer or Reader
+ * -# handles Array of size nofHandles
+ * -# nofHandles Number of elements that can be written to in handles
+ *
+ * -# Returns the number of available matched publications or subscriptions. If return > nofHandles
+ *    the resulting set is truncated. Handles are only initialized up to min(return, nofHandles).
+ */
+DDS_EXPORT dds_return_t dds_get_matched(_In_ dds_entity_t wr_or_r, _Out_writes_to_(nofHandles, return) dds_instancehandle_t *handles, _In_ size_t nofHandles);
+
+/**
+ * Description : Asserts the liveliness of the entity
+ *
+ * Arguments :
+ * -# e Entity
+ */
+DDS_EXPORT dds_return_t dds_assert_liveliness(_In_ dds_entity_t e);
+
+/**
+ * Description : Retrieves the topic of a Writer or Reader
+ *
+ * Arguments :
+ * -# wr_or_r Writer or Reader
+ */
+DDS_EXPORT dds_entity_t dds_get_topic(_In_ dds_entity_t wr_or_r);
+
+/**
+ * Description : Waits at most for the duration timeout for acks for data in the publisher or writer.
+ *
+ * Arguments :
+ * -# pub_or_w Publisher or writer
+ * -# timeout Duration the call should maximally wait for the data to be acked.
+ */
+DDS_EXPORT dds_return_t dds_wait_for_acks(_In_ dds_entity_t pub_or_w, _In_ dds_duration_t timeout);
+
+/**
+ * Description : Checks whether entity c is contained in entity e
+ *
+ * Containment is defined as follows: TODO
+ *
+ * Arguments :
+ * -# e Entity for which has to be determined whether c is contained within it
+ * -# c Entity to check for being contained in e
+ */
+DDS_EXPORT dds_return_t dds_contains(_In_ dds_entity_t e, _In_ dds_entity_t c);
+
+/**
+ * Description : Returns the current wall-clock as used for timestamps
+ */
+DDS_EXPORT dds_time_t dds_time(void);
+
+/**
+ * Description : Checks whether the entity has one of its enabled statuses triggered.
+ *
+ * Arguments :
+ * -# e Entity for which to check for triggered status
+ */
+DDS_EXPORT dds_return_t dds_entity_triggered(_In_ dds_entity_t e);
+
+/* TODO: dds_create_contentfilteredtopic -> dds_create_topic_w_query and use dds_get_query and the like. */
+DDS_EXPORT dds_entity_t dds_create_contentfilteredtopic(_In_ dds_entity_t pp, _In_z_ const char * name, _In_ dds_entity_t related_topic, _In_z_ const char *expression, _In_reads_opt_z_(npars) const char ** parameters, _In_ size_t npars);
+
+/**
+ * Description : Tries to find the topic with the supplied name.
+ *
+ * Arguments :
+ * -# pp Participant
+ * -# name Topic-name to look for
+ */
+DDS_EXPORT dds_entity_t dds_lookup_topic(_In_ dds_entity_t pp, _In_z_ const char * name);
+
+/**
+ * Description : Ignore the entity described by handle.
+ *
+ * Arguments :
+ * -# pp Participant
+ * -# handle Instance-handle of entity to be ignored.
+ */
+DDS_EXPORT dds_return_t dds_ignore(_In_ dds_entity_t pp, _In_ dds_instancehandle_t handle);
+
+/**
+ * Description : Retrieve the topic on which the content-filtered-topic is based
+ *
+ * TODO: Refactor CFT
+ *
+ * Arguments :
+ * -# cft ContentFilteredTopic
+ */
+DDS_EXPORT dds_entity_t dds_get_related_topic(_In_ dds_entity_t cft);
+/* DDS_EXPORT dds_return_t dds_contentfilteredtopic_get_parameters(...) see dds_get_query_patameters(...) */;
+/* DDS_EXPORT dds_return_t dds_contentfilteredtopic_set_parameters(...) see dds_set_query_patameters(...) */;
+
+/**
+ * Description : Retrieve the query underlying the entity
+ *
+ *
+ * Arguments :
+ * -# top_mt_qc Topic, MultiTopic, QueryConditon
+ */
+DDS_EXPORT dds_entity_t dds_get_query(_In_ dds_entity_t top_mt_qc);
+
+/**
+ * Description : Retrieve the query-parameters
+ *
+ *
+ * Arguments :
+ * -# top_mt_qc Topic, MultiTopic, QueryConditon
+ */
+DDS_EXPORT dds_return_t dds_get_query_parameters(_In_ dds_entity_t e, _Out_writes_to_(npars, return) const char ** params, _In_ size_t npars);
+
+/**
+ * Description : Set the query-parameters
+ *
+ * Arguments :
+ * -# top_mt_qc Topic, MultiTopic, QueryConditon
+ */
+DDS_EXPORT dds_return_t dds_set_query_parameters(_In_ dds_entity_t e, _In_reads_opt_z_(npars) const char ** parameters, _In_ size_t npars);
+
+DDS_EXPORT dds_entity_t dds_get_participant(_In_ dds_entity_t e); /* Convenience-wrapper for (multiple) get_parent on all children*/
+DDS_EXPORT dds_entity_t dds_get_publisher(_In_ dds_entity_t wr); /* Convenience-wrapper for (multiple) get_parent on Writer*/
+DDS_EXPORT dds_entity_t dds_get_subscriber(_In_ dds_entity_t e); /* Convenience-wrapper for (multiple) get_parent on Reader or its children*/
+DDS_EXPORT dds_entity_t dds_get_topic(_In_ dds_entity_t e); /* Convenience-wrapper for (multiple) get_parent on Writer or Reader or their children*/
+DDS_EXPORT dds_entity_t dds_get_datareader(_In_ dds_entity_t qc); /* Convenience-wrapper for get_parent on QueryCondition*/
 
 #if defined (__cplusplus)
 }
