@@ -1012,6 +1012,11 @@ DDS_EXPORT dds_return_t dds_dispose_ih_ts (_In_ dds_entity_t wr, _In_ dds_instan
  *   -# Returns 0 on success, or non-zero value to indicate an error
  */
 DDS_EXPORT dds_return_t dds_write (_In_ dds_entity_t wr, _In_ const void *data);
+/*
+ * Untyped API, which take serialized blobs now.
+ * Whether they remain exposed like this with X-types isn't entirely clear yet.
+ * TODO: make a decide about dds_takecdr
+ */
 DDS_EXPORT dds_return_t dds_writecdr (_In_ dds_entity_t wr, _In_reads_bytes_(size) const void *cdr, _In_ size_t size);
 
 /**
@@ -1091,6 +1096,8 @@ DDS_EXPORT dds_entity_t dds_create_waitset (_In_ dds_entity_t pp);
 /**
  * Description : Create a waitset with continuations
  *
+ * TODO: CHAM-145: Usefulness is under investigation.
+ *
  * Arguments :
  *  -# pp Participant to create the waitset in
  *  -# block Continuation invoked for blocking
@@ -1100,6 +1107,8 @@ DDS_EXPORT dds_entity_t dds_create_waitset_cont (_In_ dds_entity_t pp, void (_In
 
 /**
  * Description : Retrieve the continuation from a waitset
+ *
+ * TODO: CHAM-145: Usefulness is under investigation.
  *
  * Arguments :
  *  -# ws The waitset to retrieve the continuation from
@@ -1410,6 +1419,12 @@ DDS_EXPORT dds_return_t dds_take_mask_wl
     _In_ uint32_t mask
 );
 
+/*
+ * Untyped API, which take serialized blobs now.
+ * Whether they remain exposed like this with X-types isn't entirely clear yet.
+ * TODO: make a decide about dds_takecdr
+ * If we want dds_takecdr(), shouldn't there be a dds_readcdr()?
+ */
 struct serdata;
 int dds_takecdr
 (
