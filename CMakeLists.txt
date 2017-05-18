@@ -13,9 +13,13 @@ set(MEMORYCHECK_COMMAND_OPTIONS "--track-origins=yes --leak-check=full --xml=yes
 include (CTest)
 enable_testing()
 
+
 include_directories(include)
 #add_subdirectory(idlc)
 add_subdirectory(src)
 #add_subdirectory(vdds-server)
 add_subdirectory(examples)
 #add_subdirectory(rpc-examples)
+
+include(Packaging) # Pulls in CPack
+
