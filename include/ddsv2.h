@@ -1087,7 +1087,24 @@ typedef void * dds_attach_t;
  *   -# Returns a pointer to a waitset created
  */
 DDS_EXPORT dds_entity_t dds_create_waitset (_In_ dds_entity_t pp);
+
+/**
+ * Description : Create a waitset with continuations
+ *
+ * Arguments :
+ *  -# pp Participant to create the waitset in
+ *  -# block Continuation invoked for blocking
+ *  -# cont Continuation for trigger
+ */
 DDS_EXPORT dds_entity_t dds_create_waitset_cont (_In_ dds_entity_t pp, void (_In_ *block) (_In_ dds_entity_t ws, _In_opt_ void *arg, _In_ dds_time_t abstimeout), void (_In_ *cont) (_In_ dds_entity_t ws, _In_opt_ void *arg, _In_ int ret), _In_ size_t contsize);
+
+/**
+ * Description : Retrieve the continuation from a waitset
+ *
+ * Arguments :
+ *  -# ws The waitset to retrieve the continuation from
+ *  -# cont Location where to store the continuation
+ */
 DDS_EXPORT dds_return_t dds_waitset_get_cont (_In_ dds_entity_t ws, _Outptr_result_maybenull_ void** cont);
 
 
