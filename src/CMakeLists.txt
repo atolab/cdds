@@ -29,6 +29,20 @@ target_compile_definitions(vdds PRIVATE VDDS_BUILD)
 add_library(Vortex::DDSC99 ALIAS vdds)
 
 
+# Just added for install SPIKE. TODO: remove or improve.
+install(TARGETS vdds
+        ARCHIVE
+        DESTINATION lib
+        COMPONENT lib)
+install(FILES ${CMAKE_SOURCE_DIR}/include/dds.h
+        DESTINATION include
+        COMPONENT dev)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/dds
+        DESTINATION include
+        COMPONENT dev)
+
+#target_include_directories(vdds PUBLIC ../include)
+
 # TODO: improve test inclusion.
 add_subdirectory(kernel/tests)
 

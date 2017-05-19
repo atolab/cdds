@@ -21,15 +21,12 @@
 #include <pthread.h>
 #include <assert.h>
 #include <unistd.h>
-#ifndef PIKEOS_POSIX
 #include <strings.h>
-#endif
 #include <string.h>
 #include <stdio.h>
 #ifndef INTEGRITY
 #include <signal.h>
-#ifndef OS_HAS_NO_SET_NAME_PRCTL /* Define in os_defs.h iff there's no prctl()
-                                    on this platform or PR_SET_NAME does not exist */
+#ifndef __VXWORKS__
 #include <sys/prctl.h>
 #endif
 #endif
@@ -268,12 +265,10 @@ os_startRoutineWrapper (
 
     resultValue = NULL;
 
-#ifdef INTEGRITY
+#if defined(INTEGRITY)
     SetTaskName(CurrentTask(), context->threadName, strlen(context->threadName));
-#else
-#ifndef OS_HAS_NO_SET_NAME_PRCTL
+#elif !defined(__VXWORKS__)
     prctl(PR_SET_NAME, context->threadName);
-#endif
 #endif
 
     /* store the thread name with the thread via thread specific data */
@@ -354,7 +349,9 @@ os_threadCreate (
     }
     else
     {
-#ifdef VXWORKS_RTP
+#ifdef __VXWORKS__
+       /* PR_SET_NAME is not available on VxWorks. Use pthread_attr_setname
+          instead (proprietary VxWorks extension) */
        (void)pthread_attr_setname(&attr, name);
 #endif
        if (pthread_getschedparam(pthread_self(), &policy, &sched_param) != 0 ||
@@ -553,7 +550,6 @@ os_threadGetThreadName (
     return snprintf (buffer, length, "%s", name);
 }
 
-#ifndef VXWORKS_RTP
 /** \brief Wait for the termination of the identified thread
  *
  * \b os_threadWaitExit wait for the termination of the
@@ -569,6 +565,35 @@ os_threadWaitExit (
     int result;
 
     assert (threadId);
+
+#if defined(__VXWORKS__) && !defined(_WRS_KERNEL)
+    struct sched_param sched_param;
+    int max, policy = 0;
+
+    /* There is a known issue in pthread_join on VxWorks 6.x RTP mode.
+
+       WindRiver: When pthread_join returns, it does not indicate end of a
+       thread in 100% of the situations. If the thread that calls pthread_join
+       has a higher priority than the thread that is currently terminating,
+       pthread_join could return before pthread_exit has finished. This
+       conflicts with the POSIX specification that dictates that pthread_join
+       must only return when the thread is really terminated. The workaround
+       suggested by WindRiver support is to increase the priority of the thread
+       (task) to be terminated before handing back the semaphore to ensure the
+       thread exits before pthread_join returns.
+
+       This bug was submitted to WindRiver as TSR 815826. */
+
+    /* Note that any possible errors raised here are not terminal since the
+       thread may have exited at this point anyway. */
+    if (pthread_getschedparam(threadId, &policy, &sched_param) == 0) {
+        max = sched_get_priority_max(policy);
+        if (max != -1) {
+            (void)pthread_setschedprio(threadId, max);
+        }
+    }
+#endif
+
     result = pthread_join (threadId, thread_result);
     if (result != 0) {
         /* NOTE: The below report actually is a debug output; makes no sense from
@@ -580,7 +605,6 @@ os_threadWaitExit (
     }
     return rv;
 }
-#endif
 
 /** \brief Allocate thread private memory
  *
