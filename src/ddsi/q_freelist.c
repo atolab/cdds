@@ -98,6 +98,7 @@ void nn_freelist_fini (_Inout_ _Post_invalid_ struct nn_freelist *fl, _In_ void 
     os_mutexDestroy (&fl->inner[i].lock);
     for (j = 0; j < fl->inner[i].count; j++)
       xfree (fl->inner[i].m->x[j]);
+    os_free(fl->inner[i].m);
   }
   while ((m = fl->mlist) != NULL)
   {
