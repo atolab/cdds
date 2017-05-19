@@ -6,6 +6,7 @@ project(VortexDDS)
 
 set(CMAKE_C_STANDARD 99)
 
+include(AnalyzeBuild)
 # Include Coverage before CTest so that COVERAGE_COMMAND can be modified
 # in the Coverage module should that ever be necessary.
 include(Coverage)
