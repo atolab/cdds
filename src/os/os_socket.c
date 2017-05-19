@@ -266,52 +266,6 @@ os_sockaddrSameSubnet(const os_sockaddr* thisSock,
     return result;
 }
 
-bool
-os_sockaddrInetStringToAddress(const char *addressString,
-                               os_sockaddr* addressOut)
-{
-    uint32_t ipv4IntAddress;
-    bool result = false;
-
-    assert(addressOut);
-
-    ipv4IntAddress = inet_addr(addressString);
-
-    if (ipv4IntAddress == htonl(INADDR_NONE)
-#ifdef WIN32
-        || ipv4IntAddress == htonl(INADDR_ANY) /* Older Windows return this for empty string */
-#endif
-        )
-    {
-#if (OS_SOCKET_HAS_IPV6 == 1)
-        /* Try and parse as an IPv6 address */
-#ifdef WIN32
-        int sslen = sizeof(os_sockaddr_in6);
-        if (WSAStringToAddress((LPTSTR) addressString, AF_INET6, NULL, (os_sockaddr*)addressOut, &sslen) == 0)
-        {
-            result = true;
-        }
-#else
-        if (OS_INET_PTON(AF_INET6, addressString, &(((os_sockaddr_in6*)addressOut)->sin6_addr)))
-        {
-            ((os_sockaddr_in6*)addressOut)->sin6_family = AF_INET6;
-            result = true;
-        }
-#endif /* WIN32 */
-#endif /* IPV6 */
-    }
-    else
-    {
-        ((os_sockaddr_in*)addressOut)->sin_family = AF_INET;
-        ((os_sockaddr_in*)addressOut)->sin_addr.s_addr = ipv4IntAddress;
-        result = true;
-    }
-
-    return result;
-}
-
-
-
 /**
 * Convert the provided addressString into a os_sockaddr.
 * @return true on successful conversion. false otherwise
@@ -329,45 +283,31 @@ os_sockaddrStringToAddress(const char *addressString,
                            os_sockaddr* addressOut,
                            bool isIPv4)
 {
-    uint32_t ipv4IntAddress;
     bool result = false;
-    int sslen;
+    os_sockaddr_storage buf;
 
     assert(addressOut);
 
-    ipv4IntAddress = inet_addr(addressString);
-
-    if (ipv4IntAddress == htonl(INADDR_NONE)
-#ifdef WIN32
-        || ipv4IntAddress == htonl(INADDR_ANY) /* Older Windows return this for empty string */
-#endif
-        )
-    {
-#if (OS_SOCKET_HAS_IPV6 == 1)
-        /* Try and parse as an IPv6 address */
-        sslen = sizeof(os_sockaddr_in6);
-        memset(addressOut, 0, (unsigned) sslen);
-#ifdef WIN32
-        if (WSAStringToAddress((LPTSTR) addressString, AF_INET6, NULL, (os_sockaddr*)addressOut, &sslen) == 0)
+    if (strchr(addressString, ':') == NULL) {
+        if (OS_INET_PTON(
+            AF_INET, addressString, ((os_sockaddr *)&buf)) == 1)
         {
+            (void)memset(addressOut, 0, sizeof(os_sockaddr_in));
+            ((os_sockaddr_in *)addressOut)->sin_family = AF_INET;
+            ((os_sockaddr_in *)addressOut)->sin_addr =
+                 ((os_sockaddr_in *)&buf)->sin_addr;
             result = true;
         }
-#else
-        if (OS_INET_PTON(AF_INET6, addressString, &(((os_sockaddr_in6*)addressOut)->sin6_addr)))
+    } else {
+        if (OS_INET_PTON(
+            AF_INET6, addressString, ((os_sockaddr *)&buf)))
         {
-            ((os_sockaddr_in6*)addressOut)->sin6_family = AF_INET6;
+            (void)memset(addressOut, 0, sizeof(os_sockaddr_in6));
+            ((os_sockaddr_in6 *)addressOut)->sin6_family = AF_INET6;
+            ((os_sockaddr_in6 *)addressOut)->sin6_addr =
+                ((os_sockaddr_in6 *)&buf)->sin6_addr;
             result = true;
         }
-#endif /* WIN32 */
-#endif /* IPV6 */
-    }
-    else
-    {
-        sslen = sizeof(os_sockaddr_in);
-        memset(addressOut, 0, (unsigned) sslen);
-        ((os_sockaddr_in*)addressOut)->sin_family = AF_INET;
-        ((os_sockaddr_in*)addressOut)->sin_addr.s_addr = ipv4IntAddress;
-        result = true;
     }
 
     if (!result)

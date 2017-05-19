@@ -783,7 +783,8 @@ int rtps_init (void)
     char buf[INET6_ADDRSTRLEN_EXTENDED];
     nn_log (LC_CONFIG, "ownip: %s\n", sockaddr_to_string_no_port (buf, &gv.ownip));
     nn_log (LC_CONFIG, "extip: %s\n", sockaddr_to_string_no_port (buf, &gv.extip));
-    nn_log (LC_CONFIG, "extmask: %s%s\n", inet_ntoa (gv.extmask), config.useIpv6 ? " (not applicable)" : "");
+    (void)inet_ntop(AF_INET, &gv.extmask, buf, sizeof(buf));
+    nn_log (LC_CONFIG, "extmask: %s%s\n", buf, config.useIpv6 ? " (not applicable)" : "");
     nn_log (LC_CONFIG, "networkid: 0x%lx\n", (unsigned long) gv.myNetworkId);
     nn_log (LC_CONFIG, "SPDP MC: %s\n", locator_to_string_no_port (buf, &gv.loc_spdp_mc));
     nn_log (LC_CONFIG, "default MC: %s\n", locator_to_string_no_port (buf, &gv.loc_default_mc));
