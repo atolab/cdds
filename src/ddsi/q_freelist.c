@@ -158,7 +158,7 @@ _Check_return_ bool nn_freelist_push (_Inout_ struct nn_freelist *fl, _Inout_ _W
   }
   else
   {
-    struct nn_freelistM *m = fl->inner[k].m;
+    struct nn_freelistM *m;
     os_mutexLock (&fl->lock);
     if (fl->count + NN_FREELIST_MAGSIZE >= fl->max)
     {
@@ -166,6 +166,7 @@ _Check_return_ bool nn_freelist_push (_Inout_ struct nn_freelist *fl, _Inout_ _W
       os_mutexUnlock (&fl->inner[k].lock);
       return false;
     }
+    m = fl->inner[k].m;
     m->next = fl->mlist;
     fl->mlist = m;
     fl->count += NN_FREELIST_MAGSIZE;
