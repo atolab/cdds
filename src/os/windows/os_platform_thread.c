@@ -182,6 +182,7 @@ void
 os_threadExit(
     void *thread_result)
 {
+#pragma warning(suppress : 4311) /* Until CHAM-155 is being solved, type cast of void * to DWORD warning has been silenced */
     ExitThread((DWORD)thread_result);
 }
 
@@ -432,6 +433,7 @@ os_threadWaitExit(
 
     assert(tr != STILL_ACTIVE);
     if (thread_result != NULL) {
+#pragma warning(suppress : 4312) /* Until CHAM-155 is being solved, type cast of DWORD to void * warning has been silenced */
         *thread_result = (VOID *)tr;
     }
     CloseHandle(threadId.handle);

@@ -58,8 +58,8 @@ ssize_t recvmsg (os_handle fd, struct msghdr *message, int flags)
 #if SYSDEPS_MSGHDR_FLAGS
   message->msg_flags = 0;
 #endif
-  ret = recvfrom (fd, message->msg_iov[0].iov_base, message->msg_iov[0].iov_len, flags,
-                  message->msg_name, &message->msg_namelen);
+  ret = recvfrom (fd, message->msg_iov[0].iov_base, (int)message->msg_iov[0].iov_len, flags,
+                  message->msg_name, &message->msg_namelen); /* To fix the warning of conversion from 'size_t' to 'int', which may cause possible loss of data, type casting is done*/
 #if defined (_WIN32)
   /* Windows returns an error for too-large messages, Unix expects
      original size and the MSG_TRUNC flag.  MSDN says it is truncated,
@@ -168,7 +168,7 @@ ssize_t sendmsg (os_handle fd, const struct msghdr *message, int flags)
     bufs[i].buf = (void *) message->msg_iov[i].iov_base;
     bufs[i].len = (unsigned) message->msg_iov[i].iov_len;
   }
-  if (WSASendTo (fd, bufs, message->msg_iovlen, &sent, flags, (SOCKADDR *) message->msg_name, message->msg_namelen, NULL, NULL) == 0)
+  if (WSASendTo (fd, bufs, (DWORD)message->msg_iovlen, &sent, (DWORD)flags, (SOCKADDR *) message->msg_name, message->msg_namelen, NULL, NULL) == 0) /* Type casting to silence the warning of conversion from 'size_t' to 'DWORD', which may cause possible loss of data */
     ret = (ssize_t) sent;
   else
     ret = -1;

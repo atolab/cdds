@@ -19,6 +19,7 @@ if(WIN32)
   # on static detection of misuse instead of runtime detection, so all
   # these warnings can be disabled on Windows.
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+  add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS) # CHAM-91: Disabled warnings for deprecated Winsock 2 API calls in general
 elseif(UNIX AND NOT APPLE)
   find_package(GetTime REQUIRED)
   target_link_libraries(Abstraction INTERFACE GetTime)

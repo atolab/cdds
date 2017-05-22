@@ -395,13 +395,13 @@ static FILE * open_socket (char *host, unsigned short port)
         goto err_connect;
     }
 
-    file = fdopen ((int)sock, "w");
+    file = _fdopen ((int)sock, "w"); /* Type casting is done for the warning of possible loss of data for Parameter "sock" with the type of "os_socket" */
 
     return file;
 
 /* Error handling */
 err_connect:
-    (void) close(sock);
+    (void) _close((int)sock); /* Type casting is done for the warning of possible loss of data for Parameter "sock" with the type of "os_socket" */
 err_socket:
     os_strerror_r(os_getErrno(), msg, sizeof(msg));
     os__report_fprintf(stderr, "%s: %s\n", errstr, msg);

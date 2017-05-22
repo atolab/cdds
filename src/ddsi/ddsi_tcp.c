@@ -337,6 +337,7 @@ static ddsi_tcp_conn_t ddsi_tcp_cache_find (const struct msghdr * msg)
 
 static ssize_t ddsi_tcp_conn_read_plain (ddsi_tcp_conn_t tcp, void * buf, size_t len, int * err)
 {
+  #pragma warning(suppress : 4267) /* Parameter len has type int on Win32/64. There is no way to specify more, so the warning on possible loss of precision is suppressed. */
   ssize_t ret = recv (tcp->m_sock, buf, len, 0);
   *err = (ret == -1) ? os_getErrno () : 0;
   return ret;
@@ -366,7 +367,7 @@ static bool ddsi_tcp_select (os_socket sock, bool read, size_t pos)
   TRACE_TCP (("%s blocked %s: sock %d\n", ddsi_name, read ? "read" : "write", (int) sock));
   do
   {
-    ret = os_sockSelect (sock + 1, rdset, wrset, NULL, &timeout);
+    ret = os_sockSelect ((int32_t)sock + 1, rdset, wrset, NULL, &timeout); /* The variable "sock" with os_socket type causes the possible loss of data. So type casting done */
   }
   while (ret == -1 && os_getErrno () == os_sockEINTR);
 
@@ -454,6 +455,7 @@ static ssize_t ddsi_tcp_conn_write_plain (ddsi_tcp_conn_t conn, const void * buf
 #ifdef MSG_NOSIGNAL
   sendflags |= MSG_NOSIGNAL;
 #endif
+  #pragma warning(suppress : 4267) /* Parameter len has type int on Win32/64. There is no way to specify more, so the warning on possible loss of precision is suppressed. */
   ret = send (conn->m_sock, buf, len, sendflags);
   *err = (ret == -1) ? os_getErrno () : 0;
 
