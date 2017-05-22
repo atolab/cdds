@@ -3,7 +3,6 @@
 #include "kernel/dds_entity.h"
 #include "kernel/dds_reader.h"
 #include "kernel/dds_guardcond.h"
-#include "kernel/dds_statuscond.h"
 #include "kernel/dds_waitset.h"
 #include "kernel/dds_rhc.h"
 #include "ddsi/q_globals.h"
@@ -42,13 +41,13 @@ void dds_condition_delete (dds_condition * cond)
   dds_free (cond);
 }
 
-/* 
+/*
   dds_cond_callback_signal: Called from reader/writer callback handler
   with condition already locked. If can't get global attach lock need to
   unlock condition until can, to avoid deadlock (typically caused by
   condition concurrently being detached from waitset).
 */
-   
+
 void dds_cond_callback_signal (dds_condition * cond)
 {
   bool unlocked = false;

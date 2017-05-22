@@ -503,6 +503,7 @@ int delete_writer_nolinger (const struct nn_guid *guid);
 int delete_writer_nolinger_locked (struct writer *wr);
 
 int delete_reader (const struct nn_guid *guid);
+uint64_t reader_instance_id (const struct nn_guid *guid);
 
 /* To create or delete a new proxy participant: "guid" MUST have the
    pre-defined participant entity id. Unlike delete_participant(),
@@ -530,6 +531,7 @@ int delete_reader (const struct nn_guid *guid);
 
 void new_proxy_participant (const struct nn_guid *guid, unsigned bes, unsigned prismtech_bes, const struct nn_guid *privileged_pp_guid, struct addrset *as_default, struct addrset *as_meta, const struct nn_plist *plist, int64_t tlease_dur, nn_vendorid_t vendor, unsigned custom_flags);
 int delete_proxy_participant_by_guid (const struct nn_guid * guid, int isimplicit);
+uint64_t participant_instance_id (const struct nn_guid *guid);
 
 enum update_proxy_participant_source {
   UPD_PROXYPP_SPDP,
@@ -566,6 +568,7 @@ int new_proxy_group (const struct nn_guid *guid, const struct v_gid_s *gid, cons
 void delete_proxy_group (const struct nn_guid *guid, int isimplicit);
 
 void writer_exit_startup_mode (struct writer *wr);
+uint64_t writer_instance_id (const struct nn_guid *guid);
 
 
 #if defined (__cplusplus)

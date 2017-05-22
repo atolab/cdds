@@ -132,7 +132,7 @@ int main (int argc, char **argv)
       {
         extern int dds_write_async (dds_entity_t wr, const void *sample);
         status = dds_write_async (writer, &sample);
-        if (dds_err_no (status) == DDS_RETCODE_TIMEOUT)
+        if (dds_err_nr (status) == DDS_RETCODE_TIMEOUT)
         {
           timedOut = true;
         }
@@ -178,14 +178,14 @@ int main (int argc, char **argv)
   /* Cleanup */
 
   status = dds_instance_dispose (writer, &sample);
-  if (dds_err_no (status) != DDS_RETCODE_TIMEOUT)
+  if (dds_err_nr (status) != DDS_RETCODE_TIMEOUT)
   {
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   }
 
   dds_free (sample.payload._buffer);
 
-  dds_entity_delete (participant);
+  dds_delete (participant);
   dds_fini ();
   return result;
 }

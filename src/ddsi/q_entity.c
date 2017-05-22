@@ -2960,6 +2960,20 @@ void writer_exit_startup_mode (struct writer *wr)
   os_mutexUnlock (&wr->e.lock);
 }
 
+uint64_t writer_instance_id (const struct nn_guid *guid)
+{
+    struct entity_common *e;
+    e = (struct entity_common*)ephash_lookup_writer_guid(guid);
+    if (e) {
+        return e->iid;
+    }
+    e = (struct entity_common*)ephash_lookup_proxy_writer_guid(guid);
+    if (e) {
+        return e->iid;
+    }
+    return 0;
+}
+
 /* READER ----------------------------------------------------------- */
 
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
@@ -3291,6 +3305,21 @@ int delete_reader (const struct nn_guid *guid)
   gcreq_reader (rd);
   return 0;
 }
+
+uint64_t reader_instance_id (const struct nn_guid *guid)
+{
+    struct entity_common *e;
+    e = (struct entity_common*)ephash_lookup_reader_guid(guid);
+    if (e) {
+        return e->iid;
+    }
+    e = (struct entity_common*)ephash_lookup_proxy_reader_guid(guid);
+    if (e) {
+        return e->iid;
+    }
+    return 0;
+}
+
 
 /* PROXY-PARTICIPANT ------------------------------------------------ */
 static void gc_proxy_participant_lease (struct gcreq *gcreq)
@@ -3740,6 +3769,20 @@ int delete_proxy_participant_by_guid (const struct nn_guid * guid, int isimplici
   delete_ppt (ppt, isimplicit);
 
   return 0;
+}
+
+uint64_t participant_instance_id (const struct nn_guid *guid)
+{
+    struct entity_common *e;
+    e = (struct entity_common*)ephash_lookup_participant_guid(guid);
+    if (e) {
+        return e->iid;
+    }
+    e = (struct entity_common*)ephash_lookup_proxy_participant_guid(guid);
+    if (e) {
+        return e->iid;
+    }
+    return 0;
 }
 
 /* PROXY-GROUP --------------------------------------------------- */

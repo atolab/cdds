@@ -1,5 +1,16 @@
+/** @file
+ *
+ * @brief DDS C99 Communication Status API
+ *
+ * @todo add copyright header?
+ *
+ * This header file defines the public API of the Communication Status in the
+ * VortexDDS C99 language binding.
+ */
 #ifndef DDS_STATUS_H
 #define DDS_STATUS_H
+
+#include "os/os_public.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -11,9 +22,6 @@ extern "C" {
 #define OS_API OS_API_IMPORT
 #endif
 
-/** @file status.h
- *  @brief Vortex Lite Communication Status header
- */
 
 /*
   Listeners implemented as structs containing callback functions
@@ -158,61 +166,8 @@ typedef struct dds_inconsistent_topic_status
 }
 dds_inconsistent_topic_status_t;
 
-/* Listener types */
-/** \ref DCPS_Modules_Infrastructure_Listener  - TopicListener */
-typedef struct dds_topiclistener
-{
-  void (*on_inconsistent_topic) (dds_entity_t topic, dds_inconsistent_topic_status_t * status);
-}
-dds_topiclistener_t;
 
-/** \ref DCPS_Modules_Infrastructure_Listener  - DataWriterListener */
-typedef struct dds_writerlistener
-{
-  void (*on_offered_deadline_missed) (dds_entity_t writer, dds_offered_deadline_missed_status_t * status);
-  void (*on_offered_incompatible_qos) (dds_entity_t writer, dds_offered_incompatible_qos_status_t * status);
-  void (*on_liveliness_lost) (dds_entity_t writer, dds_liveliness_lost_status_t * status);
-  void (*on_publication_matched) (dds_entity_t writer, dds_publication_matched_status_t * status);
-}
-dds_writerlistener_t;
-
-/** \ref DCPS_Modules_Infrastructure_Listener  - PublisherListener */
-typedef struct dds_publisherlistener
-{
-  dds_writerlistener_t writerlistener;
-}
-dds_publisherlistener_t;
-
-/** \ref DCPS_Modules_Infrastructure_Listener  - DataReaderListener */
-typedef struct dds_readerlistener
-{
-  void (*on_requested_deadline_missed) (dds_entity_t reader, dds_requested_deadline_missed_status_t * status, void *arg);
-  void (*on_requested_incompatible_qos) (dds_entity_t reader, dds_requested_incompatible_qos_status_t * status, void *arg);
-  void (*on_sample_rejected) (dds_entity_t reader, dds_sample_rejected_status_t * status, void *arg);
-  void (*on_liveliness_changed) (dds_entity_t reader, dds_liveliness_changed_status_t * status, void *arg);
-  void (*on_data_available) (dds_entity_t reader, void *arg);
-  void (*on_subscription_matched) (dds_entity_t reader, dds_subscription_matched_status_t * status, void *arg);
-  void (*on_sample_lost) (dds_entity_t reader, dds_sample_lost_status_t * status, void *arg);
-  void *arg;
-}
-dds_readerlistener_t;
-
-/** \ref DCPS_Modules_Infrastructure_Listener  - SubscriberListener */
-typedef struct dds_subscriberlistener
-{
-  dds_readerlistener_t readerlistener;
-  void (*on_data_readers) (dds_entity_t subscriber);
-}
-dds_subscriberlistener_t;
-
-/** \ref DCPS_Modules_Infrastructure_Listener  - DomainParticipantListener */
-typedef struct dds_participantlistener
-{
-  dds_topiclistener_t topiclistener;
-  dds_publisherlistener_t publisherlistener;
-  dds_subscriberlistener_t subscriberlistener;
-}
-dds_participantlistener_t;
+/* TODO: Move the get_<status> APIs from this file to a more appropriate place. */
 
 /*
   get_<status> APIs return the status of an entity and resets the status
@@ -226,7 +181,7 @@ dds_participantlistener_t;
  *   -# topic The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_InconsistentTopic to get the status
  */
-OS_API int dds_get_inconsistent_topic_status (dds_entity_t topic, dds_inconsistent_topic_status_t * status);
+OS_API dds_return_t dds_get_inconsistent_topic_status (dds_entity_t topic, dds_inconsistent_topic_status_t * status);
 
 
 /**
@@ -237,7 +192,7 @@ OS_API int dds_get_inconsistent_topic_status (dds_entity_t topic, dds_inconsiste
  *   -# writer The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_PublicationMatched to get the status
  */
-OS_API int dds_get_publication_matched_status (dds_entity_t writer, dds_publication_matched_status_t * status);
+OS_API dds_return_t dds_get_publication_matched_status (dds_entity_t writer, dds_publication_matched_status_t * status);
 
 /**
  * Description : Get the status value corresponding to LIVELINESS_LOST and reset the status
@@ -247,7 +202,7 @@ OS_API int dds_get_publication_matched_status (dds_entity_t writer, dds_publicat
  *   -# writer The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_LivelinessLost to get the status
  */
-OS_API int dds_get_liveliness_lost_status (dds_entity_t writer, dds_liveliness_lost_status_t * status);
+OS_API dds_return_t dds_get_liveliness_lost_status (dds_entity_t writer, dds_liveliness_lost_status_t * status);
 
 /**
  * Description : Get the status value corresponding to OFFERED_DEADLINE_MISSED and reset the status
@@ -257,7 +212,7 @@ OS_API int dds_get_liveliness_lost_status (dds_entity_t writer, dds_liveliness_l
  *   -# writer The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_OfferedDeadlineMissed to get the status
  */
-OS_API int dds_get_offered_deadline_missed_status (dds_entity_t writer, dds_offered_deadline_missed_status_t * status);
+OS_API dds_return_t dds_get_offered_deadline_missed_status (dds_entity_t writer, dds_offered_deadline_missed_status_t * status);
 
 /**
  * Description : Get the status value corresponding to OFFERED_INCOMPATIBLE_QOS and reset the status
@@ -267,7 +222,7 @@ OS_API int dds_get_offered_deadline_missed_status (dds_entity_t writer, dds_offe
  *   -# writer The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_OfferedIncompatibleQoS to get the status
  */
-OS_API int dds_get_offered_incompatible_qos_status (dds_entity_t writer, dds_offered_incompatible_qos_status_t * status);
+OS_API dds_return_t dds_get_offered_incompatible_qos_status (dds_entity_t writer, dds_offered_incompatible_qos_status_t * status);
 
 /**
  * Description : Get the status value corresponding to SUBSCRIPTION_MATCHED and reset the status
@@ -277,7 +232,7 @@ OS_API int dds_get_offered_incompatible_qos_status (dds_entity_t writer, dds_off
  *   -# reader The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_SubscriptionMatched to get the status
  */
-OS_API int dds_get_subscription_matched_status (dds_entity_t reader, dds_subscription_matched_status_t * status);
+OS_API dds_return_t dds_get_subscription_matched_status (dds_entity_t reader, dds_subscription_matched_status_t * status);
 
 /**
  * Description : Get the status value corresponding to LIVELINESS_CHANGED and reset the status
@@ -287,7 +242,7 @@ OS_API int dds_get_subscription_matched_status (dds_entity_t reader, dds_subscri
  *   -# reader The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_LivelinessChanged to get the status
  */
-OS_API int dds_get_liveliness_changed_status (dds_entity_t reader, dds_liveliness_changed_status_t * status);
+OS_API dds_return_t dds_get_liveliness_changed_status (dds_entity_t reader, dds_liveliness_changed_status_t * status);
 
 /**
  * Description : Get the status value corresponding to SAMPLE_REJECTED and reset the status
@@ -297,7 +252,7 @@ OS_API int dds_get_liveliness_changed_status (dds_entity_t reader, dds_livelines
  *   -# reader The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_SampleRejected to get the status
  */
-OS_API int dds_get_sample_rejected_status (dds_entity_t reader, dds_sample_rejected_status_t * status);
+OS_API dds_return_t dds_get_sample_rejected_status (dds_entity_t reader, dds_sample_rejected_status_t * status);
 
 /**
  * Description : Get the status value corresponding to SAMPLE_LOST and reset the status
@@ -307,7 +262,7 @@ OS_API int dds_get_sample_rejected_status (dds_entity_t reader, dds_sample_rejec
  *   -# reader The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_SampleLost to get the status
  */
-OS_API int dds_get_sample_lost_status (dds_entity_t reader, dds_sample_lost_status_t * status);
+OS_API dds_return_t dds_get_sample_lost_status (dds_entity_t reader, dds_sample_lost_status_t * status);
 
 /**
  * Description : Get the status value corresponding to REQUESTED_DEADLINE_MISSED and reset the status
@@ -317,7 +272,7 @@ OS_API int dds_get_sample_lost_status (dds_entity_t reader, dds_sample_lost_stat
  *   -# reader The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_RequestedDeadlineMissed to get the status
  */
-OS_API int dds_get_requested_deadline_missed_status (dds_entity_t reader, dds_requested_deadline_missed_status_t * status);
+OS_API dds_return_t dds_get_requested_deadline_missed_status (dds_entity_t reader, dds_requested_deadline_missed_status_t * status);
 
 /**
  * Description : Get the status value corresponding to REQUESTED_INCOMPATIBLE_QOS and reset the status
@@ -327,7 +282,7 @@ OS_API int dds_get_requested_deadline_missed_status (dds_entity_t reader, dds_re
  *   -# reader The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_RequestedIncompatibleQoS to get the status
  */
-OS_API int dds_get_requested_incompatible_qos_status (dds_entity_t reader, dds_requested_incompatible_qos_status_t * status);
+OS_API dds_return_t dds_get_requested_incompatible_qos_status (dds_entity_t reader, dds_requested_incompatible_qos_status_t * status);
 
 #undef OS_API
 #if defined (__cplusplus)

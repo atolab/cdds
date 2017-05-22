@@ -1,17 +1,22 @@
 #ifndef DDS_H
 #define DDS_H
 
-/** @file dds.h
- *  @brief Vortex Lite core DDS header
+/** @file
+ *
+ *  @brief C99v2 DDS header
  */
 
 #if defined (__cplusplus)
 #define restrict
 #endif
 
+#include "os/os_public.h"
+
+/* TODO: Move to appropriate location */
+typedef _Return_type_success_(return >= 0) uintptr_t dds_return_t;
+
 /* Sub components */
 
-#include "os/os_public.h"
 #include "dds/dds_public_stream.h"
 #include "dds/dds_public_impl.h"
 #include "dds/dds_public_alloc.h"
@@ -19,6 +24,7 @@
 #include "dds/dds_public_qos.h"
 #include "dds/dds_public_error.h"
 #include "dds/dds_public_status.h"
+#include "dds/dds_public_listener.h"
 #include "dds/dds_public_log.h"
 
 #if defined (__cplusplus)
@@ -26,6 +32,7 @@ extern "C" {
 #endif
 
 #undef DDS_EXPORT
+    /* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc. */
 #ifdef _WIN32_DLL_
   #if defined VL_BUILD_DDS_DLL
     #define DDS_EXPORT extern __declspec (dllexport)
@@ -37,33 +44,9 @@ extern "C" {
 #endif
 
 /**
- * Description : Initialization function, called from main. This operation 
- * initializes all the required DDS resources,
- * handles configuration of domainid based on the input passed, parses and 
- * configures middleware from a xml file and initializes required resources.
- * 
- * Arguments :
- *   -# argc, argv - specifies the domainId 
- *   -# Returns 0 on success or a non-zero error status 
- */
-
-DDS_EXPORT int dds_init (int argc, char ** argv);
-
-/* Finalization function, called from main */
-
-/**
- * Description : Finalization function, called from main. This operation
- * releases all the resources used by DDS.
- * 
- * Arguments :
- *   -# None
- */
-DDS_EXPORT void dds_fini (void);
-
-/**
  * Description : Returns the default DDS domain id. This can be configured
  * in xml or set as an evironment variable (LITE_DOMAIN).
- * 
+ *
  * Arguments :
  *   -# None
  *   -# Returns the default domain id
@@ -88,7 +71,7 @@ DDS_EXPORT dds_domainid_t dds_domain_default (void);
 /** @}*/
 
 /**
- * dds_sample_state_t 
+ * dds_sample_state_t
  * \brief defines the state for a data value
  * -# DDS_SST_READ - DataReader has already accessed the sample by read
  * -# DDS_SST_NOT_READ - DataReader has not accessed that sample before
@@ -101,7 +84,7 @@ typedef enum dds_sample_state
 dds_sample_state_t;
 
 /**
- * dds_view_state_t 
+ * dds_view_state_t
  * \brief defines the view state of an instance relative to the samples
  * -# DDS_VST_NEW - DataReader is accessing the sample for the first time when the
  *                  instance is alive
@@ -114,8 +97,8 @@ typedef enum dds_view_state
 }
 dds_view_state_t;
 
-/** 
- * dds_instance_state_t 
+/**
+ * dds_instance_state_t
  * \brief defines the state of the instance
  * -# DDS_IST_ALIVE - Samples received for the instance from the live data writers
  * -# DDS_IST_NOT_ALIVE_DISPOSED - Instance was explicitly disposed by the data writer
@@ -141,16 +124,16 @@ dds_instance_state_t;
  * -# source_timestamp - timestamp of a data instance when it is written
  * -# instance_handle - handle to the data instance
  * -# publication_handle - handle to the publisher
- * -# disposed_generation_count - count of instance state change from 
+ * -# disposed_generation_count - count of instance state change from
  *    NOT_ALIVE_DISPOSED to ALIVE
- * -# no_writers_generation_count - count of instance state change from 
+ * -# no_writers_generation_count - count of instance state change from
  *    NOT_ALIVE_NO_WRITERS to ALIVE
  * -# sample_rank - indicates the number of samples of the same instance
  *    that follow the current one in the collection
- * -# generation_rank - difference in generations between the sample and most recent sample 
+ * -# generation_rank - difference in generations between the sample and most recent sample
  *    of the same instance that appears in the returned collection
  * -# absolute_generation_rank - difference in generations between the sample and most recent sample
- *    of the same instance when read/take was called  
+ *    of the same instance when read/take was called
  * -# reception_timestamp - timestamp of a data instance when it is added to a read queue
  */
 typedef struct dds_sample_info
@@ -173,20 +156,179 @@ dds_sample_info_t;
 
 /*
   All entities are represented by a process-private handle, with one
+  call to enable an entity when it was created disabled.
+  An entity is created enabled by default.
+  Note: disabled creation is currently not supported.
+*/
+
+/**
+ * @brief Enable entity.
+ *
+ * @note Delayed entity enabling is not supported yet (CHAM-96).
+ *
+ * This operation enables the dds_entity_t. Created dds_entity_t objects can start in
+ * either an enabled or disabled state. This is controlled by the value of the
+ * entityfactory policy on the corresponding parent entity for the given
+ * entity. Enabled entities are immediately activated at creation time meaning
+ * all their immutable QoS settings can no longer be changed. Disabled Entities are not
+ * yet activated, so it is still possible to change their immutable QoS settings. However,
+ * once activated the immutable QoS settings can no longer be changed.
+ * Creating disabled entities can make sense when the creator of the DDS_Entity
+ * does not yet know which QoS settings to apply, thus allowing another piece of code
+ * to set the QoS later on.
+ *
+ * The default setting of DDS_EntityFactoryQosPolicy is such that, by default,
+ * entities are created in an enabled state so that it is not necessary to explicitly call
+ * dds_enable on newly-created entities.
+ *
+ * The dds_enable operation produces the same results no matter how
+ * many times it is performed. Calling dds_enable on an already
+ * enabled DDS_Entity returns DDS_RETCODE_OK and has no effect.
+ *
+ * If an Entity has not yet been enabled, the only operations that can be invoked
+ * on it are: the ones to set, get or copy the QosPolicy settings, the ones that set
+ * (or get) the Listener, the ones that get the Status and the dds_get_status_changes
+ * operation (although the status of a disabled entity never changes). Other operations
+ * will return the error DDS_RETCODE_NOT_ENABLED.
+ *
+ * Entities created with a parent that is disabled, are created disabled regardless of
+ * the setting of the entityfactory policy.
+ *
+ * Calling dds_enable on an Entity whose parent is not enabled
+ * will fail and return DDS_RETCODE_PRECONDITION_NOT_MET.
+ *
+ * If the entityfactory policy has autoenable_created_entities
+ * set to TRUE, the dds_enable operation on the parent will
+ * automatically enable all child entities created with the parent.
+ *
+ * The Listeners associated with an Entity are not called until the
+ * Entity is enabled. Conditions associated with an Entity that
+ * is not enabled are "inactive", that is, have a trigger_value which is FALSE.
+ *
+ * @param[in]  e        The entity to enable.
+ *
+ * @returns  0 - Success (DDS_RETCODE_OK).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The listeners of to the entity have been successfully been
+ *                  copied into the specified listener parameter.
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                  The parent of the given Entity is not enabled.
+ */
+DDS_EXPORT dds_return_t dds_enable (_In_ dds_entity_t e);
+
+/*
+  All entities are represented by a process-private handle, with one
   call to delete an entity and all entities it logically contains.
   That is, it is equivalent to combination of
   delete_contained_entities and delete_xxx in the DCPS API.
 */
 
 /**
- * Description : Recursively deletes all the contained entities and deletes
- * the entity. Before deleting an entity with registered listeners, it's
- * status should be set to zero to disable callbacks.
+ * @brief Delete given entity.
  *
- * Arguments :
- *   -# e Entity to delete
+ * This operation will delete the given entity. It will also automatically
+ * delete all its children, childrens' children, etc entities.
+ *
+ * TODO: Link to generic dds entity relations.
+ *
+ * @param[in]  entity  Entity from which to get its parent.
+ *
+ * @returns  0 - Success (DDS_RETCODE_OK).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  The entity and its children (recursive are deleted).
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT void dds_entity_delete (dds_entity_t e);
+DDS_EXPORT dds_return_t dds_delete (_In_ dds_entity_t e);
+
+
+/**
+ * @brief Get entity publisher.
+ *
+ * This operation returns the publisher to which the given entity belongs.
+ * For instance, it will return the Publisher that was used when
+ * creating a DataWriter (when that DataWriter was provided here).
+ *
+ * TODO: Link to generic dds entity relations.
+ *
+ * @param[in]  entity  Entity from which to get its publisher.
+ *
+ * @returns >0 - Success (valid entity handle).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ */
+DDS_EXPORT dds_entity_t dds_get_publisher(_In_ dds_entity_t wr);
+
+
+/**
+ * @brief Get entity subscriber.
+ *
+ * This operation returns the subscriber to which the given entity belongs.
+ * For instance, it will return the Subscriber that was used when
+ * creating a DataReader (when that DataReader was provided here).
+ *
+ * TODO: Link to generic dds entity relations.
+ *
+ * @param[in]  entity  Entity from which to get its subscriber.
+ *
+ * @returns >0 - Success (valid entity handle).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ */
+DDS_EXPORT dds_entity_t dds_get_subscriber(_In_ dds_entity_t rd);
+
+
+/**
+ * @brief Get entity datareader.
+ *
+ * This operation returns the datareader to which the given entity belongs.
+ * For instance, it will return the DataReader that was used when
+ * creating a ReadCondition (when that ReadCondition was provided here).
+ *
+ * TODO: Link to generic dds entity relations.
+ *
+ * @param[in]  entity  Entity from which to get its datareader.
+ *
+ * @returns >0 - Success (valid entity handle).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ */
+DDS_EXPORT dds_entity_t dds_get_datareader(_In_ dds_entity_t readcond);
+
+/* TODO: document. */
+DDS_EXPORT dds_return_t dds_instancehandle_get(_In_ dds_entity_t e, _Out_ dds_instance_handle_t *i);
 
 /*
   All entities have a set of "status conditions" (following the DCPS
@@ -204,10 +346,10 @@ DDS_EXPORT void dds_entity_delete (dds_entity_t e);
  *   -# e Entity on which the status has to be read
  *   -# status Returns the status set on the entity, based on the enabled status
  *   -# mask Filter the status condition to be read (can be NULL)
- *   -# Returns 0 on success, or a non-zero error value if the mask does not 
- *      correspond to the entity      
+ *   -# Returns 0 on success, or a non-zero error value if the mask does not
+ *      correspond to the entity
  */
-DDS_EXPORT int dds_status_read (dds_entity_t e, uint32_t * status, uint32_t mask);
+DDS_EXPORT dds_return_t dds_read_status (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
 
 /**
  * Description : Read the status(es) set for the entity based on the enabled
@@ -218,9 +360,9 @@ DDS_EXPORT int dds_status_read (dds_entity_t e, uint32_t * status, uint32_t mask
  *   -# status Returns the status set on the entity, based on the enabled status
  *   -# mask Filter the status condition to be read (can be NULL)
  *   -# Returns 0 on success, or a non-zero error value if the mask does not
- *      correspond to the entity      
+ *      correspond to the entity
  */
-DDS_EXPORT int dds_status_take (dds_entity_t e, uint32_t * status, uint32_t mask);
+DDS_EXPORT dds_return_t dds_take_status (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
 
 /**
  * Description : Returns the status changes since they were last read.
@@ -229,16 +371,16 @@ DDS_EXPORT int dds_status_take (dds_entity_t e, uint32_t * status, uint32_t mask
  *   -# e Entity on which the statuses are read
  *   -# Returns the curent set of triggered statuses.
  */
-DDS_EXPORT uint32_t dds_status_changes (dds_entity_t e);
+DDS_EXPORT dds_return_t dds_get_status_changes (_In_ dds_entity_t e, _Out_ uint32_t * status);
 
 /**
  * Description : This operation returns the status enabled on the entity
  *
  * Arguments :
  *   -# e Entity to get the status
- *   -# Returns the status that are enabled for the entity     
+ *   -# Returns the status that are enabled for the entity
  */
-DDS_EXPORT uint32_t dds_status_get_enabled (dds_entity_t e);
+DDS_EXPORT dds_return_t dds_get_enabled_status (_In_ dds_entity_t e, _Out_ uint32_t * status);
 
 
 /**
@@ -247,42 +389,90 @@ DDS_EXPORT uint32_t dds_status_get_enabled (dds_entity_t e);
  * Arguments :
  *   -# e Entity to enable the status
  *   -# mask Status value that indicates the status to be enabled
- *   -# Returns 0 on success, or a non-zero error value indicating failure if the mask 
- *      does not correspond to the entity.     
+ *   -# Returns 0 on success, or a non-zero error value indicating failure if the mask
+ *      does not correspond to the entity.
  */
-DDS_EXPORT int dds_status_set_enabled (dds_entity_t e, uint32_t mask);
+DDS_EXPORT dds_return_t dds_set_enabled_status (_In_ dds_entity_t e, _In_ uint32_t mask);
 
 /*
   Almost all entities have get/set qos operations defined on them,
   again following the DCPS spec. But unlike the DCPS spec, the
-  "present" field in qos_t allows one to initialise just the one QoS
+  "present" field in qos_t allows one to initialize just the one QoS
   one wants to set & pass it to set_qos.
 */
 
 /**
- * Description : This operation allows access to the existing set of QoS policies
+ * @brief Get entity QoS policies.
+ *
+ * This operation allows access to the existing set of QoS policies
  * for the entity.
  *
- * Arguments :
- *   -# e Entity on which to get qos
- *   -# qos pointer to the qos structure that returns the set policies.
+ * TODO: Link to generic QoS information.
+ *
+ * @param[in]  e    Entity on which to get qos
+ * @param[out] qos  Pointer to the qos structure that returns the set policies
+ *
+ * @returns  0 - Success (DDS_RETCODE_OK).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The existing set of QoS policy values applied to the
+ *                  entity has successfully been copied into the specified
+ *                  qos parameter.
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The qos parameter is NULL.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT void dds_qos_get (dds_entity_t e, dds_qos_t * qos);
+DDS_EXPORT dds_return_t dds_get_qos (_In_ dds_entity_t e, _Out_ dds_qos_t * qos);
 
 
 /**
- * Description : This operation sets the QoS policies of the entity at runtime
- * This call replaces the exisiting set of policies, if already available.
+ * @brief Set entity QoS policies.
  *
- * Arguments :
- *   -# e Entity to apply QoS
- *   -# qos pointer to the qos structure with a set of policies to be applied
- *   -# Returns 0 on success, or a non-zero error value to indicate immutable QoS 
- *      is set or the values set are incorrect, which cannot be applied.
+ * This operation replaces the existing set of Qos Policy settings for an
+ * entity. The parameter qos must contain the struct with the QosPolicy
+ * settings which is checked for self-consistency.
  *
- * NOTE: Latency Budget and Ownership Strength are changeable QoS that can be set for LITE   
+ * The set of QosPolicy settings specified by the qos parameter are applied on
+ * top of the existing QoS, replacing the values of any policies previously set
+ * (provided, the operation returned DDS_RETCODE_OK).
+ *
+ * Not all policies are changeable when the entity is enabled.
+ *
+ * TODO: Link to generic QoS information.
+ *
+ * @note Currently only Latency Budget and Ownership Strength are changeable QoS
+ *       that can be set.
+ *
+ * @param[in]  e    Entity from which to get qos
+ * @param[in]  qos  Pointer to the qos structure that provides the policies
+ *
+ * @returns  0 - Success (DDS_RETCODE_OK).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The new QoS policies are set.
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The qos parameter is NULL.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ * @retval DDS_RETCODE_IMMUTABLE_POLICY
+ *                  The entity is enabled and one or more of the policies of
+ *                  the QoS are immutable.
+ * @retval DDS_RETCODE_INCONSISTENT_POLICY
+ *                  A few policies within the QoS are not consistent with
+ *                  each other.
  */
-DDS_EXPORT int dds_qos_set (dds_entity_t e, const dds_qos_t * qos);
+DDS_EXPORT dds_return_t dds_set_qos (_In_ dds_entity_t e, _In_ const dds_qos_t * qos);
 
 /*
   Get or set listener associated with an entity, type of listener
@@ -290,26 +480,91 @@ DDS_EXPORT int dds_qos_set (dds_entity_t e, const dds_qos_t * qos);
 */
 
 /**
- * Description : This operation allows access to the existing listeners attached to
+ * @brief Get entity listeners.
+ *
+ * This operation allows access to the existing listeners attached to
  * the entity.
  *
- * Arguments :
- *   -# e Entity to get the listener set
- *   -# listener pointer to the listener set on the entity
+ * TODO: Link to (generic) Listener and status information.
+ *
+ * @param[in]  e        Entity on which to get the listeners
+ * @param[out] listener Pointer to the listener structure that returns the
+ *                      set of listener callbacks.
+ *
+ * @returns  0 - Success (DDS_RETCODE_OK).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The listeners of to the entity have been successfully been
+ *                  copied into the specified listener parameter.
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The listener parameter is NULL.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT void dds_listener_get (dds_entity_t e, dds_listener_t listener);
+DDS_EXPORT dds_return_t dds_get_listener (_In_ dds_entity_t e, _Out_ dds_listener_t * listener);
 
 
 /**
- * Description : This operation installs the listener on the entity.
- * If a listener is set, Call to this will replace with the new one. 
+ * @brief Set entity listeners.
  *
- * Arguments :
- *   -# e Entity to set listener
- *   -# listener pointer to the listener (can be NULL)
+ * This operation attaches a dds_listener_t to the dds_entity_t. Only one
+ * Listener can be attached to each Entity. If a Listener was already
+ * attached, this operation will replace it with the new one. In other
+ * words, all related callbacks are replaced (possibly with NULL).
  *
+ * When listener parameter is NULL, all listener callbacks that were possibly
+ * set on the Entity will be removed.
+ *
+ * @note Not all listener callbacks are related to all entities.
+ *
+ * TODO: Link to (generic) Listener and status information.
+ *
+ * <b><i>Communication Status</i></b><br>
+ * For each communication status, the StatusChangedFlag flag is initially set to
+ * FALSE. It becomes TRUE whenever that plain communication status changes. For
+ * each plain communication status activated in the mask, the associated
+ * Listener callback is invoked and the communication status is reset
+ * to FALSE, as the listener implicitly accesses the status which is passed as a
+ * parameter to that operation.
+ * The status is reset prior to calling the listener, so if the application calls
+ * the get_<status_name> from inside the listener it will see the
+ * status already reset.
+ *
+ * <b><i>Status Propagation</i></b><br>
+ * In case a related callback within the Listener is not set, the Listener of
+ * the Parent entity is called recursively, until a Listener with the appropriate
+ * callback set has been found and called. This allows the application to set
+ * (for instance) a default behaviour in the Listener of the containing Publisher
+ * and a DataWriter specific behaviour when needed. In case the callback is not
+ * set in the Publishers' Listener either, the communication status will be
+ * propagated to the Listener of the DomainParticipant of the containing
+ * DomainParticipant. In case the callback is not set in the DomainParticipants'
+ * Listener either, the Communication Status flag will be set, resulting in a
+ * possible WaitSet trigger.
+ *
+ * @param[in]  e        Entity on which to get the listeners
+ * @param[in] listener  Pointer to the listener structure that contains the
+ *                      set of listener callbacks (maybe NULL).
+ *
+ * @returns  0 - Success (DDS_RETCODE_OK).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The listeners of to the entity have been successfully been
+ *                  copied into the specified listener parameter.
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT void dds_listener_set (dds_entity_t e, const dds_listener_t listener);
+DDS_EXPORT dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_opt_ const dds_listener_t * listener);
 
 /*
   Creation functions for various entities. Creating a subscriber or
@@ -326,45 +581,150 @@ DDS_EXPORT void dds_listener_set (dds_entity_t e, const dds_listener_t listener)
 */
 
 /**
- * Description : Creates a new instance of a DDS participant in a domain. If domain
- * is set (not DDS_DOMAIN_DEFAULT) then it must match if the domain has also
+ * @brief Creates a new instance of a DDS participant in a domain
+ *
+ * If domain is set (not DDS_DOMAIN_DEFAULT) then it must match if the domain has also
  * been configured or an error status will be returned. Currently only a single domain
  * can be configured by setting the environment variable LITE_DOMAIN, if this is not set
  * the the default domain is 0. Valid values for domain id are between 0 and 230.
  *
- * Arguments :
- *   -# pp The created participant entity
- *   -# domain The domain in which to create the participant (can be DDS_DOMAIN_DEFAULT)
- *   -# qos The QoS to set on the new participant (can be NULL)
- *   -# listener Any listener functions associated with the new participant (can be NULL)
- *   -# mask Communication status notification mask
- *   -# Returns a status, 0 on success or non-zero value to indicate an error
+ *
+ * @param[in]  domain - The domain in which to create the participant (can be DDS_DOMAIN_DEFAULT)
+ * @param[in]  qos - The QoS to set on the new participant (can be NULL)
+ * @param[in]  listener - Any listener functions associated with the new participant (can be NULL)
+
+ * @returns >0 - Success (valid handle of a participant entity).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
  */
-DDS_EXPORT int dds_participant_create
+DDS_EXPORT dds_entity_t dds_create_participant
 (
-  dds_entity_t * pp,
-  const dds_domainid_t domain,
-  const dds_qos_t * qos,
-  const dds_participantlistener_t * listener
+  _In_ const dds_domainid_t domain,
+  _In_opt_ const dds_qos_t * qos,
+  _In_opt_ const dds_listener_t * listener
 );
 
-/**
- * Description : Returns the participant for an entity.
- *
- * Arguments :
- *   -# entity The entity
- *   -# Returns The participant
- */
-DDS_EXPORT dds_entity_t dds_participant_get (dds_entity_t entity);
+
 
 /**
- * Description : Returns the domain id for a participant.
+ * @brief Get entity parent.
  *
- * Arguments :
- *   -# pp The participant entity
- *   -# Returns The participant domain id
+ * This operation returns the parent to which the given entity belongs.
+ * For instance, it will return the Participant that was used when
+ * creating a Publisher (when that Publisher was provided here).
+ *
+ * TODO: Link to generic dds entity relations.
+ *
+ * @param[in]  entity  Entity from which to get its parent.
+ *
+ * @returns >0 - Success (valid entity handle).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_domainid_t dds_participant_get_domain_id (dds_entity_t pp);
+DDS_EXPORT dds_entity_t dds_get_parent (_In_ dds_entity_t entity);
+
+
+/**
+ * @brief Get entity participant.
+ *
+ * This operation returns the participant to which the given entity belongs.
+ * For instance, it will return the Participant that was used when
+ * creating a Publisher that was used to create a DataWriter (when that
+ * DataWriter was provided here).
+ *
+ * TODO: Link to generic dds entity relations.
+ *
+ * @param[in]  entity  Entity from which to get its participant.
+ *
+ * @returns >0 - Success (valid entity handle).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ */
+DDS_EXPORT dds_entity_t dds_get_participant (_In_ dds_entity_t entity);
+
+
+/**
+ * @brief Get entity children.
+ *
+ * This operation returns the children that the entity contains.
+ * For instance, it will return all the Topics, Publishers and Subscribers
+ * of the Participant that was used to create those entities (when that
+ * Participant is provided here).
+ *
+ * This functions takes a pre-allocated list to put the children in and
+ * will return the number of found children. It is possible that the given
+ * size of the list is not the same as the number of found children. If
+ * less children are found, then the last few entries in the list are
+ * untouched. When more chilren are found, then only 'size' number of
+ * entries are inserted into the list, but still complete count of the
+ * found children is returned.
+ *
+ * When supplying NULL as list and 0 as size, you can use this to acquire
+ * the number of children without having to pre-allocate a list.
+ *
+ * TODO: Link to generic dds entity relations.
+ *
+ * @param[in]  entity   Entity from which to get its children.
+ * @param[out] children Pre-allocated array to contain the found children.
+ * @param[in]  size     Size of the pre-allocated children's list.
+ *
+ * @returns >=0 - Success (number of found children, can be larger than 'size').
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The children parameter is NULL, while a size is provided.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ */
+DDS_EXPORT dds_return_t dds_get_children(_In_ dds_entity_t entity, _Out_opt_ dds_entity_t *children, _In_ size_t size);
+
+
+/**
+ * @brief Get the domain id to which this entity is attached.
+ *
+ * When creating a participant entity, it is attached to a certain domain.
+ * All the children (like Publishers) and childrens' children (like
+ * DataReaders), etc are also attached to that domain.
+ *
+ * This function will return the original domain ID when called on
+ * any of the entities within that hierarchy.
+ *
+ * @param[in]  entity   Entity from which to get its children.
+ * @param[out] id       Pointer to put the domain ID in.
+ *
+ * @returns  0 - Success (DDS_RETCODE_OK).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                  Domain ID was returned.
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The id parameter is NULL.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ */
+DDS_EXPORT dds_return_t dds_get_domainid (_In_ dds_entity_t pp, _Out_ dds_domainid_t *id);
 
 /**
  * Description : Returns a participant created on a domain. Note that if
@@ -375,11 +735,12 @@ DDS_EXPORT dds_domainid_t dds_participant_get_domain_id (dds_entity_t pp);
  *   -# domain_id The domain id
  *   -# Returns Pariticant for domain
  */
+/* TODO: This dds_participant_lookup will be removed in favor of a domain type on which you can do 'dds_get_children'. */
 DDS_EXPORT dds_entity_t dds_participant_lookup (dds_domainid_t domain_id);
 
 /**
  * Description : Creates a new DDS topic. The type name for the topic
- * is taken from the generated descriptor. Topic matching is done on a 
+ * is taken from the generated descriptor. Topic matching is done on a
  * combination of topic name and type name.
  *
  * Arguments :
@@ -398,12 +759,12 @@ DDS_EXPORT int dds_topic_create
   const dds_topic_descriptor_t * descriptor,
   const char * name,
   const dds_qos_t * qos,
-  const dds_topiclistener_t * listener
+  const dds_listener_t * listener
 );
 
 /**
  * Description : Finds a named topic. Returns NULL if does not exist.
- * The returned topic should be released with dds_entity_delete.
+ * The returned topic should be released with dds_delete.
  *
  * Arguments :
  *   -# pp The participant on which to find the topic
@@ -469,7 +830,7 @@ DDS_EXPORT int dds_subscriber_create
   dds_entity_t pp,
   dds_entity_t * subscriber,
   const dds_qos_t * qos,
-  const dds_subscriberlistener_t * listener
+  const dds_listener_t * listener
 );
 
 /**
@@ -487,7 +848,7 @@ DDS_EXPORT int dds_publisher_create
   dds_entity_t pp,
   dds_entity_t *  publisher,
   const dds_qos_t * qos,
-  const dds_publisherlistener_t * listener
+  const dds_listener_t * listener
 );
 
 /**
@@ -507,7 +868,7 @@ DDS_EXPORT int dds_reader_create
   dds_entity_t * reader,
   dds_entity_t topic,
   const dds_qos_t * qos,
-  const dds_readerlistener_t * listener
+  const dds_listener_t * listener
 );
 
 /**
@@ -564,7 +925,7 @@ DDS_EXPORT int dds_writer_create
   dds_entity_t * writer,
   dds_entity_t topic,
   const dds_qos_t * qos,
-  const dds_writerlistener_t * listener
+  const dds_listener_t * listener
 );
 
 /*
@@ -710,15 +1071,6 @@ DDS_EXPORT void dds_write_flush (dds_entity_t wr);
   The DCPS "query" condition is not currently supported.
 */
 
-/**
- * Description : Return the status condition set by an entity
- *
- * Arguments :
- *   -# pp - The entity which has a status condition
- *   -# Returns status condition enabled by an entity
- */
-DDS_EXPORT dds_condition_t dds_statuscondition_get (dds_entity_t pp);
-
 
 /**
  * Description : Create a specific condition.
@@ -851,7 +1203,7 @@ DDS_EXPORT int dds_waitset_detach (dds_waitset_t ws, dds_condition_t e);
 /*
   The "dds_waitset_wait" operation blocks until the some of the
   attached entities has an enabled and set status condition, or
-  "reltimeout" has elapsed. The "dds_waitset_wait_until" operation 
+  "reltimeout" has elapsed. The "dds_waitset_wait_until" operation
   is the same as the "dds_wait" except that it takes an absolute timeout.
 
   Upon successful return, the array "xs" is filled with 0 < M <= nxs
@@ -874,7 +1226,7 @@ DDS_EXPORT int dds_waitset_detach (dds_waitset_t ws, dds_condition_t e);
  *               attached condition(s) is triggered or 'reltimeout' has elapsed.
  *               On successful return, the array xs is filled with the value corresponding
  *               to triggered entities as specified in the attach, and nxs with count.
- *               
+ *
  *
  * Arguments :
  *   -# ws pointer to a waitset
@@ -920,13 +1272,13 @@ DDS_EXPORT int dds_waitset_wait_until (dds_waitset_t ws, dds_attach_t *xs, size_
 */
 
 /**
- * Description : Access the collection of data values (of same type) and sample info from the 
+ * Description : Access the collection of data values (of same type) and sample info from the
  *               data reader based on the mask set.
  *               Return value provides information about number of samples read, which will
  *               be <= maxs. Based on the count, the buffer will contain data to be read only
  *               when valid_data bit in sample info structure is set.
  *               The buffer required for data values, could be allocated explicitly or can
- *               use the memory from data reader to prevent copy. In the latter case, buffer and 
+ *               use the memory from data reader to prevent copy. In the latter case, buffer and
  *               sample_info should be returned back, once it is no longer using the Data.
  *               Data values once read will remain in the buffer with the sample_state set to READ
  *               and view_state set to NOT_NEW.
@@ -972,14 +1324,14 @@ DDS_EXPORT int dds_read_instance
 );
 
 /**
- * Description : Access the collection of data values (of same type) and sample info from the data reader 
- *               based on the criteria specified in the read condition. 
- *               Read condition must be attached to the data reader before associating with data read. 
+ * Description : Access the collection of data values (of same type) and sample info from the data reader
+ *               based on the criteria specified in the read condition.
+ *               Read condition must be attached to the data reader before associating with data read.
  *               Return value provides information about number of samples read, which will
  *               be <= maxs. Based on the count, the buffer will contain data to be read only
  *               when valid_data bit in sample info structure is set.
  *               The buffer required for data values, could be allocated explicitly or can
- *               use the memory from data reader to prevent copy. In the latter case, buffer and 
+ *               use the memory from data reader to prevent copy. In the latter case, buffer and
  *               sample_info should be returned back, once it is no longer using the Data.
  *               Data values once read will remain in the buffer with the sample_state set to READ
  *               and view_state set to NOT_NEW.
@@ -1009,7 +1361,7 @@ DDS_EXPORT int dds_read_cond
  *               be <= maxs. Based on the count, the buffer will contain data to be read only
  *               when valid_data bit in sample info structure is set.
  *               The buffer required for data values, could be allocated explicitly or can
- *               use the memory from data reader to prevent copy. In the latter case, buffer and 
+ *               use the memory from data reader to prevent copy. In the latter case, buffer and
  *               sample_info should be returned back, once it is no longer using the Data.
  *
  * Arguments :
@@ -1061,14 +1413,14 @@ DDS_EXPORT int dds_take_instance
 
 /**
  * Description : Access the collection of data values (of same type) and sample info from the data reader
- *               based on the read condition set. Data value once read is removed from the Data Reader 
+ *               based on the read condition set. Data value once read is removed from the Data Reader
  *               cannot to 'read' or 'taken' again.
- *               Read condition must be attached to the data reader before associating with data_take. 
+ *               Read condition must be attached to the data reader before associating with data_take.
  *               Return value provides information about number of samples read, which will
  *               be <= maxs. Based on the count, the buffer will contain data to be read only
  *               when valid_data bit in sample info structure is set.
  *               The buffer required for data values, could be allocated explicitly or can
- *               use the memory from data reader to prevent copy. In the latter case, buffer and 
+ *               use the memory from data reader to prevent copy. In the latter case, buffer and
  *               sample_info should be returned back, once it is no longer using the Data.
  *
  * Arguments :
@@ -1088,7 +1440,7 @@ DDS_EXPORT int dds_take_cond
   dds_condition_t cond
 );
 
-/* 
+/*
   The read/take next functions return a single sample. The returned sample
   has a sample state of NOT_READ, a view state of ANY_VIEW_STATE and an
   instance state of ANY_INSTANCE_STATE.
@@ -1098,7 +1450,7 @@ DDS_EXPORT int dds_take_cond
  * Description : This operation copies the next, non-previously accessed data value and corresponding
  *               sample info and removes from the data reader.
  *
- * Arguments : 
+ * Arguments :
  * -# rd Reader entity
  * -# buf an array of pointers to samples into which data is read (pointers can be NULL)
  * -# si pointer to \ref dds_sample_info_t returned for a data value
@@ -1110,7 +1462,7 @@ DDS_EXPORT int dds_take_next (dds_entity_t rd, void ** buf, dds_sample_info_t * 
  * Description : This operation copies the next, non-previously accessed data value and corresponding
  *               sample info.
  *
- * Arguments : 
+ * Arguments :
  * -# rd Reader entity
  * -# buf an array of pointers to samples into which data is read (pointers can be NULL)
  * -# si pointer to \ref dds_sample_info_t returned for a data value
@@ -1119,13 +1471,13 @@ DDS_EXPORT int dds_take_next (dds_entity_t rd, void ** buf, dds_sample_info_t * 
 DDS_EXPORT int dds_read_next (dds_entity_t rd, void ** buf, dds_sample_info_t * si);
 
 /**
- * Description : This operation is used to return loaned samples from a data reader 
+ * Description : This operation is used to return loaned samples from a data reader
  *               returned from a read/take operation. This function is used where the samples
  *               returned by a read/take operation have been allocated by DDS (an array
  *               of NULL pointers was provided as the buffer for the read/take operation
  *               of size maxs).
  *
- * Arguments : 
+ * Arguments :
  * -# rd Reader entity
  * -# buf An array of pointers used by read/take operation
  * -# maxs The maximum number of samples provided to the read/take operation
@@ -1148,7 +1500,7 @@ DDS_EXPORT void dds_return_loan (dds_entity_t rd, void ** buf, uint32_t maxs);
  * Description : This operation takes a sample and returns an instance handle to be used for
  * subsequent operations.
  *
- * Arguments : 
+ * Arguments :
  * -# e Reader or Writer entity
  * -# data sample with a key fields set
  * -# Returns instance handle or DDS_HANDLE_NIL if instance could not be found from key
@@ -1158,9 +1510,9 @@ DDS_EXPORT dds_instance_handle_t dds_instance_lookup (dds_entity_t e, const void
 /**
  * Description : This operation takes an instance handle and return a key-value corresponding to it.
  *
- * Arguments : 
+ * Arguments :
  * -# e Reader or Writer entity
- * -# inst Instance handle 
+ * -# inst Instance handle
  * -# data pointer to an instance, to which the key ID corresponding to the instance handle will be
  *    returned, the sample in the instance should be ignored.
  * -# Returns 0 on successful operation, or a non-zero value to indicate an error if the instance
@@ -1169,8 +1521,8 @@ DDS_EXPORT dds_instance_handle_t dds_instance_lookup (dds_entity_t e, const void
 DDS_EXPORT int dds_instance_get_key (dds_entity_t e, dds_instance_handle_t inst, void * data);
 
 /**
- * Description : This operation stores the thread state for the thread created. 
- * 
+ * Description : This operation stores the thread state for the thread created.
+ *
  * Arguments :
  * -# name Thread name
  * -# Returns 0 on successful thread creation, else a non-zero value to indicate an error,
@@ -1179,9 +1531,9 @@ DDS_EXPORT int dds_instance_get_key (dds_entity_t e, dds_instance_handle_t inst,
 DDS_EXPORT int dds_thread_init (const char * name);
 
 /**
- * Description : This operation frees the thread state stored 
+ * Description : This operation frees the thread state stored
  *
- * Note: This function should be called from the same thread context before exiting 
+ * Note: This function should be called from the same thread context before exiting
  */
 DDS_EXPORT void dds_thread_fini (void);
 

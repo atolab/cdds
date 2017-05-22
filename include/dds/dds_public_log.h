@@ -1,9 +1,17 @@
+/** @file
+ *
+ * @brief DDS C99 Logging API
+ *
+ * @todo add copyright header?
+ * @todo do we really need to expose this as an API?
+ *
+ * This header file defines the public API for logging in the
+ * VortexDDS C99 language binding.
+ */
 #ifndef DDS_LOG_H
 #define DDS_LOG_H
 
-/** @file log.h
- *  @brief Vortex Lite logging support
- */
+#include "os/os_public.h"
 
 #if defined (__cplusplus)
 extern "C" {

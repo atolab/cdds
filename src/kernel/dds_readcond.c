@@ -2,6 +2,7 @@
 #include "kernel/dds_readcond.h"
 #include "kernel/dds_waitset.h"
 #include "kernel/dds_rhc.h"
+#include "kernel/dds_entity.h"
 #include "ddsi/q_ephash.h"
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
@@ -24,4 +25,13 @@ dds_condition_t dds_readcondition_create (dds_entity_t rd, uint32_t mask)
   dds_rhc_add_readcondition (cond);
 
   return (dds_condition_t) cond;
+}
+
+dds_entity_t dds_get_datareader(dds_entity_t rc)
+{
+    /* TODO: CHAM-104: Return actual errors when dds_entity_t became an handle iso a pointer (see header). */
+    if (dds_entity_is_a(rc, DDS_TYPE_COND_READ)) {
+        return dds_get_parent(rc);
+    }
+    return NULL;
 }

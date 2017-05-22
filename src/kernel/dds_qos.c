@@ -8,8 +8,6 @@
    Revisit on the conversion as default values are { 0x7fffffff, 0xffffffff }
 */
 
-#define CHANGEABLE_QOS_BIT_MASK (QP_LATENCY_BUDGET | QP_OWNERSHIP_STRENGTH)
-
 static void dds_qos_data_copy_in (nn_octetseq_t * data, const void * __restrict value, size_t sz)
 {
   if (data->value)
@@ -38,59 +36,14 @@ static void dds_qos_data_copy_out (const nn_octetseq_t * data, void ** value, si
   }
 }
 
-/* Changeable QoS NYI */
-#if 0
-/* check the new qos identified as changeable has been modified.
-   If applicable, data validation should be taken care
-
-   NOTE: Changeable qos
-   - Latency Budget and Ownership strength for VLite
-*/
-static int dds_qos_validate_changeable (dds_entity_kind_t kind, const dds_qos_t * qos)
-{
-  int set_err = 0;
-
-  switch (kind)
-  {
-    case DDS_TYPE_TOPIC:
-    case DDS_TYPE_READER:
-    {
-      if (qos->present != QP_LATENCY_BUDGET)
-      {
-        set_err = DDS_ERRNO (DDS_ERR_IMMUTABLE_QOS, DDS_MOD_QOS, DDS_ERR_M1);
-      }
-      break;
-    }
-
-    case DDS_TYPE_WRITER:
-    {
-      /* Changeable qos - Latency Budget & Ownership strength - check whether anyother qos is set */
-      if (!(qos->present & CHANGEABLE_QOS_BIT_MASK))
-      {
-        set_err = DDS_ERRNO (DDS_ERR_IMMUTABLE_QOS, DDS_MOD_QOS, DDS_ERR_M2);
-      }
-      break;
-    }
-
-    default:
-    {
-      set_err = DDS_ERRNO (DDS_ERR_IMMUTABLE_QOS, DDS_MOD_QOS, DDS_ERR_M3);
-      break;
-    }
-  }
-
-  return set_err;
-}
-#endif
-
-static bool validate_octetseq (const nn_octetseq_t* seq)
+bool validate_octetseq (const nn_octetseq_t* seq)
 {
   /* default value is NULL with length 0 */
   return (((seq->length == 0) && (seq->value == NULL)) || (seq->length > 0));
 }
 
 
-static bool validate_reliability_qospolicy (const nn_reliability_qospolicy_t * reliability)
+bool validate_reliability_qospolicy (const nn_reliability_qospolicy_t * reliability)
 {
   return
   (
@@ -99,13 +52,13 @@ static bool validate_reliability_qospolicy (const nn_reliability_qospolicy_t * r
   );
 }
 
-static bool validate_deadline_and_timebased_filter
+bool validate_deadline_and_timebased_filter
   (const nn_duration_t deadline, const nn_duration_t minimum_separation)
 {
   return (nn_from_ddsi_duration (minimum_separation) <= nn_from_ddsi_duration (deadline));
 }
 
-static bool dds_common_qos_validate (const dds_qos_t *qos)
+bool dds_qos_validate_common (const dds_qos_t *qos)
 {
   return !
   (
@@ -121,182 +74,6 @@ static bool dds_common_qos_validate (const dds_qos_t *qos)
   );
 }
 
-bool dds_reader_qos_validate (const dds_qos_t * qos)
-{
-  return !
-  (
-    (! dds_common_qos_validate (qos)) ||
-    ((qos->present & QP_USER_DATA) && ! validate_octetseq (&qos->user_data)) ||
-    ((qos->present & QP_PRISMTECH_READER_DATA_LIFECYCLE) &&
-      (validate_reader_data_lifecycle (&qos->reader_data_lifecycle) != 0)) ||
-    ((qos->present & QP_TIME_BASED_FILTER) &&
-      (validate_duration (&qos->time_based_filter.minimum_separation) != 0)) ||
-    (
-      ((qos->present & QP_HISTORY) && (qos->present & QP_RESOURCE_LIMITS)) &&
-      (validate_history_and_resource_limits (&qos->history, &qos->resource_limits) != 0)
-    ) ||
-    (
-      ((qos->present & QP_TIME_BASED_FILTER) && (qos->present & QP_DEADLINE)) &&
-      ! validate_deadline_and_timebased_filter (qos->deadline.deadline, qos->time_based_filter.minimum_separation)
-    )
-  );
-}
-
-bool dds_writer_qos_validate (const dds_qos_t * qos)
-{
-  /* ownership strength, transport priority, writer_data_lifecycle qos policy validation not done */
-
-  return !
-  (
-    (! dds_common_qos_validate (qos)) ||
-    ((qos->present & QP_USER_DATA) && ! validate_octetseq (&qos->user_data)) ||
-    ((qos->present & QP_DURABILITY_SERVICE) && (validate_durability_service_qospolicy (&qos->durability_service) != 0)) ||
-    ((qos->present & QP_LIFESPAN) && (validate_duration (&qos->lifespan.duration) != 0)) ||
-    (
-      ((qos->present & QP_HISTORY) && (qos->present & QP_RESOURCE_LIMITS)) &&
-      (validate_history_and_resource_limits (&qos->history, &qos->resource_limits) != 0)
-    )
-  );
-}
-
-bool dds_pubsub_qos_validate (const dds_qos_t * qos)
-{
-  /* partition qos not validated */
-
-  return !
-  (
-    ((qos->present & QP_GROUP_DATA) && ! validate_octetseq (&qos->group_data)) ||
-    ((qos->present & QP_PRESENTATION) && (validate_presentation_qospolicy (&qos->presentation) != 0))
-  );
-}
-
-bool dds_topic_qos_validate (const dds_qos_t * qos)
-{
-  /* transport priority not validated */
-
-  return !
-  (
-    (! dds_common_qos_validate (qos)) ||
-    ((qos->present & QP_TOPIC_DATA) && ! validate_octetseq (&qos->topic_data)) ||
-    ((qos->present & QP_DURABILITY_SERVICE) && (validate_durability_service_qospolicy (&qos->durability_service) != 0)) ||
-    ((qos->present & QP_LIFESPAN) && (validate_duration (&qos->lifespan.duration) != 0)) ||
-    (
-      ((qos->present & QP_HISTORY) && (qos->present & QP_RESOURCE_LIMITS)) &&
-      (validate_history_and_resource_limits (&qos->history, &qos->resource_limits) != 0)
-    )
-  );
-}
-
-/* qos validation done during creation
-   1. Validate qos data
-   2. Check for qos consistency
-
-   NOTE: All dds_qset_xxx() interface stores the qos without any validation.
-   validation is done before they are applied
-*/
-int dds_qos_validate (dds_entity_kind_t kind, const dds_qos_t * qos)
-{
-  bool valid = false;
-  assert (qos);
-
-  switch (kind)
-  {
-    case DDS_TYPE_PARTICIPANT:
-      valid = ! ((qos->present & QP_USER_DATA) && ! validate_octetseq (&qos->user_data));
-      break;
-    case DDS_TYPE_TOPIC:
-      valid = dds_topic_qos_validate (qos);
-      break;
-    case DDS_TYPE_PUBLISHER:
-    case DDS_TYPE_SUBSCRIBER:
-      valid = dds_pubsub_qos_validate (qos);
-      break;
-    case DDS_TYPE_READER:
-      valid = dds_reader_qos_validate (qos);
-      break;
-    case DDS_TYPE_WRITER:
-      valid = dds_writer_qos_validate (qos);
-      break;
-  }
-
-  return valid ? DDS_RETCODE_OK : DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_QOS, DDS_ERR_M1);
-}
-
-void dds_qos_get (dds_entity_t e, dds_qos_t * qos)
-{
-  assert (e);
-  assert (qos);
-
-  /* TODO: Get the qos from ddsi and return rather than copy from an entity,
-    which is maintained locally
-    ddsi doesn't manage qos for publisher/subscriber
-  */
-  dds_qos_copy (qos, e->m_qos);
-}
-
-/* Interface called whenever a changeable qos is modified */
-
-/* TODO: NYI
-   Changeable qos is set on entity locally, but not applied to ddsi.
-   ddsi doesn't support qos changes at the moment...
-*/
-int dds_qos_set (dds_entity_t e, const dds_qos_t * qos)
-{
-  assert (qos);
-  return DDS_RETCODE_IMMUTABLE_POLICY;
-
-#if 0
-#if DDSI_SUPPORT_CHANGEABLE_QOS
-  dds_duration_t time = 0;
-#endif
-
-  err = dds_qos_validate_changeable (e->m_kind, qos);
-
-    /* DDSI doesn't support set_qos functionality at the moment
-       Hence, the new qos is not applied to an entity and an
-       error is flagged
-    */
-
-  if (err == 0)
-  {
-#if DDSI_SUPPORT_CHANGEABLE_QOS
-     switch (e->m_kind)
-     {
-       case DDS_TYPE_TOPIC:
-       case DDS_TYPE_READER:
-       {
-         /* convert nn_duration_t to int64_t */
-         time = nn_from_ddsi_duration (qos->latency_budget.duration);
-         dds_qset_latency_budget (e->m_qos, time);
-       }
-       break;
-
-       case DDS_TYPE_WRITER:
-       {
-         if (qos->present & QP_LATENCY_BUDGET)
-         {
-           /* convert nn_duration_t to int64_t */
-           time = nn_from_ddsi_duration (qos->latency_budget.duration);
-           dds_qset_latency_budget (e->m_qos, time);
-         }
-	 if (qos->present & QP_OWNERSHIP_STRENGTH)
-         {
-           dds_qset_ownership_strength (e->m_qos, qos->ownership_strength.value);
-         }
-       }
-       break;
-
-       default:
-       break;
-    }
-#else
-    err = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_QOS, DDS_ERR_M1);
-#endif
-  }
-
-  return err;
-#endif
-}
 
 /* set qos to default values */
 
@@ -356,12 +133,13 @@ void dds_qos_delete (dds_qos_t * __restrict qos)
   }
 }
 
-void dds_qos_copy (dds_qos_t * __restrict dst, const dds_qos_t * __restrict src)
+dds_return_t dds_qos_copy (dds_qos_t * __restrict dst, const dds_qos_t * __restrict src)
 {
   assert (src);
   assert (dst);
 
   nn_xqos_copy (dst, src);
+  return DDS_RETCODE_OK;
 }
 
 void dds_qos_merge (dds_qos_t * __restrict dst, const dds_qos_t * __restrict src)

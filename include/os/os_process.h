@@ -157,15 +157,11 @@ os_procDestroy(
     os_procId procId,
     int32_t signal);
 
-#if !defined (VXWORKS_RTP)
-
 OS_API os_result
 os_procServiceDestroy(
     os_procId pid,
     bool isblocking,
     int32_t checkcount);
-
-#endif
 
 /** \brief Check the child exit status of the identified process
  *

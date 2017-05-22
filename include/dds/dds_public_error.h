@@ -1,9 +1,16 @@
+/** @file
+ *
+ * @brief DDS C99 Error API
+ *
+ * @todo add copyright header?
+ *
+ * This header file defines the public API of error values and convenience
+ * functions in the VortexDDS C99 language binding.
+ */
 #ifndef DDS_ERROR_H
 #define DDS_ERROR_H
 
-/** @file error.h
- *  @brief Vortex Lite Error defines header
- */
+#include "os/os_public.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -21,7 +28,7 @@ extern "C" {
 
 /* Error masks for returned status values */
 
-#define DDS_ERR_NO_MASK    0x000000ff
+#define DDS_ERR_NR_MASK    0x000000ff
 #define DDS_ERR_MOD_MASK   0x0000ff00
 #define DDS_ERR_MINOR_MASK 0x00ff0000
 
@@ -77,7 +84,7 @@ extern "C" {
 /** @}*/
 
 /** Macro to extract error number */
-#define dds_err_no(e) ((-e) & DDS_ERR_NO_MASK)
+#define dds_err_nr(e) ((-e) & DDS_ERR_NR_MASK)
 
 /** Macro to extract the error minor number */
 #define dds_err_minor(e) (((-e) & DDS_ERR_MINOR_MASK) >> 16)

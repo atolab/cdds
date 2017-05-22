@@ -156,7 +156,7 @@ int rd_string(struct client *cl, char **str)
 int db_entity_delete(struct client *cl, const struct reqhdr *req)
 {
     struct rephdr rep;
-    dds_entity_delete(req->u.entity_delete.entity);
+    dds_delete(req->u.entity_delete.entity);
     rep.code = VDDSREP_NOTHING;
     rep.status = DDS_RETCODE_OK;
     return reply(cl, &rep);
@@ -493,7 +493,7 @@ void cb_handle_event(struct bufferevent *bev, short events, void *arg)
     if (events & (BEV_EVENT_EOF | BEV_EVENT_ERROR)) {
         printf("sock%d: disconnect\n", bufferevent_getfd(cl->bev));
         if (cl->ppant != DDS_HANDLE_NIL) {
-            dds_entity_delete(cl->ppant);
+            dds_delete(cl->ppant);
         }
         os_free(cl);
         bufferevent_free(bev);

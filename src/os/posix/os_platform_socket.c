@@ -12,7 +12,9 @@
 #include <assert.h>
 #include <string.h>
 #include <unistd.h>
+#ifndef __VXWORKS__
 #include <sys/fcntl.h>
+#endif
 #include "os/os.h"
 
 os_socket

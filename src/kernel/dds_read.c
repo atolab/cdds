@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include "kernel/dds_entity.h"
 #include "kernel/dds_reader.h"
 #include "kernel/dds_rhc.h"
 #include "ddsi/q_thread.h"
@@ -98,10 +99,10 @@ static int dds_read_impl
   else
   {
     dds_readc_fc fn = take ? dds_rhc_take : dds_rhc_read;
-    ret = (fn) 
+    ret = (fn)
     (
       rd->m_rd->rhc, lock, buf, si, maxs,
-      mask & DDS_ANY_SAMPLE_STATE, 
+      mask & DDS_ANY_SAMPLE_STATE,
       mask & DDS_ANY_VIEW_STATE,
       mask & DDS_ANY_INSTANCE_STATE,
       hand
@@ -109,14 +110,14 @@ static int dds_read_impl
   }
 
   /* read/take resets data available status */
-  reader->m_scond->m_trigger &= ~DDS_DATA_AVAILABLE_STATUS;
-    
+  dds_entity_status_reset(reader, DDS_DATA_AVAILABLE_STATUS);
+
   /* reset DATA_ON_READERS status on subscriber after successful read/take */
 
   if (reader->m_parent->m_kind == DDS_TYPE_SUBSCRIBER)
   {
     dds_subscriber * sub = (dds_subscriber*) reader->m_parent;
-    sub->m_entity.m_scond->m_trigger &= ~DDS_DATA_ON_READERS_STATUS;
+    dds_entity_status_reset(&sub->m_entity, DDS_DATA_ON_READERS_STATUS);
   }
   os_mutexUnlock (&reader->m_mutex);
 
@@ -173,14 +174,14 @@ static int dds_readcdr_impl
      );
 
   /* read/take resets data available status */
-  reader->m_scond->m_trigger &= ~DDS_DATA_AVAILABLE_STATUS;
+  dds_entity_status_reset(reader, DDS_DATA_AVAILABLE_STATUS);
 
   /* reset DATA_ON_READERS status on subscriber after successful read/take */
 
   if (reader->m_parent->m_kind == DDS_TYPE_SUBSCRIBER)
   {
     dds_subscriber * sub = (dds_subscriber*) reader->m_parent;
-    sub->m_entity.m_scond->m_trigger &= ~DDS_DATA_ON_READERS_STATUS;
+    dds_entity_status_reset(&sub->m_entity, DDS_DATA_ON_READERS_STATUS);
   }
   os_mutexUnlock (&reader->m_mutex);
 

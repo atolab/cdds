@@ -8,7 +8,11 @@
 #include <string.h>
 #include <signal.h>
 #include <assert.h>
+#ifdef _WRS_KERNEL
+#include <st_inttypes.h>
+#else
 #include <inttypes.h>
+#endif /* __VXWORKS__ */
 #include <math.h>
 
 #include "ddsi/q_entity.h"
@@ -381,7 +385,7 @@ int main (int argc, char *argv[])
   unsigned long i;
   int status;
   dds_condition_t readCond;
-  dds_readerlistener_t rd_listener;
+  dds_listener_t rd_listener;
   int opt;
   const char *logfile = NULL;
   struct data_available_handler_arg dah_arg;
@@ -462,9 +466,7 @@ int main (int argc, char *argv[])
 
   os_mutexInit(&statslock);
 
-  status = dds_init (argc, argv);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  status = dds_participant_create (&participant, DDS_DOMAIN_DEFAULT, NULL, NULL);
+  participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   if ((udpsock = socket (AF_INET, SOCK_DGRAM, 0)) == -1) {
@@ -781,7 +783,7 @@ int main (int argc, char *argv[])
 
   /* Disable callbacks */
 
-  dds_status_set_enabled (reader, 0);
+  dds_set_enabled_status (reader, 0);
   if (mode == DIRECT)
   {
     dds_reader_ddsi2direct (reader, 0, NULL);
@@ -814,15 +816,13 @@ int main (int argc, char *argv[])
   dds_condition_delete (terminated);
   status = dds_waitset_delete (waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  dds_entity_delete (participant);
+  dds_delete (participant);
 
   for (i = 0; i < MAX_SAMPLES; i++)
   {
     RoundTripModule_DataType_free (&sub_data[i], DDS_FREE_CONTENTS);
   }
   RoundTripModule_DataType_free (&pub_data, DDS_FREE_CONTENTS);
-
-  dds_fini ();
 
   return 0;
 }

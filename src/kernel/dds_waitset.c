@@ -5,7 +5,6 @@
 #include "kernel/dds_condition.h"
 #include "kernel/dds_guardcond.h"
 #include "kernel/dds_readcond.h"
-#include "kernel/dds_statuscond.h"
 #include "kernel/dds_rhc.h"
 
 #include "ddsi/q_globals.h"

@@ -1,9 +1,8 @@
 #include <assert.h>
+#include <string.h>
 #include "kernel/dds_reader.h"
 #include "kernel/dds_listener.h"
 #include "kernel/dds_qos.h"
-#include "kernel/dds_status.h"
-#include "kernel/dds_statuscond.h"
 #include "kernel/dds_init.h"
 #include "kernel/dds_rhc.h"
 #include "ddsi/q_entity.h"
@@ -12,304 +11,253 @@
 #include <string.h>
 #include "os/os.h"
 
+#define DDS_READER_STATUS_MASK                                   \
+                        DDS_SAMPLE_REJECTED_STATUS              |\
+                        DDS_LIVELINESS_CHANGED_STATUS           |\
+                        DDS_REQUESTED_DEADLINE_MISSED_STATUS    |\
+                        DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS   |\
+                        DDS_DATA_AVAILABLE_STATUS               |\
+                        DDS_SAMPLE_LOST_STATUS                  |\
+                        DDS_SUBSCRIPTION_MATCHED_STATUS
+
+static dds_return_t dds_reader_instance_hdl(dds_entity_t e, dds_instance_handle_t *i)
+{
+    assert(e);
+    assert(i);
+    *i = (dds_instance_handle_t)reader_instance_id(&e->m_guid);
+    return DDS_RETCODE_OK;
+}
+
+static void dds_reader_delete(dds_entity_t e, bool recurse)
+{
+    dds_reader * rd = (dds_reader*) e;
+    struct thread_state1 * const thr = lookup_thread_state ();
+    const bool asleep = !vtime_awake_p (thr->vtime);
+
+    assert(e);
+    assert(thr);
+
+    if (asleep) {
+      thread_state_awake(thr);
+    }
+
+    delete_reader (&e->m_guid);
+    dds_entity_delete_wait (e, thr);
+    dds_entity_delete_impl ((dds_entity*) rd->m_topic, false, recurse);
+    dds_free (rd->m_loan);
+
+    if (asleep) {
+      thread_state_asleep(thr);
+    }
+}
+
+static dds_return_t dds_reader_qos_validate (const dds_qos_t *qos, bool enabled)
+{
+    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_READER, 0);
+    bool consistent = true;
+    assert(qos);
+    /* Check consistency. */
+    consistent &= dds_qos_validate_common(qos);
+    consistent &= (qos->present & QP_USER_DATA) && ! validate_octetseq (&qos->user_data);
+    consistent &= (qos->present & QP_PRISMTECH_READER_DATA_LIFECYCLE) && (validate_reader_data_lifecycle (&qos->reader_data_lifecycle) != 0);
+    consistent &= (qos->present & QP_TIME_BASED_FILTER) && (validate_duration (&qos->time_based_filter.minimum_separation) != 0);
+    consistent &= ((qos->present & QP_HISTORY)           && (qos->present & QP_RESOURCE_LIMITS) && (validate_history_and_resource_limits (&qos->history, &qos->resource_limits) != 0)) ||
+                  ((qos->present & QP_TIME_BASED_FILTER) && (qos->present & QP_DEADLINE)        && (!validate_deadline_and_timebased_filter (qos->deadline.deadline, qos->time_based_filter.minimum_separation)));
+    if (consistent) {
+        ret = DDS_RETCODE_OK;
+        if (enabled) {
+            /* TODO: Improve/check immutable check. */
+            if (qos->present != QP_LATENCY_BUDGET) {
+                ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, DDS_MOD_READER, DDS_ERR_M1);
+            }
+        }
+    }
+    return ret;
+}
+
+static dds_return_t dds_reader_qos_set (dds_entity_t e, const dds_qos_t *qos, bool enabled)
+{
+    dds_return_t ret = dds_reader_qos_validate(qos, enabled);
+    if (ret == DDS_RETCODE_OK) {
+        if (enabled) {
+            /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
+            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_READER, DDS_ERR_M1));
+        }
+    }
+    return ret;
+}
+
+static dds_return_t dds_reader_status_validate (uint32_t mask)
+{
+    return (mask & ~(DDS_READER_STATUS_MASK)) ?
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_READER, 0) :
+                     DDS_RETCODE_OK;
+}
+
 void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
 {
-  dds_reader * rd = (dds_reader*) entity;
-  bool call = false;
-  dds_readerlistener_t listener;
-  dds_requested_incompatible_qos_status_t requested_incompatible_qos;
-  dds_sample_lost_status_t sample_lost;
-  dds_sample_rejected_status_t sample_rejected;
-  dds_liveliness_changed_status_t liveliness_changed;
-  dds_subscription_matched_status_t subscription_matched;
-  void (*on_data_readers) (dds_entity_t subscriber) = NULL;
-  dds_subscriber * sub = NULL;
-#if 0
-  dds_requested_deadline_missed_status_t requested_deadline_missed;
-#endif
+    dds_reader * rd = (dds_reader*) entity;
+    bool call = false;
+    void *metrics = NULL;
 
-  if (data == NULL)
-  {
-    dds_entity_delete_signal (entity);
-    return;
-  }
-
-  /* Lock entity. Return if pending deletion or status not enabled. */
-
-  if 
-  ( 
-    (! dds_entity_callback_lock (&rd->m_entity)) ||
-    ((rd->m_entity.m_status_enable & data->status) == 0)
-  )
-  {
-    goto done;
-  }
-
-  /* Update status metrics */
-
-  listener = rd->m_listener;
-  switch (data->status)
-  {
-#if 0
-    /* TODO: NYI in DDSI */
-    case DDS_REQUESTED_DEADLINE_MISSED_STATUS:
-    {
-      rd->m_requested_deadline_missed_status.total_count++;
-      rd->m_requested_deadline_missed_status.total_count_change++;
-      rd->m_requested_deadline_missed_status.last_instance_handle = data->handle;
-      call = listener.on_requested_deadline_missed != NULL;
-      if (call)
-      {
-        requested_deadline_missed = rd->m_requested_deadline_missed_status;
-        rd->m_requested_deadline_missed_status.total_count_change = 0;
-      }
-      break;
+    /* When data is NULL, it means that the reader is deleted. */
+    if (data == NULL) {
+        /* API deletion is possible waiting for this signal that
+         * indicates that no more callbacks will be triggered. */
+        dds_entity_delete_signal (entity);
+        return;
     }
-#endif
-    case DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS:
-    {
-      rd->m_requested_incompatible_qos_status.total_count++;
-      rd->m_requested_incompatible_qos_status.total_count_change++;
-      rd->m_requested_incompatible_qos_status.last_policy_id = data->extra;
-      call = listener.on_requested_incompatible_qos != NULL;
-      if (call)
-      {
-        requested_incompatible_qos = rd->m_requested_incompatible_qos_status;
-        rd->m_requested_incompatible_qos_status.total_count_change = 0;
-      }
-      break;
-    }
-    case DDS_SAMPLE_LOST_STATUS:
-    {
-      rd->m_sample_lost_status.total_count++;
-      rd->m_sample_lost_status.total_count_change++;
-      call = listener.on_sample_lost != NULL;
-      if (call)
-      {
-        sample_lost = rd->m_sample_lost_status;
-        rd->m_sample_lost_status.total_count_change = 0;
-      }
-      break;
-    }
-    case DDS_SAMPLE_REJECTED_STATUS:
-    {
-      rd->m_sample_rejected_status.total_count++;
-      rd->m_sample_rejected_status.total_count_change++;
-      rd->m_sample_rejected_status.last_reason = data->extra;
-      rd->m_sample_rejected_status.last_instance_handle = data->handle;
-      call = listener.on_sample_rejected != NULL;
-      if (call)
-      {
-        sample_rejected = rd->m_sample_rejected_status;
-        rd->m_sample_rejected_status.total_count_change = 0;
-      }
-      break;
-    }
-    case DDS_DATA_AVAILABLE_STATUS:
-    {
-      call = listener.on_data_available != NULL;
-      break;
-    }
-    case DDS_LIVELINESS_CHANGED_STATUS:
-    {
-      if (data->add)
-      {
-        rd->m_liveliness_changed_status.alive_count++;
-        rd->m_liveliness_changed_status.alive_count_change++;
-	if (rd->m_liveliness_changed_status.not_alive_count > 0)
-	{
-	  rd->m_liveliness_changed_status.not_alive_count--;
-	}
-      }
-      else
-      {
-	rd->m_liveliness_changed_status.alive_count--;
-        rd->m_liveliness_changed_status.not_alive_count++;
-        rd->m_liveliness_changed_status.not_alive_count_change++;
-      }
-      rd->m_liveliness_changed_status.last_publication_handle = data->handle;
-      call = listener.on_liveliness_changed != NULL;
-      if (call)
-      {
-        liveliness_changed = rd->m_liveliness_changed_status;
-        rd->m_liveliness_changed_status.alive_count_change = 0;
-        rd->m_liveliness_changed_status.not_alive_count_change = 0;
-      }
-      break;
-    }
-    case DDS_SUBSCRIPTION_MATCHED_STATUS:
-    {
-      if (data->add)
-      {
-        rd->m_subscription_matched_status.total_count++;
-        rd->m_subscription_matched_status.total_count_change++;
-        rd->m_subscription_matched_status.current_count++;
-        rd->m_subscription_matched_status.current_count_change++;
-      }
-      else
-      {
-        rd->m_subscription_matched_status.current_count--;
-        rd->m_subscription_matched_status.current_count_change--;
-      }
-      rd->m_subscription_matched_status.last_publication_handle = data->handle;
-      call = listener.on_subscription_matched != NULL;
-      if (call)
-      {
-        subscription_matched = rd->m_subscription_matched_status;
-        rd->m_subscription_matched_status.total_count_change = 0;
-        rd->m_subscription_matched_status.current_count_change = 0;
-      }
-      break;
-    }
-    default: assert (0);
-  }
 
-  /* DATA_AVAILABLE is handled differently to normal status changes */
+    os_mutexLock (&rd->m_entity.m_mutex);
 
-  if (data->status != DDS_DATA_AVAILABLE_STATUS)
-  {
-    if (call)
-    {
-      /* Reset trigger and call listener unlocked */
+    /* Reset the status for possible Listener call.
+     * When a listener is not called, the status will be set (again). */
+    dds_entity_status_reset(entity, data->status);
 
-      rd->m_entity.m_scond->m_trigger &= ~data->status;
-      os_mutexUnlock (&rd->m_entity.m_mutex);
-      switch (data->status)
-      {
-#if 0
-    /* TODO: NYI in DDSI */
-        case DDS_REQUESTED_DEADLINE_MISSED_STATUS:
-          (listener.on_requested_deadline_missed) (&rd->m_entity, &requested_deadline_missed);
-          break;
-#endif
-        case DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS:
-          (listener.on_requested_incompatible_qos) (&rd->m_entity, &requested_incompatible_qos, listener.arg);
-          break;
-        case DDS_SAMPLE_LOST_STATUS:
-          (listener.on_sample_lost) (&rd->m_entity, &sample_lost, listener.arg);
-          break;
-        case DDS_SAMPLE_REJECTED_STATUS:
-          (listener.on_sample_rejected) (&rd->m_entity, &sample_rejected, listener.arg);
-          break;
-        case DDS_LIVELINESS_CHANGED_STATUS:
-          (listener.on_liveliness_changed) (&rd->m_entity, &liveliness_changed, listener.arg);
-          break;
-        case DDS_SUBSCRIPTION_MATCHED_STATUS:
-          (listener.on_subscription_matched) (&rd->m_entity, &subscription_matched, listener.arg);
-          break;
-        default: assert (0);
-      }
-      os_mutexLock (&rd->m_entity.m_mutex);
-    }
-    else
-    {
-      /* Set trigger and signal status condition */
-
-      rd->m_entity.m_scond->m_trigger |= data->status;
-      dds_cond_callback_signal (rd->m_entity.m_scond);
-    }
-    goto done;
-  }
-
-  /* 
-    DDSI only generates reader DATA_AVAILABLE status which is
-    transformed into subscriber DATA_ON_READERS status.
-    Subscriber listeners are called before reader listeners.
-    Subscriber/reader listeners are called with trigger enabled.
-    Listeners are handled before any status condition updates.
-    All listener callbacks are made with everything unlocked to
-    avoid potential deadlock.
-  */
-
-  /* Subscriber listener callback */
-
-  if (rd->m_entity.m_parent->m_kind == DDS_TYPE_SUBSCRIBER)
-  {
-    sub = (dds_subscriber*) rd->m_entity.m_parent;
-      
-    if (dds_entity_callback_lock (&sub->m_entity))
-    {
-      if (sub->m_entity.m_status_enable & DDS_DATA_ON_READERS_STATUS)
-      {
-        sub->m_entity.m_scond->m_trigger |= DDS_DATA_ON_READERS_STATUS;
-        on_data_readers = sub->m_listener.on_data_readers;
-
-        /* Call listener unlocked then reset status */
-
-        if (on_data_readers)
-        {
-          /* Set data available on reader as subscriber may read/take */
-
-          rd->m_entity.m_scond->m_trigger |= DDS_DATA_AVAILABLE_STATUS;
-          os_mutexUnlock (&rd->m_entity.m_mutex);
-          os_mutexUnlock (&sub->m_entity.m_mutex);
-          (on_data_readers) (&sub->m_entity);
-          os_mutexLock (&sub->m_entity.m_mutex);
-          os_mutexLock (&rd->m_entity.m_mutex);
-          sub->m_entity.m_scond->m_trigger &= ~DDS_DATA_ON_READERS_STATUS;
+    /* Update status metrics. */
+    switch (data->status) {
+        case DDS_REQUESTED_DEADLINE_MISSED_STATUS: {
+            rd->m_requested_deadline_missed_status.total_count++;
+            rd->m_requested_deadline_missed_status.total_count_change++;
+            rd->m_requested_deadline_missed_status.last_instance_handle = data->handle;
+            metrics = (void*)&(rd->m_requested_deadline_missed_status);
+            break;
         }
-      }
+        case DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS: {
+            rd->m_requested_incompatible_qos_status.total_count++;
+            rd->m_requested_incompatible_qos_status.total_count_change++;
+            rd->m_requested_incompatible_qos_status.last_policy_id = data->extra;
+            metrics = (void*)&(rd->m_requested_incompatible_qos_status);
+            break;
+        }
+        case DDS_SAMPLE_LOST_STATUS: {
+            rd->m_sample_lost_status.total_count++;
+            rd->m_sample_lost_status.total_count_change++;
+            metrics = (void*)&(rd->m_sample_lost_status);
+            break;
+        }
+        case DDS_SAMPLE_REJECTED_STATUS: {
+            rd->m_sample_rejected_status.total_count++;
+            rd->m_sample_rejected_status.total_count_change++;
+            rd->m_sample_rejected_status.last_reason = data->extra;
+            rd->m_sample_rejected_status.last_instance_handle = data->handle;
+            metrics = (void*)&(rd->m_sample_rejected_status);
+            break;
+        }
+        case DDS_DATA_AVAILABLE_STATUS: {
+            metrics = NULL;
+            break;
+        }
+        case DDS_LIVELINESS_CHANGED_STATUS: {
+            if (data->add) {
+                rd->m_liveliness_changed_status.alive_count++;
+                rd->m_liveliness_changed_status.alive_count_change++;
+                if (rd->m_liveliness_changed_status.not_alive_count > 0) {
+                    rd->m_liveliness_changed_status.not_alive_count--;
+                }
+            } else {
+                rd->m_liveliness_changed_status.alive_count--;
+                rd->m_liveliness_changed_status.not_alive_count++;
+                rd->m_liveliness_changed_status.not_alive_count_change++;
+            }
+            rd->m_liveliness_changed_status.last_publication_handle = data->handle;
+            metrics = (void*)&(rd->m_liveliness_changed_status);
+            break;
+        }
+        case DDS_SUBSCRIPTION_MATCHED_STATUS: {
+            if (data->add) {
+                rd->m_subscription_matched_status.total_count++;
+                rd->m_subscription_matched_status.total_count_change++;
+                rd->m_subscription_matched_status.current_count++;
+                rd->m_subscription_matched_status.current_count_change++;
+            } else {
+                rd->m_subscription_matched_status.current_count--;
+                rd->m_subscription_matched_status.current_count_change--;
+            }
+            rd->m_subscription_matched_status.last_publication_handle = data->handle;
+            metrics = (void*)&(rd->m_subscription_matched_status);
+            break;
+        }
+        default: assert (0);
     }
-    else
-    {
-      goto done;
+    os_mutexUnlock (&rd->m_entity.m_mutex);
+
+    /* Indicate to the entity hierarchy that we're busy with a callback.
+     * This is done from the top to bottom to prevent possible deadlocks.
+     * We can't really lock the entities because they have to be possibly
+     * accessible from listener callbacks. */
+    if (!dds_entity_cb_propagate_begin(entity)) {
+        /* An entity in the hierarchy is probably being deleted. */
+        return;
     }
-  }
-  
-  /* Reader listener callback */
 
-  if (call)
-  {
-    /* If on_data_readers called may have done a read/take */
+    /* DATA_AVAILABLE is handled differently to normal status changes. */
+    if (data->status == DDS_DATA_AVAILABLE_STATUS) {
+        /* First, try to ship it off to its parent subscriber or participant as DDS_DATA_ON_READERS_STATUS. */
+        call = dds_entity_cp_propagate_call(rd->m_entity.m_parent, entity, DDS_DATA_ON_READERS_STATUS, NULL, true);
 
-    if (on_data_readers == NULL)
-    {
-      rd->m_entity.m_scond->m_trigger |= DDS_DATA_AVAILABLE_STATUS;
+        if (!call) {
+            /* No parent was interested. What about myself with DDS_DATA_AVAILABLE_STATUS? */
+            call = dds_entity_cp_propagate_call(entity, entity, DDS_DATA_AVAILABLE_STATUS, NULL, false);
+        }
+
+        if (!call) {
+            /* Nobody was interested. Set the status to maybe force a trigger on the subscriber. */
+            dds_entity_status_set(rd->m_entity.m_parent, DDS_DATA_ON_READERS_STATUS);
+            dds_entity_status_signal(rd->m_entity.m_parent);
+        }
+    } else {
+        /* Is anybody interested within the entity hierarchy through listeners? */
+        call = dds_entity_cp_propagate_call(entity, entity, data->status, metrics, true);
     }
-    if (rd->m_entity.m_scond->m_trigger & DDS_DATA_AVAILABLE_STATUS)
-    {
-      os_mutexUnlock (&rd->m_entity.m_mutex);
-      if (sub)
-      {
-        os_mutexUnlock (&sub->m_entity.m_mutex);
-      }
-      (listener.on_data_available) (&rd->m_entity, listener.arg);
-      os_mutexLock (&rd->m_entity.m_mutex);
-      rd->m_entity.m_scond->m_trigger &= ~DDS_DATA_AVAILABLE_STATUS;
-      if (sub)
-      {
-        os_mutexLock (&sub->m_entity.m_mutex);
-        sub->m_entity.m_scond->m_trigger &= ~DDS_DATA_ON_READERS_STATUS;
-      }
+
+    /* Let possible waits continue. */
+    dds_entity_cb_propagate_end(entity);
+
+    if (call) {
+        /* Event was eaten by a listener. */
+        os_mutexLock (&rd->m_entity.m_mutex);
+
+        /* Reset the change counts of the metrics. */
+        switch (data->status) {
+            case DDS_REQUESTED_DEADLINE_MISSED_STATUS: {
+                rd->m_requested_deadline_missed_status.total_count_change = 0;
+                break;
+            }
+            case DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS: {
+                rd->m_requested_incompatible_qos_status.total_count_change = 0;
+                break;
+            }
+            case DDS_SAMPLE_LOST_STATUS: {
+                rd->m_sample_lost_status.total_count_change = 0;
+                break;
+            }
+            case DDS_SAMPLE_REJECTED_STATUS: {
+                rd->m_sample_rejected_status.total_count_change = 0;
+                break;
+            }
+            case DDS_DATA_AVAILABLE_STATUS: {
+                /* Nothing to reset. */;
+                break;
+            }
+            case DDS_LIVELINESS_CHANGED_STATUS: {
+                rd->m_liveliness_changed_status.alive_count_change = 0;
+                rd->m_liveliness_changed_status.not_alive_count_change = 0;
+                break;
+            }
+            case DDS_SUBSCRIPTION_MATCHED_STATUS: {
+                rd->m_subscription_matched_status.total_count_change = 0;
+                rd->m_subscription_matched_status.current_count_change = 0;
+                break;
+            }
+            default: assert (0);
+        }
+        os_mutexUnlock (&rd->m_entity.m_mutex);
+    } else {
+        /* Nobody was interested through a listener. Set the status to maybe force a trigger. */
+        dds_entity_status_set(entity, data->status);
+        dds_entity_status_signal(entity);
     }
-  }
-
-  /* Trigger subscriber status condition */
-
-  if 
-  (
-    sub && (on_data_readers == NULL) &&
-    (sub->m_entity.m_status_enable & DDS_DATA_ON_READERS_STATUS)
-  )
-  {  
-    dds_cond_callback_signal (sub->m_entity.m_scond);
-  }
-
-  /* Trigger reader status condition */
-
-  if (!call)
-  {
-    rd->m_entity.m_scond->m_trigger |= DDS_DATA_AVAILABLE_STATUS;
-    dds_cond_callback_signal (rd->m_entity.m_scond);
-  }
-
-done:
-
-  if (sub)
-  {
-    dds_entity_callback_unlock (&sub->m_entity);
-  }
-  dds_entity_callback_unlock (&rd->m_entity);
 }
 
 int dds_reader_create
@@ -318,7 +266,7 @@ int dds_reader_create
   dds_entity_t * reader,
   dds_entity_t topic,
   const dds_qos_t * qos,
-  const dds_readerlistener_t * listener
+  const dds_listener_t * listener
 )
 {
   dds_qos_t * rqos;
@@ -356,55 +304,41 @@ int dds_reader_create
   if (tp->m_entity.m_qos)
   {
     dds_qos_merge (rqos, tp->m_entity.m_qos);
-    
+
     /* reset the following qos policies if set during topic qos merge as they aren't applicable for reader */
-    rqos->present &= ~(QP_DURABILITY_SERVICE | QP_TRANSPORT_PRIORITY | QP_LIFESPAN); 
-  } 
+    rqos->present &= ~(QP_DURABILITY_SERVICE | QP_TRANSPORT_PRIORITY | QP_LIFESPAN);
+  }
   nn_xqos_mergein_missing (rqos, &gv.default_xqos_rd);
-  
-  ret = dds_qos_validate (DDS_TYPE_READER, rqos);
+
+  ret = (int)dds_reader_qos_validate (rqos, false);
   if (ret != 0)
   {
     os_mutexUnlock (&pp_or_sub->m_mutex);
     return ret;
   }
-  
+
   /* Create reader and associated read cache */
   rd = dds_alloc (sizeof (*rd));
   *reader = &rd->m_entity;
-  dds_entity_init (&rd->m_entity, pp_or_sub, DDS_TYPE_READER, rqos);
+  dds_entity_init (&rd->m_entity, pp_or_sub, DDS_TYPE_READER, rqos, listener, DDS_READER_STATUS_MASK);
   rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
   rd->m_topic = tp;
   dds_entity_add_ref (topic);
   rhc = dds_rhc_new (rd, tp->m_stopic);
+  rd->m_entity.m_deriver.delete = dds_reader_delete;
+  rd->m_entity.m_deriver.set_qos = dds_reader_qos_set;
+  rd->m_entity.m_deriver.validate_status = dds_reader_status_validate;
+  rd->m_entity.m_deriver.get_instance_hdl = dds_reader_instance_hdl;
 
-  /* Merge listener with those from parent */
-  if (listener)
-  {
-    rd->m_listener = *listener;
-  }
-  if (sub)
-  {
-    rd->m_data_on_readers = (sub->m_entity.m_status_enable & DDS_DATA_ON_READERS_STATUS);
-    dds_subscriberlistener_t l;
-    dds_listener_get_unl (pp_or_sub, &l);
-    dds_listener_merge (&rd->m_listener, &l.readerlistener, DDS_TYPE_READER);
-  }
-  else
-  {
-    dds_participantlistener_t l;
-    dds_listener_get_unl (pp_or_sub, &l);
-    dds_listener_merge (&rd->m_listener, &l.subscriberlistener.readerlistener, DDS_TYPE_READER);
-  }
   os_mutexUnlock (&pp_or_sub->m_mutex);
 
   if (asleep)
   {
     thread_state_awake (thr);
   }
-  rd->m_rd = new_reader 
+  rd->m_rd = new_reader
   (
-    &rd->m_entity.m_guid, NULL, &pp_or_sub->m_pp->m_entity.m_guid, tp->m_stopic,
+    &rd->m_entity.m_guid, NULL, &pp_or_sub->m_participant->m_guid, tp->m_stopic,
     rqos, rhc, dds_reader_status_cb, rd
   );
   assert (rd->m_rd);
@@ -500,4 +434,151 @@ int dds_reader_wait_for_historical_data
   }
 
   return ret;
+}
+
+dds_entity_t dds_get_subscriber(dds_entity_t rd)
+{
+    /* TODO: CHAM-104: Return actual errors when dds_entity_t became an handle iso a pointer (see header). */
+    if (dds_entity_is_a(rd, DDS_TYPE_READER)) {
+        return dds_get_parent(rd);
+    }
+    if (dds_entity_is_a(rd, DDS_TYPE_COND_READ)) {
+        return dds_get_parent(dds_get_parent(rd));
+    }
+    return NULL;
+}
+
+dds_return_t dds_get_subscription_matched_status (dds_entity_t entity, dds_subscription_matched_status_t * status)
+{
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_READER, 0);
+    if (dds_entity_is_a(entity, DDS_TYPE_READER) && (status != NULL)) {
+        ret = DDS_ERRNO (DDS_RETCODE_PRECONDITION_NOT_MET, DDS_MOD_READER, 0);
+
+        os_mutexLock (&entity->m_mutex);
+        if (entity->m_status_enable & DDS_SUBSCRIPTION_MATCHED_STATUS) {
+            dds_reader *rd = (dds_reader*)entity;
+            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+            if (status) {
+                *status = rd->m_subscription_matched_status;
+            }
+            rd->m_subscription_matched_status.total_count_change = 0;
+            rd->m_subscription_matched_status.current_count_change = 0;
+            dds_entity_status_reset(entity, DDS_SUBSCRIPTION_MATCHED_STATUS);
+            ret = DDS_RETCODE_OK;
+        }
+        os_mutexUnlock (&entity->m_mutex);
+    }
+    return ret;
+}
+
+dds_return_t dds_get_liveliness_changed_status (dds_entity_t entity, dds_liveliness_changed_status_t * status)
+{
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_READER, 0);
+    if (dds_entity_is_a(entity, DDS_TYPE_READER) && (status != NULL)) {
+        ret = DDS_ERRNO (DDS_RETCODE_PRECONDITION_NOT_MET, DDS_MOD_READER, 0);
+
+        os_mutexLock (&entity->m_mutex);
+        if (entity->m_status_enable & DDS_LIVELINESS_CHANGED_STATUS) {
+            dds_reader *rd = (dds_reader*)entity;
+            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+            if (status) {
+                *status = rd->m_liveliness_changed_status;
+            }
+            rd->m_liveliness_changed_status.alive_count_change = 0;
+            rd->m_liveliness_changed_status.not_alive_count_change = 0;
+            dds_entity_status_reset(entity, DDS_LIVELINESS_CHANGED_STATUS);
+            ret = DDS_RETCODE_OK;
+        }
+        os_mutexUnlock (&entity->m_mutex);
+    }
+    return ret;
+}
+
+dds_return_t dds_get_sample_rejected_status (dds_entity_t entity, dds_sample_rejected_status_t * status)
+{
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_READER, 0);
+    if (dds_entity_is_a(entity, DDS_TYPE_READER) && (status != NULL)) {
+        ret = DDS_ERRNO (DDS_RETCODE_PRECONDITION_NOT_MET, DDS_MOD_READER, 0);
+
+        os_mutexLock (&entity->m_mutex);
+        if (entity->m_status_enable & DDS_SAMPLE_REJECTED_STATUS) {
+            dds_reader *rd = (dds_reader*)entity;
+            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+            if (status) {
+                *status = rd->m_sample_rejected_status;
+            }
+            rd->m_sample_rejected_status.total_count_change = 0;
+            rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
+            dds_entity_status_reset(entity, DDS_SAMPLE_REJECTED_STATUS);
+            ret = DDS_RETCODE_OK;
+        }
+        os_mutexUnlock (&entity->m_mutex);
+    }
+    return ret;
+}
+
+dds_return_t dds_get_sample_lost_status (dds_entity_t entity, dds_sample_lost_status_t * status)
+{
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_READER, 0);
+    if (dds_entity_is_a(entity, DDS_TYPE_READER) && (status != NULL)) {
+        ret = DDS_ERRNO (DDS_RETCODE_PRECONDITION_NOT_MET, DDS_MOD_READER, 0);
+
+        os_mutexLock (&entity->m_mutex);
+        if (entity->m_status_enable & DDS_SAMPLE_LOST_STATUS) {
+            dds_reader *rd = (dds_reader*)entity;
+            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+            if (status) {
+                *status = rd->m_sample_lost_status;
+            }
+            rd->m_sample_lost_status.total_count_change = 0;
+            dds_entity_status_reset(entity, DDS_SAMPLE_LOST_STATUS);
+            ret = DDS_RETCODE_OK;
+        }
+        os_mutexUnlock (&entity->m_mutex);
+    }
+    return ret;
+}
+
+dds_return_t dds_get_requested_deadline_missed_status (dds_entity_t entity, dds_requested_deadline_missed_status_t * status)
+{
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_READER, 0);
+    if (dds_entity_is_a(entity, DDS_TYPE_READER) && (status != NULL)) {
+        ret = DDS_ERRNO (DDS_RETCODE_PRECONDITION_NOT_MET, DDS_MOD_READER, 0);
+
+        os_mutexLock (&entity->m_mutex);
+        if (entity->m_status_enable & DDS_REQUESTED_DEADLINE_MISSED_STATUS) {
+            dds_reader *rd = (dds_reader*)entity;
+            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+            if (status) {
+                *status = rd->m_requested_deadline_missed_status;
+            }
+            rd->m_requested_deadline_missed_status.total_count_change = 0;
+            dds_entity_status_reset(entity, DDS_REQUESTED_DEADLINE_MISSED_STATUS);
+            ret = DDS_RETCODE_OK;
+        }
+        os_mutexUnlock (&entity->m_mutex);
+    }
+    return ret;
+}
+
+dds_return_t dds_get_requested_incompatible_qos_status (dds_entity_t entity, dds_requested_incompatible_qos_status_t * status)
+{
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_READER, 0);
+    if (dds_entity_is_a(entity, DDS_TYPE_READER) && (status != NULL)) {
+        ret = DDS_ERRNO (DDS_RETCODE_PRECONDITION_NOT_MET, DDS_MOD_READER, 0);
+
+        os_mutexLock (&entity->m_mutex);
+        if (entity->m_status_enable & DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS) {
+            dds_reader *rd = (dds_reader*)entity;
+            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+            if (status) {
+                *status = rd->m_requested_incompatible_qos_status;
+            }
+            rd->m_requested_incompatible_qos_status.total_count_change = 0;
+            dds_entity_status_reset(entity, DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
+            ret = DDS_RETCODE_OK;
+        }
+        os_mutexUnlock (&entity->m_mutex);
+    }
+    return ret;
 }

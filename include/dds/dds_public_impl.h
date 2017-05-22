@@ -1,8 +1,19 @@
+/** @file
+ *
+ * @brief DDS C99 Implementation API
+ *
+ * @todo add copyright header?
+ * @todo do we really need to expose all of this as an API? maybe some, but all?
+ *
+ * This header file defines the public API for all kinds of things in the
+ * VortexDDS C99 language binding.
+ */
 #ifndef DDS_IMPL_H
 #define DDS_IMPL_H
 
 #include "dds/dds_public_alloc.h"
 #include "dds/dds_public_stream.h"
+#include "os/os_public.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -78,10 +89,10 @@ dds_topic_descriptor_t;
 
 typedef struct dds_entity * dds_entity_t;
 typedef struct dds_condition * dds_condition_t;
-typedef void * dds_listener_t;
 typedef uint64_t dds_instance_handle_t;
 typedef int32_t dds_domainid_t;
 typedef struct dds_waitset * dds_waitset_t;
+
 
 typedef struct dds_condition_seq
 {

@@ -150,7 +150,7 @@ int main (int argc, char **argv)
     {
       status = dds_reader_create (sub, &rds[i], topic, qos, NULL);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-      dds_status_set_enabled(rds[i], 0);
+      dds_set_enabled_status(rds[i], 0);
     }
     dds_qos_delete (qos);
   }
@@ -226,7 +226,7 @@ int main (int argc, char **argv)
       if (burstCount < burstSize)
       {
         status = dds_write (writer, &sample);
-        if (dds_err_no (status) == DDS_RETCODE_TIMEOUT)
+        if (dds_err_nr (status) == DDS_RETCODE_TIMEOUT)
         {
           timedOut = true;
         }
@@ -294,14 +294,14 @@ int main (int argc, char **argv)
   /* Cleanup */
 #if 0
   status = dds_instance_dispose (writer, &sample);
-  if (dds_err_no (status) != DDS_RETCODE_TIMEOUT)
+  if (dds_err_nr (status) != DDS_RETCODE_TIMEOUT)
   {
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   }
 #endif
   dds_free (sample.payload._buffer);
 
-  dds_entity_delete (participant);
+  dds_delete (participant);
   dds_fini ();
 
 #ifdef _WIN32

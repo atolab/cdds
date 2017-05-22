@@ -156,7 +156,7 @@ int dds_participant_create(dds_entity_t *pp, const dds_domainid_t domain, const 
     return rep.status;
 }
 
-void dds_entity_delete(dds_entity_t e)
+void dds_delete(dds_entity_t e)
 {
     struct reqhdr req;
     struct rephdr rep;

@@ -1,9 +1,16 @@
+/** @file
+ *
+ * @brief DDS C99 QoS API
+ *
+ * @todo add copyright header?
+ *
+ * This header file defines the public API of QoS and Policies in the
+ * VortexDDS C99 language binding.
+ */
 #ifndef DDS_QOS_H
 #define DDS_QOS_H
 
-/** @file qos.h
- *  @brief Vortex Lite QoS header
- */
+#include "os/os_public.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -184,7 +191,7 @@ OS_API void dds_qos_reset (dds_qos_t * __restrict qos);
  *   -# dst The pointer to the destination qos structure, where the content is to copied
  *   -# src The pointer to the source qos structure to be copied
  */
-OS_API void dds_qos_copy (dds_qos_t * __restrict dst, const dds_qos_t * __restrict src);
+OS_API dds_return_t dds_qos_copy (dds_qos_t * __restrict dst, const dds_qos_t * __restrict src);
 
 /**
  * Description : Copy the qos policies from source to destination, unless already set

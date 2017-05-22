@@ -20,18 +20,16 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef __VXWORKS__
+void os_stdlibInitialize(void);
+#endif
+
 #ifdef OSPL_VERSION
  #ifdef PIKEOS_POSIX
   #include <lwip/netdb.h>
  #else
-  #if ! defined (OSPL_VXWORKS653)
-   #include <netdb.h>
-  #endif
-  #if ! defined (VXWORKS_RTP) && ! defined (VXWORKS_55) && ! defined (OSPL_VXWORKS653)
-   #ifndef _WRS_KERNEL
-    #include <pwd.h>
-   #endif
-  #endif
+  #include <netdb.h>
  #endif
 #endif
 

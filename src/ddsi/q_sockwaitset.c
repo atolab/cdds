@@ -25,12 +25,10 @@
 
 #define WAITSET_DELTA 8
 
-#if defined (VXWORKS_RTP) || defined (_WRS_KERNEL)
-#include "pipeDrv.h"
-#include "ioLib.h"
-#ifdef VXWORKS_GTE_6
-#include "strings.h"
-#endif
+#ifdef __VXWORKS__
+#include <pipeDrv.h>
+#include <ioLib.h>
+#include <string.h>
 #include <selectLib.h>
 #define OSPL_PIPENAMESIZE 26
 #endif
@@ -303,15 +301,14 @@ fail:
 
 #else
 
-#ifndef VXWORKS_RTP
+#ifndef __VXWORKS__
 #if defined (AIX) || defined (__Lynx__) || defined (__QNX__)
 #include <fcntl.h>
-#else
-#if ! defined (_WRS_KERNEL) && ! defined(INTEGRITY)
+#elif ! defined(INTEGRITY)
 #include <sys/fcntl.h>
 #endif
-#endif
-#endif
+#endif /* __VXWORKS__ */
+
 #ifndef _WRS_KERNEL
 #include <sys/select.h>
 #endif

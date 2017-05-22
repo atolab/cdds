@@ -15,15 +15,7 @@
 #include "ddsi/q_thread.h"
 
 #ifdef _WRS_KERNEL
-
-#include "os_library.h"
-os_dynamicLoad_plugin *os_dynamicLibPlugin = &os_dynamicLibPluginImpl;
 char *os_environ[] = { NULL };
-struct os_librarySymbols os_staticLibraries[] =
-{
-  { NULL, (os_entryPoint[]) { {NULL, NULL } } }
-};
-
 #endif
 
 struct q_globals gv;
@@ -31,7 +23,6 @@ struct q_globals gv;
 dds_globals dds_global =
 {
   DDS_DOMAIN_DEFAULT, OS_ATOMIC_UINT32_INIT (0),
-  { OS_ATOMIC_UINT32_INIT (0), OS_ATOMIC_UINT32_INIT (0), OS_ATOMIC_UINT32_INIT (0), OS_ATOMIC_UINT32_INIT (0), OS_ATOMIC_UINT32_INIT (0), OS_ATOMIC_UINT32_INIT (0) },
   NULL, NULL, NULL, NULL
 };
 
@@ -99,9 +90,10 @@ static void dds_set_report_level (void)
   }
 }
 
-extern int dds_init (int argc, char ** argv)
+extern int dds_init ()
 {
   const char * uri;
+  char tmp[50];
 
   if (os_atomic_inc32_nv (&dds_global.m_init_count) > 1)
   {
@@ -134,11 +126,8 @@ extern int dds_init (int argc, char ** argv)
   }
   dds_set_report_level ();
 
-  if (argc)
-  {
-    char * tmp = strrchr (argv[0], '/');
-    dds_init_exe = dds_string_dup (tmp ? ++tmp : argv[0]);
-  }
+  os_procGetProcessName(tmp, sizeof(tmp));
+  dds_init_exe = dds_string_dup (tmp);
 
   return DDS_RETCODE_OK;
 }
@@ -164,7 +153,7 @@ extern int dds_init_impl (dds_domainid_t domain)
     return DDS_RETCODE_OK;
   }
 
-  /* If domain not set check envirionment variable */
+  /* If domain not set check environment variable */
 
   if (domain == DDS_DOMAIN_DEFAULT)
   {
@@ -257,5 +246,6 @@ extern void dds_fini (void)
     os_osExit ();
     dds_string_free (dds_init_exe);
     dds_sleepfor (DDS_MSECS (500));
+    dds_global.m_default_domain = DDS_DOMAIN_DEFAULT;
   }
 }

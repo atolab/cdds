@@ -32,13 +32,13 @@
 #endif
 #endif
 
-#if defined (__linux) || defined (__sun) || defined (__APPLE__) || defined (INTEGRITY) || defined (AIX) || defined (OS_RTEMS_DEFS_H) || defined (VXWORKS_RTP) || defined (__Lynx__) || defined (_WRS_KERNEL) || defined (__linux__) || defined (OS_QNX_DEFS_H)
+#if defined (__linux) || defined (__sun) || defined (__APPLE__) || defined (INTEGRITY) || defined (AIX) || defined (OS_RTEMS_DEFS_H) || defined (__VXWORKS__) || defined (__Lynx__) || defined (__linux__) || defined (OS_QNX_DEFS_H)
 #define SYSDEPS_HAVE_MSGHDR 1
 #define SYSDEPS_HAVE_RECVMSG 1
 #define SYSDEPS_HAVE_SENDMSG 1
 #endif
 
-#if defined (__linux) || defined (__sun) || defined (__APPLE__) || defined (INTEGRITY) || defined (AIX) || defined (OS_RTEMS_DEFS_H) || defined (VXWORKS_RTP) || defined (_WRS_KERNEL) || defined (__linux__) || defined (OS_QNX_DEFS_H)
+#if defined (__linux) || defined (__sun) || defined (__APPLE__) || defined (INTEGRITY) || defined (AIX) || defined (OS_RTEMS_DEFS_H) || defined (__VXWORKS__) || defined (__linux__) || defined (OS_QNX_DEFS_H)
 #define SYSDEPS_HAVE_IOVEC 1
 #endif
 

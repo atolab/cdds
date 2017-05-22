@@ -11,14 +11,11 @@
 extern "C" {
 #endif
 
-int dds_qos_validate (dds_entity_kind_t kind, const dds_qos_t * qos);
+bool validate_octetseq (const nn_octetseq_t* seq);
+bool validate_reliability_qospolicy (const nn_reliability_qospolicy_t * reliability);
+bool validate_deadline_and_timebased_filter (const nn_duration_t deadline, const nn_duration_t minimum_separation);
 
-/* required by CPP to set defaults */
-
-DDS_EXPORT bool dds_reader_qos_validate (const dds_qos_t * qos);
-DDS_EXPORT bool dds_writer_qos_validate (const dds_qos_t * qos);
-DDS_EXPORT bool dds_pubsub_qos_validate (const dds_qos_t * qos);
-DDS_EXPORT bool dds_topic_qos_validate (const dds_qos_t * qos);
+bool dds_qos_validate_common (const dds_qos_t *qos);
 
 #if defined (__cplusplus)
 }

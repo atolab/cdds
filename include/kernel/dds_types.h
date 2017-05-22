@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 
+
 struct dds_domain;
 struct dds_entity;
 struct dds_participant;
@@ -42,6 +43,8 @@ struct rhc;
 #define DDS_MOD_THREAD 0x0c00
 #define DDS_MOD_INST 0x0d00
 #define DDS_MOD_PPANT 0x0e00
+#define DDS_MOD_ENTITY 0x0f00
+#define DDS_MOD_TOPIC 0x1000
 
 /* Minor numbers for error codes */
 
@@ -76,7 +79,7 @@ struct rhc;
 #define DDS_IS_PP_OR_PUB 0x00020000 /* Is a participant or publisher */
 #define DDS_IS_RD_OR_WR  0x00040000 /* Is a reader or writer */
 #define DDS_IS_MAPPED    0x00080000 /* Is mapped via guid to DDSI type */
-#define DDS_HAS_SCOND    0x00100000 /* Has an associated status condition */
+#define DDS_HAS_STATUS   0x00100000 /* Has an associated status condition */
 
 /*
   Have separate kinds for entity and condition, matching DDS type
@@ -86,11 +89,11 @@ struct rhc;
 
 typedef enum dds_entity_kind
 {
-  DDS_TYPE_TOPIC       = 0x00000000 | DDS_HAS_SCOND,
+  DDS_TYPE_TOPIC       = 0x00000000 | DDS_HAS_STATUS,
   DDS_TYPE_PARTICIPANT = 0x00000001 | DDS_IS_MAPPED | DDS_IS_PP_OR_SUB | DDS_IS_PP_OR_PUB,
-  DDS_TYPE_READER      = 0x00000002 | DDS_IS_MAPPED | DDS_HAS_SCOND | DDS_IS_RD_OR_WR,
-  DDS_TYPE_WRITER      = 0x00000003 | DDS_IS_MAPPED | DDS_HAS_SCOND | DDS_IS_RD_OR_WR,
-  DDS_TYPE_SUBSCRIBER  = 0x00000004 | DDS_IS_PP_OR_SUB | DDS_HAS_SCOND,
+  DDS_TYPE_READER      = 0x00000002 | DDS_IS_MAPPED | DDS_HAS_STATUS | DDS_IS_RD_OR_WR,
+  DDS_TYPE_WRITER      = 0x00000003 | DDS_IS_MAPPED | DDS_HAS_STATUS | DDS_IS_RD_OR_WR,
+  DDS_TYPE_SUBSCRIBER  = 0x00000004 | DDS_IS_PP_OR_SUB | DDS_HAS_STATUS,
   DDS_TYPE_PUBLISHER   = 0x00000005 | DDS_IS_PP_OR_PUB
 }
 dds_entity_kind_t;
@@ -142,7 +145,6 @@ typedef struct dds_condition
   uint32_t m_trigger;
   dds_ws_cond_link * m_waitsets;
   os_mutex * m_lock;
-  void * m_cpp;
 }
 dds_condition;
 
@@ -170,8 +172,6 @@ typedef struct dds_readcond
 }
 dds_readcond;
 
-typedef struct dds_condition dds_statuscond;
-
 typedef struct dds_guardcond
 {
   dds_condition m_cond;
@@ -179,12 +179,29 @@ typedef struct dds_guardcond
 }
 dds_guardcond;
 
+/* The listener struct. */
+
+typedef struct c99_listener {
+    dds_on_inconsistent_topic_fn on_inconsistent_topic;
+    dds_on_liveliness_lost_fn on_liveliness_lost;
+    dds_on_offered_deadline_missed_fn on_offered_deadline_missed;
+    dds_on_offered_incompatible_qos_fn on_offered_incompatible_qos;
+    dds_on_data_on_readers_fn on_data_on_readers;
+    dds_on_sample_lost_fn on_sample_lost;
+    dds_on_data_available_fn on_data_available;
+    dds_on_sample_rejected_fn on_sample_rejected;
+    dds_on_liveliness_changed_fn on_liveliness_changed;
+    dds_on_requested_deadline_missed_fn on_requested_deadline_missed;
+    dds_on_requested_incompatible_qos_fn on_requested_incompatible_qos;
+    dds_on_publication_matched_fn on_publication_matched;
+    dds_on_subscription_matched_fn on_subscription_matched;
+    void *arg;
+} c99_listener_t;
+
 /* Entity flag values */
 
-#define DDS_ENTITY_IN_USE 0x0001
-#define DDS_ENTITY_DELETED 0x0002
-#define DDS_ENTITY_WAITING 0x0004
-#define DDS_ENTITY_FAILED 0x0008
+#define DDS_ENTITY_DELETED      0x0002
+#define DDS_ENTITY_ENABLED      0x0004
 #define DDS_ENTITY_DDSI_DELETED 0x0010
 
 typedef struct dds_domain
@@ -196,24 +213,38 @@ typedef struct dds_domain
 }
 dds_domain;
 
+typedef struct dds_entity_deriver {
+    void (*delete)(dds_entity_t e, bool recurse);
+    dds_return_t (*set_qos)(dds_entity_t e, const dds_qos_t *qos, bool enabled);
+    dds_return_t (*validate_status)(uint32_t mask);
+    dds_return_t (*propagate_status)(dds_entity_t e, uint32_t mask, bool set);
+    dds_return_t (*get_instance_hdl)(dds_entity_t e, dds_instance_handle_t *i);
+}
+dds_entity_deriver;
+
+
 typedef struct dds_entity
 {
   dds_entity_kind_t m_kind;
+  dds_entity_deriver m_deriver;
   uint32_t m_refc;
   struct dds_entity * m_next;
   struct dds_entity * m_parent;
   struct dds_entity * m_children;
-  struct dds_participant * m_pp;
+  struct dds_entity * m_participant;
   struct dds_domain * m_domain;
-  dds_statuscond * m_scond;
+  /* TODO: dds_condition will become an entity, so entity shouldn't have a condition!!! circular dependency!!! BAD!!! */
+  dds_condition * m_status;
   dds_qos_t * m_qos;
-  void * m_cpp;
   dds_domainid_t m_domainid;
   nn_guid_t m_guid;
   uint32_t m_status_enable;
   uint32_t m_flags;
+  uint32_t m_cb_waiting;
+  uint32_t m_cb_count;
   os_mutex m_mutex;
   os_cond m_cond;
+  c99_listener_t m_listener;
 }
 dds_entity;
 
@@ -222,7 +253,6 @@ extern const ut_avlTreedef_t dds_topictree_def;
 typedef struct dds_participant
 {
   struct dds_entity m_entity;
-  dds_participantlistener_t m_listener;
   struct dds_entity * m_dur_reader;
   struct dds_entity * m_dur_writer;
 }
@@ -233,7 +263,6 @@ typedef struct dds_reader
   struct dds_entity m_entity;
   const struct dds_topic * m_topic;
   struct reader * m_rd;
-  dds_readerlistener_t m_listener;
   bool m_data_on_readers;
   bool m_loan_out;
   char * m_loan;
@@ -256,7 +285,6 @@ typedef struct dds_writer
   const struct dds_topic * m_topic;
   struct nn_xpack * m_xp;
   struct writer * m_wr;
-  dds_writerlistener_t m_listener;
   os_mutex m_call_lock;
 
   /* Status metrics */
@@ -271,14 +299,12 @@ dds_writer;
 typedef struct dds_subscriber
 {
   struct dds_entity m_entity;
-  dds_subscriberlistener_t m_listener;
 }
 dds_subscriber;
 
 typedef struct dds_publisher
 {
   struct dds_entity m_entity;
-  dds_publisherlistener_t m_listener;
 }
 dds_publisher;
 
@@ -287,7 +313,6 @@ typedef struct dds_topic
   struct dds_entity m_entity;
   struct sertopic * m_stopic;
   const dds_topic_descriptor_t * m_descriptor;
-  dds_topiclistener_t m_listener;
 
   /* Status metrics */
 
@@ -308,7 +333,6 @@ typedef struct dds_globals
 {
   dds_domainid_t m_default_domain;
   os_atomic_uint32_t m_init_count;
-  os_atomic_uint32_t m_entity_count[DDS_ENTITY_NUM];
   void (*m_dur_reader) (struct dds_reader * reader, struct rhc * rhc);
   int (*m_dur_wait) (struct dds_reader * reader, dds_duration_t timeout);
   void (*m_dur_init) (void);
