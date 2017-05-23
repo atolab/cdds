@@ -40,6 +40,17 @@ ddsi_tran_factory_t ddsi_factory_find (const char * type)
   return factory;
 }
 
+void ddsi_tran_factories_fini (void)
+{
+    ddsi_tran_factory_t factory;
+
+    while ((factory = ddsi_tran_factories) != NULL) {
+        ddsi_tran_factories = ddsi_tran_factories->m_factory;
+
+        ddsi_factory_free(factory);
+    }
+}
+
 void ddsi_factory_free (ddsi_tran_factory_t factory)
 {
   if (factory && factory->m_free_fn)

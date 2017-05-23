@@ -1179,7 +1179,7 @@ err_set_recvips:
       os_free (gv.interfaces[i].name);
   }
 err_find_own_ip:
-  ddsi_factory_free (gv.m_factory);
+    ddsi_tran_factories_fini ();
 err_udp_tcp_init:
   if (config.tp_enable)
     ut_thread_pool_free (gv.thread_pool);
@@ -1404,7 +1404,7 @@ void rtps_term (void)
 
   /* Not freeing gv.tev_conn: it aliases data_conn_uc */
 
-  ddsi_factory_free (gv.m_factory);
+  ddsi_tran_factories_fini ();
 
   if (gv.pcap_fp)
   {
