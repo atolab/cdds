@@ -5,6 +5,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 project(VortexDDS)
 
 set(CMAKE_C_STANDARD 99)
+if(CMAKE_SYSTEM_NAME STREQUAL "VxWorks")
+  add_definitions(-std=c99)
+endif()
 
 include(AnalyzeBuild)
 # Include Coverage before CTest so that COVERAGE_COMMAND can be modified
