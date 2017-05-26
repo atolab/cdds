@@ -287,7 +287,7 @@ os_sockaddrInetStringToAddress(const char *addressString,
         /* Try and parse as an IPv6 address */
 #ifdef WIN32
         int sslen = sizeof(os_sockaddr_in6);
-        if (WSAStringToAddress((LPTSTR) addressString, AF_INET6, NULL, (os_sockaddr*)addressOut, &sslen) == 0) //CHAM-91
+        if (WSAStringToAddress((LPTSTR) addressString, AF_INET6, NULL, (os_sockaddr*)addressOut, &sslen) == 0)
         {
             result = true;
         }
@@ -348,7 +348,7 @@ os_sockaddrStringToAddress(const char *addressString,
         sslen = sizeof(os_sockaddr_in6);
         memset(addressOut, 0, (unsigned) sslen);
 #ifdef WIN32
-        if (WSAStringToAddress((LPTSTR) addressString, AF_INET6, NULL, (os_sockaddr*)addressOut, &sslen) == 0) //CHAM-91
+        if (WSAStringToAddress((LPTSTR) addressString, AF_INET6, NULL, (os_sockaddr*)addressOut, &sslen) == 0)
         {
             result = true;
         }
