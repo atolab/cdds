@@ -248,14 +248,14 @@ os_stat(
 struct os_stat *buf)
 {
         os_result result;
-        struct _stat _buf;
+        struct _stat32 _buf;
         int r;
 
-        r = _stat(path, &_buf);
+        r = _stat32(path, &_buf);
         if (r == 0) {
                 buf->stat_mode = _buf.st_mode;
                 buf->stat_size = _buf.st_size;
-                buf->stat_mtime.tv_sec = (os_timeSec)_buf.st_mtime; /* Type casting is done for the warning of conversion from '__time64_t' to 'os_timeSec', which may cause possible loss of data */
+                buf->stat_mtime.tv_sec = _buf.st_mtime;
                 buf->stat_mtime.tv_nsec = 0;
                 result = os_resultSuccess;
         }
