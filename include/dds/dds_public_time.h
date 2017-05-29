@@ -16,10 +16,14 @@
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
+#ifdef _WIN32_DLL_
+  #if defined VDDS_BUILD
+    #define OS_API OS_API_EXPORT
+  #else
+    #define OS_API OS_API_IMPORT
+  #endif
 #else
-#define OS_API OS_API_IMPORT
+  #define OS_API extern
 #endif
 
 /*

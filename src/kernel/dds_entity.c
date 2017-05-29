@@ -382,7 +382,7 @@ dds_return_t dds_get_children(dds_entity_t e, dds_entity_t *children, size_t siz
             ret = 0;
             dds_entity* iter = e->m_children;
             while (iter) {
-                if (ret < size) {
+                if ((size_t)ret < size) { /*To fix the warning of signed/unsigned mismatch, type casting is done for the variable 'ret'*/
                     children[ret] = (dds_entity_t)iter;
                 }
                 ret++;
