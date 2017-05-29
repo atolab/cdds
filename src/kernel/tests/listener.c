@@ -1,7 +1,5 @@
-#include "CUnit/CUnit.h"
-#include "CUnit/Automated.h"
-
 #include "dds.h"
+#include "cunitrunner/runner.h"
 
 #define ASSERT_CALLBACK_EQUAL(fntype, listener, expected) \
     do { \
@@ -170,54 +168,40 @@ void test_getters_setters(void)
 
 int main (int argc, char **argv)
 {
-    CU_pSuite pSuite = NULL;
-
-    /* initialize the CUnit test registry */
-    if (CUE_SUCCESS != CU_initialize_registry()) {
-        return CU_get_error();
-    }
+    CU_pSuite pSuite;
+	
+	if(runner_init(argc, argv)){
+		goto err_init;
+	}	   
 
     /* add a suite to the registry */
-    pSuite = CU_add_suite("C99::Listener test suite", NULL, NULL);
-    if (NULL == pSuite) {
-        CU_cleanup_registry();
-        return CU_get_error();
+    if((pSuite = CU_add_suite("C99::Listener test suite", NULL, NULL)) == NULL){
+       goto err;
     }
 
     /* add test cases to the test suite */
-    if (NULL == CU_add_test(pSuite, "Create and delete a dds_listener_t instance", test_create_and_delete)) {
-        CU_cleanup_registry();
-        return CU_get_error();
+    if (CU_add_test(pSuite, "Create and delete a dds_listener_t instance", test_create_and_delete) == NULL) {
+        goto err;
     }
 
-    if (NULL == CU_add_test(pSuite, "Reset a dds_listener_t instance to its default values", test_reset)) {
-        CU_cleanup_registry();
-        return CU_get_error();
+    if (CU_add_test(pSuite, "Reset a dds_listener_t instance to its default values", test_reset) == NULL) {
+        goto err;
     }
 
-    if (NULL == CU_add_test(pSuite, "Copy a dds_listener_t instance", test_copy)) {
-        CU_cleanup_registry();
-        return CU_get_error();
+    if (CU_add_test(pSuite, "Copy a dds_listener_t instance", test_copy) == NULL) {
+        goto err;
     }
 
-    if (NULL == CU_add_test(pSuite, "Merge two dds_listener_t instances", test_merge)) {
-        CU_cleanup_registry();
-        return CU_get_error();
+    if (CU_add_test(pSuite, "Merge two dds_listener_t instances", test_merge) == NULL) {
+        goto err;
     }
 
-    if (NULL == CU_add_test(pSuite, "Get/Set dds_listener_t callbacks", test_getters_setters)) {
-        CU_cleanup_registry();
-        return CU_get_error();
+    if (CU_add_test(pSuite, "Get/Set dds_listener_t callbacks", test_getters_setters) == NULL) {
+        goto err;
     }
-
-    /* Run all tests using the CUnit Automated interface */
-    CU_set_output_filename ("cunit");
-    CU_list_tests_to_file ();
-    CU_automated_run_tests ();
-
-    /* cleanup registry */
-    CU_cleanup_registry();
-
-    /* ctest requires the test executable to return 0 when succuss, non-null when fail */
+    runner_run();
+err:
+    runner_fini();
+err_init:
     return CU_get_error();
 }
