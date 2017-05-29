@@ -280,35 +280,35 @@ os_sockaddrSameSubnet(const os_sockaddr* thisSock,
 */
 bool
 os_sockaddrStringToAddress(const char *addressString,
-                           os_sockaddr* addressOut,
+                           os_sockaddr *addressOut,
                            bool isIPv4)
 {
-    bool result = false;
+    bool result;
+    int ret;
     os_sockaddr_storage buf;
 
     assert(addressOut);
 
-    if (strchr(addressString, ':') == NULL) {
-        if (OS_INET_PTON(
-            AF_INET, addressString, ((os_sockaddr *)&buf)) == 1)
-        {
-            (void)memset(addressOut, 0, sizeof(os_sockaddr_in));
-            ((os_sockaddr_in *)addressOut)->sin_family = AF_INET;
-            ((os_sockaddr_in *)addressOut)->sin_addr =
-                 ((os_sockaddr_in *)&buf)->sin_addr;
-            result = true;
-        }
+    ret = OS_INET_PTON(AF_INET, addressString, ((os_sockaddr *)&buf));
+    if (ret == 1) {
+        (void)memset(addressOut, 0, sizeof(os_sockaddr_in));
+        ((os_sockaddr_in *)addressOut)->sin_family = AF_INET;
+        ((os_sockaddr_in *)addressOut)->sin_addr =
+            ((os_sockaddr_in *)&buf)->sin_addr;
     } else {
-        if (OS_INET_PTON(
-            AF_INET6, addressString, ((os_sockaddr *)&buf)))
-        {
+        assert(ret == 0);
+#if (OS_SOCKET_HAS_IPV6 == 1)
+        ret = OS_INET_PTON(AF_INET6, addressString, ((os_sockaddr *)&buf));
+        if (ret == 1) {
             (void)memset(addressOut, 0, sizeof(os_sockaddr_in6));
             ((os_sockaddr_in6 *)addressOut)->sin6_family = AF_INET6;
             ((os_sockaddr_in6 *)addressOut)->sin6_addr =
                 ((os_sockaddr_in6 *)&buf)->sin6_addr;
-            result = true;
         }
+#endif
     }
+
+    result = (ret == 1);
 
     if (!result)
     {
@@ -489,52 +489,30 @@ os_sockaddrGetPort(
 }
 
 
-char*
-os_sockaddrAddressToString(const os_sockaddr* sa,
-                            char* buffer, size_t buflen)
+char *
+os_sockaddrAddressToString(
+    const os_sockaddr* sa,
+    char* buffer,
+    size_t buflen)
 {
-#if defined (WIN32) || (WINCE)
-    socklen_t structLength;
-    int errorCode;
-
-    strncpy(buffer, "Unknown address family", buflen);
-
-    structLength = (sa->sa_family == AF_INET6 ? sizeof (os_sockaddr_in6) : sizeof (os_sockaddr_in));
-    if (errorCode = getnameinfo(sa,
-                   structLength,
-                   buffer,
-                   (DWORD)buflen,
-                   NULL,
-                   0,
-                   NI_NUMERICHOST))
-    {
-                char errmsg[1024];
-                int errNo = os_getErrno();
-                (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
-
-        OS_REPORT(OS_ERROR,"os_sockaddrAddressToString", 0,
-                "error calling getnameinfo to stringify network address. Error: %d (%s)",
-                errNo, errmsg);
-    }
-#else
     assert (buflen <= 0x7fffffff);
+
     switch(sa->sa_family) {
         case AF_INET:
             OS_INET_NTOP(AF_INET, &(((struct sockaddr_in *)sa)->sin_addr),
-                    buffer, (socklen_t) buflen);
+                    buffer, (socklen_t)buflen);
             break;
-
 #if (OS_SOCKET_HAS_IPV6 == 1)
         case AF_INET6:
             OS_INET_NTOP(AF_INET6, &(((os_sockaddr_in6 *)sa)->sin6_addr),
-                    buffer, (socklen_t) buflen);
+                    buffer, (socklen_t)buflen);
             break;
 #endif
-
         default:
             snprintf(buffer, buflen, "Unknown address family");
+            break;
     }
-#endif
+
     return buffer;
 }
 
