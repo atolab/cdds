@@ -375,7 +375,7 @@ dds_return_t dds_get_children(dds_entity_t e, dds_entity_t *children, size_t siz
     /* TODO: CHAM-104: Return more different errors when dds_entity_t became an handle iso a pointer (see header). */
     dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, 0);
     if (e > 0) {
-        if (((children != NULL) && (size  > 0)) ||
+        if (((children != NULL) && (size  > 0) && (size < INT32_MAX)) ||
             ((children == NULL) && (size == 0)) ){
 
             os_mutexLock(&e->m_mutex);
