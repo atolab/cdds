@@ -17,8 +17,7 @@ find_package(Criterion)
 #
 function(add_dds_test NAME SUITE)
     if (((${SUITE} STREQUAL Criterion) AND (CRITERION_FOUND)) OR
-        ((${SUITE} STREQUAL cunitrunner)) )
-
+        ((${SUITE} STREQUAL cunitrunner)))
         set(TEST_NAME "c99_${NAME}")
         add_executable(${NAME} ${ARGN})
         target_link_libraries(${NAME} Vortex::DDSC99 ${SUITE})
@@ -31,7 +30,7 @@ endfunction()
 #################################################################################
 # The tests
 #################################################################################
-add_dds_test(basic                    cunitrunner          basic.c)
+add_dds_test(basic                    cunitrunner    basic.c)
 add_dds_test(entity_api               Criterion      entity_api.c)
-add_dds_test(listener                 cunitrunner          listener.c)
+add_dds_test(listener                 cunitrunner    listener.c)
 add_dds_test(participant_creation     Criterion      participant_creation.c)

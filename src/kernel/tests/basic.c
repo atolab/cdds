@@ -1,8 +1,7 @@
 #include "dds.h"
 #include "cunitrunner/runner.h"
 
-void test(void) 
-{
+void test(void) {
 
   dds_entity_t participant;
 
@@ -17,24 +16,23 @@ void test(void)
 int main (int argc, char *argv[])
 {
     CU_pSuite pSuite;
-    
-	if(runner_init(argc, argv)){
-		goto err_init;
-	}
 
-	/*add a suite to the registry*/
-	if((pSuite = CU_add_suite("Basic C99 interface test", NULL, NULL)) == NULL){
-		goto err;
-	}
+    if(runner_init(argc, argv)){
+        goto err_init;
+    }
 
-	/*add test cases to the test suite*/
-	if(CU_add_test(pSuite, "C99 Interface",test) == NULL) {
-		goto err;
-	}
-	runner_run();
+    /*add a suite to the registry*/
+    if((pSuite = CU_add_suite("Basic C99 interface test", NULL, NULL)) == NULL){
+        goto err;
+    }
+
+    /*add test cases to the test suite*/
+    if(CU_add_test(pSuite, "C99 Interface",test) == NULL) {
+        goto err;
+    }
+    runner_run();
 err:
-	runner_fini();
+    runner_fini();
 err_init:
-	return CU_get_error();	    
+    return CU_get_error();
 }
-

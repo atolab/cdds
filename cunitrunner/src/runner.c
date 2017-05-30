@@ -54,7 +54,11 @@ CU_ErrorCode runner_init (int argc, char* argv[])
                 }
                 case 'r':
                 {
-                    runner.results = argv[++i];
+                    if(i +1 < argc){
+                        runner.results = argv[++i];
+                    } else {
+                        CU_set_error(256);
+                    }
                     break;
                 }
                 default:
