@@ -170,12 +170,12 @@ int main (int argc, char **argv)
 {
     CU_pSuite pSuite;
 
-    if(runner_init(argc, argv)){
+    if (runner_init(argc, argv)){
         goto err_init;
     }
 
     /* add a suite to the registry */
-    if((pSuite = CU_add_suite("C99::Listener test suite", NULL, NULL)) == NULL){
+    if ((pSuite = CU_add_suite("C99::Listener test suite", NULL, NULL)) == NULL){
        goto err;
     }
 

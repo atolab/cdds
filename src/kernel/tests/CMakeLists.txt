@@ -21,7 +21,7 @@ function(add_dds_test NAME SUITE)
         set(TEST_NAME "c99_${NAME}")
         add_executable(${NAME} ${ARGN})
         target_link_libraries(${NAME} Vortex::DDSC99 ${SUITE})
-        
+
         add_test(${TEST_NAME} ${NAME})
     endif()
 endfunction()
