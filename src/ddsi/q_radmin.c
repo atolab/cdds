@@ -1067,22 +1067,12 @@ static struct nn_rsample *defrag_rsample_new (struct nn_rdata *rdata, const stru
       return NULL;
     sentinel->first = sentinel->last = NULL;
     sentinel->min = sentinel->maxp1 = 0;
-    /* The return value is allowed be NULL, but the path has
-     * been initialized when that's the case. So, ignore the
-     * return value and continue inserting this node. */
-    OSPL_DIAG_OFF(unused-result)
     ut_avlLookupIPath (&rsample_defrag_fragtree_treedef, &dfsample->fragtree, &sentinel->min, &ivpath);
-    OSPL_DIAG_ON(unused-result)
     ut_avlInsertIPath (&rsample_defrag_fragtree_treedef, &dfsample->fragtree, sentinel, &ivpath);
   }
 
-  /* The return value is allowed be NULL, but the path has
-   * been initialized when that's the case. So, ignore the
-   * return value and continue adding this node. */
-  OSPL_DIAG_OFF(unused-result)
   /* add an interval for the first received fragment */
   ut_avlLookupIPath (&rsample_defrag_fragtree_treedef, &dfsample->fragtree, &rdata->min, &ivpath);
-  OSPL_DIAG_ON(unused-result)
   defrag_rsample_addiv (dfsample, rdata, &ivpath);
   return rsample;
 }
@@ -1402,12 +1392,7 @@ struct nn_rsample *nn_defrag_rsample (struct nn_defrag *defrag, struct nn_rdata 
        child of the old maximum node */
     /* FIXME: MERGE THIS ONE WITH THE NEXT */
     TRACE_RADMIN (("  new max sample\n"));
-    /* The return value is allowed be NULL, but the path has
-     * been initialized when that's the case. So, ignore the
-     * return value and continue inserting this node. */
-    OSPL_DIAG_OFF(unused-result)
     ut_avlLookupIPath (&defrag_sampletree_treedef, &defrag->sampletree, &sampleinfo->seq, &path);
-    OSPL_DIAG_ON(unused-result)
     if ((sample = defrag_rsample_new (rdata, sampleinfo)) == NULL)
       return NULL;
     ut_avlInsertIPath (&defrag_sampletree_treedef, &defrag->sampletree, sample, &path);

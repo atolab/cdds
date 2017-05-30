@@ -413,12 +413,7 @@ void ut_avlInsert (_In_ const ut_avlTreedef_t *td, _Inout_ ut_avlTree_t *tree, _
     } else {
         key = LOAD_DIRKEY (node, td);
     }
-    /* The return value is allowed be NULL, but the path has
-     * been initialized when that's the case. So, ignore the
-     * return value and continue inserting this node. */
-    OSPL_DIAG_OFF(unused-result)
     ut_avlLookupIPath (td, tree, key, &path);
-    OSPL_DIAG_ON(unused-result)
     ut_avlInsertIPath (td, tree, vnode, &path);
 }
 
