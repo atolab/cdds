@@ -426,7 +426,7 @@ void dds_stream_write_string (dds_stream_t * os, const char * val)
 
   if (val)
   {
-    size += (uint32_t)strlen (val); /* Type casting is done for the warning of conversion from 'size_t' to 'uint32_t', which may cause possible loss of data */
+    size += (uint32_t)strlen (val);
   }
 
   DDS_OS_PUT4 (os, size, uint32_t);

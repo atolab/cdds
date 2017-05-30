@@ -219,9 +219,9 @@ extern "C" {
     os_sockSendto(
             os_socket s,
             const void *msg,
-            size_t len,
+            _In_range_(0, INT_MAX) size_t len,
             const struct sockaddr *to,
-            size_t tolen,
+            _In_range_(0, INT_MAX) size_t tolen,
             size_t *bytesSent);
 
     OS_API os_result

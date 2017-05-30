@@ -367,7 +367,7 @@ static bool ddsi_tcp_select (os_socket sock, bool read, size_t pos)
   TRACE_TCP (("%s blocked %s: sock %d\n", ddsi_name, read ? "read" : "write", (int) sock));
   do
   {
-    ret = os_sockSelect ((int32_t)sock + 1, rdset, wrset, NULL, &timeout); /* The variable "sock" with os_socket type causes the possible loss of data. So type casting done */
+    ret = os_sockSelect (sock + 1, rdset, wrset, NULL, &timeout);
   }
   while (ret == -1 && os_getErrno () == os_sockEINTR);
 

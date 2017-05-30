@@ -13,7 +13,7 @@
 #include "os/os_public.h"
 
 /* TODO: Move to appropriate location */
-typedef _Return_type_success_(return >= 0) uintptr_t dds_return_t;
+typedef _Return_type_success_(return >= 0) intptr_t dds_return_t;
 
 /* Sub components */
 
@@ -694,8 +694,7 @@ DDS_EXPORT dds_entity_t dds_get_participant (_In_ dds_entity_t entity);
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_children(_In_ dds_entity_t entity, _Out_opt_ dds_entity_t *children, _In_ size_t size);
-
+DDS_EXPORT dds_return_t dds_get_children(_In_ dds_entity_t entity, _Out_opt_ dds_entity_t *children, _In_ _In_range_(0, INTPTR_MAX) size_t size);
 
 /**
  * @brief Get the domain id to which this entity is attached.

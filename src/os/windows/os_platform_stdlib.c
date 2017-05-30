@@ -493,7 +493,7 @@ snprintf(
 ssize_t os_write(
         _In_ int fd,
         _In_reads_bytes_(count) void const* buf,
-        _In_ size_t count)
+        _In_ _In_range_(0, UINT_MAX) size_t count)
 {
-        return _write(fd, buf, (unsigned int)count); /* Type casting is done for the warning of conversion from 'size_t' to 'unsigned int', which may cause possible loss of data */
+        return _write(fd, buf, (unsigned int)count);
 }
