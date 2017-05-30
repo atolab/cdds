@@ -353,13 +353,13 @@ static const ut_avlNode_t *lookup_path (_In_ const ut_avlTreedef_t *td, const ut
     return cursor;
 }
 
-_Check_return_ _Ret_maybenull_ void *ut_avlLookupDPath (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key, _Out_ ut_avlDPath_t *path)
+_Ret_maybenull_ void *ut_avlLookupDPath (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key, _Out_ ut_avlDPath_t *path)
 {
     const ut_avlNode_t *node = lookup_path (td, tree, key, &path->p);
     return (void *) conode_from_node (td, node);
 }
 
-_Check_return_ _Ret_maybenull_ void *ut_avlLookupIPath (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key, _Out_ ut_avlIPath_t *path)
+_Ret_maybenull_ void *ut_avlLookupIPath (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key, _Out_ ut_avlIPath_t *path)
 {
     const ut_avlNode_t *node = lookup_path (td, tree, key, &path->p);
     /* If no duplicates allowed, path may not be used for insertion,
@@ -990,12 +990,12 @@ _Check_return_ _Ret_maybenull_ void *ut_avlCLookup (_In_ const ut_avlCTreedef_t 
     return ut_avlLookup (&td->t, &tree->t, key);
 }
 
-_Check_return_ _Ret_maybenull_ void *ut_avlCLookupIPath (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key, _Out_ ut_avlIPath_t *path)
+_Ret_maybenull_ void *ut_avlCLookupIPath (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key, _Out_ ut_avlIPath_t *path)
 {
     return ut_avlLookupIPath (&td->t, &tree->t, key, path);
 }
 
-_Check_return_ _Ret_maybenull_ void *ut_avlCLookupDPath (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key, _Out_ ut_avlDPath_t *path)
+_Ret_maybenull_ void *ut_avlCLookupDPath (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree, _In_ const void *key, _Out_ ut_avlDPath_t *path)
 {
     return ut_avlLookupDPath (&td->t, &tree->t, key, path);
 }
