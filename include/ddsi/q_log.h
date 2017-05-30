@@ -59,8 +59,8 @@ void logbuf_init (logbuf_t lb);
 void logbuf_free (logbuf_t lb);
 
 int nn_vlog (logcat_t cat, const char *fmt, va_list ap);
-OS_API int nn_log (logcat_t cat, const char *fmt, ...) __attribute_format__((printf,2,3));
-OS_API int nn_trace (const char *fmt, ...) __attribute_format__((printf,1,2));
+OS_API int nn_log (_In_ logcat_t cat, _In_z_ _Printf_format_string_ const char *fmt, ...) __attribute_format__((printf,2,3));
+OS_API int nn_trace (_In_z_ _Printf_format_string_ const char *fmt, ...) __attribute_format__((printf,1,2));
 void nn_log_set_tstamp (nn_wctime_t tnow);
 
 #define TRACE(args) ((config.enabled_logcats & LC_TRACE) ? (nn_trace args) : 0)

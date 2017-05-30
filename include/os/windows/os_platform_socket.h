@@ -62,6 +62,7 @@ extern "C" {
 #define os_sockECONNRESET   WSAECONNRESET   /* Connection reset by peer */
 
     typedef SOCKET os_socket;
+    #define PRIsock PRIuPTR
 #define OS_SOCKET_INVALID (-1)
 
 	void os_socketModuleInit(void);

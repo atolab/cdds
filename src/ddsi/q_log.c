@@ -147,7 +147,7 @@ int nn_vlog (logcat_t cat, const char *fmt, va_list ap)
   return 0;
 }
 
-int nn_log (logcat_t cat, const char *fmt, ...)
+int nn_log (_In_ logcat_t cat, _In_z_ _Printf_format_string_ const char *fmt, ...)
 {
   if (config.enabled_logcats & cat)
   {
@@ -164,7 +164,7 @@ int nn_log (logcat_t cat, const char *fmt, ...)
   return 0;
 }
 
-int nn_trace (const char *fmt, ...)
+int nn_trace (_In_z_ _Printf_format_string_ const char *fmt, ...)
 {
   if (config.enabled_logcats & LC_TRACE)
   {
