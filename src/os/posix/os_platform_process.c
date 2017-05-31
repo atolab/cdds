@@ -8,6 +8,15 @@
 #include "../snippets/code/os_posix_process.c"
 
 #define _OS_PROCESS_DEFAULT_NAME_LEN_ (512)
+
+void os_procAttrInit(_Out_ os_procAttr *procAttr)
+{
+    assert(procAttr != NULL);
+    procAttr->schedClass = OS_SCHED_DEFAULT;
+    procAttr->schedPriority = 0; //TODO: Proper scheduling default
+    procAttr->activeRedirect = 0;
+}
+
 int32_t
 os_procGetProcessName(
                       char *procName,

@@ -45,4 +45,5 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/dds
 
 # TODO: improve test inclusion.
 add_subdirectory(kernel/tests)
+add_subdirectory(os/tests)
 
