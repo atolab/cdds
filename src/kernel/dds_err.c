@@ -98,6 +98,7 @@ bool dds_err_check (int err, unsigned flags, const char * where)
   return (err >= 0);
 }
 
+
 static void dds_fail_default (const char * msg, const char * where)
 {
   fprintf (stderr, "Aborting Failure: %s %s\n", where, msg);
@@ -122,4 +123,32 @@ void dds_fail (const char * msg, const char * where)
   {
     (dds_fail_func) (msg, where);
   }
+}
+
+
+/* TEMPORY FUNCTION
+ * This function checks validity of entities
+ * Once handles are used and dds_entity_t is basically the same as dds_return_t this function is not needed anymore */
+bool dds_entity_check (_In_opt_ dds_entity_t e, _In_ unsigned flags, _In_z_ const char * where)
+{
+  if (e == NULL)
+  {
+    if (flags & (DDS_CHECK_REPORT | DDS_CHECK_FAIL))
+    {
+      char *msg = "Err invalid entity";
+       if (flags & DDS_CHECK_REPORT)
+      {
+        printf ("%s: %s\n", where, msg);
+      }
+      if (flags & DDS_CHECK_FAIL)
+      {
+        dds_fail (msg, where);
+      }
+    }
+    if (flags & DDS_CHECK_EXIT)
+    {
+      exit (-1);
+    }
+  }
+  return (e != NULL);
 }
