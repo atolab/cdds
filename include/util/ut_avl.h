@@ -263,7 +263,7 @@ OS_API void ut_avlFree (_In_ const ut_avlTreedef_t *td, _Inout_ _Post_invalid_ u
 OS_API void ut_avlFreeArg (_In_ const ut_avlTreedef_t *td, _Inout_ _Post_invalid_ ut_avlTree_t *tree, _In_opt_ void (*freefun) (_Inout_ void *node, _Inout_opt_ void *arg), _Inout_opt_ void *arg) __nonnull((1,2));
 
 _Check_return_ _Ret_maybenull_ OS_API void *ut_avlRoot (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree) __nonnull_all__;
-_Ret_ OS_API void *ut_avlRootNonEmpty (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree) __nonnull_all__;
+_Ret_notnull_ OS_API void *ut_avlRootNonEmpty (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree) __nonnull_all__;
 _Check_return_ _Ret_maybenull_ OS_API void *ut_avlLookup (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key) __nonnull_all__;
                _Ret_maybenull_ OS_API void *ut_avlLookupIPath (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key, _Out_ ut_avlIPath_t *path) __nonnull_all__;
                _Ret_maybenull_ OS_API void *ut_avlLookupDPath (_In_ const ut_avlTreedef_t *td, _In_ const ut_avlTree_t *tree, _In_ const void *key, _Out_ ut_avlDPath_t *path) __nonnull_all__;
