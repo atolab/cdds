@@ -266,52 +266,6 @@ os_sockaddrSameSubnet(const os_sockaddr* thisSock,
     return result;
 }
 
-bool
-os_sockaddrInetStringToAddress(const char *addressString,
-                               os_sockaddr* addressOut)
-{
-    uint32_t ipv4IntAddress;
-    bool result = false;
-
-    assert(addressOut);
-
-    ipv4IntAddress = inet_addr(addressString);
-
-    if (ipv4IntAddress == htonl(INADDR_NONE)
-#ifdef WIN32
-        || ipv4IntAddress == htonl(INADDR_ANY) /* Older Windows return this for empty string */
-#endif
-        )
-    {
-#if (OS_SOCKET_HAS_IPV6 == 1)
-        /* Try and parse as an IPv6 address */
-#ifdef WIN32
-        int sslen = sizeof(os_sockaddr_in6);
-        if (WSAStringToAddress((LPTSTR) addressString, AF_INET6, NULL, (os_sockaddr*)addressOut, &sslen) == 0)
-        {
-            result = true;
-        }
-#else
-        if (OS_INET_PTON(AF_INET6, addressString, &(((os_sockaddr_in6*)addressOut)->sin6_addr)))
-        {
-            ((os_sockaddr_in6*)addressOut)->sin6_family = AF_INET6;
-            result = true;
-        }
-#endif /* WIN32 */
-#endif /* IPV6 */
-    }
-    else
-    {
-        ((os_sockaddr_in*)addressOut)->sin_family = AF_INET;
-        ((os_sockaddr_in*)addressOut)->sin_addr.s_addr = ipv4IntAddress;
-        result = true;
-    }
-
-    return result;
-}
-
-
-
 /**
 * Convert the provided addressString into a os_sockaddr.
 * @return true on successful conversion. false otherwise
@@ -319,98 +273,41 @@ os_sockaddrInetStringToAddress(const char *addressString,
 * @param addressOut A pointer to an os_sockaddr. Must be big enough for
 * the address type specified by the string. This implies it should
 * generally be the address of an os_sockaddr_storage for safety's sake.
-* @param isIPv4 Iff the addressString is a hostname specifies whether
+* @param isIPv4 If the addressString is a hostname specifies whether
 * and IPv4 address should be returned. If false an Ipv6 address will be
 * requested. If the address is in either valid decimal presentation format
 * param will be ignored.
 */
 bool
 os_sockaddrStringToAddress(const char *addressString,
-                           os_sockaddr* addressOut,
+                           os_sockaddr *addressOut,
                            bool isIPv4)
 {
-    uint32_t ipv4IntAddress;
-    bool result = false;
-    int sslen;
+    int ret;
+    const char *fmt;
+    struct addrinfo hints;
+    struct addrinfo *res = NULL;
 
-    assert(addressOut);
+    assert(addressString != NULL);
+    assert(addressOut != NULL);
 
-    ipv4IntAddress = inet_addr(addressString);
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = (isIPv4 ? AF_INET : AF_INET6);
+    hints.ai_socktype = SOCK_DGRAM;
 
-    if (ipv4IntAddress == htonl(INADDR_NONE)
-#ifdef WIN32
-        || ipv4IntAddress == htonl(INADDR_ANY) /* Older Windows return this for empty string */
-#endif
-        )
-    {
-#if (OS_SOCKET_HAS_IPV6 == 1)
-        /* Try and parse as an IPv6 address */
-        sslen = sizeof(os_sockaddr_in6);
-        memset(addressOut, 0, (unsigned) sslen);
-#ifdef WIN32
-        if (WSAStringToAddress((LPTSTR) addressString, AF_INET6, NULL, (os_sockaddr*)addressOut, &sslen) == 0)
-        {
-            result = true;
-        }
-#else
-        if (OS_INET_PTON(AF_INET6, addressString, &(((os_sockaddr_in6*)addressOut)->sin6_addr)))
-        {
-            ((os_sockaddr_in6*)addressOut)->sin6_family = AF_INET6;
-            result = true;
-        }
-#endif /* WIN32 */
-#endif /* IPV6 */
-    }
-    else
-    {
-        sslen = sizeof(os_sockaddr_in);
-        memset(addressOut, 0, (unsigned) sslen);
-        ((os_sockaddr_in*)addressOut)->sin_family = AF_INET;
-        ((os_sockaddr_in*)addressOut)->sin_addr.s_addr = ipv4IntAddress;
-        result = true;
+    ret = getaddrinfo(addressString, NULL, &hints, &res);
+    if (ret != 0) {
+        fmt = "getaddrinfo(\"%s\") failed: %s";
+        OS_REPORT(OS_DEBUG, __func__, 0, fmt, addressString, gai_strerror(ret));
+    } else if (res != NULL) {
+        memcpy(addressOut, res->ai_addr, res->ai_addrlen);
+        freeaddrinfo(res);
+    } else {
+        fmt = "getaddrinfo(\"%s\") did not return any results";
+        OS_REPORT(OS_DEBUG, __func__, 0, fmt, addressString);
     }
 
-    if (!result)
-    {
-#ifdef DO_HOST_BY_NAME
-        struct addrinfo template;
-        struct addrinfo *resultList;
-        int retCode;
-
-        memset (&template, 0, sizeof(template));
-        template.ai_family = (isIPv4 ? AF_INET : AF_INET6);
-        template.ai_socktype = SOCK_DGRAM;
-
-        retCode = getaddrinfo(addressString, NULL, &template, &resultList);
-        if (retCode != 0)
-        {
-            OS_REPORT(OS_DEBUG,"os_sockaddrStringToAddress", 0,
-                "error calling getaddrinfo(\"%s\"): %s",
-                addressString, gai_strerror(retCode));
-        }
-        else
-        {
-            if (resultList)
-            {
-                memcpy(addressOut, resultList->ai_addr, resultList->ai_addrlen);
-                /* Ignore other entries, just take first */
-                freeaddrinfo(resultList);
-                result = true;
-
-            }
-            else
-            {
-                OS_REPORT(OS_DEBUG,"os_sockaddrStringToAddress", 0,
-                      "could not lookup host \"%s\"",
-                      addressString);
-            }
-        }
-#else
-        OS_UNUSED_ARG(isIPv4);
-#endif
-    }
-
-    return result;
+    return (ret == 0 && res != NULL);
 }
 
 /**
@@ -553,48 +450,24 @@ char*
 os_sockaddrAddressToString(const os_sockaddr* sa,
                             char* buffer, size_t buflen)
 {
-#if defined (WIN32) || (WINCE)
-    socklen_t structLength;
-    int errorCode;
-
-    strncpy(buffer, "Unknown address family", buflen);
-
-    structLength = (sa->sa_family == AF_INET6 ? sizeof (os_sockaddr_in6) : sizeof (os_sockaddr_in));
-    if (errorCode = getnameinfo(sa,
-                   structLength,
-                   buffer,
-                   (DWORD)buflen,
-                   NULL,
-                   0,
-                   NI_NUMERICHOST))
-    {
-                char errmsg[1024];
-                int errNo = os_getErrno();
-                (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
-
-        OS_REPORT(OS_ERROR,"os_sockaddrAddressToString", 0,
-                "error calling getnameinfo to stringify network address. Error: %d (%s)",
-                errNo, errmsg);
-    }
-#else
     assert (buflen <= 0x7fffffff);
+
     switch(sa->sa_family) {
         case AF_INET:
             OS_INET_NTOP(AF_INET, &(((struct sockaddr_in *)sa)->sin_addr),
                     buffer, (socklen_t) buflen);
             break;
-
 #if (OS_SOCKET_HAS_IPV6 == 1)
         case AF_INET6:
             OS_INET_NTOP(AF_INET6, &(((os_sockaddr_in6 *)sa)->sin6_addr),
                     buffer, (socklen_t) buflen);
             break;
 #endif
-
         default:
             (void) snprintf(buffer, buflen, "Unknown address family");
+            break;
     }
-#endif
+
     return buffer;
 }
 

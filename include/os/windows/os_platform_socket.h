@@ -30,7 +30,6 @@ extern "C" {
 #define OS_SOCKET_HAS_SA_LEN    0
 #define OS_NO_SIOCGIFINDEX      1
 #define OS_NO_NETLINK           1
-#define DO_HOST_BY_NAME
 
 #if defined NTDDI_VERSION && defined _WIN32_WINNT_WS03 && NTDDI_VERSION >= _WIN32_WINNT_WS03
 #define OS_SOCKET_HAS_SSM 1

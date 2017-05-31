@@ -302,17 +302,6 @@ extern "C" {
                           const os_sockaddr* mask);
 
     /**
-     * Convert an address in ‘dotted decimal’ IPv4 or ‘colon-separated hexadecimal’ IPv6
-     * notation to an socket address.
-     * @param addressString The address string.
-     * @param addressOut The found socket address when found.
-     * @return True when the address is a valid address, False otherwise.
-     */
-    OS_API bool
-    os_sockaddrInetStringToAddress(const char *addressString,
-                                   os_sockaddr* addressOut);
-
-    /**
      * Convert a socket address to a string format presentation representation
      * @param sa The socket address struct.
      * @param buffer A character buffer to hold the string rep of the address.

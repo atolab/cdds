@@ -376,7 +376,7 @@ os_reportSetApiInfo (
 static FILE * open_socket (char *host, unsigned short port)
 {
     FILE * file = NULL;
-    struct sockaddr_in sa;
+    struct sockaddr_storage sa;
     os_socket sock;
     char msg[64];
     const char *errstr;
@@ -387,9 +387,13 @@ static FILE * open_socket (char *host, unsigned short port)
     }
 
     memset((char *)&sa, 0, sizeof(sa));
-    sa.sin_family = AF_INET;
-    sa.sin_port = htons(port);
-    sa.sin_addr.s_addr = inet_addr (host);
+    (void)os_sockaddrStringToAddress(host, (os_sockaddr *)&sa, true);
+    if (sa.ss_family == AF_INET) {
+        ((os_sockaddr_in *)&sa)->sin_port = htons(port);
+    } else {
+        assert(sa.ss_family == AF_INET6);
+        ((os_sockaddr_in6 *)&sa)->sin6_port = htons(port);
+    }
     if (connect (sock, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
         errstr = "connect";
         goto err_connect;
