@@ -292,7 +292,12 @@ os_sockaddrStringToAddress(const char *addressString,
     assert(addressOut != NULL);
 
     memset(&hints, 0, sizeof(hints));
+#if (OS_SOCKET_HAS_IPV6 == 1)
     hints.ai_family = (isIPv4 ? AF_INET : AF_INET6);
+#else
+    hints.ai_family = AF_INET;
+    (void)isIPv4;
+#endif /* IPv6 */
     hints.ai_socktype = SOCK_DGRAM;
 
     ret = getaddrinfo(addressString, NULL, &hints, &res);
