@@ -42,6 +42,12 @@ bool validate_octetseq (const nn_octetseq_t* seq)
   return (((seq->length == 0) && (seq->value == NULL)) || (seq->length > 0));
 }
 
+bool validate_partition_qospolicy (_In_ const nn_partition_qospolicy_t * partition)
+{
+  /* default value is NULL with length 0 */
+  return (((partition->n == 0) && (partition->strs == NULL)) || (partition->n > 0));
+}
+
 
 bool validate_reliability_qospolicy (const nn_reliability_qospolicy_t * reliability)
 {
