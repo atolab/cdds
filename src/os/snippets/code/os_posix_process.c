@@ -293,8 +293,8 @@ os_procCreate(
                 }
             }
 #endif
-            /* Set the process name via environment variable SPLICE_PROCNAME */
-            snprintf(environment, sizeof(environment), "SPLICE_PROCNAME=%s", name);
+            /* Set the process name via environment variable SPLICE_PROCNAME (truncation is acceptable) */
+            (void) snprintf(environment, sizeof(environment), "SPLICE_PROCNAME=%s", name);
             putenv(environment);
             /* exec executable file */
 #if __APPLE__

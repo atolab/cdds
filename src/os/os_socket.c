@@ -592,7 +592,7 @@ os_sockaddrAddressToString(const os_sockaddr* sa,
 #endif
 
         default:
-            snprintf(buffer, buflen, "Unknown address family");
+            (void) snprintf(buffer, buflen, "Unknown address family");
     }
 #endif
     return buffer;

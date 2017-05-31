@@ -251,8 +251,7 @@ os_result ut_thread_pool_submit (ut_thread_pool pool, void (*fn) (void *arg), vo
             if ((pool->m_thread_max == 0) || (pool->m_threads < pool->m_thread_max))
             {
                 /* OK if fails as have queued job */
-
-                ut_thread_pool_new_thread (pool);
+                (void) ut_thread_pool_new_thread (pool);
             }
         }
 
