@@ -271,12 +271,8 @@ os_startRoutineWrapper (
     prctl(PR_SET_NAME, context->threadName);
 #endif
 
-    /* store the thread name with the thread via thread specific data; failure isn't  */
-    if (pthread_setspecific (os_threadNameKey, context->threadName) == EINVAL) {
-        OS_REPORT (OS_WARNING, "os_startRoutineWrapper", 0,
-                     "pthread_setspecific failed with error EINVAL (%d), "
-                     "invalid os_threadNameKey value", EINVAL);
-    }
+    /* store the thread name with the thread via thread specific data */
+    pthread_setspecific (os_threadNameKey, context->threadName);
 
     /* allocate an array to store thread private memory references */
     os_threadMemInit ();
