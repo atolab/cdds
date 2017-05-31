@@ -22,7 +22,11 @@ function(add_dds_test NAME SUITE)
         add_executable(${NAME} ${ARGN})
         target_link_libraries(${NAME} Vortex::DDSC99 ${SUITE})
 
-        add_test(${TEST_NAME} ${NAME})
+        if(${SUITE} STREQUAL cunitrunner)
+          add_test(${TEST_NAME} ${NAME} -a -r ${NAME})
+        else()
+          add_test(${TEST_NAME} ${NAME})
+        endif()
     endif()
 endfunction()
 

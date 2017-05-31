@@ -16,12 +16,16 @@ find_package(CUnit)
 #       ARGN    The c file(s) that contains the test.
 #
 function(add_dds_test NAME SUITE)
-    if ( (${SUITE} STREQUAL cunitrunner) )
+    if ((${SUITE} STREQUAL cunitrunner))
         set(TEST_NAME "abstraction_${NAME}")
         add_executable(${NAME} ${ARGN})
         target_link_libraries(${NAME} OSAbstraction ${SUITE})
-        
-        add_test(${TEST_NAME} ${NAME})
+
+	if(SUITE STREQUAL cunitrunner)
+          add_test(${TEST_NAME} ${NAME} -a -r ${NAME})
+        else()
+          add_test(${TEST_NAME} ${NAME})
+        endif()
     endif()
 endfunction()
 
