@@ -2313,7 +2313,7 @@ os__report_fprintf(FILE *file,
          * stdout can also give broken pipe)
          */
         va_start(args, format);
-        os_vfprintfnosigpipe(stdout, format, args);
+        (void) os_vfprintfnosigpipe(stdout, format, args);
         va_end(args);
     }
     return BytesWritten;

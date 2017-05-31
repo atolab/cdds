@@ -13,7 +13,6 @@
 #define OS_REPORT_H
 
 #include <stdarg.h>
-#include "os/os.h"
 
 #if defined (__cplusplus)
 extern "C" {

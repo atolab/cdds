@@ -169,7 +169,7 @@ static void ddsi_tcp_sock_free (os_socket sock, const char * msg)
   {
     if (msg)
     {
-      nn_log (LC_INFO, "%s %s free socket %d\n", ddsi_name, msg, sock);
+      nn_log (LC_INFO, "%s %s free socket %"PRIsock"\n", ddsi_name, msg, sock);
     }
     os_sockFree (sock);
   }
@@ -227,7 +227,7 @@ static void ddsi_tcp_conn_connect (ddsi_tcp_conn_t conn, const struct msghdr * m
 #endif
 
     sockaddr_to_string_with_port(buff, (const os_sockaddr_storage *) msg->msg_name);
-    nn_log (LC_INFO, "%s connect socket %"PRIsock" port %d to %s\n", ddsi_name, sock, get_socket_port (sock), buff);
+    nn_log (LC_INFO, "%s connect socket %"PRIsock" port %u to %s\n", ddsi_name, sock, get_socket_port (sock), buff);
 
     /* Also may need to receive on connection so add to waitset */
 
@@ -763,17 +763,17 @@ static ddsi_tran_conn_t ddsi_tcp_accept (ddsi_tran_listener_t listener)
   {
     getsockname (tl->m_sock, (struct sockaddr *) &addr, &addrlen);
     sockaddr_to_string_with_port(buff, &addr);
-    nn_log ((err == 0) ? LC_ERROR : LC_FATAL, "%s accept failed on socket %d at %s errno %d\n", ddsi_name, tl->m_sock, buff, err);
+    nn_log ((err == 0) ? LC_ERROR : LC_FATAL, "%s accept failed on socket %"PRIsock" at %s errno %d\n", ddsi_name, tl->m_sock, buff, err);
   }
   else if (getpeername (sock, (struct sockaddr *) &addr, &addrlen) == -1)
   {
-    nn_log (LC_WARNING, "%s accepted new socket %d on socket %d but no peer address, errno %d\n", ddsi_name, sock, tl->m_sock, os_getErrno());
+    nn_log (LC_WARNING, "%s accepted new socket %"PRIsock" on socket %"PRIsock" but no peer address, errno %d\n", ddsi_name, sock, tl->m_sock, os_getErrno());
     os_sockFree (sock);
   }
   else
   {
     sockaddr_to_string_with_port(buff, &addr);
-    nn_log (LC_INFO, "%s accept new socket %d on socket %d from %s\n", ddsi_name, sock, tl->m_sock, buff);
+    nn_log (LC_INFO, "%s accept new socket %"PRIsock" on socket %"PRIsock" from %s\n", ddsi_name, sock, tl->m_sock, buff);
 
     os_sockSetNonBlocking (sock, true);
     tcp = ddsi_tcp_new_conn (sock, true, &addr);
@@ -882,7 +882,7 @@ static ddsi_tran_listener_t ddsi_tcp_create_listener (int port, ddsi_tran_qos_t 
     }
 
     sockaddr_to_string_with_port(buff, &addr);
-    nn_log (LC_INFO, "%s create listener socket %d on %s\n", ddsi_name, sock, buff);
+    nn_log (LC_INFO, "%s create listener socket %"PRIsock" on %s\n", ddsi_name, sock, buff);
   }
 
   return tl ? &tl->m_base : NULL;

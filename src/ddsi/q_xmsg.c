@@ -1614,7 +1614,7 @@ int nn_xpack_addmsg (struct nn_xpack *xp, struct nn_xmsg *m, const uint32_t flag
      But do make sure we can't run out of iovecs. */
   assert (niov + NN_XMSG_MAX_SUBMESSAGE_IOVECS <= NN_XMSG_MAX_MESSAGE_IOVECS);
 
-  TRACE (("xpack_addmsg %p %p %d(", (void *) xp, (void *) m, flags));
+  TRACE (("xpack_addmsg %p %p %u(", (void *) xp, (void *) m, flags));
   switch (m->kind)
   {
     case NN_XMSG_KIND_CONTROL:

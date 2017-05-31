@@ -10,7 +10,6 @@
 #ifndef _DDS_PUBLIC_LISTENER_H_
 #define _DDS_PUBLIC_LISTENER_H_
 
-#include "dds.h"
 #include "dds/dds_public_impl.h"
 #include "dds/dds_public_status.h"
 #include "os/os_public.h"

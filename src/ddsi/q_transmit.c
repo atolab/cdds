@@ -839,7 +839,7 @@ static int insert_sample_in_whc (struct writer *wr, seqno_t seq, struct nn_plist
     nn_log (LC_TRACE, "write_sample %x:%x:%x:%x #%"PRId64"", PGUID (wr->e.guid), seq);
     if (plist != 0 && (plist->present & PP_COHERENT_SET))
       nn_log (LC_TRACE, " C#%"PRId64"", fromSN (plist->coherent_set_seqno));
-    nn_log (LC_TRACE, ": ST%d %s/%s:%s%s\n",
+    nn_log (LC_TRACE, ": ST%u %s/%s:%s%s\n",
             serdata->v.msginfo.statusinfo, tname, ttname,
             ppbuf, tmp < (int) sizeof (ppbuf) ? "" : " (trunc)");
   }

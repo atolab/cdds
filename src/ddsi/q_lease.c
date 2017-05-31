@@ -283,7 +283,7 @@ void handle_PMD (UNUSED_ARG (const struct receiver_state *rst), unsigned statusi
   TRACE ((" PMD ST%x", statusinfo));
   if (data->identifier != CDR_LE && data->identifier != CDR_BE)
   {
-    TRACE ((" PMD data->identifier %d !?\n", ntohs (data->identifier)));
+    TRACE ((" PMD data->identifier %u !?\n", ntohs (data->identifier)));
     return;
   }
   switch (statusinfo & (NN_STATUSINFO_DISPOSE | NN_STATUSINFO_UNREGISTER))
@@ -297,7 +297,7 @@ void handle_PMD (UNUSED_ARG (const struct receiver_state *rst), unsigned statusi
         nn_guid_prefix_t p = nn_ntoh_guid_prefix (pmd->participantGuidPrefix);
         unsigned kind = ntohl (pmd->kind);
         unsigned length = bswap ? bswap4u (pmd->length) : pmd->length;
-        TRACE ((" pp %x:%x:%x kind %u data %d", p.u[0], p.u[1], p.u[2], kind, length));
+        TRACE ((" pp %x:%x:%x kind %u data %u", p.u[0], p.u[1], p.u[2], kind, length));
         if (len - sizeof (struct CDRHeader) - offsetof (ParticipantMessageData_t, value) < length)
           debug_print_rawdata (" SHORT2", pmd->value, len - sizeof (struct CDRHeader) - offsetof (ParticipantMessageData_t, value));
         else

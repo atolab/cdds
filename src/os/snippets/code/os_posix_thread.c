@@ -451,7 +451,7 @@ os_threadCreate (
                              "pthread_create failed with SCHED_FIFO "     \
                              "for thread '%s', reverting to SCHED_OTHER.",
                              name);
-                pthread_attr_setschedpolicy (&attr, SCHED_OTHER);
+                (void) pthread_attr_setschedpolicy (&attr, SCHED_OTHER); /* SCHED_OTHER is always supported */
                 pthread_attr_getschedpolicy(&attr, &policy);
 
                 if ((tattr.schedPriority < sched_get_priority_min(policy)) ||

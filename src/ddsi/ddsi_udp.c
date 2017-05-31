@@ -228,7 +228,7 @@ static ddsi_tran_conn_t ddsi_udp_create_conn
     nn_log
     (
       LC_INFO,
-      "ddsi_udp_create_conn %s socket %d port %d\n",
+      "ddsi_udp_create_conn %s socket %"PRIsock" port %u\n",
       mcast ? "multicast" : "unicast",
       uc->m_sock,
       uc->m_base.m_base.m_port
@@ -246,7 +246,7 @@ static ddsi_tran_conn_t ddsi_udp_create_conn
     {
       NN_ERROR2
       (
-        "UDP make_socket failed for %s port %d\n",
+        "UDP make_socket failed for %s port %u\n",
         mcast ? "multicast" : "unicast",
         port
       );
@@ -282,7 +282,7 @@ static void ddsi_udp_release_conn (ddsi_tran_conn_t conn)
   nn_log
   (
     LC_INFO,
-    "ddsi_udp_release_conn %s socket %d port %d\n",
+    "ddsi_udp_release_conn %s socket %"PRIsock" port %u\n",
     conn->m_base.m_multicast ? "multicast" : "unicast",
     uc->m_sock,
     uc->m_base.m_base.m_port

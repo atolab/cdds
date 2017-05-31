@@ -1582,7 +1582,7 @@ static int dds_rhc_read_w_qminv
     os_mutexLock (&rhc->lock);
   }
 
-  TRACE (("read_w_qminv(%p,%p,%p,%d,%x) - inst %u nonempty %u disp %u nowr %u new %u samples %u+%u read %u+%u\n",
+  TRACE (("read_w_qminv(%p,%p,%p,%u,%x) - inst %u nonempty %u disp %u nowr %u new %u samples %u+%u read %u+%u\n",
     (void *) rhc, (void *) values, (void *) info_seq, max_samples, qminv,
     rhc->n_instances, rhc->n_nonempty_instances, rhc->n_not_alive_disposed,
     rhc->n_not_alive_no_writers, rhc->n_new, rhc->n_vsamples, rhc->n_invsamples,
@@ -1683,7 +1683,7 @@ static int dds_rhc_read_w_qminv
     }
     while (inst != end && n < max_samples);
   }
-  TRACE (("read: returning %d\n", n));
+  TRACE (("read: returning %u\n", n));
   assert (rhc_check_counts_locked (rhc, true));
   os_mutexUnlock (&rhc->lock);
 
@@ -1711,7 +1711,7 @@ static int dds_rhc_take_w_qminv
     os_mutexLock (&rhc->lock);
   }
 
-  TRACE (("take_w_qminv(%p,%p,%p,%d,%x) - inst %u nonempty %u disp %u nowr %u new %u samples %u+%u read %u+%u\n",
+  TRACE (("take_w_qminv(%p,%p,%p,%u,%x) - inst %u nonempty %u disp %u nowr %u new %u samples %u+%u read %u+%u\n",
     (void*) rhc, (void*) values, (void*) info_seq, max_samples, qminv,
     rhc->n_instances, rhc->n_nonempty_instances, rhc->n_not_alive_disposed,
     rhc->n_not_alive_no_writers, rhc->n_new, rhc->n_vsamples,
@@ -1846,7 +1846,7 @@ static int dds_rhc_take_w_qminv
       inst = inst1;
     }
   }
-  TRACE (("take: returning %d\n", n));
+  TRACE (("take: returning %u\n", n));
   assert (rhc_check_counts_locked (rhc, true));
   os_mutexUnlock (&rhc->lock);
 
@@ -1873,7 +1873,7 @@ static int dds_rhc_takecdr_w_qminv
     os_mutexLock (&rhc->lock);
   }
 
-  TRACE (("take_w_qminv(%p,%p,%p,%d,%x) - inst %u nonempty %u disp %u nowr %u new %u samples %u+%u read %u+%u\n",
+  TRACE (("take_w_qminv(%p,%p,%p,%u,%x) - inst %u nonempty %u disp %u nowr %u new %u samples %u+%u read %u+%u\n",
           (void*) rhc, (void*) values, (void*) info_seq, max_samples, qminv,
           rhc->n_instances, rhc->n_nonempty_instances, rhc->n_not_alive_disposed,
           rhc->n_not_alive_no_writers, rhc->n_new, rhc->n_vsamples,
@@ -1993,7 +1993,7 @@ static int dds_rhc_takecdr_w_qminv
       inst = inst1;
     }
   }
-  TRACE (("take: returning %d\n", n));
+  TRACE (("take: returning %u\n", n));
   assert (rhc_check_counts_locked (rhc, true));
   os_mutexUnlock (&rhc->lock);
 
@@ -2058,7 +2058,7 @@ void dds_rhc_add_readcondition (dds_readcond * cond)
   rhc->nconds++;
   rhc->conds = cond;
 
-  TRACE (("add_readcondition(%p, %x, %x, %x) => %p qminv %x ; rhc %d conds\n",
+  TRACE (("add_readcondition(%p, %x, %x, %x) => %p qminv %x ; rhc %u conds\n",
     (void *) rhc, cond->m_sample_states, cond->m_view_states,
     cond->m_instance_states, cond, cond->m_qminv, rhc->nconds));
 
