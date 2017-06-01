@@ -370,7 +370,6 @@ int main (int argc, char *argv[])
   dds_qos_t *subQos;
 
   uint32_t payloadSize = 0;
-  unsigned long long numSamples = 0;
   dds_time_t timeOut = 0;
   dds_time_t startTime;
   dds_time_t postTakeTime;
@@ -562,7 +561,7 @@ int main (int argc, char *argv[])
       void *addrsamples[] = { &addrsample };
       dds_sample_info_t infos[1];
       dds_time_t tprint, tsend;
-      printf ("# payloadSize: %"PRIu32" | numSamples: %llu | timeOut: %" PRIi64 "\n\n", payloadSize, numSamples, timeOut);
+      printf ("# payloadSize: %"PRIu32" | timeOut: %" PRIi64 "\n\n", payloadSize, timeOut);
       memset (buf, 0, sizeof (buf));
       memset (&addrsample, 0, sizeof (addrsample));
       do {
@@ -642,7 +641,7 @@ int main (int argc, char *argv[])
 
     if (isping)
     {
-      printf ("# payloadSize: %"PRIu32" | numSamples: %llu | timeOut: %" PRIi64 "\n\n", payloadSize, numSamples, timeOut);
+      printf ("# payloadSize: %"PRIu32" | timeOut: %" PRIi64 "\n\n", payloadSize, timeOut);
 
       pub_data.payload._length = payloadSize;
       pub_data.payload._buffer = payloadSize ? dds_alloc (payloadSize) : NULL;
@@ -662,7 +661,7 @@ int main (int argc, char *argv[])
       status = dds_write (writer, &pub_data);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-      for (i = 0; !dds_condition_triggered (terminated) && (!numSamples || i < numSamples); i++)
+      for (i = 0; !dds_condition_triggered (terminated); i++)
       {
         /* Wait for response from pong */
         status = dds_waitset_wait (waitSet, wsresults, wsresultsize, (mode != WAITSET) ? DDS_INFINITY : waitTimeout);
@@ -701,7 +700,7 @@ int main (int argc, char *argv[])
 
           /* Print stats each second */
           difference = postTakeTime - startTime;
-          if (difference > NS_IN_ONE_SEC || (i && i == numSamples))
+          if (difference > NS_IN_ONE_SEC)
           {
             printf("%9" PRIi64 " %9lu %8.0f %8"PRId64"\n", elapsed + 1, roundTrip.count, exampleGetMedianFromTimeStats (&roundTrip)/1000, roundTrip.min/1000);
             exampleResetTimeStats (&roundTrip);
