@@ -375,7 +375,6 @@ int main (int argc, char *argv[])
   dds_qos_t *subQos;
 
   uint32_t payloadSize = 0;
-  dds_time_t timeOut = 0;
   dds_time_t startTime;
   dds_time_t postTakeTime;
   dds_time_t difference = 0;
@@ -566,7 +565,7 @@ int main (int argc, char *argv[])
       void *addrsamples[] = { &addrsample };
       dds_sample_info_t infos[1];
       dds_time_t tprint, tsend;
-      printf ("# payloadSize: %"PRIu32" | timeOut: %" PRIi64 "\n\n", payloadSize, timeOut);
+      printf ("# payloadSize: %"PRIu32"\n\n", payloadSize);
       memset (buf, 0, sizeof (buf));
       memset (&addrsample, 0, sizeof (addrsample));
       do {
@@ -646,7 +645,7 @@ int main (int argc, char *argv[])
 
     if (isping)
     {
-      printf ("# payloadSize: %"PRIu32" | timeOut: %" PRIi64 "\n\n", payloadSize, timeOut);
+      printf ("# payloadSize: %"PRIu32"\n\n", payloadSize);
 
       pub_data.payload._length = payloadSize;
       pub_data.payload._buffer = payloadSize ? dds_alloc (payloadSize) : NULL;
@@ -735,11 +734,6 @@ int main (int argc, char *argv[])
             startTime = tnow;
             elapsed++;
           }
-        }
-
-        if (timeOut && elapsed == timeOut)
-        {
-          dds_guard_trigger (terminated);
         }
       }
 
