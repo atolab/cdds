@@ -146,7 +146,7 @@ static void free_tkmap_instance (void *vtk, UNUSED_ARG(void *f_arg))
   os_free (tk);
 }
 
-void dds_tkmap_free (struct tkmap * map)
+void dds_tkmap_free (_Inout_ _Post_invalid_ struct tkmap * map)
 {
   ut_chhEnumUnsafe (map->m_hh, free_tkmap_instance, NULL);
   ut_chhFree (map->m_hh);
@@ -155,7 +155,7 @@ void dds_tkmap_free (struct tkmap * map)
   dds_free (map);
 }
 
-uint64_t dds_tkmap_lookup (struct tkmap * map, const struct serdata * sd)
+uint64_t dds_tkmap_lookup (_In_ struct tkmap * map, _In_ const struct serdata * sd)
 {
   struct tkmap_instance dummy;
   struct tkmap_instance * tk;
@@ -183,7 +183,8 @@ static void dds_tkmap_get_key_fn (void * vtk, void * varg)
   }
 }
 
-bool dds_tkmap_get_key (struct tkmap * map, uint64_t iid, void * sample)
+_Check_return_
+bool dds_tkmap_get_key (_In_ struct tkmap * map, _In_ uint64_t iid, _Out_ void * sample)
 {
   tkmap_get_key_arg arg = { iid, sample, false };
   os_mutexLock (&map->m_lock);
@@ -209,7 +210,8 @@ static void dds_tkmap_get_inst_fn (void * vtk, void * varg)
   }
 }
 
-struct tkmap_instance * dds_tkmap_find_by_id (struct tkmap * map, uint64_t iid)
+_Check_return_
+struct tkmap_instance * dds_tkmap_find_by_id (_In_ struct tkmap * map, _In_ uint64_t iid)
 {
   tkmap_get_inst_arg arg = { iid, NULL };
   ut_chhEnumUnsafe (map->m_hh, dds_tkmap_get_inst_fn, &arg);
@@ -228,13 +230,12 @@ struct tkmap_instance * dds_tkmap_find_by_id (struct tkmap * map, uint64_t iid)
 #define DDS_DEBUG_KEYHASH 1
 #endif
 
-struct tkmap_instance * dds_tkmap_find
-(
-  const struct dds_topic * topic,
-  struct serdata * sd,
-  const bool rd,
-  const bool create
-)
+_Check_return_
+struct tkmap_instance * dds_tkmap_find(
+        _In_ const struct dds_topic * topic,
+        _In_ struct serdata * sd,
+        _In_ const bool rd,
+        _In_ const bool create)
 {
   struct tkmap_instance dummy;
   struct tkmap_instance * tk;
@@ -325,7 +326,8 @@ retry:
   return tk;
 }
 
-struct tkmap_instance * dds_tkmap_lookup_instance_ref (struct serdata * sd)
+_Check_return_
+struct tkmap_instance * dds_tkmap_lookup_instance_ref (_In_ struct serdata * sd)
 {
   dds_topic * topic = sd->v.st->topic ? sd->v.st->topic->status_cb_entity : NULL;
 
@@ -342,12 +344,12 @@ struct tkmap_instance * dds_tkmap_lookup_instance_ref (struct serdata * sd)
   return dds_tkmap_find (topic, sd, true, true);
 }
 
-void dds_tkmap_instance_ref (struct tkmap_instance *tk)
+void dds_tkmap_instance_ref (_In_ struct tkmap_instance *tk)
 {
   os_atomic_inc32 (&tk->m_refc);
 }
 
-void dds_tkmap_instance_unref (struct tkmap_instance * tk)
+void dds_tkmap_instance_unref (_In_ struct tkmap_instance * tk)
 {
   uint32_t old, new;
   assert (vtime_awake_p(lookup_thread_state()->vtime));
@@ -366,7 +368,7 @@ void dds_tkmap_instance_unref (struct tkmap_instance * tk)
     struct tkmap *map = tk->m_map;
 
     /* Remove from hash table */
-    ut_chhRemove(map->m_hh, tk);
+    (void)ut_chhRemove(map->m_hh, tk);
 
     /* Signal any threads blocked in their retry loops in lookup */
     os_mutexLock(&map->m_lock);

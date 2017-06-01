@@ -20,22 +20,21 @@ struct tkmap_instance
   os_atomic_uint32_t m_refc;
 };
 
-struct tkmap * dds_tkmap_new (void);
-void dds_tkmap_free (struct tkmap *tkmap);
-void dds_tkmap_instance_ref (struct tkmap_instance *tk);
-uint64_t dds_tkmap_lookup (struct tkmap *tkmap, const struct serdata *serdata);
-bool dds_tkmap_get_key (struct tkmap * map, uint64_t iid, void * sample);
-struct tkmap_instance * dds_tkmap_find
-(
-  const struct dds_topic * topic,
-  struct serdata * sd,
-  const bool rd,
-  const bool create
-);
-struct tkmap_instance * dds_tkmap_find_by_id (struct tkmap * map, uint64_t iid);
 
-DDS_EXPORT struct tkmap_instance * dds_tkmap_lookup_instance_ref (struct serdata * sd);
-DDS_EXPORT void dds_tkmap_instance_unref (struct tkmap_instance * tk);
+struct tkmap * dds_tkmap_new (void);
+void dds_tkmap_free (_Inout_ _Post_invalid_ struct tkmap *tkmap);
+void dds_tkmap_instance_ref (_In_ struct tkmap_instance *tk);
+uint64_t dds_tkmap_lookup (_In_ struct tkmap *tkmap, _In_ const struct serdata *serdata);
+_Check_return_ bool dds_tkmap_get_key (_In_ struct tkmap * map, _In_ uint64_t iid, _Out_ void * sample);
+_Check_return_ struct tkmap_instance * dds_tkmap_find(
+        _In_ const struct dds_topic * topic,
+        _In_ struct serdata * sd,
+        _In_ const bool rd,
+        _In_ const bool create);
+_Check_return_ struct tkmap_instance * dds_tkmap_find_by_id (_In_ struct tkmap * map, _In_ uint64_t iid);
+
+DDS_EXPORT _Check_return_ struct tkmap_instance * dds_tkmap_lookup_instance_ref (_In_ struct serdata * sd);
+DDS_EXPORT void dds_tkmap_instance_unref (_In_ struct tkmap_instance * tk);
 
 #if defined (__cplusplus)
 }
