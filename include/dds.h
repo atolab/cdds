@@ -816,21 +816,25 @@ DDS_EXPORT void dds_topic_set_filter (dds_entity_t topic, dds_topic_filter_fn fi
 DDS_EXPORT dds_topic_filter_fn dds_topic_get_filter (dds_entity_t topic);
 
 /**
- * Description : Creates a new instance of a DDS subscriber
+ * @brief Creates a new instance of a DDS subscriber
  *
- * Arguments :
- *   -# pp The participant on which the subscriber is being created
- *   -# subscriber The created subscriber entity
- *   -# qos The QoS to set on the new subscriber (can be NULL)
- *   -# listener Any listener functions associated with the new subscriber (can be NULL)
- *   -# Returns a status, 0 on success or non-zero value to indicate an error
+ * @param[in]  pp - The participant on which the subscriber is being created
+ * @param[in]  qos - The QoS to set on the new subscriber (can be NULL)
+ * @param[in]  listener - Any listener functions associated with the new subscriber (can be NULL)
+
+ * @returns >0 - Success (valid handle of a subscriber entity).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ *         DDS_RETCODE_BAD_PARAMETER
+ *                  One of the parameters is invalid
  */
-DDS_EXPORT int dds_subscriber_create
+DDS_EXPORT dds_entity_t dds_create_subscriber
 (
-  dds_entity_t pp,
-  dds_entity_t * subscriber,
-  const dds_qos_t * qos,
-  const dds_listener_t * listener
+  _In_ dds_entity_t pp,
+  _In_opt_ const dds_qos_t * qos,
+  _In_opt_ const dds_listener_t * listener
 );
 
 /**
@@ -1536,6 +1540,58 @@ DDS_EXPORT int dds_thread_init (const char * name);
  * Note: This function should be called from the same thread context before exiting
  */
 DDS_EXPORT void dds_thread_fini (void);
+
+/**
+ * @brief Begin coherent publishing or begin accessing a coherent set in a subscriber
+ *
+ * Invoking on a Writer or Reader behaves as if dds_begin_coherent was invoked on its parent
+ * Publisher or Subscriber respectively.
+ *
+ * @param[in]  e - The entity that is prepared for coherent access
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_ERROR
+ *             An internal error has occurred.
+ *         DDS_RETCODE_BAD_PARAMETER
+ *             The provided entity is invalid or not supported
+ */
+DDS_EXPORT dds_return_t dds_begin_coherent(_In_ dds_entity_t e);
+
+/**
+ * @brief End coherent publishing or end accessing a coherent set in a subscriber
+ *
+ * Invoking on a Writer or Reader behaves as if dds_end_coherent was invoked on its parent
+ * Publisher or Subscriber respectively.
+ *
+ * @param[in] e - The entity on which coherent access is finished
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful
+ *         DDS_RETCODE_BAD_PARAMETER
+ *             The provided entity is invalid or not supported
+ */
+DDS_EXPORT dds_return_t dds_end_coherent(_In_ dds_entity_t e);
+
+/**
+ * @brief Trigger DATA_AVAILABLE event on contained readers
+ *
+ * The DATA_AVAILABLE event is broadcast to all readers owned by this subscriber that currently
+ * have new data available. Any on_data_available listener callbacks attached to respective
+ * readers are invoked.
+ *
+ * @param[in] sub A subscriber
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @reval DDS_RETCODE_OK
+ *            The operation was successful
+ *        DDS_RETCODE_BAD_PARAMETER
+ *            The provided subscriber is invalid
+ */
+DDS_EXPORT dds_return_t dds_notify_readers(_In_ dds_entity_t sub);
 
 #if defined (__cplusplus)
 }

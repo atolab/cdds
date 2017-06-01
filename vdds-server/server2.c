@@ -241,7 +241,7 @@ int db_publisher_subscriber_create(struct client *cl, const struct reqhdr *req)
         rep.status = dds_publisher_create (req->u.publisher_create.pp, &rep.u.entity.e, qos, NULL);
     } else {
         assert(req->code == VDDSREQ_SUBSCRIBER_CREATE);
-        rep.status = dds_subscriber_create (req->u.subscriber_create.pp, &rep.u.entity.e, qos, NULL);
+        rep.status = dds_create_subscriber (req->u.subscriber_create.pp, &rep.u.entity.e, qos, NULL);
     }
     dds_qos_delete (qos);
     os_free(partname);

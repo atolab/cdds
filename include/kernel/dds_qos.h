@@ -11,9 +11,11 @@
 extern "C" {
 #endif
 
+bool validate_deadline_and_timebased_filter (const nn_duration_t deadline, const nn_duration_t minimum_separation);
+bool validate_entityfactory_qospolicy (const nn_entity_factory_qospolicy_t * entityfactory);
 bool validate_octetseq (const nn_octetseq_t* seq);
 bool validate_reliability_qospolicy (const nn_reliability_qospolicy_t * reliability);
-bool validate_deadline_and_timebased_filter (const nn_duration_t deadline, const nn_duration_t minimum_separation);
+bool validate_stringseq (const nn_stringseq_t* seq);
 
 bool dds_qos_validate_common (const dds_qos_t *qos);
 

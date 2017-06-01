@@ -182,7 +182,7 @@ int ping_main (int argc, char *argv[])
   subQos = dds_qos_create ();
   dds_qset_partition (subQos, 1, subPartitions);
 
-  status = dds_subscriber_create (participant, &subscriber, subQos, NULL);
+  status = dds_create_subscriber (participant, &subscriber, subQos, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (subQos);
   /* A DDS_DataReader is created on the Subscriber & Topic with a modified QoS. */
