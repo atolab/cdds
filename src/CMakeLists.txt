@@ -44,5 +44,7 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/dds
 #target_include_directories(vdds PUBLIC ../include)
 
 # TODO: improve test inclusion.
-add_subdirectory(kernel/tests)
+if(BUILD_TESTING)
+  add_subdirectory(kernel/tests)
+endif()
 

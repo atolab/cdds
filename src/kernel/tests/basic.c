@@ -1,10 +1,8 @@
 #include "dds.h"
-#include "CUnit/CUnit.h"
-#include "CUnit/Automated.h"
+#include "cunitrunner/runner.h"
 
-
-void test(void) {
-
+void test(void)
+{
   dds_entity_t participant;
   int status;
 
@@ -13,44 +11,30 @@ void test(void) {
 
   /* TODO: CHAM-108: Add some simple read/write test(s). */
 
-  status = dds_delete (participant);
+  status = dds_delete(participant);
   CU_ASSERT(status == DDS_RETCODE_OK);
 }
 
-
-
 int main (int argc, char *argv[])
 {
-    CU_pSuite pSuite = NULL;
+    CU_pSuite pSuite;
 
-    /* initialize the CUnit test registry */
-    if (CUE_SUCCESS != CU_initialize_registry()) {
-        return CU_get_error();
+    if (runner_init(argc, argv)){
+        goto err_init;
     }
 
-    /* add a suite to the registry */
-    pSuite = CU_add_suite("Basic C99 interface test", NULL, NULL);
-    if (NULL == pSuite) {
-        CU_cleanup_registry();
-        return CU_get_error();
+    /*add a suite to the registry*/
+    if ((pSuite = CU_add_suite("Basic C99 interface test", NULL, NULL)) == NULL){
+        goto err;
     }
 
-    /* add test cases to the test suite */
-    if (NULL == CU_add_test(pSuite, "C99 Interface", test)) {
-        CU_cleanup_registry();
-        return CU_get_error();
+    /*add test cases to the test suite*/
+    if (CU_add_test(pSuite, "C99 Interface",test) == NULL) {
+        goto err;
     }
-
-
-    /* Run all tests using the CUnit Automated interface */
-    CU_set_output_filename ("cunit");
-    CU_list_tests_to_file ();
-    CU_automated_run_tests ();
-
-    /* cleanup registry */
-    CU_cleanup_registry();
-
-    /* ctest requires the test executable to return 0 when succuss, non-null when fail */
+    runner_run();
+err:
+    runner_fini();
+err_init:
     return CU_get_error();
 }
-
