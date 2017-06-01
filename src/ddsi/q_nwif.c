@@ -441,7 +441,7 @@ static int set_rcvbuf (os_socket socket)
   {
     /* make sure the receive buffersize is at least the minimum required */
     ReceiveBufferSize = socket_min_rcvbuf_size;
-    os_sockSetsockopt (socket, SOL_SOCKET, SO_RCVBUF, (const char *) &ReceiveBufferSize, sizeof (ReceiveBufferSize));
+    (void) os_sockSetsockopt (socket, SOL_SOCKET, SO_RCVBUF, (const char *) &ReceiveBufferSize, sizeof (ReceiveBufferSize));
 
     /* We don't check the return code from setsockopt, because some O/Ss tend
        to silently cap the buffer size.  The only way to make sure is to read

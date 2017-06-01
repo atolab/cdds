@@ -169,7 +169,7 @@ static void ddsi_tcp_sock_free (os_socket sock, const char * msg)
   {
     if (msg)
     {
-      nn_log (LC_INFO, "%s %s free socket %d\n", ddsi_name, msg, sock);
+      nn_log (LC_INFO, "%s %s free socket %"PRIsock"\n", ddsi_name, msg, sock);
     }
     os_sockFree (sock);
   }
@@ -227,7 +227,7 @@ static void ddsi_tcp_conn_connect (ddsi_tcp_conn_t conn, const struct msghdr * m
 #endif
 
     sockaddr_to_string_with_port(buff, (const os_sockaddr_storage *) msg->msg_name);
-    nn_log (LC_INFO, "%s connect socket %d port %d to %s\n", ddsi_name, sock, get_socket_port (sock), buff);
+    nn_log (LC_INFO, "%s connect socket %"PRIsock" port %u to %s\n", ddsi_name, sock, get_socket_port (sock), buff);
 
     /* Also may need to receive on connection so add to waitset */
 
@@ -272,7 +272,7 @@ static void ddsi_tcp_cache_add (ddsi_tcp_conn_t conn, ut_avlIPath_t * path)
   }
 
   sockaddr_to_string_with_port(buff, &conn->m_peer_addr);
-  nn_log (LC_INFO, "%s cache %s %s socket %d to %s\n", ddsi_name, action, conn->m_base.m_server ? "server" : "client", conn->m_sock, buff);
+  nn_log (LC_INFO, "%s cache %s %s socket %"PRIsock" to %s\n", ddsi_name, action, conn->m_base.m_server ? "server" : "client", conn->m_sock, buff);
 }
 
 static void ddsi_tcp_cache_remove (ddsi_tcp_conn_t conn)
@@ -286,7 +286,7 @@ static void ddsi_tcp_cache_remove (ddsi_tcp_conn_t conn)
   if (node)
   {
     sockaddr_to_string_with_port(buff, &conn->m_peer_addr);
-    nn_log (LC_INFO, "%s cache removed socket %d to %s\n", ddsi_name, conn->m_sock, buff);
+    nn_log (LC_INFO, "%s cache removed socket %"PRIsock" to %s\n", ddsi_name, conn->m_sock, buff);
     ut_avlDeleteDPath (&ddsi_tcp_treedef, &ddsi_tcp_cache_g, node, &path);
     ddsi_tcp_node_free (node);
   }
@@ -337,6 +337,7 @@ static ddsi_tcp_conn_t ddsi_tcp_cache_find (const struct msghdr * msg)
 
 static ssize_t ddsi_tcp_conn_read_plain (ddsi_tcp_conn_t tcp, void * buf, size_t len, int * err)
 {
+  #pragma warning(suppress : 4267) /* Parameter len has type int on Win32/64. There is no way to specify more, so the warning on possible loss of precision is suppressed. */
   ssize_t ret = recv (tcp->m_sock, buf, len, 0);
   *err = (ret == -1) ? os_getErrno () : 0;
   return ret;
@@ -366,7 +367,7 @@ static bool ddsi_tcp_select (os_socket sock, bool read, size_t pos)
   TRACE_TCP (("%s blocked %s: sock %d\n", ddsi_name, read ? "read" : "write", (int) sock));
   do
   {
-    ret = os_sockSelect (sock + 1, rdset, wrset, NULL, &timeout);
+    ret = os_sockSelect ((int32_t)sock + 1, rdset, wrset, NULL, &timeout); /* The variable "sock" with os_socket type causes the possible loss of data. So type casting done */
   }
   while (ret == -1 && os_getErrno () == os_sockEINTR);
 
@@ -419,7 +420,7 @@ static ssize_t ddsi_tcp_conn_read (ddsi_tran_conn_t conn, unsigned char * buf, s
     }
     else if (n == 0)
     {
-      TRACE_TCP (("%s read: sock %d closed-by-peer\n", ddsi_name, (int) tcp->m_sock));
+      TRACE_TCP (("%s read: sock %"PRIsock" closed-by-peer\n", ddsi_name, tcp->m_sock));
       break;
     }
     else
@@ -435,7 +436,7 @@ static ssize_t ddsi_tcp_conn_read (ddsi_tran_conn_t conn, unsigned char * buf, s
         }
         else
         {
-          TRACE_TCP (("%s read: sock %d error %d\n", ddsi_name, (int) tcp->m_sock, err));
+          TRACE_TCP (("%s read: sock %"PRIsock" error %d\n", ddsi_name, tcp->m_sock, err));
           break;
         }
       }
@@ -454,6 +455,7 @@ static ssize_t ddsi_tcp_conn_write_plain (ddsi_tcp_conn_t conn, const void * buf
 #ifdef MSG_NOSIGNAL
   sendflags |= MSG_NOSIGNAL;
 #endif
+  #pragma warning(suppress : 4267) /* Parameter len has type int on Win32/64. There is no way to specify more, so the warning on possible loss of precision is suppressed. */
   ret = send (conn->m_sock, buf, len, sendflags);
   *err = (ret == -1) ? os_getErrno () : 0;
 
@@ -502,7 +504,7 @@ static ssize_t ddsi_tcp_block_write
         }
         else
         {
-          TRACE_TCP (("%s write: sock %d error %d\n", ddsi_name, (int) conn->m_sock, err));
+          TRACE_TCP (("%s write: sock %"PRIsock" error %d\n", ddsi_name, conn->m_sock, err));
           break;
         }
       }
@@ -551,7 +553,7 @@ static ssize_t ddsi_tcp_conn_write (ddsi_tran_conn_t base, const struct msghdr *
 
   if (!connect && ((flags & DDSI_TRAN_ON_CONNECT) != 0))
   {
-    TRACE_TCP (("%s write: sock %d message filtered\n", ddsi_name, (int) conn->m_sock));
+    TRACE_TCP (("%s write: sock %"PRIsock" message filtered\n", ddsi_name, conn->m_sock));
     os_mutexUnlock (&conn->m_mutex);
     return (ssize_t) len;
   }
@@ -613,14 +615,14 @@ static ssize_t ddsi_tcp_conn_write (ddsi_tran_conn_t base, const struct msghdr *
           {
             nn_log
             (
-              LC_WARNING, "%s write failed on socket %d with errno %d\n",
+              LC_WARNING, "%s write failed on socket %"PRIsock" with errno %d\n",
               ddsi_name, conn->m_sock, err
             );
           }
         }
         else
         {
-          TRACE_TCP (("%s write: sock %d ECONNRESET\n", ddsi_name, (int) conn->m_sock));
+          TRACE_TCP (("%s write: sock %"PRIsock" ECONNRESET\n", ddsi_name, conn->m_sock));
         }
       }
     }
@@ -628,7 +630,7 @@ static ssize_t ddsi_tcp_conn_write (ddsi_tran_conn_t base, const struct msghdr *
     {
       if (ret == 0)
       {
-        TRACE_TCP (("%s write: sock %d eof\n", ddsi_name, (int) conn->m_sock));
+        TRACE_TCP (("%s write: sock %"PRIsock" eof\n", ddsi_name, conn->m_sock));
       }
       piecewise = (ret > 0 && (size_t) ret < len);
     }
@@ -761,17 +763,17 @@ static ddsi_tran_conn_t ddsi_tcp_accept (ddsi_tran_listener_t listener)
   {
     getsockname (tl->m_sock, (struct sockaddr *) &addr, &addrlen);
     sockaddr_to_string_with_port(buff, &addr);
-    nn_log ((err == 0) ? LC_ERROR : LC_FATAL, "%s accept failed on socket %d at %s errno %d\n", ddsi_name, tl->m_sock, buff, err);
+    nn_log ((err == 0) ? LC_ERROR : LC_FATAL, "%s accept failed on socket %"PRIsock" at %s errno %d\n", ddsi_name, tl->m_sock, buff, err);
   }
   else if (getpeername (sock, (struct sockaddr *) &addr, &addrlen) == -1)
   {
-    nn_log (LC_WARNING, "%s accepted new socket %d on socket %d but no peer address, errno %d\n", ddsi_name, sock, tl->m_sock, os_getErrno());
+    nn_log (LC_WARNING, "%s accepted new socket %"PRIsock" on socket %"PRIsock" but no peer address, errno %d\n", ddsi_name, sock, tl->m_sock, os_getErrno());
     os_sockFree (sock);
   }
   else
   {
     sockaddr_to_string_with_port(buff, &addr);
-    nn_log (LC_INFO, "%s accept new socket %d on socket %d from %s\n", ddsi_name, sock, tl->m_sock, buff);
+    nn_log (LC_INFO, "%s accept new socket %"PRIsock" on socket %"PRIsock" from %s\n", ddsi_name, sock, tl->m_sock, buff);
 
     os_sockSetNonBlocking (sock, true);
     tcp = ddsi_tcp_new_conn (sock, true, &addr);
@@ -880,7 +882,7 @@ static ddsi_tran_listener_t ddsi_tcp_create_listener (int port, ddsi_tran_qos_t 
     }
 
     sockaddr_to_string_with_port(buff, &addr);
-    nn_log (LC_INFO, "%s create listener socket %d on %s\n", ddsi_name, sock, buff);
+    nn_log (LC_INFO, "%s create listener socket %"PRIsock" on %s\n", ddsi_name, sock, buff);
   }
 
   return tl ? &tl->m_base : NULL;
@@ -890,7 +892,7 @@ static void ddsi_tcp_conn_delete (ddsi_tcp_conn_t conn)
 {
   char buff[INET6_ADDRSTRLEN_EXTENDED];
   sockaddr_to_string_with_port(buff, &conn->m_peer_addr);
-  nn_log (LC_INFO, "%s free %s connnection on socket %d to %s\n", ddsi_name, conn->m_base.m_server ? "server" : "client", conn->m_sock, buff);
+  nn_log (LC_INFO, "%s free %s connnection on socket %"PRIsock" to %s\n", ddsi_name, conn->m_base.m_server ? "server" : "client", conn->m_sock, buff);
 
 #ifdef DDSI_INCLUDE_SSL
   if (ddsi_tcp_ssl_plugin.ssl_free)
@@ -914,7 +916,7 @@ static void ddsi_tcp_close_conn (ddsi_tran_conn_t tc)
     nn_locator_t loc;
     ddsi_tcp_conn_t conn = (ddsi_tcp_conn_t) tc;
     sockaddr_to_string_with_port(buff, &conn->m_peer_addr);
-    nn_log (LC_INFO, "%s close %s connnection on socket %d to %s\n", ddsi_name, conn->m_base.m_server ? "server" : "client", conn->m_sock, buff);
+    nn_log (LC_INFO, "%s close %s connnection on socket %"PRIsock" to %s\n", ddsi_name, conn->m_base.m_server ? "server" : "client", conn->m_sock, buff);
     (void) shutdown (conn->m_sock, 2);
     nn_address_to_loc(&loc, &conn->m_peer_addr, conn->m_peer_addr.ss_family == AF_INET ? NN_LOCATOR_KIND_TCPv4 : NN_LOCATOR_KIND_TCPv6);
     loc.port = conn->m_peer_port;

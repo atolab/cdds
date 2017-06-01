@@ -42,6 +42,7 @@ typedef struct ddsi_udp_conn
 
 static struct ddsi_udp_config ddsi_udp_config_g;
 static struct ddsi_tran_factory ddsi_udp_factory_g;
+static bool ddsi_udp_init_g;
 
 static ssize_t ddsi_udp_conn_read (ddsi_tran_conn_t conn, unsigned char * buf, size_t len)
 {
@@ -227,7 +228,7 @@ static ddsi_tran_conn_t ddsi_udp_create_conn
     nn_log
     (
       LC_INFO,
-      "ddsi_udp_create_conn %s socket %d port %d\n",
+      "ddsi_udp_create_conn %s socket %"PRIsock" port %u\n",
       mcast ? "multicast" : "unicast",
       uc->m_sock,
       uc->m_base.m_base.m_port
@@ -245,7 +246,7 @@ static ddsi_tran_conn_t ddsi_udp_create_conn
     {
       NN_ERROR2
       (
-        "UDP make_socket failed for %s port %d\n",
+        "UDP make_socket failed for %s port %u\n",
         mcast ? "multicast" : "unicast",
         port
       );
@@ -281,7 +282,7 @@ static void ddsi_udp_release_conn (ddsi_tran_conn_t conn)
   nn_log
   (
     LC_INFO,
-    "ddsi_udp_release_conn %s socket %d port %d\n",
+    "ddsi_udp_release_conn %s socket %"PRIsock" port %u\n",
     conn->m_base.m_multicast ? "multicast" : "unicast",
     uc->m_sock,
     uc->m_base.m_base.m_port
@@ -293,12 +294,26 @@ static void ddsi_udp_release_conn (ddsi_tran_conn_t conn)
   os_free (conn);
 }
 
+void ddsi_udp_fini (void)
+{
+    if(ddsi_udp_init_g) {
+        free_group_membership(ddsi_udp_config_g.mship);
+        memset (&ddsi_udp_factory_g, 0, sizeof (ddsi_udp_factory_g));
+
+        ddsi_udp_init_g = false;
+        nn_log (LC_INFO | LC_CONFIG, "udp finalized\n");
+    }
+}
+
 int ddsi_udp_init (void)
 {
-  static bool init = false;
-  if (! init)
+  /* TODO: proper init_once. Either the call doesn't need it, in which case
+   * this can be removed. Or the call does, in which case it should be done right.
+   * The lack of locking suggests it isn't needed.
+   */
+  if (! ddsi_udp_init_g)
   {
-    init = true;
+    ddsi_udp_init_g = true;
     memset (&ddsi_udp_factory_g, 0, sizeof (ddsi_udp_factory_g));
     ddsi_udp_factory_g.m_kind = NN_LOCATOR_KIND_UDPv4;
     ddsi_udp_factory_g.m_typename = "udp";
@@ -306,6 +321,7 @@ int ddsi_udp_init (void)
     ddsi_udp_factory_g.m_supports_fn = ddsi_udp_supports;
     ddsi_udp_factory_g.m_create_conn_fn = ddsi_udp_create_conn;
     ddsi_udp_factory_g.m_release_conn_fn = ddsi_udp_release_conn;
+    ddsi_udp_factory_g.m_free_fn = ddsi_udp_fini;
     ddsi_udp_factory_g.m_join_mc_fn = ddsi_udp_join_mc;
     ddsi_udp_factory_g.m_leave_mc_fn = ddsi_udp_leave_mc;
 #if OS_SOCKET_HAS_IPV6
@@ -315,9 +331,9 @@ int ddsi_udp_init (void)
     }
 #endif
 
-    ddsi_factory_add (&ddsi_udp_factory_g);
-
     ddsi_udp_config_g.mship = new_group_membership();
+
+    ddsi_factory_add (&ddsi_udp_factory_g);
 
     nn_log (LC_INFO | LC_CONFIG, "udp initialized\n");
   }

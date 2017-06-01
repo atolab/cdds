@@ -5,12 +5,15 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 project(VortexDDS)
 
 set(CMAKE_C_STANDARD 99)
+if(CMAKE_SYSTEM_NAME STREQUAL "VxWorks")
+  add_definitions(-std=c99)
+endif()
 
 include(AnalyzeBuild)
 # Include Coverage before CTest so that COVERAGE_COMMAND can be modified
 # in the Coverage module should that ever be necessary.
 include(Coverage)
-set(MEMORYCHECK_COMMAND_OPTIONS "--track-origins=yes --leak-check=full --xml=yes --xml-file=TestResultValgrind.xml --tool=memcheck --show-reachable=yes --leak-resolution=high")
+set(MEMORYCHECK_COMMAND_OPTIONS "--track-origins=yes --leak-check=full --trace-children=yes --child-silent-after-fork=yes --xml=yes --xml-file=TestResultValgrind_%p.xml --tool=memcheck --show-reachable=yes --leak-resolution=high")
 include (CTest)
 enable_testing()
 

@@ -248,10 +248,10 @@ os_stat(
 struct os_stat *buf)
 {
         os_result result;
-        struct _stat _buf;
+        struct _stat32 _buf;
         int r;
 
-        r = _stat(path, &_buf);
+        r = _stat32(path, &_buf);
         if (r == 0) {
                 buf->stat_mode = _buf.st_mode;
                 buf->stat_size = _buf.st_size;
@@ -495,5 +495,5 @@ ssize_t os_write(
         _In_reads_bytes_(count) void const* buf,
         _In_ size_t count)
 {
-        return _write(fd, buf, count);
+        return _write(fd, buf, (unsigned int)count); /* Type casting is done for the warning of conversion from 'size_t' to 'unsigned int', which may cause possible loss of data */
 }

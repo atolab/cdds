@@ -1,12 +1,6 @@
 #include "dds.h"
-
-//#define CRITERION_WRAPPER
-#ifndef CRITERION_WRAPPER
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
-#else /* CRITERION_WRAPPER */
-#include "criterion_mock.h"
-#endif /* CRITERION_WRAPPER */
 
 /* Add --verbose command line argument to get the cr_log_info traces (if there are any). */
 
@@ -298,13 +292,13 @@ void entity_get_entities(void)
     /* Get Children, of which there are currently none. */
     status = dds_get_children (entity, NULL, 0);
     if (status > 0) {
-        cr_assert_fail("dds_get_children(entity, NULL, 0) un-expectantly found children");
+        cr_assert("dds_get_children(entity, NULL, 0) un-expectantly found children");
     } else {
         cr_assert_eq(status, 0, "dds_get_children(entity, NULL, 0) failed");
     }
     status = dds_get_children (entity, &child, 1);
     if (status > 0) {
-        cr_assert_fail("dds_get_children(entity, child, 1) un-expectantly returned children");
+        cr_assert("dds_get_children(entity, child, 1) un-expectantly returned children");
     } else {
         cr_assert_eq(status, 0, "dds_get_children(entity, child, 1) failed");
     }

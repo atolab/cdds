@@ -60,7 +60,7 @@ void dds_key_gen
         case DDS_OP_VAL_2BY: len += 2; break;
         case DDS_OP_VAL_4BY: len += 4; break;
         case DDS_OP_VAL_8BY: len += 8; break;
-        case DDS_OP_VAL_STR: src = *((char**) src); 
+        case DDS_OP_VAL_STR: src = *((char**) src); /* Fall-through intentional */
         case DDS_OP_VAL_BST: len += (uint32_t) (5 + strlen (src)); break;
         case DDS_OP_VAL_ARR: 
           len += op[2] * dds_op_size[DDS_OP_SUBTYPE (*op)];
@@ -118,7 +118,7 @@ void dds_key_gen
       case DDS_OP_VAL_STR:
       {
         src = *((char**) src);
-      }
+      } /* Fall-through intentional */
       case DDS_OP_VAL_BST:
       {
         uint32_t u32;

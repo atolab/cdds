@@ -148,7 +148,8 @@ static int dds_waitset_remove_condition (dds_waitset * ws, dds_condition * cond)
     dds_condition_remove_waitset (cond, ws);
 }
 
-bool dds_waitset_add_condition_locked (dds_waitset * ws, dds_condition * cond, dds_attach_t x)
+_Check_return_
+bool dds_waitset_add_condition_locked (_In_ dds_waitset * ws, _In_ dds_condition * cond, _In_ dds_attach_t x)
 {
   dds_ws_cond_link * wsl = NULL;
 
@@ -167,7 +168,7 @@ bool dds_waitset_add_condition_locked (dds_waitset * ws, dds_condition * cond, d
   return (wsl != NULL);
 }
 
-int dds_waitset_remove_condition_locked (dds_waitset * ws, dds_condition * cond)
+int dds_waitset_remove_condition_locked (_In_ dds_waitset * ws, _In_ dds_condition * cond)
 {
   dds_ws_cond_link * iter;
   dds_ws_cond_link * prev;
@@ -387,13 +388,14 @@ int dds_waitset_wait (dds_waitset_t ws, dds_attach_t *xs, size_t nxs, dds_time_t
   return dds_waitset_wait_impl (ws, xs, nxs, abstimeout, tnow);
 }
 
-void dds_waitset_signal (dds_waitset * ws)
+void dds_waitset_signal (_In_ dds_waitset * ws)
 {
   os_mutexLock (&ws->conds_lock);
   ws->triggered++;
-  if (ws->block == 0)
+  if (ws->block == 0) {
     os_condBroadcast (&ws->cv);
-  else if (ws->trp_xs) /* note: signal is called also when no-one is waiting */
-    dds_waitset_wait_impl_locked(ws, ws->trp_xs, ws->trp_nxs, ws->trp_abstimeout, dds_time());
+  } else if (ws->trp_xs) { /* note: signal is called also when no-one is waiting */
+    (void)dds_waitset_wait_impl_locked(ws, ws->trp_xs, ws->trp_nxs, ws->trp_abstimeout, dds_time());
+  }
   os_mutexUnlock (&ws->conds_lock);
 }

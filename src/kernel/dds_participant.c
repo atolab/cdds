@@ -84,7 +84,7 @@ dds_entity_t dds_create_participant
 )
 {
   int ret;
-  dds_entity_t e;
+  dds_entity_t e = NULL;
   nn_guid_t guid;
   dds_participant * pp;
   nn_plist_t plist;
@@ -138,6 +138,7 @@ dds_entity_t dds_create_participant
 
   if (ret != 0)
   {
+    dds_qos_delete(new_qos);
     ret = DDS_ERRNO (DDS_RETCODE_ERROR, DDS_MOD_KERNEL, DDS_ERR_M4);
     goto fail;
   }

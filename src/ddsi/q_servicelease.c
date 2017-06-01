@@ -102,7 +102,7 @@ static void *lease_renewal_thread (struct nn_servicelease *sl)
           vtime_t wd = thread_states.ts[i].watchdog;
           int alive = vtime_asleep_p (vt) || vtime_asleep_p (wd) || vtime_gt (wd, sl->av_ary[i].wd);
           n_alive += (unsigned) alive;
-          TRACE ((" %d(%s):%c:%u:%u->%u:", i, thread_states.ts[i].name, alive ? 'a' : 'd', vt, sl->av_ary[i].wd, wd));
+          TRACE ((" %u(%s):%c:%u:%u->%u:", i, thread_states.ts[i].name, alive ? 'a' : 'd', vt, sl->av_ary[i].wd, wd));
           sl->av_ary[i].wd = wd;
           if (sl->av_ary[i].alive != alive)
           {
@@ -125,7 +125,7 @@ static void *lease_renewal_thread (struct nn_servicelease *sl)
        the DDSI2 service to be marked as dead. */
     if (n_alive == thread_states.nthreads)
     {
-      TRACE ((": [%d] renewing\n", n_alive));
+      TRACE ((": [%u] renewing\n", n_alive));
       /* FIXME: perhaps it would be nice to control automatic
          liveliness updates from here.
          FIXME: should terminate failure of renew_cb() */
@@ -134,7 +134,7 @@ static void *lease_renewal_thread (struct nn_servicelease *sl)
     }
     else
     {
-      TRACE ((": [%d] NOT renewing\n", n_alive));
+      TRACE ((": [%u] NOT renewing\n", n_alive));
       if (was_alive)
         log_stack_traces ();
       was_alive = 0;

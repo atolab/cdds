@@ -395,13 +395,13 @@ static FILE * open_socket (char *host, unsigned short port)
         goto err_connect;
     }
 
-    file = fdopen ((int)sock, "w");
+    file = fdopen ((int)sock, "w"); /* Type casting is done for the warning of possible loss of data for Parameter "sock" with the type of "os_socket" */
 
     return file;
 
 /* Error handling */
 err_connect:
-    (void) close(sock);
+    (void) close((int)sock); /* Type casting is done for the warning of possible loss of data for Parameter "sock" with the type of "os_socket" */
 err_socket:
     os_strerror_r(os_getErrno(), msg, sizeof(msg));
     os__report_fprintf(stderr, "%s: %s\n", errstr, msg);
@@ -2313,7 +2313,7 @@ os__report_fprintf(FILE *file,
          * stdout can also give broken pipe)
          */
         va_start(args, format);
-        os_vfprintfnosigpipe(stdout, format, args);
+        (void) os_vfprintfnosigpipe(stdout, format, args);
         va_end(args);
     }
     return BytesWritten;

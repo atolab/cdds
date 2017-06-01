@@ -171,6 +171,7 @@ ddsi_tran_conn_t ddsi_factory_create_conn
   uint32_t port,
   ddsi_tran_qos_t qos
 );
+void ddsi_tran_factories_fini (void);
 void ddsi_factory_add (ddsi_tran_factory_t factory);
 void ddsi_factory_free (ddsi_tran_factory_t factory);
 ddsi_tran_factory_t ddsi_factory_find (const char * type);

@@ -820,7 +820,7 @@ static void add_AckNack (struct nn_xmsg *msg, struct proxy_writer *pwr, struct p
     nn_xmsg_shrink (msg, sm_marker, ACKNACK_SIZE (an->readerSNState.numbits));
     nn_xmsg_submsg_setnext (msg, sm_marker);
 
-    TRACE (("acknack %x:%x:%x:%x -> %x:%x:%x:%x: #%d:%"PRId64"/%d:",
+    TRACE (("acknack %x:%x:%x:%x -> %x:%x:%x:%x: #%d:%"PRId64"/%u:",
             PGUID (rwn->rd_guid), PGUID (pwr->e.guid), rwn->count,
             base, an->readerSNState.numbits));
     for (ui = 0; ui != an->readerSNState.numbits; ui++)
@@ -851,7 +851,7 @@ static void add_AckNack (struct nn_xmsg *msg, struct proxy_writer *pwr, struct p
       *countp = ++pwr->nackfragcount;
       nn_xmsg_submsg_setnext (msg, sm_marker);
 
-      TRACE ((" + nackfrag #%d:%"PRId64"/%u/%d:", *countp, fromSN (nf->writerSN), nf->fragmentNumberState.bitmap_base, nf->fragmentNumberState.numbits));
+      TRACE ((" + nackfrag #%d:%"PRId64"/%u/%u:", *countp, fromSN (nf->writerSN), nf->fragmentNumberState.bitmap_base, nf->fragmentNumberState.numbits));
       for (ui = 0; ui != nf->fragmentNumberState.numbits; ui++)
         TRACE (("%c", nn_bitset_isset (nf->fragmentNumberState.numbits, nf->fragmentNumberState.bits, ui) ? '1' : '0'));
     }

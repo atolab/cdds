@@ -997,7 +997,7 @@ static int do_locator
       }
       if ((int)x->base + x->count >= 28 || x->count == 0 || x->idx >= x->count)
       {
-        TRACE (("plist/do_locator[kind=IPv4MCGEN]: invalid base/count/idx (%d,%d,%d)\n", x->base, x->count, x->idx));
+        TRACE (("plist/do_locator[kind=IPv4MCGEN]: invalid base/count/idx (%u,%u,%u)\n", x->base, x->count, x->idx));
         return ERR_INVALID;
       }
       break;
@@ -1243,7 +1243,7 @@ static int valid_endpoint_guid (const nn_guid_t *g, const struct dd *dd)
             return 0;
           else
           {
-            TRACE (("plist/valid_endpoint_guid[src=USER,proto=%d.%d]: invalid kind (%x)\n",
+            TRACE (("plist/valid_endpoint_guid[src=USER,proto=%u.%u]: invalid kind (%x)\n",
                     dd->protocol_version.major, dd->protocol_version.minor,
                     g->entityid.u & NN_ENTITYID_KIND_MASK));
             return ERR_INVALID;
@@ -1268,7 +1268,7 @@ static int valid_endpoint_guid (const nn_guid_t *g, const struct dd *dd)
             return 0;
           else
           {
-            TRACE (("plist/valid_endpoint_guid[src=BUILTIN,proto=%d.%d]: invalid entityid (%x)\n",
+            TRACE (("plist/valid_endpoint_guid[src=BUILTIN,proto=%u.%u]: invalid entityid (%x)\n",
                     dd->protocol_version.major, dd->protocol_version.minor, g->entityid.u));
             return ERR_INVALID;
           }
@@ -1295,7 +1295,7 @@ static int valid_endpoint_guid (const nn_guid_t *g, const struct dd *dd)
               return 0;
             else
             {
-              TRACE (("plist/valid_endpoint_guid[src=VENDOR,proto=%d.%d]: invalid entityid (%x)\n",
+              TRACE (("plist/valid_endpoint_guid[src=VENDOR,proto=%u.%u]: invalid entityid (%x)\n",
                       dd->protocol_version.major, dd->protocol_version.minor, g->entityid.u));
               return 0;
             }
@@ -1321,7 +1321,7 @@ static int do_guid (nn_guid_t *dst, uint64_t *present, uint64_t fl, int (*valid)
     if (fl == PP_PARTICIPANT_GUID && vendor_is_twinoaks (dd->vendorid) &&
         dst->entityid.u == 0 && ! NN_STRICT_P)
     {
-      NN_WARNING6 ("plist(vendor %d.%d): rewriting invalid participant guid %x:%x:%x:%x\n",
+      NN_WARNING6 ("plist(vendor %u.%u): rewriting invalid participant guid %x:%x:%x:%x\n",
                    dd->vendorid.id[0], dd->vendorid.id[1],
                    dst->prefix.u[0], dst->prefix.u[1], dst->prefix.u[2], dst->entityid.u);
       dst->entityid.u = NN_ENTITYID_PARTICIPANT;
@@ -1719,7 +1719,7 @@ static int init_one_parameter
         /* Not accepting a submessage advertising a protocol version
            other than that advertised by the message header, unless I
            have good reason to, at least not when being strict. */
-        TRACE (("plist/init_one_parameter[pid=PROTOCOL_VERSION,mode=STRICT]: version (%d.%d) mismatch with message (%d.%d)\n",
+        TRACE (("plist/init_one_parameter[pid=PROTOCOL_VERSION,mode=STRICT]: version (%u.%u) mismatch with message (%u.%u)\n",
                 dest->protocol_version.major, dest->protocol_version.minor,
                 dd->protocol_version.major, dd->protocol_version.minor));
         return ERR_INVALID;
@@ -1736,7 +1736,7 @@ static int init_one_parameter
            dest->vendorid.id[1] != dd->vendorid.id[1]))
       {
         /* see PROTOCOL_VERSION */
-        TRACE (("plist/init_one_parameter[pid=VENDORID,mode=STRICT]: vendor (%d.%d) mismatch with message (%d.%d)\n",
+        TRACE (("plist/init_one_parameter[pid=VENDORID,mode=STRICT]: vendor (%u.%u) mismatch with message (%u.%u)\n",
                 dest->vendorid.id[0], dest->vendorid.id[1], dd->vendorid.id[0], dd->vendorid.id[1]));
         return ERR_INVALID;
       }
@@ -1835,7 +1835,7 @@ static int init_one_parameter
     case PID_BUILTIN_ENDPOINT_SET:
       if (dd->bufsz < sizeof (dest->builtin_endpoint_set))
       {
-        TRACE (("plist/init_one_parameter[pid=BUILTIN_ENDPOINT_SET(%d)]: buffer too small\n", pid));
+        TRACE (("plist/init_one_parameter[pid=BUILTIN_ENDPOINT_SET(%u)]: buffer too small\n", pid));
         return ERR_INVALID;
       }
       memcpy (&dest->builtin_endpoint_set, dd->buf, sizeof (dest->builtin_endpoint_set));
@@ -1859,7 +1859,7 @@ static int init_one_parameter
                                           NN_BUILTIN_ENDPOINT_PARTICIPANT_MESSAGE_DATA_WRITER |
                                           NN_BUILTIN_ENDPOINT_PARTICIPANT_MESSAGE_DATA_READER)) != 0)
       {
-        TRACE (("plist/init_one_parameter[pid=BUILTIN_ENDPOINT_SET(%d),mode=STRICT,proto=%d.%d]: invalid set (0x%x)\n",
+        TRACE (("plist/init_one_parameter[pid=BUILTIN_ENDPOINT_SET(%u),mode=STRICT,proto=%u.%u]: invalid set (0x%x)\n",
                 pid, dd->protocol_version.major, dd->protocol_version.minor, dest->builtin_endpoint_set));
         return ERR_INVALID;
       }
@@ -1871,7 +1871,7 @@ static int init_one_parameter
         return 0;
       else if (dd->bufsz < sizeof (dest->prismtech_builtin_endpoint_set))
       {
-        TRACE (("plist/init_one_parameter[pid=PRISMTECH_BUILTIN_ENDPOINT_SET(%d)]: buffer too small\n", pid));
+        TRACE (("plist/init_one_parameter[pid=PRISMTECH_BUILTIN_ENDPOINT_SET(%u)]: buffer too small\n", pid));
         return ERR_INVALID;
       }
       else
@@ -1914,7 +1914,7 @@ static int init_one_parameter
       {
         /* Spec says I may not interpret the reserved bits. But no-one
            may use them in this version of the specification */
-        TRACE (("plist/init_one_parameter[pid=STATUSINFO,mode=STRICT,proto=%d.%d]: invalid statusinfo (0x%x)\n",
+        TRACE (("plist/init_one_parameter[pid=STATUSINFO,mode=STRICT,proto=%u.%u]: invalid statusinfo (0x%x)\n",
                 dd->protocol_version.major, dd->protocol_version.minor, dest->statusinfo));
         return ERR_INVALID;
       }
@@ -1960,7 +1960,7 @@ static int init_one_parameter
            reject it: in (really) strict mode we do not accept
            undefined things, even though we are -arguably- supposed to
            ignore it. */
-        TRACE (("plist/init_one_parameter[pid=ENDPOINT_GUID,mode=PEDANTIC,proto=%d.%d]: undefined pid\n",
+        TRACE (("plist/init_one_parameter[pid=ENDPOINT_GUID,mode=PEDANTIC,proto=%u.%u]: undefined pid\n",
                 dd->protocol_version.major, dd->protocol_version.minor));
         return ERR_INVALID;
       }
@@ -2131,7 +2131,7 @@ static int init_one_parameter
         return 0;
       else if (!protocol_version_is_newer (dd->protocol_version) && NN_STRICT_P)
       {
-        TRACE (("plist/init_one_parameter[pid=%d,mode=STRICT,proto=%d.%d]: undefined paramter id\n",
+        TRACE (("plist/init_one_parameter[pid=%u,mode=STRICT,proto=%u.%u]: undefined paramter id\n",
                 pid, dd->protocol_version.major, dd->protocol_version.minor));
         return ERR_INVALID;
       }
@@ -2315,7 +2315,7 @@ int nn_plist_init_frommsg
 #endif
       break;
     default:
-      NN_WARNING3 ("plist(vendor %d.%d): unknown encoding (%d)\n",
+      NN_WARNING3 ("plist(vendor %u.%u): unknown encoding (%d)\n",
                    src->vendorid.id[0], src->vendorid.id[1], src->encoding);
       return ERR_INVALID;
   }
@@ -2357,14 +2357,14 @@ int nn_plist_init_frommsg
     }
     if (length > src->bufsz - sizeof (*par) - (unsigned) (pl - src->buf))
     {
-      NN_WARNING3 ("plist(vendor %d.%d): parameter length %d out of bounds\n",
+      NN_WARNING3 ("plist(vendor %u.%u): parameter length %u out of bounds\n",
                    src->vendorid.id[0], src->vendorid.id[1], length);
       nn_plist_fini (dest);
       return ERR_INVALID;
     }
     if ((length % 4) != 0) /* DDSI 9.4.2.11 */
     {
-      NN_WARNING3 ("plist(vendor %d.%d): parameter length %d mod 4 != 0\n",
+      NN_WARNING3 ("plist(vendor %u.%u): parameter length %u mod 4 != 0\n",
                    src->vendorid.id[0], src->vendorid.id[1], length);
       nn_plist_fini (dest);
       return ERR_INVALID;
@@ -2372,7 +2372,7 @@ int nn_plist_init_frommsg
 
     if (config.enabled_logcats & LC_PLIST)
     {
-      TRACE_PLIST (("%4x PID %x len %d ", (unsigned) (pl - src->buf), pid, length));
+      TRACE_PLIST (("%4x PID %x len %u ", (unsigned) (pl - src->buf), pid, length));
       log_octetseq(LC_PLIST, length, (const unsigned char *) (par + 1));
       TRACE_PLIST (("\n"));
     }
@@ -2382,7 +2382,7 @@ int nn_plist_init_frommsg
     if ((res = init_one_parameter (dest, &dest_tmp, pwanted, qwanted, pid, &dd)) < 0)
     {
       /* make sure we print a trace message on error */
-      TRACE (("plist(vendor %d.%d): failed at pid=%d\n", src->vendorid.id[0], src->vendorid.id[1], pid));
+      TRACE (("plist(vendor %u.%u): failed at pid=%u\n", src->vendorid.id[0], src->vendorid.id[1], pid));
       nn_plist_fini (dest);
       return res;
     }
@@ -2390,7 +2390,7 @@ int nn_plist_init_frommsg
   }
   /* If we get here, that means we reached the end of the message
      without encountering a sentinel. That is an error */
-  NN_WARNING2 ("plist(vendor %d.%d): invalid parameter list: sentinel missing\n",
+  NN_WARNING2 ("plist(vendor %u.%u): invalid parameter list: sentinel missing\n",
                src->vendorid.id[0], src->vendorid.id[1]);
   nn_plist_fini (dest);
   return ERR_INVALID;
@@ -2423,7 +2423,7 @@ unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn
 #endif
       break;
     default:
-      NN_WARNING3 ("plist(vendor %d.%d): quickscan: unknown encoding (%d)\n",
+      NN_WARNING3 ("plist(vendor %u.%u): quickscan: unknown encoding (%d)\n",
                    src->vendorid.id[0], src->vendorid.id[1], src->encoding);
       return NULL;
   }
@@ -2441,13 +2441,13 @@ unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn
       return (unsigned char *) pl;
     if (length > src->bufsz - (size_t)(pl - src->buf))
     {
-      NN_WARNING3 ("plist(vendor %d.%d): quickscan: parameter length %d out of bounds\n",
+      NN_WARNING3 ("plist(vendor %u.%u): quickscan: parameter length %u out of bounds\n",
                   src->vendorid.id[0], src->vendorid.id[1], length);
       return NULL;
     }
     if ((length % 4) != 0) /* DDSI 9.4.2.11 */
     {
-      NN_WARNING3 ("plist(vendor %d.%d): quickscan: parameter length %d mod 4 != 0\n",
+      NN_WARNING3 ("plist(vendor %u.%u): quickscan: parameter length %u mod 4 != 0\n",
                    src->vendorid.id[0], src->vendorid.id[1], length);
       return NULL;
     }
@@ -2458,7 +2458,7 @@ unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn
       case PID_KEYHASH:
       if (length < sizeof (dest->keyhash))
       {
-        TRACE (("plist(vendor %d.%d): quickscan(PID_KEYHASH): buffer too small\n",
+        TRACE (("plist(vendor %u.%u): quickscan(PID_KEYHASH): buffer too small\n",
           src->vendorid.id[0], src->vendorid.id[1]));
         return NULL;
       }
@@ -2468,7 +2468,7 @@ unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn
       case PID_STATUSINFO:
         if (length < 4)
         {
-          TRACE (("plist(vendor %d.%d): quickscan(PID_STATUSINFO): buffer too small\n",
+          TRACE (("plist(vendor %u.%u): quickscan(PID_STATUSINFO): buffer too small\n",
                   src->vendorid.id[0], src->vendorid.id[1]));
           return NULL;
         }
@@ -2492,7 +2492,7 @@ unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn
   }
   /* If we get here, that means we reached the end of the message
      without encountering a sentinel. That is an error */
-  NN_WARNING2 ("plist(vendor %d.%d): quickscan: invalid parameter list: sentinel missing\n",
+  NN_WARNING2 ("plist(vendor %u.%u): quickscan: invalid parameter list: sentinel missing\n",
                src->vendorid.id[0], src->vendorid.id[1]);
   return NULL;
 }
@@ -3278,7 +3278,7 @@ static void log_octetseq (logcat_t cat, unsigned n, const unsigned char *xs)
         m = 1;
       while (m--)
       {
-        nn_log (cat, "%s%d", i == 0 ? "" : ",", *xs++);
+        nn_log (cat, "%s%u", i == 0 ? "" : ",", *xs++);
         i++;
       }
     }
@@ -3307,7 +3307,7 @@ void nn_log_xqos (logcat_t cat, const nn_xqos_t *xqos)
 
   DO (TOPIC_NAME, { LOGB1 ("topic=%s", xqos->topic_name); });
   DO (TYPE_NAME, { LOGB1 ("type=%s", xqos->type_name); });
-  DO (PRESENTATION, { LOGB3 ("presentation=%d:%d:%d", xqos->presentation.access_scope, xqos->presentation.coherent_access, xqos->presentation.ordered_access); });
+  DO (PRESENTATION, { LOGB3 ("presentation=%d:%u:%u", xqos->presentation.access_scope, xqos->presentation.coherent_access, xqos->presentation.ordered_access); });
   DO (PARTITION, {
       unsigned i;
       LOGB0 ("partition={");
@@ -3317,12 +3317,12 @@ void nn_log_xqos (logcat_t cat, const nn_xqos_t *xqos)
       nn_log (cat, "}");
     });
   DO (GROUP_DATA, {
-    LOGB1 ("group_data=%d<", xqos->group_data.length);
+    LOGB1 ("group_data=%u<", xqos->group_data.length);
     log_octetseq (cat, xqos->group_data.length, xqos->group_data.value);
     nn_log (cat, ">");
   });
   DO (TOPIC_DATA, {
-    LOGB1 ("topic_data=%d<", xqos->topic_data.length);
+    LOGB1 ("topic_data=%u<", xqos->topic_data.length);
     log_octetseq (cat, xqos->topic_data.length, xqos->topic_data.value);
     nn_log (cat, ">");
   });
@@ -3343,31 +3343,31 @@ void nn_log_xqos (logcat_t cat, const nn_xqos_t *xqos)
   DO (TRANSPORT_PRIORITY, { LOGB1 ("transport_priority=%d", xqos->transport_priority.value); });
   DO (LIFESPAN, { LOGB1 ("lifespan="FMT_DUR, PRINTARG_DUR (xqos->lifespan.duration)); });
   DO (USER_DATA, {
-    LOGB1 ("user_data=%d<", xqos->user_data.length);
+    LOGB1 ("user_data=%u<", xqos->user_data.length);
     log_octetseq (cat, xqos->user_data.length, xqos->user_data.value);
     nn_log (cat, ">");
   });
   DO (OWNERSHIP, { LOGB1 ("ownership=%d", xqos->ownership.kind); });
   DO (OWNERSHIP_STRENGTH, { LOGB1 ("ownership_strength=%d", xqos->ownership_strength.value); });
   DO (TIME_BASED_FILTER, { LOGB1 ("time_based_filter="FMT_DUR, PRINTARG_DUR (xqos->time_based_filter.minimum_separation)); });
-  DO (PRISMTECH_READER_DATA_LIFECYCLE, { LOGB5 ("reader_data_lifecycle="FMT_DUR":"FMT_DUR":%d:%d:%d", PRINTARG_DUR (xqos->reader_data_lifecycle.autopurge_nowriter_samples_delay), PRINTARG_DUR (xqos->reader_data_lifecycle.autopurge_disposed_samples_delay), xqos->reader_data_lifecycle.autopurge_dispose_all, xqos->reader_data_lifecycle.enable_invalid_samples, (int) xqos->reader_data_lifecycle.invalid_sample_visibility); });
+  DO (PRISMTECH_READER_DATA_LIFECYCLE, { LOGB5 ("reader_data_lifecycle="FMT_DUR":"FMT_DUR":%u:%u:%d", PRINTARG_DUR (xqos->reader_data_lifecycle.autopurge_nowriter_samples_delay), PRINTARG_DUR (xqos->reader_data_lifecycle.autopurge_disposed_samples_delay), xqos->reader_data_lifecycle.autopurge_dispose_all, xqos->reader_data_lifecycle.enable_invalid_samples, (int) xqos->reader_data_lifecycle.invalid_sample_visibility); });
   DO (PRISMTECH_WRITER_DATA_LIFECYCLE, {
-    LOGB3 ("writer_data_lifecycle={%d,"FMT_DUR","FMT_DUR"}",
+    LOGB3 ("writer_data_lifecycle={%u,"FMT_DUR","FMT_DUR"}",
            xqos->writer_data_lifecycle.autodispose_unregistered_instances,
            PRINTARG_DUR (xqos->writer_data_lifecycle.autounregister_instance_delay),
            PRINTARG_DUR (xqos->writer_data_lifecycle.autopurge_suspended_samples_delay)); });
-  DO (PRISMTECH_RELAXED_QOS_MATCHING, { LOGB1 ("relaxed_qos_matching=%d", xqos->relaxed_qos_matching.value); });
-  DO (PRISMTECH_READER_LIFESPAN, { LOGB2 ("reader_lifespan={%d,"FMT_DUR"}", xqos->reader_lifespan.use_lifespan, PRINTARG_DUR (xqos->reader_lifespan.duration)); });
+  DO (PRISMTECH_RELAXED_QOS_MATCHING, { LOGB1 ("relaxed_qos_matching=%u", xqos->relaxed_qos_matching.value); });
+  DO (PRISMTECH_READER_LIFESPAN, { LOGB2 ("reader_lifespan={%u,"FMT_DUR"}", xqos->reader_lifespan.use_lifespan, PRINTARG_DUR (xqos->reader_lifespan.duration)); });
   DO (PRISMTECH_SUBSCRIPTION_KEYS, {
     unsigned i;
-    LOGB1 ("subscription_keys={%d,{", xqos->subscription_keys.use_key_list);
+    LOGB1 ("subscription_keys={%u,{", xqos->subscription_keys.use_key_list);
     for (i = 0; i < xqos->subscription_keys.key_list.n; i++) {
       nn_log (cat, "%s%s", (i == 0) ? "" : ",", xqos->subscription_keys.key_list.strs[i]);
     }
     nn_log (cat, "}}");
   });
-  DO (PRISMTECH_ENTITY_FACTORY, { LOGB1 ("entity_factory=%d", xqos->entity_factory.autoenable_created_entities); });
-  DO (PRISMTECH_SYNCHRONOUS_ENDPOINT, { LOGB1 ("synchronous_endpoint=%d", xqos->synchronous_endpoint.value); });
+  DO (PRISMTECH_ENTITY_FACTORY, { LOGB1 ("entity_factory=%u", xqos->entity_factory.autoenable_created_entities); });
+  DO (PRISMTECH_SYNCHRONOUS_ENDPOINT, { LOGB1 ("synchronous_endpoint=%u", xqos->synchronous_endpoint.value); });
 
 #undef PRINTARG_DUR
 #undef FMT_DUR

@@ -729,7 +729,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_etime_t tnow, const Ac
   src.entityid = msg->readerId;
   dst.prefix = rst->dst_guid_prefix;
   dst.entityid = msg->writerId;
-  TRACE (("ACKNACK(%s#%d:%"PRId64"/%d:", msg->smhdr.flags & ACKNACK_FLAG_FINAL ? "F" : "",
+  TRACE (("ACKNACK(%s#%d:%"PRId64"/%u:", msg->smhdr.flags & ACKNACK_FLAG_FINAL ? "F" : "",
           *countp, fromSN (msg->readerSNState.bitmap_base), msg->readerSNState.numbits));
   for (i = 0; i < msg->readerSNState.numbits; i++)
     TRACE (("%c", nn_bitset_isset (msg->readerSNState.numbits, msg->readerSNState.bits, i) ? '1' : '0'));
@@ -1033,7 +1033,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_etime_t tnow, const Ac
        that. */
     if (gapend-1 + gapnumbits > max_seq_in_reply)
       max_seq_in_reply = gapend-1 + gapnumbits;
-    TRACE ((" XGAP%"PRId64"..%"PRId64"/%d:", gapstart, gapend, gapnumbits));
+    TRACE ((" XGAP%"PRId64"..%"PRId64"/%u:", gapstart, gapend, gapnumbits));
     for (i = 0; i < gapnumbits; i++)
       TRACE (("%c", nn_bitset_isset (gapnumbits, gapbits, i) ? '1' : '0'));
     m = nn_xmsg_new (gv.xmsgpool, &wr->e.guid.prefix, 0, NN_XMSG_KIND_CONTROL);
@@ -1445,7 +1445,7 @@ static int handle_NackFrag (struct receiver_state *rst, nn_etime_t tnow, const N
   dst.prefix = rst->dst_guid_prefix;
   dst.entityid = msg->writerId;
 
-  TRACE (("NACKFRAG(#%d:%"PRId64"/%u/%d:", *countp, seq, msg->fragmentNumberState.bitmap_base, msg->fragmentNumberState.numbits));
+  TRACE (("NACKFRAG(#%d:%"PRId64"/%u/%u:", *countp, seq, msg->fragmentNumberState.bitmap_base, msg->fragmentNumberState.numbits));
   for (i = 0; i < msg->fragmentNumberState.numbits; i++)
     TRACE (("%c", nn_bitset_isset (msg->fragmentNumberState.numbits, msg->fragmentNumberState.bits, i) ? '1' : '0'));
 
@@ -1574,7 +1574,7 @@ static int handle_InfoSRC (struct receiver_state *rst, const InfoSRC_t *msg)
   rst->src_guid_prefix = nn_ntoh_guid_prefix (msg->guid_prefix);
   rst->protocol_version = msg->version;
   rst->vendor = msg->vendorid;
-  TRACE (("INFOSRC(%x:%x:%x vendor %d.%d)",
+  TRACE (("INFOSRC(%x:%x:%x vendor %u.%u)",
           PGUIDPREFIX (rst->src_guid_prefix), rst->vendor.id[0], rst->vendor.id[1]));
   return 1;
 }
@@ -1693,7 +1693,7 @@ static int handle_Gap (struct receiver_state *rst, nn_etime_t tnow, struct nn_rm
   dst.entityid = msg->readerId;
   gapstart = fromSN (msg->gapStart);
   listbase = fromSN (msg->gapList.bitmap_base);
-  TRACE (("GAP(%"PRId64"..%"PRId64"/%d ", gapstart, listbase, msg->gapList.numbits));
+  TRACE (("GAP(%"PRId64"..%"PRId64"/%u ", gapstart, listbase, msg->gapList.numbits));
 
   /* There is no _good_ reason for a writer to start the bitmap with a
      1 bit, but check for it just in case, to reduce the number of
@@ -1836,7 +1836,7 @@ static serdata_t extract_sample_from_data
     {
       const struct proxy_writer *pwr = sampleinfo->pwr;
       nn_guid_t guid = pwr ? pwr->e.guid : null_guid; /* can't be null _yet_, but that might change some day */
-      TRACE (("data(application, vendor %d.%d): %x:%x:%x:%x #%"PRId64
+      TRACE (("data(application, vendor %u.%u): %x:%x:%x:%x #%"PRId64
               ": write without proper payload (data_smhdr_flags 0x%x size %u)\n",
               sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
               PGUID (guid), sampleinfo->seq,
@@ -1893,7 +1893,7 @@ static serdata_t extract_sample_from_data
     nn_guid_t guid = pwr ? pwr->e.guid : null_guid; /* can't be null _yet_, but that might change some day */
     NN_WARNING7
     (
-      "data(application, vendor %d.%d): %x:%x:%x:%x #%"PRId64": deserialization %s/%s failed (%s)\n",
+      "data(application, vendor %u.%u): %x:%x:%x:%x #%"PRId64": deserialization %s/%s failed (%s)\n",
       sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
       PGUID (guid), sampleinfo->seq,
       topic->name, topic->typename,
@@ -2004,7 +2004,7 @@ static int deliver_user_data (const struct nn_rsample_info *sampleinfo, const st
     src.bufsz = NN_RDATA_PAYLOAD_OFF (fragchain) - qos_offset;
     if (nn_plist_init_frommsg (&qos, NULL, PP_STATUSINFO | PP_KEYHASH | PP_COHERENT_SET | PP_PRISMTECH_EOTINFO, 0, &src) < 0)
     {
-      NN_WARNING4 ("data(application, vendor %d.%d): %x:%x:%x:%x #%"PRIu64": invalid inline qos\n",
+      NN_WARNING4 ("data(application, vendor %u.%u): %x:%x:%x:%x #%"PRId64": invalid inline qos\n",
                    src.vendorid.id[0], src.vendorid.id[1], PGUID (pwr->e.guid), sampleinfo->seq);
       return 0;
     }
@@ -2901,7 +2901,7 @@ static int handle_submsg_sequence
 #if 0
         state = "parse:msg_len";
 #endif
-        TRACE (("MSG_LEN(%d)", ((MsgLen_t*) sm)->length));
+        TRACE (("MSG_LEN(%u)", ((MsgLen_t*) sm)->length));
         break;
       }
       case SMID_PT_ENTITY_ID:
@@ -3059,7 +3059,7 @@ static bool do_packet
     {
       hdr->guid_prefix = nn_ntoh_guid_prefix (hdr->guid_prefix);
 
-      TRACE (("HDR(%x:%x:%x vendor %d.%d) len %lu\n",
+      TRACE (("HDR(%x:%x:%x vendor %u.%u) len %lu\n",
         PGUIDPREFIX (hdr->guid_prefix), hdr->vendorid.id[0], hdr->vendorid.id[1], (unsigned long) sz));
 
       {
@@ -3175,7 +3175,7 @@ static void rebuild_local_participant_set (struct thread_state1 *self, struct lo
     {
       lps->ps[lps->nps].m_conn = pp->m_conn;
       lps->ps[lps->nps].guid_prefix = pp->e.guid.prefix;
-      TRACE (("  pp %x:%x:%x:%x handle %d\n", PGUID (pp->e.guid), ddsi_conn_handle (pp->m_conn)));
+      TRACE (("  pp %x:%x:%x:%x handle %"PRIsock"\n", PGUID (pp->e.guid), ddsi_conn_handle (pp->m_conn)));
       lps->nps++;
     }
   }
@@ -3205,7 +3205,7 @@ static void rebuild_local_participant_set (struct thread_state1 *self, struct lo
     qsort (lps->ps, lps->nps, sizeof (*lps->ps), local_participant_cmp);
     lps->nps = (unsigned) dedup_sorted_array (lps->ps, lps->nps, sizeof (*lps->ps), local_participant_cmp);
   }
-  TRACE (("  nparticipants %d\n", lps->nps));
+  TRACE (("  nparticipants %u\n", lps->nps));
 }
 
 void * listen_thread (struct ddsi_tran_listener * listener)

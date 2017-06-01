@@ -166,6 +166,8 @@ void test_getters_setters(void)
     TEST_GET_SET(listener, publication_matched, publication_matched_cb);
     TEST_GET_SET(listener, subscription_matched, subscription_matched_cb);
     TEST_GET_SET(listener, data_available, data_available_cb);
+
+    dds_listener_delete(listener);
 }
 
 int main (int argc, char **argv)

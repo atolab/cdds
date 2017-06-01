@@ -231,10 +231,13 @@ os_sockSelect(
     return r;
 }
 
-static os_result os_queryInterfaceAttributesIPv4 (const struct ifaddrs *ifa, os_ifAttributes *ifElement)
+_Check_return_
+static os_result
+os_queryInterfaceAttributesIPv4 (_In_ const struct ifaddrs *ifa, _Inout_ os_ifAttributes *ifElement)
 {
   os_result result = os_resultSuccess;
   strncpy (ifElement->name, ifa->ifa_name, OS_IFNAMESIZE);
+  ifElement->name[OS_IFNAMESIZE - 1] = '\0';
   memcpy (&ifElement->address, ifa->ifa_addr, sizeof (os_sockaddr_in));
   ifElement->flags = ifa->ifa_flags;
   if (ifElement->flags & IFF_BROADCAST)
@@ -246,11 +249,13 @@ static os_result os_queryInterfaceAttributesIPv4 (const struct ifaddrs *ifa, os_
   return result;
 }
 
+_Check_return_
 static os_result
-os_queryInterfaceAttributesIPv6 (const struct ifaddrs *ifa, os_ifAttributes *ifElement)
+os_queryInterfaceAttributesIPv6 (_In_ const struct ifaddrs *ifa, _Inout_ os_ifAttributes *ifElement)
 {
   os_result result = os_resultSuccess;
   strncpy (ifElement->name, ifa->ifa_name, OS_IFNAMESIZE);
+  ifElement->name[OS_IFNAMESIZE - 1] = '\0';
   memcpy (&ifElement->address, ifa->ifa_addr, sizeof (os_sockaddr_in6));
   ifElement->flags = ifa->ifa_flags;
   memset (&ifElement->broadcast_address, 0, sizeof (ifElement->broadcast_address));

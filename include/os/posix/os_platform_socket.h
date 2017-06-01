@@ -68,7 +68,11 @@ extern "C" {
 #define os_sockECONNRESET   ECONNRESET  /* Connection reset by peer */
 
     typedef int os_socket; /* signed */
+    #define PRIsock "d"
+
 #define OS_SOCKET_INVALID (-1)
+
+
 
 #if defined (__cplusplus)
 }

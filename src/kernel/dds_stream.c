@@ -82,12 +82,12 @@ static void dds_stream_read
 
 #define DDS_IS_GET4(s,v,t) \
   (v) = *DDS_CDR_ADDRESS ((s), t); \
-  if ((s)->m_endian != DDS_ENDIAN) (v) = DDS_SWAP32 ((uint32_t) (v)); \
-  (s)->m_index += 4
+  if ((s)->m_endian != DDS_ENDIAN) (v) = (t)(DDS_SWAP32 ((uint32_t) (v))); \
+  (s)->m_index += 4;
 
 #define DDS_IS_GET8(s,v,t) \
   (v) = *DDS_CDR_ADDRESS ((s), t); \
-  if ((s)->m_endian != DDS_ENDIAN) (v) = DDS_SWAP64 ((uint64_t) (v)); \
+  if ((s)->m_endian != DDS_ENDIAN) (v) = (t)(DDS_SWAP64 ((uint64_t) (v))); \
   (s)->m_index += 8
 
 #define DDS_IS_GET_BYTES(s,b,l) \
@@ -426,7 +426,7 @@ void dds_stream_write_string (dds_stream_t * os, const char * val)
 
   if (val)
   {
-    size += strlen (val);
+    size += (uint32_t)strlen (val); /* Type casting is done for the warning of conversion from 'size_t' to 'uint32_t', which may cause possible loss of data */
   }
 
   DDS_OS_PUT4 (os, size, uint32_t);

@@ -884,7 +884,7 @@ int rtps_init (void)
     {
       assert(0);
     }
-    nn_log (LC_CONFIG, "rtps_init: uc ports: disc %d data %d\n", port_disc_uc, port_data_uc);
+    nn_log (LC_CONFIG, "rtps_init: uc ports: disc %u data %u\n", port_disc_uc, port_data_uc);
   }
   nn_log (LC_CONFIG, "rtps_init: domainid %d participantid %d\n", config.domainId, config.participantIndex);
 
@@ -907,7 +907,7 @@ int rtps_init (void)
   {
     uint32_t port;
 
-    TRACE (("Unicast Ports: discovery %d data %d \n",
+    TRACE (("Unicast Ports: discovery %u data %u \n",
       ddsi_tran_port (gv.disc_conn_uc), ddsi_tran_port (gv.data_conn_uc)));
 
     if (config.allowMulticast)
@@ -927,7 +927,7 @@ int rtps_init (void)
       if (gv.disc_conn_mc == NULL || gv.data_conn_mc == NULL)
         goto err_mc_conn;
 
-      TRACE (("Multicast Ports: discovery %d data %d \n",
+      TRACE (("Multicast Ports: discovery %u data %u \n",
         ddsi_tran_port (gv.disc_conn_mc), ddsi_tran_port (gv.data_conn_mc)));
 
       /* Set multicast locators */
@@ -1179,7 +1179,7 @@ err_set_recvips:
       os_free (gv.interfaces[i].name);
   }
 err_find_own_ip:
-  ddsi_factory_free (gv.m_factory);
+    ddsi_tran_factories_fini ();
 err_udp_tcp_init:
   if (config.tp_enable)
     ut_thread_pool_free (gv.thread_pool);
@@ -1404,7 +1404,7 @@ void rtps_term (void)
 
   /* Not freeing gv.tev_conn: it aliases data_conn_uc */
 
-  ddsi_factory_free (gv.m_factory);
+  ddsi_tran_factories_fini ();
 
   if (gv.pcap_fp)
   {

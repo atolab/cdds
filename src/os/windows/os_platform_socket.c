@@ -149,7 +149,7 @@ os_sockSendto(
     size_t tolen,
     size_t *bytesSent)
 {
-    int res = sendto(s, msg, len, 0, to, tolen);
+    int res = sendto(s, msg, (int)len, 0, to, (int)tolen); /* The parameter len with type of size_t causes the possible loss of data. So type casting done */
     if (res < 0)
     {
         *bytesSent = 0;
