@@ -51,7 +51,10 @@ os_setErrno(int err)
 }
 
 int
-os_strerror_r(int err, char *str, size_t len)
+os_strerror_r(
+    _In_ int err,
+    _Out_writes_z_(len) char *str,
+    _In_ size_t len)
 {
 	int res = 0;
 	DWORD cnt;
@@ -78,4 +81,3 @@ os_strerror_r(int err, char *str, size_t len)
 	
 	return res;
 }
-

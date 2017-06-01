@@ -381,19 +381,15 @@ static FILE * open_socket (char *host, unsigned short port)
     char msg[64];
     const char *errstr;
 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((sock = os_sockNew(AF_INET, SOCK_STREAM)) < 0) {
         errstr = "socket";
         goto err_socket;
     }
 
     memset((char *)&sa, 0, sizeof(sa));
     (void)os_sockaddrStringToAddress(host, (os_sockaddr *)&sa, true);
-    if (sa.ss_family == AF_INET) {
-        ((os_sockaddr_in *)&sa)->sin_port = htons(port);
-    } else {
-        assert(sa.ss_family == AF_INET6);
-        ((os_sockaddr_in6 *)&sa)->sin6_port = htons(port);
-    }
+    os_sockaddrSetPort((os_sockaddr *)&sa, htons(port));
+
     if (connect (sock, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
         errstr = "connect";
         goto err_connect;

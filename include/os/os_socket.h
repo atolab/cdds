@@ -326,12 +326,26 @@ extern "C" {
             char* buffer,
             size_t buflen);
 
-
-    /* docced in implementation file */
-    OS_API bool
-    os_sockaddrStringToAddress(const char *addressString,
-                               os_sockaddr* addressOut,
-                               bool isIPv4);
+    /**
+    * Convert the provided addressString into a os_sockaddr.
+    *
+    * @param addressString The string representation of a network address.
+    * @param addressOut A pointer to an os_sockaddr. Must be big enough for
+    * the address type specified by the string. This implies it should
+    * generally be the address of an os_sockaddr_storage for safety's sake.
+    * @param isIPv4 If the addressString is a hostname specifies whether
+    * and IPv4 address should be returned. If false an Ipv6 address will be
+    * requested. If the address is in either valid decimal presentation format
+    * param will be ignored.
+    * @return true on successful conversion. false otherwise
+    */
+    _Success_(return) OS_API bool
+    os_sockaddrStringToAddress(
+        _In_z_  const char *addressString,
+        _When_(isIPv4 == true, _Out_writes_bytes_(sizeof(IN_ADDR)))
+        _When_(isIPv4 == false, _Out_writes_bytes_(sizeof(IN6_ADDR)))
+            os_sockaddr *addressOut,
+        _In_ bool isIPv4);
 
     /* docced in implementation file */
     OS_API bool
@@ -387,5 +401,3 @@ extern "C" {
 #endif
 
 #endif /* OS_SOCKET_H */
-
-

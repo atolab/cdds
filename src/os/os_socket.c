@@ -266,22 +266,26 @@ os_sockaddrSameSubnet(const os_sockaddr* thisSock,
     return result;
 }
 
-/**
-* Convert the provided addressString into a os_sockaddr.
-* @return true on successful conversion. false otherwise
-* @param addressString The string representation of a network address.
-* @param addressOut A pointer to an os_sockaddr. Must be big enough for
-* the address type specified by the string. This implies it should
-* generally be the address of an os_sockaddr_storage for safety's sake.
-* @param isIPv4 If the addressString is a hostname specifies whether
-* and IPv4 address should be returned. If false an Ipv6 address will be
-* requested. If the address is in either valid decimal presentation format
-* param will be ignored.
-*/
-bool
-os_sockaddrStringToAddress(const char *addressString,
-                           os_sockaddr *addressOut,
-                           bool isIPv4)
+#if WIN32
+/*
+ * gai_strerror under Windows is not thread safe. See getaddrinfo on MSDN:
+ * https://msdn.microsoft.com/en-us/library/windows/desktop/ms738520.aspx
+ *
+ * The error codes that getaddrinfo returns map directly onto WSA error codes.
+ * os_strerror_r can therefore safely be used to retrieve their description.
+ */
+#define os_gai_strerror(errnum) os_strerror(errnum)
+#else
+#define os_gai_strerror(errnum) gai_strerror(errnum)
+#endif /* WIN32 */
+
+_Success_(return) bool
+os_sockaddrStringToAddress(
+    _In_z_  const char *addressString,
+    _When_(isIPv4 == true, _Out_writes_bytes_(sizeof(IN_ADDR)))
+    _When_(isIPv4 == false, _Out_writes_bytes_(sizeof(IN6_ADDR)))
+        os_sockaddr *addressOut,
+    _In_ bool isIPv4)
 {
     int ret;
     const char *fmt;
@@ -303,7 +307,8 @@ os_sockaddrStringToAddress(const char *addressString,
     ret = getaddrinfo(addressString, NULL, &hints, &res);
     if (ret != 0) {
         fmt = "getaddrinfo(\"%s\") failed: %s";
-        OS_REPORT(OS_DEBUG, __func__, 0, fmt, addressString, gai_strerror(ret));
+        OS_REPORT(
+            OS_DEBUG, __func__, 0, fmt, addressString, os_gai_strerror(ret));
     } else if (res != NULL) {
         memcpy(addressOut, res->ai_addr, res->ai_addrlen);
         freeaddrinfo(res);
