@@ -264,20 +264,18 @@ void log_stacktrace (const char *name, os_threadId tid)
 #include <signal.h>
 
 static os_atomic_uint32_t log_stacktrace_flag = OS_ATOMIC_UINT32_INIT(0);
+static struct {
+  int depth;
+  void *stk[64];
+} log_stacktrace_stk;
+
 
 static void log_stacktrace_sigh (int sig __attribute__ ((unused)))
 {
-  void *stk[64];
-  char **strs;
-  int i, n;
-  nn_log (~0u, "-- stack trace follows --\n");
-  n = backtrace (stk, (int) (sizeof (stk) / sizeof (*stk)));
-  strs = backtrace_symbols (stk, n);
-  for (i = 0; i < n; i++)
-    nn_log (~0u, "%s\n", strs[i]);
-  free (strs);
-  nn_log (~0u, "-- end of stack trace --\n");
+  int e = os_getErrno();
+  log_stacktrace_stk.depth = backtrace (log_stacktrace_stk.stk, (int) (sizeof (log_stacktrace_stk.stk) / sizeof (*log_stacktrace_stk.stk)));
   os_atomic_inc32 (&log_stacktrace_flag);
+  os_setErrno(e);
 }
 
 void log_stacktrace (const char *name, os_threadId tid)
@@ -290,6 +288,8 @@ void log_stacktrace (const char *name, os_threadId tid)
   {
     const os_time d = { 0, 1000000 };
     struct sigaction act, oact;
+    char **strs;
+    int i;
     nn_log (~0u, "-- stack trace of %s requested --\n", name);
     act.sa_handler = log_stacktrace_sigh;
     act.sa_flags = 0;
@@ -301,6 +301,12 @@ void log_stacktrace (const char *name, os_threadId tid)
     while (!os_atomic_cas32 (&log_stacktrace_flag, 2, 3))
       os_nanoSleep (d);
     sigaction (SIGXCPU, &oact, NULL);
+    nn_log (~0u, "-- stack trace follows --\n");
+    strs = backtrace_symbols (log_stacktrace_stk.stk, log_stacktrace_stk.depth);
+    for (i = 0; i < log_stacktrace_stk.depth; i++)
+      nn_log (~0u, "%s\n", strs[i]);
+    free (strs);
+    nn_log (~0u, "-- end of stack trace --\n");
     os_atomic_st32 (&log_stacktrace_flag, 0);
   }
 }
