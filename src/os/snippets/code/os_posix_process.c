@@ -113,7 +113,6 @@ void
 os_procExit(
     os_exitStatus status)
 {
-    assert(status != OS_EXIT_SUCCESS || status != OS_EXIT_FAILURE);
     exit((signed int)status);
     return;
 }
