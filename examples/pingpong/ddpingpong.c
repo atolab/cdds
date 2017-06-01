@@ -251,6 +251,7 @@ void reader_cb (const struct nn_rsample_info *sampleinfo, const struct nn_rdata 
     serstate_t st;
     serdata_t d;
     nn_wctime_t sourcetime;
+    int ret;
 
     sourcetime = nn_wctime_from_ddsi_time(sampleinfo->timestamp);
 
@@ -284,8 +285,12 @@ void reader_cb (const struct nn_rsample_info *sampleinfo, const struct nn_rdata 
     ddsi_serstate_append_blob(st, 4, sampleinfo->size - 4, datap + 4);
     ddsi_serstate_set_msginfo(st, 0, sourcetime, NULL);
     d = ddsi_serstate_fix(st);
-    write_sample_gc(arg->xp, arg->wr, d, arg->tk);
-    nn_xpack_send(arg->xp, true);
+    ret = write_sample_gc(arg->xp, arg->wr, d, arg->tk);
+    if (ret >= 0) {
+      nn_xpack_send(arg->xp, true);
+    } else {
+      printf("Error: write_sample_gc failed: %d\n", ret);
+    }
     if (mustfree) free (datap);
   }
 }
@@ -370,8 +375,6 @@ int main (int argc, char *argv[])
   dds_qos_t *subQos;
 
   uint32_t payloadSize = 0;
-  unsigned long long numSamples = 0;
-  dds_time_t timeOut = 0;
   dds_time_t startTime;
   dds_time_t postTakeTime;
   dds_time_t difference = 0;
@@ -562,7 +565,7 @@ int main (int argc, char *argv[])
       void *addrsamples[] = { &addrsample };
       dds_sample_info_t infos[1];
       dds_time_t tprint, tsend;
-      printf ("# payloadSize: %"PRIu32" | numSamples: %llu | timeOut: %" PRIi64 "\n\n", payloadSize, numSamples, timeOut);
+      printf ("# payloadSize: %"PRIu32"\n\n", payloadSize);
       memset (buf, 0, sizeof (buf));
       memset (&addrsample, 0, sizeof (addrsample));
       do {
@@ -642,7 +645,7 @@ int main (int argc, char *argv[])
 
     if (isping)
     {
-      printf ("# payloadSize: %"PRIu32" | numSamples: %llu | timeOut: %" PRIi64 "\n\n", payloadSize, numSamples, timeOut);
+      printf ("# payloadSize: %"PRIu32"\n\n", payloadSize);
 
       pub_data.payload._length = payloadSize;
       pub_data.payload._buffer = payloadSize ? dds_alloc (payloadSize) : NULL;
@@ -662,7 +665,7 @@ int main (int argc, char *argv[])
       status = dds_write (writer, &pub_data);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-      for (i = 0; !dds_condition_triggered (terminated) && (!numSamples || i < numSamples); i++)
+      for (i = 0; !dds_condition_triggered (terminated); i++)
       {
         /* Wait for response from pong */
         status = dds_waitset_wait (waitSet, wsresults, wsresultsize, (mode != WAITSET) ? DDS_INFINITY : waitTimeout);
@@ -701,7 +704,7 @@ int main (int argc, char *argv[])
 
           /* Print stats each second */
           difference = postTakeTime - startTime;
-          if (difference > NS_IN_ONE_SEC || (i && i == numSamples))
+          if (difference > NS_IN_ONE_SEC)
           {
             printf("%9" PRIi64 " %9lu %8.0f %8"PRId64"\n", elapsed + 1, roundTrip.count, exampleGetMedianFromTimeStats (&roundTrip)/1000, roundTrip.min/1000);
             exampleResetTimeStats (&roundTrip);
@@ -731,11 +734,6 @@ int main (int argc, char *argv[])
             startTime = tnow;
             elapsed++;
           }
-        }
-
-        if (timeOut && elapsed == timeOut)
-        {
-          dds_guard_trigger (terminated);
         }
       }
 
