@@ -14,7 +14,7 @@ static dds_return_t dds_publisher_instance_hdl(dds_entity_t e, dds_instance_hand
     return DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_KERNEL, 0);
 }
 
-static dds_return_t dds_publisher_qos_validate (const dds_qos_t *qos, bool enabled)
+static dds_return_t dds_publisher_qos_validate (_In_ const dds_qos_t *qos, _In_ bool enabled)
 {
     dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_KERNEL, 0);
     bool consistent = true;
@@ -59,19 +59,14 @@ dds_entity_t dds_create_publisher
 
 
   /* Check participant */
-
-  if ((pp == NULL) || (pp->m_kind != DDS_TYPE_PARTICIPANT))
+  if (!dds_entity_is_kind(pp, DDS_TYPE_PARTICIPANT))
   {
       /* TODO: Temporary implementation
        * It should actually return a handle indicating a BAD_PARAMETER, but as long
-       * as there is no implementation of an handle server NULL is retruned instead.
-       * ret = DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER, DDS_MOD_WRITER, DDS_ERR_M3);
-        return (dds_entity_t)ret;
+       * as there is no implementation of an handle server NULL is returned instead.
        */
       return NULL;
   }
-
-  os_mutexLock (&pp->m_mutex);
 
   /* Validate qos */
 
@@ -87,7 +82,7 @@ dds_entity_t dds_create_publisher
   }
 
   /* Create publisher */
-
+  os_mutexLock (&pp->m_mutex);
   pub = dds_alloc (sizeof (*pub));
   dds_entity_init (&pub->m_entity, pp, DDS_TYPE_PUBLISHER, new_qos, listener, DDS_PUBLISHER_STATUS_MASK);
   pub->m_entity.m_deriver.set_qos = dds_publisher_qos_set;
@@ -97,7 +92,6 @@ dds_entity_t dds_create_publisher
 
 fail:
 
-  os_mutexUnlock (&pp->m_mutex);
   /* TODO: return ret when handles have been implemented correctly */
   return NULL;
 }

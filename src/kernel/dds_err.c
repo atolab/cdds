@@ -125,13 +125,14 @@ void dds_fail (const char * msg, const char * where)
   }
 }
 
+#define DDS_HANDLE_IS_VALID(h)  (h!=NULL)
 
-/* TEMPORY FUNCTION
+/* TEMPORARY FUNCTION
  * This function checks validity of entities
  * Once handles are used and dds_entity_t is basically the same as dds_return_t this function is not needed anymore */
 bool dds_entity_check (_In_opt_ dds_entity_t e, _In_ unsigned flags, _In_z_ const char * where)
 {
-  if (e == NULL)
+  if (DDS_HANDLE_IS_VALID(e))
   {
     if (flags & (DDS_CHECK_REPORT | DDS_CHECK_FAIL))
     {

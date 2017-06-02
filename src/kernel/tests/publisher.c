@@ -41,13 +41,6 @@ void publisher_creation(void)
   qos = dds_qos_create();
   cr_assert_neq(qos, NULL, "dds_qos_create()");
 
-  /* Use defaUlt publisher os */
-  dds_get_default_subscriber_qos(qos);
-  cr_assert_neq(qos, NULL, "dds_get_default_subscriber_qos()");
-  publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,qos,NULL) where qos obtained from dds_get_default_subscriber_qos()");
-  dds_delete(publisher);
-
   /* Use qos without partition; in that case the default partition should be used */
   publisher = dds_create_publisher(participant, qos, NULL);
   cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,qos,NULL) where qos with default partition");
