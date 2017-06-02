@@ -837,23 +837,107 @@ DDS_EXPORT dds_entity_t dds_create_subscriber
   _In_opt_ const dds_listener_t * listener
 );
 
+
 /**
- * Description : Creates a new instance of a DDS publisher
+ * @brief Creates a new instance of a DDS publisher
  *
- * Arguments :
- *   -# pp The participant on which the publisher is being created
- *   -# publisher The created publisher entity
- *   -# qos The QoS to set on the new publisher (can be NULL)
- *   -# listener Any listener functions associated with the new publisher (can be NULL)
- *   -# Returns a status, 0 on success or non-zero value to indicate an error
+ * @param[in]  pp       The participant to create a publisher for
+ * @param[in]  qos      The QoS to set on the new publisher (can be NULL)
+ * @param[in]  listener Any listener functions associated with the new publisher (can be NULL)
+ *
+ * @returns >0 - Success (valid handle of a publisher entity).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
  */
-DDS_EXPORT int dds_publisher_create
+DDS_EXPORT dds_entity_t dds_create_publisher
 (
-  dds_entity_t pp,
-  dds_entity_t *  publisher,
-  const dds_qos_t * qos,
-  const dds_listener_t * listener
+  _In_ dds_entity_t pp,
+  _In_opt_ const dds_qos_t * qos,
+  _In_opt_ const dds_listener_t * listener
 );
+
+
+/**
+ * @brief Suspends the publications of the Publisher
+ *
+ * This operation is a hint to the Service so it can optimize its performance by e.g., collecting
+ * modifications to DDS wrirters and then batching them. The Service is not required to use the hint.
+ *
+ * Every invocation of this operation must be matched by a corresponding call to @see dds_resume
+ * indicating that the set of modifications has completed.
+ *
+ * @param[in]  pub      The publisher for which all publications will be suspended
+ *
+ * @returns >0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                Publications suspended successfully.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                The pub parameter is not a valid publisher.
+ * @retval DDS_RETCODE_UNSUPPORTED
+ *                Operation is not supported
+ */
+DDS_EXPORT dds_return_t dds_suspend
+(
+  _In_ dds_entity_t pub
+);
+
+
+/**
+ * @brief Resumes the publications of the Publisher
+ *
+ * This operation is a hint to the Service to indicate that the application has completed changes
+ * initiated by a previous @see suspend. The Service is not required to use the hint.
+ *
+ * The call to resume_publications must match a previous call to @see suspend_publications.
+ *
+ * @param[in]  pub      The publisher for which all publications will be resumed
+ *
+ * @returns >0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                Publications resumed successfully.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                The pub parameter is not a valid publisher.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                No previous matching @see dds_suspend.
+ * @retval DDS_RETCODE_UNSUPPORTED
+ *                Operation is not supported.
+ */
+DDS_EXPORT dds_return_t dds_resume
+(
+  _In_ dds_entity_t pub
+);
+
+
+/**
+ * @brief Waits at most for the duration timeout for acks for data in the publisher or writer.
+ *
+ * This operation blocks the calling thread until either all data written by the publisher
+ * or writer is acknowledged by all matched reliable reader entities, or else the duration
+ * specified by the timeout parameter elapses, whichever happens first.
+ *
+ * @param[in]  pub_or_w   The publisher or writer whose acknowledgements must be waited for.
+ *
+ * @returns >0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                All acknowledgements successfully received with the timeout.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                The pub_or_w parameter is not a valid publisher or writer.
+ * @retval DDS_RETCODE_TIMEOUT
+ *                Timeout expired before all acknowledgements from reliable reader entities were received.
+ * @retval DDS_RETCODE_UNSUPPORTED
+ *                Operation is not supported.
+ */
+DDS_EXPORT dds_return_t dds_wait_for_acks
+(
+  _In_ dds_entity_t pub_or_w,
+  _In_ dds_duration_t timeout
+);
+
 
 /**
  * Description : Creates a new instance of a DDS reader

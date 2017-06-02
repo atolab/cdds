@@ -174,8 +174,8 @@ int ping_main (int argc, char *argv[])
   pubQos = dds_qos_create ();
   dds_qset_partition (pubQos, 1, pubPartitions);
 
-  status = dds_publisher_create (participant, &publisher, pubQos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  publisher = dds_create_publisher (participant, pubQos, NULL);
+  DDS_ENTITY_CHECK (publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (pubQos);
 
   /* A DDS_Subscriber is created on the domain participant. */

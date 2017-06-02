@@ -20,8 +20,9 @@ static dds_return_t dds_publisher_qos_validate (const dds_qos_t *qos, bool enabl
     bool consistent = true;
     assert(qos);
     /* Check consistency. */
-    consistent &= ((qos->present & QP_GROUP_DATA) && ! validate_octetseq (&qos->group_data));
-    consistent &= ((qos->present & QP_PRESENTATION) && (validate_presentation_qospolicy (&qos->presentation) != 0));
+    consistent &= (qos->present & QP_GROUP_DATA) ? validate_octetseq (&qos->group_data) : true;
+    consistent &= (qos->present & QP_PRESENTATION) ? (validate_presentation_qospolicy (&qos->presentation) == 0) : true;
+    consistent &= (qos->present & QP_PARTITION) ? validate_partition_qospolicy(&qos->partition) : true;
     if (consistent) {
         if (enabled) {
             /* TODO: Improve/check immutable check. */
@@ -45,23 +46,30 @@ static dds_return_t dds_publisher_qos_set (dds_entity_t e, const dds_qos_t *qos,
     return ret;
 }
 
-int dds_publisher_create
+dds_entity_t dds_create_publisher
 (
-  dds_entity_t pp,
-  dds_entity_t * publisher,
-  const dds_qos_t * qos,
-  const dds_listener_t * listener
+  _In_ dds_entity_t pp,
+  _In_opt_ const dds_qos_t * qos,
+  _In_opt_ const dds_listener_t * listener
 )
 {
-  int ret = DDS_RETCODE_OK;
   dds_publisher * pub;
   dds_qos_t * new_qos = NULL;
+  dds_return_t ret;
 
-  assert (pp);
-  assert (pp->m_kind == DDS_TYPE_PARTICIPANT);
-  assert (publisher);
 
   /* Check participant */
+
+  if ((pp == NULL) || (pp->m_kind != DDS_TYPE_PARTICIPANT))
+  {
+      /* TODO: Temporary implementation
+       * It should actually return a handle indicating a BAD_PARAMETER, but as long
+       * as there is no implementation of an handle server NULL is retruned instead.
+       * ret = DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER, DDS_MOD_WRITER, DDS_ERR_M3);
+        return (dds_entity_t)ret;
+       */
+      return NULL;
+  }
 
   os_mutexLock (&pp->m_mutex);
 
@@ -69,8 +77,8 @@ int dds_publisher_create
 
   if (qos)
   {
-    ret = (int)dds_publisher_qos_validate(qos, false);
-    if (ret != 0)
+    ret = dds_publisher_qos_validate(qos, false);
+    if (ret != DDS_RETCODE_OK)
     {
       goto fail;
     }
@@ -82,13 +90,62 @@ int dds_publisher_create
 
   pub = dds_alloc (sizeof (*pub));
   dds_entity_init (&pub->m_entity, pp, DDS_TYPE_PUBLISHER, new_qos, listener, DDS_PUBLISHER_STATUS_MASK);
-  *publisher = &pub->m_entity;
   pub->m_entity.m_deriver.set_qos = dds_publisher_qos_set;
   pub->m_entity.m_deriver.get_instance_hdl = dds_publisher_instance_hdl;
+  os_mutexUnlock (&pp->m_mutex);
+  return &pub->m_entity;
 
 fail:
 
   os_mutexUnlock (&pp->m_mutex);
+  /* TODO: return ret when handles have been implemented correctly */
+  return NULL;
+}
+
+
+dds_return_t dds_suspend
+(
+  _In_ dds_entity_t pub
+)
+{
+  dds_return_t ret;
+
+  /* TODO: Currently unsupported. */
+  OS_UNUSED_ARG(pub);
+
+  ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_WRITER, 0);
+  return ret;
+}
+
+
+dds_return_t dds_resume
+(
+  _In_ dds_entity_t pub
+)
+{
+  dds_return_t ret;
+
+  /* TODO: Currently unsupported. */
+  OS_UNUSED_ARG(pub);
+
+  ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_WRITER, 0);
+  return ret;
+}
+
+
+dds_return_t dds_wait_for_acks
+(
+  _In_ dds_entity_t pub_or_w,
+  _In_ dds_duration_t timeout
+)
+{
+  dds_return_t ret;
+
+  /* TODO: Currently unsupported. */
+  OS_UNUSED_ARG(pub_or_w);
+  OS_UNUSED_ARG(timeout);
+
+  ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_WRITER, 0);
   return ret;
 }
 

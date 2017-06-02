@@ -42,7 +42,7 @@ bool validate_octetseq (const nn_octetseq_t* seq)
   return (((seq->length == 0) && (seq->value == NULL)) || (seq->length > 0));
 }
 
-bool validate_stringseq (const nn_stringseq_t* seq)
+bool validate_stringseq (_In_ const nn_stringseq_t* seq)
 {
   if (seq->n != 0) {
     unsigned i;
@@ -421,7 +421,7 @@ void dds_qset_partition
 void dds_qset_reliability
 (
     _Inout_ dds_qos_t * __restrict qos,
-    _In_range_(DDS_RELIABILITY_BEST_EFFORT, DDS_RELIABILITY_RELIABLE) dds_reliability_kind_t kind,
+    _In_range_(DDS_RELIABILITY_BEST_EFFORT, DDDS_RELIABILITY_RELIABLE) dds_reliability_kind_t kind,
     _In_range_(0, DDS_INFINITY) dds_duration_t max_blocking_time
 )
 {
@@ -512,7 +512,7 @@ void dds_qset_durability_service
 void dds_qget_userdata
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Outptr_result_bytebuffer_maybenull_(*sz) void ** value,
+    _Out_ void ** value,
     _Out_ size_t * sz
 )
 {
@@ -524,8 +524,8 @@ void dds_qget_userdata
 void dds_qget_topicdata
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Outptr_result_bytebuffer_maybenull_(*sz) void ** value,
-    _Out_ size_t * sz
+    _Inout_ void ** value,
+    _Inout_ size_t * sz
 )
 {
   if (qos && value && sz) {
@@ -536,8 +536,8 @@ void dds_qget_topicdata
 void dds_qget_groupdata
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Outptr_result_bytebuffer_maybenull_(*sz) void ** value,
-    _Out_ size_t * sz
+    _Inout_ void ** value,
+    _Inout_ size_t * sz
 )
 {
   if (qos && value && sz) {
@@ -548,7 +548,7 @@ void dds_qget_groupdata
 void dds_qget_durability
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ dds_durability_kind_t *kind
+    _Inout_ dds_durability_kind_t *kind
 )
 {
   if (qos && kind) {
@@ -559,8 +559,8 @@ void dds_qget_durability
 void dds_qget_history
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_opt_ dds_history_kind_t * kind,
-    _Out_opt_ int32_t *depth
+    _Inout_opt_ dds_history_kind_t * kind,
+    _Inout_opt_ int32_t *depth
 )
 {
   if (qos) {
@@ -572,9 +572,9 @@ void dds_qget_history
 void dds_qget_resource_limits
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_opt_ int32_t *max_samples,
-    _Out_opt_ int32_t *max_instances,
-    _Out_opt_ int32_t *max_samples_per_instance
+    _Inout_opt_ int32_t *max_samples,
+    _Inout_opt_ int32_t *max_instances,
+    _Inout_opt_ int32_t *max_samples_per_instance
 )
 {
   if (qos) {
@@ -589,9 +589,9 @@ void dds_qget_resource_limits
 void dds_qget_presentation
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_opt_ dds_presentation_access_scope_kind_t *access_scope,
-    _Out_opt_ bool *coherent_access,
-    _Out_opt_ bool *ordered_access
+    _Inout_opt_ dds_presentation_access_scope_kind_t *access_scope,
+    _Inout_opt_ bool *coherent_access,
+    _Inout_opt_ bool *ordered_access
 )
 {
   if (qos) {
@@ -604,7 +604,7 @@ void dds_qget_presentation
 void dds_qget_lifespan
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ dds_duration_t * lifespan
+    _Inout_ dds_duration_t * lifespan
 )
 {
   if (qos && lifespan) {
@@ -616,7 +616,7 @@ void dds_qget_lifespan
 void dds_qget_deadline
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ dds_duration_t * deadline
+    _Inout_ dds_duration_t * deadline
 )
 {
   if (qos && deadline) {
@@ -628,7 +628,7 @@ void dds_qget_deadline
 void dds_qget_latency_budget
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ dds_duration_t *duration
+    _Inout_ dds_duration_t *duration
 )
 {
   if (qos && duration) {
@@ -640,7 +640,7 @@ void dds_qget_latency_budget
 void dds_qget_ownership
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ dds_ownership_kind_t *kind
+    _Inout_ dds_ownership_kind_t *kind
 )
 {
   if (qos && kind) {
@@ -651,7 +651,7 @@ void dds_qget_ownership
 void dds_qget_ownership_strength
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ int32_t *value
+    _Inout_ int32_t *value
 )
 {
   if (qos && value) {
@@ -662,8 +662,8 @@ void dds_qget_ownership_strength
 void dds_qget_liveliness
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_opt_ dds_liveliness_kind_t *kind,
-    _Out_opt_ dds_duration_t *lease_duration
+    _Inout_opt_ dds_liveliness_kind_t *kind,
+    _Inout_opt_ dds_duration_t *lease_duration
 )
 {
   if (qos) {
@@ -676,7 +676,7 @@ void dds_qget_liveliness
 void dds_qget_time_based_filter
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ dds_duration_t *minimum_separation
+    _Inout_ dds_duration_t *minimum_separation
 )
 {
   if (qos && minimum_separation)
@@ -689,8 +689,8 @@ void dds_qget_time_based_filter
 void dds_qget_partition
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ uint32_t *n,
-    _Out_opt_ char *** ps
+    _Inout_ uint32_t *n,
+    _Inout_ char *** ps
 )
 {
   if (qos && n && ps) {
@@ -713,8 +713,8 @@ void dds_qget_partition
 void dds_qget_reliability
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_opt_ dds_reliability_kind_t *kind,
-    _Out_opt_ dds_duration_t *max_blocking_time
+    _Inout_opt_ dds_reliability_kind_t *kind,
+    _Inout_opt_ dds_duration_t *max_blocking_time
 )
 {
   if (qos) {
@@ -727,7 +727,7 @@ void dds_qget_reliability
 void dds_qget_transport_priority
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ int32_t *value
+    _Inout_ int32_t *value
 )
 {
   if (qos && value) {
@@ -738,7 +738,7 @@ void dds_qget_transport_priority
 void dds_qget_destination_order
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ dds_destination_order_kind_t *kind
+    _Inout_ dds_destination_order_kind_t *kind
 )
 {
   if (qos && kind) {
@@ -749,7 +749,7 @@ void dds_qget_destination_order
 void dds_qget_writer_data_lifecycle
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ bool * autodispose
+    _Inout_ bool * autodispose
 )
 {
   if (qos && autodispose) {
@@ -760,8 +760,8 @@ void dds_qget_writer_data_lifecycle
 void dds_qget_reader_data_lifecycle
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_opt_ dds_duration_t *autopurge_nowriter_samples_delay,
-    _Out_opt_ dds_duration_t *autopurge_disposed_samples_delay
+    _Inout_opt_ dds_duration_t *autopurge_nowriter_samples_delay,
+    _Inout_opt_ dds_duration_t *autopurge_disposed_samples_delay
 )
 {
   if (qos) {
@@ -780,12 +780,12 @@ void dds_qget_reader_data_lifecycle
 void dds_qget_durability_service
 (
   _In_ const dds_qos_t * qos,
-  _Out_opt_ dds_duration_t * service_cleanup_delay,
-  _Out_opt_ dds_history_kind_t * history_kind,
-  _Out_opt_ int32_t * history_depth,
-  _Out_opt_ int32_t * max_samples,
-  _Out_opt_ int32_t * max_instances,
-  _Out_opt_ int32_t * max_samples_per_instance
+  _Inout_opt_ dds_duration_t * service_cleanup_delay,
+  _Inout_opt_ dds_history_kind_t * history_kind,
+  _Inout_opt_ int32_t * history_depth,
+  _Inout_opt_ int32_t * max_samples,
+  _Inout_opt_ int32_t * max_instances,
+  _Inout_opt_ int32_t * max_samples_per_instance
 )
 {
   if (qos) {

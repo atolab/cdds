@@ -85,8 +85,8 @@ int main (int argc, char *argv[])
 
   qos = dds_qos_create ();
   dds_qset_partition (qos, 1, pubPartitions);
-  status = dds_publisher_create (participant, &publisher, qos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  publisher = dds_create_publisher (participant, qos, NULL);
+  DDS_ENTITY_CHECK (publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (qos);
 
   /* A DDS DataWriter is created on the Publisher & Topic with a modififed Qos. */
