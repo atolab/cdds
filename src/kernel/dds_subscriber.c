@@ -122,7 +122,7 @@ dds_entity_t dds_create_subscriber
     return NULL;
 }
 
-dds_return_t dds_notify_readers(dds_entity_t sub)
+dds_return_t dds_notify_readers(_In_ dds_entity_t sub)
 {
     dds_return_t ret = DDS_RETCODE_OK;
     dds_entity_t iter;

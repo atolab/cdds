@@ -468,7 +468,7 @@ OS_API
 void dds_qset_reliability
 (
     _Inout_ dds_qos_t * __restrict qos,
-    _In_range_(DDS_RELIABILITY_BEST_EFFORT, DDDS_RELIABILITY_RELIABLE) dds_reliability_kind_t kind,
+    _In_range_(DDS_RELIABILITY_BEST_EFFORT, DDS_RELIABILITY_RELIABLE) dds_reliability_kind_t kind,
     _In_range_(0, DDS_INFINITY) dds_duration_t max_blocking_time
 );
 
@@ -561,8 +561,8 @@ OS_API
 void dds_qget_userdata
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ void ** value,
-    _Inout_ size_t * sz
+    _Outptr_result_bytebuffer_maybenull_(*sz) void ** value,
+    _Out_ size_t * sz
 );
 
 /**
@@ -576,8 +576,8 @@ OS_API
 void dds_qget_topicdata
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ void ** value,
-    _Inout_ size_t * sz
+    _Outptr_result_bytebuffer_maybenull_(*sz) void ** value,
+    _Out_ size_t * sz
 );
 
 /**
@@ -591,8 +591,8 @@ OS_API
 void dds_qget_groupdata
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ void ** value,
-    _Inout_ size_t * sz
+    _Outptr_result_bytebuffer_maybenull_(*sz) void ** value,
+    _Out_ size_t * sz
 );
 
 /**
@@ -605,7 +605,7 @@ OS_API
 void dds_qget_durability
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ dds_durability_kind_t *kind
+    _Out_ dds_durability_kind_t *kind
 );
 
 /**
@@ -619,8 +619,8 @@ OS_API
 void dds_qget_history
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_opt_ dds_history_kind_t * kind,
-    _Inout_opt_ int32_t *depth
+    _Out_opt_ dds_history_kind_t * kind,
+    _Out_opt_ int32_t *depth
 );
 
 /**
@@ -635,9 +635,9 @@ OS_API
 void dds_qget_resource_limits
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_opt_ int32_t *max_samples,
-    _Inout_opt_ int32_t *max_instances,
-    _Inout_opt_ int32_t *max_samples_per_instance
+    _Out_opt_ int32_t *max_samples,
+    _Out_opt_ int32_t *max_instances,
+    _Out_opt_ int32_t *max_samples_per_instance
 );
 
 /**
@@ -652,9 +652,9 @@ OS_API
 void dds_qget_presentation
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_opt_ dds_presentation_access_scope_kind_t *access_scope,
-    _Inout_opt_ bool *coherent_access,
-    _Inout_opt_ bool *ordered_access
+    _Out_opt_ dds_presentation_access_scope_kind_t *access_scope,
+    _Out_opt_ bool *coherent_access,
+    _Out_opt_ bool *ordered_access
 );
 
 /**
@@ -667,7 +667,7 @@ OS_API
 void dds_qget_lifespan
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ dds_duration_t * lifespan
+    _Out_ dds_duration_t * lifespan
 );
 
 /**
@@ -680,7 +680,7 @@ OS_API
 void dds_qget_deadline
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ dds_duration_t * deadline
+    _Out_ dds_duration_t * deadline
 );
 
 /**
@@ -693,7 +693,7 @@ OS_API
 void dds_qget_latency_budget
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ dds_duration_t *duration
+    _Out_ dds_duration_t *duration
 );
 
 /**
@@ -706,7 +706,7 @@ OS_API
 void dds_qget_ownership
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ dds_ownership_kind_t *kind
+    _Out_ dds_ownership_kind_t *kind
 );
 
 /**
@@ -719,7 +719,7 @@ OS_API
 void dds_qget_ownership_strength
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ int32_t *value
+    _Out_ int32_t *value
 );
 
 /**
@@ -733,8 +733,8 @@ OS_API
 void dds_qget_liveliness
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_opt_ dds_liveliness_kind_t *kind,
-    _Inout_opt_ dds_duration_t *lease_duration
+    _Out_opt_ dds_liveliness_kind_t *kind,
+    _Out_opt_ dds_duration_t *lease_duration
 );
 
 /**
@@ -747,7 +747,7 @@ OS_API
 void dds_qget_time_based_filter
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ dds_duration_t *minimum_separation
+    _Out_ dds_duration_t *minimum_separation
 );
 
 /**
@@ -761,8 +761,8 @@ OS_API
 void dds_qget_partition
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ uint32_t *n,
-    _Inout_ char *** ps
+    _Out_ uint32_t *n,
+    _Out_ char *** ps
 );
 
 /**
@@ -776,8 +776,8 @@ OS_API
 void dds_qget_reliability
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_opt_ dds_reliability_kind_t *kind,
-    _Inout_opt_ dds_duration_t *max_blocking_time
+    _Out_opt_ dds_reliability_kind_t *kind,
+    _Out_opt_ dds_duration_t *max_blocking_time
 );
 
 /**
@@ -790,7 +790,7 @@ OS_API
 void dds_qget_transport_priority
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ int32_t *value
+    _Out_ int32_t *value
 );
 
 /**
@@ -803,7 +803,7 @@ OS_API
 void dds_qget_destination_order
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ dds_destination_order_kind_t *kind
+    _Out_ dds_destination_order_kind_t *kind
 );
 
 /**
@@ -816,7 +816,7 @@ OS_API
 void dds_qget_writer_data_lifecycle
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_ bool * autodispose
+    _Out_ bool * autodispose
 );
 
 /**
@@ -830,8 +830,8 @@ OS_API
 void dds_qget_reader_data_lifecycle
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_opt_ dds_duration_t *autopurge_nowriter_samples_delay,
-    _Inout_opt_ dds_duration_t *autopurge_disposed_samples_delay
+    _Out_opt_ dds_duration_t *autopurge_nowriter_samples_delay,
+    _Out_opt_ dds_duration_t *autopurge_disposed_samples_delay
 );
 
 /**
@@ -848,12 +848,12 @@ void dds_qget_reader_data_lifecycle
 OS_API void dds_qget_durability_service
 (
   _In_ const dds_qos_t * qos,
-  _Inout_opt_ dds_duration_t * service_cleanup_delay,
-  _Inout_opt_ dds_history_kind_t * history_kind,
-  _Inout_opt_ int32_t * history_depth,
-  _Inout_opt_ int32_t * max_samples,
-  _Inout_opt_ int32_t * max_instances,
-  _Inout_opt_ int32_t * max_samples_per_instance
+  _Out_opt_ dds_duration_t * service_cleanup_delay,
+  _Out_opt_ dds_history_kind_t * history_kind,
+  _Out_opt_ int32_t * history_depth,
+  _Out_opt_ int32_t * max_samples,
+  _Out_opt_ int32_t * max_instances,
+  _Out_opt_ int32_t * max_samples_per_instance
 );
 
 #undef OS_API
