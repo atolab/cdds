@@ -294,7 +294,7 @@ os_procCreate(
 #endif
             /* Set the process name via environment variable SPLICE_PROCNAME (truncation is acceptable) */
             (void) snprintf(environment, sizeof(environment), "SPLICE_PROCNAME=%s", name);
-            putenv(environment);
+            (void) putenv(environment); /* If putenv(...) would fail, the child must do without a 'nice' processname. */
             /* exec executable file */
 #if __APPLE__
             char **environ = *_NSGetEnviron ();

@@ -300,12 +300,12 @@ void dds_entity_delete_impl (_In_ dds_entity_t e, _In_ bool child, _In_ bool rec
 }
 
 void dds_entity_init(
-        _In_ dds_entity * e,
-        _In_ dds_entity * parent,
-        _In_ dds_entity_kind_t kind,
+        _In_     dds_entity * e,
+        _In_opt_ dds_entity * parent,
+        _In_     dds_entity_kind_t kind,
         _In_opt_ dds_qos_t *qos,
         _In_opt_ const dds_listener_t *listener,
-        _In_ uint32_t mask)
+        _In_     uint32_t mask)
 {
     assert (e);
 
