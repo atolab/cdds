@@ -157,6 +157,7 @@ static void tc_os_strtoll (void)
     str = (const char *)str_llrange;
     ll = os_strtoll(str, &ptr, 10);
     CU_ASSERT (ll == llmax && *ptr == '1');
+    printf("str_llrange: %s\nll: %lld, *ptr: %s\n", str_llrange, ll, ptr);
 
   #if ENABLE_TRACING
     printf ("Starting tc_os_strtoll_003a\n");
