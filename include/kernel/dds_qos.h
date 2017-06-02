@@ -12,6 +12,7 @@ extern "C" {
 #endif
 
 bool validate_octetseq (const nn_octetseq_t* seq);
+bool validate_partition_qospolicy (_In_ const nn_partition_qospolicy_t * partition);
 bool validate_reliability_qospolicy (const nn_reliability_qospolicy_t * reliability);
 bool validate_deadline_and_timebased_filter (const nn_duration_t deadline, const nn_duration_t minimum_separation);
 

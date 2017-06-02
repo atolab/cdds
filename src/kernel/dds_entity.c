@@ -618,3 +618,8 @@ dds_return_t dds_instancehandle_get(_In_ dds_entity_t e, _Out_ dds_instance_hand
     }
     return ret;
 }
+
+bool dds_entity_is_kind (_In_opt_ dds_entity_t e, _In_ dds_entity_kind_t kind)
+{
+    return ((e != NULL) && (e->m_kind == kind));
+}
