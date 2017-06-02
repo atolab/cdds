@@ -271,6 +271,21 @@ extern "C" {
     os_sockFree(
             os_socket s);
 
+#ifdef WIN32
+/* SOCKETs on Windows are NOT integers. The nfds parameter is only there for
+   compatibility, the implementation ignores it. Implicit casts will generate
+   warnings though, therefore os_sockSelect on Windows is a proxy macro that
+   discards the parameter */
+#define os_sockSelect(nfds, readfds, writefds, errorfds, timeout) \
+    os__sockSelect((readfds), (writefds), (errorfds), (timeout))
+
+    OS_API int32_t
+    os__sockSelect(
+            fd_set *readfds,
+            fd_set *writefds,
+            fd_set *errorfds,
+            os_time *timeout);
+#else
     OS_API int32_t
     os_sockSelect(
             int32_t nfds,
@@ -278,7 +293,7 @@ extern "C" {
             fd_set *writefds,
             fd_set *errorfds,
             os_time *timeout);
-
+#endif /* WIN32 */
 
     /* docced in implementation file */
     OS_API os_result

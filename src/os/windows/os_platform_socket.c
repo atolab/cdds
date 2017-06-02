@@ -542,8 +542,7 @@ os_sockFree(
 }
 
 int32_t
-os_sockSelect(
-    int32_t nfds,
+os__sockSelect(
     fd_set *readfds,
     fd_set *writefds,
     fd_set *errorfds,
@@ -554,7 +553,7 @@ os_sockSelect(
 
     t.tv_sec = (long)timeout->tv_sec;
     t.tv_usec = (long)(timeout->tv_nsec / 1000);
-    r = select(nfds, readfds, writefds, errorfds, &t);
+    r = select(-1, readfds, writefds, errorfds, &t);
 
     return r;
 }
