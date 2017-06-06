@@ -26,7 +26,6 @@ static void usage (const char * name)
 CU_ErrorCode runner_init (int argc, char* argv[])
 {
     int i;
-    CU_ErrorCode result;
 
     runner.automated = false;
     runner.junit = false;
