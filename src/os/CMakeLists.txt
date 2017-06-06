@@ -13,3 +13,7 @@ PREPEND(srcs_os "${CMAKE_SOURCE_DIR}/src/os" os_atomics.c os_init.c os_report.c 
 add_library(OSAbstraction ${srcs_os})
 target_compile_definitions(OSAbstraction PRIVATE VDDS_BUILD)
 target_link_libraries(OSAbstraction INTERFACE Abstraction)
+
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
