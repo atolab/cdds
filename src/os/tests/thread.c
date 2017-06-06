@@ -893,7 +893,7 @@ static void tc_os_threadFigureIdentity (void)
       #ifdef WIN32
         sscanf (threadId, "%d", &threadNumeric);
       #else
-        sscanf (&threadId[12], PRIxPTR, &threadNumeric);
+        sscanf (threadId, "%"PRIxPTR, &threadNumeric);
       #endif
 
       #ifndef INTEGRITY
