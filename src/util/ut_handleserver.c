@@ -30,8 +30,8 @@ typedef struct ut_handleserver {
 } ut_handleserver;
 
 
-static ut_handle_t check_handle(ut_handleserver *hs, ut_handle_t hdl, int32_t kind);
-static void delete_handle(ut_handleserver *hs, int32_t idx);
+_Check_return_ static ut_handle_t check_handle(_In_ ut_handleserver *hs, _In_ ut_handle_t hdl, _In_ int32_t kind);
+static void delete_handle(_In_ ut_handleserver *hs, _In_ int32_t idx);
 
 _Check_return_ ut_handleserver_t
 ut_handleserver_new()
@@ -117,13 +117,15 @@ ut_handle_delete_by_claim(_In_                   ut_handleserver_t srv,
 {
     ut_handleserver *hs = srv;
     ut_handleinfo *info = claim;
+    os_mutex *info_mutex;
 
     assert(hs);
     assert(info);
 
     os_mutexLock(&hs->mutex);
+    info_mutex = info->mutex;
     delete_handle(hs, (info->hdl & UT_HANDLE_IDX_MASK));
-    os_mutexUnlock(info->mutex);
+    os_mutexUnlock(info_mutex);
     os_mutexUnlock(&hs->mutex);
 }
 
@@ -225,7 +227,10 @@ ut_handle_release(_In_                   ut_handleserver_t srv,
     os_mutexUnlock(info->mutex);
 }
 
-static ut_handle_t check_handle(ut_handleserver *hs, ut_handle_t hdl, int32_t kind)
+_Check_return_ static ut_handle_t
+check_handle(_In_ ut_handleserver *hs,
+             _In_ ut_handle_t hdl,
+             _In_ int32_t kind)
 {
     if (hdl > 0) {
         int32_t idx = (hdl & UT_HANDLE_IDX_MASK);
@@ -252,7 +257,9 @@ static ut_handle_t check_handle(ut_handleserver *hs, ut_handle_t hdl, int32_t ki
     return hdl;
 }
 
-static void delete_handle(ut_handleserver *hs, int32_t idx)
+static void
+delete_handle(_In_ ut_handleserver *hs,
+              _In_ int32_t idx)
 {
     os_free(hs->hdls[idx]);
     hs->hdls[idx] = NULL;
