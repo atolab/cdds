@@ -69,6 +69,7 @@ typedef gid_t os_gid;
 typedef mode_t os_mode_t;
 #ifdef _WRS_KERNEL
 typedef RTP_ID os_procId; /* typedef struct wind_rtp *RTP_ID */
+#define PRIprocId "d"
 #else
 typedef pid_t os_procId;
 #define PRIprocId "d"

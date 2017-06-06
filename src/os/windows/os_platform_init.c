@@ -38,11 +38,11 @@ void os_osInit (void)
   initCount = os_atomic_inc32_nv(&_ospl_osInitCount);
 
   if (initCount == 1) {
+    os_processModuleInit();
     os_threadModuleInit();
     os_timeModuleInit();
     os_reportInit(false);
     os_socketModuleInit();
-    /*os_processModuleInit();*/
   }
 
   return;
@@ -61,11 +61,11 @@ void os_osExit (void)
   initCount = os_atomic_dec32_nv(&_ospl_osInitCount);
 
   if (initCount == 0) {
-    /*os_processModuleExit();*/
     os_socketModuleExit();
     os_reportExit();
     os_timeModuleExit();
     os_threadModuleExit();
+    os_processModuleExit();
   } else if ((initCount + 1) < initCount){
     /* The 0 boundary is passed, so os_osExit is called more often than
      * os_osInit. Therefore undo decrement as nothing happened and warn. */
