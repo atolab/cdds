@@ -62,23 +62,23 @@ nn_etime_t now_et (void)
   return t;
 }
 
-static void time_to_sec_usec (int *sec, int *usec, int64_t t)
+static void time_to_sec_usec (_Out_ int * __restrict sec, _Out_ int * __restrict usec, _In_ int64_t t)
 {
   *sec = (int) (t / T_SECOND);
   *usec = (int) (t % T_SECOND) / 1000;
 }
 
-void mtime_to_sec_usec (int *sec, int *usec, nn_mtime_t t)
+void mtime_to_sec_usec (_Out_ int * __restrict sec, _Out_ int * __restrict usec, _In_ nn_mtime_t t)
 {
   time_to_sec_usec (sec, usec, t.v);
 }
 
-void wctime_to_sec_usec (int *sec, int *usec, nn_wctime_t t)
+void wctime_to_sec_usec (_Out_ int * __restrict sec, _Out_ int * __restrict usec, _In_ nn_wctime_t t)
 {
   time_to_sec_usec (sec, usec, t.v);
 }
 
-void etime_to_sec_usec (int *sec, int *usec, nn_etime_t t)
+void etime_to_sec_usec (_Out_ int * __restrict sec, _Out_ int * __restrict usec, _In_ nn_etime_t t)
 {
   time_to_sec_usec (sec, usec, t.v);
 }
