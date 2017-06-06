@@ -170,8 +170,6 @@ os_threadModuleInit (
     pthread_key_create (&os_threadNameKey, NULL);
     pthread_key_create (&os_threadMemKey, NULL);
 
-    pthread_setspecific (os_threadNameKey, "main thread");
-
 #ifndef INTEGRITY
     sigfillset(&os_threadBlockAllMask);
 #endif

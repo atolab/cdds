@@ -163,6 +163,14 @@ OS_API dds_fail_fn dds_fail_get (void);
  */
 OS_API void dds_fail (const char * msg, const char * where);
 
+
+/* TEMPORARY FUNCTION */
+
+OS_API bool dds_entity_check (_In_opt_ dds_entity_t e, _In_ unsigned flags, _In_z_ const char * where);
+
+#define DDS_ENTITY_CHECK(e, f) (dds_entity_check ((e), (f), __FILE__ ":" DDS_INT_TO_STRING(__LINE__)))
+
+
 #undef OS_API
 
 #if defined (__cplusplus)

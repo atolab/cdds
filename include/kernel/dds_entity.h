@@ -36,6 +36,8 @@ void dds_entity_delete_wait (_In_ dds_entity_t e, _In_ struct thread_state1 * co
 #define dds_entity_status_match(e,t)  (((dds_entity*)e)->m_status->m_trigger &   t)
 void dds_entity_status_signal(_In_ dds_entity_t e);
 
+bool dds_entity_is_kind (_In_opt_ dds_entity_t e, _In_ dds_entity_kind_t kind);
+
 #if defined (__cplusplus)
 }
 #endif
