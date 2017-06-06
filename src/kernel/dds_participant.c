@@ -51,7 +51,7 @@ static dds_return_t dds_participant_qos_validate (const dds_qos_t *qos, bool ena
     bool consistent;
     assert(qos);
     /* Check consistency. */
-    consistent = ! ((qos->present & QP_USER_DATA) && ! validate_octetseq (&qos->user_data));
+    consistent = (qos->present & QP_USER_DATA) ? validate_octetseq (&qos->user_data) : true;
     if (consistent) {
         if (enabled) {
             /* TODO: Improve/check immutable check. */

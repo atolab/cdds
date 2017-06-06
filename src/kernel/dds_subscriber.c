@@ -21,8 +21,8 @@ static dds_return_t dds_subscriber_qos_validate (const dds_qos_t *qos, bool enab
     bool consistent = true;
     assert(qos);
     /* Check consistency. */
-    consistent &= ((qos->present & QP_GROUP_DATA) && ! validate_octetseq (&qos->group_data));
-    consistent &= ((qos->present & QP_PRESENTATION) && (validate_presentation_qospolicy (&qos->presentation) != 0));
+    consistent &= (qos->present & QP_GROUP_DATA) ? validate_octetseq (&qos->group_data) : true;
+    consistent &= (qos->present & QP_PRESENTATION) ? (validate_presentation_qospolicy (&qos->presentation) == 0) : true;
     if (consistent) {
         if (enabled) {
             /* TODO: Improve/check immutable check. */

@@ -58,11 +58,13 @@ static dds_return_t dds_reader_qos_validate (const dds_qos_t *qos, bool enabled)
     assert(qos);
     /* Check consistency. */
     consistent &= dds_qos_validate_common(qos);
-    consistent &= (qos->present & QP_USER_DATA) && ! validate_octetseq (&qos->user_data);
-    consistent &= (qos->present & QP_PRISMTECH_READER_DATA_LIFECYCLE) && (validate_reader_data_lifecycle (&qos->reader_data_lifecycle) != 0);
-    consistent &= (qos->present & QP_TIME_BASED_FILTER) && (validate_duration (&qos->time_based_filter.minimum_separation) != 0);
-    consistent &= ((qos->present & QP_HISTORY)           && (qos->present & QP_RESOURCE_LIMITS) && (validate_history_and_resource_limits (&qos->history, &qos->resource_limits) != 0)) ||
-                  ((qos->present & QP_TIME_BASED_FILTER) && (qos->present & QP_DEADLINE)        && (!validate_deadline_and_timebased_filter (qos->deadline.deadline, qos->time_based_filter.minimum_separation)));
+    consistent &= (qos->present & QP_USER_DATA)                       ? validate_octetseq (&qos->user_data) : true;
+    consistent &= (qos->present & QP_PRISMTECH_READER_DATA_LIFECYCLE) ? validate_reader_data_lifecycle (&qos->reader_data_lifecycle) == 0 : true;
+    consistent &= (qos->present & QP_TIME_BASED_FILTER)               ? validate_duration (&qos->time_based_filter.minimum_separation) == 0 : true;
+    consistent &= (qos->present & QP_HISTORY)
+               && (qos->present & QP_RESOURCE_LIMITS)                 ? validate_history_and_resource_limits (&qos->history, &qos->resource_limits) == 0 : true;
+    consistent &= (qos->present & QP_TIME_BASED_FILTER)
+               && (qos->present & QP_DEADLINE)                        ? validate_deadline_and_timebased_filter (qos->deadline.deadline, qos->time_based_filter.minimum_separation) : true;
     if (consistent) {
         ret = DDS_RETCODE_OK;
         if (enabled) {
