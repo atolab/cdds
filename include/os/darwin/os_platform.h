@@ -41,6 +41,7 @@ extern "C" {
     typedef gid_t os_gid;
     typedef mode_t os_mode_t;
     typedef pid_t os_procId;
+    #define PRIprocId "d"
 
 #include "os/posix/os_platform_socket.h"
 #include "os/posix/os_platform_sync.h"
