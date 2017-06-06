@@ -180,24 +180,6 @@ extern "C" {
             uint32_t listSize,
             uint32_t *validElements);
 
-    OS_API void *
-    os_sockQueryInterfaceStatusInit(
-            const char *ifName);
-
-    OS_API void
-    os_sockQueryInterfaceStatusDeinit(
-            void *handle);
-
-    OS_API os_result
-    os_sockQueryInterfaceStatus(
-            void *handle,
-            os_time timeout,
-            bool *status);
-
-    OS_API os_result
-    os_sockQueryInterfaceStatusSignal(
-            void *handle);
-
     OS_API os_socket
     os_sockNew(
             int domain, /* AF_INET */

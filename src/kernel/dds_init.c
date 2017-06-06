@@ -126,7 +126,7 @@ extern int dds_init ()
   }
   dds_set_report_level ();
 
-  os_procGetProcessName(tmp, sizeof(tmp));
+  os_procName(tmp, sizeof(tmp));
   dds_init_exe = dds_string_dup (tmp);
 
   return DDS_RETCODE_OK;

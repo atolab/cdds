@@ -41,7 +41,7 @@ void os_osInit (void)
     os_syncModuleInit();
     os_threadModuleInit();
     os_reportInit(false);
-    /*os_processModuleInit();*/
+    os_processModuleInit();
   }
 
   return;
@@ -60,7 +60,7 @@ void os_osExit (void)
   initCount = os_atomic_dec32_nv(&_ospl_osInitCount);
 
   if (initCount == 0) {
-    /*os_processModuleExit();*/
+    os_processModuleExit();
     os_reportExit();
     os_threadModuleExit();
     os_syncModuleExit();

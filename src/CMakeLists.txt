@@ -20,7 +20,7 @@ PREPEND(srcs_kernel kernel dds_alloc.c dds_iid.c dds_participant.c dds_reader.c 
 # Recipe for the vdds target
 # The vdds target depends on the OSAbstraction target
 add_library(vdds ${srcs_util} ${srcs_ddsi} ${srcs_kernel})
-target_link_libraries(vdds PRIVATE INTERFACE OSAbstraction)
+target_link_libraries(vdds PRIVATE OSAbstraction)
 target_compile_definitions(vdds PRIVATE VDDS_BUILD)
 
 # Create a psuedo-target that other targets (i.e. examples, tests) can depend on and can also be

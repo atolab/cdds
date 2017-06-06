@@ -42,7 +42,8 @@ extern "C" {
 
     typedef double os_timeReal;
     typedef int os_timeSec;
-    typedef int os_procId;
+    typedef DWORD os_procId;
+    #define PRIprocId "u"
         /* keep in sync with st_mode field def in struct stat in sys/stat.h */
         typedef unsigned short os_mode_t;
         typedef SSIZE_T ssize_t;
