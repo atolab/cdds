@@ -63,6 +63,12 @@ bool validate_entityfactory_qospolicy(const nn_entity_factory_qospolicy_t * enti
   return !(entityfactory->autoenable_created_entities & ~1);
 }
 
+bool validate_partition_qospolicy (_In_ const nn_partition_qospolicy_t * partition)
+{
+  /* default value is NULL with length 0 */
+  return (((partition->n == 0) && (partition->strs == NULL)) || (partition->n > 0));
+}
+
 bool validate_reliability_qospolicy (const nn_reliability_qospolicy_t * reliability)
 {
   return

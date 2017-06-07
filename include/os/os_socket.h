@@ -180,24 +180,6 @@ extern "C" {
             uint32_t listSize,
             uint32_t *validElements);
 
-    OS_API void *
-    os_sockQueryInterfaceStatusInit(
-            const char *ifName);
-
-    OS_API void
-    os_sockQueryInterfaceStatusDeinit(
-            void *handle);
-
-    OS_API os_result
-    os_sockQueryInterfaceStatus(
-            void *handle,
-            os_time timeout,
-            bool *status);
-
-    OS_API os_result
-    os_sockQueryInterfaceStatusSignal(
-            void *handle);
-
     OS_API os_socket
     os_sockNew(
             int domain, /* AF_INET */
@@ -271,6 +253,21 @@ extern "C" {
     os_sockFree(
             os_socket s);
 
+#ifdef WIN32
+/* SOCKETs on Windows are NOT integers. The nfds parameter is only there for
+   compatibility, the implementation ignores it. Implicit casts will generate
+   warnings though, therefore os_sockSelect on Windows is a proxy macro that
+   discards the parameter */
+#define os_sockSelect(nfds, readfds, writefds, errorfds, timeout) \
+    os__sockSelect((readfds), (writefds), (errorfds), (timeout))
+
+    OS_API int32_t
+    os__sockSelect(
+            fd_set *readfds,
+            fd_set *writefds,
+            fd_set *errorfds,
+            os_time *timeout);
+#else
     OS_API int32_t
     os_sockSelect(
             int32_t nfds,
@@ -278,7 +275,7 @@ extern "C" {
             fd_set *writefds,
             fd_set *errorfds,
             os_time *timeout);
-
+#endif /* WIN32 */
 
     /* docced in implementation file */
     OS_API os_result
@@ -300,17 +297,6 @@ extern "C" {
     os_sockaddrSameSubnet(const os_sockaddr* thisSock,
                           const os_sockaddr* thatSock,
                           const os_sockaddr* mask);
-
-    /**
-     * Convert an address in ‘dotted decimal’ IPv4 or ‘colon-separated hexadecimal’ IPv6
-     * notation to an socket address.
-     * @param addressString The address string.
-     * @param addressOut The found socket address when found.
-     * @return True when the address is a valid address, False otherwise.
-     */
-    OS_API bool
-    os_sockaddrInetStringToAddress(const char *addressString,
-                                   os_sockaddr* addressOut);
 
     /**
      * Convert a socket address to a string format presentation representation
@@ -337,12 +323,26 @@ extern "C" {
             char* buffer,
             size_t buflen);
 
-
-    /* docced in implementation file */
-    OS_API bool
-    os_sockaddrStringToAddress(const char *addressString,
-                               os_sockaddr* addressOut,
-                               bool isIPv4);
+    /**
+    * Convert the provided addressString into a os_sockaddr.
+    *
+    * @param addressString The string representation of a network address.
+    * @param addressOut A pointer to an os_sockaddr. Must be big enough for
+    * the address type specified by the string. This implies it should
+    * generally be the address of an os_sockaddr_storage for safety's sake.
+    * @param isIPv4 If the addressString is a hostname specifies whether
+    * and IPv4 address should be returned. If false an Ipv6 address will be
+    * requested. If the address is in either valid decimal presentation format
+    * param will be ignored.
+    * @return true on successful conversion. false otherwise
+    */
+    _Success_(return) OS_API bool
+    os_sockaddrStringToAddress(
+        _In_z_  const char *addressString,
+        _When_(isIPv4, _Out_writes_bytes_(sizeof(os_sockaddr_in)))
+        _When_(!isIPv4, _Out_writes_bytes_(sizeof(os_sockaddr_in6)))
+            os_sockaddr *addressOut,
+        _In_ bool isIPv4);
 
     /* docced in implementation file */
     OS_API bool
@@ -398,5 +398,3 @@ extern "C" {
 #endif
 
 #endif /* OS_SOCKET_H */
-
-

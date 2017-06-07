@@ -1,6 +1,5 @@
 find_package(Vortex REQUIRED)
-find_package(Criterion)
-find_package(CUnit)
+find_package(Criterion REQUIRED)
 
 #
 # Function
@@ -13,17 +12,21 @@ find_package(CUnit)
 #
 # Parameters
 #       NAME    The executable name of the test
-#       TYPE    The type of test 'Criterion' or 'CUnit'
+#       TYPE    The type of test 'Criterion' or 'cunitrunner'
 #       ARGN    The c file(s) that contains the test.
 #
 function(add_dds_test NAME SUITE)
     if (((${SUITE} STREQUAL Criterion) AND (CRITERION_FOUND)) OR
-        ((${SUITE} STREQUAL CUnit    ) AND (CUNIT_FOUND    )) )
-
+        ((${SUITE} STREQUAL cunitrunner)))
         set(TEST_NAME "c99_${NAME}")
         add_executable(${NAME} ${ARGN})
         target_link_libraries(${NAME} Vortex::DDSC99 ${SUITE})
-        add_test(${TEST_NAME} ${NAME})
+
+        if(${SUITE} STREQUAL cunitrunner)
+          add_test(${TEST_NAME} ${NAME} -a -r ${NAME})
+        else()
+          add_test(${TEST_NAME} ${NAME} --xml=${NAME}-Junit.xml)
+        endif()
     endif()
 endfunction()
 
@@ -31,9 +34,10 @@ endfunction()
 #################################################################################
 # The tests
 #################################################################################
-add_dds_test(basic                    CUnit          basic.c)
+add_dds_test(basic                    cunitrunner    basic.c)
 add_dds_test(entity_api               Criterion      entity_api.c)
-add_dds_test(listener                 CUnit          listener.c)
+add_dds_test(listener                 cunitrunner    listener.c)
 add_dds_test(participant_creation     Criterion      participant_creation.c)
 add_dds_test(subscriber               Criterion      subscriber.c)
+add_dds_test(publisher                Criterion      publisher.c)
 

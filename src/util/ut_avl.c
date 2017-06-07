@@ -980,7 +980,7 @@ _Check_return_ _Ret_maybenull_ void *ut_avlCRoot (_In_ const ut_avlCTreedef_t *t
     return ut_avlRoot (&td->t, &tree->t);
 }
 
-_Ret_ void *ut_avlCRootNonEmpty (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree)
+_Ret_notnull_  void *ut_avlCRootNonEmpty (_In_ const ut_avlCTreedef_t *td, _In_ const ut_avlCTree_t *tree)
 {
     return ut_avlRootNonEmpty (&td->t, &tree->t);
 }

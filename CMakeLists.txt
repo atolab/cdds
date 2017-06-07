@@ -14,19 +14,23 @@ include(AnalyzeBuild)
 # in the Coverage module should that ever be necessary.
 include(Coverage)
 set(MEMORYCHECK_COMMAND_OPTIONS "--track-origins=yes --leak-check=full --trace-children=yes --child-silent-after-fork=yes --xml=yes --xml-file=TestResultValgrind_%p.xml --tool=memcheck --show-reachable=yes --leak-resolution=high")
-include (CTest)
-enable_testing()
+
+# By default building the testing tree is enabled by including CTest, but
+# since not everybody has CUnit and/or Criterion installed, and because it is
+# not strictly required to build the product itself, switch to off by default.
+option(BUILD_TESTING "Build the testing tree." OFF)
+include(CTest)
 
 # todo sphinx+breathe to replace doxygen
 find_package(Doxygen)
 if(Doxygen_FOUND)
-    configure_file(${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in
-        ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-    add_custom_target(docs
-        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Executing Doxygen for document generation"
-        VERBATIM)
+  configure_file(${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+  add_custom_target(docs
+    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Executing Doxygen for document generation"
+    VERBATIM)
 endif()
 
 include_directories(include)
@@ -34,6 +38,9 @@ include_directories(include)
 add_subdirectory(src)
 #add_subdirectory(vdds-server)
 add_subdirectory(examples)
+if(BUILD_TESTING)
+  add_subdirectory(cunitrunner)
+endif()
 #add_subdirectory(rpc-examples)
 
 include(Packaging) # Pulls in CPack

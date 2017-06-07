@@ -48,13 +48,28 @@ extern "C" {
                  int err);
 
     /**
-     * \brief Get string representation for specified error code
+     * \brief Get description for specified error code
+     *
+     * @return 0 success. On error a (positive) error number is returned
+     * @param err Error number
+     * @param buf Buffer to store description in
+     * @oaram bufsz Number of bytes available in buf
+     */
+    OS_API int
+    os_strerror_r (
+        _In_ int err,
+        _Out_writes_z_(bufsz) char *buf,
+        _In_ size_t bufsz);
+
+    /**
+     * \brief Get description for specified error code
      *
      * @return Pointer to string allocated in thread specific memory
      * @param err Error number
      */
-    OS_API int
-    os_strerror_r (int err, char *buf, size_t bufsz);
+    OS_API const char *
+    os_strerror (
+        _In_ int err);
 
 #undef OS_API
 

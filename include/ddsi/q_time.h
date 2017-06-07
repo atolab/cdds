@@ -64,9 +64,9 @@ int valid_ddsi_timestamp (nn_ddsi_time_t t);
 OS_API nn_wctime_t now (void);       /* wall clock time */
 nn_mtime_t now_mt (void);     /* monotonic time */
 nn_etime_t now_et (void);     /* elapsed time */
-void mtime_to_sec_usec (int *sec, int *usec, nn_mtime_t t);
-void wctime_to_sec_usec (int *sec, int *usec, nn_wctime_t t);
-void etime_to_sec_usec (int *sec, int *usec, nn_etime_t t);
+void mtime_to_sec_usec (_Out_ int * __restrict sec, _Out_ int * __restrict usec, _In_ nn_mtime_t t);
+void wctime_to_sec_usec (_Out_ int * __restrict sec, _Out_ int * __restrict usec, _In_ nn_wctime_t t);
+void etime_to_sec_usec (_Out_ int * __restrict sec, _Out_ int * __restrict usec, _In_ nn_etime_t t);
 nn_mtime_t mtime_round_up (nn_mtime_t t, int64_t round);
 nn_mtime_t add_duration_to_mtime (nn_mtime_t t, int64_t d);
 nn_wctime_t add_duration_to_wctime (nn_wctime_t t, int64_t d);

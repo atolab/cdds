@@ -40,8 +40,8 @@ void os_osInit (void)
   if (initCount == 1) {
     os_syncModuleInit();
     os_threadModuleInit();
+    os_processModuleInit();
     os_reportInit(false);
-    /*os_processModuleInit();*/
   }
 
   return;
@@ -60,8 +60,8 @@ void os_osExit (void)
   initCount = os_atomic_dec32_nv(&_ospl_osInitCount);
 
   if (initCount == 0) {
-    /*os_processModuleExit();*/
     os_reportExit();
+    os_processModuleExit();
     os_threadModuleExit();
     os_syncModuleExit();
   } else if ((initCount + 1) < initCount){

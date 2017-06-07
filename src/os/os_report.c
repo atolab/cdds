@@ -329,7 +329,7 @@ os__report_xml_head[] =
         "<LINE>%d</LINE>\n"
         "<CODE>%d</CODE>\n"
         "<PROCESS>\n"
-        "<ID>%d</ID>\n"
+        "<ID>%"PRIprocId"</ID>\n"
         "<NAME>%s</NAME>\n"
         "</PROCESS>\n"
         "<THREAD>\n"
@@ -376,20 +376,20 @@ os_reportSetApiInfo (
 static FILE * open_socket (char *host, unsigned short port)
 {
     FILE * file = NULL;
-    struct sockaddr_in sa;
+    struct sockaddr_storage sa;
     os_socket sock;
     char msg[64];
     const char *errstr;
 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((sock = os_sockNew(AF_INET, SOCK_STREAM)) < 0) {
         errstr = "socket";
         goto err_socket;
     }
 
     memset((char *)&sa, 0, sizeof(sa));
-    sa.sin_family = AF_INET;
-    sa.sin_port = htons(port);
-    sa.sin_addr.s_addr = inet_addr (host);
+    (void)os_sockaddrStringToAddress(host, (os_sockaddr *)&sa, true);
+    os_sockaddrSetPort((os_sockaddr *)&sa, htons(port));
+
     if (connect (sock, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
         errstr = "connect";
         goto err_connect;
@@ -1169,7 +1169,7 @@ os_report_noargs(
        entry in the default log file or registered a typed report plugin. */
     if ((doDefault) || (xmlReportPluginsCount > 0) || (typedReportPluginsCount > 0))
     {
-        os_procFigureIdentity (procid, sizeof (procid));
+        os_procNamePid (procid, sizeof (procid));
         os_threadFigureIdentity (thrid, sizeof (thrid));
 
         report.reportType = type;
@@ -1207,7 +1207,7 @@ os_report_noargs(
                 pid = os_procIdSelf ();
                 tid = os_threadIdToInteger (os_threadIdSelf ());
 
-                os_procGetProcessName (proc, sizeof (proc));
+                os_procName (proc, sizeof (proc));
                 os_threadGetThreadName (thr, sizeof (thr));
 
                 ptr = buf;
@@ -1980,8 +1980,8 @@ os__report_stack_unwind(
         pid = os_procIdSelf ();
         tid = os_threadIdToInteger (os_threadIdSelf ());
 
-        os_procFigureIdentity (procid, sizeof (procid));
-        os_procGetProcessName (proc, sizeof (proc));
+        os_procNamePid (procid, sizeof (procid));
+        os_procName (proc, sizeof (proc));
         os_threadFigureIdentity (thrid, sizeof (thrid));
         os_threadGetThreadName (thr, sizeof (thr));
 
@@ -1994,7 +1994,7 @@ os__report_stack_unwind(
                     strlen (file) +
                     (size_t)snprintf (tmp, sizeof(tmp), "%d", line) +
                     (size_t)snprintf (tmp, sizeof(tmp), "%d", code) +
-                    (size_t)snprintf (tmp, sizeof(tmp), "%d", pid) +
+                    (size_t)snprintf (tmp, sizeof(tmp), "%"PRIprocId, pid) +
                     strlen (proc) +
                     (size_t)snprintf (tmp, sizeof(tmp), "%lu", tid) +
                     strlen (thr) +

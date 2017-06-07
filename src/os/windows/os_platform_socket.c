@@ -542,8 +542,7 @@ os_sockFree(
 }
 
 int32_t
-os_sockSelect(
-    int32_t nfds,
+os__sockSelect(
     fd_set *readfds,
     fd_set *writefds,
     fd_set *errorfds,
@@ -554,7 +553,7 @@ os_sockSelect(
 
     t.tv_sec = (long)timeout->tv_sec;
     t.tv_usec = (long)(timeout->tv_nsec / 1000);
-    r = select(nfds, readfds, writefds, errorfds, &t);
+    r = select(-1, readfds, writefds, errorfds, &t);
 
     return r;
 }
@@ -896,203 +895,6 @@ os_sockQueryIPv6Interfaces (
 
     *validElements = listIndex;
 
-    return result;
-}
-
-static os_result
-os_sockGetInterfaceStatus (
-    const char *ifName,
-    bool *status)
-{
-    bool result = os_resultSuccess;
-    PIP_ADAPTER_ADDRESSES pAddresses = NULL;
-    PIP_ADAPTER_ADDRESSES pCurrAddress = NULL;
-    PIP_ADAPTER_UNICAST_ADDRESS pUnicast = NULL;
-    unsigned long outBufLen = WORKING_BUFFER_SIZE;
-    int retVal;
-    int iterations = 0;
-    int listIndex = 0;
-
-    do {
-        pAddresses = (IP_ADAPTER_ADDRESSES *) os_malloc(outBufLen);
-        if (!pAddresses) {
-            os_report(OS_ERROR, "os_sockQueryInterfaces", __FILE__, __LINE__, 0,
-                "Failed to allocate %d bytes for Adapter addresses", outBufLen);
-            return os_resultFail;
-        }
-        retVal = GetAdaptersAddresses(AF_INET, 0, NULL, pAddresses, &outBufLen);
-        if (retVal == ERROR_BUFFER_OVERFLOW) {
-            os_free(pAddresses);
-            pAddresses = NULL;
-            outBufLen <<= 1; /* double the buffer just to be save.*/
-        } else {
-            break;
-        }
-        iterations++;
-    } while ((retVal == ERROR_BUFFER_OVERFLOW) && (iterations < MAX_TRIES));
-
-    for (pCurrAddress = pAddresses; pCurrAddress; pCurrAddress = pCurrAddress->Next) {
-        char buffer[OS_IFNAMESIZE];
-        (void) snprintf(buffer, sizeof(buffer), "%wS", pCurrAddress->FriendlyName);
-        if (strcmp(ifName, buffer) == 0) {
-            if (pCurrAddress->OperStatus == IfOperStatusUp) {
-                *status = TRUE;
-                break;
-            }
-        }
-    }
-
-    if (pAddresses) {
-        os_free(pAddresses);
-    }
-
-    return result;
-}
-
-typedef struct os_sockQueryInterfaceStatusInfo_s {
-    char *ifName;
-    OVERLAPPED overlap;
-    HANDLE hHandle;
-} os_sockQueryInterfaceStatusInfo;
-
-
-void
-os_sockQueryInterfaceStatusDeinit(
-    void *handle)
-{
-    os_sockQueryInterfaceStatusInfo *info = (os_sockQueryInterfaceStatusInfo *) handle;
-
-    if (info) {
-        if (info->ifName) {
-            os_free(info->ifName);
-        }
-        CancelIPChangeNotify(&info->overlap);
-        CloseHandle(info->hHandle);
-        os_free(info);
-    }
-}
-
-static void
-os_sockQueryInterfaceStatusReset(
-    os_sockQueryInterfaceStatusInfo *info)
-{
-    HANDLE hand = NULL;
-    DWORD ret;
-
-    (void)WSAResetEvent(info->overlap.hEvent);
-    (void)CancelIPChangeNotify(&info->overlap);
-    ret = NotifyAddrChange(&hand, &info->overlap);
-    if (ret != NO_ERROR) {
-        if (os_getErrno() != WSA_IO_PENDING) {
-            os_report(OS_ERROR, "os_sockQueryInterfaceStatusReset", __FILE__, __LINE__, 0,
-                          "Failed to reset notifications for network interface address changes");
-        }
-    }
-}
-
-void *
-os_sockQueryInterfaceStatusInit(
-    const char *ifName)
-{
-    os_sockQueryInterfaceStatusInfo *info = NULL;
-    HANDLE hand = NULL;
-    DWORD ret;
-
-    info = (os_sockQueryInterfaceStatusInfo *) os_malloc(sizeof(os_sockQueryInterfaceStatusInfo));
-    if (info) {
-        memset(info, 0, sizeof(os_sockQueryInterfaceStatusInfo));
-        info->ifName = os_strdup(ifName);
-        if (!info->ifName) {
-            os_free(info);
-            info = NULL;
-            os_report(OS_ERROR, "os_sockQueryInterfaceStatusInit", __FILE__, __LINE__, 0,
-                      "Failed to allocate os_sockQueryInterfaceStatusInfo");
-        }
-    }
-
-    if (info) {
-        info->overlap.hEvent = WSACreateEvent();
-        ret = NotifyAddrChange(&hand, &info->overlap);
-        if ((ret != NO_ERROR) && (os_getErrno() != WSA_IO_PENDING)) {
-            os_free(info->ifName);
-            os_free(info);
-            info = NULL;
-            os_report(OS_ERROR, "os_sockQueryInterfaceStatusInit", __FILE__, __LINE__, 0,
-                      "Failed to administer for network interface address changes");
-        } else {
-            info->hHandle = CreateEvent(NULL, FALSE, FALSE, NULL);
-            if (info->hHandle == NULL) {
-                int errNo = os_getErrno();
-                                char errmsg[1024];
-                (void) os_strerror_r(errNo, errmsg, sizeof errmsg);
-                os_report(OS_ERROR, "os_sockQueryInterfaceStatusInit", __FILE__, __LINE__, 0, "CreateEvent failed: %d %s", errNo, errmsg);
-                                os_sockQueryInterfaceStatusDeinit(info);
-                info = NULL;
-            }
-        }
-    }
-
-    return info;
-}
-
-
-os_result
-os_sockQueryInterfaceStatus(
-    void *handle,
-    os_time timeout,
-    bool *status)
-{
-    os_sockQueryInterfaceStatusInfo *info = (os_sockQueryInterfaceStatusInfo *) handle;
-    os_result result = os_resultFail;
-    DWORD t;
-    DWORD r;
-    HANDLE hHandles[2];
-
-    *status = FALSE;
-
-    if (info) {
-        assert(timeout.tv_sec >= 0);
-        t = (DWORD)timeout.tv_sec;
-        t = t * 1000 + timeout.tv_nsec / 1000000;
-
-        hHandles[0] = info->overlap.hEvent;
-        hHandles[1] = info->hHandle;
-        r = WaitForMultipleObjects(2, hHandles, FALSE, t);
-        if (r == WAIT_OBJECT_0) {
-            result = os_sockGetInterfaceStatus(info->ifName, status);
-            os_sockQueryInterfaceStatusReset(info);
-        } else if ((r - WAIT_OBJECT_0) == 1) {
-            /* (Mis)using os_resultTimeout to indicate that woken from
-             * WaitForMultipleObjects and no status update is available */
-            result = os_resultTimeout;
-        } else if (r == WAIT_TIMEOUT) {
-            result = os_resultTimeout;
-        } else {
-            result = os_resultFail;
-        }
-    }
-
-    return result;
-}
-
-os_result
-os_sockQueryInterfaceStatusSignal(
-    void *handle)
-{
-    os_sockQueryInterfaceStatusInfo *info = (os_sockQueryInterfaceStatusInfo *) handle;
-    os_result result = os_resultFail;
-
-    if (info) {
-        if (!SetEvent(info->hHandle)) {
-            int errNo = os_getErrno();
-                        char errmsg[1024];
-
-                        (void) os_strerror_r(errNo, errmsg, sizeof errmsg);
-            os_report(OS_WARNING, "os_sockQueryInterfaceStatusSignal", __FILE__, __LINE__, 0, "SetEvent failed: %d %s", errNo, errmsg);
-        } else {
-            result = os_resultSuccess;
-        }
-    }
     return result;
 }
 

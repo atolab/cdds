@@ -115,6 +115,23 @@ extern "C" {
 #define OSPL_DIAG_ON(x)
 #endif
 
+/**
+ * \brief Calculate maximum value of an integer type
+ *
+ * A somewhat complex, but efficient way to calculate the maximum value of an
+ * integer type at compile time.
+ *
+ * For unsigned numerical types the first part up to XOR is enough. The second
+ * part is to make up for signed numerical types.
+ */
+#define OS_MAX_INTEGER(T) \
+    ((T)(((T)~0) ^ ((T)!((T)~0 > 0) << (CHAR_BIT * sizeof(T) - 1))))
+/**
+ * \brief Calculate minimum value of an integer type
+ */
+#define OS_MIN_INTEGER(T) \
+    ((-OS_MAX_INTEGER(T)) - 1)
+
 #if !defined (OS_UNUSED_ARG)
 #define OS_UNUSED_ARG(a) (void) (a)
 #endif

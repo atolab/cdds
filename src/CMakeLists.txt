@@ -11,7 +11,7 @@ ENDFUNCTION(PREPEND)
 # Create the os target
 add_subdirectory(os)
 
-PREPEND(srcs_util util ut_avl.c ut_crc.c ut_expand_envvars.c ut_fibheap.c ut_hopscotch.c ut_thread_pool.c ut_xmlparser.c)
+PREPEND(srcs_util util ut_avl.c ut_crc.c ut_expand_envvars.c ut_fibheap.c ut_handleserver.c ut_hopscotch.c ut_thread_pool.c ut_xmlparser.c)
 
 PREPEND(srcs_ddsi ddsi ddsi_ser.c ddsi_ssl.c ddsi_tcp.c ddsi_tran.c ddsi_udp.c q_addrset.c q_bitset_inlines.c q_bswap.c q_bswap_inlines.c q_config.c q_ddsi_discovery.c q_debmon.c q_entity.c q_ephash.c q_gc.c q_init.c q_lat_estim.c q_lease.c q_log.c q_md5.c q_misc.c q_nwif.c q_pcap.c q_plist.c q_qosmatch.c q_radmin.c q_receive.c q_security.c q_servicelease.c q_sockwaitset.c q_thread.c q_thread_inlines.c q_time.c q_transmit.c q_whc.c q_xevent.c q_xmsg.c q_freelist.c sysdeps.c)
 
@@ -20,7 +20,7 @@ PREPEND(srcs_kernel kernel dds_alloc.c dds_coherent.c dds_iid.c dds_participant.
 # Recipe for the vdds target
 # The vdds target depends on the OSAbstraction target
 add_library(vdds ${srcs_util} ${srcs_ddsi} ${srcs_kernel})
-target_link_libraries(vdds PRIVATE INTERFACE OSAbstraction)
+target_link_libraries(vdds PRIVATE OSAbstraction)
 target_compile_definitions(vdds PRIVATE VDDS_BUILD)
 
 # Create a psuedo-target that other targets (i.e. examples, tests) can depend on and can also be
@@ -44,5 +44,8 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/dds
 #target_include_directories(vdds PUBLIC ../include)
 
 # TODO: improve test inclusion.
-add_subdirectory(kernel/tests)
+if(BUILD_TESTING)
+  add_subdirectory(kernel/tests)
+  add_subdirectory(util/tests)
+endif()
 

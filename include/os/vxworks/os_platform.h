@@ -69,8 +69,10 @@ typedef gid_t os_gid;
 typedef mode_t os_mode_t;
 #ifdef _WRS_KERNEL
 typedef RTP_ID os_procId; /* typedef struct wind_rtp *RTP_ID */
+#define PRIprocId "d"
 #else
 typedef pid_t os_procId;
+#define PRIprocId "d"
 
 /* If unistd.h is included after stdint.h, intptr_t will be defined twice.
  * It seems like this is an issue with the VxWorks provided header-files. The
