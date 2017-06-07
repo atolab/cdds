@@ -35,7 +35,7 @@
 typedef struct {
     char *threadName;
     void *arguments;
-    void *(*startRoutine)(void *);
+    uint32_t (*startRoutine)(void *);
 } os_threadContext;
 
 typedef struct {
@@ -239,9 +239,11 @@ void
 os_threadExit (
     uint32_t thread_result)
 {
+    uintptr_t res = thread_result;
+
     os_threadMemExit ();
 
-    pthread_exit ((void *) thread_result); /* Doesn't return */
+    pthread_exit ((void *) res); /* Doesn't return */
 }
 
 /** \brief Wrap thread start routine
@@ -256,10 +258,10 @@ os_startRoutineWrapper (
     void *threadContext)
 {
     os_threadContext *context = threadContext;
-    void *resultValue;
+    uintptr_t resultValue;
     os_threadId id;
 
-    resultValue = NULL;
+    resultValue = 0;
 
 #if defined(INTEGRITY)
     SetTaskName(CurrentTask(), context->threadName, strlen(context->threadName));
@@ -295,7 +297,7 @@ os_startRoutineWrapper (
     os_threadMemExit ();
 
     /* return the result of the user routine */
-    return resultValue;
+    return (void *)resultValue;
 }
 
 /** \brief Create a new thread
@@ -316,7 +318,7 @@ os_threadCreate (
     os_threadId *threadId,
     const char *name,
     const os_threadAttr *threadAttr,
-    void *(* start_routine)(void *),
+    uint32_t (* start_routine)(void *),
     void *arg)
 {
     pthread_attr_t attr;
@@ -605,7 +607,8 @@ os_threadWaitExit (
         rv = os_resultSuccess;
     }
     if(thread_result){
-        *thread_result = (uint32_t)vthread_result;
+        uintptr_t res = (uintptr_t)vthread_result;
+        *thread_result = (uint32_t)res;
     }
     return rv;
 }

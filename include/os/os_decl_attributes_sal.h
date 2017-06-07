@@ -646,6 +646,9 @@
 #ifndef _Ret_
 #define _Ret_ __attribute_returns_nonnull__
 #endif
+#ifndef _Ret_bytecap_
+#define _Ret_bytecap_(c) __attribute_returns_nonnull__
+#endif
 #ifndef _Ret_maybenull_
 #define _Ret_maybenull_
 #endif

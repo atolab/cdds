@@ -31,7 +31,7 @@ __thread struct thread_state1 *tsd_thread_state;
 #endif
 
 _Ret_bytecap_(size)
-static void * os_malloc_aligned_cacheline (_In_ size_t size)
+void * os_malloc_aligned_cacheline (_In_ size_t size)
 {
   /* This wastes some space, but we use it only once and it isn't a
      huge amount of memory, just a little over a cache line.
@@ -232,7 +232,7 @@ struct thread_state1 *create_thread (_In_z_ const char *name, _In_ uint32_t (*f)
   }
   TRACE (("create_thread: %s: class %d priority %d stack %u\n", name, (int) tattr.schedClass, tattr.schedPriority, tattr.stackSize));
 
-  if (os_threadCreate (&tid, name, &tattr, &create_thread_wrapper, ctxt) != os_resultSuccess)
+  if (os_threadCreate (&tid, name, &tattr, (os_threadRoutine)&create_thread_wrapper, ctxt) != os_resultSuccess)
   {
     ts1->state = THREAD_STATE_ZERO;
     NN_FATAL1 ("create_thread: %s: os_threadCreate failed\n", name);
