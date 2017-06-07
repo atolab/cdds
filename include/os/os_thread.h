@@ -165,7 +165,7 @@ extern "C" {
      * Possible Results:
      * - returns the integer representation of the given thread ID
      */
-    OS_API unsigned long
+    OS_API uintmax_t
     os_threadIdToInteger(
             os_threadId id);
 

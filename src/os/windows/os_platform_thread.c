@@ -373,7 +373,7 @@ os_threadCreate(
  * Possible Results:
  * - returns the integer representation of the given thread ID
  */
-unsigned long
+uintmax_t
 os_threadIdToInteger(os_threadId id)
 {
    return id.threadId;

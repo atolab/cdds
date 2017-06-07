@@ -238,7 +238,7 @@ struct thread_state1 *create_thread (_In_z_ const char *name, _In_ uint32_t (*f)
     NN_FATAL1 ("create_thread: %s: os_threadCreate failed\n", name);
     goto fatal;
   }
-  nn_log (LC_INFO, "started new thread 0x%llx : %s\n", (unsigned long long) os_threadIdToInteger (tid), name);
+  nn_log (LC_INFO, "started new thread 0x%"PRIxMAX" : %s\n", os_threadIdToInteger (tid), name);
   ts1->extTid = tid; /* overwrite the temporary value with the correct external one */
   os_mutexUnlock (&thread_states.lock);
   return ts1;

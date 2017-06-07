@@ -495,10 +495,10 @@ os_threadCreate (
  * Possible Results:
  * - returns the integer representation of the given thread ID
  */
-unsigned long
+uintmax_t
 os_threadIdToInteger(os_threadId id)
 {
-   return (unsigned long) id;
+   return id;
 }
 
 /** \brief Return the thread ID of the calling thread
@@ -601,7 +601,7 @@ os_threadWaitExit (
     if (result != 0) {
         /* NOTE: The below report actually is a debug output; makes no sense from
          * a customer perspective. Made OS_INFO for now. */
-        OS_REPORT (OS_INFO, "os_threadWaitExit", 2, "pthread_join(%lu) failed with error %d", os_threadIdToInteger(threadId), result);
+        OS_REPORT (OS_INFO, "os_threadWaitExit", 2, "pthread_join(0x%"PRIxMAX") failed with error %d", os_threadIdToInteger(threadId), result);
         rv = os_resultFail;
     } else {
         rv = os_resultSuccess;

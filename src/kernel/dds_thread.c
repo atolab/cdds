@@ -29,7 +29,7 @@ int dds_thread_init (const char* tname)
       ts->lb = 0;
       ts->extTid = tid;
       ts->tid = tid;
-      nn_log (LC_INFO, "started application thread 0x%llx : %s\n", (unsigned long long) os_threadIdToInteger (tid), tname);
+      nn_log (LC_INFO, "started application thread 0x%"PRIxMAX" : %s\n", os_threadIdToInteger (tid), tname);
     }
     os_mutexUnlock (&thread_states.lock);
   }

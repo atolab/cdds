@@ -35,13 +35,16 @@ uint32_t threadExit_thread (_In_ void *args)
   return 0;
 }
 
+static uintmax_t thread_id_from_thread;
+
 uint32_t threadId_thread (_In_opt_ void *args)
 {
   if (args != NULL)
   {
     sleepSeconds (3);
   }
-  return os_threadIdToInteger (os_threadIdSelf ());
+  thread_id_from_thread = os_threadIdToInteger (os_threadIdSelf ());
+  return (uint32_t)thread_id_from_thread; /* Truncates potentially; just used for checking passing a result-value. */
 }
 
 uint32_t get_threadExit_thread (void *args)
@@ -621,7 +624,7 @@ static void tc_os_threadIdSelf (void)
     os_threadId   thread_os_threadId;
     os_threadAttr thread_os_threadAttr;
     int result;
-    uint32_t thread_id_from_thread;
+    uint32_t result_from_thread;
 
   #if ENABLE_TRACING
     /* Check if own thread ID is correctly provided */
@@ -635,12 +638,13 @@ static void tc_os_threadIdSelf (void)
       #ifdef _WRS_KERNEL
         sleepSeconds(1);
       #endif
-        result = os_threadWaitExit (thread_os_threadId, &thread_id_from_thread);
+        result = os_threadWaitExit (thread_os_threadId, &result_from_thread);
         CU_ASSERT (result == os_resultSuccess);
 
         if (result == os_resultSuccess) {
-            unsigned long tmp_thread_os_threadId = os_threadIdToInteger(thread_os_threadId);
+            uintmax_t tmp_thread_os_threadId = os_threadIdToInteger(thread_os_threadId);
             CU_ASSERT (thread_id_from_thread == tmp_thread_os_threadId);
+            CU_ASSERT (result_from_thread == (uint32_t)tmp_thread_os_threadId);
         } else {
           #if ENABLE_TRACING
             printf ("os_threadWaitExit failed.\n");
@@ -662,7 +666,7 @@ static void tc_os_threadWaitExit (void)
     os_threadId   thread_os_threadId;
     os_threadAttr thread_os_threadAttr;
     int result;
-    uint32_t thread_id_from_thread;
+    uint32_t result_from_thread;
 
   #if ENABLE_TRACING
     /* Wait for thread to terminate and get the return value with Success result,
@@ -677,11 +681,12 @@ static void tc_os_threadWaitExit (void)
       #ifdef _WRS_KERNEL
         sleepSeconds(1);
       #endif
-        result = os_threadWaitExit (thread_os_threadId, &thread_id_from_thread);
+        result = os_threadWaitExit (thread_os_threadId, &result_from_thread);
         CU_ASSERT (result == os_resultSuccess);
 
         if (result == os_resultSuccess) {
             CU_ASSERT (thread_id_from_thread == os_threadIdToInteger(thread_os_threadId));
+            CU_ASSERT (result_from_thread == (uint32_t)thread_id_from_thread);
         } else {
           #if ENABLE_TRACING
             printf ("os_threadWaitExit failed.\n");
@@ -706,11 +711,12 @@ static void tc_os_threadWaitExit (void)
       #ifdef _WRS_KERNEL
         sleepSeconds(1);
       #endif
-        result = os_threadWaitExit (thread_os_threadId, &thread_id_from_thread);
+        result = os_threadWaitExit (thread_os_threadId, &result_from_thread);
         CU_ASSERT(result == os_resultSuccess);
 
         if (result == os_resultSuccess) {
             CU_ASSERT (thread_id_from_thread == os_threadIdToInteger(thread_os_threadId));
+            CU_ASSERT (result_from_thread == (uint32_t)thread_id_from_thread);
         } else {
          #if ENABLE_TRACING
             printf ("os_threadWaitExit failed.\n");
