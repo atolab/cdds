@@ -1,6 +1,8 @@
 find_package(Vortex REQUIRED)
 find_package(Criterion REQUIRED)
 
+include(CUnit)
+
 #
 # Function
 #       add_dds_test
@@ -34,9 +36,12 @@ endfunction()
 #################################################################################
 # The tests
 #################################################################################
-add_dds_test(basic                    cunitrunner    basic.c)
 add_dds_test(entity_api               Criterion      entity_api.c)
-add_dds_test(listener                 cunitrunner    listener.c)
 add_dds_test(participant_creation     Criterion      participant_creation.c)
 add_dds_test(publisher                Criterion      publisher.c)
+
+add_cunit_executable(basic basic.c)
+target_link_libraries(basic Vortex::DDSC99)
+add_cunit_executable(listener listener.c)
+target_link_libraries(listener Vortex::DDSC99)
 

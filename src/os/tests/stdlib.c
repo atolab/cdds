@@ -1,5 +1,5 @@
 #include "dds.h"
-#include "cunitrunner/runner.h"
+#include "CUnit/Runner.h"
 #include "os/os.h"
 
 #ifndef WINCE
@@ -29,14 +29,14 @@ vsnprintfTest(
     return result;
 }
 
-static int suite_abstraction_stdlib_init (void)
+CUnit_Suite_Initialize(stdlib)
 {
     int result = DDS_RETCODE_OK;
     os_osInit();
     return result;
 }
 
-static int suite_abstraction_stdlib_clean (void)
+CUnit_Suite_Cleanup(stdlib)
 {
   /* Remove files used to test permissions */
 
@@ -50,7 +50,7 @@ static int suite_abstraction_stdlib_clean (void)
   return 0;
 }
 
-static void stdlib_strcasecmp (void)
+CUnit_Test(stdlib, strcasecmp)
 {
     int res;
     char *s1, *s2;
@@ -116,7 +116,7 @@ static void stdlib_strcasecmp (void)
   #endif
 }
 
-static void stdlib_strncasecmp (void)
+CUnit_Test(stdlib, strncasecmp)
 {
     int res;
     char *s1, *s2;
@@ -198,7 +198,7 @@ static void stdlib_strncasecmp (void)
   #endif
 }
 
-static void stdlib_gethostname (void)
+CUnit_Test(stdlib, gethostname)
 {
     int res;
     os_result os_res;
@@ -226,7 +226,7 @@ static void stdlib_gethostname (void)
   #endif
 }
 
-static void stdlib_putenv (void)
+CUnit_Test(stdlib, putenv)
 {
     os_result os_res;
 
@@ -241,12 +241,23 @@ static void stdlib_putenv (void)
   #endif
 }
 
-static void stdlib_getenv (void)
+CUnit_Test(stdlib, getenv)
 {
+    char *env;
+    os_result res;
+
   #if ENABLE_TRACING
     printf ("Starting stdlib_os_getenv_001\n");
   #endif
-    CU_ASSERT (strcmp (os_getenv("ABCDE"), "FGHIJ") == 0);
+
+    res = os_putenv("ABCDE=FGHIJ");
+    CU_ASSERT(res == os_resultSuccess);
+
+    env = os_getenv("ABCDE");
+    CU_ASSERT(env != NULL);
+    if (env != NULL) {
+        CU_ASSERT(strcmp(env, "FGHIJ") == 0);
+    }
   #if ENABLE_TRACING
     printf ("Starting stdlib_os_getenv_002\n");
   #endif
@@ -256,7 +267,7 @@ static void stdlib_getenv (void)
   #endif
 }
 
-static void stdlib_fileSep (void)
+CUnit_Test(stdlib, fileSep)
 {
   #if defined WIN32
     const char *wanted= "\\";
@@ -272,7 +283,7 @@ static void stdlib_fileSep (void)
   #endif
 }
 
-static void stdlib_access (void)
+CUnit_Test(stdlib, access)
 {
     os_result os_res;
     os_result wanted;
@@ -568,7 +579,7 @@ static void stdlib_access (void)
   #endif
 }
 
-static void stdlib_vsnprintf (void)
+CUnit_Test(stdlib, vsnprintf)
 {
   #if ENABLE_TRACING
     printf ("Starting stdlib_os_vsnprintf_001\n");
@@ -582,7 +593,7 @@ static void stdlib_vsnprintf (void)
   #endif
 }
 
-static void stdlib_strtok_r (void)
+CUnit_Test(stdlib, strtok_r)
 {
     char * res;
     char *strtok_r_ts1;
@@ -659,7 +670,7 @@ static void stdlib_strtok_r (void)
   #endif
 }
 
-static void stdlib_index (void)
+CUnit_Test(stdlib, index)
 {
     char * res;
     char *index_ts1;
@@ -693,54 +704,3 @@ static void stdlib_index (void)
     printf ("Ending stdlib_os_index\n");
   #endif
 }
-
-int main (int argc, char *argv[])
-{
-    CU_pSuite suite;
-
-    if (runner_init(argc, argv)){
-        goto err_init;
-    }
-
-    if ((suite = CU_add_suite ("abstraction_stdlib", suite_abstraction_stdlib_init, suite_abstraction_stdlib_clean)) == NULL){
-        goto err;
-    }
-    if (CU_add_test (suite, "stdlib_os_strcasecmp", stdlib_strcasecmp) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "stdlib_os_strncasecmp", stdlib_strncasecmp) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "stdlib_os_gethostname", stdlib_gethostname) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "stdlib_os_putenv", stdlib_putenv) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "stdlib_os_putenv", stdlib_getenv) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "stdlib_os_fileSep", stdlib_fileSep) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "stdlib_os_access", stdlib_access) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "stdlib_os_vsnprintf", stdlib_vsnprintf) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "stdlib_os_strtok_r", stdlib_strtok_r) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "stdlib_os_index", stdlib_index) == NULL) {
-        goto err;
-    }
-
-    runner_run();
-err:
-    runner_fini();
-err_init:
-    return CU_get_error();
-}
-
-

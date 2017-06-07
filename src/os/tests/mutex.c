@@ -1,5 +1,5 @@
 #include "dds.h"
-#include "cunitrunner/runner.h"
+#include "CUnit/Runner.h"
 #include "os/os.h"
 #include "os/os_process.h"
 
@@ -151,7 +151,7 @@ void *concurrent_trylock_thread (void *arg)
     return (void *)0;
 }
 
-static int  suite_abstraction_mutex_init (void)
+CUnit_Suite_Initialize(mutex)
 {
     int result = 0;
     os_osInit();
@@ -167,7 +167,7 @@ static int  suite_abstraction_mutex_init (void)
     return result;
 }
 
-static int suite_abstraction_mutex_clean (void)
+CUnit_Suite_Cleanup(mutex)
 {
     int result = DDS_RETCODE_OK;
 
@@ -179,7 +179,7 @@ static int suite_abstraction_mutex_clean (void)
     return result;
 }
 
-static void tc_os_mutexInit (void)
+CUnit_Test(mutex, init)
 {
   #if ENABLE_TRACING
     /* Initialize mutex with PRIVATE scope and Success result  */
@@ -199,7 +199,7 @@ static void tc_os_mutexInit (void)
   #endif
 }
 
-static void tc_os_mutexLock (void)
+CUnit_Test(mutex, lock, false)
 {
   #if ENABLE_TRACING
     /* Test critical section access with locking and PRIVATE scope  */
@@ -288,7 +288,7 @@ static void tc_os_mutexLock (void)
   #endif
 }
 
-static void tc_os_mutexTryLock (void)
+CUnit_Test(mutex, trylock, false)
 {
   #if ENABLE_TRACING
     /* Test critical section access with trylocking and PRIVATE scope */
@@ -319,7 +319,7 @@ static void tc_os_mutexTryLock (void)
   #endif
 }
 
-static void tc_os_mutexUnlock (void)
+CUnit_Test(mutex, unlock, false)
 {
   #if ENABLE_TRACING
     /* Unlock mutex with PRIVATE scope and Success result */
@@ -338,7 +338,7 @@ static void tc_os_mutexUnlock (void)
   #endif
 }
 
-static void tc_os_mutexDestroy (void)
+CUnit_Test(mutex, destroy, false)
 {
   #if ENABLE_TRACING
     /* Deinitialize mutex with PRIVATE scope and Success result */
@@ -355,37 +355,4 @@ static void tc_os_mutexDestroy (void)
   #if ENABLE_TRACING
     printf ("Ending tc_mutexDestroy\n");
   #endif
-}
-
-int main (int argc, char *argv[])
-{
-    CU_pSuite suite;
-
-    if (runner_init(argc, argv)){
-        goto err_init;
-    }
-
-    if ((suite = CU_add_suite ("abstraction_mutex", suite_abstraction_mutex_init, suite_abstraction_mutex_clean)) == NULL){
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_mutexInit", tc_os_mutexInit) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_mutexLock", tc_os_mutexLock) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_mutexTryLock", tc_os_mutexTryLock) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_mutexUnlock", tc_os_mutexUnlock) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_mutexDestroy", tc_os_mutexDestroy) == NULL) {
-        goto err;
-    }
-    runner_run();
-err:
-    runner_fini();
-err_init:
-    return CU_get_error();
 }

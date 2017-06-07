@@ -1,5 +1,5 @@
 #include "dds.h"
-#include "cunitrunner/runner.h"
+#include "CUnit/Runner.h"
 
 #define ASSERT_CALLBACK_EQUAL(fntype, listener, expected) \
     do { \
@@ -43,7 +43,7 @@ static void subscription_matched_cb(dds_entity_t reader, const dds_subscription_
 
 
 /* tests */
-void test_create_and_delete(void)
+CUnit_Test(c99_listener, create_and_delete)
 {
     /* Verify create doesn't return null */
     dds_listener_t *listener;
@@ -69,7 +69,7 @@ void test_create_and_delete(void)
     dds_listener_delete(NULL);
 }
 
-void test_reset(void)
+CUnit_Test(c99_listener, reset)
 {
     dds_listener_t *listener;
     listener = dds_listener_create(NULL);
@@ -86,7 +86,7 @@ void test_reset(void)
     dds_listener_delete(listener);
 }
 
-void test_copy(void)
+CUnit_Test(c99_listener, copy)
 {
     dds_listener_t *listener1 = NULL, *listener2 = NULL;
     listener1 = dds_listener_create(NULL);
@@ -113,7 +113,7 @@ void test_copy(void)
     dds_listener_delete(listener2);
 }
 
-void test_merge(void)
+CUnit_Test(c99_listener, merge)
 {
     dds_listener_t *listener1 = NULL, *listener2 = NULL;
     listener1 = dds_listener_create(NULL);
@@ -145,7 +145,7 @@ void test_merge(void)
     dds_listener_delete(listener2);
 }
 
-void test_getters_setters(void)
+CUnit_Test(c99_listener, getters_setters)
 {
     /* test all individual cb get/set methods */
     dds_listener_t *listener = dds_listener_create(NULL);
@@ -168,42 +168,3 @@ void test_getters_setters(void)
     dds_listener_delete(listener);
 }
 
-int main (int argc, char **argv)
-{
-    CU_pSuite pSuite;
-
-    if (runner_init(argc, argv)){
-        goto err_init;
-    }
-
-    /* add a suite to the registry */
-    if ((pSuite = CU_add_suite("C99::Listener test suite", NULL, NULL)) == NULL){
-       goto err;
-    }
-
-    /* add test cases to the test suite */
-    if (CU_add_test(pSuite, "Create and delete a dds_listener_t instance", test_create_and_delete) == NULL) {
-        goto err;
-    }
-
-    if (CU_add_test(pSuite, "Reset a dds_listener_t instance to its default values", test_reset) == NULL) {
-        goto err;
-    }
-
-    if (CU_add_test(pSuite, "Copy a dds_listener_t instance", test_copy) == NULL) {
-        goto err;
-    }
-
-    if (CU_add_test(pSuite, "Merge two dds_listener_t instances", test_merge) == NULL) {
-        goto err;
-    }
-
-    if (CU_add_test(pSuite, "Get/Set dds_listener_t callbacks", test_getters_setters) == NULL) {
-        goto err;
-    }
-    runner_run();
-err:
-    runner_fini();
-err_init:
-    return CU_get_error();
-}

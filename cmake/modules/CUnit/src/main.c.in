@@ -1,0 +1,22 @@
+#include "CUnit/Runner.h"
+
+@CUnit_Decls@
+
+int main (int argc, char *argv[])
+{
+    CU_pSuite examples;
+
+    if (cu_runner_init(argc, argv)) {
+        goto err_init;
+    }
+
+@CUnit_Defs@
+
+    cu_runner_run();
+
+err:
+    cu_runner_fini();
+err_init:
+    return CU_get_error();
+}
+
