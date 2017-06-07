@@ -129,7 +129,7 @@ ut_handle_create(_In_ ut_handleserver_t srv, _In_ int32_t kind, _In_opt_ void *a
  * Does not lock nor unlock at handle creation provided mutex
  */
 OS_API void
-ut_handle_delete(_In_ ut_handleserver_t srv, _Inout_ _Post_invalid_ ut_handle_t hdl);
+ut_handle_delete(_In_ ut_handleserver_t srv, _In_ _Post_invalid_ ut_handle_t hdl);
 
 /*
  * This will remove the handle related information from the server administration

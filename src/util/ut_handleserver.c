@@ -98,8 +98,8 @@ ut_handle_create(_In_     ut_handleserver_t srv,
 }
 
 void
-ut_handle_delete(_In_                   ut_handleserver_t srv,
-                 _Inout_ _Post_invalid_ ut_handle_t hdl)
+ut_handle_delete(_In_                ut_handleserver_t srv,
+                 _In_ _Post_invalid_ ut_handle_t hdl)
 {
     ut_handleserver *hs = srv;
     assert(hs);
@@ -151,10 +151,13 @@ ut_handle_get_arg(_In_  ut_handleserver_t srv,
     ut_handleserver *hs = srv;
     assert(hs);
     assert(arg);
+    *arg = NULL;
     os_mutexLock(&hs->mutex);
     hdl = check_handle(hs, hdl, kind);
     if (hdl > 0) {
-        *arg = hs->hdls[hdl & UT_HANDLE_IDX_MASK]->arg;
+        int32_t idx = (hdl & UT_HANDLE_IDX_MASK);
+        assert(idx < MAX_NR_OF_HANDLES);
+        *arg = hs->hdls[idx]->arg;
     }
     os_mutexUnlock(&hs->mutex);
     return hdl;
@@ -175,13 +178,18 @@ ut_handle_claim(_In_      ut_handleserver_t srv,
     assert(claim);
 
     *claim = NULL;
+    if (arg) {
+        *arg = NULL;
+    }
 
     os_mutexLock(&hs->mutex);
 
     /* Check if handle is valid, expected and lockable. */
     hdl = check_handle(hs, hdl, kind);
     if (hdl > 0) {
-        info = hs->hdls[hdl & UT_HANDLE_IDX_MASK];
+        int32_t idx = (hdl & UT_HANDLE_IDX_MASK);
+        assert(idx < MAX_NR_OF_HANDLES);
+        info = hs->hdls[idx];
         if (info->mutex == NULL) {
             hdl = UT_HANDLE_ERROR_NOT_LOCKABLE;
         } else {
@@ -235,6 +243,7 @@ check_handle(_In_ ut_handleserver *hs,
     if (hdl > 0) {
         int32_t idx = (hdl & UT_HANDLE_IDX_MASK);
         if (idx < hs->last) {
+            assert(idx < MAX_NR_OF_HANDLES);
             ut_handleinfo *info = hs->hdls[idx];
             if (info != NULL) {
                 if ((info->hdl & UT_HANDLE_KIND_MASK) == (hdl & UT_HANDLE_KIND_MASK)) {
@@ -261,6 +270,8 @@ static void
 delete_handle(_In_ ut_handleserver *hs,
               _In_ int32_t idx)
 {
+    assert(hs);
+    assert(idx < MAX_NR_OF_HANDLES);
     os_free(hs->hdls[idx]);
     hs->hdls[idx] = NULL;
 }
