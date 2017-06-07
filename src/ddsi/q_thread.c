@@ -30,7 +30,8 @@ struct thread_states thread_states;
 __thread struct thread_state1 *tsd_thread_state;
 #endif
 
-static void * os_malloc_aligned_cacheline (size_t size)
+_Ret_bytecap_(size)
+static void * os_malloc_aligned_cacheline (_In_ size_t size)
 {
   /* This wastes some space, but we use it only once and it isn't a
      huge amount of memory, just a little over a cache line.
@@ -48,13 +49,15 @@ static void * os_malloc_aligned_cacheline (size_t size)
   return (void *) ptrA;
 }
 
-static void os_free_aligned (void *ptr)
+static void os_free_aligned ( _Pre_maybenull_ _Post_invalid_ void *ptr)
 {
-  void **pptr = ptr;
-  os_free (pptr[-1]);
+  if (ptr) {
+    void **pptr = ptr;
+    os_free (pptr[-1]);
+  }
 }
 
-void thread_states_init (unsigned maxthreads)
+void thread_states_init (_In_ unsigned maxthreads)
 {
   unsigned i;
 
@@ -104,13 +107,13 @@ struct thread_state1 *lookup_thread_state_real (void)
 
 struct thread_context {
   struct thread_state1 *self;
-  void * (*f) (void *arg);
+  uint32_t (*f) (_In_opt_ void *arg);
   void *arg;
 };
 
-static void *create_thread_wrapper (struct thread_context *ctxt)
+static uint32_t create_thread_wrapper (_In_ _Post_invalid_ struct thread_context *ctxt)
 {
-  void *ret;
+  uint32_t ret;
   ctxt->self->tid = os_threadIdSelf ();
   ret = ctxt->f (ctxt->arg);
   logbuf_free (ctxt->self->lb);
@@ -118,7 +121,7 @@ static void *create_thread_wrapper (struct thread_context *ctxt)
   return ret;
 }
 
-static int find_free_slot (const char *name)
+static int find_free_slot (_In_z_ const char *name)
 {
   unsigned i;
   int cand;
@@ -134,7 +137,7 @@ static int find_free_slot (const char *name)
   return cand;
 }
 
-int thread_exists (const char *name)
+int thread_exists (_In_z_ const char *name)
 {
   unsigned i;
   int present = 0;
@@ -171,7 +174,7 @@ void upgrade_main_thread (void)
   os_mutexUnlock (&thread_states.lock);
 }
 
-const struct config_thread_properties_listelem *lookup_thread_properties (const char *name)
+const struct config_thread_properties_listelem *lookup_thread_properties (_In_z_ const char *name)
 {
   const struct config_thread_properties_listelem *e;
   for (e = config.thread_properties; e != NULL; e = e->next)
@@ -180,7 +183,7 @@ const struct config_thread_properties_listelem *lookup_thread_properties (const 
   return e;
 }
 
-struct thread_state1 * init_thread_state (const char *tname)
+struct thread_state1 * init_thread_state (_In_z_ const char *tname)
 {
   int cand;
   struct thread_state1 *ts;
@@ -197,7 +200,9 @@ struct thread_state1 * init_thread_state (const char *tname)
   return ts;
 }
 
-struct thread_state1 *create_thread (const char *name, void * (*f) (void *arg), void *arg)
+_Success_(return != NULL)
+_Ret_maybenull_
+struct thread_state1 *create_thread (_In_z_ const char *name, _In_ uint32_t (*f) (void *arg), _In_opt_ void *arg)
 {
   struct config_thread_properties_listelem const * const tprops = lookup_thread_properties (name);
   os_threadAttr tattr;
@@ -227,7 +232,7 @@ struct thread_state1 *create_thread (const char *name, void * (*f) (void *arg), 
   }
   TRACE (("create_thread: %s: class %d priority %d stack %u\n", name, (int) tattr.schedClass, tattr.schedPriority, tattr.stackSize));
 
-  if (os_threadCreate (&tid, name, &tattr, (void * (*) (void *)) create_thread_wrapper, ctxt) != os_resultSuccess)
+  if (os_threadCreate (&tid, name, &tattr, &create_thread_wrapper, ctxt) != os_resultSuccess)
   {
     ts1->state = THREAD_STATE_ZERO;
     NN_FATAL1 ("create_thread: %s: os_threadCreate failed\n", name);
@@ -244,7 +249,7 @@ struct thread_state1 *create_thread (const char *name, void * (*f) (void *arg), 
   return NULL;
 }
 
-static void reap_thread_state (struct thread_state1 *ts1, int sync_with_servicelease)
+static void reap_thread_state (_Inout_ struct thread_state1 *ts1, _In_ int sync_with_servicelease)
 {
   os_mutexLock (&thread_states.lock);
   ts1->state = THREAD_STATE_ZERO;
@@ -255,11 +260,12 @@ static void reap_thread_state (struct thread_state1 *ts1, int sync_with_servicel
   os_mutexUnlock (&thread_states.lock);
 }
 
-int join_thread (struct thread_state1 *ts1, void **retval)
+_Success_(return == 0)
+int join_thread (_Inout_ struct thread_state1 *ts1)
 {
   int ret;
   assert (ts1->state == THREAD_STATE_ALIVE);
-  if (os_threadWaitExit (ts1->extTid, retval) == 0)
+  if (os_threadWaitExit (ts1->extTid, NULL) == os_resultSuccess)
     ret = 0;
   else
     ret = ERR_UNSPECIFIED;
@@ -268,7 +274,7 @@ int join_thread (struct thread_state1 *ts1, void **retval)
   return ret;
 }
 
-void reset_thread_state (struct thread_state1 *ts1)
+void reset_thread_state (_Inout_opt_ struct thread_state1 *ts1)
 {
   if (ts1)
   {
@@ -289,8 +295,7 @@ void downgrade_main_thread (void)
 #endif
 }
 
-
-struct thread_state1 *get_thread_state (os_threadId id)
+struct thread_state1 *get_thread_state (_In_ os_threadId id)
 {
   unsigned i;
   struct thread_state1 *ts = NULL;

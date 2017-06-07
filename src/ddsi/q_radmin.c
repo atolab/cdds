@@ -2430,7 +2430,7 @@ static enum dqueue_elem_kind dqueue_elem_kind (const struct nn_rsample_chain_ele
     return DQEK_BUBBLE;
 }
 
-static void *dqueue_thread (struct nn_dqueue *q)
+static uint32_t dqueue_thread (struct nn_dqueue *q)
 {
   struct thread_state1 *self = lookup_thread_state ();
   nn_mtime_t next_thread_cputime = { 0 };
@@ -2515,7 +2515,7 @@ static void *dqueue_thread (struct nn_dqueue *q)
     os_mutexLock (&q->lock);
   }
   os_mutexUnlock (&q->lock);
-  return NULL;
+  return 0;
 }
 
 struct nn_dqueue *nn_dqueue_new (const char *name, uint32_t max_samples, nn_dqueue_handler_t handler, void *arg)
@@ -2539,7 +2539,7 @@ struct nn_dqueue *nn_dqueue_new (const char *name, uint32_t max_samples, nn_dque
   if ((thrname = os_malloc (3 + strlen (name) + 1)) == NULL)
     goto fail_thrname;
   sprintf (thrname, "dq.%s", name);
-  if ((q->ts = create_thread (thrname, (void * (*) (void *)) dqueue_thread, q)) == NULL)
+  if ((q->ts = create_thread (thrname, (uint32_t (*) (void *)) dqueue_thread, q)) == NULL)
     goto fail_thread;
   os_free (thrname);
   return q;
@@ -2671,7 +2671,7 @@ void nn_dqueue_free (struct nn_dqueue *q)
   b.kind = NN_DQBK_STOP;
   nn_dqueue_enqueue_bubble (q, &b);
 
-  join_thread (q->ts, (void **) 0);
+  join_thread (q->ts);
   assert (q->sc.first == NULL);
   os_condDestroy (&q->cond);
   os_mutexDestroy (&q->lock);

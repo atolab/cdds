@@ -50,7 +50,7 @@ extern "C" {
     } os_threadMemoryIndex;
 
     /** \brief Definition for a thread routine invoked on thread create. */
-    typedef void *(*os_threadRoutine)(void*);
+    typedef uint32_t (*os_threadRoutine)(void*);
 
     /** \brief Definition of the scheduling class */
     typedef enum os_schedClass {
@@ -130,9 +130,7 @@ extern "C" {
      * Terminate the calling thread passing the result
      * to any thread waiting for the termination
      */
-    OS_API void
-    os_threadExit(
-            void *thread_result);
+    OS_API void os_threadExit(_In_ uint32_t thread_result);
 
     /** \brief Create a new thread
      *
@@ -156,11 +154,11 @@ extern "C" {
      */
     OS_API os_result
     os_threadCreate(
-            os_threadId *threadId,
-            const char *name,
-            const os_threadAttr *threadAttr,
-            os_threadRoutine start_routine,
-            void *arg);
+            _Out_ os_threadId *threadId,
+            _In_z_ const char *name,
+            _In_ const os_threadAttr *threadAttr,
+            _In_ os_threadRoutine start_routine,
+            _In_opt_ void *arg);
 
     /** \brief Return the integer representation of the given thread ID
      *
@@ -196,8 +194,8 @@ extern "C" {
      */
     OS_API os_result
     os_threadWaitExit(
-            os_threadId threadId,
-            void **thread_result);
+            _In_ os_threadId threadId,
+            _Out_opt_ uint32_t *thread_result);
 
     /** \brief Figure out the identity of the current thread
      *

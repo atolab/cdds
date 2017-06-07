@@ -237,13 +237,11 @@ os_threadModuleSetHook(
  */
 void
 os_threadExit (
-    void *thread_result)
+    uint32_t thread_result)
 {
-
     os_threadMemExit ();
 
-    pthread_exit (thread_result);
-    return;
+    pthread_exit ((void *) thread_result); /* Doesn't return */
 }
 
 /** \brief Wrap thread start routine
@@ -561,10 +559,11 @@ os_threadGetThreadName (
 os_result
 os_threadWaitExit (
     os_threadId threadId,
-    void **thread_result)
+    uint32_t *thread_result)
 {
     os_result rv;
     int result;
+    void *vthread_result;
 
     assert (threadId);
 
@@ -596,7 +595,7 @@ os_threadWaitExit (
     }
 #endif
 
-    result = pthread_join (threadId, thread_result);
+    result = pthread_join (threadId, &vthread_result);
     if (result != 0) {
         /* NOTE: The below report actually is a debug output; makes no sense from
          * a customer perspective. Made OS_INFO for now. */
@@ -604,6 +603,9 @@ os_threadWaitExit (
         rv = os_resultFail;
     } else {
         rv = os_resultSuccess;
+    }
+    if(thread_result){
+        *thread_result = (uint32_t)vthread_result;
     }
     return rv;
 }

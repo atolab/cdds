@@ -3208,7 +3208,7 @@ static void rebuild_local_participant_set (struct thread_state1 *self, struct lo
   TRACE (("  nparticipants %u\n", lps->nps));
 }
 
-void * listen_thread (struct ddsi_tran_listener * listener)
+uint32_t listen_thread (struct ddsi_tran_listener * listener)
 {
   ddsi_tran_conn_t conn;
 
@@ -3223,10 +3223,10 @@ void * listen_thread (struct ddsi_tran_listener * listener)
       os_sockWaitsetTrigger (gv.waitset);
     }
   }
-  return NULL;
+  return 0;
 }
 
-void * recv_thread (struct nn_rbufpool * rbpool)
+uint32_t recv_thread (struct nn_rbufpool * rbpool)
 {
   struct thread_state1 *self = lookup_thread_state ();
   struct local_participant_set lps;
@@ -3306,5 +3306,5 @@ void * recv_thread (struct nn_rbufpool * rbpool)
     }
   }
   local_participant_set_fini (&lps);
-  return NULL;
+  return 0;
 }

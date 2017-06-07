@@ -18,61 +18,54 @@ static void sleepSeconds (int seconds)
   os_nanoSleep (sdelay);
 }
 
-void *new_thread (void *args)
+uint32_t new_thread (_In_ void *args)
 {
-  static char tr_result[] = "os_threadExit";
-
   snprintf (arg_result, sizeof (arg_result), "%s", (char *)args);
   sleepSeconds (3);
-  return tr_result;
+  return 0;
 }
 
-void *threadExit_thread (void *args)
+uint32_t threadExit_thread (_In_ void *args)
 {
+  uint32_t *value = (uint32_t*) args;
 #ifdef _WRS_KERNEL
   taskDelay(1*sysClkRateGet());
 #endif
-  os_threadExit (args);
-  return NULL;
+  os_threadExit (*value);
+  return 0;
 }
 
-static unsigned long thread_id_from_thread = 0;
-
-void * threadId_thread (void *args)
+uint32_t threadId_thread (_In_opt_ void *args)
 {
   if (args != NULL)
   {
     sleepSeconds (3);
   }
-  thread_id_from_thread = os_threadIdToInteger (os_threadIdSelf ());
-  return NULL;
+  return os_threadIdToInteger (os_threadIdSelf ());
 }
 
-void * get_threadExit_thread (void *args)
+uint32_t get_threadExit_thread (void *args)
 {
   os_threadId * threadId = args;
-  unsigned long * id = NULL;
-  int ret = os_threadWaitExit (*threadId, (void**) &id);
-  if (ret == os_resultSuccess)
-  {
-    free (id);
-  }
-  return (ret == os_resultSuccess) ? args : NULL;
+  uint32_t id;
+  os_result ret = os_threadWaitExit (*threadId, &id);
+
+  return id;
 }
 
-void *threadIdentity_thread (void *args)
+uint32_t threadIdentity_thread (_In_ void *args)
 {
   char *identity = args;
   os_threadFigureIdentity (identity, 512);
-  return NULL;
+  return 0;
 }
 
-static void *threadMain(void *args)
+static uint32_t threadMain(_In_opt_ void *args)
 {
   OS_UNUSED_ARG(args);
   threadCalled = 1;
   sleepSeconds(1);
-  return NULL;
+  return 0;
 }
 
 static int threadStartCallback(os_threadId id, void *arg)
@@ -87,7 +80,7 @@ static int threadStartCallback(os_threadId id, void *arg)
   return 0;
 }
 
-void *threadMemory_thread (void *args)
+uint32_t threadMemory_thread (_In_opt_ void *args)
 {
     OS_UNUSED_ARG(args);
 
@@ -135,7 +128,7 @@ void *threadMemory_thread (void *args)
     returnval = os_threadMemGet (3);
     CU_ASSERT (returnval == NULL);
 
-    return returnval;
+    return 0;
 }
 
 static int threadStopCallback(os_threadId id, void *arg)
@@ -197,7 +190,7 @@ static void tc_os_threadCreate (void)
     printf ("Starting tc_os_threadCreate_001\n");
   #endif
     os_threadAttrInit (&thread_os_threadAttr);
-    result = os_threadCreate (&thread_os_threadId, "ThreadCreate1", &thread_os_threadAttr, new_thread, "os_threadCreate");
+    result = os_threadCreate (&thread_os_threadId, "ThreadCreate1", &thread_os_threadAttr, &new_thread, "os_threadCreate");
     CU_ASSERT (result == os_resultSuccess);
     if (result == os_resultSuccess) {
   #ifdef _WRS_KERNEL
@@ -234,7 +227,7 @@ static void tc_os_threadCreate (void)
   #endif
     os_threadAttrInit (&thread_os_threadAttr);
     thread_os_threadAttr.schedClass = OS_SCHED_DEFAULT;
-    result = os_threadCreate (&thread_os_threadId, "ThreadCreate3", &thread_os_threadAttr, new_thread, "os_threadCreate");
+    result = os_threadCreate (&thread_os_threadId, "ThreadCreate3", &thread_os_threadAttr, &new_thread, "os_threadCreate");
     CU_ASSERT (result == os_resultSuccess);
   #if !(defined _WRS_KERNEL || defined WIN32)
     if (result == os_resultSuccess) {
@@ -265,7 +258,7 @@ static void tc_os_threadCreate (void)
   #endif
     os_threadAttrInit (&thread_os_threadAttr);
     thread_os_threadAttr.schedClass = OS_SCHED_TIMESHARE;
-    result = os_threadCreate (&thread_os_threadId, "ThreadCreate4", &thread_os_threadAttr, new_thread, "os_threadCreate");
+    result = os_threadCreate (&thread_os_threadId, "ThreadCreate4", &thread_os_threadAttr, &new_thread, "os_threadCreate");
     CU_ASSERT (result == os_resultSuccess);
     if (result == os_resultSuccess) {
       #ifndef WIN32
@@ -311,7 +304,7 @@ static void tc_os_threadCreate (void)
         os_threadAttrInit (&thread_os_threadAttr);
         thread_os_threadAttr.schedClass = OS_SCHED_REALTIME;
         thread_os_threadAttr.schedPriority = sched_get_priority_min (SCHED_FIFO);
-        result = os_threadCreate (&thread_os_threadId, "ThreadCreate5", &thread_os_threadAttr, new_thread, "os_threadCreate");
+        result = os_threadCreate (&thread_os_threadId, "ThreadCreate5", &thread_os_threadAttr, &new_thread, "os_threadCreate");
         CU_ASSERT (result == os_resultSuccess);
         if (result == os_resultSuccess) {
             int policy;
@@ -352,7 +345,7 @@ static void tc_os_threadCreate (void)
     #else
       thread_os_threadAttr.schedPriority = sched_get_priority_min (SCHED_OTHER);
     #endif
-    result = os_threadCreate (&thread_os_threadId, "ThreadCreate6", &thread_os_threadAttr, new_thread, "os_threadCreate");
+    result = os_threadCreate (&thread_os_threadId, "ThreadCreate6", &thread_os_threadAttr, &new_thread, "os_threadCreate");
   #ifdef _WRS_KERNEL
     #if ENABLE_TRACING
     if (result == os_resultSuccess)
@@ -402,7 +395,7 @@ static void tc_os_threadCreate (void)
     #else
         thread_os_threadAttr.schedPriority = sched_get_priority_max (SCHED_OTHER);
     #endif
-    result = os_threadCreate (&thread_os_threadId, "ThreadCreate7", &thread_os_threadAttr, new_thread, "os_threadCreate");
+    result = os_threadCreate (&thread_os_threadId, "ThreadCreate7", &thread_os_threadAttr, &new_thread, "os_threadCreate");
   #ifdef _WRS_KERNEL
     #if ENABLE_TRACING
     if (result == os_resultSuccess)
@@ -462,7 +455,7 @@ static void tc_os_threadCreate (void)
       #else
         thread_os_threadAttr.schedPriority = sched_get_priority_min (SCHED_FIFO);
       #endif
-        result = os_threadCreate (&thread_os_threadId, "ThreadCreate8", &thread_os_threadAttr, new_thread, "os_threadCreate");
+        result = os_threadCreate (&thread_os_threadId, "ThreadCreate8", &thread_os_threadAttr, &new_thread, "os_threadCreate");
         CU_ASSERT (result == os_resultSuccess);
 
         if (result == os_resultSuccess) {
@@ -526,7 +519,7 @@ static void tc_os_threadCreate (void)
       #else
         thread_os_threadAttr.schedPriority = sched_get_priority_max (SCHED_FIFO);
       #endif
-        result = os_threadCreate (&thread_os_threadId, "ThreadCreate9", &thread_os_threadAttr, new_thread, "os_threadCreate");
+        result = os_threadCreate (&thread_os_threadId, "ThreadCreate9", &thread_os_threadAttr, &new_thread, "os_threadCreate");
         CU_ASSERT (result == os_resultSuccess);
 
         if (result == os_resultSuccess) {
@@ -585,8 +578,8 @@ static void tc_os_threadExit (void)
 {
     os_threadId   thread_os_threadId;
     os_threadAttr thread_os_threadAttr;
-    unsigned long  value;
-    unsigned long  return_value;
+    uint32_t value;
+    uint32_t return_value;
     int result;
 
   #if ENABLE_TRACING
@@ -595,14 +588,14 @@ static void tc_os_threadExit (void)
   #endif
     value = 12345678;
     os_threadAttrInit (&thread_os_threadAttr);
-    result = os_threadCreate (&thread_os_threadId, "threadExit", &thread_os_threadAttr, threadExit_thread, (void *)value);
+    result = os_threadCreate (&thread_os_threadId, "threadExit", &thread_os_threadAttr, &threadExit_thread, &value);
     CU_ASSERT (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
       #ifdef _WRS_KERNEL
         sleepSeconds(1);
       #endif
-        result = os_threadWaitExit (thread_os_threadId, (void **)&return_value);
+        result = os_threadWaitExit (thread_os_threadId, &return_value);
         CU_ASSERT (result == os_resultSuccess);
 
         if (result == os_resultSuccess) {
@@ -628,20 +621,21 @@ static void tc_os_threadIdSelf (void)
     os_threadId   thread_os_threadId;
     os_threadAttr thread_os_threadAttr;
     int result;
+    uint32_t thread_id_from_thread;
 
   #if ENABLE_TRACING
     /* Check if own thread ID is correctly provided */
     printf ("Starting tc_os_threadIdSelf_001\n");
   #endif
     os_threadAttrInit (&thread_os_threadAttr);
-    result = os_threadCreate (&thread_os_threadId, "OwnThreadId", &thread_os_threadAttr, threadId_thread, NULL);
+    result = os_threadCreate (&thread_os_threadId, "OwnThreadId", &thread_os_threadAttr, &threadId_thread, NULL);
     CU_ASSERT (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
       #ifdef _WRS_KERNEL
         sleepSeconds(1);
       #endif
-        result = os_threadWaitExit (thread_os_threadId, NULL);
+        result = os_threadWaitExit (thread_os_threadId, &thread_id_from_thread);
         CU_ASSERT (result == os_resultSuccess);
 
         if (result == os_resultSuccess) {
@@ -668,6 +662,7 @@ static void tc_os_threadWaitExit (void)
     os_threadId   thread_os_threadId;
     os_threadAttr thread_os_threadAttr;
     int result;
+    uint32_t thread_id_from_thread;
 
   #if ENABLE_TRACING
     /* Wait for thread to terminate and get the return value with Success result,
@@ -675,14 +670,14 @@ static void tc_os_threadWaitExit (void)
     printf ("Starting tc_os_threadWaitExit_001\n");
   #endif
     os_threadAttrInit (&thread_os_threadAttr);
-    result = os_threadCreate (&thread_os_threadId, "threadWaitExit", &thread_os_threadAttr, threadId_thread, (void *)1);
+    result = os_threadCreate (&thread_os_threadId, "threadWaitExit", &thread_os_threadAttr, &threadId_thread, (void *)1);
     CU_ASSERT (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
       #ifdef _WRS_KERNEL
         sleepSeconds(1);
       #endif
-        result = os_threadWaitExit (thread_os_threadId, NULL);
+        result = os_threadWaitExit (thread_os_threadId, &thread_id_from_thread);
         CU_ASSERT (result == os_resultSuccess);
 
         if (result == os_resultSuccess) {
@@ -704,14 +699,14 @@ static void tc_os_threadWaitExit (void)
     printf ("Starting tc_os_threadWaitExit_002\n");
   #endif
     os_threadAttrInit (&thread_os_threadAttr);
-    result = os_threadCreate (&thread_os_threadId, "threadWaitExit", &thread_os_threadAttr, threadId_thread, NULL);
+    result = os_threadCreate (&thread_os_threadId, "threadWaitExit", &thread_os_threadAttr, &threadId_thread, NULL);
     CU_ASSERT (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
       #ifdef _WRS_KERNEL
         sleepSeconds(1);
       #endif
-        result = os_threadWaitExit (thread_os_threadId, NULL);
+        result = os_threadWaitExit (thread_os_threadId, &thread_id_from_thread);
         CU_ASSERT(result == os_resultSuccess);
 
         if (result == os_resultSuccess) {
@@ -732,7 +727,7 @@ static void tc_os_threadWaitExit (void)
     printf ("Starting tc_os_threadWaitExit_003\n");
   #endif
     os_threadAttrInit (&thread_os_threadAttr);
-    result = os_threadCreate (&thread_os_threadId, "threadWaitExit", &thread_os_threadAttr, threadId_thread, NULL);
+    result = os_threadCreate (&thread_os_threadId, "threadWaitExit", &thread_os_threadAttr, &threadId_thread, NULL);
     CU_ASSERT (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
@@ -757,11 +752,10 @@ static void tc_os_threadWaitExit (void)
     {
         os_threadId threadWait1;
         os_result result1;
-        void * returnResult1;
 
-        result = os_threadCreate (&thread_os_threadId, "threadToWaitFor", &thread_os_threadAttr, threadId_thread, (void*) 1);
+        result = os_threadCreate (&thread_os_threadId, "threadToWaitFor", &thread_os_threadAttr, &threadId_thread, (void*) 1);
         CU_ASSERT (result == os_resultSuccess);
-        result1 = os_threadCreate (&threadWait1, "waitingThread1", &thread_os_threadAttr, get_threadExit_thread, &thread_os_threadId);
+        result1 = os_threadCreate (&threadWait1, "waitingThread1", &thread_os_threadAttr, &get_threadExit_thread, &thread_os_threadId);
         CU_ASSERT (result1 == os_resultSuccess);
 
         if (result == os_resultSuccess && result1 == os_resultSuccess)
@@ -769,7 +763,7 @@ static void tc_os_threadWaitExit (void)
           #ifdef _WRS_KERNEL
             sleepSeconds(1);
           #endif
-            result1 = os_threadWaitExit (threadWait1, &returnResult1);
+            result1 = os_threadWaitExit (threadWait1, NULL);
 
             if (result1 != os_resultSuccess) {
               #if ENABLE_TRACING
@@ -795,7 +789,7 @@ static void tc_os_threadWaitExit (void)
     printf ("Starting tc_os_threadWaitExit_005\n");
   #endif
     os_threadAttrInit (&thread_os_threadAttr);
-    result = os_threadCreate (&thread_os_threadId, "threadWaitExit", &thread_os_threadAttr, threadId_thread, NULL);
+    result = os_threadCreate (&thread_os_threadId, "threadWaitExit", &thread_os_threadAttr, &threadId_thread, NULL);
     CU_ASSERT  (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
@@ -836,7 +830,7 @@ static void tc_os_threadFigureIdentity (void)
     /* Untested because the identifier does not contain the name on Windows */
   #else
     os_threadAttrInit (&thread_os_threadAttr);
-    result = os_threadCreate (&thread_os_threadId, "threadFigureIdentity", &thread_os_threadAttr, threadIdentity_thread, threadId);
+    result = os_threadCreate (&thread_os_threadId, "threadFigureIdentity", &thread_os_threadAttr, &threadIdentity_thread, threadId);
     CU_ASSERT (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
@@ -1072,7 +1066,7 @@ static void tc_os_threadModule (void)
 
     os_threadAttrInit (&thread_os_threadAttr);
     /* Run the following tests for child thread */
-    result = os_threadCreate (&thread_os_threadId, "ThreadMemory", &thread_os_threadAttr, threadMemory_thread, NULL);
+    result = os_threadCreate (&thread_os_threadId, "ThreadMemory", &thread_os_threadAttr, &threadMemory_thread, NULL);
     if (result == os_resultSuccess)
     {
 #ifdef _WRS_KERNEL
@@ -1098,7 +1092,7 @@ static void tc_os_threadModule (void)
     hook.stopCb = NULL;
     hook.stopArg = NULL;
     os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, threadMain, NULL);
+    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
     CU_ASSERT (result == os_resultSuccess);
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 0 && threadCalled == 1);
@@ -1115,7 +1109,7 @@ static void tc_os_threadModule (void)
     hook.stopCb = threadStopCallback;
     hook.stopArg = NULL;
     os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, threadMain, NULL);
+    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
     CU_ASSERT (result == os_resultSuccess);
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 1 && threadCalled == 1);
@@ -1133,7 +1127,7 @@ static void tc_os_threadModule (void)
     hook.stopCb = threadStopCallback;
     hook.stopArg = NULL;
     os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, threadMain, NULL);
+    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
     CU_ASSERT (result == os_resultSuccess);
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 0 && stopCallbackCount == 1 && mainCount == 1 && threadCalled == 1);
@@ -1151,7 +1145,7 @@ static void tc_os_threadModule (void)
     hook.stopCb = threadStopCallback;
     hook.stopArg = &mainCount;
     os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, threadMain, NULL);
+    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
     CU_ASSERT (result == os_resultSuccess);
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 0 && mainCount == 1 && threadCalled == 1);
@@ -1169,7 +1163,7 @@ static void tc_os_threadModule (void)
     hook.stopCb = threadStopCallback;
     hook.stopArg = &mainCount;
     os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, threadMain, NULL);
+    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
     CU_ASSERT (result == os_resultSuccess);
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 0 && stopCallbackCount == 0 && mainCount == 2 && threadCalled == 1);
@@ -1187,7 +1181,7 @@ static void tc_os_threadModule (void)
     hook.stopCb = threadStopCallback;
     hook.stopArg = &mainCount;
     os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, threadMain, NULL);
+    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
     CU_ASSERT (result == os_resultSuccess);
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 0 && stopCallbackCount == 0 && mainCount == 1);
@@ -1205,7 +1199,7 @@ static void tc_os_threadModule (void)
     hook.stopCb = NULL;
     hook.stopArg = &mainCount;
     os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, threadMain, NULL);
+    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
     CU_ASSERT (result == os_resultSuccess);
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 0 && mainCount == 0 && threadCalled == 1);
@@ -1223,7 +1217,7 @@ static void tc_os_threadModule (void)
     hook.stopCb = NULL;
     hook.stopArg = NULL;
     os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, threadMain, NULL);
+    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
     CU_ASSERT (result == os_resultSuccess);
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 0 && mainCount == 0 && threadCalled == 0);

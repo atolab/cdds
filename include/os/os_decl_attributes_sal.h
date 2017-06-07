@@ -56,7 +56,7 @@
 #define _Analysis_mode_(m)
 #endif
 #ifndef _Analysis_noreturn_
-#define _Analysis_noreturn_
+#define _Analysis_noreturn_ __attribute_noreturn__
 #endif
 #ifndef _Analysis_suppress_lock_checking_
 #define _Analysis_suppress_lock_checking_(e)

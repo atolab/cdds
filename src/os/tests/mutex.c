@@ -34,7 +34,6 @@ os_threadAttr       mutex_os_threadAttr;
 os_threadId         mutex_os_threadId[4];
 os_time             delay1 = { 5, 0 };
 os_time             pdelay = { 1, 0 };
-void                *thr_result;
 os_procId           mutex_os_procId;
 os_procId           mutex_os_procId1;
 os_procId           mutex_os_procId2;
@@ -45,7 +44,7 @@ int                 loop;
 static shared_data *sd;
 char                filePath[255];
 
-void *concurrent_lock_thread (void *arg)
+uint32_t concurrent_lock_thread (_In_opt_ void *arg)
 {
     int j;
     int loopc = 0;
@@ -89,10 +88,10 @@ void *concurrent_lock_thread (void *arg)
        for (j = 0; j < BUSYLOOP; j++);
        loopc++;
     }
-    return (void *)0;
+    return 0;
 }
 
-void *concurrent_trylock_thread (void *arg)
+uint32_t concurrent_trylock_thread (_In_opt_ void *arg)
 {
     int j;
     int loopc = 0;
@@ -148,7 +147,7 @@ void *concurrent_trylock_thread (void *arg)
        for (j = 0; j < BUSYLOOP; j++);
        loopc++;
     }
-    return (void *)0;
+    return 0;
 }
 
 static int  suite_abstraction_mutex_init (void)
@@ -221,16 +220,16 @@ static void tc_os_mutexLock (void)
     sd->trylock_corrupt_count = 0;
     sd->trylock_loop_count = 0;
     sd->trylock_busy_count = 0;
-    os_threadCreate (&mutex_os_threadId[0], "thr0", &mutex_os_threadAttr, concurrent_lock_thread, (void *)0);
-    os_threadCreate (&mutex_os_threadId[1], "thr1", &mutex_os_threadAttr, concurrent_lock_thread, (void *)0);
-    os_threadCreate (&mutex_os_threadId[2], "thr2", &mutex_os_threadAttr, concurrent_trylock_thread, (void *)0);
-    os_threadCreate (&mutex_os_threadId[3], "thr3", &mutex_os_threadAttr, concurrent_trylock_thread, (void *)0);
+    os_threadCreate (&mutex_os_threadId[0], "thr0", &mutex_os_threadAttr, &concurrent_lock_thread, NULL);
+    os_threadCreate (&mutex_os_threadId[1], "thr1", &mutex_os_threadAttr, &concurrent_lock_thread, NULL);
+    os_threadCreate (&mutex_os_threadId[2], "thr2", &mutex_os_threadAttr, &concurrent_trylock_thread, NULL);
+    os_threadCreate (&mutex_os_threadId[3], "thr3", &mutex_os_threadAttr, &concurrent_trylock_thread, NULL);
     os_nanoSleep (delay1);
     sd->stop = 1;
-    os_threadWaitExit (mutex_os_threadId[0], &thr_result);
-    os_threadWaitExit (mutex_os_threadId[1], &thr_result);
-    os_threadWaitExit (mutex_os_threadId[2], &thr_result);
-    os_threadWaitExit (mutex_os_threadId[3], &thr_result);
+    os_threadWaitExit (mutex_os_threadId[0], NULL);
+    os_threadWaitExit (mutex_os_threadId[1], NULL);
+    os_threadWaitExit (mutex_os_threadId[2], NULL);
+    os_threadWaitExit (mutex_os_threadId[3], NULL);
   #if ENABLE_TRACING
     printf ("All threads stopped\n");
   #endif
@@ -247,16 +246,16 @@ static void tc_os_mutexLock (void)
     sd->trylock_corrupt_count = 0;
     sd->trylock_loop_count = 0;
     sd->trylock_busy_count = 0;
-    os_threadCreate (&mutex_os_threadId[0], "thr0", &mutex_os_threadAttr, concurrent_lock_thread, (void *)1);
-    os_threadCreate (&mutex_os_threadId[1], "thr1", &mutex_os_threadAttr, concurrent_lock_thread, (void *)1);
-    os_threadCreate (&mutex_os_threadId[2], "thr2", &mutex_os_threadAttr, concurrent_trylock_thread, (void *)1);
-    os_threadCreate (&mutex_os_threadId[3], "thr3", &mutex_os_threadAttr, concurrent_trylock_thread, (void *)1);
+    os_threadCreate (&mutex_os_threadId[0], "thr0", &mutex_os_threadAttr, &concurrent_lock_thread, (void *)1);
+    os_threadCreate (&mutex_os_threadId[1], "thr1", &mutex_os_threadAttr, &concurrent_lock_thread, (void *)1);
+    os_threadCreate (&mutex_os_threadId[2], "thr2", &mutex_os_threadAttr, &concurrent_trylock_thread, (void *)1);
+    os_threadCreate (&mutex_os_threadId[3], "thr3", &mutex_os_threadAttr, &concurrent_trylock_thread, (void *)1);
     os_nanoSleep (delay1);
     sd->stop = 1;
-    os_threadWaitExit (mutex_os_threadId[0], &thr_result);
-    os_threadWaitExit (mutex_os_threadId[1], &thr_result);
-    os_threadWaitExit (mutex_os_threadId[2], &thr_result);
-    os_threadWaitExit (mutex_os_threadId[3], &thr_result);
+    os_threadWaitExit (mutex_os_threadId[0], NULL);
+    os_threadWaitExit (mutex_os_threadId[1], NULL);
+    os_threadWaitExit (mutex_os_threadId[2], NULL);
+    os_threadWaitExit (mutex_os_threadId[3], NULL);
   #if ENABLE_TRACING
     printf ("All threads stopped\n");
   #endif
