@@ -98,8 +98,8 @@ ut_handle_create(_In_     ut_handleserver_t srv,
 }
 
 void
-ut_handle_delete(_In_                ut_handleserver_t srv,
-                 _In_ _Post_invalid_ ut_handle_t hdl)
+ut_handle_delete(_In_ ut_handleserver_t srv,
+                 _In_ ut_handle_t hdl)
 {
     ut_handleserver *hs = srv;
     assert(hs);
@@ -210,10 +210,17 @@ ut_handle_claim(_In_      ut_handleserver_t srv,
                     os_mutexLock(&hs->mutex);
                     /* Check if handle was deleted. */
                     hdl = check_handle(hs, hdl, kind);
+                    if (hdl < 0) {
+                        /* Set info to NULL to exit the loop.
+                         * Checking the hdl (instead of info) at the loop
+                         * condition triggers (microsoft) static analysis. */
+                        info = NULL;
+                    }
                 } else {
                     assert(false);
+                    info = NULL;
                 }
-            } while ((*claim == NULL) && (hdl > 0));
+            } while ((*claim == NULL) && (info != NULL));
         }
     }
     os_mutexUnlock(&hs->mutex);
