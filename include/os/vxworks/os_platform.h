@@ -18,15 +18,14 @@
 /* The above inttypes includes don't seem to define uintmax_t &c. */
 #ifdef _WRS_CONFIG_LP64 /* Used in cafe/inttypes.h too */
 #define _PFX_64 "l"
-typedef long int                intmax_t;
 typedef unsigned long int       uintmax_t;
 #else
 #define _PFX_64 "ll"
-typedef long long int           intmax_t;
 typedef unsigned long long int  uintmax_t;
 #endif
 
 /* FIXME: Not a complete replacement for inttypes.h (yet); no SCN/PRI?LEAST/FAST/etc */
+/* FIXME: Wrap all of them in #ifndefs */
 #define PRId8      "d"
 #define PRId16     "d"
 #define PRId32     "d"
@@ -50,7 +49,7 @@ typedef unsigned long long int  uintmax_t;
 #define PRIx8      "x"
 #define PRIx16     "x"
 #define PRIx32     "x"
-#define PRIx64     _PFX_64 "x"
+/*#define PRIx64     _PFX_64 "x" // Defined in cafe/inttypes.h apparently */
 
 #define PRIX8      "X"
 #define PRIX16     "X"
@@ -67,8 +66,8 @@ typedef unsigned long long int  uintmax_t;
 #define PRIdPTR    _PFX_64 "d"
 #define PRIiPTR    _PFX_64 "i"
 #define PRIoPTR    _PFX_64 "o"
-#define PRIuPTR    _PFX_64 "u"
-#define PRIxPTR    _PFX_64 "x"
+/*#define PRIuPTR    _PFX_64 "u" // Defined in cafe/inttypes.h apparently */
+/*#define PRIxPTR    _PFX_64 "x" // Defined in cafe/inttypes.h apparently */
 #define PRIXPTR    _PFX_64 "X"
 
 #define INFINITY infinity()
