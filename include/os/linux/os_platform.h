@@ -43,6 +43,7 @@ extern "C" {
 #include "os/posix/os_platform_sync.h"
 #include "os/posix/os_platform_thread.h"
 #include "os/posix/os_platform_stdlib.h"
+#include "os/posix/os_platform_process.h"
 
 #if defined (__cplusplus)
 }
