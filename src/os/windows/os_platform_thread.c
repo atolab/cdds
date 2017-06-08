@@ -450,9 +450,9 @@ os_threadFigureIdentity(
 
    threadName = (char *)os_threadMemGet(OS_THREAD_NAME);
    if (threadName != NULL) {
-       size = snprintf (threadIdentity, threadIdentitySize, "%s 0x%"PRIxMAX, threadName, GetCurrentThreadId());
+       size = snprintf (threadIdentity, threadIdentitySize, "%s 0x%"PRIx32, threadName, GetCurrentThreadId());
    } else {
-       size = snprintf (threadIdentity, threadIdentitySize, "0x%"PRIxMAX, GetCurrentThreadId());
+       size = snprintf (threadIdentity, threadIdentitySize, "0x%"PRIx32, GetCurrentThreadId());
    }
 
    return size;

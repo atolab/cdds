@@ -522,9 +522,9 @@ os_threadFigureIdentity (
 
     threadName = pthread_getspecific (os_threadNameKey);
     if (threadName != NULL) {
-        size = snprintf (threadIdentity, threadIdentitySize, "%s 0x%"PRIxMAX, threadName, pthread_self ());
+        size = snprintf (threadIdentity, threadIdentitySize, "%s 0x%"PRIxMAX, threadName, (uintmax_t)pthread_self ());
     } else {
-        size = snprintf (threadIdentity, threadIdentitySize, "0x%"PRIxMAX, pthread_self ());
+        size = snprintf (threadIdentity, threadIdentitySize, "0x%"PRIxMAX, (uintmax_t)pthread_self ());
     }
     return size;
 }
@@ -585,7 +585,7 @@ os_threadWaitExit (
     if (pthread_getschedparam(threadId.v, &policy, &sched_param) == 0) {
         max = sched_get_priority_max(policy);
         if (max != -1) {
-            (void)pthread_setschedprio(threadId, max);
+            (void)pthread_setschedprio(threadId.v, max);
         }
     }
 #endif
