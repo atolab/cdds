@@ -2498,22 +2498,6 @@ static int handle_DataFrag (struct receiver_state *rst, nn_etime_t tnow, struct 
   return 1;
 }
 
-#ifdef DDSI_INCLUDE_ENCRYPTION
-static size_t decode_container (unsigned char *submsg, size_t len)
-{
-  size_t result = len;
-  if (gv.recvSecurityCodec && len > 0)
-  {
-    if (! (q_security_plugin.decode)
-      (gv.recvSecurityCodec, submsg, len, &result  /* in/out, decrements the length*/))
-    {
-      result = 0;
-    }
-  }
-  return result;
-}
-#endif /* DDSI_INCLUDE_ENCRYPTION */
-
 static void malformed_packet_received_nosubmsg
 (
   const unsigned char * msg,
@@ -2874,22 +2858,6 @@ static int handle_submsg_sequence
           switch (sm->pt_infocontainer.id)
           {
             case PTINFO_ID_ENCRYPT:
-#ifdef DDSI_INCLUDE_ENCRYPTION
-              if (q_security_plugin.decode)
-              {
-                /* we have: msg .. submsg .. submsg+submsg_size-1 submsg .. msg+len-1
-                   our container: data starts immediately following the pt_infocontainer */
-                const size_t len1 = submsg_size - sizeof (PT_InfoContainer_t);
-                unsigned char * const submsg1 = submsg + sizeof (PT_InfoContainer_t);
-                size_t len2 = decode_container (submsg1, len1);
-                if ( len2 != 0 ) {
-                  TRACE ((")\n"));
-                  if (handle_submsg_sequence (conn, self, tnowWC, tnowE, src_prefix, dst_prefix, msg, (size_t) (submsg1 - msg) + len2, submsg1, rmsg) < 0)
-                    goto malformed;
-                }
-                TRACE (("PT_INFO_CONTAINER END"));
-              }
-#endif /* DDSI_INCLUDE_ENCRYPTION */
               break;
             default:
               TRACE (("(unknown id %u?)\n", sm->pt_infocontainer.id));

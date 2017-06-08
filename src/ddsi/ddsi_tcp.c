@@ -344,7 +344,7 @@ static ssize_t ddsi_tcp_conn_read_plain (ddsi_tcp_conn_t tcp, void * buf, size_t
 }
 
 #ifdef DDSI_INCLUDE_SSL
-static os_ssize_t ddsi_tcp_conn_read_ssl (ddsi_tcp_conn_t tcp, void * buf, os_size_t len, int * err)
+static ssize_t ddsi_tcp_conn_read_ssl (ddsi_tcp_conn_t tcp, void * buf, size_t len, int * err)
 {
   return (ddsi_tcp_ssl_plugin.read) (tcp->m_ssl, buf, len, err);
 }
@@ -463,7 +463,7 @@ static ssize_t ddsi_tcp_conn_write_plain (ddsi_tcp_conn_t conn, const void * buf
 }
 
 #ifdef DDSI_INCLUDE_SSL
-static os_ssize_t ddsi_tcp_conn_write_ssl (ddsi_tcp_conn_t conn, const void * buf, os_size_t len, int * err)
+static ssize_t ddsi_tcp_conn_write_ssl (ddsi_tcp_conn_t conn, const void * buf, size_t len, int * err)
 {
   return (ddsi_tcp_ssl_plugin.write) (conn->m_ssl, buf, len, err);
 }

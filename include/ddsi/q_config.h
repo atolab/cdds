@@ -16,9 +16,6 @@
 
 #include "ddsi/q_log.h"
 #include "ddsi/q_thread.h"
-#ifdef DDSI_INCLUDE_ENCRYPTION
-#include "ddsi/q_security.h"
-#endif /* DDSI_INCLUDE_ENCRYPTION */
 #include "ddsi/q_xqos.h"
 #include "ddsi/ddsi_tran.h"
 #include "ddsi/q_feature_check.h"
@@ -82,34 +79,6 @@ struct config_listelem {
   struct config_listelem *next;
 };
 
-#ifdef DDSI_INCLUDE_ENCRYPTION
-struct q_security_plugins
-{
-  c_bool (*encode) (q_securityEncoderSet, uint32_t, void *, uint32_t, uint32_t *);
-  c_bool (*decode) (q_securityDecoderSet, void *, size_t, size_t *);
-  q_securityEncoderSet (*new_encoder) (void);
-  q_securityDecoderSet (*new_decoder) (void);
-  c_bool (*free_encoder) (q_securityEncoderSet);
-  c_bool (*free_decoder) (q_securityDecoderSet);
-  ssize_t (*send_encoded) (ddsi_tran_conn_t, struct msghdr *, q_securityEncoderSet *, uint32_t, uint32_t);
-  char * (*cipher_type) (q_cipherType);
-  c_bool (*cipher_type_from_string) (const char *, q_cipherType *);
-  uint32_t (*header_size) (q_securityEncoderSet, uint32_t);
-  q_cipherType (*encoder_type) (q_securityEncoderSet, uint32_t);
-  c_bool (*valid_uri) (q_cipherType, const char *);
-};
-
-struct q_security_plugins q_security_plugin;
-
-struct config_securityprofile_listelem
-{
-  struct config_securityprofile_listelem *next;
-  char *name;
-  q_cipherType cipher;
-  char *key;
-};
-#endif /* DDSI_INCLUDE_ENCRYPTION */
-
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
 struct config_networkpartition_listelem {
   struct config_networkpartition_listelem *next;
@@ -117,10 +86,6 @@ struct config_networkpartition_listelem {
   char *address_string;
   struct addrset *as;
   int connected;
-#ifdef DDSI_INCLUDE_ENCRYPTION
-  char *profileName;
-  struct config_securityprofile_listelem *securityProfile;
-#endif /* DDSI_INCLUDE_ENCRYPTION */
   uint32_t partitionHash;
   uint32_t partitionId;
 };
@@ -302,9 +267,6 @@ struct config
   struct config_channel_listelem *channels;
   struct config_channel_listelem *max_channel; /* channel with highest prio; always computed */
 #endif /* DDSI_INCLUDE_NETWORK_CHANNELS */
-#ifdef DDSI_INCLUDE_ENCRYPTION
-  struct config_securityprofile_listelem  *securityProfiles;
-#endif /* DDSI_INCLUDE_ENCRYPTION */
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
   struct config_networkpartition_listelem *networkPartitions;
   unsigned nof_networkPartitions;

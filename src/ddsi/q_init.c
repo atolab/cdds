@@ -804,14 +804,6 @@ int rtps_init (void)
   gv.xmsgpool = nn_xmsgpool_new ();
   gv.serpool = ddsi_serstatepool_new ();
 
-#ifdef DDSI_INCLUDE_ENCRYPTION
-  if (q_security_plugin.new_decoder)
-  {
-    gv.recvSecurityCodec = (q_security_plugin.new_decoder) ();
-    nn_log (LC_CONFIG, "decoderset created\n");
-  }
-#endif
-
   nn_plist_init_default_participant (&gv.default_plist_pp);
   nn_xqos_init_default_reader (&gv.default_xqos_rd);
   nn_xqos_init_default_writer (&gv.default_xqos_wr);
@@ -1149,10 +1141,6 @@ err_unicast_sockets:
   lease_management_term ();
   os_condDestroy (&gv.participant_set_cond);
   os_mutexDestroy (&gv.participant_set_lock);
-#ifdef DDSI_INCLUDE_ENCRYPTION
-  if (q_security_plugin.free_decoder)
-    q_security_plugin.free_decoder (gv.recvSecurityCodec);
-#endif
   nn_xqos_fini (&gv.builtin_endpoint_xqos_wr);
   nn_xqos_fini (&gv.builtin_endpoint_xqos_rd);
   nn_xqos_fini (&gv.spdp_endpoint_xqos);
@@ -1271,12 +1259,6 @@ void rtps_term (void)
   nn_reorder_free (gv.spdp_reorder);
   nn_defrag_free (gv.spdp_defrag);
   os_mutexDestroy (&gv.spdp_lock);
-#ifdef DDSI_INCLUDE_ENCRYPTION
-  if (q_security_plugin.free_decoder)
-  {
-    (q_security_plugin.free_decoder) (gv.recvSecurityCodec);
-  }
-#endif /* DDSI_INCLUDE_ENCRYPTION */
 
   {
     struct ephash_enum_proxy_participant est;

@@ -9,13 +9,15 @@
  *   for full copyright notice and license terms.
  *
  */
+#ifdef DDSI_INCLUDE_SSL
 #include "ddsi/ddsi_ssl.h"
 #include "ddsi/q_config.h"
 #include "ddsi/q_log.h"
 #include "os/os_heap.h"
 #include "ddsi/ddsi_tcp.h"
 
-#ifdef DDSI_INCLUDE_SSL
+#include <string.h>
+#include <assert.h>
 
 #include <openssl/rand.h>
 #include <openssl/err.h>
@@ -68,7 +70,7 @@ static int ddsi_ssl_verify (int ok, X509_STORE_CTX * store)
   return ok;
 }
 
-static os_ssize_t ddsi_ssl_read (SSL * ssl, void * buf, os_size_t len, int * err)
+static ssize_t ddsi_ssl_read (SSL * ssl, void * buf, size_t len, int * err)
 {
   int ret;
 
@@ -111,7 +113,7 @@ static os_ssize_t ddsi_ssl_read (SSL * ssl, void * buf, os_size_t len, int * err
   return ret;
 }
 
-static os_ssize_t ddsi_ssl_write (SSL * ssl, const void * buf, os_size_t len, int * err)
+static ssize_t ddsi_ssl_write (SSL * ssl, const void * buf, size_t len, int * err)
 {
   int ret;
 
@@ -369,7 +371,7 @@ static SSL * ddsi_ssl_accept (BIO * bio, os_socket * sock)
   return ssl;
 }
 
-static c_bool ddsi_ssl_init (void)
+static bool ddsi_ssl_init (void)
 {
   unsigned locks = (unsigned) CRYPTO_num_locks ();
   unsigned i;
