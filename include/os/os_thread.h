@@ -125,24 +125,14 @@ extern "C" {
             os_threadHook *hook,
             os_threadHook *oldHook);
 
-    /** \brief Terminate the calling thread
-     *
-     * Terminate the calling thread passing the result
-     * to any thread waiting for the termination
-     */
-    OS_API void os_threadExit(_In_ uint32_t thread_result);
-
     /** \brief Create a new thread
      *
      * Creates a new thread of control that executes concurrently with
      * the calling thread. The new thread applies the function start_routine
      * passing it arg as first argument.
      *
-     * The new thread terminates either explicitely, by calling os_threadExit,
-     * or implicitely, by returning from the start_routine function. The latter
-     * case is equivelant to calling os_threadExit with the result returned by
-     * start_routine as exit code. The cerated thread is identified by the
-     * returned threadId.
+     * The new thread terminates by returning from the start_routine function.
+     * The created thread is identified by the returned threadId.
      *
      * Possible Results:
      * - assertion failure: threadId = NULL || name = NULL ||

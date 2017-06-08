@@ -25,16 +25,6 @@ uint32_t new_thread (_In_ void *args)
   return 0;
 }
 
-uint32_t threadExit_thread (_In_ void *args)
-{
-  uint32_t *value = args;
-#ifdef _WRS_KERNEL
-  taskDelay(1*sysClkRateGet());
-#endif
-  os_threadExit (*value);
-  return 0;
-}
-
 static uintmax_t thread_id_from_thread;
 
 uint32_t threadId_thread (_In_opt_ void *args)
@@ -574,48 +564,6 @@ static void tc_os_threadCreate (void)
 
   #if ENABLE_TRACING
     printf ("Ending tc_threadCreate\n");
-  #endif
-}
-
-static void tc_os_threadExit (void)
-{
-    os_threadId   thread_os_threadId;
-    os_threadAttr thread_os_threadAttr;
-    uint32_t value;
-    uint32_t return_value;
-    int result;
-
-  #if ENABLE_TRACING
-    /* Check for correct return value when terminating thread via os_threadExit */
-    printf ("Starting tc_os_threadExit_001\n");
-  #endif
-    value = 12345678;
-    os_threadAttrInit (&thread_os_threadAttr);
-    result = os_threadCreate (&thread_os_threadId, "threadExit", &thread_os_threadAttr, &threadExit_thread, &value);
-    CU_ASSERT (result == os_resultSuccess);
-
-    if (result == os_resultSuccess) {
-      #ifdef _WRS_KERNEL
-        sleepSeconds(1);
-      #endif
-        result = os_threadWaitExit (thread_os_threadId, &return_value);
-        CU_ASSERT (result == os_resultSuccess);
-
-        if (result == os_resultSuccess) {
-            CU_ASSERT (return_value == value);
-        } else {
-          #if ENABLE_TRACING
-            printf ("os_threadWaitExit failed.\n");
-          #endif
-        }
-    } else {
-      #if ENABLE_TRACING
-        printf ("os_threadCreate failed.\n");
-      #endif
-    }
-
-  #if ENABLE_TRACING
-    printf ("Ending tc_threadExit\n");
   #endif
 }
 
@@ -1235,9 +1183,6 @@ int main (int argc, char *argv[])
         goto err;
     }
     if (CU_add_test (suite, "tc_os_threadCreate", tc_os_threadCreate) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_threadExit", tc_os_threadExit) == NULL) {
         goto err;
     }
     if (CU_add_test (suite, "tc_os_threadIdSelf", tc_os_threadIdSelf) == NULL) {

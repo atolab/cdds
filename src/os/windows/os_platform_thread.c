@@ -169,18 +169,6 @@ os_threadModuleSetHook(
     return result;
 }
 
-/** \brief Terminate the calling thread
- *
- * \b os_threadExit terminate the calling thread  by calling
- * \b Exit
- */
-void
-os_threadExit(
-    _In_ uint32_t thread_result)
-{
-    ExitThread(thread_result);
-}
-
 const DWORD MS_VC_EXCEPTION=0x406D1388;
 
 #pragma pack(push,8)

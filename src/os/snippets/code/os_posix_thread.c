@@ -223,22 +223,6 @@ os_threadModuleSetHook(
     return result;
 }
 
-/** \brief Terminate the calling thread
- *
- * \b os_threadExit terminate the calling thread by calling
- * \b pthread_exit.
- */
-void
-os_threadExit (
-    uint32_t thread_result)
-{
-    uintptr_t res = thread_result;
-
-    os_threadMemExit ();
-
-    pthread_exit ((void *) res); /* Doesn't return */
-}
-
 /** \brief Wrap thread start routine
  *
  * \b os_startRoutineWrapper wraps a threads starting routine.
