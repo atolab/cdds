@@ -4,24 +4,20 @@
 
 /* Add --verbose command line argument to get the cr_log_info traces (if there are any). */
 
+static dds_entity_t entity = NULL;
+
 #define cr_assert_status_eq(s1, s2, ...) cr_assert_eq(dds_err_nr(s1), s2, __VA_ARGS__)
 
-Test(c99_entity, creation)
+void entity_creation()
 {
-    dds_entity_t entity;
-
     /* Use participant as entity in the tests. */
     entity = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_neq(entity, NULL, "dds_create_participant");
 }
 
-Test(c99_entity, enabling)
+void entity_enabling()
 {
-    dds_entity_t entity;
     dds_return_t status;
-
-    entity = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_neq(entity, NULL, "dds_create_participant");
 
     /* Check enabling with bad parameters. */
     status = dds_enable(NULL);
@@ -40,12 +36,8 @@ Test(c99_entity, enabling)
 
 void entity_qos_get_set(dds_entity_t e, const char* info)
 {
-    dds_entity_t entity;
     dds_return_t status;
     dds_qos_t *qos = dds_qos_create();
-
-    entity = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_neq(entity, NULL, "dds_create_participant");
 
     /* Get QoS. */
     status = dds_get_qos (entity, qos);
@@ -60,14 +52,10 @@ void entity_qos_get_set(dds_entity_t e, const char* info)
     dds_qos_delete(qos);
 }
 
-Test(c99_entity, qos)
+void entity_qos()
 {
-    dds_entity_t entity;
     dds_return_t status;
     dds_qos_t *qos = dds_qos_create();
-
-    entity = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_neq(entity, NULL, "dds_create_participant");
 
     /* Don't check inconsistent and immutable policies. That's a job
      * for the specific entity children, not for the generic part. */
@@ -102,17 +90,13 @@ Test(c99_entity, qos)
     dds_qos_delete(qos);
 }
 
-Test(c99_entity, listeners)
+void entity_listeners(void)
 {
-    dds_entity_t entity;
     dds_return_t status;
     dds_listener_t *l1 = dds_listener_create(NULL);
     dds_listener_t *l2 = dds_listener_create(NULL);
     void *cb1;
     void *cb2;
-
-    entity = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_neq(entity, NULL, "dds_create_participant");
 
     /* Don't check actual workings of the listeners. That's a job
      * for the specific entity children, not for the generic part. */
@@ -188,14 +172,10 @@ Test(c99_entity, listeners)
     dds_free(l1);
 }
 
-Test(c99_entity, status)
+void entity_status(void)
 {
-    dds_entity_t entity;
     dds_return_t status;
     uint32_t s1 = 0;
-
-    entity = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_neq(entity, NULL, "dds_create_participant");
 
     /* Don't check actual bad statuses. That's a job
      * for the specific entity children, not for the generic part. */
@@ -243,14 +223,11 @@ Test(c99_entity, status)
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_take_status(entity, status, 0)");
 }
 
-Test(c99_entity, handle)
+
+void entity_handle(void)
 {
-    dds_entity_t entity;
     dds_return_t status;
     dds_instance_handle_t hdl;
-
-    entity = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_neq(entity, NULL, "dds_create_participant");
 
     /* Don't check actual handle contents. That's a job
      * for the specific entity children, not for the generic part. */
@@ -269,15 +246,11 @@ Test(c99_entity, handle)
     cr_assert_neq(hdl, 0, "Entity instance handle is 0");
 }
 
-Test(c99_entity, get_entities)
+void entity_get_entities(void)
 {
-    dds_entity_t entity;
     dds_return_t status;
     dds_entity_t par = NULL;
     dds_entity_t child;
-
-    entity = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_neq(entity, NULL, "dds_create_participant");
 
     /* ---------- Get Parent ------------ */
 
@@ -331,14 +304,10 @@ Test(c99_entity, get_entities)
     }
 }
 
-Test(c99_entity, get_domainid)
+void entity_get_domainid(void)
 {
-    dds_entity_t entity;
     dds_return_t status;
     dds_domainid_t id;
-
-    entity = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_neq(entity, NULL, "dds_create_participant");
 
     /* Check getting ID with bad parameters. */
     status = dds_get_domainid (NULL, NULL);
@@ -354,17 +323,27 @@ Test(c99_entity, get_domainid)
     cr_assert_eq(id, 0, "Different domain_id was returned than expected");
 }
 
-Test(c99_entity, deletion)
+void entity_deletion(void)
 {
-    dds_entity_t entity;
     dds_return_t status;
-
     status = dds_delete(NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_delete(NULL)");
-    entity = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_neq(entity, NULL, "dds_create_participant");
     status = dds_delete(entity);
     cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_delete(entity)");
     entity = NULL;
+}
+
+Test(c99, entity_api)
+{
+    entity_creation();
+    entity_enabling();
+    entity_qos();
+    entity_listeners();
+    entity_status();
+    entity_handle();
+    entity_get_entities();
+    entity_get_domainid();
+    entity_deletion();
+
 }
 
