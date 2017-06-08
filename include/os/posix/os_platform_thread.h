@@ -7,7 +7,10 @@
 extern "C" {
 #endif
 
-    typedef pthread_t os_threadId;
+    /* Wrapped in a struct to help programmers conform to the abstraction. */
+    typedef struct os_threadId_s {
+        pthread_t v; /* Don't touch */
+    } os_threadId;
 
     void os_threadModuleInit (void);
     void os_threadModuleExit (void);

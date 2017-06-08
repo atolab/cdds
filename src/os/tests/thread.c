@@ -27,7 +27,7 @@ uint32_t new_thread (_In_ void *args)
 
 uint32_t threadExit_thread (_In_ void *args)
 {
-  uint32_t *value = (uint32_t*) args;
+  uint32_t *value = args;
 #ifdef _WRS_KERNEL
   taskDelay(1*sysClkRateGet());
 #endif
@@ -237,7 +237,7 @@ static void tc_os_threadCreate (void)
         int policy;
         struct sched_param sched_param;
 
-        result_int = pthread_getschedparam (thread_os_threadId, &policy, &sched_param);
+        result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
         CU_ASSERT (result_int == DDS_RETCODE_OK);
 
         if (result_int != DDS_RETCODE_OK) {
@@ -268,7 +268,7 @@ static void tc_os_threadCreate (void)
         int policy;
         struct sched_param sched_param;
 
-        result_int = pthread_getschedparam (thread_os_threadId, &policy, &sched_param);
+        result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
         CU_ASSERT (result_int == DDS_RETCODE_OK);
 
         if (result_int != DDS_RETCODE_OK) {
@@ -313,7 +313,7 @@ static void tc_os_threadCreate (void)
             int policy;
             struct sched_param sched_param;
 
-            result_int = pthread_getschedparam (thread_os_threadId, &policy, &sched_param);
+            result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
             CU_ASSERT (result_int == DDS_RETCODE_OK);
 
             if (result_int == DDS_RETCODE_OK) {
@@ -363,7 +363,7 @@ static void tc_os_threadCreate (void)
         int policy;
         struct sched_param sched_param;
 
-        result_int = pthread_getschedparam (thread_os_threadId, &policy, &sched_param);
+        result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
         CU_ASSERT (result_int == DDS_RETCODE_OK);
 
         if (result_int == DDS_RETCODE_OK) {
@@ -413,7 +413,7 @@ static void tc_os_threadCreate (void)
         int policy;
         struct sched_param sched_param;
 
-        result_int = pthread_getschedparam (thread_os_threadId, &policy, &sched_param);
+        result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
         CU_ASSERT (result_int == DDS_RETCODE_OK);
 
         if (result_int == DDS_RETCODE_OK) {
@@ -476,7 +476,7 @@ static void tc_os_threadCreate (void)
             int policy;
             struct sched_param sched_param;
 
-            result_int = pthread_getschedparam (thread_os_threadId, &policy, &sched_param);
+            result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
             CU_ASSERT (result_int == DDS_RETCODE_OK);
 
             if (result_int == 0) {
@@ -536,7 +536,7 @@ static void tc_os_threadCreate (void)
             int policy;
             struct sched_param sched_param;
 
-            result_int = pthread_getschedparam (thread_os_threadId, &policy, &sched_param);
+            result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
             CU_ASSERT (result_int == DDS_RETCODE_OK);
 
             if (result_int == 0) {
@@ -826,7 +826,7 @@ static void tc_os_threadFigureIdentity (void)
     char threadId[512];
     char thread_name[512];
     int result;
-    uintptr_t threadNumeric = 0;
+    uintmax_t threadNumeric = 0;
 
   #if ENABLE_TRACING
     /* Figure out the identity of the thread, where it's name is known */
@@ -851,9 +851,9 @@ static void tc_os_threadFigureIdentity (void)
             int dum;
             sscanf (threadId, "%s (%d %d)", thread_name, &threadNumeric, &dum);
           #else
-            sscanf (threadId, "%s %"SCNxPTR, thread_name, &threadNumeric);
+            sscanf (threadId, "%s 0x%"SCNxMAX, thread_name, &threadNumeric);
           #endif
-            CU_ASSERT (strcmp (thread_name, "threadFigureIdentity") == 0 && threadNumeric == (uintptr_t)thread_os_threadId);
+            CU_ASSERT (strcmp (thread_name, "threadFigureIdentity") == 0 && threadNumeric == os_threadIdToInteger(thread_os_threadId));
         } else {
           #if ENABLE_TRACING
             printf ("os_threadWaitExit failed.\n");
@@ -923,19 +923,10 @@ static void tc_os_threadFigureIdentity (void)
        char threadIdString[512];
        unsigned int threadIdLen;
 
-     #ifdef WIN32
-       snprintf (threadIdString, sizeof(threadIdString), "%d",
-                  (uintptr_t)os_threadIdToInteger(os_threadIdSelf()));
-     #else
-       snprintf (threadIdString, sizeof(threadIdString), PRIxPTR, (uintptr_t)os_threadIdSelf());
-     #endif
+       snprintf (threadIdString, sizeof(threadIdString), "0x%"PRIxMAX, os_threadIdToInteger(os_threadIdSelf()));
        threadIdLen = os_threadFigureIdentity (threadId, sizeof(threadId));
 
-     #ifdef WIN32
        CU_ASSERT (threadIdLen == strlen(threadIdString));
-     #else
-       CU_ASSERT (threadIdLen == (strlen(threadIdString) + strlen("main thread ")));
-     #endif
    }
   #endif
 
