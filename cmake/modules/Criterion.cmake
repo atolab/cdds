@@ -38,7 +38,7 @@ function(add_criterion_executable target)
 
     add_test(
       NAME "Criterion_${suite}_${test}"
-      COMMAND ${target} --filter "${suite}/${test}" "--xml=${suite}_${test}-Junit.xml")
+      COMMAND ${target} --filter "${suite}/${test}" --xml=${suite}_${test}-Junit.xml --quiet)
   endforeach()
 endfunction()
 
