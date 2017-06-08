@@ -105,7 +105,7 @@ function(add_cunit_executable target)
 
     add_test(
       NAME "CUnit_${suite}_${test}"
-      COMMAND ${target} -a -j -r "${suite}-${test}" -s ${suite} -t ${test})
+      COMMAND ${target} -a -r "${suite}-${test}" -s ${suite} -t ${test})
   endforeach()
 
   set(root "${CUNIT_DIR}")
