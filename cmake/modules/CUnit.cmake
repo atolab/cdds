@@ -1,83 +1,71 @@
 find_package(CUnit REQUIRED)
 
-set(CUNIT_MODULE_DIR "${CMAKE_CURRENT_LIST_DIR}")
+include(Glob)
 
-set(s "[ \t\r\n]") # space
-set(w "[0-9a-zA-Z_]") # word
-set(param "${s}*(${w}+)${s}*")
-set(func "CUnit_${w}+${s}*\\(${param}(,${param}(,${param})?)?\\)")
+set(CUNIT_DIR "${CMAKE_CURRENT_LIST_DIR}/CUnit")
 
 function(add_cunit_executable target)
-  string(RANDOM basename) # Don't use target as basename
+  # Generate semi-random filename to store the generated code in to avoid
+  # possible naming conflicts.
+  string(RANDOM random)
+  set(runner "${target}_${random}")
 
-  # Find all c source files
-  foreach(filename ${ARGN})
-    if(NOT IS_ABSOLUTE "${filename}")
-      set(filename "${CMAKE_CURRENT_SOURCE_DIR}/${filename}")
-    endif()
+  set(s "[ \t\r\n]") # space
+  set(w "[0-9a-zA-Z_]") # word
+  set(param "${s}*(${w}+)${s}*")
+  set(pattern "CUnit_${w}+${s}*\\(${param}(,${param}(,${param})?)?\\)")
 
-    if(IS_DIRECTORY "${filename}")
-      file(GLOB_RECURSE filenames "${filename}/*.c")
-    elseif(EXISTS "${filename}")
-      set(filenames "${filename}")
-    else()
-      set(filenames "")
-    endif()
+  glob(filenames "c" ${ARGN})
 
-    list(FILTER filenames INCLUDE REGEX "\.c$")
-    list(APPEND sources ${filenames})
-  endforeach()
+  foreach(filename ${filenames})
+    file(READ "${filename}" contents)
+    string(REGEX MATCHALL "${pattern}" captures "${contents}")
 
-  set(suites "")
-  set(suites_w_init "")
-  set(suites_w_deinit "")
-  mark_as_advanced(suites suites_w_init suites_w_deinit)
-  set(tests "")
-  mark_as_advanced(tests)
+    list(LENGTH captures length)
+    if(length)
+      # Ensure only files that actually implement CUnit tests are added to the
+      # list of source files.
+      list(APPEND sources "${filename}")
 
-  foreach(source ${sources})
-    file(READ "${source}" contents)
+      foreach(capture ${captures})
+        string(REGEX REPLACE "${pattern}" "\\1" suite "${capture}")
 
-    string(REGEX MATCHALL "${func}" captures "${contents}")
-    foreach(capture ${captures})
-      string(REGEX REPLACE "${func}" "\\1" suite "${capture}")
+        if("${capture}" MATCHES "CUnit_Suite_Initialize")
+          list(APPEND suites ${suite})
+          list(APPEND suites_w_init ${suite})
+        elseif("${capture}" MATCHES "CUnit_Suite_Cleanup")
+          list(APPEND suites ${suite})
+          list(APPEND suites_w_deinit ${suite})
+        elseif("${capture}" MATCHES "CUnit_Test")
+          list(APPEND suites ${suite})
 
-      if("${capture}" MATCHES "CUnit_Suite_Initialize")
-        list(APPEND suites ${suite})
-        list(APPEND suites_w_init ${suite})
-      elseif("${capture}" MATCHES "CUnit_Suite_Cleanup")
-        list(APPEND suites ${suite})
-        list(APPEND suites_w_deinit ${suite})
-      elseif("${capture}" MATCHES "CUnit_Test")
-        list(APPEND suites ${suite})
+          # Specifying a test name is mandatory
+          if("${capture}" MATCHES ",")
+            string(REGEX REPLACE "${pattern}" "\\3" test "${capture}")
+          else()
+            message(FATAL_ERROR "Bad CUnit_Test signature in ${filename}")
+          endif()
 
-        # Specifying a test name is mandatory
-        if("${capture}" MATCHES ",")
-          string(REGEX REPLACE "${func}" "\\3" test "${capture}")
+          # Specifying if a test is enabled is optional
+          set(enable "true")
+          if("${capture}" MATCHES ",${param},")
+            string(REGEX REPLACE "${pattern}" "\\5" enable "${capture}")
+          endif()
+
+          if((NOT "${enable}" STREQUAL "true") AND
+             (NOT "${enable}" STREQUAL "false"))
+            message(FATAL_ERROR "Bad CUnit_Test signature in ${filename}")
+          endif()
+
+          list(APPEND tests "${suite}:${test}:${enable}")
         else()
-          message(FATAL_ERROR "Unsupported CUnit_Test signature in ${source}")
+          message(FATAL_ERROR "Bad CUnit signature in ${filename}")
         endif()
-
-        # Specifying if a test is enabled is optional
-        set(enable "true")
-
-        if("${capture}" MATCHES ",${param},")
-          string(REGEX REPLACE "${func}" "\\5" enable "${capture}")
-        endif()
-
-        if((NOT "${enable}" STREQUAL "true") AND
-           (NOT "${enable}" STREQUAL "false"))
-          message(FATAL_ERROR "Unsupport CUnit_Test signature in ${source}")
-        endif()
-
-        list(APPEND tests "${suite}:${test}:${enable}")
-      else()
-        message(FATAL_ERROR "Unsupported CUnit signature in ${source}")
-      endif()
-    endforeach()
+      endforeach()
+    endif()
   endforeach()
 
-  # Test suite signature can be declared only after everything is parsed
+  # Test suite signatures can be decided on only after everything is parsed.
   set(lf "\n")
   set(declf "")
   set(deflf "")
@@ -116,16 +104,16 @@ function(add_cunit_executable target)
     set(deflf "${lf}")
 
     add_test(
-      NAME "${suite}_${test}"
+      NAME "CUnit_${suite}_${test}"
       COMMAND ${target} -a -j -r "${suite}-${test}" -s ${suite} -t ${test})
   endforeach()
 
-  set(root "${CUNIT_MODULE_DIR}/CUnit")
+  set(root "${CUNIT_DIR}")
   set(CUnit_Decls "${decls}")
   set(CUnit_Defs "${defs}")
 
-  configure_file("${root}/src/main.c.in" "${basename}.c" @ONLY)
-  add_executable(${target} "${basename}.c" "${root}/src/runner.c" ${sources})
+  configure_file("${root}/src/main.c.in" "${runner}.c" @ONLY)
+  add_executable(${target} "${runner}.c" "${root}/src/runner.c" ${sources})
   target_link_libraries(${target} cunit)
   target_include_directories(${target} PRIVATE "${root}/include")
 endfunction()
