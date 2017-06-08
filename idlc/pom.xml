@@ -1,11 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.prismtech.lite</groupId>
+    <groupId>com.prismtech.vortex</groupId>
     <artifactId>idlc</artifactId>
     <version>VLITE-01</version>
     <packaging>jar</packaging>
-    <name>IDL Preprocessor</name>
+    <name>IDL Compiler</name>
 
     <!-- FIXME: The local in-tree repository is hopefully only a temporary
                 requirement. Please take care not to "pollute" the source
@@ -49,7 +49,7 @@
             <resource>
                 <directory>${basedir}</directory>
                 <includes>
-                    <include>com/prismtech/lite/templates/**</include>
+                    <include>com/prismtech/vortex/templates/**</include>
                 </includes>
             </resource>
         </resources>
@@ -81,7 +81,7 @@
                 <artifactId>antlr4-maven-plugin</artifactId>
                 <version>4.5</version>
                 <configuration>
-                    <sourceDirectory>${basedir}/com/prismtech/lite/parser/grammar</sourceDirectory>
+                    <sourceDirectory>${basedir}/com/prismtech/vortex/parser/grammar</sourceDirectory>
                     <visitor>true</visitor>
                     <listener>false</listener>
                 </configuration>
@@ -111,8 +111,8 @@
                             <goal>copy</goal>
                         </goals>
                         <configuration>
-                            <sourceFile>${basedir}/com/prismtech/lite/Version.java.tmpl</sourceFile>
-                            <destinationFile>target/generated-sources/idlc/com/prismtech/lite/Version.java</destinationFile>
+                            <sourceFile>${basedir}/com/prismtech/vortex/Version.java.tmpl</sourceFile>
+                            <destinationFile>target/generated-sources/idlc/com/prismtech/vortex/Version.java</destinationFile>
                         </configuration>
                     </execution>
                     <execution>
@@ -122,8 +122,8 @@
                             <goal>copy</goal>
                         </goals>
                         <configuration>
-                            <sourceFile>${basedir}/com/prismtech/lite/LicenseMgr.java.dummy</sourceFile>
-                            <destinationFile>target/generated-sources/idlc/com/prismtech/lite/LicenseMgr.java</destinationFile>
+                            <sourceFile>${basedir}/com/prismtech/vortex/LicenseMgr.java.dummy</sourceFile>
+                            <destinationFile>target/generated-sources/idlc/com/prismtech/vortex/LicenseMgr.java</destinationFile>
                         </configuration>
                     </execution>
                 </executions>

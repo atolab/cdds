@@ -1,0 +1,14 @@
+package com.prismtech.vortex;
+
+class LicenseMgr
+{
+  static boolean checkout (String feature)
+  {
+    return true;
+  }
+
+  static boolean checkin ()
+  {
+    return true;
+  }
+}

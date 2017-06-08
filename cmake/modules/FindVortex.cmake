@@ -11,7 +11,7 @@
 
 # Allow a user-override, i.e. when Vortex is not installed in any of the system default locations
 
-if (NOT TARGET Vortex::DDSC99)
+if (NOT TARGET Vortex::DDSC)
   if(EXISTS "$ENV{VORTEX_HOME}")
       file(TO_CMAKE_PATH "$ENV{VORTEX_HOME}" VORTEX_HOME)
       set(VORTEX_HOME "${VORTEX_HOME}" CACHE PATH "Prefix of VortexDDS installation.")
@@ -21,24 +21,24 @@ if (NOT TARGET Vortex::DDSC99)
       NAMES dds.h
       HINTS ${VORTEX_HOME}/include)
 
-  find_library(VORTEX_DDSC99_LIBRARY
-      NAMES vdds
+  find_library(VORTEX_DDSC_LIBRARY
+      NAMES vddsc
       HINTS ${VORTEX_HOME}/lib)
 else()
-  get_target_property(VORTEX_DDSC99_LIBRARY Vortex::DDSC99 NAME)
-  get_target_property(VORTEX_INCLUDE_DIR Vortex::DDSC99 INCLUDE_DIRECTORIES)
+  get_target_property(VORTEX_DDSC_LIBRARY Vortex::DDSC NAME)
+  get_target_property(VORTEX_INCLUDE_DIR Vortex::DDSC INCLUDE_DIRECTORIES)
 endif()
 
 # Convenience macro to handle the QUIETLY and REQUIRED arguments and set Vortex_FOUND to TRUE if
 # all listed REQUIRED_VARS are TRUE
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Vortex
-    REQUIRED_VARS VORTEX_INCLUDE_DIR VORTEX_DDSC99_LIBRARY)
+    REQUIRED_VARS VORTEX_INCLUDE_DIR VORTEX_DDSC_LIBRARY)
 
-if (VORTEX_FOUND AND NOT TARGET Vortex::DDSC99)
-    add_library(Vortex::DDSC99 UNKNOWN IMPORTED)
-    set_target_properties(Vortex::DDSC99 PROPERTIES
-      IMPORTED_LOCATION                 "${VORTEX_DDSC99_LIBRARY}"
+if (VORTEX_FOUND AND NOT TARGET Vortex::DDSC)
+    add_library(Vortex::DDSC UNKNOWN IMPORTED)
+    set_target_properties(Vortex::DDSC PROPERTIES
+      IMPORTED_LOCATION                 "${VORTEX_DDSC_LIBRARY}"
       INTERFACE_INCLUDE_DIRECTORIES     "${VORTEX_INCLUDE_DIR}"
       IMPORTED_LINK_INTERFACE_LANGUAGES "C" )
 endif()

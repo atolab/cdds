@@ -1,12 +1,12 @@
 /** @file
  *
- * @brief DDS C99 Allocation API
+ * @brief DDS C Allocation API
  *
  * @todo add copyright header?
  * @todo do we really need to expose this as an API?
  *
  * This header file defines the public API of allocation convenience functions
- * in the VortexDDS C99 language binding.
+ * in the VortexDDS C language binding.
  */
 #ifndef DDS_ALLOC_H
 #define DDS_ALLOC_H
