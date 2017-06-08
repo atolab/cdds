@@ -635,7 +635,6 @@ int main (int argc, char *argv[])
     CU_add_test (suite, "tc_os_atomics_OR", tc_os_atomics_OR);
 
     runner_run();
-err:
     runner_fini();
 err_init:
     return CU_get_error();

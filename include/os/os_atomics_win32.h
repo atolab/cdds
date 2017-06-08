@@ -14,13 +14,6 @@
    provide all the interlocked operations for 64-bit operands on x86
    platforms, but it doesn't. */
 
-#undef OS_API
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
 #if defined OS_64BIT
 #define OS_ATOMIC64_SUPPORT 1
 #else
@@ -53,7 +46,7 @@
 #if OS_ATOMIC_HAVE_INLINE
 #define OS_ATOMIC_API_INLINE OS_ATOMIC_INLINE
 #else
-#define OS_ATOMIC_API_INLINE OS_API
+#define OS_ATOMIC_API_INLINE OSAPI_EXPORT
 #endif
 
 /* LD, ST */

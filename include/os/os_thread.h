@@ -26,11 +26,6 @@
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
     /* Number of slots in Thread Private Memory */
 
     typedef enum os_threadMemoryIndex {
@@ -120,7 +115,7 @@ extern "C" {
      *  - returns os_ResultFail if
      *      the hooks are not set
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_threadModuleSetHook(
             os_threadHook *hook,
             os_threadHook *oldHook);
@@ -142,7 +137,7 @@ extern "C" {
      * - returns os_resultFail if
      *     the thread is not created because of an failure
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_threadCreate(
             _Out_ os_threadId *threadId,
             _In_z_ const char *name,
@@ -155,7 +150,7 @@ extern "C" {
      * Possible Results:
      * - returns the integer representation of the given thread ID
      */
-    OS_API uintmax_t
+    OSAPI_EXPORT uintmax_t
     os_threadIdToInteger(
             os_threadId id);
 
@@ -164,7 +159,7 @@ extern "C" {
      * Possible Results:
      * - returns the tread ID of the calling thread
      */
-    OS_API os_threadId
+    OSAPI_EXPORT os_threadId
     os_threadIdSelf(void);
 
     /** \brief Wait for the termination of the identified thread
@@ -182,7 +177,7 @@ extern "C" {
      * - returns os_threadFail if
      *     the services is aborted because of a failure
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_threadWaitExit(
             _In_ os_threadId threadId,
             _Out_opt_ uint32_t *thread_result);
@@ -202,7 +197,7 @@ extern "C" {
      *
      * \b threadIdentity will not be filled beyond the specified \b threadIdentitySize
      */
-    OS_API int32_t
+    OSAPI_EXPORT int32_t
     os_threadFigureIdentity(
             char *threadIdentity,
             uint32_t threadIdentitySize);
@@ -217,7 +212,7 @@ extern "C" {
      *
      * \b name will not be filled beyond the specified \b length
      */
-    OS_API int32_t
+    OSAPI_EXPORT int32_t
     os_threadGetThreadName(
             char *name,
             uint32_t length);
@@ -231,7 +226,7 @@ extern "C" {
      * Possible Results:
      * - assertion failure: threadAttr = NULL
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_threadAttrInit(
             os_threadAttr *threadAttr)
         __nonnull_all__;
@@ -256,7 +251,7 @@ extern "C" {
      *     of the requested size if
      *     memory is successfully allocated
      */
-    OS_API void *
+    OSAPI_EXPORT void *
     os_threadMemMalloc(
             int32_t index,
             size_t size);
@@ -273,7 +268,7 @@ extern "C" {
      * - os_threadMemGet (index) = NULL and allocated
      *   heap memory is freed
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_threadMemFree(
             int32_t index);
 
@@ -287,11 +282,10 @@ extern "C" {
      *     the specified index
      * - returns a reference to the allocated memory
      */
-    OS_API void *
+    OSAPI_EXPORT void *
     os_threadMemGet(
             int32_t index);
 
-#undef OS_API
 
 #if defined (__cplusplus)
 }

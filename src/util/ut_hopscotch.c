@@ -21,7 +21,7 @@ struct ut_chhBucket {
     os_atomic_voidp_t data;
 };
 
-struct ut_chhBucketArray {
+struct _Struct_size_bytes_(size) ut_chhBucketArray {
     uint32_t size; /* power of 2 */
 #if __STDC_VERSION__ >= 199901L
     struct ut_chhBucket bs[];
@@ -65,6 +65,7 @@ static int ut_chhInit (struct ut_chh *rt, uint32_t init_size, uint32_t (*hash) (
     rt->hash = hash;
     rt->equals = equals;
     rt->gc_buckets = gc_buckets;
+    _Analysis_assume_(size >= HH_HOP_RANGE);
     buckets = os_malloc (offsetof (struct ut_chhBucketArray, bs) + size * sizeof (*buckets->bs));
     os_atomic_stvoidp (&rt->buckets, buckets);
     buckets->size = size;
@@ -484,6 +485,7 @@ static void ut_hhInit (struct ut_hh *rt, uint32_t init_size, uint32_t (*hash) (c
     rt->hash = hash;
     rt->equals = equals;
     rt->size = size;
+    _Analysis_assume_(size >= HH_HOP_RANGE);
     rt->buckets = os_malloc (size * sizeof (*rt->buckets));
     for (i = 0; i < size; i++) {
         rt->buckets[i].hopinfo = 0;
@@ -564,6 +566,7 @@ static void ut_hhResize (struct ut_hh *rt)
     struct ut_hhBucket *bs1;
     uint32_t i, idxmask0, idxmask1;
 
+    _Analysis_assume_(rt->size >= HH_HOP_RANGE);
     bs1 = os_malloc (2 * rt->size * sizeof (*rt->buckets));
 
     for (i = 0; i < 2 * rt->size; i++) {
@@ -707,6 +710,7 @@ static void ut_ehhInit (struct ut_ehh *rt, size_t elemsz, uint32_t init_size, ui
     rt->size = size;
     rt->elemsz = elemsz;
     rt->bucketsz = sizeof (struct ut_ehhBucket) + ((elemsz+7) & ~(size_t)7);
+    _Analysis_assume_(size >= HH_HOP_RANGE);
     rt->buckets = os_malloc (size * rt->bucketsz);
     for (i = 0; i < size; i++) {
         struct ut_ehhBucket *b = (struct ut_ehhBucket *) (rt->buckets + i * rt->bucketsz);

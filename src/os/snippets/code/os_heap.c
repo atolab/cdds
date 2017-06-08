@@ -39,9 +39,11 @@ static pa_uint32_t alloccnt = { 0ULL };
 /** \brief Allocate memory from heap
  *
  */
+_Check_return_
+_Ret_bytecap_(size)
 void *
-os_malloc (
-    size_t size)
+os_malloc(
+    _In_range_(>, 0) size_t size)
 {
     char *ptr;
 
@@ -77,10 +79,12 @@ os_malloc (
     return ptr;
 }
 
+_Check_return_
+_Ret_bytecap_(size)
 void *
 os_realloc(
-    void *memblk,
-    size_t size)
+    _Pre_maybenull_ _Post_ptr_invalid_ void *memblk,
+    _In_range_(>, 0) size_t size)
 {
     unsigned char *ptr = (unsigned char *)memblk;
 
@@ -142,7 +146,7 @@ os_realloc(
  */
 void
 os_free (
-    void *ptr)
+    _Pre_maybenull_ _Post_ptr_invalid_ void *ptr)
 {
     if (ptr != NULL)
     {

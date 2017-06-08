@@ -17,11 +17,11 @@ PREPEND(srcs_ddsi ddsi ddsi_ser.c ddsi_ssl.c ddsi_tcp.c ddsi_tran.c ddsi_udp.c q
 
 PREPEND(srcs_vddsc vddsc dds_alloc.c dds_iid.c dds_participant.c dds_reader.c dds_thread.c dds_writer.c dds_condition.c dds_init.c dds_publisher.c dds_rhc.c dds_time.c q_osplser.c dds_domain.c dds_instance.c dds_qos.c dds_tkmap.c dds_entity.c dds_key.c dds_querycond.c dds_topic.c dds_err.c dds_listener.c dds_read.c dds_stream.c dds_waitset.c dds_guardcond.c dds_log.c dds_readcond.c dds_subscriber.c dds_write.c)
 
-# Recipe for the vdds target
-# The vdds target depends on the OSAbstraction target
+# The vddsc target depends on the OSAPI target
 add_library(vddsc ${srcs_util} ${srcs_ddsi} ${srcs_vddsc})
-target_link_libraries(vddsc PRIVATE OSAbstraction)
+target_link_libraries(vddsc PRIVATE OSAPI)
 target_compile_definitions(vddsc PRIVATE VDDS_BUILD)
+target_include_directories(vddsc PUBLIC "${CMAKE_SOURCE_DIR}/include/" "${CMAKE_BINARY_DIR}/exports/")
 
 # Create a psuedo-target that other targets (i.e. examples, tests) can depend on and can also be
 # provided as import-target by a package-file when building those targets outside the regular
@@ -40,8 +40,6 @@ install(FILES ${CMAKE_SOURCE_DIR}/include/dds.h
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/dds
         DESTINATION include
         COMPONENT dev)
-
-#target_include_directories(vdds PUBLIC ../include)
 
 # TODO: improve test inclusion.
 if(BUILD_TESTING)

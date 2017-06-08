@@ -8,9 +8,9 @@ extern "C" {
 #endif
 
     typedef struct os_threadInfo_s {
-		DWORD threadId;
-		HANDLE handle;
-	} os_threadId;
+        DWORD threadId;
+        HANDLE handle;
+    } os_threadId;
 
     os_result os_threadModuleInit (void);
     void os_threadModuleExit (void);

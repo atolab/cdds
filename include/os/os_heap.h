@@ -24,15 +24,11 @@
 #ifndef OS_HEAP_H
 #define OS_HEAP_H
 
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
     /* !!!!!!!!NOTE From here no more includes are allowed!!!!!!! */
 
     /** \brief Allocate memory from heap
@@ -44,11 +40,11 @@ extern "C" {
      * - abort() if memory exhaustion is detected
      * - returns pointer to allocated memory
      */
-    OS_API void *
-    os_malloc(
-            size_t size) __attribute_malloc__
-        __attribute_returns_nonnull__
-        __attribute_warn_unused_result__
+    _Check_return_
+    _Ret_bytecap_(size)
+    OSAPI_EXPORT void *
+    os_malloc(_In_range_(>, 0) size_t size)
+        __attribute_malloc__
         __attribute_alloc_size__((1));
 
     /** \brief Reallocate memory from heap
@@ -63,11 +59,13 @@ extern "C" {
      * - abort() if memory exhaustion is detected
      * - return pointer to reallocated memory otherwise.
      */
-    OS_API void *
+    _Check_return_
+    _Ret_bytecap_(size)
+    OSAPI_EXPORT void *
     os_realloc(
-            void *memblk,
-            size_t size) __attribute_returns_nonnull__
-        __attribute_warn_unused_result__
+            _Pre_maybenull_ _Post_ptr_invalid_ void *memblk,
+            _In_range_(>, 0) size_t size)
+        __attribute_malloc__
         __attribute_alloc_size__((1));
 
     /** \brief Free allocated memory and return it to heap
@@ -76,11 +74,8 @@ extern "C" {
      * and release it to the heap. When \b ptr is NULL,
      * os_free will return without doing any action.
      */
-    OS_API void
-    os_free(
-            void *ptr);
-
-#undef OS_API
+    OSAPI_EXPORT void
+    os_free(_Pre_maybenull_ _Post_ptr_invalid_ void *ptr);
 
 #if defined (__cplusplus)
 }

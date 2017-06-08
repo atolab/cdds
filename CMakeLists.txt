@@ -33,7 +33,6 @@ if(Doxygen_FOUND)
     VERBATIM)
 endif()
 
-include_directories(include)
 #add_subdirectory(idlc)
 add_subdirectory(src)
 #add_subdirectory(vdds-server)

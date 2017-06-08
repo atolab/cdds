@@ -25,12 +25,6 @@ extern "C" {
 #endif
 
 #include "os/os_defs.h"
-
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
 /* !!!!!!!!NOTE From here no more includes are allowed!!!!!!! */
 
 /** \brief Return the process ID of the calling process
@@ -38,7 +32,7 @@ extern "C" {
  * Possible Results:
  * - returns the process ID of the calling process
  */
-OS_API os_procId os_procIdSelf(void);
+OSAPI_EXPORT os_procId os_procIdSelf(void);
 
 /** \brief Figure out the identity of the current process
  *
@@ -55,7 +49,7 @@ OS_API os_procId os_procIdSelf(void);
  *
  * \b procIdentity will not be filled beyond the specified \b procIdentitySize
  */
-OS_API int
+OSAPI_EXPORT int
 os_procNamePid(
     _Out_writes_z_(procIdentitySize) char *procIdentity,
     _In_ size_t procIdentitySize);
@@ -73,12 +67,10 @@ os_procNamePid(
  *
  * \b procName will not be filled beyond the specified \b procNameSize
  */
-OS_API int
+OSAPI_EXPORT int
 os_procName(
     _Out_writes_z_(procNameSize) char *procName,
     _In_ size_t procNameSize);
-
-#undef OS_API
 
 #if defined (__cplusplus)
 }
