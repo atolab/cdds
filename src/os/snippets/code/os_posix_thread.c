@@ -35,15 +35,8 @@
 typedef struct {
     char *threadName;
     void *arguments;
-    void *(*startRoutine)(void *);
+    uint32_t (*startRoutine)(void *);
 } os_threadContext;
-
-typedef struct {
-#ifndef INTEGRITY
-    sigset_t oldMask;
-#endif
-    unsigned  protectCount;
-} os_threadProtectInfo;
 
 static pthread_key_t os_threadNameKey;
 static pthread_key_t os_threadMemKey;
@@ -237,13 +230,13 @@ os_threadModuleSetHook(
  */
 void
 os_threadExit (
-    void *thread_result)
+    uint32_t thread_result)
 {
+    uintptr_t res = thread_result;
 
     os_threadMemExit ();
 
-    pthread_exit (thread_result);
-    return;
+    pthread_exit ((void *) res); /* Doesn't return */
 }
 
 /** \brief Wrap thread start routine
@@ -258,10 +251,10 @@ os_startRoutineWrapper (
     void *threadContext)
 {
     os_threadContext *context = threadContext;
-    void *resultValue;
+    uintptr_t resultValue;
     os_threadId id;
 
-    resultValue = NULL;
+    resultValue = 0;
 
 #if defined(INTEGRITY)
     SetTaskName(CurrentTask(), context->threadName, strlen(context->threadName));
@@ -279,7 +272,7 @@ os_startRoutineWrapper (
     /* allocate an array to store thread private memory references */
     os_threadMemInit ();
 
-    id = pthread_self();
+    id.v = pthread_self();
     /* Call the start callback */
     if (os_threadCBs.startCb(id, os_threadCBs.startArg) == 0) {
         /* Call the user routine */
@@ -297,7 +290,7 @@ os_startRoutineWrapper (
     os_threadMemExit ();
 
     /* return the result of the user routine */
-    return resultValue;
+    return (void *)resultValue;
 }
 
 /** \brief Create a new thread
@@ -318,7 +311,7 @@ os_threadCreate (
     os_threadId *threadId,
     const char *name,
     const os_threadAttr *threadAttr,
-    void *(* start_routine)(void *),
+    uint32_t (* start_routine)(void *),
     void *arg)
 {
     pthread_attr_t attr;
@@ -437,7 +430,7 @@ os_threadCreate (
                           result, name);
           }
 
-          create_ret = pthread_create(threadId, &attr, os_startRoutineWrapper,
+          create_ret = pthread_create(&threadId->v, &attr, os_startRoutineWrapper,
                                       threadContext);
           if (create_ret != 0) {
              /* In case real-time thread creation failed due to a lack
@@ -471,7 +464,7 @@ os_threadCreate (
                                 "pthread_attr_setschedparam failed "      \
                                 "with error %d (%s)", result, name);
                 } else {
-                   create_ret = pthread_create(threadId, &attr,
+                   create_ret = pthread_create(&threadId->v, &attr,
                                                os_startRoutineWrapper, threadContext);
                 }
              }
@@ -495,10 +488,10 @@ os_threadCreate (
  * Possible Results:
  * - returns the integer representation of the given thread ID
  */
-unsigned long
+uintmax_t
 os_threadIdToInteger(os_threadId id)
 {
-   return (unsigned long) id;
+   return id.v;
 }
 
 /** \brief Return the thread ID of the calling thread
@@ -507,10 +500,10 @@ os_threadIdToInteger(os_threadId id)
  * calling \b pthread_self.
  */
 os_threadId
-os_threadIdSelf (
-    void)
+os_threadIdSelf (void)
 {
-    return pthread_self ();
+    os_threadId id = {.v = pthread_self ()};
+    return id;
 }
 
 /** \brief Figure out the identity of the current thread
@@ -529,9 +522,9 @@ os_threadFigureIdentity (
 
     threadName = pthread_getspecific (os_threadNameKey);
     if (threadName != NULL) {
-        size = snprintf (threadIdentity, threadIdentitySize, "%s 0x%"PRIxPTR, threadName, (uintptr_t)pthread_self ());
+        size = snprintf (threadIdentity, threadIdentitySize, "%s 0x%"PRIxMAX, threadName, (uintmax_t)pthread_self ());
     } else {
-        size = snprintf (threadIdentity, threadIdentitySize, "0x%"PRIxPTR, (uintptr_t)pthread_self ());
+        size = snprintf (threadIdentity, threadIdentitySize, "0x%"PRIxMAX, (uintmax_t)pthread_self ());
     }
     return size;
 }
@@ -561,12 +554,13 @@ os_threadGetThreadName (
 os_result
 os_threadWaitExit (
     os_threadId threadId,
-    void **thread_result)
+    uint32_t *thread_result)
 {
     os_result rv;
     int result;
+    void *vthread_result;
 
-    assert (threadId);
+    assert (threadId.v);
 
 #if defined(__VXWORKS__) && !defined(_WRS_KERNEL)
     struct sched_param sched_param;
@@ -588,22 +582,26 @@ os_threadWaitExit (
 
     /* Note that any possible errors raised here are not terminal since the
        thread may have exited at this point anyway. */
-    if (pthread_getschedparam(threadId, &policy, &sched_param) == 0) {
+    if (pthread_getschedparam(threadId.v, &policy, &sched_param) == 0) {
         max = sched_get_priority_max(policy);
         if (max != -1) {
-            (void)pthread_setschedprio(threadId, max);
+            (void)pthread_setschedprio(threadId.v, max);
         }
     }
 #endif
 
-    result = pthread_join (threadId, thread_result);
+    result = pthread_join (threadId.v, &vthread_result);
     if (result != 0) {
         /* NOTE: The below report actually is a debug output; makes no sense from
          * a customer perspective. Made OS_INFO for now. */
-        OS_REPORT (OS_INFO, "os_threadWaitExit", 2, "pthread_join(%lu) failed with error %d", os_threadIdToInteger(threadId), result);
+        OS_REPORT (OS_INFO, "os_threadWaitExit", 2, "pthread_join(0x%"PRIxMAX") failed with error %d", os_threadIdToInteger(threadId), result);
         rv = os_resultFail;
     } else {
         rv = os_resultSuccess;
+    }
+    if(thread_result){
+        uintptr_t res = (uintptr_t)vthread_result;
+        *thread_result = (uint32_t)res;
     }
     return rv;
 }
@@ -710,63 +708,3 @@ os_threadMemGet (
     return threadMemLoc;
 }
 
-os_result
-os_threadProtect(void)
-{
-    os_result result;
-    os_threadProtectInfo *pi;
-
-    pi = os_threadMemGet(OS_THREAD_PROTECT);
-    if (pi == NULL) {
-        pi = os_threadMemMalloc(OS_THREAD_PROTECT,
-                                sizeof(os_threadProtectInfo));
-        if (pi) {
-            pi->protectCount = 1;
-            result = os_resultSuccess;
-        } else {
-            result = os_resultFail;
-        }
-    } else {
-        pi->protectCount++;
-        result = os_resultSuccess;
-    }
-#ifndef INTEGRITY
-    if ((result == os_resultSuccess) && (pi->protectCount == 1)) {
-        if (pthread_sigmask(SIG_SETMASK,
-                         &os_threadBlockAllMask,
-                         &pi->oldMask) != 0) {
-            result = os_resultFail;
-        }
-    }
-#endif
-    return result;
-}
-
-os_result
-os_threadUnprotect(void)
-{
-    os_result result;
-    os_threadProtectInfo *pi;
-
-    pi = os_threadMemGet(OS_THREAD_PROTECT);
-    if (pi) {
-        pi->protectCount--;
-#ifndef INTEGRITY
-        if (pi->protectCount == 0) {
-            if (pthread_sigmask(SIG_SETMASK,&pi->oldMask,NULL) != 0) {
-                result = os_resultFail;
-            } else {
-                result = os_resultSuccess;
-            }
-        } else {
-#endif
-            result = os_resultSuccess;
-#ifndef INTEGRITY
-        }
-#endif
-    } else {
-        result = os_resultFail;
-    }
-
-    return result;
-}

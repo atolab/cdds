@@ -333,7 +333,7 @@ os__report_xml_head[] =
         "<NAME>%s</NAME>\n"
         "</PROCESS>\n"
         "<THREAD>\n"
-        "<ID>%lu</ID>\n"
+        "<ID>%"PRIuMAX"</ID>\n"
         "<NAME>%s</NAME>\n"
         "</THREAD>\n"
         "<VERSION>%s</VERSION>\n"
@@ -1202,7 +1202,7 @@ os_report_noargs(
                 bool again;
                 char proc[256], thr[64];
                 os_procId pid;
-                unsigned long tid;
+                uintmax_t tid;
 
                 pid = os_procIdSelf ();
                 tid = os_threadIdToInteger (os_threadIdSelf ());
@@ -1966,7 +1966,7 @@ os__report_stack_unwind(
         char proc[256], procid[256];
         char thr[64], thrid[64];
         os_procId pid;
-        unsigned long tid;
+        uintmax_t tid;
 
         assert (context != NULL);
         assert (path != NULL);
@@ -1996,7 +1996,7 @@ os__report_stack_unwind(
                     (size_t)snprintf (tmp, sizeof(tmp), "%d", code) +
                     (size_t)snprintf (tmp, sizeof(tmp), "%"PRIprocId, pid) +
                     strlen (proc) +
-                    (size_t)snprintf (tmp, sizeof(tmp), "%lu", tid) +
+                    (size_t)snprintf (tmp, sizeof(tmp), "%"PRIuMAX, tid) +
                     strlen (thr) +
                     strlen (os__report_version) +
                     strlen (os__report_inner_revision) +

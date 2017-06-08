@@ -309,7 +309,7 @@ static int print_proxy_participants (struct thread_state1 *self, ddsi_tran_conn_
   return x;
 }
 
-static void *debmon_main (void *vdm)
+static uint32_t debmon_main (void *vdm)
 {
   struct debug_monitor *dm = vdm;
   os_mutexLock (&dm->lock);
@@ -342,7 +342,7 @@ static void *debmon_main (void *vdm)
     os_mutexLock (&dm->lock);
   }
   os_mutexUnlock (&dm->lock);
-  return NULL;
+  return 0;
 }
 
 struct debug_monitor *new_debug_monitor (int port)
@@ -419,7 +419,7 @@ void free_debug_monitor (struct debug_monitor *dm)
   os_condBroadcast (&dm->cond);
   os_mutexUnlock (&dm->lock);
   ddsi_listener_unblock (dm->servsock);
-  join_thread (dm->servts, NULL);
+  join_thread (dm->servts);
   ddsi_listener_free (dm->servsock);
   os_condDestroy (&dm->cond);
   os_mutexDestroy (&dm->lock);

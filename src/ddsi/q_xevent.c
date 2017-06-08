@@ -156,7 +156,7 @@ struct xeventq {
   uint32_t auxiliary_bandwidth_limit;
 };
 
-static void *xevent_thread (struct xeventq *xevq);
+static uint32_t xevent_thread (struct xeventq *xevq);
 static nn_mtime_t earliest_in_xeventq (struct xeventq *evq);
 static int msg_xevents_cmp (const void *a, const void *b);
 static int compare_xevent_tsched (const void *va, const void *vb);
@@ -512,7 +512,7 @@ int xeventq_start (struct xeventq *evq, const char *name)
   }
 
   evq->terminate = 0;
-  evq->ts = create_thread (evqname, (void * (*) (void *)) xevent_thread, evq);
+  evq->ts = create_thread (evqname, (uint32_t (*) (void *)) xevent_thread, evq);
 
   if (name)
   {
@@ -528,7 +528,7 @@ void xeventq_stop (struct xeventq *evq)
   evq->terminate = 1;
   os_condSignal (&evq->cond);
   os_mutexUnlock (&evq->lock);
-  join_thread (evq->ts, NULL);
+  join_thread (evq->ts);
   evq->ts = NULL;
 }
 
@@ -1326,7 +1326,7 @@ static void handle_xevents (struct thread_state1 *self, struct xeventq *xevq, st
   ASSERT_MUTEX_HELD (&xevq->lock);
 }
 
-static void * xevent_thread (struct xeventq * xevq)
+static uint32_t xevent_thread (struct xeventq * xevq)
 {
   struct thread_state1 *self = lookup_thread_state ();
   struct nn_xpack *xp;
@@ -1381,7 +1381,7 @@ static void * xevent_thread (struct xeventq * xevq)
   os_mutexUnlock (&xevq->lock);
   nn_xpack_send (xp, false);
   nn_xpack_free (xp);
-  return NULL;
+  return 0;
 }
 
 void qxev_msg (struct xeventq *evq, struct nn_xmsg *msg)

@@ -216,9 +216,7 @@ int64_t get_thread_cputime (void)
 int os_threadEqual (os_threadId a, os_threadId b)
 {
   /* on pthreads boxes, pthread_equal (a, b); as a workaround: */
-  unsigned long ai = os_threadIdToInteger (a);
-  unsigned long bi = os_threadIdToInteger (b);
-  return ai == bi;
+  return os_threadIdToInteger (a) == os_threadIdToInteger (b);
 }
 #endif
 
@@ -297,7 +295,7 @@ void log_stacktrace (const char *name, os_threadId tid)
     while (!os_atomic_cas32 (&log_stacktrace_flag, 0, 1))
       os_nanoSleep (d);
     sigaction (SIGXCPU, &act, &oact);
-    pthread_kill (tid, SIGXCPU);
+    pthread_kill (tid.v, SIGXCPU);
     while (!os_atomic_cas32 (&log_stacktrace_flag, 2, 3))
       os_nanoSleep (d);
     sigaction (SIGXCPU, &oact, NULL);
