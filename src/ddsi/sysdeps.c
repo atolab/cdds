@@ -216,9 +216,7 @@ int64_t get_thread_cputime (void)
 int os_threadEqual (os_threadId a, os_threadId b)
 {
   /* on pthreads boxes, pthread_equal (a, b); as a workaround: */
-  unsigned long ai = os_threadIdToInteger (a);
-  unsigned long bi = os_threadIdToInteger (b);
-  return ai == bi;
+  return os_threadIdToInteger (a) == os_threadIdToInteger (b);
 }
 #endif
 

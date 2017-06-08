@@ -31,23 +31,23 @@ NN_C99_INLINE struct thread_state1 *lookup_thread_state (void)
 #endif
 }
 
-NN_C99_INLINE int vtime_awake_p (vtime_t vtime)
+NN_C99_INLINE int vtime_awake_p (_In_ vtime_t vtime)
 {
   return (vtime % 2) == 0;
 }
 
-NN_C99_INLINE int vtime_asleep_p (vtime_t vtime)
+NN_C99_INLINE int vtime_asleep_p (_In_ vtime_t vtime)
 {
   return (vtime % 2) == 1;
 }
 
-NN_C99_INLINE int vtime_gt (vtime_t vtime1, vtime_t vtime0)
+NN_C99_INLINE int vtime_gt (_In_ vtime_t vtime1, _In_ vtime_t vtime0)
 {
   Q_STATIC_ASSERT_CODE (sizeof (vtime_t) == sizeof (svtime_t));
   return (svtime_t) (vtime1 - vtime0) > 0;
 }
 
-NN_C99_INLINE void thread_state_asleep (struct thread_state1 *ts1)
+NN_C99_INLINE void thread_state_asleep (_Inout_ struct thread_state1 *ts1)
 {
   vtime_t vt = ts1->vtime;
   vtime_t wd = ts1->watchdog;
@@ -70,7 +70,7 @@ NN_C99_INLINE void thread_state_asleep (struct thread_state1 *ts1)
   }
  }
 
-NN_C99_INLINE void thread_state_awake (struct thread_state1 *ts1)
+NN_C99_INLINE void thread_state_awake (_Inout_ struct thread_state1 *ts1)
 {
   vtime_t vt = ts1->vtime;
   vtime_t wd = ts1->watchdog;
@@ -91,7 +91,7 @@ NN_C99_INLINE void thread_state_awake (struct thread_state1 *ts1)
 
 }
 
-NN_C99_INLINE void thread_state_blocked (struct thread_state1 *ts1)
+NN_C99_INLINE void thread_state_blocked (_Inout_ struct thread_state1 *ts1)
 {
   vtime_t wd = ts1->watchdog;
   if ( wd % 2 ){
@@ -101,7 +101,7 @@ NN_C99_INLINE void thread_state_blocked (struct thread_state1 *ts1)
   }
 }
 
-NN_C99_INLINE void thread_state_unblocked (struct thread_state1 *ts1)
+NN_C99_INLINE void thread_state_unblocked (_Inout_ struct thread_state1 *ts1)
 {
   vtime_t wd = ts1->watchdog;
   if ( wd % 2 ){

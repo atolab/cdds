@@ -1104,10 +1104,10 @@ int rtps_init (void)
   gv.user_dqueue = nn_dqueue_new ("user", config.delivery_queue_maxsamples, user_dqueue_handler, NULL);
 #endif
 
-  gv.recv_ts = create_thread ("recv", (void * (*) (void *)) recv_thread, gv.rbufpool);
+  gv.recv_ts = create_thread ("recv", (uint32_t (*) (void *)) recv_thread, gv.rbufpool);
   if (gv.listener)
   {
-    gv.listen_ts = create_thread ("listen", (void * (*) (void *)) listen_thread, gv.listener);
+    gv.listen_ts = create_thread ("listen", (uint32_t (*) (void *)) listen_thread, gv.listener);
   }
 
   if (gv.startup_mode)
@@ -1231,12 +1231,12 @@ void rtps_term (void)
 
   /* Stop all I/O */
   rtps_term_prep ();
-  join_thread (gv.recv_ts, NULL);
+  join_thread (gv.recv_ts);
 
   if (gv.listener)
   {
     ddsi_listener_unblock(gv.listener);
-    join_thread (gv.listen_ts, NULL);
+    join_thread (gv.listen_ts);
     ddsi_listener_free(gv.listener);
   }
 

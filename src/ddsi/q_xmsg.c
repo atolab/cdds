@@ -1394,7 +1394,7 @@ static void nn_xpack_send_real (struct nn_xpack * xp)
 #define SENDQ_HW 10
 #define SENDQ_LW 0
 
-static void *nn_xpack_sendq_thread (UNUSED_ARG (void *arg))
+static uint32_t nn_xpack_sendq_thread (UNUSED_ARG (void *arg))
 {
   os_mutexLock (&gv.sendq_lock);
   while (!(gv.sendq_stop && gv.sendq_head == NULL))
@@ -1417,7 +1417,7 @@ static void *nn_xpack_sendq_thread (UNUSED_ARG (void *arg))
     }
   }
   os_mutexUnlock (&gv.sendq_lock);
-  return NULL;
+  return 0;
 }
 
 void nn_xpack_sendq_init (void)
@@ -1446,7 +1446,7 @@ void nn_xpack_sendq_stop (void)
 void nn_xpack_sendq_fini (void)
 {
   assert (gv.sendq_head == NULL);
-  join_thread(gv.sendq_ts, NULL);
+  join_thread(gv.sendq_ts);
   os_condDestroy(&gv.sendq_cond);
   os_mutexDestroy(&gv.sendq_lock);
 }

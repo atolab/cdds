@@ -38,7 +38,7 @@ struct ut_thread_pool_s
     os_mutex m_mutex;                  /* Pool guard mutex */
 };
 
-static void * ut_thread_start_fn (void * arg)
+static uint32_t ut_thread_start_fn (_In_ void * arg)
 {
     ddsi_work_queue_job_t job;
     ut_thread_pool pool = (ut_thread_pool) arg;
@@ -81,7 +81,7 @@ static void * ut_thread_start_fn (void * arg)
         os_condBroadcast (&pool->m_cv);
     }
     os_mutexUnlock (&pool->m_mutex);
-    return NULL;
+    return 0;
 }
 
 static os_result ut_thread_pool_new_thread (ut_thread_pool pool)
@@ -93,7 +93,7 @@ static os_result ut_thread_pool_new_thread (ut_thread_pool pool)
     os_result res;
 
     (void) snprintf (name, sizeof (name), "OSPL-%u-%u", pools++, pool->m_count++);
-    res = os_threadCreate (&id, name, &pool->m_attr, ut_thread_start_fn, pool);
+    res = os_threadCreate (&id, name, &pool->m_attr, &ut_thread_start_fn, pool);
 
     if (res == os_resultSuccess)
     {

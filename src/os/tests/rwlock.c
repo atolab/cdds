@@ -46,7 +46,6 @@ typedef struct {
 os_threadAttr       rwlock_os_threadAttr;
 os_threadId         rwlock_os_threadId[RWLOCK_THREADS];
 static int          i;
-void                *thr_result;
 os_result           result;
 char                buffer[512];
 os_procId           rwlock_os_procId;
@@ -54,7 +53,7 @@ int                 supported_resultBusy;
 int                 loop;
 static shared_data *sd;
 
-void *concurrent_write_thread (void *arg)
+uint32_t concurrent_write_thread (_In_ void *arg)
 {
     struct Par *par = (struct Par *)arg;
     os_threadId myid = os_threadIdSelf();
@@ -85,10 +84,10 @@ void *concurrent_write_thread (void *arg)
 
         os_nanoSleep( rwlock_delay );
     }
-    return (void *)0;
+    return 0;
 }
 
-void *concurrent_read_thread (void *arg)
+uint32_t concurrent_read_thread (_In_ void *arg)
 {
     int j;
     os_threadId prevId;
@@ -141,10 +140,10 @@ void *concurrent_read_thread (void *arg)
 
         os_nanoSleep( rwlock_delay );
     }
-    return (void *)0;
+    return 0;
 }
 
-void *concurrent_trywrite_thread (void *arg)
+uint32_t concurrent_trywrite_thread (_In_ void *arg)
 {
     struct Par *par = (struct Par *)arg;
     os_result result;
@@ -182,10 +181,10 @@ void *concurrent_trywrite_thread (void *arg)
 
         os_nanoSleep( rwlock_delay );
     }
-    return (void *)0;
+    return 0;
 }
 
-void *concurrent_tryread_thread (void *arg)
+uint32_t concurrent_tryread_thread (_In_ void *arg)
 {
     int j;
     os_threadId prevId;
@@ -245,7 +244,7 @@ void *concurrent_tryread_thread (void *arg)
 
         os_nanoSleep( rwlock_delay );
     }
-    return (void *)0;
+    return 0;
 }
 
 static int  suite_abstraction_rwlock_init (void)
@@ -326,24 +325,24 @@ static void tc_os_rwlockRead (void)
         par[i].index = i;
     }
     os_threadAttrInit (&rwlock_os_threadAttr);
-    os_threadCreate (&rwlock_os_threadId[0], "thr0", &rwlock_os_threadAttr, concurrent_write_thread, (void *)&par[0]);
-    os_threadCreate (&rwlock_os_threadId[1], "thr1", &rwlock_os_threadAttr, concurrent_write_thread, (void *)&par[1]);
-    os_threadCreate (&rwlock_os_threadId[2], "thr2", &rwlock_os_threadAttr, concurrent_read_thread, (void *)&par[2]);
-    os_threadCreate (&rwlock_os_threadId[3], "thr3", &rwlock_os_threadAttr, concurrent_read_thread, (void *)&par[3]);
-    os_threadCreate (&rwlock_os_threadId[4], "thr4", &rwlock_os_threadAttr, concurrent_trywrite_thread, (void *)&par[4]);
-    os_threadCreate (&rwlock_os_threadId[5], "thr5", &rwlock_os_threadAttr, concurrent_trywrite_thread, (void *)&par[5]);
-    os_threadCreate (&rwlock_os_threadId[6], "thr6", &rwlock_os_threadAttr, concurrent_tryread_thread, (void *)&par[6]);
-    os_threadCreate (&rwlock_os_threadId[7], "thr7", &rwlock_os_threadAttr, concurrent_tryread_thread, (void *)&par[7]);
+    os_threadCreate (&rwlock_os_threadId[0], "thr0", &rwlock_os_threadAttr, &concurrent_write_thread, (void *)&par[0]);
+    os_threadCreate (&rwlock_os_threadId[1], "thr1", &rwlock_os_threadAttr, &concurrent_write_thread, (void *)&par[1]);
+    os_threadCreate (&rwlock_os_threadId[2], "thr2", &rwlock_os_threadAttr, &concurrent_read_thread, (void *)&par[2]);
+    os_threadCreate (&rwlock_os_threadId[3], "thr3", &rwlock_os_threadAttr, &concurrent_read_thread, (void *)&par[3]);
+    os_threadCreate (&rwlock_os_threadId[4], "thr4", &rwlock_os_threadAttr, &concurrent_trywrite_thread, (void *)&par[4]);
+    os_threadCreate (&rwlock_os_threadId[5], "thr5", &rwlock_os_threadAttr, &concurrent_trywrite_thread, (void *)&par[5]);
+    os_threadCreate (&rwlock_os_threadId[6], "thr6", &rwlock_os_threadAttr, &concurrent_tryread_thread, (void *)&par[6]);
+    os_threadCreate (&rwlock_os_threadId[7], "thr7", &rwlock_os_threadAttr, &concurrent_tryread_thread, (void *)&par[7]);
     os_nanoSleep (rdelay);
     sd->stop = 1;
-    os_threadWaitExit (rwlock_os_threadId[0], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[1], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[2], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[3], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[4], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[5], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[6], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[7], &thr_result);
+    os_threadWaitExit (rwlock_os_threadId[0], NULL);
+    os_threadWaitExit (rwlock_os_threadId[1], NULL);
+    os_threadWaitExit (rwlock_os_threadId[2], NULL);
+    os_threadWaitExit (rwlock_os_threadId[3], NULL);
+    os_threadWaitExit (rwlock_os_threadId[4], NULL);
+    os_threadWaitExit (rwlock_os_threadId[5], NULL);
+    os_threadWaitExit (rwlock_os_threadId[6], NULL);
+    os_threadWaitExit (rwlock_os_threadId[7], NULL);
 
   #if ENABLE_TRACING
     printf ("All threads stopped\n");
@@ -404,24 +403,24 @@ static void tc_os_rwlockRead (void)
         par[i].index = i;
     }
     os_threadAttrInit (&rwlock_os_threadAttr);
-    os_threadCreate (&rwlock_os_threadId[0], "thr0", &rwlock_os_threadAttr, concurrent_write_thread, (void *)&par[0]);
-    os_threadCreate (&rwlock_os_threadId[1], "thr1", &rwlock_os_threadAttr, concurrent_write_thread, (void *)&par[1]);
-    os_threadCreate (&rwlock_os_threadId[2], "thr2", &rwlock_os_threadAttr, concurrent_read_thread, (void *)&par[2]);
-    os_threadCreate (&rwlock_os_threadId[3], "thr3", &rwlock_os_threadAttr, concurrent_read_thread, (void *)&par[3]);
-    os_threadCreate (&rwlock_os_threadId[4], "thr4", &rwlock_os_threadAttr, concurrent_trywrite_thread, (void *)&par[4]);
-    os_threadCreate (&rwlock_os_threadId[5], "thr5", &rwlock_os_threadAttr, concurrent_trywrite_thread, (void *)&par[5]);
-    os_threadCreate (&rwlock_os_threadId[6], "thr6", &rwlock_os_threadAttr, concurrent_tryread_thread, (void *)&par[6]);
-    os_threadCreate (&rwlock_os_threadId[7], "thr7", &rwlock_os_threadAttr, concurrent_tryread_thread, (void *)&par[7]);
+    os_threadCreate (&rwlock_os_threadId[0], "thr0", &rwlock_os_threadAttr, &concurrent_write_thread, (void *)&par[0]);
+    os_threadCreate (&rwlock_os_threadId[1], "thr1", &rwlock_os_threadAttr, &concurrent_write_thread, (void *)&par[1]);
+    os_threadCreate (&rwlock_os_threadId[2], "thr2", &rwlock_os_threadAttr, &concurrent_read_thread, (void *)&par[2]);
+    os_threadCreate (&rwlock_os_threadId[3], "thr3", &rwlock_os_threadAttr, &concurrent_read_thread, (void *)&par[3]);
+    os_threadCreate (&rwlock_os_threadId[4], "thr4", &rwlock_os_threadAttr, &concurrent_trywrite_thread, (void *)&par[4]);
+    os_threadCreate (&rwlock_os_threadId[5], "thr5", &rwlock_os_threadAttr, &concurrent_trywrite_thread, (void *)&par[5]);
+    os_threadCreate (&rwlock_os_threadId[6], "thr6", &rwlock_os_threadAttr, &concurrent_tryread_thread, (void *)&par[6]);
+    os_threadCreate (&rwlock_os_threadId[7], "thr7", &rwlock_os_threadAttr, &concurrent_tryread_thread, (void *)&par[7]);
     os_nanoSleep (rdelay);
     sd->stop = 1;
-    os_threadWaitExit (rwlock_os_threadId[0], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[1], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[2], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[3], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[4], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[5], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[6], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[7], &thr_result);
+    os_threadWaitExit (rwlock_os_threadId[0], NULL);
+    os_threadWaitExit (rwlock_os_threadId[1], NULL);
+    os_threadWaitExit (rwlock_os_threadId[2], NULL);
+    os_threadWaitExit (rwlock_os_threadId[3], NULL);
+    os_threadWaitExit (rwlock_os_threadId[4], NULL);
+    os_threadWaitExit (rwlock_os_threadId[5], NULL);
+    os_threadWaitExit (rwlock_os_threadId[6], NULL);
+    os_threadWaitExit (rwlock_os_threadId[7], NULL);
 
   #if ENABLE_TRACING
     printf ("All threads stopped\n");
