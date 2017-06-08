@@ -295,7 +295,7 @@ void log_stacktrace (const char *name, os_threadId tid)
     while (!os_atomic_cas32 (&log_stacktrace_flag, 0, 1))
       os_nanoSleep (d);
     sigaction (SIGXCPU, &act, &oact);
-    pthread_kill (tid, SIGXCPU);
+    pthread_kill (tid.v, SIGXCPU);
     while (!os_atomic_cas32 (&log_stacktrace_flag, 2, 3))
       os_nanoSleep (d);
     sigaction (SIGXCPU, &oact, NULL);

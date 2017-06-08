@@ -301,12 +301,6 @@ extern "C" {
     os_threadMemGet(
             int32_t index);
 
-    OS_API os_result
-    os_threadProtect(void);
-
-    OS_API os_result
-    os_threadUnprotect(void);
-
 #undef OS_API
 
 #if defined (__cplusplus)

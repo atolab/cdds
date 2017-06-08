@@ -25,10 +25,6 @@ typedef struct {
     os_threadRoutine startRoutine;
 } os_threadContext;
 
-typedef struct {
-    unsigned protectCount;
-} os_threadProtectInfo;
-
 static DWORD tlsIndex;
 static os_threadHook os_threadCBs;
 
@@ -447,16 +443,16 @@ os_threadWaitExit(
 int
 os_threadFigureIdentity(
     char *threadIdentity,
-	uint32_t threadIdentitySize)
+    uint32_t threadIdentitySize)
 {
    int size;
    char* threadName;
 
    threadName = (char *)os_threadMemGet(OS_THREAD_NAME);
    if (threadName != NULL) {
-       size = snprintf (threadIdentity, threadIdentitySize, "%s %u", threadName, GetCurrentThreadId());
+       size = snprintf (threadIdentity, threadIdentitySize, "%s 0x%"PRIxMAX, threadName, GetCurrentThreadId());
    } else {
-       size = snprintf (threadIdentity, threadIdentitySize, "%u", GetCurrentThreadId());
+       size = snprintf (threadIdentity, threadIdentitySize, "0x%"PRIxMAX, GetCurrentThreadId());
    }
 
    return size;

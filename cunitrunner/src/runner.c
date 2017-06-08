@@ -62,6 +62,7 @@ CU_ErrorCode runner_init (int argc, char* argv[])
                 }
                 default:
                 {
+                    usage(argv[0]);
                     CU_set_error(256); /* Will print as "Undefined Errpr" */
                     goto err;
                 }
