@@ -13,7 +13,7 @@ include(AnalyzeBuild)
 # Include Coverage before CTest so that COVERAGE_COMMAND can be modified
 # in the Coverage module should that ever be necessary.
 include(Coverage)
-set(MEMORYCHECK_COMMAND_OPTIONS "--track-origins=yes --leak-check=full --trace-children=yes --child-silent-after-fork=yes --xml=yes --xml-file=TestResultValgrind_%p.xml --tool=memcheck --show-reachable=yes --leak-resolution=high")
+set(MEMORYCHECK_COMMAND_OPTIONS "--track-origins=yes --leak-check=full --trace-children=yes --child-silent-after-fork=yes --xml=yes --xml-file=TestResultValgrind_%p.xml --tool=memcheck --show-reachable=yes --leak-resolution=high --suppressions=${CMAKE_CURRENT_SOURCE_DIR}/valgrind.supp")
 
 # By default building the testing tree is enabled by including CTest, but
 # since not everybody has CUnit and/or Criterion installed, and because it is
