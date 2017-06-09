@@ -54,8 +54,7 @@ ut_handleserver_init(void)
     os_osInit();
     /* TODO CHAM-138: Allow re-entry (something like os_osInit()). */
     assert(hs == NULL);
-    hs = os_malloc(sizeof(*hs));
-    memset(hs, 0, sizeof(*hs));
+    hs = os_malloc(sizeof(ut_handleserver));
     hs->last = 0;
     os_mutexInit(&hs->mutex);
     return UT_HANDLE_OK;
@@ -105,7 +104,7 @@ ut_handle_create(
     if (hs->last < MAX_NR_OF_HANDLES) {
         hdl  = hs->last;
         hdl |= kind;
-        hs->hdls[hs->last] = os_malloc(sizeof(hs->hdls[0]));
+        hs->hdls[hs->last] = os_malloc(sizeof(ut_handlelink));
         hs->hdls[hs->last]->cnt   = 0;
         hs->hdls[hs->last]->arg   = arg;
         hs->hdls[hs->last]->hdl   = hdl;

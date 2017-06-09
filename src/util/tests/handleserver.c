@@ -74,6 +74,41 @@ Test(util, handleserver_close)
     ut_handleserver_fini();
 }
 
+/*****************************************************************************************/
+Test(util, handleserver_link)
+{
+    const os_time zero  = { 0, 0 };
+    int32_t kind = 0x10000000;
+    ut_handle_retcode_t ret;
+    struct ut_handlelink *link;
+    ut_handle_t hdl;
+    int arg = 1;
+    void *argx;
+
+    ret = ut_handleserver_init();
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handleserver_init");
+
+    hdl = ut_handle_create(kind, (void*)&arg);
+    cr_assert(hdl > 0, "ut_handle_create");
+
+    link = ut_handle_get_link(hdl);
+    cr_assert_neq(link, NULL, "ut_handle_get_link");
+
+    ret = ut_handle_claim(hdl, link, kind, &argx);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_claim ret");
+    cr_assert_eq(argx, &arg, "ut_handle_claim arg");
+
+    ut_handle_release(hdl, link);
+
+    ret = ut_handle_delete(hdl, link, zero);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_delete");
+
+    link = ut_handle_get_link(hdl);
+    cr_assert_eq(link, NULL, "ut_handle_get_link");
+
+    ut_handleserver_fini();
+}
+
 
 /*****************************************************************************************/
 Test(util, handleserver_types)
