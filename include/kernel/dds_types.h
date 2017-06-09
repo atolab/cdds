@@ -181,7 +181,7 @@ dds_guardcond;
 
 /* The listener struct. */
 
-typedef struct c99_listener {
+typedef struct c_listener {
     dds_on_inconsistent_topic_fn on_inconsistent_topic;
     dds_on_liveliness_lost_fn on_liveliness_lost;
     dds_on_offered_deadline_missed_fn on_offered_deadline_missed;
@@ -196,7 +196,7 @@ typedef struct c99_listener {
     dds_on_publication_matched_fn on_publication_matched;
     dds_on_subscription_matched_fn on_subscription_matched;
     void *arg;
-} c99_listener_t;
+} c_listener_t;
 
 /* Entity flag values */
 
@@ -244,7 +244,7 @@ typedef struct dds_entity
   uint32_t m_cb_count;
   os_mutex m_mutex;
   os_cond m_cond;
-  c99_listener_t m_listener;
+  c_listener_t m_listener;
 }
 dds_entity;
 

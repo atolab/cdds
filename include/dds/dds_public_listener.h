@@ -53,8 +53,8 @@ typedef void (*dds_on_any_fn) (); /**< Empty parameter list on purpose; should b
 #define DDS_LUNSET (NULL)
 #endif
 
-struct c99_listener;
-typedef struct c99_listener dds_listener_t;
+struct c_listener;
+typedef struct c_listener dds_listener_t;
 
 #if 0
 /**
