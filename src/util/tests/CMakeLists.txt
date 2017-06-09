@@ -35,4 +35,5 @@ endfunction()
 # The tests
 #################################################################################
 add_dds_test(handleserver               Criterion      handleserver.c)
+add_dds_test(criterion_mem              Criterion      criterion_mem.c)
 
