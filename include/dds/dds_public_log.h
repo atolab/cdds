@@ -1,12 +1,12 @@
 /** @file
  *
- * @brief DDS C99 Logging API
+ * @brief DDS C Logging API
  *
  * @todo add copyright header?
  * @todo do we really need to expose this as an API?
  *
  * This header file defines the public API for logging in the
- * VortexDDS C99 language binding.
+ * VortexDDS C language binding.
  */
 #ifndef DDS_LOG_H
 #define DDS_LOG_H

@@ -608,17 +608,17 @@ error:
     return -1;
 }
 
-void *server(void *vclient)
+uint32_t server(void *vclient)
 {
     struct client *cl = vclient;
     while (!terminate && serve_one(cl) > 0)
         ;
-    return NULL;
+    return 0;
 }
 
 void reap_dead_client(struct client *cl)
 {
-    (void)join_thread(cl->server_tid, NULL);
+    (void)join_thread(cl->server_tid);
     close(cl->ib.fd);
     os_free(cl);
 }

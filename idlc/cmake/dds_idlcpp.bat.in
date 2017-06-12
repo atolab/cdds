@@ -6,5 +6,5 @@ if "%CLASSPATH%"=="" (
     set CLASSPATH=@IDLC_JAR@;%CLASSPATH%
 )
 
-java com.prismtech.lite.compilers.Idlcpp %*
+java com.prismtech.vortex.compilers.Idlcpp %*
 

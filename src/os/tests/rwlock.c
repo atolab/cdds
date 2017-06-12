@@ -46,146 +46,145 @@ typedef struct {
 os_threadAttr       rwlock_os_threadAttr;
 os_threadId         rwlock_os_threadId[RWLOCK_THREADS];
 static int          i;
-void                *thr_result;
 os_result           result;
 char                buffer[512];
 os_procId           rwlock_os_procId;
 int                 supported_resultBusy;
 int                 loop;
-static shared_data *sd;
+static shared_data sd;
 
-void *concurrent_write_thread (void *arg)
+uint32_t concurrent_write_thread (_In_ void *arg)
 {
     struct Par *par = (struct Par *)arg;
     os_threadId myid = os_threadIdSelf();
     int printed = 0;
 
-    while (!sd->stop) {
+    while (!sd.stop) {
         if (par->lock) {
-            os_rwlockWrite (&sd->global_rwlock);
+            os_rwlockWrite (&sd.global_rwlock);
         }
-        sd->global_data = myid;
+        sd.global_data = myid;
 
         FORCE_SCHEDULING();
 
         os_nanoSleep( rwlock_delay );
-        if (os_threadIdToInteger(sd->global_data) != os_threadIdToInteger(myid)) {
-            sd->write_corrupt_count++;
+        if (os_threadIdToInteger(sd.global_data) != os_threadIdToInteger(myid)) {
+            sd.write_corrupt_count++;
             if (!printed) {
                 /* printf ("Critical section corrupted during write [%d]\n", par->index); */
                 printed++;
             }
         }
-        sd->concurrent_write_access++;
+        sd.concurrent_write_access++;
         if (par->lock) {
-            os_rwlockUnlock (&sd->global_rwlock);
+            os_rwlockUnlock (&sd.global_rwlock);
         }
 
         FORCE_SCHEDULING();
 
         os_nanoSleep( rwlock_delay );
     }
-    return (void *)0;
+    return 0;
 }
 
-void *concurrent_read_thread (void *arg)
+uint32_t concurrent_read_thread (_In_ void *arg)
 {
     int j;
     os_threadId prevId;
     struct Par *par = (struct Par *)arg;
     int printed = 0;
 
-    while (!sd->stop) {
+    while (!sd.stop) {
         if (par->lock) {
-            os_rwlockRead (&sd->global_rwlock);
+            os_rwlockRead (&sd.global_rwlock);
         }
-        sd->read_thread[par->index] = os_threadIdSelf();
+        sd.read_thread[par->index] = os_threadIdSelf();
         par->read_access++;
-        prevId = sd->global_data;
+        prevId = sd.global_data;
 
         FORCE_SCHEDULING();
 
         for (j = 0; j < BUSYLOOP/2; j++) {
-            if (os_threadIdToInteger(sd->global_data) !=
+            if (os_threadIdToInteger(sd.global_data) !=
            os_threadIdToInteger(prevId)) {
-                sd->read_corrupt_count++;
+                sd.read_corrupt_count++;
                 if (!printed) {
                     /* printf ("Critical section corrupted during read [%d]\n", par->index); */
                     printed++;
                 }
-                prevId = sd->global_data;
+                prevId = sd.global_data;
             }
 
             FORCE_SCHEDULING();
         }
-        if (os_threadIdToInteger(sd->read_thread[0]) ||
-            os_threadIdToInteger(sd->read_thread[1]) ||
-            os_threadIdToInteger(sd->read_thread[2]) ||
-            os_threadIdToInteger(sd->read_thread[3]) ||
-            os_threadIdToInteger(sd->read_thread[4]) ||
-            os_threadIdToInteger(sd->read_thread[5]) ||
-            os_threadIdToInteger(sd->read_thread[6]) ||
-            os_threadIdToInteger(sd->read_thread[7]) ||
-            os_threadIdToInteger(sd->read_thread[8]) ||
-            os_threadIdToInteger(sd->read_thread[9]) ||
-            os_threadIdToInteger(sd->read_thread[10]) ||
-            os_threadIdToInteger(sd->read_thread[11])) {
+        if (os_threadIdToInteger(sd.read_thread[0]) ||
+            os_threadIdToInteger(sd.read_thread[1]) ||
+            os_threadIdToInteger(sd.read_thread[2]) ||
+            os_threadIdToInteger(sd.read_thread[3]) ||
+            os_threadIdToInteger(sd.read_thread[4]) ||
+            os_threadIdToInteger(sd.read_thread[5]) ||
+            os_threadIdToInteger(sd.read_thread[6]) ||
+            os_threadIdToInteger(sd.read_thread[7]) ||
+            os_threadIdToInteger(sd.read_thread[8]) ||
+            os_threadIdToInteger(sd.read_thread[9]) ||
+            os_threadIdToInteger(sd.read_thread[10]) ||
+            os_threadIdToInteger(sd.read_thread[11])) {
             par->concurrent_read_access++;
         }
-        sd->concurrent_read_access++;
+        sd.concurrent_read_access++;
         if (par->lock) {
-            os_rwlockUnlock (&sd->global_rwlock);
+            os_rwlockUnlock (&sd.global_rwlock);
         }
 
         FORCE_SCHEDULING();
 
         os_nanoSleep( rwlock_delay );
     }
-    return (void *)0;
+    return 0;
 }
 
-void *concurrent_trywrite_thread (void *arg)
+uint32_t concurrent_trywrite_thread (_In_ void *arg)
 {
     struct Par *par = (struct Par *)arg;
     os_result result;
     os_threadId myid = os_threadIdSelf();
     int printed = 0;
 
-    while (!sd->stop) {
+    while (!sd.stop) {
         if (par->lock) {
-            while ((result = os_rwlockTryWrite (&sd->global_rwlock)) != os_resultSuccess) {
+            while ((result = os_rwlockTryWrite (&sd.global_rwlock)) != os_resultSuccess) {
                 if (result == os_resultBusy) {
-                    sd->trywrite_busy_count++;
+                    sd.trywrite_busy_count++;
                 }
 
                 FORCE_SCHEDULING();
             }
         }
-        sd->global_data = os_threadIdSelf();
+        sd.global_data = os_threadIdSelf();
 
         FORCE_SCHEDULING();
 
         os_nanoSleep( rwlock_delay );
-        if (os_threadIdToInteger(sd->global_data) != os_threadIdToInteger(myid)) {
-            sd->trywrite_corrupt_count++;
+        if (os_threadIdToInteger(sd.global_data) != os_threadIdToInteger(myid)) {
+            sd.trywrite_corrupt_count++;
        if (!printed) {
           /* printf ("Critical section corrupted during trywrite [%d]\n", par->index); */
           printed++;
        }
         }
-        sd->concurrent_trywrite_access++;
+        sd.concurrent_trywrite_access++;
         if (par->lock) {
-            os_rwlockUnlock (&sd->global_rwlock);
+            os_rwlockUnlock (&sd.global_rwlock);
         }
 
         FORCE_SCHEDULING();
 
         os_nanoSleep( rwlock_delay );
     }
-    return (void *)0;
+    return 0;
 }
 
-void *concurrent_tryread_thread (void *arg)
+uint32_t concurrent_tryread_thread (_In_ void *arg)
 {
     int j;
     os_threadId prevId;
@@ -193,59 +192,59 @@ void *concurrent_tryread_thread (void *arg)
     os_result result;
     int printed = 0;
 
-    while (!sd->stop) {
+    while (!sd.stop) {
         if (par->lock) {
-            while ((result = os_rwlockTryRead (&sd->global_rwlock)) != os_resultSuccess) {
+            while ((result = os_rwlockTryRead (&sd.global_rwlock)) != os_resultSuccess) {
                 if (result == os_resultBusy) {
-                    sd->tryread_busy_count++;
+                    sd.tryread_busy_count++;
                 }
 
                 FORCE_SCHEDULING();
             }
         }
-        sd->read_thread[par->index] = os_threadIdSelf();
+        sd.read_thread[par->index] = os_threadIdSelf();
         par->read_access++;
-        prevId = sd->global_data;
+        prevId = sd.global_data;
 
         FORCE_SCHEDULING();
 
         for (j = 0; j < BUSYLOOP/2; j++) {
-            if (os_threadIdToInteger(sd->global_data) !=
+            if (os_threadIdToInteger(sd.global_data) !=
            os_threadIdToInteger(prevId)) {
-                sd->tryread_corrupt_count++;
+                sd.tryread_corrupt_count++;
                 if (!printed) {
                     /* printf ("Critical section corrupted during read [%d]\n", par->index); */
                     printed++;
                 }
-                prevId = sd->global_data;
+                prevId = sd.global_data;
             }
 
             FORCE_SCHEDULING();
         }
-        if (os_threadIdToInteger(sd->read_thread[0]) ||
-            os_threadIdToInteger(sd->read_thread[1]) ||
-            os_threadIdToInteger(sd->read_thread[2]) ||
-            os_threadIdToInteger(sd->read_thread[3]) ||
-            os_threadIdToInteger(sd->read_thread[4]) ||
-            os_threadIdToInteger(sd->read_thread[5]) ||
-            os_threadIdToInteger(sd->read_thread[6]) ||
-            os_threadIdToInteger(sd->read_thread[7]) ||
-            os_threadIdToInteger(sd->read_thread[8]) ||
-            os_threadIdToInteger(sd->read_thread[9]) ||
-            os_threadIdToInteger(sd->read_thread[10]) ||
-            os_threadIdToInteger(sd->read_thread[11])) {
+        if (os_threadIdToInteger(sd.read_thread[0]) ||
+            os_threadIdToInteger(sd.read_thread[1]) ||
+            os_threadIdToInteger(sd.read_thread[2]) ||
+            os_threadIdToInteger(sd.read_thread[3]) ||
+            os_threadIdToInteger(sd.read_thread[4]) ||
+            os_threadIdToInteger(sd.read_thread[5]) ||
+            os_threadIdToInteger(sd.read_thread[6]) ||
+            os_threadIdToInteger(sd.read_thread[7]) ||
+            os_threadIdToInteger(sd.read_thread[8]) ||
+            os_threadIdToInteger(sd.read_thread[9]) ||
+            os_threadIdToInteger(sd.read_thread[10]) ||
+            os_threadIdToInteger(sd.read_thread[11])) {
             par->concurrent_read_access++;
         }
-        sd->concurrent_tryread_access++;
+        sd.concurrent_tryread_access++;
         if (par->lock) {
-            os_rwlockUnlock (&sd->global_rwlock);
+            os_rwlockUnlock (&sd.global_rwlock);
         }
 
         FORCE_SCHEDULING();
 
         os_nanoSleep( rwlock_delay );
     }
-    return (void *)0;
+    return 0;
 }
 
 static int  suite_abstraction_rwlock_init (void)
@@ -271,7 +270,6 @@ static int suite_abstraction_rwlock_clean (void)
   #if ENABLE_TRACING
     printf("Run suite_abstraction_rwlock_clean\n");
   #endif
-    os_free (sd);
     os_osExit();
     return result;
 }
@@ -282,8 +280,7 @@ static void tc_os_rwlockInit (void)
     /* Initilalize reader/writer lock with PRIVATE scope and Success result */
     printf ("Starting tc_os_rwlockInit_001\n");
   #endif
-    sd = os_malloc (sizeof (*sd));
-    os_rwlockInit (&sd->global_rwlock);
+    os_rwlockInit (&sd.global_rwlock);
 
   #if ENABLE_TRACING
     /* Initilalize reader/writer lock with Fail result */
@@ -308,17 +305,17 @@ static void tc_os_rwlockRead (void)
   #if ENABLE_TRACING
     printf ("Testing for %d.%9.9d seconds without lock\n", rdelay.tv_sec, rdelay.tv_nsec);
   #endif
-    sd->read_corrupt_count = 0;
-    sd->write_corrupt_count = 0;
-    sd->concurrent_read_access = 0;
-    sd->concurrent_write_access = 0;
-    sd->tryread_corrupt_count = 0;
-    sd->trywrite_corrupt_count = 0;
-    sd->concurrent_tryread_access = 0;
-    sd->concurrent_trywrite_access = 0;
-    sd->tryread_busy_count = 0;
-    sd->trywrite_busy_count = 0;
-    sd->stop = 0;
+    sd.read_corrupt_count = 0;
+    sd.write_corrupt_count = 0;
+    sd.concurrent_read_access = 0;
+    sd.concurrent_write_access = 0;
+    sd.tryread_corrupt_count = 0;
+    sd.trywrite_corrupt_count = 0;
+    sd.concurrent_tryread_access = 0;
+    sd.concurrent_trywrite_access = 0;
+    sd.tryread_busy_count = 0;
+    sd.trywrite_busy_count = 0;
+    sd.stop = 0;
     for (i = 0; i < RWLOCK_THREADS;  i++) {
         par[i].concurrent_read_access = 0;
         par[i].read_access = 0;
@@ -326,24 +323,24 @@ static void tc_os_rwlockRead (void)
         par[i].index = i;
     }
     os_threadAttrInit (&rwlock_os_threadAttr);
-    os_threadCreate (&rwlock_os_threadId[0], "thr0", &rwlock_os_threadAttr, concurrent_write_thread, (void *)&par[0]);
-    os_threadCreate (&rwlock_os_threadId[1], "thr1", &rwlock_os_threadAttr, concurrent_write_thread, (void *)&par[1]);
-    os_threadCreate (&rwlock_os_threadId[2], "thr2", &rwlock_os_threadAttr, concurrent_read_thread, (void *)&par[2]);
-    os_threadCreate (&rwlock_os_threadId[3], "thr3", &rwlock_os_threadAttr, concurrent_read_thread, (void *)&par[3]);
-    os_threadCreate (&rwlock_os_threadId[4], "thr4", &rwlock_os_threadAttr, concurrent_trywrite_thread, (void *)&par[4]);
-    os_threadCreate (&rwlock_os_threadId[5], "thr5", &rwlock_os_threadAttr, concurrent_trywrite_thread, (void *)&par[5]);
-    os_threadCreate (&rwlock_os_threadId[6], "thr6", &rwlock_os_threadAttr, concurrent_tryread_thread, (void *)&par[6]);
-    os_threadCreate (&rwlock_os_threadId[7], "thr7", &rwlock_os_threadAttr, concurrent_tryread_thread, (void *)&par[7]);
+    os_threadCreate (&rwlock_os_threadId[0], "thr0", &rwlock_os_threadAttr, &concurrent_write_thread, (void *)&par[0]);
+    os_threadCreate (&rwlock_os_threadId[1], "thr1", &rwlock_os_threadAttr, &concurrent_write_thread, (void *)&par[1]);
+    os_threadCreate (&rwlock_os_threadId[2], "thr2", &rwlock_os_threadAttr, &concurrent_read_thread, (void *)&par[2]);
+    os_threadCreate (&rwlock_os_threadId[3], "thr3", &rwlock_os_threadAttr, &concurrent_read_thread, (void *)&par[3]);
+    os_threadCreate (&rwlock_os_threadId[4], "thr4", &rwlock_os_threadAttr, &concurrent_trywrite_thread, (void *)&par[4]);
+    os_threadCreate (&rwlock_os_threadId[5], "thr5", &rwlock_os_threadAttr, &concurrent_trywrite_thread, (void *)&par[5]);
+    os_threadCreate (&rwlock_os_threadId[6], "thr6", &rwlock_os_threadAttr, &concurrent_tryread_thread, (void *)&par[6]);
+    os_threadCreate (&rwlock_os_threadId[7], "thr7", &rwlock_os_threadAttr, &concurrent_tryread_thread, (void *)&par[7]);
     os_nanoSleep (rdelay);
-    sd->stop = 1;
-    os_threadWaitExit (rwlock_os_threadId[0], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[1], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[2], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[3], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[4], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[5], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[6], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[7], &thr_result);
+    sd.stop = 1;
+    os_threadWaitExit (rwlock_os_threadId[0], NULL);
+    os_threadWaitExit (rwlock_os_threadId[1], NULL);
+    os_threadWaitExit (rwlock_os_threadId[2], NULL);
+    os_threadWaitExit (rwlock_os_threadId[3], NULL);
+    os_threadWaitExit (rwlock_os_threadId[4], NULL);
+    os_threadWaitExit (rwlock_os_threadId[5], NULL);
+    os_threadWaitExit (rwlock_os_threadId[6], NULL);
+    os_threadWaitExit (rwlock_os_threadId[7], NULL);
 
   #if ENABLE_TRACING
     printf ("All threads stopped\n");
@@ -355,28 +352,28 @@ static void tc_os_rwlockRead (void)
         printf ("total try read access %d, concurrent try read access %d for thread %d\n",
             par[i].read_access, par[i].concurrent_read_access, i);
     }
-    printf ("read_corrupt_count = %d\n", sd->read_corrupt_count);
-    printf ("write_corrupt_count = %d\n", sd->write_corrupt_count);
-    printf ("tryread_corrupt_count = %d\n", sd->tryread_corrupt_count);
-    printf ("trywrite_corrupt_count = %d\n", sd->trywrite_corrupt_count);
-    printf ("concurrent_read_access = %d\n", sd->concurrent_read_access);
-    printf ("concurrent_write_access = %d\n", sd->concurrent_write_access);
-    printf ("concurrent_tryread_access = %d\n", sd->concurrent_tryread_access);
-    printf ("concurrent_trywrite_access = %d\n", sd->concurrent_trywrite_access);
+    printf ("read_corrupt_count = %d\n", sd.read_corrupt_count);
+    printf ("write_corrupt_count = %d\n", sd.write_corrupt_count);
+    printf ("tryread_corrupt_count = %d\n", sd.tryread_corrupt_count);
+    printf ("trywrite_corrupt_count = %d\n", sd.trywrite_corrupt_count);
+    printf ("concurrent_read_access = %d\n", sd.concurrent_read_access);
+    printf ("concurrent_write_access = %d\n", sd.concurrent_write_access);
+    printf ("concurrent_tryread_access = %d\n", sd.concurrent_tryread_access);
+    printf ("concurrent_trywrite_access = %d\n", sd.concurrent_trywrite_access);
 
     sprintf (buffer, "Corrupt counter = %d, Loop counter is %d",
-        sd->read_corrupt_count + sd->write_corrupt_count + sd->tryread_corrupt_count + sd->trywrite_corrupt_count,
-        sd->concurrent_read_access + sd->concurrent_write_access + sd->concurrent_tryread_access + sd->concurrent_trywrite_access);
+        sd.read_corrupt_count + sd.write_corrupt_count + sd.tryread_corrupt_count + sd.trywrite_corrupt_count,
+        sd.concurrent_read_access + sd.concurrent_write_access + sd.concurrent_tryread_access + sd.concurrent_trywrite_access);
   #endif
 
-    CU_ASSERT((sd->read_corrupt_count > 0 ||
-               sd->write_corrupt_count > 0 ||
-               sd->tryread_corrupt_count > 0 ||
-               sd->trywrite_corrupt_count > 0) &&
-              sd->concurrent_read_access > 0 &&
-              sd->concurrent_write_access > 0 &&
-              sd->concurrent_tryread_access > 0 &&
-              sd->concurrent_trywrite_access > 0);
+    CU_ASSERT((sd.read_corrupt_count > 0 ||
+               sd.write_corrupt_count > 0 ||
+               sd.tryread_corrupt_count > 0 ||
+               sd.trywrite_corrupt_count > 0) &&
+              sd.concurrent_read_access > 0 &&
+              sd.concurrent_write_access > 0 &&
+              sd.concurrent_tryread_access > 0 &&
+              sd.concurrent_trywrite_access > 0);
 
   #if ENABLE_TRACING
     /* Test critical section READ access with locking and PRIVATE scope */
@@ -386,17 +383,17 @@ static void tc_os_rwlockRead (void)
   #if ENABLE_TRACING
     printf ("Testing for %d.%9.9d seconds with lock\n", rdelay.tv_sec, rdelay.tv_nsec);
   #endif
-    sd->read_corrupt_count = 0;
-    sd->write_corrupt_count = 0;
-    sd->concurrent_read_access = 0;
-    sd->concurrent_write_access = 0;
-    sd->tryread_corrupt_count = 0;
-    sd->trywrite_corrupt_count = 0;
-    sd->concurrent_tryread_access = 0;
-    sd->concurrent_trywrite_access = 0;
-    sd->tryread_busy_count = 0;
-    sd->trywrite_busy_count = 0;
-    sd->stop = 0;
+    sd.read_corrupt_count = 0;
+    sd.write_corrupt_count = 0;
+    sd.concurrent_read_access = 0;
+    sd.concurrent_write_access = 0;
+    sd.tryread_corrupt_count = 0;
+    sd.trywrite_corrupt_count = 0;
+    sd.concurrent_tryread_access = 0;
+    sd.concurrent_trywrite_access = 0;
+    sd.tryread_busy_count = 0;
+    sd.trywrite_busy_count = 0;
+    sd.stop = 0;
     for (i = 0; i < RWLOCK_THREADS;  i++) {
         par[i].concurrent_read_access = 0;
         par[i].read_access = 0;
@@ -404,24 +401,24 @@ static void tc_os_rwlockRead (void)
         par[i].index = i;
     }
     os_threadAttrInit (&rwlock_os_threadAttr);
-    os_threadCreate (&rwlock_os_threadId[0], "thr0", &rwlock_os_threadAttr, concurrent_write_thread, (void *)&par[0]);
-    os_threadCreate (&rwlock_os_threadId[1], "thr1", &rwlock_os_threadAttr, concurrent_write_thread, (void *)&par[1]);
-    os_threadCreate (&rwlock_os_threadId[2], "thr2", &rwlock_os_threadAttr, concurrent_read_thread, (void *)&par[2]);
-    os_threadCreate (&rwlock_os_threadId[3], "thr3", &rwlock_os_threadAttr, concurrent_read_thread, (void *)&par[3]);
-    os_threadCreate (&rwlock_os_threadId[4], "thr4", &rwlock_os_threadAttr, concurrent_trywrite_thread, (void *)&par[4]);
-    os_threadCreate (&rwlock_os_threadId[5], "thr5", &rwlock_os_threadAttr, concurrent_trywrite_thread, (void *)&par[5]);
-    os_threadCreate (&rwlock_os_threadId[6], "thr6", &rwlock_os_threadAttr, concurrent_tryread_thread, (void *)&par[6]);
-    os_threadCreate (&rwlock_os_threadId[7], "thr7", &rwlock_os_threadAttr, concurrent_tryread_thread, (void *)&par[7]);
+    os_threadCreate (&rwlock_os_threadId[0], "thr0", &rwlock_os_threadAttr, &concurrent_write_thread, (void *)&par[0]);
+    os_threadCreate (&rwlock_os_threadId[1], "thr1", &rwlock_os_threadAttr, &concurrent_write_thread, (void *)&par[1]);
+    os_threadCreate (&rwlock_os_threadId[2], "thr2", &rwlock_os_threadAttr, &concurrent_read_thread, (void *)&par[2]);
+    os_threadCreate (&rwlock_os_threadId[3], "thr3", &rwlock_os_threadAttr, &concurrent_read_thread, (void *)&par[3]);
+    os_threadCreate (&rwlock_os_threadId[4], "thr4", &rwlock_os_threadAttr, &concurrent_trywrite_thread, (void *)&par[4]);
+    os_threadCreate (&rwlock_os_threadId[5], "thr5", &rwlock_os_threadAttr, &concurrent_trywrite_thread, (void *)&par[5]);
+    os_threadCreate (&rwlock_os_threadId[6], "thr6", &rwlock_os_threadAttr, &concurrent_tryread_thread, (void *)&par[6]);
+    os_threadCreate (&rwlock_os_threadId[7], "thr7", &rwlock_os_threadAttr, &concurrent_tryread_thread, (void *)&par[7]);
     os_nanoSleep (rdelay);
-    sd->stop = 1;
-    os_threadWaitExit (rwlock_os_threadId[0], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[1], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[2], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[3], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[4], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[5], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[6], &thr_result);
-    os_threadWaitExit (rwlock_os_threadId[7], &thr_result);
+    sd.stop = 1;
+    os_threadWaitExit (rwlock_os_threadId[0], NULL);
+    os_threadWaitExit (rwlock_os_threadId[1], NULL);
+    os_threadWaitExit (rwlock_os_threadId[2], NULL);
+    os_threadWaitExit (rwlock_os_threadId[3], NULL);
+    os_threadWaitExit (rwlock_os_threadId[4], NULL);
+    os_threadWaitExit (rwlock_os_threadId[5], NULL);
+    os_threadWaitExit (rwlock_os_threadId[6], NULL);
+    os_threadWaitExit (rwlock_os_threadId[7], NULL);
 
   #if ENABLE_TRACING
     printf ("All threads stopped\n");
@@ -434,16 +431,16 @@ static void tc_os_rwlockRead (void)
             par[i].read_access, par[i].concurrent_read_access, i);
     }
 
-    sprintf (buffer, "Corrupt read counter = %d, Read loop counter is %d", sd->read_corrupt_count, sd->concurrent_read_access);
+    sprintf (buffer, "Corrupt read counter = %d, Read loop counter is %d", sd.read_corrupt_count, sd.concurrent_read_access);
   #endif
-    CU_ASSERT (sd->read_corrupt_count == 0 && sd->concurrent_read_access > 0);
+    CU_ASSERT (sd.read_corrupt_count == 0 && sd.concurrent_read_access > 0);
 
   #if ENABLE_TRACING
     /* Test read on rwlock with PRIVATE scope and Success result & not locked */
     printf ("Starting tc_os_rwlockRead_003\n");
   #endif
-    os_rwlockRead (&sd->global_rwlock); // Cannot be checked
-    os_rwlockUnlock (&sd->global_rwlock);
+    os_rwlockRead (&sd.global_rwlock); // Cannot be checked
+    os_rwlockUnlock (&sd.global_rwlock);
 
   #if ENABLE_TRACING
     /* Test read on rwlock with PRIVATE scope and Success result & locked by read */
@@ -468,16 +465,16 @@ static void tc_os_rwlockWrite (void)
     /* Test critical section WRITE access with locking and PRIVATE scope */
     printf ("Starting tc_os_rwlockWrite_001\n");
 
-    sprintf (buffer, "Corrupt write counter = %d, Write loop counter is %d", sd->write_corrupt_count, sd->concurrent_write_access);
+    sprintf (buffer, "Corrupt write counter = %d, Write loop counter is %d", sd.write_corrupt_count, sd.concurrent_write_access);
   #endif
-    CU_ASSERT (sd->write_corrupt_count == 0 && sd->concurrent_write_access > 0);
+    CU_ASSERT (sd.write_corrupt_count == 0 && sd.concurrent_write_access > 0);
 
   #if ENABLE_TRACING
     /* Test write on rwlock with PRIVATE scope and Success result */
     printf ("Starting tc_os_rwlockWrite_002\n");
   #endif
-    os_rwlockWrite (&sd->global_rwlock); //Cannot be checked
-    os_rwlockUnlock (&sd->global_rwlock);
+    os_rwlockWrite (&sd.global_rwlock); //Cannot be checked
+    os_rwlockUnlock (&sd.global_rwlock);
 
   #if ENABLE_TRACING
     /* Test write on rwlock with PRIVATE scope and Fail result */
@@ -496,17 +493,17 @@ static void tc_os_rwlockTryRead (void)
     /* Test critical section READ access with trylocking and PRIVATE scope */
     printf ("Starting tc_os_rwlockTryRead_001\n");
 
-    sprintf (buffer, "Corrupt tryread counter = %d, Tryread loop counter is %d, Busy counter = %d", sd->tryread_corrupt_count, sd->concurrent_tryread_access, sd->tryread_busy_count);
+    sprintf (buffer, "Corrupt tryread counter = %d, Tryread loop counter is %d, Busy counter = %d", sd.tryread_corrupt_count, sd.concurrent_tryread_access, sd.tryread_busy_count);
   #endif
-    CU_ASSERT (sd->tryread_corrupt_count == 0 && sd->concurrent_tryread_access > 0);
+    CU_ASSERT (sd.tryread_corrupt_count == 0 && sd.concurrent_tryread_access > 0);
 
   #if ENABLE_TRACING
     /* Test try read on rwlock with PRIVATE scope and Success result & not locked */
     printf ("Starting tc_os_rwlockTryRead_002\n");
   #endif
-    result = os_rwlockTryRead (&sd->global_rwlock);
+    result = os_rwlockTryRead (&sd.global_rwlock);
     CU_ASSERT (result == os_resultSuccess);
-    os_rwlockUnlock (&sd->global_rwlock);
+    os_rwlockUnlock (&sd.global_rwlock);
 
   #if ENABLE_TRACING
     /* Test try read on rwlock with PRIVATE scope and Success result & locked by read */
@@ -537,17 +534,17 @@ static void tc_os_rwlockTryWrite (void)
     /* Test critical section WRITE access with trylocking and PRIVATE scope */
     printf ("Starting tc_os_rwlockTryWrite_001\n");
 
-    sprintf (buffer, "Corrupt trywrite counter = %d, Trywrite loop counter is %d, Busy counter = %d", sd->trywrite_corrupt_count, sd->concurrent_trywrite_access, sd->trywrite_busy_count);
+    sprintf (buffer, "Corrupt trywrite counter = %d, Trywrite loop counter is %d, Busy counter = %d", sd.trywrite_corrupt_count, sd.concurrent_trywrite_access, sd.trywrite_busy_count);
   #endif
-    CU_ASSERT (sd->trywrite_corrupt_count == 0 && sd->concurrent_trywrite_access > 0);
+    CU_ASSERT (sd.trywrite_corrupt_count == 0 && sd.concurrent_trywrite_access > 0);
 
   #if ENABLE_TRACING
     /* Test try write on rwlock with PRIVATE scope and Success result */
     printf ("Starting tc_os_rwlockTryWrite_002\n");
   #endif
-    result = os_rwlockTryWrite (&sd->global_rwlock);
+    result = os_rwlockTryWrite (&sd.global_rwlock);
     CU_ASSERT (result == os_resultSuccess);
-    os_rwlockUnlock (&sd->global_rwlock);
+    os_rwlockUnlock (&sd.global_rwlock);
 
   #if ENABLE_TRACING
     /* Test try write on rwlock with PRIVATE scope and Busy result & locked by read */
@@ -578,31 +575,31 @@ static void tc_os_rwlockUnlock (void)
     /* Unlock rwlock with PRIVATE scope and Success result and claimed with read */
     printf ("Starting tc_os_rwlockUnlock_001\n");
   #endif
-    os_rwlockRead (&sd->global_rwlock);
-    os_rwlockUnlock (&sd->global_rwlock); //Cannot be checked
+    os_rwlockRead (&sd.global_rwlock);
+    os_rwlockUnlock (&sd.global_rwlock); //Cannot be checked
 
   #if ENABLE_TRACING
     /* Unlock rwlock with PRIVATE scope and Success result and claimed with try read */
     printf ("Starting tc_os_rwlockUnlock_002\n");
   #endif
-    result = os_rwlockTryRead (&sd->global_rwlock);
+    result = os_rwlockTryRead (&sd.global_rwlock);
     CU_ASSERT (result == os_resultSuccess);
-    os_rwlockUnlock (&sd->global_rwlock);
+    os_rwlockUnlock (&sd.global_rwlock);
 
   #if ENABLE_TRACING
     /* Unlock rwlock with PRIVATE scope and Success result and claimed with write */
     printf ("Starting tc_os_rwlockUnlock_003\n");
   #endif
-    os_rwlockWrite (&sd->global_rwlock);
-    os_rwlockUnlock (&sd->global_rwlock); //Cannot be checked
+    os_rwlockWrite (&sd.global_rwlock);
+    os_rwlockUnlock (&sd.global_rwlock); //Cannot be checked
 
   #if ENABLE_TRACING
     /* Unlock rwlock with PRIVATE scope and Success result and claimed with try write */
     printf ("Starting tc_os_rwlockUnlock_004\n");
   #endif
-    result = os_rwlockTryWrite (&sd->global_rwlock);
+    result = os_rwlockTryWrite (&sd.global_rwlock);
     CU_ASSERT (result == os_resultSuccess);
-    os_rwlockUnlock (&sd->global_rwlock);
+    os_rwlockUnlock (&sd.global_rwlock);
 
   #if ENABLE_TRACING
     /* Unlock rwlock with PRIVATE scope and Fail result */
@@ -621,7 +618,7 @@ static void tc_os_rwlockDestroy (void)
     /* Deinitialize rwlock with PRIVATE scope and Success result */
     printf ("Starting tc_os_rwlockDestroy_001\n");
   #endif
-    os_rwlockDestroy (&sd->global_rwlock); //Cannot be checked
+    os_rwlockDestroy (&sd.global_rwlock); //Cannot be checked
 
   #if ENABLE_TRACING
     /* Deinitialize rwlock with PRIVATE scope and Fail result */

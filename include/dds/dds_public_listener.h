@@ -1,11 +1,11 @@
 /** @file
  *
- * @brief DDS C99 Listener API
+ * @brief DDS C Listener API
  *
  * @todo add copyright header?
  *
  * This header file defines the public API of listeners in the
- * VortexDDS C99 language binding.
+ * VortexDDS C language binding.
  */
 #ifndef _DDS_PUBLIC_LISTENER_H_
 #define _DDS_PUBLIC_LISTENER_H_
@@ -53,8 +53,8 @@ typedef void (*dds_on_any_fn) (); /**< Empty parameter list on purpose; should b
 #define DDS_LUNSET (NULL)
 #endif
 
-struct c99_listener;
-typedef struct c99_listener dds_listener_t;
+struct c_listener;
+typedef struct c_listener dds_listener_t;
 
 #if 0
 /**

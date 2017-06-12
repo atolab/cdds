@@ -1,11 +1,11 @@
 /** @file
  *
- * @brief DDS C99 Communication Status API
+ * @brief DDS C Communication Status API
  *
  * @todo add copyright header?
  *
  * This header file defines the public API of the Communication Status in the
- * VortexDDS C99 language binding.
+ * VortexDDS C language binding.
  */
 #ifndef DDS_STATUS_H
 #define DDS_STATUS_H

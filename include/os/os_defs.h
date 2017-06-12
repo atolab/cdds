@@ -168,7 +168,7 @@ extern "C" {
 #define OS_ATOMIC_VOIDP_INIT(v) { (uintptr_t) (v) }
 
     /** \brief Definition of the service return values */
-    typedef enum os_result {
+    typedef _Return_type_success_(return == os_resultSuccess) enum os_result {
         /** The service is successfully completed */
         os_resultSuccess,
         /** A resource was not found */
@@ -208,7 +208,7 @@ extern "C" {
      GCC when not optimizing ignores "extern inline" functions. So we
      need to distinguish between optimizing & non-optimizing ... */
 
-    /* Defining PA_HAVE_INLINE is a supported way of overruling this file */
+    /* Defining OS_HAVE_INLINE is a supported way of overruling this file */
 #ifndef OS_HAVE_INLINE
 
 #if __STDC_VERSION__ >= 199901L

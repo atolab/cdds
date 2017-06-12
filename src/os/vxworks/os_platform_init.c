@@ -79,10 +79,6 @@ void os_osInit (void)
 }
 
 /** \brief OS layer deinitialization
- *
- * \b os_osExit calls:
- * - \b os_sharedMemoryExit
- * - \b os_threadExit
  */
 void os_osExit (void)
 {

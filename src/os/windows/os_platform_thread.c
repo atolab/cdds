@@ -22,12 +22,8 @@
 typedef struct {
     char *threadName;
     void *arguments;
-    void *(*startRoutine)(void *);
+    os_threadRoutine startRoutine;
 } os_threadContext;
-
-typedef struct {
-    unsigned protectCount;
-} os_threadProtectInfo;
 
 static DWORD tlsIndex;
 static os_threadHook os_threadCBs;
@@ -173,19 +169,6 @@ os_threadModuleSetHook(
     return result;
 }
 
-/** \brief Terminate the calling thread
- *
- * \b os_threadExit terminate the calling thread  by calling
- * \b Exit
- */
-void
-os_threadExit(
-    void *thread_result)
-{
-#pragma warning(suppress : 4311) /* Until CHAM-155 is being solved, type cast of void * to DWORD warning has been silenced */
-    ExitThread((DWORD)thread_result);
-}
-
 const DWORD MS_VC_EXCEPTION=0x406D1388;
 
 #pragma pack(push,8)
@@ -243,12 +226,12 @@ void os_threadSetThreadName( DWORD dwThreadID, char* threadName)
  * that will be visible if the process is running under the MS
  * debugger.
  */
-static void *
+static uint32_t
 os_startRoutineWrapper(
-    void *threadContext)
+    _In_ _Post_invalid_ void *threadContext)
 {
     os_threadContext *context = threadContext;
-    void *resultValue = NULL;
+    uint32_t resultValue = 0;
     os_threadId id;
 
     /* allocate an array to store thread private memory references */
@@ -267,13 +250,11 @@ os_startRoutineWrapper(
 
     os_threadCBs.stopCb(id, os_threadCBs.stopArg);
 
-#ifndef LITE
     os_report_stack_free();
     os_reportClearApiInfo();
-#endif
 
     /* Free the thread context resources, arguments is responsibility */
-    /* for the caller of os_procCreate                                */
+    /* for the caller of os_threadCreate                                */
     os_free (context->threadName);
     os_free (context);
 
@@ -290,11 +271,11 @@ os_startRoutineWrapper(
  */
 os_result
 os_threadCreate(
-    os_threadId *threadId,
-    const char *name,
-    const os_threadAttr *threadAttr,
-    void *(* start_routine)(void *),
-    void *arg)
+    _Out_ os_threadId *threadId,
+    _In_z_ const char *name,
+    _In_ const os_threadAttr *threadAttr,
+    _In_ os_threadRoutine start_routine,
+    _In_opt_ void *arg)
 {
     HANDLE threadHandle;
     DWORD threadIdent;
@@ -308,7 +289,7 @@ os_threadCreate(
     assert(start_routine != NULL);
 
     /* Take over the thread context: name, start routine and argument */
-    threadContext = os_malloc(sizeof (os_threadContext));
+    threadContext = os_malloc(sizeof (*threadContext));
     threadContext->threadName = os_strdup(name);
     threadContext->startRoutine = start_routine;
     threadContext->arguments = arg;
@@ -374,7 +355,7 @@ os_threadCreate(
  * Possible Results:
  * - returns the integer representation of the given thread ID
  */
-unsigned long
+uintmax_t
 os_threadIdToInteger(os_threadId id)
 {
    return id.threadId;
@@ -404,8 +385,8 @@ os_threadIdSelf(
  */
 os_result
 os_threadWaitExit(
-    os_threadId threadId,
-    void **thread_result)
+    _In_ os_threadId threadId,
+    _Out_opt_ uint32_t *thread_result)
 {
     DWORD tr;
     DWORD err;
@@ -432,15 +413,10 @@ os_threadWaitExit(
     }
 
     assert(tr != STILL_ACTIVE);
-    if (thread_result != NULL) {
-#pragma warning(suppress : 4312) /* Until CHAM-155 is being solved, type cast of DWORD to void * warning has been silenced */
-        *thread_result = (VOID *)tr;
+    if (thread_result) {
+        *thread_result = tr;
     }
     CloseHandle(threadId.handle);
-    /* ES: dds2086: Perform a second close of the handle, this in effect closes
-     * the handle opened by the thread creation in the os_threadCreate(...) call.
-     */
-/*     CloseHandle(threadHandle); */
 
     return os_resultSuccess;
 }
@@ -453,16 +429,16 @@ os_threadWaitExit(
 int
 os_threadFigureIdentity(
     char *threadIdentity,
-	uint32_t threadIdentitySize)
+    uint32_t threadIdentitySize)
 {
    int size;
    char* threadName;
 
    threadName = (char *)os_threadMemGet(OS_THREAD_NAME);
    if (threadName != NULL) {
-       size = snprintf (threadIdentity, threadIdentitySize, "%s %u", threadName, GetCurrentThreadId());
+       size = snprintf (threadIdentity, threadIdentitySize, "%s 0x%"PRIx32, threadName, GetCurrentThreadId());
    } else {
-       size = snprintf (threadIdentity, threadIdentitySize, "%u", GetCurrentThreadId());
+       size = snprintf (threadIdentity, threadIdentitySize, "0x%"PRIx32, GetCurrentThreadId());
    }
 
    return size;

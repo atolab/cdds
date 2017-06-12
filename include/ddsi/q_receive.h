@@ -21,8 +21,8 @@ struct nn_rsample_info;
 struct nn_rdata;
 struct ddsi_tran_listener;
 
-void *recv_thread (struct nn_rbufpool *rbpool);
-void *listen_thread (struct ddsi_tran_listener * listener);
+uint32_t recv_thread (struct nn_rbufpool *rbpool);
+uint32_t listen_thread (struct ddsi_tran_listener * listener);
 int user_dqueue_handler (const struct nn_rsample_info *sampleinfo, const struct nn_rdata *fragchain, const nn_guid_t *rdguid, void *qarg);
 
 #if defined (__cplusplus)

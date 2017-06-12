@@ -58,7 +58,7 @@ struct nn_servicelease {
   struct thread_state1 *ts;
 };
 
-static void *lease_renewal_thread (struct nn_servicelease *sl)
+static uint32_t lease_renewal_thread (struct nn_servicelease *sl)
 {
   /* Do not check more often than once every 100ms (no particular
      reason why it has to be 100ms), regardless of the lease settings.
@@ -166,7 +166,7 @@ static void *lease_renewal_thread (struct nn_servicelease *sl)
     thread_state_asleep (self);
   }
   os_mutexUnlock (&sl->lock);
-  return NULL;
+  return 0;
 }
 
 static void dummy_renew_cb (UNUSED_ARG (void *arg))
@@ -204,7 +204,7 @@ int nn_servicelease_start_renewing (struct nn_servicelease *sl)
   sl->keepgoing = 1;
   os_mutexUnlock (&sl->lock);
 
-  sl->ts = create_thread ("lease", (void * (*) (void *)) lease_renewal_thread, sl);
+  sl->ts = create_thread ("lease", (uint32_t (*) (void *)) lease_renewal_thread, sl);
   if (sl->ts == NULL)
     goto fail_thread;
   return 0;
@@ -228,7 +228,7 @@ void nn_servicelease_free (struct nn_servicelease *sl)
     sl->keepgoing = 0;
     os_condSignal (&sl->cond);
     os_mutexUnlock (&sl->lock);
-    join_thread (sl->ts, (void **) 0);
+    join_thread (sl->ts);
   }
   os_condDestroy (&sl->cond);
   os_mutexDestroy (&sl->lock);

@@ -1,12 +1,12 @@
 /** @file
  *
- * @brief DDS C99 Implementation API
+ * @brief DDS C Implementation API
  *
  * @todo add copyright header?
  * @todo do we really need to expose all of this as an API? maybe some, but all?
  *
  * This header file defines the public API for all kinds of things in the
- * VortexDDS C99 language binding.
+ * VortexDDS C language binding.
  */
 #ifndef DDS_IMPL_H
 #define DDS_IMPL_H

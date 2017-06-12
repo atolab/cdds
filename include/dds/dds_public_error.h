@@ -1,11 +1,11 @@
 /** @file
  *
- * @brief DDS C99 Error API
+ * @brief DDS C Error API
  *
  * @todo add copyright header?
  *
  * This header file defines the public API of error values and convenience
- * functions in the VortexDDS C99 language binding.
+ * functions in the VortexDDS C language binding.
  */
 #ifndef DDS_ERROR_H
 #define DDS_ERROR_H

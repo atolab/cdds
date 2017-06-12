@@ -3,7 +3,7 @@
 
 /** @file
  *
- *  @brief C99v2 DDS header
+ *  @brief C DDS header
  */
 
 #if defined (__cplusplus)
@@ -45,7 +45,7 @@ extern "C" {
 
 /**
  * Description : Returns the default DDS domain id. This can be configured
- * in xml or set as an evironment variable (LITE_DOMAIN).
+ * in xml or set as an evironment variable (VORTEX_DOMAIN).
  *
  * Arguments :
  *   -# None
@@ -585,7 +585,7 @@ DDS_EXPORT dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_opt_ const dd
  *
  * If domain is set (not DDS_DOMAIN_DEFAULT) then it must match if the domain has also
  * been configured or an error status will be returned. Currently only a single domain
- * can be configured by setting the environment variable LITE_DOMAIN, if this is not set
+ * can be configured by setting the environment variable VORTEX_DOMAIN, if this is not set
  * the the default domain is 0. Valid values for domain id are between 0 and 230.
  *
  *

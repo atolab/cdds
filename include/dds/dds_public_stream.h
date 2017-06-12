@@ -1,11 +1,11 @@
 /** @file
  *
- * @brief DDS C99 Stream API
+ * @brief DDS C Stream API
  *
  * @todo add copyright header?
  *
  * This header file defines the public API of the Streams in the
- * VortexDDS C99 language binding.
+ * VortexDDS C language binding.
  */
 #ifndef DDS_STREAM_H
 #define DDS_STREAM_H

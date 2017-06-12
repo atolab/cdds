@@ -1,2 +1,2 @@
 #!/bin/sh
-java -classpath "@IDLC_JAR@" com.prismtech.lite.compilers.Idlc "$@"
+java -classpath "@IDLC_JAR@" com.prismtech.vortex.compilers.Idlc "$@"

@@ -76,7 +76,7 @@ static int threads_vtime_check (unsigned *nivs, struct idx_vtime *ivs)
   return *nivs == 0;
 }
 
-static void *gcreq_queue_thread (struct gcreq_queue *q)
+static uint32_t gcreq_queue_thread (struct gcreq_queue *q)
 {
   struct thread_state1 *self = lookup_thread_state ();
   struct os_time to = { 0, 100 * T_MILLISECOND };
@@ -147,7 +147,7 @@ static void *gcreq_queue_thread (struct gcreq_queue *q)
     os_mutexLock (&q->lock);
   }
   os_mutexUnlock (&q->lock);
-  return NULL;
+  return 0;
 }
 
 struct gcreq_queue *gcreq_queue_new (void)
@@ -159,7 +159,7 @@ struct gcreq_queue *gcreq_queue_new (void)
   q->count = 0;
   os_mutexInit (&q->lock);
   os_condInit (&q->cond, &q->lock);
-  q->ts = create_thread ("gc", (void * (*) (void *)) gcreq_queue_thread, q);
+  q->ts = create_thread ("gc", (uint32_t (*) (void *)) gcreq_queue_thread, q);
   assert (q->ts);
   return q;
 }
@@ -186,7 +186,7 @@ void gcreq_queue_free (struct gcreq_queue *q)
      which point the thread terminates. */
   gcreq_enqueue (gcreq);
 
-  join_thread (q->ts, (void **) 0);
+  join_thread (q->ts);
   assert (q->first == NULL);
   os_condDestroy (&q->cond);
   os_mutexDestroy (&q->lock);

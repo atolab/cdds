@@ -1,11 +1,11 @@
 /** @file
  *
- * @brief DDS C99 Time support API
+ * @brief DDS C Time support API
  *
  * @todo add copyright header?
  *
  * This header file defines the public API of the in the
- * VortexDDS C99 language binding.
+ * VortexDDS C language binding.
  */
 #ifndef DDS_TIME_H
 #define DDS_TIME_H

@@ -88,20 +88,20 @@ extern struct thread_states thread_states;
 extern __thread struct thread_state1 *tsd_thread_state;
 #endif
 
-void thread_states_init (unsigned maxthreads);
+void thread_states_init (_In_ unsigned maxthreads);
 void thread_states_fini (void);
 
 void upgrade_main_thread (void);
 void downgrade_main_thread (void);
-const struct config_thread_properties_listelem *lookup_thread_properties (const char *name);
-struct thread_state1 *create_thread (const char *name, void * (*f) (void *arg), void *arg);
+const struct config_thread_properties_listelem *lookup_thread_properties (_In_z_ const char *name);
+_Success_(return != NULL) _Ret_maybenull_ struct thread_state1 *create_thread (_In_z_ const char *name, _In_ uint32_t (*f) (void *arg), _In_opt_ void *arg);
 struct thread_state1 *lookup_thread_state_real (void);
-int join_thread (struct thread_state1 *ts1, void **ret);
+_Success_(return == 0) int join_thread (_Inout_ struct thread_state1 *ts1);
 void log_stack_traces (void);
-struct thread_state1 *get_thread_state (os_threadId id);
-struct thread_state1 * init_thread_state (const char *tname);
-void reset_thread_state (struct thread_state1 *ts1);
-int thread_exists (const char *name);
+struct thread_state1 *get_thread_state (_In_ os_threadId id);
+struct thread_state1 * init_thread_state (_In_z_ const char *tname);
+void reset_thread_state (_Inout_opt_ struct thread_state1 *ts1);
+int thread_exists (_In_z_ const char *name);
 
 #if defined (__cplusplus)
 }
@@ -113,15 +113,15 @@ int thread_exists (const char *name);
 #if defined (__cplusplus)
 extern "C" {
 #endif
-int vtime_awake_p (vtime_t vtime);
-int vtime_asleep_p (vtime_t vtime);
-int vtime_gt (vtime_t vtime1, vtime_t vtime0);
+int vtime_awake_p (_In_ vtime_t vtime);
+int vtime_asleep_p (_In_ vtime_t vtime);
+int vtime_gt (_In_ vtime_t vtime1, _In_ vtime_t vtime0);
 
 struct thread_state1 *lookup_thread_state (void);
-void thread_state_asleep (struct thread_state1 *ts1);
-void thread_state_awake (struct thread_state1 *ts1);
-void thread_state_blocked (struct thread_state1 *ts1);
-void thread_state_unblocked (struct thread_state1 *ts1);
+void thread_state_asleep (_Inout_ struct thread_state1 *ts1);
+void thread_state_awake (_Inout_ struct thread_state1 *ts1);
+void thread_state_blocked (_Inout_ struct thread_state1 *ts1);
+void thread_state_unblocked (_Inout_ struct thread_state1 *ts1);
 #if defined (__cplusplus)
 }
 #endif

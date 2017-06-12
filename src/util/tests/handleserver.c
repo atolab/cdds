@@ -20,7 +20,7 @@ typedef struct claiming_arg {
     void        *arg;
 } claiming_arg;
 
-void*
+static uint32_t
 claiming_thread(void *a)
 {
     claiming_arg *ca = (claiming_arg*)a;
@@ -38,7 +38,7 @@ claiming_thread(void *a)
 
     ca->state = STOPPED;
 
-    return NULL;
+    return 0;
 }
 
 os_result
