@@ -338,7 +338,14 @@ void dds_qset_partition (dds_qos_t * __restrict qos, uint32_t n, const char ** p
 
   assert (qos);
   assert (ps);
-
+  if (qos->partition.strs != NULL){
+	  for (uint32_t i = 0; i < qos->partition.n; i++)
+	  {
+	    dds_free(qos->partition.strs[i]);
+	  }
+	  dds_free(qos->partition.strs);
+	  qos->partition.strs == NULL;
+  }
   qos->partition.n = n;
   qos->partition.strs = dds_alloc (sizeof (char*) * n);
 

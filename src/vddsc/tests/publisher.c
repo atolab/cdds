@@ -31,7 +31,6 @@ void publisher_creation(void)
   /* Use non-null participant */
   publisher = dds_create_publisher(participant, NULL, NULL);
   cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,NULL,NULL)");
-  dds_delete(publisher);
 
   /* Use entity that is not a participant */
   publisher1 = dds_create_publisher(publisher, NULL, NULL);
@@ -40,6 +39,8 @@ void publisher_creation(void)
   /* Create a non-null qos */
   qos = dds_qos_create();
   cr_assert_neq(qos, NULL, "dds_qos_create()");
+
+  dds_delete(publisher);
 
   /* Use qos without partition; in that case the default partition should be used */
   publisher = dds_create_publisher(participant, qos, NULL);
