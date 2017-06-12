@@ -5,45 +5,238 @@
 
 /* Add --verbose command line argument to get the cr_log_info traces (if there are any). */
 
-typedef enum claiming_state {
-    STARTING,
-    CLAIMING,
-    STOPPED
-} claiming_state;
-
-
-typedef struct claiming_arg {
-    claiming_state state;
-    ut_handleserver_t srv;
-    ut_handle_t  hdl;
-    int32_t      kind;
-    void        *arg;
-} claiming_arg;
-
-static uint32_t
-claiming_thread(void *a)
+/*****************************************************************************************/
+Test(util, handleserver_basic)
 {
-    claiming_arg *ca = (claiming_arg*)a;
-    ut_handleclaim_t claim;
-    ut_handle_t ret;
+    const os_time zero  = { 0, 0 };
+    int32_t kind = 0x10000000;
+    ut_handle_retcode_t ret;
+    ut_handle_t hdl;
+    int arg = 1;
     void *argx;
 
-    ca->state = CLAIMING;
+    ret = ut_handleserver_init();
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handleserver_init");
 
-    ret = ut_handle_claim(ca->srv, ca->hdl, ca->kind, &argx, &claim);
-    cr_assert_eq(ret, ca->hdl, "ut_handle_claim(thr) ret");
-    cr_assert_eq(argx, ca->arg, "ut_handle_claim(thr) arg");
-    cr_assert_neq(claim, NULL, "ut_handle_claim(thr) claim");
-    ut_handle_release(ca->srv, claim);
+    hdl = ut_handle_create(kind, (void*)&arg);
+    cr_assert(hdl > 0, "ut_handle_create");
 
-    ca->state = STOPPED;
+    ret = ut_handle_claim(hdl, NULL, kind, &argx);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_claim ret");
+    cr_assert_eq(argx, &arg, "ut_handle_claim arg");
+
+    ut_handle_release(hdl, NULL);
+
+    ret = ut_handle_delete(hdl, NULL, zero);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_delete");
+
+    ret = ut_handle_claim(hdl, NULL, kind, &argx);
+    cr_assert_eq(ret, UT_HANDLE_DELETED, "ut_handle_claim ret");
+
+    ut_handleserver_fini();
+}
+
+
+/*****************************************************************************************/
+Test(util, handleserver_close)
+{
+    const os_time zero  = { 0, 0 };
+    int32_t kind = 0x10000000;
+    ut_handle_retcode_t ret;
+    ut_handle_t hdl;
+    int arg = 1;
+    void *argx;
+    bool closed;
+
+    ret = ut_handleserver_init();
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handleserver_init");
+
+    hdl = ut_handle_create(kind, (void*)&arg);
+    cr_assert(hdl > 0, "ut_handle_create");
+
+    closed = ut_handle_is_closed(hdl, NULL);
+    cr_assert_eq(closed, false, "ut_handle_is_closed ret");
+
+    ut_handle_close(hdl, NULL);
+
+    closed = ut_handle_is_closed(hdl, NULL);
+    cr_assert_eq(closed, true, "ut_handle_is_closed ret");
+
+    ret = ut_handle_claim(hdl, NULL, kind, &argx);
+    cr_assert_eq(ret, UT_HANDLE_CLOSED, "ut_handle_claim ret");
+
+    ret = ut_handle_delete(hdl, NULL, zero);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_delete");
+
+    ret = ut_handle_claim(hdl, NULL, kind, &argx);
+    cr_assert_eq(ret, UT_HANDLE_DELETED, "ut_handle_claim ret");
+
+    ut_handleserver_fini();
+}
+
+/*****************************************************************************************/
+Test(util, handleserver_link)
+{
+    const os_time zero  = { 0, 0 };
+    int32_t kind = 0x10000000;
+    ut_handle_retcode_t ret;
+    struct ut_handlelink *link;
+    ut_handle_t hdl;
+    int arg = 1;
+    void *argx;
+
+    ret = ut_handleserver_init();
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handleserver_init");
+
+    hdl = ut_handle_create(kind, (void*)&arg);
+    cr_assert(hdl > 0, "ut_handle_create");
+
+    link = ut_handle_get_link(hdl);
+    cr_assert_neq(link, NULL, "ut_handle_get_link");
+
+    ret = ut_handle_claim(hdl, link, kind, &argx);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_claim ret");
+    cr_assert_eq(argx, &arg, "ut_handle_claim arg");
+
+    ut_handle_release(hdl, link);
+
+    ret = ut_handle_delete(hdl, link, zero);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_delete");
+
+    link = ut_handle_get_link(hdl);
+    cr_assert_eq(link, NULL, "ut_handle_get_link");
+
+    ut_handleserver_fini();
+}
+
+
+/*****************************************************************************************/
+Test(util, handleserver_types)
+{
+    const os_time zero  = { 0, 0 };
+    int32_t kind1 = 0x10000000;
+    int32_t kind2 = 0x20000000;
+    ut_handle_retcode_t ret;
+    ut_handle_t hdl1a;
+    ut_handle_t hdl1b;
+    ut_handle_t hdl2;
+    int arg1a = (int)'a';
+    int arg1b = (int)'b';
+    int arg2  = (int)'2';
+    void *argx;
+
+    ret = ut_handleserver_init();
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handleserver_init");
+
+    hdl1a = ut_handle_create(kind1, (void*)&arg1a);
+    cr_assert(hdl1a > 0, "ut_handle_create");
+
+    hdl1b = ut_handle_create(kind1, (void*)&arg1b);
+    cr_assert(hdl1b > 0, "ut_handle_create");
+
+    hdl2 = ut_handle_create(kind2, (void*)&arg2);
+    cr_assert(hdl2 > 0, "ut_handle_create");
+
+    ret = ut_handle_claim(hdl1a, NULL, kind1, &argx);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_claim ret");
+    cr_assert_eq(argx, &arg1a, "ut_handle_claim arg");
+
+    ret = ut_handle_claim(hdl1b, NULL, kind1, &argx);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_claim ret");
+    cr_assert_eq(argx, &arg1b, "ut_handle_claim arg");
+
+    ret = ut_handle_claim(hdl2, NULL, kind2, &argx);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_claim ret");
+    cr_assert_eq(argx, &arg2, "ut_handle_claim arg");
+
+    ret = ut_handle_claim(hdl1a, NULL, kind2, &argx);
+    cr_assert_eq(ret, UT_HANDLE_UNEQUAL_KIND, "ut_handle_claim ret");
+
+    ret = ut_handle_claim(hdl1a, NULL, kind2, &argx);
+    cr_assert_eq(ret, UT_HANDLE_UNEQUAL_KIND, "ut_handle_claim ret");
+
+    ret = ut_handle_claim(hdl2, NULL, kind1, &argx);
+    cr_assert_eq(ret, UT_HANDLE_UNEQUAL_KIND, "ut_handle_claim ret");
+
+    ut_handle_release(hdl1a, NULL);
+    ut_handle_release(hdl1b, NULL);
+    ut_handle_release(hdl2,  NULL);
+
+    ret = ut_handle_delete(hdl1a, NULL, zero);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_delete");
+    ret = ut_handle_delete(hdl1b, NULL, zero);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_delete");
+    ret = ut_handle_delete(hdl2,  NULL, zero);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_delete");
+
+    ut_handleserver_fini();
+}
+
+
+/*****************************************************************************************/
+Test(util, handleserver_timeout)
+{
+    const os_time zero  = { 0, 0 };
+    int32_t kind = 0x10000000;
+    ut_handle_retcode_t ret;
+    ut_handle_t hdl;
+    int arg = 1;
+    void *argx;
+
+    ret = ut_handleserver_init();
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handleserver_init");
+
+    hdl = ut_handle_create(kind, (void*)&arg);
+    cr_assert(hdl > 0, "ut_handle_create");
+
+    ret = ut_handle_claim(hdl, NULL, kind, &argx);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_claim ret");
+    cr_assert_eq(argx, &arg, "ut_handle_claim arg");
+
+    ret = ut_handle_delete(hdl, NULL, zero);
+    cr_assert_eq(ret, UT_HANDLE_TIMEOUT, "ut_handle_delete");
+
+    ut_handle_release(hdl, NULL);
+
+    ret = ut_handle_delete(hdl, NULL, zero);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_delete");
+
+    ut_handleserver_fini();
+}
+
+
+/*****************************************************************************************/
+typedef enum thread_state_t {
+    STARTING,
+    DELETING,
+    STOPPED
+} thread_state_t;
+
+typedef struct thread_arg_t {
+    thread_state_t state;
+    ut_handle_t    hdl;
+} thread_arg_t;
+
+static uint32_t
+deleting_thread(void *a)
+{
+    thread_arg_t *arg = (thread_arg_t*)a;
+    const os_time ten = { 10, 0 };
+    ut_handle_t ret;
+
+    arg->state = DELETING;
+    /* This should block until the main test released all claims. */
+    ret = ut_handle_delete(arg->hdl, NULL, ten);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_delete ret");
+    arg->state = STOPPED;
 
     return 0;
 }
 
 os_result
-claiming_thread_reached_state(claiming_state *actual, claiming_state expected, int32_t msec)
+thread_reached_state(thread_state_t *actual, thread_state_t expected, int32_t msec)
 {
+    /* Convenience function. */
     bool stopped = false;
     os_time msec10 = { 0, 10000000 };
     while ((msec > 0) && (*actual != expected)) {
@@ -53,122 +246,55 @@ claiming_thread_reached_state(claiming_state *actual, claiming_state expected, i
     return (*actual == expected) ? os_resultSuccess : os_resultTimeout;
 }
 
-Test(util, handleserver)
+Test(util, handleserver_wakeup)
 {
-    ut_handleserver_t srv;
-    ut_handle_t       hdl1;
-    ut_handle_t       hdl2;
-    ut_handle_t       hdl3;
-    ut_handle_t       ret;
-    int arg1 = 1;
-    int arg2 = 2;
+    const os_time zero  = {  0, 0 };
+    int32_t kind = 0x10000000;
+    ut_handle_retcode_t ret;
+    ut_handle_t hdl;
+    int arg = 1;
     void *argx;
-    int32_t kind1 = 0x10000000;
-    int32_t kind2 = 0x20000000;
-    int32_t kind3 = 0x40000000;
-    os_mutex mtx1;
-    os_mutex mtx3;
-    ut_handleclaim_t claim1;
-    ut_handleclaim_t claim2;
-    ut_handleclaim_t claim3;
+
     os_threadId   thread_id;
-    claiming_arg  thread_arg;
+    thread_arg_t  thread_arg;
     os_threadAttr thread_attr;
     os_result     osr;
 
-    os_osInit();
-    os_mutexInit(&mtx1);
-    os_mutexInit(&mtx3);
+    ret = ut_handleserver_init();
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handleserver_init");
 
-    os_threadAttrInit(&thread_attr);
+    hdl = ut_handle_create(kind, (void*)&arg);
+    cr_assert(hdl > 0, "ut_handle_create");
 
-    /* Create the server. */
-    srv = ut_handleserver_new();
-    cr_assert_neq(srv, NULL, "ut_handleserver_new");
+    ret = ut_handle_claim(hdl, NULL, kind, &argx);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_claim1 ret");
 
-    /* Create various handles with different arguments. */
-    hdl1 = ut_handle_create(srv, kind1, (void*)&arg1, &mtx1);
-    cr_assert(hdl1 > 0, "ut_handle_create(1)");
-    ret = ut_handle_is_valid(srv, hdl1);
-    cr_assert_eq(ret, hdl1, "ut_handle_is_valid(1)");
-    hdl2 = ut_handle_create(srv, kind2, (void*)&arg2, NULL);
-    cr_assert(hdl2 > 0, "ut_handle_create(2)");
-    ret = ut_handle_is_valid(srv, hdl2);
-    cr_assert_eq(ret, hdl2, "ut_handle_is_valid(2)");
-    hdl3 = ut_handle_create(srv, kind3, NULL, &mtx3);
-    cr_assert(hdl3 > 0, "ut_handle_create(3)");
-    ret = ut_handle_is_valid(srv, hdl3);
-    cr_assert_eq(ret, hdl3, "ut_handle_is_valid(3)");
+    ret = ut_handle_claim(hdl, NULL, kind, &argx);
+    cr_assert_eq(ret, UT_HANDLE_OK, "ut_handle_claim2 ret");
 
-    /* Try getting an arg with an handle with invalid kind. */
-    ret = ut_handle_get_arg(srv, hdl1, kind2, &argx);
-    cr_assert_eq(ret, UT_HANDLE_ERROR_KIND_NOT_EQUAL, "ut_handle_get_arg(invalid kind)");
-
-    /* Try claiming an handle with invalid kind. */
-    ret = ut_handle_claim(srv, hdl1, kind3, NULL, &claim1);
-    cr_assert_eq(ret, UT_HANDLE_ERROR_KIND_NOT_EQUAL, "ut_handle_claim(invalid kind)");
-
-    /* Try claiming an unlockable handle. */
-    ret = ut_handle_claim(srv, hdl2, kind2, NULL, &claim2);
-    cr_assert_eq(ret, UT_HANDLE_ERROR_NOT_LOCKABLE, "ut_handle_claim(unlockable)");
-
-    /* Get arg from handle. */
-    ret = ut_handle_get_arg(srv, hdl2, kind2, &argx);
-    cr_assert_eq(ret, hdl2, "ut_handle_get_arg(2) ret");
-    cr_assert_eq(argx, &arg2, "ut_handle_get_arg(2) arg");
-
-    /* Claim handles. */
-    ret = ut_handle_claim(srv, hdl1, kind1, &argx, &claim1);
-    cr_assert_eq(ret, hdl1, "ut_handle_claim(1) ret");
-    cr_assert_eq(argx, &arg1, "ut_handle_claim(1) arg");
-    cr_assert_neq(claim1, NULL, "ut_handle_claim(1) claim");
-    ret = ut_handle_claim(srv, hdl3, kind3, &argx, &claim3);
-    cr_assert_eq(ret, hdl3, "ut_handle_claim(3) ret");
-    cr_assert_eq(argx, NULL, "ut_handle_claim(3) arg");
-    cr_assert_neq(claim3, NULL, "ut_handle_claim(3) claim");
-
-    /* Release and reclaim. */
-    ut_handle_release(srv, claim1);
-    ret = ut_handle_claim(srv, hdl1, kind1, &argx, &claim1);
-    cr_assert_eq(ret, hdl1, "ut_handle_claim(1) ret");
-    cr_assert_eq(argx, &arg1, "ut_handle_claim(1) arg");
-    cr_assert_neq(claim1, NULL, "ut_handle_claim(1) claim");
-
-    /* Try re-claiming in other thread, which should block. */
-    thread_arg.arg = (void*)&arg1;
-    thread_arg.hdl = hdl1;
-    thread_arg.kind = kind1;
-    thread_arg.srv = srv;
+    /* Try deleting in other thread, which should block. */
+    thread_arg.hdl   = hdl;
     thread_arg.state = STARTING;
     os_threadAttrInit(&thread_attr);
-    osr = os_threadCreate(&thread_id, "claiming_thread", &thread_attr, claiming_thread, (void*)&thread_arg);
+    osr = os_threadCreate(&thread_id, "deleting_thread", &thread_attr, deleting_thread, (void*)&thread_arg);
     cr_assert_eq(osr, os_resultSuccess, "os_threadCreate");
-    osr = claiming_thread_reached_state(&thread_arg.state, CLAIMING, 1000);
-    cr_assert_eq(osr, os_resultSuccess, "claiming");
-    osr = claiming_thread_reached_state(&thread_arg.state, STOPPED, 500);
-    cr_assert_eq(osr, os_resultTimeout, "claiming");
+    osr = thread_reached_state(&thread_arg.state, DELETING, 1000);
+    cr_assert_eq(osr, os_resultSuccess, "deleting");
+    osr = thread_reached_state(&thread_arg.state, STOPPED, 500);
+    cr_assert_eq(osr, os_resultTimeout, "deleting");
 
-    /* Releasing the hdl should unblock the thread. */
-    ut_handle_release(srv, claim1);
-    osr = claiming_thread_reached_state(&thread_arg.state, STOPPED, 1000);
-    cr_assert_eq(osr, os_resultSuccess, "claiming");
+    /* First release of the hdl should not unblock the thread. */
+    ut_handle_release(hdl, NULL);
+    osr = thread_reached_state(&thread_arg.state, STOPPED, 500);
+    cr_assert_eq(osr, os_resultTimeout, "deleting");
+
+    /* Second release of the hdl should unblock the thread. */
+    ut_handle_release(hdl, NULL);
+    osr = thread_reached_state(&thread_arg.state, STOPPED, 500);
+    cr_assert_eq(osr, os_resultSuccess, "deleting");
     os_threadWaitExit(thread_id, NULL);
 
-    /* Delete the handles. */
-    ut_handle_delete(srv, hdl1);
-    ret = ut_handle_is_valid(srv, hdl1);
-    cr_assert_eq(ret, UT_HANDLE_ERROR_DELETED, "ut_handle_delete_by_claim(1)");
-    ut_handle_delete(srv, hdl2);
-    ret = ut_handle_is_valid(srv, hdl2);
-    cr_assert_eq(ret, UT_HANDLE_ERROR_DELETED, "ut_handle_delete(2)");
-    ut_handle_delete_by_claim(srv, claim3);
-    ret = ut_handle_is_valid(srv, hdl3);
-    cr_assert_eq(ret, UT_HANDLE_ERROR_DELETED, "ut_handle_delete(3)");
+    /* The handle is deleted within the thread. */
 
-    ut_handleserver_free(srv);
-
-    os_mutexDestroy(&mtx1);
-    os_mutexDestroy(&mtx3);
-    os_osExit();
+    ut_handleserver_fini();
 }
-

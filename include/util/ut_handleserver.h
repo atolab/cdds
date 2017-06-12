@@ -24,172 +24,207 @@ extern "C" {
 #define OS_API OS_API_IMPORT
 #endif
 
-/*
- * The handleserver type.
- */
-typedef struct ut_handleserver* ut_handleserver_t;
-
-/*
- * The handle claim type.
- */
-typedef struct ut_handleinfo* ut_handleclaim_t;
-
-/*
- * The 32 bit handle
- *      |  bits |       values | description                                                 |
- *      --------------------------------------------------------------------------------------
- *      |    31 |            2 | positive/negative (negative can be used to indicate errors) |
- *      | 26-30 |           32 | handle kind       (value determined by client)              |
- *      | 23-25 |            8 | sequence number   (maintained by the handleserver)          |
- *      |  0-22 |    8.388.608 | index             (maintained by the handleserver)          |
+/********************************************************************************************
  *
- * To make sure that sequence is wrapped as little as possible, the create handle should search
- * for a not used entry with the lowest sequence number and use that.
+ * TODO CHAM-138: Header file improvements
+ *    - Remove some internal design decisions and masks from the header file.
+ *    - Improve function headers where needed.
  *
- * TODO: maybe go for 64 bits anyway (dds_instance_handles_t is 64 bits as well), which makes
- * it more easy to create unique handles with different information within them.
- */
-typedef int32_t ut_handle_t;
+ ********************************************************************************************/
 
 /*
- * Handle bits
- *   +kkk kkss siii iiii iiii iiii iiii iiii
- * 31|   26| 23|                          0|
+ * Short working ponderings.
+ *
+ * A handle will be created with a related object. If you want to protect that object by
+ * means of a mutex, it's your responsibility, not handleservers'.
+ *
+ * The handle server keeps an 'active claim' count. Every time a handle is claimed, the
+ * count is increase and decreased when the handle is released. A handle can only be
+ * deleted when there's no more active claim. You can use this to make sure that nobody
+ * is using the handle anymore, which should mean that nobody is using the related object
+ * anymore. So, when you can delete the handle, you can safely delete the related object.
+ *
+ * To prevent new claims (f.i. when you want to delete the handle), you can close the
+ * handle. This will not remove any information within the handleserver, it just prevents
+ * new claims. The delete will actually free handleserver internal memory.
+ *
+ * There's currently a global lock in the handle server that is used with every API call.
+ * Maybe the internals can be improved to circumvent the need for that...
  */
-#define UT_HANDLE_SIGN_MASK (0x80000000)
-#define UT_HANDLE_KIND_MASK (0x7C000000)
-#define UT_HANDLE_SEQ_MASK  (0x03800000)
-#define UT_HANDLE_IDX_MASK  (0x007FFFFF)
+
 
 /*
  * Some error return values.
  */
-#define UT_HANDLE_ERROR                  (-1) /* Internal error. */
-#define UT_HANDLE_ERROR_DELETED          (-2) /* Handle has been previously deleted. */
-#define UT_HANDLE_ERROR_INVALID          (-3) /* Handle is not a valid handle. */
-#define UT_HANDLE_ERROR_KIND_NOT_EQUAL   (-4) /* Handle does not contain expected kind. */
-#define UT_HANDLE_ERROR_NOT_LOCKABLE     (-5) /* Handle was created without mutex. */
+typedef _Return_type_success_(return == 0) enum ut_handle_retcode_t {
+    UT_HANDLE_OK               =  0,
+    UT_HANDLE_ERROR            = -1,     /* General error.                                      */
+    UT_HANDLE_CLOSED           = -2,     /* Handle has been previously close.                   */
+    UT_HANDLE_DELETED          = -3,     /* Handle has been previously deleted.                 */
+    UT_HANDLE_INVALID          = -4,     /* Handle is not a valid handle.                       */
+    UT_HANDLE_UNEQUAL_KIND     = -5,     /* Handle does not contain expected kind.              */
+    UT_HANDLE_TIMEOUT          = -6,     /* Operation timed out.                                */
+    UT_HANDLE_OUT_OF_RESOURCES = -7      /* Action isn't possible because of limited resources. */
+} ut_handle_retcode_t;
+
 
 /*
- * Create new handleserver.
+ * The 32 bit handle
+ *      |  bits |     # values | description                                                 |
+ *      --------------------------------------------------------------------------------------
+ *      |    31 |            2 | positive/negative (negative can be used to indicate errors) |
+ *      | 24-30 |          127 | handle kind       (value determined by client)              |
+ *      |  0-23 |   16.777.215 | index or hash     (maintained by the handleserver)          |
+ *
+ * When the handle is negative, it'll contain a ut_handle_retcode_t error value.
+ *
+ * FYI: the entity id within DDSI is also 24 bits...
  */
-_Check_return_ OS_API ut_handleserver_t
-ut_handleserver_new();
+typedef _Return_type_success_(return > 0) int32_t ut_handle_t;
 
 /*
- * Destroy handleserver.
+ * Handle bits
+ *   +kkk kkkk iiii iiii iiii iiii iiii iiii
+ * 31|   | 24|                            0|
+ */
+#define UT_HANDLE_SIGN_MASK (0x80000000)
+#define UT_HANDLE_KIND_MASK (0x7F000000)
+#define UT_HANDLE_IDX_MASK  (0x00FFFFFF)
+
+#define UT_HANDLE_DONTCARE_KIND (0)
+
+/*
+ * The handle link type.
+ *
+ * The lookup of an handle should be very quick.
+ * But to increase the performance just a little bit more, it is possible to
+ * acquire a handlelink. This can be used by the handleserver to circumvent
+ * the lookup and go straight to the handle related information.
+ *
+ * Almost every handleserver function supports the handlelink. You don't have
+ * to provide the link. When it is NULL, the normal lookup will be done.
+ *
+ * This handlelink is invalid after the related handle is deleted and should
+ * never be used afterwards.
+ */
+_Return_type_success_(return != NULL) struct ut_handlelink;
+
+
+/*
+ * Initialize handleserver singleton.
+ */
+_Check_return_ OS_API ut_handle_retcode_t
+ut_handleserver_init(void);
+
+
+/*
+ * Destroy handleserver singleton.
+ * The handleserver is destroyed when fini() is called as often as init().
  */
 OS_API void
-ut_handleserver_free(_Inout_ _Post_invalid_ ut_handleserver_t srv);
+ut_handleserver_fini(void);
+
 
 /*
  * This creates a new handle that contains the given type and is linked to the
  * user data.
- *
- * The handleserver will keep increasing its internal administration with
- * blocks of a arbitrary number of handles when needed. Before doing that,
- * it'll scan the previous published handles and see if any of them has been
- * deleted (the 'in use' bit will be 0). If so, then that handle will be
- * reused with an increased sequence number.
- *
- * A mutex can be provided with the creation of the handle. When it is
- * provided, then the claim/release functions will use that to actually
- * lock and unlock the handle.
- * When the mutex is NULL, then the claim/release functions won't do anything.
- * It is allowed to pass the same mutex to multiple different handles. Then
- * claiming one handle will prevent other handles to be claimed.
  *
  * A kind value != 0 has to be provided, just to make sure that no 0 handles
  * will be created. It should also fit the UT_HANDLE_KIND_MASK.
  * In other words handle creation will fail if
  * ((kind & ~UT_HANDLE_KIND_MASK != 0) || (kind & UT_HANDLE_KIND_MASK == 0)).
  *
- * Does not lock handle.
+ * It has to do something clever to make sure that a deleted handle is not
+ * re-issued very quickly after it was deleted.
  *
- * srv  - The handle server to create and store the handle in.
  * kind - The handle kind, provided by the client.
  * arg  - The user data linked to the handle (may be NULL).
- * mtx  - The mutex used when claiming the created handle (may be NULL).
  *
  * Valid handle when returned value is positive.
- * Otherwise negative handle is returned with error value.
+ * Otherwise negative handle is returned.
  */
 _Pre_satisfies_((kind & UT_HANDLE_KIND_MASK) && !(kind & ~UT_HANDLE_KIND_MASK))
 _Post_satisfies_((return & UT_HANDLE_KIND_MASK) == kind)
-_Check_return_ OS_API ut_handle_t
-ut_handle_create(_In_ ut_handleserver_t srv, _In_ int32_t kind, _In_opt_ void *arg, _In_opt_ os_mutex *mtx);
+_Must_inspect_result_ OS_API ut_handle_t
+ut_handle_create(
+        _In_ int32_t kind,
+        _In_ void *arg);
+
+
+/*
+ * This will close the handle. All information remains, only new claims will
+ * fail.
+ *
+ * This is a noop on an already closed handle.
+ */
+OS_API void
+ut_handle_close(
+        _In_        ut_handle_t hdl,
+        _Inout_opt_ struct ut_handlelink *link);
+
 
 /*
  * This will remove the handle related information from the server administration
- * so that the entry can be used for another handle.
+ * to free up space.
  *
- * When using the given handle again, UT_HANDLESERVER_ERROR_HANDLE_DELETED will
- * be returned by any handleserver function.
+ * This is an implicit close().
  *
- * Does not lock nor unlock at handle creation provided mutex
+ * It will delete the information when there are no more active claims. It'll
+ * block when necessary to wait for all possible claims to be released.
  */
-OS_API void
-ut_handle_delete(_In_ ut_handleserver_t srv, _In_ ut_handle_t hdl);
+_Check_return_ OS_API ut_handle_retcode_t
+ut_handle_delete(
+        _In_                        ut_handle_t hdl,
+        _Inout_opt_ _Post_invalid_  struct ut_handlelink *link,
+        _In_                        os_time timeout);
+
 
 /*
- * This will remove the handle related information from the server administration
- * so that the entry can be used for another handle.
+ * If the a valid handle is given, which matches the kind and it is not closed,
+ * then the related arg will be provided and the claims count is increased.
  *
- * When using the given handle again, UT_HANDLESERVER_ERROR_HANDLE_DELETED will
- * be returned by any handleserver function.
- *
- * Does unlock at handle creation provided mutex (after deletion finished).
- */
-OS_API void
-ut_handle_delete_by_claim(_In_ ut_handleserver_t srv, _Inout_ _Post_invalid_ ut_handleclaim_t claim);
-
-/*
- * Checks if the given handle is valid.
- *
- * An handle is deleted when either the handle server finds the related handle
- * entry un-used or if the entry's sequence number does not equal to the sequence
- * within the handle.
- *
- * An handle can also be invalid when it contains a index that hasn't been
- * published yet.
- *
- * Does not lock handle.
- *
- * Valid when returned handle == given hdl.
- * Otherwise negative handle is returned with error value.
- */
-_Check_return_ OS_API ut_handle_t
-ut_handle_is_valid(_In_ ut_handleserver_t srv, _In_ ut_handle_t hdl);
-
-/*
- * This will give the arg that is linked to the handle.
- *
- * Does not lock handle.
- *
- * Valid when returned handle == given hdl.
- * Otherwise negative handle is returned with error value.
+ * Returns OK when succeeded.
  */
 _Pre_satisfies_((kind & UT_HANDLE_KIND_MASK) && !(kind & ~UT_HANDLE_KIND_MASK))
-_Check_return_ OS_API ut_handle_t
-ut_handle_get_arg(_In_ ut_handleserver_t srv, _In_ ut_handle_t hdl, _In_ int32_t kind, _Out_ void **arg);
+_Check_return_ OS_API ut_handle_retcode_t
+ut_handle_claim(
+        _In_        ut_handle_t hdl,
+        _Inout_opt_ struct ut_handlelink *link,
+        _In_        int32_t kind,
+        _Out_       void **arg);
+
 
 /*
- * At creation given mutex will be locked and the related arg will be given
- * if the handle is valid, matches the kind and is not deleted.
- *
- * Valid when returned handle == given hdl.
- * Otherwise negative handle is returned with error value.
- */
-_Pre_satisfies_((kind & UT_HANDLE_KIND_MASK) && !(kind & ~UT_HANDLE_KIND_MASK))
-_Check_return_ OS_API ut_handle_t
-ut_handle_claim(_In_ ut_handleserver_t srv, _In_ ut_handle_t hdl, _In_ int32_t kind, _Out_opt_ void **arg, _Out_ ut_handleclaim_t *claim);
-
-/*
- * At creation given mutex will be unlocked.
+ * The active claims count is decreased.
  */
 OS_API void
-ut_handle_release(_In_ ut_handleserver_t srv, _Inout_ _Post_invalid_ ut_handleclaim_t claim);
+ut_handle_release(
+        _In_        ut_handle_t hdl,
+        _Inout_opt_ struct ut_handlelink *link);
 
+
+/*
+ * Check if the handle is closed.
+ *
+ * This is only useful when you have already claimed a handle and it is
+ * possible that another thread is trying to delete the handle while you
+ * were (for instance) sleeping or waiting for something. Now you can
+ * break of your process and release the handle, making the deletion
+ * possible.
+ */
+_Check_return_ OS_API bool
+ut_handle_is_closed(
+        _In_        ut_handle_t hdl,
+        _Inout_opt_ struct ut_handlelink *link);
+
+
+/*
+ * This will get the link of the handle, which can be used for performance
+ * increase.
+ */
+_Must_inspect_result_ OS_API struct ut_handlelink*
+ut_handle_get_link(
+        _In_ ut_handle_t hdl);
 
 
 #undef OS_API
