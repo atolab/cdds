@@ -445,7 +445,7 @@ char * dds_topic_get_type_name (dds_entity_t topic)
 
 dds_return_t dds_get_inconsistent_topic_status (dds_entity_t entity, dds_inconsistent_topic_status_t * status)
 {
-    uint32_t errnr;
+    int32_t errnr;
     dds_topic *t;
 
     errnr = dds_topic_lock(entity, &t);

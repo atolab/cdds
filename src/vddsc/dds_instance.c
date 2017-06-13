@@ -88,7 +88,6 @@ dds_instance_handle_t dds_instance_register (dds_entity_t e, const void * data)
   dds_entity *wr;
   int ret = DDS_RETCODE_OK;
 
-  assert (wr);
   assert (data);
 
   ret = dds_entity_lock(e, DDS_KIND_WRITER, &wr);
@@ -114,7 +113,6 @@ int dds_instance_unregister_ts (dds_entity_t e, const void * data, dds_instance_
   const dds_topic * topic = NULL;
   dds_entity *wr;
 
-  assert (wr);
   assert (data != NULL || handle != DDS_HANDLE_NIL);
 
   ret = dds_entity_lock(e, DDS_KIND_WRITER, &wr);

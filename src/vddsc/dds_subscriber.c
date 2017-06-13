@@ -87,7 +87,7 @@ dds_entity_t dds_create_subscriber
     dds_entity_t hdl;
     dds_qos_t * new_qos = NULL;
     dds_return_t ret;
-    uint32_t errnr;
+    int32_t errnr;
 
     errnr = dds_entity_lock(pp, DDS_KIND_PARTICIPANT, &participant);
     if (errnr != DDS_RETCODE_OK) {
@@ -121,7 +121,7 @@ dds_return_t dds_notify_readers(_In_ dds_entity_t subscriber)
 {
     dds_entity *iter;
     dds_entity *sub;
-    uint32_t errnr;
+    int32_t errnr;
 
     errnr = dds_entity_lock(subscriber, DDS_KIND_SUBSCRIBER, &sub);
     if (errnr == DDS_RETCODE_OK) {

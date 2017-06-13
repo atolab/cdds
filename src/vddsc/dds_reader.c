@@ -269,7 +269,7 @@ int dds_reader_create (
   const dds_listener_t * listener)
 {
     dds_qos_t * rqos;
-    uint32_t errnr;
+    int32_t errnr;
     dds_entity * parent = NULL;
     dds_subscriber  * sub = NULL;
     dds_reader * rd;
@@ -466,7 +466,7 @@ dds_entity_t dds_get_subscriber(dds_entity_t e)
 
 dds_return_t dds_get_subscription_matched_status (dds_entity_t reader, dds_subscription_matched_status_t * status)
 {
-    uint32_t errnr;
+    int32_t errnr;
     dds_reader *rd;
 
     errnr = dds_reader_lock(reader, &rd);
@@ -487,7 +487,7 @@ dds_return_t dds_get_subscription_matched_status (dds_entity_t reader, dds_subsc
 
 dds_return_t dds_get_liveliness_changed_status (dds_entity_t reader, dds_liveliness_changed_status_t * status)
 {
-    uint32_t errnr;
+    int32_t errnr;
     dds_reader *rd;
 
     errnr = dds_reader_lock(reader, &rd);
@@ -508,7 +508,7 @@ dds_return_t dds_get_liveliness_changed_status (dds_entity_t reader, dds_livelin
 
 dds_return_t dds_get_sample_rejected_status (dds_entity_t reader, dds_sample_rejected_status_t * status)
 {
-    uint32_t errnr;
+    int32_t errnr;
     dds_reader *rd;
 
     errnr = dds_reader_lock(reader, &rd);
@@ -529,7 +529,7 @@ dds_return_t dds_get_sample_rejected_status (dds_entity_t reader, dds_sample_rej
 
 dds_return_t dds_get_sample_lost_status (dds_entity_t reader, dds_sample_lost_status_t * status)
 {
-    uint32_t errnr;
+    int32_t errnr;
     dds_reader *rd;
 
     errnr = dds_reader_lock(reader, &rd);
@@ -549,7 +549,7 @@ dds_return_t dds_get_sample_lost_status (dds_entity_t reader, dds_sample_lost_st
 
 dds_return_t dds_get_requested_deadline_missed_status (dds_entity_t reader, dds_requested_deadline_missed_status_t * status)
 {
-    uint32_t errnr;
+    int32_t errnr;
     dds_reader *rd;
 
     errnr = dds_reader_lock(reader, &rd);
@@ -569,7 +569,7 @@ dds_return_t dds_get_requested_deadline_missed_status (dds_entity_t reader, dds_
 
 dds_return_t dds_get_requested_incompatible_qos_status (dds_entity_t reader, dds_requested_incompatible_qos_status_t * status)
 {
-    uint32_t errnr;
+    int32_t errnr;
     dds_reader *rd;
 
     errnr = dds_reader_lock(reader, &rd);

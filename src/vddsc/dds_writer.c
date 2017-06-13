@@ -267,7 +267,7 @@ int dds_writer_create
   const dds_listener_t * listener
 )
 {
-  uint32_t errnr;
+  int32_t errnr;
   dds_qos_t * wqos;
   dds_publisher * pub = NULL;
   dds_writer * wr;
@@ -376,7 +376,7 @@ dds_entity_t dds_get_publisher(dds_entity_t e)
 
 dds_return_t dds_get_publication_matched_status (dds_entity_t entity, dds_publication_matched_status_t * status)
 {
-    uint32_t errnr;
+    int32_t errnr;
     dds_writer *wr;
 
     errnr = dds_writer_lock(entity, &wr);
@@ -397,7 +397,7 @@ dds_return_t dds_get_publication_matched_status (dds_entity_t entity, dds_public
 
 dds_return_t dds_get_liveliness_lost_status (dds_entity_t entity, dds_liveliness_lost_status_t * status)
 {
-    uint32_t errnr;
+    int32_t errnr;
     dds_writer *wr;
 
     errnr = dds_writer_lock(entity, &wr);
@@ -417,7 +417,7 @@ dds_return_t dds_get_liveliness_lost_status (dds_entity_t entity, dds_liveliness
 
 dds_return_t dds_get_offered_deadline_missed_status (dds_entity_t entity, dds_offered_deadline_missed_status_t * status)
 {
-    uint32_t errnr;
+    int32_t errnr;
     dds_writer *wr;
 
     errnr = dds_writer_lock(entity, &wr);
@@ -437,7 +437,7 @@ dds_return_t dds_get_offered_deadline_missed_status (dds_entity_t entity, dds_of
 
 dds_return_t dds_get_offered_incompatible_qos_status (dds_entity_t entity, dds_offered_incompatible_qos_status_t * status)
 {
-    uint32_t errnr;
+    int32_t errnr;
     dds_writer *wr;
 
     errnr = dds_writer_lock(entity, &wr);

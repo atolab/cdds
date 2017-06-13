@@ -301,7 +301,7 @@ void dds_entity_delete_impl (_In_ dds_entity *e, _In_ bool child, _In_ bool recu
     }
 
     /* Clean up */
-    if (ut_handle_delete(e->m_hdl, e->m_hdllink, timeout) != UT_HANDLE_OK) {
+    if (ut_handle_delete(e->m_hdl, e->m_hdllink, timeout) == UT_HANDLE_OK) {
         if (e->m_deriver.delete) {
             e->m_deriver.delete(e, recurse);
         }
@@ -393,7 +393,7 @@ dds_entity_t dds_get_parent(_In_ dds_entity_t entity)
 {
     dds_entity *e;
     dds_entity_t hdl = entity;
-    uint32_t errnr = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+    int32_t errnr = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
     if (errnr == DDS_RETCODE_OK) {
         if (e->m_parent) {
             hdl = e->m_parent->m_hdl;
@@ -411,7 +411,7 @@ dds_entity_t dds_get_participant(_In_ dds_entity_t entity)
 {
     dds_entity *e;
     dds_entity_t hdl = entity;
-    uint32_t errnr = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+    int32_t errnr = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
     if (errnr == DDS_RETCODE_OK) {
         if (e->m_participant) {
             hdl = e->m_participant->m_hdl;

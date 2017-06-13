@@ -58,7 +58,7 @@ dds_entity_t dds_create_publisher
   dds_entity_t hdl;
   dds_qos_t * new_qos = NULL;
   dds_return_t ret;
-  uint32_t errnr;
+  int32_t errnr;
 
   errnr = dds_entity_lock(pp, DDS_KIND_PARTICIPANT, &participant);
   if (errnr != DDS_RETCODE_OK) {

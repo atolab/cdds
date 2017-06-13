@@ -14,8 +14,6 @@ dds_condition_t dds_readcondition_create (dds_entity_t reader, uint32_t mask)
   dds_reader * rd;
   int32_t ret;
 
-  assert (rd);
-
   ret = dds_reader_lock(reader, &rd);
   if (ret == DDS_RETCODE_OK) {
       cond = dds_alloc (sizeof (*cond));
