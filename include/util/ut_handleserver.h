@@ -65,7 +65,7 @@ typedef _Return_type_success_(return == 0) enum ut_handle_retcode_t {
     UT_HANDLE_UNEQUAL_KIND     = -5,     /* Handle does not contain expected kind.              */
     UT_HANDLE_TIMEOUT          = -6,     /* Operation timed out.                                */
     UT_HANDLE_OUT_OF_RESOURCES = -7,     /* Action isn't possible because of limited resources. */
-    UT_HANDLE_NOT_INITALIZED   = -8,     /* Not initialized.                                    */
+    UT_HANDLE_NOT_INITALIZED   = -8      /* Not initialized.                                    */
 } ut_handle_retcode_t;
 
 

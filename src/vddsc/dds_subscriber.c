@@ -138,3 +138,21 @@ dds_return_t dds_notify_readers(_In_ dds_entity_t subscriber)
 
     return DDS_ERRNO(errnr, DDS_MOD_KERNEL, 0);
 }
+
+dds_return_t
+dds_subscriber_begin_coherent
+(
+    dds_entity_t e
+)
+{
+    return DDS_RETCODE_UNSUPPORTED;
+}
+
+dds_return_t
+dds_subscriber_end_coherent
+(
+    dds_entity_t e
+)
+{
+    return DDS_RETCODE_UNSUPPORTED;
+}

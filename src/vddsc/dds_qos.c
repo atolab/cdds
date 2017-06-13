@@ -41,6 +41,11 @@ bool validate_octetseq (const nn_octetseq_t* seq)
   /* default value is NULL with length 0 */
   return (((seq->length == 0) && (seq->value == NULL)) || (seq->length > 0));
 }
+bool validate_partition_qospolicy (_In_ const nn_partition_qospolicy_t * partition)
+{
+  /* default value is NULL with length 0 */
+  return (((partition->n == 0) && (partition->strs == NULL)) || (partition->n > 0));
+}
 
 bool validate_stringseq (const nn_stringseq_t* seq)
 {
@@ -61,12 +66,6 @@ bool validate_entityfactory_qospolicy(const nn_entity_factory_qospolicy_t * enti
 {
   /* Bools must be 0 or 1, i.e., only the lsb may be set */
   return !(entityfactory->autoenable_created_entities & ~1);
-}
-
-bool validate_partition_qospolicy (_In_ const nn_partition_qospolicy_t * partition)
-{
-  /* default value is NULL with length 0 */
-  return (((partition->n == 0) && (partition->strs == NULL)) || (partition->n > 0));
 }
 
 bool validate_reliability_qospolicy (const nn_reliability_qospolicy_t * reliability)
@@ -410,6 +409,15 @@ void dds_qset_partition
   if (qos && n && ps) {
     uint32_t i;
     size_t len;
+
+    if (qos->partition.strs != NULL){
+      for (uint32_t i = 0; i < qos->partition.n; i++)
+      {
+        dds_free(qos->partition.strs[i]);
+      }
+      dds_free(qos->partition.strs);
+      qos->partition.strs = NULL;
+    }
 
     qos->partition.n = n;
     qos->partition.strs = dds_alloc (sizeof (char*) * n);

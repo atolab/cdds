@@ -133,7 +133,6 @@ dds_return_t dds_wait_for_acks
   return ret;
 }
 
-
 dds_return_t
 dds_publisher_begin_coherent
 (
