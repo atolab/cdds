@@ -411,7 +411,7 @@ void dds_qset_partition
     size_t len;
 
     if (qos->partition.strs != NULL){
-      for (uint32_t i = 0; i < qos->partition.n; i++)
+      for (i = 0; i < qos->partition.n; i++)
       {
         dds_free(qos->partition.strs[i]);
       }
@@ -703,7 +703,7 @@ void dds_qget_time_based_filter
 void dds_qget_partition
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ uint32_t *n,
+    _Out_opt_ uint32_t *n,
     _Out_opt_ char *** ps
 )
 {
