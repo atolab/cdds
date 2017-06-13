@@ -476,7 +476,7 @@ dds_get_children(
 }
 
 _Check_return_ dds_return_t
-dds_get_qos (_In_ dds_entity_t entity, _Out_ dds_qos_t * qos)
+dds_get_qos (_In_ dds_entity_t entity, _Inout_ dds_qos_t * qos)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if ((entity > 0) && (qos != NULL)) {
@@ -490,11 +490,6 @@ dds_get_qos (_In_ dds_entity_t entity, _Out_ dds_qos_t * qos)
             }
             dds_entity_unlock(e);
         }
-    }
-    if (ret == DDS_RETCODE_OK) {
-        ret = 0;
-    } else {
-        ret = -1;
     }
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }

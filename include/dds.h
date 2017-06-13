@@ -429,7 +429,7 @@ DDS_EXPORT dds_return_t dds_set_enabled_status (_In_ dds_entity_t e, _In_ uint32
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT _Check_return_ dds_return_t dds_get_qos (_In_ dds_entity_t e, _Out_ dds_qos_t * qos);
+DDS_EXPORT _Check_return_ dds_return_t dds_get_qos (_In_ dds_entity_t e, _Inout_ dds_qos_t * qos);
 
 
 /**
