@@ -522,7 +522,7 @@ dds_set_qos (_In_ dds_entity_t entity, _In_ const dds_qos_t * qos)
 }
 
 _Check_return_ dds_return_t
-dds_get_listener (_In_ dds_entity_t entity, _Out_ dds_listener_t * listener)
+dds_get_listener (_In_ dds_entity_t entity, _Inout_ dds_listener_t * listener)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (listener != NULL) {
@@ -576,7 +576,7 @@ dds_enable(_In_ dds_entity_t entity)
 
 
 _Check_return_ dds_return_t
-dds_get_status_changes (_In_ dds_entity_t entity, _Out_ uint32_t *mask)
+dds_get_status_changes (_In_ dds_entity_t entity, _Inout_ uint32_t *mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (mask != NULL) {
@@ -595,7 +595,7 @@ dds_get_status_changes (_In_ dds_entity_t entity, _Out_ uint32_t *mask)
 }
 
 _Check_return_ dds_return_t
-dds_get_enabled_status(_In_ dds_entity_t entity, _Out_ uint32_t *mask)
+dds_get_enabled_status(_In_ dds_entity_t entity, _Inout_ uint32_t *mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (mask != NULL) {
@@ -641,7 +641,7 @@ dds_set_enabled_status (_In_ dds_entity_t entity, _In_ uint32_t mask)
 
 /* Read status condition based on mask */
 _Check_return_ dds_return_t
-dds_read_status (_In_ dds_entity_t entity, _Out_ uint32_t * status, _In_ uint32_t mask)
+dds_read_status (_In_ dds_entity_t entity, _Inout_ uint32_t * status, _In_ uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (status != NULL) {
@@ -664,7 +664,7 @@ dds_read_status (_In_ dds_entity_t entity, _Out_ uint32_t * status, _In_ uint32_
 
 /* Take and clear status condition based on mask */
 _Check_return_ dds_return_t
-dds_take_status (_In_ dds_entity_t entity, _Out_ uint32_t * status, _In_ uint32_t mask)
+dds_take_status (_In_ dds_entity_t entity, _Inout_ uint32_t * status, _In_ uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (status != NULL) {
@@ -699,7 +699,7 @@ dds_entity_status_signal(_In_ dds_entity *e)
 }
 
 _Check_return_ dds_return_t
-dds_get_domainid (_In_ dds_entity_t entity, _Out_ dds_domainid_t *id)
+dds_get_domainid (_In_ dds_entity_t entity, _Inout_ dds_domainid_t *id)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (id != NULL) {
@@ -714,7 +714,7 @@ dds_get_domainid (_In_ dds_entity_t entity, _Out_ dds_domainid_t *id)
 }
 
 _Check_return_ dds_return_t
-dds_instancehandle_get(_In_ dds_entity_t entity, _Out_ dds_instance_handle_t *i)
+dds_instancehandle_get(_In_ dds_entity_t entity, _Inout_ dds_instance_handle_t *i)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (i != NULL) {

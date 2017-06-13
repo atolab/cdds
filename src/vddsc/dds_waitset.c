@@ -90,9 +90,9 @@ static int dds_waitset_wait_impl_locked
       waitset->timeout_counter++;
       dds_duration_t dt = abstimeout - tnow;
       os_time to;
-      if ((sizeof (to.tv_sec) == 4) && ((dt / DDS_NSECS_IN_SEC) >= INT32_MAX))
+      if ((dt / (dds_duration_t)DDS_NSECS_IN_SEC) >= (dds_duration_t)OS_TIME_INFINITE_SEC)
       {
-        to.tv_sec = INT32_MAX;
+        to.tv_sec = OS_TIME_INFINITE_SEC;
         to.tv_nsec = DDS_NSECS_IN_SEC - 1;
       }
       else

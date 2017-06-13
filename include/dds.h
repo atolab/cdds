@@ -329,7 +329,7 @@ DDS_EXPORT dds_entity_t dds_get_subscriber(_In_ dds_entity_t rd);
 DDS_EXPORT dds_entity_t dds_get_datareader(_In_ dds_entity_t readcond);
 
 /* TODO: document. */
-DDS_EXPORT _Check_return_ dds_return_t dds_instancehandle_get(_In_ dds_entity_t e, _Out_ dds_instance_handle_t *i);
+DDS_EXPORT _Check_return_ dds_return_t dds_instancehandle_get(_In_ dds_entity_t e, _Inout_ dds_instance_handle_t *i);
 
 /*
   All entities have a set of "status conditions" (following the DCPS
@@ -350,7 +350,7 @@ DDS_EXPORT _Check_return_ dds_return_t dds_instancehandle_get(_In_ dds_entity_t 
  *   -# Returns 0 on success, or a non-zero error value if the mask does not
  *      correspond to the entity
  */
-DDS_EXPORT _Check_return_ dds_return_t dds_read_status (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
+DDS_EXPORT _Check_return_ dds_return_t dds_read_status (_In_ dds_entity_t e, _Inout_ uint32_t * status, _In_ uint32_t mask);
 
 /**
  * Description : Read the status(es) set for the entity based on the enabled
@@ -363,7 +363,7 @@ DDS_EXPORT _Check_return_ dds_return_t dds_read_status (_In_ dds_entity_t e, _Ou
  *   -# Returns 0 on success, or a non-zero error value if the mask does not
  *      correspond to the entity
  */
-DDS_EXPORT _Check_return_ dds_return_t dds_take_status (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
+DDS_EXPORT _Check_return_ dds_return_t dds_take_status (_In_ dds_entity_t e, _Inout_ uint32_t * status, _In_ uint32_t mask);
 
 /**
  * Description : Returns the status changes since they were last read.
@@ -372,7 +372,7 @@ DDS_EXPORT _Check_return_ dds_return_t dds_take_status (_In_ dds_entity_t e, _Ou
  *   -# e Entity on which the statuses are read
  *   -# Returns the curent set of triggered statuses.
  */
-DDS_EXPORT _Check_return_ dds_return_t dds_get_status_changes (_In_ dds_entity_t e, _Out_ uint32_t * status);
+DDS_EXPORT _Check_return_ dds_return_t dds_get_status_changes (_In_ dds_entity_t e, _Inout_ uint32_t * status);
 
 /**
  * Description : This operation returns the status enabled on the entity
@@ -381,7 +381,7 @@ DDS_EXPORT _Check_return_ dds_return_t dds_get_status_changes (_In_ dds_entity_t
  *   -# e Entity to get the status
  *   -# Returns the status that are enabled for the entity
  */
-DDS_EXPORT _Check_return_ dds_return_t dds_get_enabled_status (_In_ dds_entity_t e, _Out_ uint32_t * status);
+DDS_EXPORT _Check_return_ dds_return_t dds_get_enabled_status (_In_ dds_entity_t e, _Inout_ uint32_t * status);
 
 
 /**
@@ -507,7 +507,7 @@ DDS_EXPORT _Check_return_ dds_return_t dds_set_qos (_In_ dds_entity_t e, _In_ co
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT _Check_return_ dds_return_t dds_get_listener (_In_ dds_entity_t e, _Out_ dds_listener_t * listener);
+DDS_EXPORT _Check_return_ dds_return_t dds_get_listener (_In_ dds_entity_t e, _Inout_ dds_listener_t * listener);
 
 
 /**
@@ -725,7 +725,7 @@ DDS_EXPORT _Check_return_ dds_return_t dds_get_children(_In_ dds_entity_t entity
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT _Check_return_ dds_return_t dds_get_domainid (_In_ dds_entity_t pp, _Out_ dds_domainid_t *id);
+DDS_EXPORT _Check_return_ dds_return_t dds_get_domainid (_In_ dds_entity_t pp, _Inout_ dds_domainid_t *id);
 
 /**
  * Description : Returns a participant created on a domain. Note that if

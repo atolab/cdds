@@ -703,8 +703,8 @@ void dds_qget_time_based_filter
 void dds_qget_partition
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_opt_ uint32_t *n,
-    _Out_opt_ char *** ps
+    _Inout_opt_ uint32_t *n,
+    _Inout_opt_ char *** ps
 )
 {
   if (qos && n && ps) {
