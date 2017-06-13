@@ -18,19 +18,46 @@ typedef os_atomic_uint32_t fake_seq_t;
 uint64_t fake_seq_next (fake_seq_t *x) { return os_atomic_inc32_nv (x); }
 #endif
 
-int dds_write (dds_entity_t wr, const void * data)
+int dds_write (dds_entity_t e, const void * data)
 {
-  return dds_write_impl (wr, data, dds_time (), 0);
+    int ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_writer *wr;
+    if (data != NULL) {
+        ret = dds_writer_lock(e, &wr);
+        if (ret != DDS_RETCODE_OK) {
+            ret = dds_write_impl (wr, data, dds_time (), 0);
+            dds_writer_unlock(wr);
+        }
+    }
+    return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
 }
 
-int dds_writecdr (dds_entity_t wr, const void * cdr, size_t sz)
+int dds_writecdr (dds_entity_t e, const void * cdr, size_t sz)
 {
-  return dds_writecdr_impl (wr, cdr, sz, dds_time (), 0);
+    int ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_writer *wr;
+    if (cdr != NULL) {
+        ret = dds_writer_lock(e, &wr);
+        if (ret != DDS_RETCODE_OK) {
+            ret = dds_writecdr_impl (wr, cdr, sz, dds_time (), 0);
+            dds_writer_unlock(wr);
+        }
+    }
+    return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
 }
 
-int dds_write_ts (dds_entity_t wr, const void * data, dds_time_t tstamp)
+int dds_write_ts (dds_entity_t e, const void * data, dds_time_t tstamp)
 {
-  return dds_write_impl (wr, data, tstamp, 0);
+    int ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_writer *wr;
+    if (data != NULL) {
+        ret = dds_writer_lock(e, &wr);
+        if (ret != DDS_RETCODE_OK) {
+            ret = dds_write_impl (wr, data, tstamp, 0);
+            dds_writer_unlock(wr);
+        }
+    }
+    return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
 }
 
 #include "ddsi/q_radmin.h"
@@ -103,7 +130,7 @@ static void deliver_locally (struct writer *wr, int64_t seq, serdata_t payload, 
 
 int dds_write_impl
 (
-  dds_entity_t wr, const void * data,
+  dds_writer *wr, const void * data,
   dds_time_t tstamp, dds_write_action action
 )
 {
@@ -111,7 +138,7 @@ int dds_write_impl
   int ret = DDS_RETCODE_OK;
 
   assert (wr);
-  assert (wr->m_kind == DDS_TYPE_WRITER);
+  assert (dds_entity_kind(((dds_entity*)wr)->m_hdl) == DDS_KIND_WRITER);
   assert (data);
 
   struct thread_state1 * const thr = lookup_thread_state ();
@@ -197,7 +224,7 @@ filtered:
 
 int dds_writecdr_impl
 (
- dds_entity_t wr, const void * cdr, size_t sz,
+ dds_writer *wr, const void * cdr, size_t sz,
  dds_time_t tstamp, dds_write_action action
  )
 {
@@ -205,14 +232,12 @@ int dds_writecdr_impl
   int ret = DDS_RETCODE_OK;
 
   assert (wr);
-  assert (wr->m_kind == DDS_TYPE_WRITER);
   assert (cdr);
 
   struct thread_state1 * const thr = lookup_thread_state ();
   const bool asleep = !vtime_awake_p (thr->vtime);
   const bool writekey = action & DDS_WR_KEY_BIT;
-  dds_writer * writer = (dds_writer*) wr;
-  struct writer * ddsi_wr = writer->m_wr;
+  struct writer * ddsi_wr = wr->m_wr;
   struct tkmap_instance * tk;
   serdata_t d;
 
@@ -253,10 +278,10 @@ int dds_writecdr_impl
   ((action & DDS_WR_DISPOSE_BIT) ? NN_STATUSINFO_DISPOSE : 0) |
   ((action & DDS_WR_UNREGISTER_BIT) ? NN_STATUSINFO_UNREGISTER : 0);
   d->v.msginfo.timestamp.v = tstamp;
-  os_mutexLock (&writer->m_call_lock);
+  os_mutexLock (&wr->m_call_lock);
   ddsi_serdata_ref(d);
   tk = (ddsi_plugin.rhc_lookup_fn) (d);
-  ret = write_sample_gc (writer->m_xp, ddsi_wr, d, tk);
+  ret = write_sample_gc (wr->m_xp, ddsi_wr, d, tk);
 
   if (ret >= 0)
   {
@@ -264,7 +289,7 @@ int dds_writecdr_impl
 
     if (! config.whc_batch)
     {
-      nn_xpack_send (writer->m_xp, false);
+      nn_xpack_send (wr->m_xp, false);
     }
     ret = DDS_RETCODE_OK;
   }
@@ -276,7 +301,7 @@ int dds_writecdr_impl
   {
     ret = DDS_ERRNO (DDS_RETCODE_ERROR, DDS_MOD_WRITER, DDS_ERR_M2);
   }
-  os_mutexUnlock (&writer->m_call_lock);
+  os_mutexUnlock (&wr->m_call_lock);
 
   if (ret == DDS_RETCODE_OK)
     deliver_locally (ddsi_wr, fake_seq_next(&fake_seq), d, tk);
@@ -293,26 +318,25 @@ int dds_writecdr_impl
 
 void dds_write_set_batch (bool enable)
 {
-  config.whc_batch = enable ? 1 : 0;
+    config.whc_batch = enable ? 1 : 0;
 }
 
-void dds_write_flush (dds_entity_t wr)
+void dds_write_flush (dds_entity_t e)
 {
-  assert (wr);
-  assert (wr->m_kind == DDS_TYPE_WRITER);
+    struct thread_state1 * const thr = lookup_thread_state ();
+    const bool asleep = !vtime_awake_p (thr->vtime);
+    dds_writer *wr;
 
-  struct thread_state1 * const thr = lookup_thread_state ();
-  const bool asleep = !vtime_awake_p (thr->vtime);
+    if (asleep) {
+        thread_state_awake (thr);
+    }
 
-  if (asleep)
-  {
-    thread_state_awake (thr);
-  }
-  os_mutexLock (&wr->m_mutex);
-  nn_xpack_send (((dds_writer*) wr)->m_xp, true);
-  os_mutexUnlock (&wr->m_mutex);
-  if (asleep)
-  {
-    thread_state_asleep (thr);
-  }
+    if (dds_writer_lock(e, &wr) != DDS_RETCODE_OK) {
+        nn_xpack_send (wr->m_xp, true);
+        dds_writer_unlock(wr);
+    }
+
+    if (asleep) {
+        thread_state_asleep (thr);
+    }
 }

@@ -112,6 +112,12 @@ extern int dds_init ()
   gv.static_logbuf_lock_inited = 1;
   os_mutexInit (&dds_global.m_mutex);
 
+  if (ut_handleserver_init() != UT_HANDLE_OK)
+  {
+    fprintf (stderr, "Initializing handle server failed\n");
+    return DDS_ERRNO (DDS_RETCODE_ERROR, DDS_MOD_KERNEL, DDS_ERR_M3);
+  }
+
   dds_cfgst = config_init (uri);
   if (dds_cfgst == NULL)
   {
@@ -223,6 +229,7 @@ extern void dds_fini (void)
 {
   if (os_atomic_dec32_nv (&dds_global.m_init_count) == 0)
   {
+    ut_handleserver_fini();
     if (ddsi_plugin.init_fn)
     {
 #ifndef _WIN32

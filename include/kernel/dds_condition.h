@@ -17,8 +17,6 @@ struct dds_condition * dds_readcond_alloc
 );
 int dds_readcond_free (struct rhc * rhc, dds_condition * cond);
 
-bool dds_scond_exist (dds_entity_kind_t kind);
-
 void dds_cond_signal_waitsets_locked (dds_condition * cond);
 void dds_cond_callback_signal (dds_condition * cond);
 

@@ -84,7 +84,7 @@ int main (int argc, char **argv)
   pubParts[0] = partitionName;
   dds_qset_partition (pubQos, 1, pubParts);
   publisher = dds_create_publisher (participant, pubQos, NULL);
-  DDS_ENTITY_CHECK (publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  DDS_ERR_CHECK (publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (pubQos);
 
   /* A DataWriter is created on the publisher. */

@@ -11,27 +11,23 @@ dds_begin_coherent
     _In_ dds_entity_t e
 )
 {
-    dds_entity_t entity = e;
     dds_return_t ret;
-    switch(e->m_kind) {
-        case DDS_TYPE_WRITER:
-            /* Invoking on a writer behaves as if invoked on its parent publisher */
-            entity = e->m_parent;
-            assert(entity->m_kind == DDS_TYPE_PUBLISHER);
-            /* no break */
-        case DDS_TYPE_PUBLISHER:
-            ret = dds_publisher_begin_coherent(entity);
+
+    switch(dds_entity_kind(e)) {
+        case DDS_KIND_READER:
+        case DDS_KIND_WRITER:
+            /* Invoking on a writer/reader behaves as if invoked on
+             * its parent publisher/subscriber. */
+            ret = dds_begin_coherent(dds_get_parent(e));
             break;
-        case DDS_TYPE_READER:
-            /* Invoking on a reader behaves as if invoked on its parent subscriber */
-            entity = e->m_parent;
-            assert(entity->m_kind == DDS_TYPE_SUBSCRIBER);
-            /* no break */
-        case DDS_TYPE_SUBSCRIBER:
-            ret = dds_subscriber_begin_coherent(entity);
+        case DDS_KIND_PUBLISHER:
+            ret = dds_publisher_begin_coherent(e);
+            break;
+        case DDS_KIND_SUBSCRIBER:
+            ret = dds_subscriber_begin_coherent(e);
             break;
         default:
-            ret = DDS_RETCODE_BAD_PARAMETER;
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_KERNEL, 0);
             break;
     }
     return ret;
@@ -43,27 +39,23 @@ dds_end_coherent
     _In_ dds_entity_t e
 )
 {
-    dds_entity_t entity = e;
     dds_return_t ret;
-    switch(e->m_kind) {
-        case DDS_TYPE_WRITER:
-            /* Invoking on a writer behaves as if invoked on its parent publisher */
-            entity = e->m_parent;
-            assert(entity->m_kind == DDS_TYPE_PUBLISHER);
-            /* no break */
-        case DDS_TYPE_PUBLISHER:
-            ret = dds_publisher_end_coherent(entity);
+
+    switch(dds_entity_kind(e)) {
+        case DDS_KIND_READER:
+        case DDS_KIND_WRITER:
+            /* Invoking on a writer/reader behaves as if invoked on
+             * its parent publisher/subscriber. */
+            ret = dds_end_coherent(dds_get_parent(e));
             break;
-        case DDS_TYPE_READER:
-            /* Invoking on a reader behaves as if invoked on its parent subscriber */
-            entity = e->m_parent;
-            assert(entity->m_kind == DDS_TYPE_SUBSCRIBER);
-            /* no break */
-        case DDS_TYPE_SUBSCRIBER:
-            ret = dds_subscriber_end_coherent(entity);
+        case DDS_KIND_PUBLISHER:
+            ret = dds_publisher_end_coherent(e);
+            break;
+        case DDS_KIND_SUBSCRIBER:
+            ret = dds_subscriber_end_coherent(e);
             break;
         default:
-            ret = DDS_RETCODE_BAD_PARAMETER;
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_KERNEL, 0);
             break;
     }
     return ret;

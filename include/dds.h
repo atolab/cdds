@@ -13,7 +13,8 @@
 #include "os/os_public.h"
 
 /* TODO: Move to appropriate location */
-typedef _Return_type_success_(return >= 0) intptr_t dds_return_t;
+typedef _Return_type_success_(return >= 0) int32_t dds_return_t;
+typedef _Return_type_success_(return >= 0) int32_t dds_entity_t;
 
 /* Sub components */
 

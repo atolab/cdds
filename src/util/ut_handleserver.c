@@ -92,11 +92,14 @@ ut_handle_create(
 {
     ut_handle_t hdl = (ut_handle_t)UT_HANDLE_OUT_OF_RESOURCES;
 
-    assert(hs);
     /* A kind is obligatory. */
     assert(kind & UT_HANDLE_KIND_MASK);
     /* The kind should extent outside its boundaries. */
     assert(!(kind & ~UT_HANDLE_KIND_MASK));
+
+    if (hs == NULL) {
+        return (ut_handle_t)UT_HANDLE_NOT_INITALIZED;
+    }
 
     os_mutexLock(&hs->mutex);
 
@@ -196,8 +199,11 @@ ut_handle_claim(
     struct ut_handlelink *info = link;
     ut_handle_retcode_t   ret = UT_HANDLE_OK;
 
-    assert(hs);
     assert(arg);
+
+    if (hs == NULL) {
+        return (ut_handle_t)UT_HANDLE_NOT_INITALIZED;
+    }
 
     *arg = NULL;
 
