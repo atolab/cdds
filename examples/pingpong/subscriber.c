@@ -271,7 +271,7 @@ int main (int argc, char **argv)
 
     subParts[0] = partitionName;
     dds_qset_partition (subQos, 1, subParts);
-    status = dds_subscriber_create (participant, &subscriber, subQos, NULL);
+    status = dds_create_subscriber (participant, &subscriber, subQos, NULL);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     dds_qos_delete (subQos);
 

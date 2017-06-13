@@ -164,47 +164,44 @@ typedef enum dds_presentation_access_scope_kind
 dds_presentation_access_scope_kind_t;
 
 /**
- * Description : Allocate memory and initializes to default values for qos
+ * @brief Allocate memory and initialize default QoS-policies
  *
- * Arguments :
- *   -# Returns a pointer to the allocated memory for dds_qos_t  structure, 0 if unsuccessful
+ * @returns - Pointer to the initialized dds_qos_t structure, NULL if unsuccessful.
  */
-
+_Ret_notnull_
 OS_API dds_qos_t * dds_qos_create (void);
 
 /**
- * Description : Delete the memory allocated to qos structure
+ * @brief Delete memory allocated to QoS-policies structure
  *
- * Arguments :
- *   -# qos pointer to the structure
+ * @param[in] qos - Pointer to dds_qos_t structure
  */
-OS_API void dds_qos_delete (dds_qos_t * __restrict qos);
+OS_API void dds_qos_delete (_In_ _Post_invalid_ dds_qos_t * __restrict qos);
 
 /**
- * Description : This operation results in resetting the qos structure contents to 0
+ * @brief Reset a QoS-policies structure to default values
  *
- * Arguments :
- *   -# qos pointer to the structure
+ * @param[in,out] qos - Pointer to the dds_qos_t structure
  */
-OS_API void dds_qos_reset (dds_qos_t * __restrict qos);
+OS_API void dds_qos_reset (_Inout_ dds_qos_t * __restrict qos);
 
 /**
- * Description : Copy the qos policies from source to destination
+ * @brief Copy all QoS-policies from one structure to another
  *
- * Arguments :
- *   -# dst The pointer to the destination qos structure, where the content is to copied
- *   -# src The pointer to the source qos structure to be copied
+ * @param[in,out] dst - Pointer to the destination dds_qos_t structure
+ * @param[in] src - Pointer to the source dds_qos_t structure
  */
-OS_API dds_return_t dds_qos_copy (dds_qos_t * __restrict dst, const dds_qos_t * __restrict src);
+OS_API dds_return_t dds_qos_copy (_Inout_ dds_qos_t * __restrict dst, _In_ const dds_qos_t * __restrict src);
 
 /**
- * Description : Copy the qos policies from source to destination, unless already set
+ * @brief Copy all QoS-policies from one structure to another, unless already set
  *
- * Arguments :
- *   -# dst The pointer to the destination qos structure, where the content is merged
- *   -# src The pointer to the source qos structure to be copied
+ * Policies are copied from src to dst, unless src already has the policy set to a non-default value.
+ *
+ * @param[in,out] dst - Pointer to the destination qos structure
+ * @param[in] src - Pointer to the source qos structure
  */
-OS_API void dds_qos_merge (dds_qos_t * __restrict dst, const dds_qos_t * __restrict src);
+OS_API void dds_qos_merge (_Inout_ dds_qos_t * __restrict dst, _In_ const dds_qos_t * __restrict src);
 
 /**
  * Description : Retrieves the default value of the domain participant qos
@@ -231,14 +228,6 @@ OS_API void dds_get_default_topic_qos (dds_qos_t * __restrict qos);
 OS_API void dds_get_default_publisher_qos (dds_qos_t * __restrict qos);
 
 /**
- * Description : Retrieves the default value of the subscriber qos
- *
- * Arguments :
- *   -# qos pointer that contains default values of the policies for subscriber
- */
-OS_API void dds_get_default_subscriber_qos (dds_qos_t * __restrict qos);
-
-/**
  * Description : Retrieves the default value of the data writer qos
  *
  * Arguments :
@@ -254,507 +243,617 @@ OS_API void dds_get_default_writer_qos (dds_qos_t * __restrict qos);
  */
 OS_API void dds_get_default_reader_qos (dds_qos_t * __restrict qos);
 
-/* return values represent the Error codes if set call is unsuccessful
-*/
-
 /**
- * Description : Set the userdata policy in the qos structure. This value will be validated and applied
- * at the time of entity creation.
+ * @brief Set the userdata of a qos structure.
  *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the userdata will be applied
- *   -# value content of the user data
- *   -# sz size of the value passed in
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the userdata
+ * @param[in] value - Pointer to the userdata
+ * @param[in] sz - Size of userdata stored in value
  */
-OS_API void dds_qset_userdata (dds_qos_t * __restrict qos, const void * __restrict value, size_t sz);
-
-/**
- * Description : Set the topicdata policy in the qos structure. This value will be validated and applied
- * at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the topicdata will be applied
- *   -# value content of the topic data
- *   -# sz size of the value passed in
- */
-OS_API void dds_qset_topicdata (dds_qos_t * __restrict qos, const void * __restrict value, size_t sz);
-
-/**
- * Description : Set the groupdata policy in the qos structure. This value will be validated and applied
- * at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the groupdata will be applied
- *   -# value content of the group data
- *   -# sz size of the value passed in
- */
-OS_API void dds_qset_groupdata (dds_qos_t * __restrict qos, const void * __restrict value, size_t sz);
-
-/**
- * Description : Set the durability policy in the qos structure. This value will be validated and applied
- * at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the durability will be applied
- *   -# kind \ref DCPS_QoS_Durability
- */
-OS_API void dds_qset_durability (dds_qos_t *qos, dds_durability_kind_t kind);
-
-/**
- * Description : Set the history policy in the qos structure. This value will be validated and applied
- * at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the history will be applied
- *   -# kind, depth \ref DCPS_QoS_History
- */
-OS_API void dds_qset_history (dds_qos_t *qos, dds_history_kind_t kind, int32_t depth);
-
-/**
- * Description : Set the resource limits policy to the qos structure. This value will be validated and applied
- * at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the resource limits will be applied
- *   -# max_samples, max_instances, max_samples_per_instance \ref DCPS_QoS_ResourceLimits
- */
-OS_API void dds_qset_resource_limits (dds_qos_t *qos, int32_t max_samples, int32_t max_instances, int32_t max_samples_per_instance);
-
-/**
- * Description : Set the presentation policy in the qos structure. This value will be validated and applied
- * at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the presentation policy will be applied
- *   -# access_scope, coherent_access & ordered access  \ref DCPS_QoS_Presentation
- */
-OS_API void dds_qset_presentation (dds_qos_t *qos, dds_presentation_access_scope_kind_t access_scope, bool coherent_access, bool ordered_access);
-
-/**
- * Description : Set the lifespan policy in the qos structure. This value will be validated and applied
- * at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the lifespan policy will be applied
- *   -# lifespan Expiration time relative to source timestamp beyond which the sample shall be
- *      removed from the caches.
- */
-OS_API void dds_qset_lifespan (dds_qos_t *qos, dds_duration_t lifespan);
-
-/**
- * Description : Set the deadline policy in the qos structure. This value will be validated and applied
- * at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the deadline policy will be applied
- *   -# deadline \ref DCPS_QoS_Deadline.
- */
-OS_API void dds_qset_deadline (dds_qos_t *qos, dds_duration_t deadline);
-
-/**
- * Description : Set the latency budget policy in the qos structure. This value will be validated
- * and applied at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the latency budget policy will be applied
- *   -# duration \ref DCPS_QoS_LatencyBudget
- */
-OS_API void dds_qset_latency_budget (dds_qos_t *qos, dds_duration_t duration);
-
-/**
- * Description : Set the ownership policy in the qos structure. This value will be validated
- * and applied at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the ownership policy will be applied
- *   -# kind \ref DCPS_QoS_Ownership
- */
-OS_API void dds_qset_ownership (dds_qos_t *qos, dds_ownership_kind_t kind);
-
-/**
- * Description : Set the ownership strength in the qos structure. This value will be validated
- * and applied at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the ownership strength will be applied
- *   -# value determines the ownership of a data instance, and the arbitration is performed by the data reader.
- */
-OS_API void dds_qset_ownership_strength (dds_qos_t *qos, int32_t value);
-
-/**
- * Description : Set the liveliness policy in the qos structure. This value will be validated
- * and applied at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the liveliness policy will be applied
- *   -# kind, lease_duration \ref DCPS_QoS_Liveliness
- */
-OS_API void dds_qset_liveliness (dds_qos_t *qos, dds_liveliness_kind_t kind, dds_duration_t lease_duration);
-
-/**
- * Description : Set the time based filter policy in the qos structure. This value will be validated
- * and applied at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the timebased filter policy will be applied
- *   -# minimum_separation The duration that determines the rate at which the data reader want to see the sample
- *      per instance.
- */
-OS_API void dds_qset_time_based_filter (dds_qos_t *qos, dds_duration_t minimum_separation);
-
-/**
- * Description : Set the logical partition name in the qos structure. This value will be validated
- * and applied at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the timebased filter policy will be applied
- *   -# n The partition number
- *   -# ps The logical name to the partition to create \ref DCPS_QoS_Partition
- */
-OS_API void dds_qset_partition (dds_qos_t * __restrict qos, uint32_t n, const char ** ps);
-
-/**
- * Description : Set the reliability policy in the qos structure. This value will be validated
- * and applied at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the reliability policy will be applied
- *   -# kind, max_blocking_time \ref DCPS_QoS_Reliability
- */
-OS_API void dds_qset_reliability (dds_qos_t *qos, dds_reliability_kind_t kind, dds_duration_t max_blocking_time);
-
-/**
- * Description : Set the transport priority policy in the qos structure. This value will be validated
- * and applied at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the transport policy will be applied
- *   -# value priority value for transporting the messages (higher the number, higher the priority)
- *   NOTE: Depends on the underlying transport.
- */
-OS_API void dds_qset_transport_priority (dds_qos_t *qos, int32_t value);
-
-/**
- * Description : Set the destination order policy in the qos structure. This value will be validated
- * and applied at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the destination order will be applied
- *   -# kind \ref DCPS_QoS_DestinationOrder
- */
-OS_API void dds_qset_destination_order (dds_qos_t *qos, dds_destination_order_kind_t kind);
-
-/**
- * Description : Set the writer data lifecycle policy in the qos structure. This value will be validated
- * and applied at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the writer data cycle policy will be applied
- *   -# autodispose_unregistered_instances
- *      - true : dispose the instance automatically each time when it is unregistered
- *      - false : automatic disposition will not happen upon unregistration
- */
-OS_API void dds_qset_writer_data_lifecycle (dds_qos_t *qos, bool autodispose_unregistered_instances);
-
-/**
- * Description : Set the reader data lifecycle policy in the qos structure. This value will be validated
- * and applied at the time of entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the reader data cycle policy will be applied
- *   -# autopurge_nowriter_samples, autopurge_disposed_samples_delay \ref DCPS_QoS_ReaderDataLifecycle
- */
-OS_API void dds_qset_reader_data_lifecycle (dds_qos_t *qos, dds_duration_t autopurge_nowriter_samples, dds_duration_t autopurge_disposed_samples_delay);
-
-/**
- * Description : Set the durability service qos. This value will be validated
- * and applied on entity creation.
- *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the durability service policy will be applied
- *   -# service_cleanup_delay Controls when the durability service can remove all information regarding a data-instance
- *   -# history_kind, history_depth Controls the HISTORY QoS of the durability server DataReader
- *   -# max_samples, max_instances, max_samples_per_instance Controls the RESOURCE_ LIMITS QoS of the durability server DataReader
- */
-OS_API void dds_qset_durability_service
+OS_API
+void dds_qset_userdata
 (
-  dds_qos_t * qos,
-  dds_duration_t service_cleanup_delay,
-  dds_history_kind_t history_kind,
-  int32_t history_depth,
-  int32_t max_samples,
-  int32_t max_instances,
-  int32_t max_samples_per_instance
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_ const void * __restrict value,
+    _In_range_(>, 0) size_t sz
 );
 
-/*
-   Getters: return false if not set, true if set; userdata, topicdata,
-   groupdata, partition are all aliased into the qos data, NULL
-   pointers indicate the value is of no interest, so
-   dds_qget_deadline (&qos,NULL) is a simple way of testing whether the
-   deadline qos is set at all.
-*/
-
 /**
- * Description : Get the userdata policy.
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the topicdata of a qos structure.
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# value The pointer to the userdata (can be NULL)
- *   -# sz The size of the userdata (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the topicdata
+ * @param[in] value - Pointer to the topicdata
+ * @param[in] sz - Size of the topicdata stored in value
  */
-OS_API void dds_qget_userdata (const dds_qos_t *qos, void ** value, size_t *sz);
+OS_API
+void dds_qset_topicdata
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_ const void * __restrict value,
+    _In_range_(>, 0) size_t sz
+);
 
 /**
- * Description : Get the topicdata policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the groupdata of a qos structure.
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# value The pointer to the topicdata (can be NULL)
- *   -# sz The size of the topicdata (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the groupdata
+ * @param[in] value - Pointer to the group data
+ * @param[in] sz - Size of groupdata stored in value
  */
-OS_API void dds_qget_topicdata (const dds_qos_t *qos, void ** value, size_t *sz);
+OS_API
+void dds_qset_groupdata
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_ const void * __restrict value,
+    _In_range_(>, 0) size_t sz
+);
 
 /**
- * Description : Get the groupdata policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the durability policy of a qos structure.
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# value The pointer to the groupdata (can be NULL)
- *   -# sz The size of the groupdata (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] kind - Durability kind value \ref DCPS_QoS_Durability
  */
-OS_API void dds_qget_groupdata (const dds_qos_t *qos, void ** value, size_t *sz);
+OS_API
+void dds_qset_durability
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(DDS_DURABILITY_VOLATILE, DDS_DURABILITY_PERSISTENT) dds_durability_kind_t kind
+);
 
 /**
- * Description : Get the durability qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# kind The pointer to \ref DCPS_QoS_Durability (can be NULL)
- */
-OS_API void dds_qget_durability (const dds_qos_t *qos, dds_durability_kind_t *kind);
-
-/**
- * Description : Get the history qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the history policy of a qos structure.
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# kind, depth The pointer to retrieve \ref DCPS_QoS_History (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] kind - History kind value \ref DCPS_QoS_History
+ * @param[in] depth - History depth value \ref DCPS_QoS_History
  */
-OS_API void dds_qget_history (const dds_qos_t *qos, dds_history_kind_t *kind, int32_t * depth);
+OS_API void dds_qset_history
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(DDS_HISTORY_KEEP_LAST, DDS_HISTORY_KEEP_ALL) dds_history_kind_t kind,
+    _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t depth
+);
 
 /**
- * Description : Get the resource limits qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the resource limits policy of a qos structure.
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# max_samples, max_instances, max_samples_per_instance The pointer to retrieve the value of
- *      \ref DCPS_QoS_ResourceLimits (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] max_samples - Number of samples resource-limit value
+ * @param[in] max_instances - Number of instances resource-limit value
+ * @param[in] max_samples_per_instance - Number of samples per instance resource-limit value
  */
-OS_API void dds_qget_resource_limits (const dds_qos_t *qos, int32_t *max_samples, int32_t *max_instances, int32_t *max_samples_per_instance);
+OS_API
+void dds_qset_resource_limits
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t max_samples,
+    _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t max_instances,
+    _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t max_samples_per_instance
+);
+
 
 /**
- * Description : Get the presentation qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the presentation policy of a qos structure.
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# access_scope, coherent_access & ordered_access The pointer to \ref DCPS_QoS_Presentation (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] access_scope - Access-scope kind
+ * @param[in] coherent_access - Coherent access enable value
+ * @param[in] ordered_access - Ordered access enable value
  */
-OS_API void dds_qget_presentation (const dds_qos_t *qos, dds_presentation_access_scope_kind_t *access_scope, bool *coherent_access, bool *ordered_access);
+OS_API void dds_qset_presentation
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(DDS_PRESENTATION_INSTANCE, DDS_PRESENTATION_GROUP) dds_presentation_access_scope_kind_t access_scope,
+    _In_ bool coherent_access,
+    _In_ bool ordered_access
+);
 
 /**
- * Description : Get the lifespan qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the lifespan policy of a qos structure.
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# lifespan The pointer to retrieve the lifespan duration value set (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] lifespan - Lifespan duration (expiration time relative to source timestamp of a sample)
  */
-OS_API void dds_qget_lifespan (const dds_qos_t *qos, dds_duration_t *lifespan);
+OS_API
+void dds_qset_lifespan
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(0, DDS_INFINITY) dds_duration_t lifespan
+);
 
 /**
- * Description : Get the deadline qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the deadline policy of a qos structure.
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# deadline The pointer to retrieve \ref DCPS_QoS_Deadline (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] deadline - Deadline duration
  */
-OS_API void dds_qget_deadline (const dds_qos_t *qos, dds_duration_t *deadline);
+OS_API
+void dds_qset_deadline
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(0, DDS_INFINITY) dds_duration_t deadline
+);
 
 /**
- * Description : Get the latency budget qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# duration The pointer to retrieve \ref DCPS_QoS_LatencyBudget (can be NULL)
- */
-OS_API void dds_qget_latency_budget (const dds_qos_t *qos, dds_duration_t *duration);
-
-/**
- * Description : Get the ownership qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the latency-budget policy of a qos structure
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# kind The pointer to retrieve the value of \ref dds_ownership_kind_t (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] duration - Latency budget duration
  */
-OS_API void dds_qget_ownership (const dds_qos_t *qos, dds_ownership_kind_t *kind);
+OS_API
+void dds_qset_latency_budget
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(0, DDS_INFINITY) dds_duration_t duration
+);
 
 /**
- * Description : Get the ownership strength qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the ownership policy of a qos structure
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# value The pointer to retrieve the ownership strength (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] kind - Ownership kind
  */
-OS_API void dds_qget_ownership_strength (const dds_qos_t *qos, int32_t *value);
+OS_API
+void dds_qset_ownership
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(DDS_OWNERSHIP_SHARED, DDS_OWNERSHIP_EXCLUSIVE) dds_ownership_kind_t kind
+);
 
 /**
- * Description : Get the liveliness qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the ownership strength policy of a qos structure
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# kind, lease_duration The pointer to retrieve \ref DCPS_QoS_Liveliness (can be NULL)
+ * param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * param[in] value - Ownership strength value
  */
-OS_API void dds_qget_liveliness (const dds_qos_t *qos, dds_liveliness_kind_t *kind, dds_duration_t *lease_duration);
+OS_API
+void dds_qset_ownership_strength
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_ int32_t value
+);
 
 /**
- * Description : Get the timebased filter qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# minimum_separation The pointer to retrieve \ref DCPS_QoS_TimeBasedFilter (can be NULL)
- */
-OS_API void dds_qget_time_based_filter (const dds_qos_t *qos, dds_duration_t *minimum_separation);
-
-/**
- * Description : Get the logical partition qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# n The pointer to retrieve the partition number set (can be NULL)
- *   -# ps The pointer to \ref DCPS_QoS_Partition (can be NULL)
- */
-OS_API void dds_qget_partition (const dds_qos_t *qos, uint32_t *n, char *** ps);
-
-/**
- * Description : Get the reliability qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the liveliness policy of a qos structure
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# kind, max_blocking_time The pointer to retrieve \ref DCPS_QoS_Reliability (can be NULL)
+ * param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * param[in] kind - Liveliness kind
+ * param[in[ lease_duration - Lease duration
  */
-OS_API void dds_qget_reliability (const dds_qos_t *qos, dds_reliability_kind_t *kind, dds_duration_t *max_blocking_time);
+OS_API
+void dds_qset_liveliness
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(DDS_LIVELINESS_AUTOMATIC, DDS_LIVELINESS_MANUAL_BY_TOPIC) dds_liveliness_kind_t kind,
+    _In_range_(0, DDS_INFINITY) dds_duration_t lease_duration
+);
 
 /**
- * Description : Get the transport priority qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the time-based filter policy of a qos structure
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# value The pointer to retrieve the transport priority set (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] minimum_separation - Minimum duration between sample delivery for an instance
  */
-OS_API void dds_qget_transport_priority (const dds_qos_t *qos, int32_t *value);
+OS_API
+void dds_qset_time_based_filter
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(0, DDS_INFINITY) dds_duration_t minimum_separation
+);
 
 /**
- * Description : Get the destination order qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the partition policy of a qos structure
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# value The pointer to retrieve \ref DCPS_QoS_DestinationOrder (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] n - Number of partitions stored in ps
+ * @param[in[ ps - Pointer to string(s) storing partition name(s)
  */
-OS_API void dds_qget_destination_order (const dds_qos_t *qos, dds_destination_order_kind_t *value);
+OS_API
+void dds_qset_partition
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_ uint32_t n,
+    _In_reads_z_(n) const char ** __restrict ps
+);
 
 /**
- * Description : Get the writer data lifecycle qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the reliability policy of a qos structure
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# autodispose_unregistered_instances The pointer to retrieve the value set (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] kind - Reliability kind
+ * @param[in] max_blocking_time - Max blocking duration applied when kind is reliable.
  */
-OS_API void dds_qget_writer_data_lifecycle (const dds_qos_t *qos, bool * autodispose_unregistered_instances);
+OS_API
+void dds_qset_reliability
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(DDS_RELIABILITY_BEST_EFFORT, DDS_RELIABILITY_RELIABLE) dds_reliability_kind_t kind,
+    _In_range_(0, DDS_INFINITY) dds_duration_t max_blocking_time
+);
 
 /**
- * Description : Get the reader data lifecycle qos policy
- *               This operation returns false to indicate that the policy is not set.
- *               To check whether the policy is set at all, all other arguments could be set to NULL
- *               except qos.
+ * @brief Set the transport-priority policy of a qos structure
  *
- * Arguments :
- *   -# qos The pointer to the qos structure which has the policies set
- *   -# autopurge_nowriter_samples & autopurge_disposed_samples_delay
- *      The pointer to retrieve DCPS_QoS_ReaderDataLifecycle (can be NULL)
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] value - Priority value
  */
-OS_API void dds_qget_reader_data_lifecycle (const dds_qos_t *qos, dds_duration_t *autopurge_nowriter_samples, dds_duration_t *autopurge_disposed_samples_delay);
+OS_API
+void dds_qset_transport_priority
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_ int32_t value
+);
 
 /**
- * Description : Get the durability service qos policy values.
+ * @brief Set the destination-order policy of a qos structure
  *
- * Arguments :
- *   -# qos The pointer to the qos structure, where the durability service policy will be applied
- *   -# service_cleanup_delay Controls when the durability service can remove all information regarding a data-instance
- *   -# history_kind, history_depth Controls the HISTORY QoS of the durability server DataReader
- *   -# max_samples, max_instances, max_samples_per_instance Controls the RESOURCE_ LIMITS QoS of the durability server DataReader
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] kind - Destination-order kind
+ */
+OS_API
+void dds_qset_destination_order
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(DDS_DESTINATIONORDER_BY_RECEPTION_TIMESTAMP,
+        DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP) dds_destination_order_kind_t kind
+);
+
+/**
+ * @brief Set the writer data-lifecycle policy of a qos structure
+ *
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] autodispose_unregistered_instances - Automatic disposal of unregistered instances
+ */
+OS_API
+void dds_qset_writer_data_lifecycle
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_ bool autodispose
+);
+
+/**
+ * @brief Set the reader data-lifecycle policy of a qos structure
+ *
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] autopurge_nowriter_samples_delay - Delay for purging of samples from instances in a no-writers state
+ * @param[in] autopurge_disposed_samples_delay - Delay for purging of samples from disposed instances
+ */
+OS_API
+void dds_qset_reader_data_lifecycle
+(
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(0, DDS_INFINITY) dds_duration_t autopurge_nowriter_samples_delay,
+    _In_range_(0, DDS_INFINITY) dds_duration_t autopurge_disposed_samples_delay
+);
+
+/**
+ * @brief Set the durability-service policy of a qos structure
+ *
+ * @param[in,out] qos - Pointer to a dds_qos_t structure that will store the policy
+ * @param[in] service_cleanup_delay - Delay for purging of abandoned instances from the durability service
+ * @param[in] history_kind - History policy kind applied by the durability service
+ * @param[in] history_depth - History policy depth applied by the durability service
+ * @param[in] max_samples - Number of samples resource-limit policy applied by the durability service
+ * @param[in] max_instances - Number of instances resource-limit policy applied by the durability service
+ * @param[in] max_samples_per_instance - Number of samples per instance resource-limit policy applied by the durability service
+ */
+OS_API
+void dds_qset_durability_service
+(
+  _Inout_ dds_qos_t * __restrict qos,
+  _In_range_(0, DDS_INFINITY) dds_duration_t service_cleanup_delay,
+  _In_range_(DDS_HISTORY_KEEP_LAST, DDS_HISTORY_KEEP_ALL) dds_history_kind_t history_kind,
+  _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t history_depth,
+  _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t max_samples,
+  _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t max_instances,
+  _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t max_samples_per_instance
+);
+
+/**
+ * @brief Get the userdata from a qos structure
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] value - Pointer that will store the userdata
+ * @param[in,out] sz - Pointer that will store the size of userdata
+ */
+OS_API
+void dds_qget_userdata
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Outptr_result_bytebuffer_maybenull_(*sz) void ** value,
+    _Out_ size_t * sz
+);
+
+/**
+ * @brief Get the topicdata from a qos structure
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] value - Pointer that will store the topicdata
+ * @param[in,out] sz - Pointer that will store the size of topicdata
+ */
+OS_API
+void dds_qget_topicdata
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Outptr_result_bytebuffer_maybenull_(*sz) void ** value,
+    _Out_ size_t * sz
+);
+
+/**
+ * @brief Get the groupdata from a qos structure
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] value - Pointer that will store the groupdata
+ * @param[in,out] sz - Pointer that will store the size of groupdata
+ */
+OS_API
+void dds_qget_groupdata
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Outptr_result_bytebuffer_maybenull_(*sz) void ** value,
+    _Out_ size_t * sz
+);
+
+/**
+ * @brief Get the durability policy from a qos structure
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] kind - Pointer that will store the durability kind
+ */
+OS_API
+void dds_qget_durability
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_ dds_durability_kind_t *kind
+);
+
+/**
+ * @brief Get the history policy from a qos structure
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] kind - Pointer that will store the history kind (optional)
+ * @param[in,out] depth - Pointer that will store the history depth (optional)
+ */
+OS_API
+void dds_qget_history
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_opt_ dds_history_kind_t * kind,
+    _Out_opt_ int32_t *depth
+);
+
+/**
+ * @brief Get the resource-limits policy from a qos structure
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] max_samples - Pointer that will store the number of samples resource-limit (optional)
+ * @param[in,out] max_instances - Pointer that will store the number of instances resource-limit (optional)
+ * @param[in,out] max_samples_per_instance - Pointer that will store the number of samples per instance resource-limit (optional)
+ */
+OS_API
+void dds_qget_resource_limits
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_opt_ int32_t *max_samples,
+    _Out_opt_ int32_t *max_instances,
+    _Out_opt_ int32_t *max_samples_per_instance
+);
+
+/**
+ * @brief Get the presentation policy from a qos structure
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] access_scope - Pointer that will store access scope kind (optional)
+ * @param[in,out] coherent_access - Pointer that will store coherent access enable value (optional)
+ * @param[in,out] ordered_access - Pointer that will store orderede access enable value (optional)
+ */
+OS_API
+void dds_qget_presentation
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_opt_ dds_presentation_access_scope_kind_t *access_scope,
+    _Out_opt_ bool *coherent_access,
+    _Out_opt_ bool *ordered_access
+);
+
+/**
+ * @brief Get the lifespan policy from a qos structure
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] lifespan - Pointer that will store lifespan duration
+ */
+OS_API
+void dds_qget_lifespan
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_ dds_duration_t * lifespan
+);
+
+/**
+ * @brief Get the deadline policy from a qos structure
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] deadline - Pointer that will store deadline duration
+ */
+OS_API
+void dds_qget_deadline
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_ dds_duration_t * deadline
+);
+
+/**
+ * @brief Get the latency-budget policy from a qos structure
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] duration - Pointer that will store latency-budget duration
+ */
+OS_API
+void dds_qget_latency_budget
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_ dds_duration_t *duration
+);
+
+/**
+ * @brief Get the ownership policy from a qos structure
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] kind - Pointer that will store the ownership kind
+ */
+OS_API
+void dds_qget_ownership
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_ dds_ownership_kind_t *kind
+);
+
+/**
+ * @brief Get the ownership strength qos policy
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] value - Pointer that will store the ownership strength value
+ */
+OS_API
+void dds_qget_ownership_strength
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_ int32_t *value
+);
+
+/**
+ * @brief Get the liveliness qos policy
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] kind - Pointer that will store the liveliness kind (optional)
+ * @param[in,out] lease_duration - Pointer that will store the liveliness lease duration (optional)
+ */
+OS_API
+void dds_qget_liveliness
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_opt_ dds_liveliness_kind_t *kind,
+    _Out_opt_ dds_duration_t *lease_duration
+);
+
+/**
+ * @brief Get the time-based filter qos policy
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] minimum_separation - Pointer that will store the minimum separation duration (optional)
+ */
+OS_API
+void dds_qget_time_based_filter
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_ dds_duration_t *minimum_separation
+);
+
+/**
+ * @brief Get the partition qos policy
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] n - Pointer that will store the number of partitions (optional)
+ * @param[in,out] ps - Pointer that will store the string(s) containing partition name(s) (optional)
+ */
+OS_API
+void dds_qget_partition
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_ uint32_t *n,
+    _Out_ char *** ps
+);
+
+/**
+ * @brief Get the reliability qos policy
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] kind - Pointer that will store the reliability kind (optional)
+ * @param[in,out] max_blocking_time - Pointer that will store the max blocking time for reliable reliability (optional)
+ */
+OS_API
+void dds_qget_reliability
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_opt_ dds_reliability_kind_t *kind,
+    _Out_opt_ dds_duration_t *max_blocking_time
+);
+
+/**
+ * @brief Get the transport priority qos policy
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] value - Pointer that will store the transport priority value
+ */
+OS_API
+void dds_qget_transport_priority
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_ int32_t *value
+);
+
+/**
+ * @brief Get the destination-order qos policy
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] kind - Pointer that will store the destination-order kind
+ */
+OS_API
+void dds_qget_destination_order
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_ dds_destination_order_kind_t *kind
+);
+
+/**
+ * @brief Get the writer data-lifecycle qos policy
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] autodispose_unregistered_instances - Pointer that will store the autodispose unregistered instances enable value
+ */
+OS_API
+void dds_qget_writer_data_lifecycle
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_ bool * autodispose
+);
+
+/**
+ * @brief Get the reader data-lifecycle qos policy
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out] autopurge_nowriter_samples_delay - Pointer that will store the delay for auto-purging samples from instances in a no-writer state (optional)
+ * @param[in,out] autopurge_disposed_samples_delay - Pointer that will store the delay for auto-purging of disposed instances (optional)
+ */
+OS_API
+void dds_qget_reader_data_lifecycle
+(
+    _In_ const dds_qos_t * __restrict qos,
+    _Out_opt_ dds_duration_t *autopurge_nowriter_samples_delay,
+    _Out_opt_ dds_duration_t *autopurge_disposed_samples_delay
+);
+
+/**
+ * @brief Get the durability-service qos policy values.
+ *
+ * @param[in] qos - Pointer to a dds_qos_t structure storing the policy
+ * @param[in,out]  service_cleanup_delay - Pointer that will store the delay for purging of abandoned instances from the durability service (optional)
+ * @param[in,out] history_kind - Pointer that will store history policy kind applied by the durability service (optional)
+ * @param[in,out] history_depth - Pointer that will store history policy depth applied by the durability service (optional)
+ * @param[in,out] max_samples - Pointer that will store number of samples resource-limit policy applied by the durability service (optional)
+ * @param[in,out] max_instances - Pointer that will store number of instances resource-limit policy applied by the durability service (optional)
+ * @param[in,out] max_samples_per_instance - Pointer that will store number of samples per instance resource-limit policy applied by the durability service (optional)
  */
 OS_API void dds_qget_durability_service
 (
-  const dds_qos_t * qos,
-  dds_duration_t * service_cleanup_delay,
-  dds_history_kind_t * history_kind,
-  int32_t * history_depth,
-  int32_t * max_samples,
-  int32_t * max_instances,
-  int32_t * max_samples_per_instance
+  _In_ const dds_qos_t * qos,
+  _Out_opt_ dds_duration_t * service_cleanup_delay,
+  _Out_opt_ dds_history_kind_t * history_kind,
+  _Out_opt_ int32_t * history_depth,
+  _Out_opt_ int32_t * max_samples,
+  _Out_opt_ int32_t * max_instances,
+  _Out_opt_ int32_t * max_samples_per_instance
 );
 
 #undef OS_API

@@ -67,7 +67,7 @@ int pong_main (int argc, char *argv[])
 
   qos = dds_qos_create ();
   dds_qset_partition (qos, 1, subPartitions);
-  status = dds_subscriber_create (participant, &subscriber, qos, NULL);
+  status = dds_create_subscriber (participant, &subscriber, qos, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (qos);
 

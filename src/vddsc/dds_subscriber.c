@@ -19,10 +19,14 @@ static dds_return_t dds_subscriber_qos_validate (const dds_qos_t *qos, bool enab
 {
     dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_KERNEL, 0);
     bool consistent = true;
+
     assert(qos);
-    /* Check consistency. */
-    consistent &= ((qos->present & QP_GROUP_DATA) && ! validate_octetseq (&qos->group_data));
-    consistent &= ((qos->present & QP_PRESENTATION) && (validate_presentation_qospolicy (&qos->presentation) != 0));
+    consistent &= (qos->present & QP_GROUP_DATA) ? validate_octetseq(&qos->group_data) : true;
+    consistent &= (qos->present & QP_PARTITION) ? validate_stringseq(&qos->partition) : true;
+    consistent &= (qos->present & QP_PRESENTATION) ? !validate_presentation_qospolicy(&qos->presentation) : true;
+    consistent &= (qos->present & QP_PRISMTECH_ENTITY_FACTORY) ? \
+        validate_entityfactory_qospolicy(&qos->entity_factory) : true;
+
     if (consistent) {
         if (enabled) {
             /* TODO: Improve/check immutable check. */
@@ -71,49 +75,85 @@ static dds_return_t dds_subscriber_status_propagate (dds_entity_t sub, uint32_t 
     return DDS_RETCODE_OK;
 }
 
-int dds_subscriber_create
+dds_entity_t dds_create_subscriber
 (
-  dds_entity_t pp,
-  dds_entity_t * subscriber,
-  const dds_qos_t * qos,
-  const dds_listener_t * listener
+  _In_ dds_entity_t pp,
+  _In_opt_ const dds_qos_t * qos,
+  _In_opt_ const dds_listener_t * listener
 )
 {
-  int ret = DDS_RETCODE_OK;
-  dds_subscriber * sub;
-  dds_qos_t * new_qos = NULL;
+    dds_return_t ret = DDS_RETCODE_OK;
+    dds_entity_t e = NULL;
+    dds_subscriber * sub;
+    dds_qos_t * new_qos = NULL;
 
-  assert (pp);
-  assert (pp->m_kind == DDS_TYPE_PARTICIPANT);
-  assert (subscriber);
-
-  os_mutexLock (&pp->m_mutex);
-
-  /* Validate qos */
-
-  if (qos)
-  {
-    ret = (int)dds_subscriber_qos_validate (qos, false);
-    if (ret != 0)
-    {
-      goto fail;
+    /* Validate participant */
+    if (!pp || pp->m_kind != DDS_TYPE_PARTICIPANT) {
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_KERNEL, 0);
+        goto fail;
     }
-    new_qos = dds_qos_create ();
-    dds_qos_copy (new_qos, qos);
-  }
 
-  /* Create subscriber */
+    /* Validate qos */
+    if (qos) {
+        ret = dds_subscriber_qos_validate(qos, false);
+        if (ret != DDS_RETCODE_OK) {
+            DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_KERNEL, 1);
+            goto fail;
+        }
+        new_qos = dds_qos_create();
+        dds_qos_copy(new_qos, qos);
+    }
 
-  sub = dds_alloc (sizeof (*sub));
-  dds_entity_init (&sub->m_entity, pp, DDS_TYPE_SUBSCRIBER, new_qos, listener, DDS_SUBSCRIBER_STATUS_MASK);
-  *subscriber = &sub->m_entity;
-  sub->m_entity.m_deriver.set_qos = dds_subscriber_qos_set;
-  sub->m_entity.m_deriver.validate_status = dds_subscriber_status_validate;
-  sub->m_entity.m_deriver.propagate_status = dds_subscriber_status_propagate;
-  sub->m_entity.m_deriver.get_instance_hdl = dds_subscriber_instance_hdl;
+    /* Create subscriber */
+    sub = dds_alloc(sizeof(*sub));
 
-fail:
+    os_mutexLock(&pp->m_mutex);
+    dds_entity_init(&sub->m_entity, pp, DDS_TYPE_SUBSCRIBER, new_qos, listener, DDS_SUBSCRIBER_STATUS_MASK);
+    sub->m_entity.m_deriver.set_qos = dds_subscriber_qos_set;
+    sub->m_entity.m_deriver.validate_status = dds_subscriber_status_validate;
+    sub->m_entity.m_deriver.propagate_status = dds_subscriber_status_propagate;
+    sub->m_entity.m_deriver.get_instance_hdl = dds_subscriber_instance_hdl;
+    os_mutexUnlock(&pp->m_mutex);
 
-  os_mutexUnlock (&pp->m_mutex);
-  return ret;
+    return (dds_entity_t)sub;
+
+    fail:
+    /* return ret; */
+    return NULL;
+}
+
+dds_return_t dds_notify_readers(_In_ dds_entity_t sub)
+{
+    dds_return_t ret = DDS_RETCODE_OK;
+    dds_entity_t iter;
+
+    os_mutexLock(&sub->m_mutex);
+    iter = sub->m_children;
+    while (iter) {
+        os_mutexLock(&iter->m_mutex);
+        //TODO check if reader has data available, call listener
+        os_mutexUnlock(&iter->m_mutex);
+        iter = iter->m_next;
+    }
+    os_mutexUnlock(&sub->m_mutex);
+
+    return DDS_RETCODE_UNSUPPORTED;
+}
+
+dds_return_t
+dds_subscriber_begin_coherent
+(
+    dds_entity_t e
+)
+{
+    return DDS_RETCODE_UNSUPPORTED;
+}
+
+dds_return_t
+dds_subscriber_end_coherent
+(
+    dds_entity_t e
+)
+{
+    return DDS_RETCODE_UNSUPPORTED;
 }

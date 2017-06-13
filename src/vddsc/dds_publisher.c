@@ -142,3 +142,22 @@ dds_return_t dds_wait_for_acks
   ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_WRITER, 0);
   return ret;
 }
+
+dds_return_t
+dds_publisher_begin_coherent
+(
+    _In_ dds_entity_t e
+)
+{
+    return DDS_RETCODE_UNSUPPORTED;
+}
+
+dds_return_t
+dds_publisher_end_coherent
+(
+    _In_ dds_entity_t e
+)
+{
+    return DDS_RETCODE_UNSUPPORTED;
+}
+

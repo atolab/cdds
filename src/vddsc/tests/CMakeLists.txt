@@ -39,4 +39,5 @@ add_dds_test(entity_api               Criterion      entity_api.c)
 add_dds_test(listener                 cunitrunner    listener.c)
 add_dds_test(participant_creation     Criterion      participant_creation.c)
 add_dds_test(publisher                Criterion      publisher.c)
+add_dds_test(subscriber               Criterion      subscriber.c)
 

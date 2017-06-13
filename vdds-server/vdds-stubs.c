@@ -293,7 +293,7 @@ int dds_publisher_create(dds_entity_t pp, dds_entity_t *publisher, const dds_qos
     return rep.status;
 }
 
-int dds_subscriber_create(dds_entity_t pp, dds_entity_t *subscriber, const dds_qos_t *qos, const dds_subscriberlistener_t *listener)
+int dds_create_subscriber(dds_entity_t pp, dds_entity_t *subscriber, const dds_qos_t *qos, const dds_subscriberlistener_t *listener)
 {
     struct reqhdr req;
     struct rephdr rep;

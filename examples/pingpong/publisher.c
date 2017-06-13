@@ -142,7 +142,7 @@ int main (int argc, char **argv)
     dds_qos_t *qos = dds_qos_create ();
     dds_entity_t sub;
     dds_qset_partition (qos, 1, parts);
-    status = dds_subscriber_create (participant, &sub, qos, NULL);
+    status = dds_create_subscriber (participant, &sub, qos, NULL);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     dds_qos_delete (qos);
     qos = dds_qos_create ();
