@@ -2,7 +2,7 @@
 #include "cunitrunner/runner.h"
 #include "os/os.h"
 
-#define ENABLE_TRACING 1
+#define ENABLE_TRACING 0
 
 char          arg_result[30];
 int           threadCalled;
