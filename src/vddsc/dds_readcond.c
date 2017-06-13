@@ -30,7 +30,7 @@ dds_condition_t dds_readcondition_create (dds_entity_t reader, uint32_t mask)
   return (dds_condition_t) cond;
 }
 
-dds_entity_t dds_get_datareader(dds_entity_t rc)
+dds_entity_t dds_get_datareader(_In_ dds_entity_t rc)
 {
     if (rc > 0) {
 #if 0

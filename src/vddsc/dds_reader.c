@@ -450,7 +450,7 @@ int dds_reader_wait_for_historical_data
     return ret;
 }
 
-dds_entity_t dds_get_subscriber(dds_entity_t e)
+dds_entity_t dds_get_subscriber(_In_ dds_entity_t e)
 {
     if (e > 0) {
         if (dds_entity_kind(e) == DDS_KIND_READER) {

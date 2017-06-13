@@ -362,7 +362,7 @@ int dds_writer_create
   return DDS_RETCODE_OK;
 }
 
-dds_entity_t dds_get_publisher(dds_entity_t e)
+dds_entity_t dds_get_publisher(_In_ dds_entity_t e)
 {
     if (e > 0) {
         if (dds_entity_kind(e) == DDS_KIND_WRITER) {

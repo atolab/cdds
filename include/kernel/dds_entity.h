@@ -22,6 +22,7 @@ void dds_entity_add_ref (_In_ dds_entity * e);
 _Check_return_
 bool dds_entity_cb_propagate_begin(_In_ dds_entity *e);
 void dds_entity_cb_propagate_end(_In_ dds_entity *e);
+_Check_return_
 bool dds_entity_cp_propagate_call(_In_ dds_entity *e, _In_ dds_entity *src, _In_ uint32_t status, _In_opt_ void *metrics, _In_ bool propagate);
 
 void dds_entity_delete_signal (_In_ dds_entity *e);

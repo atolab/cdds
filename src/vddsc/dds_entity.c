@@ -11,7 +11,8 @@
 #endif
 
 
-void dds_entity_add_ref (_In_ dds_entity * e)
+void
+dds_entity_add_ref (_In_ dds_entity * e)
 {
     assert (e);
     os_mutexLock (&e->m_mutex);
@@ -19,8 +20,8 @@ void dds_entity_add_ref (_In_ dds_entity * e)
     os_mutexUnlock (&e->m_mutex);
 }
 
-_Check_return_
-bool dds_entity_cb_propagate_begin(_In_ dds_entity *e)
+_Check_return_ bool
+dds_entity_cb_propagate_begin(_In_ dds_entity *e)
 {
     bool ok = true;
     if (e) {
@@ -47,7 +48,8 @@ bool dds_entity_cb_propagate_begin(_In_ dds_entity *e)
     return ok;
 }
 
-void dds_entity_cb_propagate_end(_In_ dds_entity *e)
+void
+dds_entity_cb_propagate_end(_In_ dds_entity *e)
 {
     if (e) {
         /* We started at the top, so when resetting we should start at the bottom. */
@@ -65,7 +67,8 @@ void dds_entity_cb_propagate_end(_In_ dds_entity *e)
     }
 }
 
-bool dds_entity_cp_propagate_call(
+_Check_return_ bool
+dds_entity_cp_propagate_call(
         _In_ dds_entity *e,
         _In_ dds_entity *src,
         _In_ uint32_t status,
@@ -82,42 +85,49 @@ bool dds_entity_cp_propagate_call(
         switch (status) {
             case DDS_INCONSISTENT_TOPIC_STATUS:
                 if (l->on_inconsistent_topic != DDS_LUNSET) {
+                    assert(metrics);
                     l->on_inconsistent_topic(src->m_hdl, *((dds_inconsistent_topic_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_OFFERED_DEADLINE_MISSED_STATUS:
                 if (l->on_offered_deadline_missed != DDS_LUNSET) {
+                    assert(metrics);
                     l->on_offered_deadline_missed(src->m_hdl, *((dds_offered_deadline_missed_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_REQUESTED_DEADLINE_MISSED_STATUS:
                 if (l->on_requested_deadline_missed != DDS_LUNSET) {
+                    assert(metrics);
                     l->on_requested_deadline_missed(src->m_hdl, *((dds_requested_deadline_missed_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_OFFERED_INCOMPATIBLE_QOS_STATUS:
                 if (l->on_offered_incompatible_qos != DDS_LUNSET) {
+                    assert(metrics);
                     l->on_offered_incompatible_qos(src->m_hdl, *((dds_offered_incompatible_qos_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS:
                 if (l->on_requested_incompatible_qos != DDS_LUNSET) {
+                    assert(metrics);
                     l->on_requested_incompatible_qos(src->m_hdl, *((dds_requested_incompatible_qos_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_SAMPLE_LOST_STATUS:
                 if (l->on_sample_lost != DDS_LUNSET) {
+                    assert(metrics);
                     l->on_sample_lost(src->m_hdl, *((dds_sample_lost_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_SAMPLE_REJECTED_STATUS:
                 if (l->on_sample_rejected != DDS_LUNSET) {
+                    assert(metrics);
                     l->on_sample_rejected(src->m_hdl, *((dds_sample_rejected_status_t*)metrics), l->arg);
                     called = true;
                 }
@@ -136,24 +146,28 @@ bool dds_entity_cp_propagate_call(
                 break;
             case DDS_LIVELINESS_LOST_STATUS:
                 if (l->on_liveliness_lost != DDS_LUNSET) {
+                    assert(metrics);
                     l->on_liveliness_lost(src->m_hdl, *((dds_liveliness_lost_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_LIVELINESS_CHANGED_STATUS:
                 if (l->on_liveliness_changed != DDS_LUNSET) {
+                    assert(metrics);
                     l->on_liveliness_changed(src->m_hdl, *((dds_liveliness_changed_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_PUBLICATION_MATCHED_STATUS:
                 if (l->on_publication_matched != DDS_LUNSET) {
+                    assert(metrics);
                     l->on_publication_matched(src->m_hdl, *((dds_publication_matched_status_t*)metrics), l->arg);
                     called = true;
                 }
                 break;
             case DDS_SUBSCRIPTION_MATCHED_STATUS:
                 if (l->on_subscription_matched != DDS_LUNSET) {
+                    assert(metrics);
                     l->on_subscription_matched(src->m_hdl, *((dds_subscription_matched_status_t*)metrics), l->arg);
                     called = true;
                 }
@@ -170,7 +184,8 @@ bool dds_entity_cp_propagate_call(
 }
 
 
-static void dds_entity_cb_wait (_In_ dds_entity *e)
+static void
+dds_entity_cb_wait (_In_ dds_entity *e)
 {
     e->m_cb_waiting++;
     while (e->m_cb_count > 0) {
@@ -179,7 +194,8 @@ static void dds_entity_cb_wait (_In_ dds_entity *e)
     e->m_cb_waiting--;
 }
 
-static void dds_entity_cb_wait_signal (_In_ dds_entity *e)
+static void
+dds_entity_cb_wait_signal (_In_ dds_entity *e)
 {
     /* Wake possible others. */
     if (e->m_cb_waiting > 0) {
@@ -187,7 +203,8 @@ static void dds_entity_cb_wait_signal (_In_ dds_entity *e)
     }
 }
 
-void dds_entity_delete_signal (_In_ dds_entity *e)
+void
+dds_entity_delete_signal (_In_ dds_entity *e)
 {
     /* Signal that clean up complete */
     os_mutexLock (&e->m_mutex);
@@ -196,7 +213,8 @@ void dds_entity_delete_signal (_In_ dds_entity *e)
     os_mutexUnlock (&e->m_mutex);
 }
 
-void dds_entity_delete_wait (_In_ dds_entity *e, _In_ struct thread_state1 * const thr)
+void
+dds_entity_delete_wait (_In_ dds_entity *e, _In_ struct thread_state1 * const thr)
 {
     /* Wait for DDSI clean up to complete */
     os_mutexLock (&e->m_mutex);
@@ -211,7 +229,8 @@ void dds_entity_delete_wait (_In_ dds_entity *e, _In_ struct thread_state1 * con
     os_mutexUnlock (&e->m_mutex);
 }
 
-void dds_entity_delete_impl (_In_ dds_entity *e, _In_ bool child, _In_ bool recurse)
+void
+dds_entity_delete_impl (_In_ dds_entity *e, _In_ bool child, _In_ bool recurse)
 {
     os_time    timeout = { 10, 0 };
     dds_entity *iter;
@@ -317,7 +336,8 @@ void dds_entity_delete_impl (_In_ dds_entity *e, _In_ bool child, _In_ bool recu
     }
 }
 
-dds_entity_t dds_entity_init(
+_Check_return_ dds_entity_t
+dds_entity_init(
         _In_     dds_entity * e,
         _In_opt_ dds_entity * parent,
         _In_     dds_entity_kind_t kind,
@@ -375,7 +395,8 @@ dds_entity_t dds_entity_init(
     return (dds_entity_t)(e->m_hdl);
 }
 
-dds_return_t dds_delete (_In_ dds_entity_t entity)
+dds_return_t
+dds_delete (_In_ dds_entity_t entity)
 {
     dds_entity *e;
     dds_return_t ret;
@@ -389,7 +410,8 @@ dds_return_t dds_delete (_In_ dds_entity_t entity)
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, 0);
 }
 
-dds_entity_t dds_get_parent(_In_ dds_entity_t entity)
+_Check_return_ dds_entity_t
+dds_get_parent(_In_ dds_entity_t entity)
 {
     dds_entity *e;
     dds_entity_t hdl = entity;
@@ -407,7 +429,8 @@ dds_entity_t dds_get_parent(_In_ dds_entity_t entity)
     return hdl;
 }
 
-dds_entity_t dds_get_participant(_In_ dds_entity_t entity)
+_Check_return_ dds_entity_t
+dds_get_participant(_In_ dds_entity_t entity)
 {
     dds_entity *e;
     dds_entity_t hdl = entity;
@@ -425,9 +448,10 @@ dds_entity_t dds_get_participant(_In_ dds_entity_t entity)
     return hdl;
 }
 
-dds_return_t dds_get_children(
+_Check_return_ dds_return_t
+dds_get_children(
         _In_ dds_entity_t entity,
-        _Out_opt_ dds_entity_t *children,
+        _Inout_opt_ dds_entity_t *children,
         _In_ size_t size)
 {
     dds_entity *e;
@@ -451,7 +475,8 @@ dds_return_t dds_get_children(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
-dds_return_t dds_get_qos (_In_ dds_entity_t entity, _Out_ dds_qos_t * qos)
+_Check_return_ dds_return_t
+dds_get_qos (_In_ dds_entity_t entity, _Out_ dds_qos_t * qos)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if ((entity > 0) && (qos != NULL)) {
@@ -470,7 +495,8 @@ dds_return_t dds_get_qos (_In_ dds_entity_t entity, _Out_ dds_qos_t * qos)
 }
 
 /* Interface called whenever a changeable qos is modified */
-dds_return_t dds_set_qos (_In_ dds_entity_t entity, _In_ const dds_qos_t * qos)
+_Check_return_ dds_return_t
+dds_set_qos (_In_ dds_entity_t entity, _In_ const dds_qos_t * qos)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (qos != NULL) {
@@ -495,7 +521,8 @@ dds_return_t dds_set_qos (_In_ dds_entity_t entity, _In_ const dds_qos_t * qos)
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
-dds_return_t dds_get_listener (_In_ dds_entity_t entity, _Out_ dds_listener_t * listener)
+_Check_return_ dds_return_t
+dds_get_listener (_In_ dds_entity_t entity, _Out_ dds_listener_t * listener)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (listener != NULL) {
@@ -511,7 +538,8 @@ dds_return_t dds_get_listener (_In_ dds_entity_t entity, _Out_ dds_listener_t * 
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
-dds_return_t dds_set_listener (_In_ dds_entity_t entity, _In_opt_ const dds_listener_t * listener)
+_Check_return_ dds_return_t
+dds_set_listener (_In_ dds_entity_t entity, _In_opt_ const dds_listener_t * listener)
 {
     dds_return_t ret;
     dds_entity *e;
@@ -529,7 +557,8 @@ dds_return_t dds_set_listener (_In_ dds_entity_t entity, _In_opt_ const dds_list
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
-dds_return_t dds_enable(_In_ dds_entity_t entity)
+_Check_return_ dds_return_t
+dds_enable(_In_ dds_entity_t entity)
 {
     dds_return_t ret;
     dds_entity *e;
@@ -546,7 +575,8 @@ dds_return_t dds_enable(_In_ dds_entity_t entity)
 }
 
 
-dds_return_t dds_get_status_changes (_In_ dds_entity_t entity, _Out_ uint32_t *mask)
+_Check_return_ dds_return_t
+dds_get_status_changes (_In_ dds_entity_t entity, _Out_ uint32_t *mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (mask != NULL) {
@@ -564,7 +594,8 @@ dds_return_t dds_get_status_changes (_In_ dds_entity_t entity, _Out_ uint32_t *m
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
-dds_return_t dds_get_enabled_status(_In_ dds_entity_t entity, _Out_ uint32_t *mask)
+_Check_return_ dds_return_t
+dds_get_enabled_status(_In_ dds_entity_t entity, _Out_ uint32_t *mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (mask != NULL) {
@@ -583,7 +614,8 @@ dds_return_t dds_get_enabled_status(_In_ dds_entity_t entity, _Out_ uint32_t *ma
 }
 
 
-dds_return_t dds_set_enabled_status (_In_ dds_entity_t entity, _In_ uint32_t mask)
+dds_return_t
+dds_set_enabled_status (_In_ dds_entity_t entity, _In_ uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     dds_entity *e;
@@ -608,7 +640,8 @@ dds_return_t dds_set_enabled_status (_In_ dds_entity_t entity, _In_ uint32_t mas
 
 
 /* Read status condition based on mask */
-dds_return_t dds_read_status (_In_ dds_entity_t entity, _Out_ uint32_t * status, _In_ uint32_t mask)
+_Check_return_ dds_return_t
+dds_read_status (_In_ dds_entity_t entity, _Out_ uint32_t * status, _In_ uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (status != NULL) {
@@ -630,7 +663,8 @@ dds_return_t dds_read_status (_In_ dds_entity_t entity, _Out_ uint32_t * status,
 }
 
 /* Take and clear status condition based on mask */
-dds_return_t dds_take_status (_In_ dds_entity_t entity, _Out_ uint32_t * status, _In_ uint32_t mask)
+_Check_return_ dds_return_t
+dds_take_status (_In_ dds_entity_t entity, _Out_ uint32_t * status, _In_ uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (status != NULL) {
@@ -655,7 +689,8 @@ dds_return_t dds_take_status (_In_ dds_entity_t entity, _Out_ uint32_t * status,
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
-void dds_entity_status_signal(_In_ dds_entity *e)
+void
+dds_entity_status_signal(_In_ dds_entity *e)
 {
     assert(e);
     os_mutexLock (&e->m_mutex);
@@ -663,7 +698,8 @@ void dds_entity_status_signal(_In_ dds_entity *e)
     os_mutexUnlock (&e->m_mutex);
 }
 
-dds_return_t dds_get_domainid (_In_ dds_entity_t entity, _Out_ dds_domainid_t *id)
+_Check_return_ dds_return_t
+dds_get_domainid (_In_ dds_entity_t entity, _Out_ dds_domainid_t *id)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (id != NULL) {
@@ -677,7 +713,8 @@ dds_return_t dds_get_domainid (_In_ dds_entity_t entity, _Out_ dds_domainid_t *i
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
-dds_return_t dds_instancehandle_get(_In_ dds_entity_t entity, _Out_ dds_instance_handle_t *i)
+_Check_return_ dds_return_t
+dds_instancehandle_get(_In_ dds_entity_t entity, _Out_ dds_instance_handle_t *i)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (i != NULL) {
@@ -693,8 +730,8 @@ dds_return_t dds_instancehandle_get(_In_ dds_entity_t entity, _Out_ dds_instance
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
-_Check_return_
-int32_t dds_entity_lock(_In_ dds_entity_t hdl, _In_ dds_entity_kind_t kind, _Out_ dds_entity **e)
+_Check_return_ int32_t
+dds_entity_lock(_In_ dds_entity_t hdl, _In_ dds_entity_kind_t kind, _Out_ dds_entity **e)
 {
     ut_handle_t utr;
     assert(e);

@@ -223,7 +223,7 @@ dds_sample_info_t;
  * @retval DDS_RETCODE_PRECONDITION_NOT_MET
  *                  The parent of the given Entity is not enabled.
  */
-DDS_EXPORT dds_return_t dds_enable (_In_ dds_entity_t e);
+DDS_EXPORT _Check_return_ dds_return_t dds_enable (_In_ dds_entity_t e);
 
 /*
   All entities are represented by a process-private handle, with one
@@ -329,7 +329,7 @@ DDS_EXPORT dds_entity_t dds_get_subscriber(_In_ dds_entity_t rd);
 DDS_EXPORT dds_entity_t dds_get_datareader(_In_ dds_entity_t readcond);
 
 /* TODO: document. */
-DDS_EXPORT dds_return_t dds_instancehandle_get(_In_ dds_entity_t e, _Out_ dds_instance_handle_t *i);
+DDS_EXPORT _Check_return_ dds_return_t dds_instancehandle_get(_In_ dds_entity_t e, _Out_ dds_instance_handle_t *i);
 
 /*
   All entities have a set of "status conditions" (following the DCPS
@@ -350,7 +350,7 @@ DDS_EXPORT dds_return_t dds_instancehandle_get(_In_ dds_entity_t e, _Out_ dds_in
  *   -# Returns 0 on success, or a non-zero error value if the mask does not
  *      correspond to the entity
  */
-DDS_EXPORT dds_return_t dds_read_status (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
+DDS_EXPORT _Check_return_ dds_return_t dds_read_status (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
 
 /**
  * Description : Read the status(es) set for the entity based on the enabled
@@ -363,7 +363,7 @@ DDS_EXPORT dds_return_t dds_read_status (_In_ dds_entity_t e, _Out_ uint32_t * s
  *   -# Returns 0 on success, or a non-zero error value if the mask does not
  *      correspond to the entity
  */
-DDS_EXPORT dds_return_t dds_take_status (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
+DDS_EXPORT _Check_return_ dds_return_t dds_take_status (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
 
 /**
  * Description : Returns the status changes since they were last read.
@@ -372,7 +372,7 @@ DDS_EXPORT dds_return_t dds_take_status (_In_ dds_entity_t e, _Out_ uint32_t * s
  *   -# e Entity on which the statuses are read
  *   -# Returns the curent set of triggered statuses.
  */
-DDS_EXPORT dds_return_t dds_get_status_changes (_In_ dds_entity_t e, _Out_ uint32_t * status);
+DDS_EXPORT _Check_return_ dds_return_t dds_get_status_changes (_In_ dds_entity_t e, _Out_ uint32_t * status);
 
 /**
  * Description : This operation returns the status enabled on the entity
@@ -381,7 +381,7 @@ DDS_EXPORT dds_return_t dds_get_status_changes (_In_ dds_entity_t e, _Out_ uint3
  *   -# e Entity to get the status
  *   -# Returns the status that are enabled for the entity
  */
-DDS_EXPORT dds_return_t dds_get_enabled_status (_In_ dds_entity_t e, _Out_ uint32_t * status);
+DDS_EXPORT _Check_return_ dds_return_t dds_get_enabled_status (_In_ dds_entity_t e, _Out_ uint32_t * status);
 
 
 /**
@@ -429,7 +429,7 @@ DDS_EXPORT dds_return_t dds_set_enabled_status (_In_ dds_entity_t e, _In_ uint32
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_qos (_In_ dds_entity_t e, _Out_ dds_qos_t * qos);
+DDS_EXPORT _Check_return_ dds_return_t dds_get_qos (_In_ dds_entity_t e, _Out_ dds_qos_t * qos);
 
 
 /**
@@ -473,7 +473,7 @@ DDS_EXPORT dds_return_t dds_get_qos (_In_ dds_entity_t e, _Out_ dds_qos_t * qos)
  *                  A few policies within the QoS are not consistent with
  *                  each other.
  */
-DDS_EXPORT dds_return_t dds_set_qos (_In_ dds_entity_t e, _In_ const dds_qos_t * qos);
+DDS_EXPORT _Check_return_ dds_return_t dds_set_qos (_In_ dds_entity_t e, _In_ const dds_qos_t * qos);
 
 /*
   Get or set listener associated with an entity, type of listener
@@ -507,7 +507,7 @@ DDS_EXPORT dds_return_t dds_set_qos (_In_ dds_entity_t e, _In_ const dds_qos_t *
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_listener (_In_ dds_entity_t e, _Out_ dds_listener_t * listener);
+DDS_EXPORT _Check_return_ dds_return_t dds_get_listener (_In_ dds_entity_t e, _Out_ dds_listener_t * listener);
 
 
 /**
@@ -565,7 +565,7 @@ DDS_EXPORT dds_return_t dds_get_listener (_In_ dds_entity_t e, _Out_ dds_listene
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_opt_ const dds_listener_t * listener);
+DDS_EXPORT _Check_return_ dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_opt_ const dds_listener_t * listener);
 
 /*
   Creation functions for various entities. Creating a subscriber or
@@ -630,7 +630,7 @@ DDS_EXPORT dds_entity_t dds_create_participant
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_entity_t dds_get_parent (_In_ dds_entity_t entity);
+DDS_EXPORT _Check_return_ dds_entity_t dds_get_parent (_In_ dds_entity_t entity);
 
 
 /**
@@ -655,7 +655,7 @@ DDS_EXPORT dds_entity_t dds_get_parent (_In_ dds_entity_t entity);
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_entity_t dds_get_participant (_In_ dds_entity_t entity);
+DDS_EXPORT _Check_return_ dds_entity_t dds_get_participant (_In_ dds_entity_t entity);
 
 
 /**
@@ -695,7 +695,7 @@ DDS_EXPORT dds_entity_t dds_get_participant (_In_ dds_entity_t entity);
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_children(_In_ dds_entity_t entity, _Out_opt_ dds_entity_t *children, _In_ size_t size);
+DDS_EXPORT _Check_return_ dds_return_t dds_get_children(_In_ dds_entity_t entity, _Inout_opt_ dds_entity_t *children, _In_ size_t size);
 
 
 /**
@@ -725,7 +725,7 @@ DDS_EXPORT dds_return_t dds_get_children(_In_ dds_entity_t entity, _Out_opt_ dds
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_domainid (_In_ dds_entity_t pp, _Out_ dds_domainid_t *id);
+DDS_EXPORT _Check_return_ dds_return_t dds_get_domainid (_In_ dds_entity_t pp, _Out_ dds_domainid_t *id);
 
 /**
  * Description : Returns a participant created on a domain. Note that if
