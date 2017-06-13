@@ -2,7 +2,7 @@
 #include "cunitrunner/runner.h"
 #include "os/os.h"
 
-#define ENABLE_TRACING 0
+#define ENABLE_TRACING 1
 
 char          arg_result[30];
 int           threadCalled;
@@ -236,6 +236,9 @@ static void tc_os_threadCreate (void)
           #endif
         } else
             CU_ASSERT (policy == SCHED_OTHER);
+
+        result = os_threadWaitExit (thread_os_threadId, NULL);
+        CU_ASSERT (result == os_resultSuccess);
     } else {
       #if ENABLE_TRACING
         printf ("os_threadCreate failed.\n");
