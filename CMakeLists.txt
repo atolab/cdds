@@ -4,6 +4,14 @@ cmake_minimum_required(VERSION 3.5)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 project(VortexDDS)
 
+# CMAKE_LIBRARY_ARCHITECTURE is used to lookup libraries in together with
+# CMAKE_PREFIX_PATH, but it is not detectected automatically.
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(CMAKE_LIBRARY_ARCHITECTURE x86_84)
+else()
+    set(CMAKE_LIBRARY_ARCHITECTURE x86)
+endif()
+
 set(CMAKE_C_STANDARD 99)
 if(CMAKE_SYSTEM_NAME STREQUAL "VxWorks")
   add_definitions(-std=c99)
