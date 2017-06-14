@@ -7,7 +7,7 @@ project(VortexDDS)
 # CMAKE_LIBRARY_ARCHITECTURE is used to lookup libraries in together with
 # CMAKE_PREFIX_PATH, but it is not detectected automatically.
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(CMAKE_LIBRARY_ARCHITECTURE x86_84)
+    set(CMAKE_LIBRARY_ARCHITECTURE x86_64)
 else()
     set(CMAKE_LIBRARY_ARCHITECTURE x86)
 endif()
