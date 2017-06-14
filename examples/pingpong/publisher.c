@@ -134,8 +134,7 @@ int main (int argc, char **argv)
 
   /* A topic is created for our sample type on the domain participant. */
 
-  status = dds_topic_create (participant, &topic, &ThroughputModule_DataType_desc, "Throughput", NULL, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  topic = dds_create_topic (participant, &ThroughputModule_DataType_desc, "Throughput", NULL, NULL);
 
   if (localReaders)
   {

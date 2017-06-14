@@ -470,7 +470,6 @@ int main (int argc, char *argv[])
   os_mutexInit(&statslock);
 
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   if ((udpsock = socket (AF_INET, SOCK_DGRAM, 0)) == -1) {
     perror ("create udp socket"); exit (1);
@@ -486,11 +485,8 @@ int main (int argc, char *argv[])
   }
 
   /* A DDS_Topic is created for our sample type on the domain participant. */
-  status = dds_topic_create (participant, &topic, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-  status = dds_topic_create (participant, &addrtopic, &RoundTripModule_Address_desc, "UDPRoundTrip", NULL, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
+  addrtopic = dds_create_topic (participant, &RoundTripModule_Address_desc, "UDPRoundTrip", NULL, NULL);
 
   /* A DDS_Publisher is created on the domain participant. */
   pubQos = dds_qos_create ();

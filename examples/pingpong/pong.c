@@ -77,9 +77,7 @@ int main (int argc, char *argv[])
 
   /* A DDS Topic is created for our sample type on the domain participant. */
 
-  status = dds_topic_create
-    (participant, &topic, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
 
   /* A DDS Publisher is created on the domain participant. */
 
