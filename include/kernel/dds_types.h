@@ -7,6 +7,7 @@
 #include "dds.h"
 #include "ddsi/q_rtps.h"
 #include "util/ut_avl.h"
+#include "util/ut_handleserver.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -71,37 +72,14 @@ struct rhc;
 
 /* To construct return status */
 
-#define DDS_ERRNO(e,m,n) (-((n) | (m) | (e)))
+#define DDS_ERRNO(e,m,n) ((e <= 0) ? e : -((n) | (m) | (e)))
 
-/* Bit flags for entity kind */
-
-#define DDS_IS_PP_OR_SUB 0x00010000 /* Is a participant or subscriber */
-#define DDS_IS_PP_OR_PUB 0x00020000 /* Is a participant or publisher */
-#define DDS_IS_RD_OR_WR  0x00040000 /* Is a reader or writer */
-#define DDS_IS_MAPPED    0x00080000 /* Is mapped via guid to DDSI type */
-#define DDS_HAS_STATUS   0x00100000 /* Has an associated status condition */
 
 /*
   Have separate kinds for entity and condition, matching DDS type
   hierarchy. Have distinct values so will detect if an entity is passed
   as a condition or vice versa.
 */
-
-typedef enum dds_entity_kind
-{
-  DDS_TYPE_TOPIC       = 0x00000000 | DDS_HAS_STATUS,
-  DDS_TYPE_PARTICIPANT = 0x00000001 | DDS_IS_MAPPED | DDS_IS_PP_OR_SUB | DDS_IS_PP_OR_PUB,
-  DDS_TYPE_READER      = 0x00000002 | DDS_IS_MAPPED | DDS_HAS_STATUS | DDS_IS_RD_OR_WR,
-  DDS_TYPE_WRITER      = 0x00000003 | DDS_IS_MAPPED | DDS_HAS_STATUS | DDS_IS_RD_OR_WR,
-  DDS_TYPE_SUBSCRIBER  = 0x00000004 | DDS_IS_PP_OR_SUB | DDS_HAS_STATUS,
-  DDS_TYPE_PUBLISHER   = 0x00000005 | DDS_IS_PP_OR_PUB
-}
-dds_entity_kind_t;
-
-#define DDS_ENTITY_NUM 6
-#define DDS_TYPE_INDEX_MASK 0x0000000f /* To use entity kind as an array index */
-#define DDS_TYPE_INDEX_COUNT (DDS_TYPE_INDEX_MASK + 1)
-
 typedef enum dds_cond_kind
 {
   DDS_TYPE_COND_GUARD  = 0x00000040,
@@ -109,7 +87,7 @@ typedef enum dds_cond_kind
   DDS_TYPE_COND_QUERY  = 0x00000100|DDS_TYPE_COND_READ,
   DDS_TYPE_COND_STATUS = 0x00000200
 }
-dds_cond_kind_t;
+dds_cond_kind_deprecated_t;
 
 /* Link between waitset and condition */
 
@@ -141,7 +119,7 @@ dds_waitset;
 
 typedef struct dds_condition
 {
-  dds_cond_kind_t m_kind;
+  dds_cond_kind_deprecated_t m_kind;
   uint32_t m_trigger;
   dds_ws_cond_link * m_waitsets;
   os_mutex * m_lock;
@@ -213,19 +191,23 @@ typedef struct dds_domain
 }
 dds_domain;
 
+struct dds_entity;
 typedef struct dds_entity_deriver {
-    void (*delete)(dds_entity_t e, bool recurse);
-    dds_return_t (*set_qos)(dds_entity_t e, const dds_qos_t *qos, bool enabled);
+    /* Close can be used to terminate (blocking) actions on a entity before actually deleting it. */
+    void (*close)(struct dds_entity *e, bool recurse);
+    /* Delete is used to actually free the entity. */
+    void (*delete)(struct dds_entity *e, bool recurse);
+    dds_return_t (*set_qos)(struct dds_entity *e, const dds_qos_t *qos, bool enabled);
     dds_return_t (*validate_status)(uint32_t mask);
-    dds_return_t (*propagate_status)(dds_entity_t e, uint32_t mask, bool set);
-    dds_return_t (*get_instance_hdl)(dds_entity_t e, dds_instance_handle_t *i);
+    dds_return_t (*propagate_status)(struct dds_entity *e, uint32_t mask, bool set);
+    dds_return_t (*get_instance_hdl)(struct dds_entity *e, dds_instance_handle_t *i);
 }
 dds_entity_deriver;
 
 
 typedef struct dds_entity
 {
-  dds_entity_kind_t m_kind;
+  ut_handle_t m_hdl;
   dds_entity_deriver m_deriver;
   uint32_t m_refc;
   struct dds_entity * m_next;
@@ -245,6 +227,7 @@ typedef struct dds_entity
   os_mutex m_mutex;
   os_cond m_cond;
   c_listener_t m_listener;
+  struct ut_handlelink *m_hdllink;
 }
 dds_entity;
 

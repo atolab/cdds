@@ -761,8 +761,8 @@ OS_API
 void dds_qget_partition
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ uint32_t *n,
-    _Out_ char *** ps
+    _Inout_opt_ uint32_t *n,
+    _Inout_opt_ char *** ps
 );
 
 /**

@@ -41,7 +41,6 @@ bool validate_octetseq (const nn_octetseq_t* seq)
   /* default value is NULL with length 0 */
   return (((seq->length == 0) && (seq->value == NULL)) || (seq->length > 0));
 }
-
 bool validate_partition_qospolicy (_In_ const nn_partition_qospolicy_t * partition)
 {
   /* default value is NULL with length 0 */
@@ -412,7 +411,7 @@ void dds_qset_partition
     size_t len;
 
     if (qos->partition.strs != NULL){
-      for (uint32_t i = 0; i < qos->partition.n; i++)
+      for (i = 0; i < qos->partition.n; i++)
       {
         dds_free(qos->partition.strs[i]);
       }
@@ -704,8 +703,8 @@ void dds_qget_time_based_filter
 void dds_qget_partition
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Out_ uint32_t *n,
-    _Out_opt_ char *** ps
+    _Inout_opt_ uint32_t *n,
+    _Inout_opt_ char *** ps
 )
 {
   if (qos && n && ps) {

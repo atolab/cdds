@@ -4,10 +4,10 @@
 void test(void)
 {
   dds_entity_t participant;
-  int status;
+  dds_return_t status;
 
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  CU_ASSERT(participant != NULL);
+  CU_ASSERT(participant > 0);
 
   /* TODO: CHAM-108: Add some simple read/write test(s). */
 

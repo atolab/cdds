@@ -7,7 +7,7 @@
 #define DDS_SUBSCRIBER_STATUS_MASK                               \
                         DDS_DATA_ON_READERS_STATUS
 
-static dds_return_t dds_subscriber_instance_hdl(dds_entity_t e, dds_instance_handle_t *i)
+static dds_return_t dds_subscriber_instance_hdl(dds_entity *e, dds_instance_handle_t *i)
 {
     assert(e);
     assert(i);
@@ -38,7 +38,7 @@ static dds_return_t dds_subscriber_qos_validate (const dds_qos_t *qos, bool enab
     return ret;
 }
 
-static dds_return_t dds_subscriber_qos_set (dds_entity_t e, const dds_qos_t *qos, bool enabled)
+static dds_return_t dds_subscriber_qos_set (dds_entity *e, const dds_qos_t *qos, bool enabled)
 {
     dds_return_t ret = dds_subscriber_qos_validate(qos, enabled);
     if (ret == DDS_RETCODE_OK) {
@@ -61,10 +61,10 @@ static dds_return_t dds_subscriber_status_validate (uint32_t mask)
   Set boolean on readers that indicates state of DATA_ON_READERS
   status on parent subscriber
 */
-static dds_return_t dds_subscriber_status_propagate (dds_entity_t sub, uint32_t mask, bool set)
+static dds_return_t dds_subscriber_status_propagate (dds_entity *sub, uint32_t mask, bool set)
 {
     if (mask & DDS_DATA_ON_READERS_STATUS) {
-        dds_entity_t iter = sub->m_children;
+        dds_entity *iter = sub->m_children;
         while (iter) {
             os_mutexLock (&iter->m_mutex);
             ((dds_reader*) iter)->m_data_on_readers = set;
@@ -75,30 +75,31 @@ static dds_return_t dds_subscriber_status_propagate (dds_entity_t sub, uint32_t 
     return DDS_RETCODE_OK;
 }
 
-dds_entity_t dds_create_subscriber
-(
-  _In_ dds_entity_t pp,
-  _In_opt_ const dds_qos_t * qos,
-  _In_opt_ const dds_listener_t * listener
-)
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+_Must_inspect_result_ dds_entity_t
+dds_create_subscriber(
+        _In_     dds_entity_t participant,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener)
 {
-    dds_return_t ret = DDS_RETCODE_OK;
-    dds_entity_t e = NULL;
+    dds_entity * par;
     dds_subscriber * sub;
+    dds_entity_t hdl;
     dds_qos_t * new_qos = NULL;
+    dds_return_t ret;
+    int32_t errnr;
 
-    /* Validate participant */
-    if (!pp || pp->m_kind != DDS_TYPE_PARTICIPANT) {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_KERNEL, 0);
-        goto fail;
+    errnr = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
+    if (errnr != DDS_RETCODE_OK) {
+        return DDS_ERRNO(errnr, DDS_MOD_KERNEL, DDS_ERR_M2);
     }
 
     /* Validate qos */
     if (qos) {
         ret = dds_subscriber_qos_validate(qos, false);
         if (ret != DDS_RETCODE_OK) {
-            DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_KERNEL, 1);
-            goto fail;
+            dds_entity_unlock(par);
+            return ret;
         }
         new_qos = dds_qos_create();
         dds_qos_copy(new_qos, qos);
@@ -106,38 +107,39 @@ dds_entity_t dds_create_subscriber
 
     /* Create subscriber */
     sub = dds_alloc(sizeof(*sub));
-
-    os_mutexLock(&pp->m_mutex);
-    dds_entity_init(&sub->m_entity, pp, DDS_TYPE_SUBSCRIBER, new_qos, listener, DDS_SUBSCRIBER_STATUS_MASK);
+    hdl = dds_entity_init(&sub->m_entity, par, DDS_KIND_SUBSCRIBER, new_qos, listener, DDS_SUBSCRIBER_STATUS_MASK);
     sub->m_entity.m_deriver.set_qos = dds_subscriber_qos_set;
     sub->m_entity.m_deriver.validate_status = dds_subscriber_status_validate;
     sub->m_entity.m_deriver.propagate_status = dds_subscriber_status_propagate;
     sub->m_entity.m_deriver.get_instance_hdl = dds_subscriber_instance_hdl;
-    os_mutexUnlock(&pp->m_mutex);
+    dds_entity_unlock(par);
 
-    return (dds_entity_t)sub;
-
-    fail:
-    /* return ret; */
-    return NULL;
+    return hdl;
 }
 
-dds_return_t dds_notify_readers(_In_ dds_entity_t sub)
+_Pre_satisfies_((subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER)
+dds_return_t
+dds_notify_readers(
+        _In_ dds_entity_t subscriber)
 {
-    dds_return_t ret = DDS_RETCODE_OK;
-    dds_entity_t iter;
+    dds_entity *iter;
+    dds_entity *sub;
+    int32_t errnr;
 
-    os_mutexLock(&sub->m_mutex);
-    iter = sub->m_children;
-    while (iter) {
-        os_mutexLock(&iter->m_mutex);
-        //TODO check if reader has data available, call listener
-        os_mutexUnlock(&iter->m_mutex);
-        iter = iter->m_next;
+    errnr = dds_entity_lock(subscriber, DDS_KIND_SUBSCRIBER, &sub);
+    if (errnr == DDS_RETCODE_OK) {
+        errnr = DDS_RETCODE_UNSUPPORTED;
+        iter = sub->m_children;
+        while (iter) {
+            os_mutexLock(&iter->m_mutex);
+            // TODO: check if reader has data available, call listener
+            os_mutexUnlock(&iter->m_mutex);
+            iter = iter->m_next;
+        }
+        dds_entity_unlock(sub);
     }
-    os_mutexUnlock(&sub->m_mutex);
 
-    return DDS_RETCODE_UNSUPPORTED;
+    return DDS_ERRNO(errnr, DDS_MOD_KERNEL, 0);
 }
 
 dds_return_t
