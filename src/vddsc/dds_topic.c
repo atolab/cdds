@@ -420,7 +420,7 @@ DDS_EXPORT dds_return_t dds_get_name (_In_ dds_entity_t e, _Out_writes_z_(size) 
   if(e == NULL){
     return DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER, DDS_MOD_TOPIC, 0);
   }
-  snprintf(name, size, ((dds_topic*) e)->m_stopic->name);
+  snprintf(name, size, "%s", ((dds_topic*) e)->m_stopic->name);
   return DDS_RETCODE_OK;
 }
 
@@ -429,7 +429,7 @@ DDS_EXPORT dds_return_t dds_get_type_name (_In_ dds_entity_t topic, _Out_writes_
   if(topic == NULL){
     return DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER, DDS_MOD_TOPIC, 0);
   }
-  snprintf(name, size, ((dds_topic*) topic)->m_stopic->name);
+  snprintf(name, size, "%s", ((dds_topic*) topic)->m_stopic->name);
   return DDS_RETCODE_OK;
 }
 

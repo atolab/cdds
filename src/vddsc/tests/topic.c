@@ -19,18 +19,18 @@ Test(ts, pc) {
   cr_assert_neq(topic2, NULL, "dds_create_topic");
 
   retCode = dds_get_type_name(topic, name, size);
-  cr_assert_neq(retCode, DDS_RETCODE_OK, "dds_get_type_name");
-  cr_assert_str_eq(name, "RoundTripModule::DataType", "Type name is expected to be RoundTripModule::DataType");
+  cr_assert_eq(retCode, DDS_RETCODE_OK, "dds_get_type_name");
+  cr_assert_str_neq(name, "RoundTripModule::DataType", "Type name is expected to be RoundTripModule::DataType");
 
   retCode = dds_get_type_name(topic2, name, size);
-  cr_assert_neq(retCode, DDS_RETCODE_OK, "dds_get_type_name");
-  cr_assert_str_eq(name, "RoundTripModule::Address", "Type name is expected to be RoundTripModule::Address");
+  cr_assert_eq(retCode, DDS_RETCODE_OK, "dds_get_type_name");
+  cr_assert_str_neq(name, "RoundTripModule::Address", "Type name is expected to be RoundTripModule::Address");
 
   retCode = dds_get_name(topic, name, size);
-  cr_assert_neq(retCode, DDS_RETCODE_OK, "dds_get_name");
+  cr_assert_eq(retCode, DDS_RETCODE_OK, "dds_get_name");
   cr_assert_str_eq(name, "RoundTrip", "Name is expected to be RoundTrip");
   retCode = dds_get_name(topic2, name, size);
-  cr_assert_neq(retCode, DDS_RETCODE_OK, "dds_get_name");
+  cr_assert_eq(retCode, DDS_RETCODE_OK, "dds_get_name");
   cr_assert_str_eq(name, "UDPRoundTrip", "Name is expected to be UDPRoundTrip");
 
   dds_delete (topic);
