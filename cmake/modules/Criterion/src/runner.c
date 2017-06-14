@@ -72,7 +72,7 @@ run_test_nok[] =
     "          <CUNIT_RUN_TEST_FAILURE>" LF
     "            <TEST_NAME> %s </TEST_NAME>" LF
     "            <FILE_NAME> %s </FILE_NAME>" LF
-    "            <LINE_NUMBER> %u </LINE_NUMBER>" LF
+    "            <LINE_NUMBER> %zu </LINE_NUMBER>" LF
     "            <CONDITION> %s </CONDITION>" LF
     "          </CUNIT_RUN_TEST_FAILURE>" LF;
 
@@ -81,26 +81,26 @@ run_stats[] =
     "  <CUNIT_RUN_SUMMARY>" LF
     "    <CUNIT_RUN_SUMMARY_RECORD>" LF
     "      <TYPE> Suites </TYPE>" LF
-    "      <TOTAL> %u </TOTAL>" LF
-    "      <RUN> %u </RUN>" LF
+    "      <TOTAL> %zu </TOTAL>" LF
+    "      <RUN> %zu </RUN>" LF
     "      <SUCCEEDED> - NA - </SUCCEEDED>" LF
-    "      <FAILED> %u </FAILED>" LF
-    "      <INACTIVE> %u </INACTIVE>" LF
+    "      <FAILED> %zu </FAILED>" LF
+    "      <INACTIVE> %zu </INACTIVE>" LF
     "    </CUNIT_RUN_SUMMARY_RECORD>" LF
     "    <CUNIT_RUN_SUMMARY_RECORD>" LF
     "      <TYPE> Test Cases </TYPE>" LF
-    "      <TOTAL> %u </TOTAL>" LF
-    "      <RUN> %u </RUN>" LF
-    "      <SUCCEEDED> %u </SUCCEEDED>" LF
-    "      <FAILED> %u </FAILED>" LF
-    "      <INACTIVE> %u </INACTIVE>" LF
+    "      <TOTAL> %zu </TOTAL>" LF
+    "      <RUN> %zu </RUN>" LF
+    "      <SUCCEEDED> %zu </SUCCEEDED>" LF
+    "      <FAILED> %zu </FAILED>" LF
+    "      <INACTIVE> %zu </INACTIVE>" LF
     "    </CUNIT_RUN_SUMMARY_RECORD>" LF
     "    <CUNIT_RUN_SUMMARY_RECORD>" LF
     "      <TYPE> Assertions </TYPE>" LF
-    "      <TOTAL> %u </TOTAL>" LF
-    "      <RUN> %u </RUN>" LF
-    "      <SUCCEEDED> %u </SUCCEEDED>" LF
-    "      <FAILED> %u </FAILED>" LF
+    "      <TOTAL> %zu </TOTAL>" LF
+    "      <RUN> %d </RUN>" LF
+    "      <SUCCEEDED> %d </SUCCEEDED>" LF
+    "      <FAILED> %d </FAILED>" LF
     "      <INACTIVE> n/a </INACTIVE>" LF
     "    </CUNIT_RUN_SUMMARY_RECORD>" LF
     "  </CUNIT_RUN_SUMMARY>" LF;
@@ -148,7 +148,7 @@ list_suite_hdr[] =
     "        <INITIALIZE_VALUE> %s </INITIALIZE_VALUE>" LF
     "        <CLEANUP_VALUE> %s </CLEANUP_VALUE>" LF
     "        <ACTIVE_VALUE> %s </ACTIVE_VALUE>" LF
-    "        <TEST_COUNT_VALUE> %u </TEST_COUNT_VALUE>" LF
+    "        <TEST_COUNT_VALUE> %zu </TEST_COUNT_VALUE>" LF
     "      </CUNIT_ALL_TEST_LISTING_SUITE_DEFINITION>" LF
     "      <CUNIT_ALL_TEST_LISTING_SUITE_TESTS>" LF;
 
@@ -211,6 +211,7 @@ print_run_stats(FILE *file, struct criterion_global_stats *stats)
     struct criterion_suite_stats *itr;
 
     (void)fprintf(file, run_hdr);
+    (void)fprintf(file, run_result_hdr);
     for (itr = stats->suites; itr != NULL; itr = itr->next) {
         if (itr->tests_skipped != itr->nb_tests) {
             print_run_suite_stats(file, itr);
@@ -221,7 +222,7 @@ print_run_stats(FILE *file, struct criterion_global_stats *stats)
             }
         }
     }
-
+    (void)fprintf(file, run_result_ftr);
     (void)fprintf(
         file,
         run_stats,
