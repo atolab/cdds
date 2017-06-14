@@ -4,7 +4,7 @@
 void test(void)
 {
   dds_entity_t participant;
-  int status;
+  dds_return_t status;
 
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   CU_ASSERT(participant != NULL);
