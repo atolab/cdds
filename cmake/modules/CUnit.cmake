@@ -114,7 +114,7 @@ function(add_cunit_executable target)
 
   configure_file("${root}/src/main.c.in" "${runner}.c" @ONLY)
   add_executable(${target} "${runner}.c" "${root}/src/runner.c" ${sources})
-  target_link_libraries(${target} cunit)
+  target_link_libraries(${target} CUnit)
   target_include_directories(${target} PRIVATE "${root}/include")
 endfunction()
 

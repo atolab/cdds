@@ -1,21 +1,24 @@
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include <criterion/criterion.h>
 #include <criterion/hooks.h>
 
-static char runfn[NAME_MAX + 1] = { 0 };
-static char listfn[NAME_MAX + 1] = { 0 };
-static char stamp[64] = { 0 };
-
-#ifdef WIN32
+#ifdef _WIN32
+#include <stdlib.h>
 #define LF "\r\n"
+#define NAME_MAX _MAX_FNAME
 #else
 #define LF "\n"
 #endif
+
+static char runfn[NAME_MAX + 1] = { 0 };
+static char listfn[NAME_MAX + 1] = { 0 };
+static char stamp[64] = { 0 };
 
 static const char
 run_hdr[] =
