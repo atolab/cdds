@@ -2,6 +2,8 @@ find_package(Criterion REQUIRED)
 
 include(Glob)
 
+set(CRITERION_DIR "${CMAKE_CURRENT_LIST_DIR}/Criterion")
+
 function(add_criterion_executable target)
   set(s "[ \t\r\n]") # space
   set(w "[0-9a-zA-Z_]") # word
@@ -28,7 +30,8 @@ function(add_criterion_executable target)
     endif()
   endforeach()
 
-  add_executable(${target} ${sources})
+  set(root "${CRITERION_DIR}")
+  add_executable(${target} "${root}/src/runner.c" ${sources})
   target_link_libraries(${target} Criterion)
 
   foreach(entry ${tests})
@@ -38,7 +41,7 @@ function(add_criterion_executable target)
 
     add_test(
       NAME "Criterion_${suite}_${test}"
-      COMMAND ${target} --filter "${suite}/${test}" --xml=${suite}_${test}-Junit.xml --quiet)
+      COMMAND ${target} --filter "${suite}/${test}" --cunit=${suite}-${test} --quiet)
   endforeach()
 endfunction()
 
