@@ -12,6 +12,8 @@ else()
     set(CMAKE_LIBRARY_ARCHITECTURE x86)
 endif()
 
+message(STATUS "Architecture: ${CMAKE_LIBRARY_ARCHITECTURE}, PrefixPath: ${CMAKE_PREFIX_PATH}")
+
 set(CMAKE_C_STANDARD 99)
 if(CMAKE_SYSTEM_NAME STREQUAL "VxWorks")
   add_definitions(-std=c99)
