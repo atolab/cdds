@@ -72,7 +72,7 @@ run_test_nok[] =
     "          <CUNIT_RUN_TEST_FAILURE>" LF
     "            <TEST_NAME> %s </TEST_NAME>" LF
     "            <FILE_NAME> %s </FILE_NAME>" LF
-    "            <LINE_NUMBER> %zu </LINE_NUMBER>" LF
+    "            <LINE_NUMBER> %u </LINE_NUMBER>" LF
     "            <CONDITION> %s </CONDITION>" LF
     "          </CUNIT_RUN_TEST_FAILURE>" LF;
 
@@ -98,9 +98,9 @@ run_stats[] =
     "    <CUNIT_RUN_SUMMARY_RECORD>" LF
     "      <TYPE> Assertions </TYPE>" LF
     "      <TOTAL> %zu </TOTAL>" LF
-    "      <RUN> %d </RUN>" LF
-    "      <SUCCEEDED> %d </SUCCEEDED>" LF
-    "      <FAILED> %d </FAILED>" LF
+    "      <RUN> %zu </RUN>" LF
+    "      <SUCCEEDED> %zu </SUCCEEDED>" LF
+    "      <FAILED> %zu </FAILED>" LF
     "      <INACTIVE> n/a </INACTIVE>" LF
     "    </CUNIT_RUN_SUMMARY_RECORD>" LF
     "  </CUNIT_RUN_SUMMARY>" LF;
@@ -124,11 +124,11 @@ list_stats[] =
     "  <CUNIT_LIST_TOTAL_SUMMARY>" LF
     "    <CUNIT_LIST_TOTAL_SUMMARY_RECORD>" LF
     "      <CUNIT_LIST_TOTAL_SUMMARY_RECORD_TEXT> Total Number of Suites </CUNIT_LIST_TOTAL_SUMMARY_RECORD_TEXT>" LF
-    "      <CUNIT_LIST_TOTAL_SUMMARY_RECORD_VALUE> %u </CUNIT_LIST_TOTAL_SUMMARY_RECORD_VALUE>" LF
+    "      <CUNIT_LIST_TOTAL_SUMMARY_RECORD_VALUE> %zu </CUNIT_LIST_TOTAL_SUMMARY_RECORD_VALUE>" LF
     "    </CUNIT_LIST_TOTAL_SUMMARY_RECORD>" LF
     "    <CUNIT_LIST_TOTAL_SUMMARY_RECORD>" LF
     "      <CUNIT_LIST_TOTAL_SUMMARY_RECORD_TEXT> Total Number of Test Cases </CUNIT_LIST_TOTAL_SUMMARY_RECORD_TEXT>" LF
-    "      <CUNIT_LIST_TOTAL_SUMMARY_RECORD_VALUE> %u </CUNIT_LIST_TOTAL_SUMMARY_RECORD_VALUE>" LF
+    "      <CUNIT_LIST_TOTAL_SUMMARY_RECORD_VALUE> %zu </CUNIT_LIST_TOTAL_SUMMARY_RECORD_VALUE>" LF
     "    </CUNIT_LIST_TOTAL_SUMMARY_RECORD>" LF
     "  </CUNIT_LIST_TOTAL_SUMMARY>" LF;
 
