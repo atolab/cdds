@@ -192,7 +192,6 @@ static int dds_readcdr_impl
   return ret;
 }
 
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 int
 dds_read(
         dds_entity_t reader,
@@ -204,7 +203,6 @@ dds_read(
   return dds_read_impl(false, reader, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 int
 dds_read_instance(
         dds_entity_t reader,
@@ -218,7 +216,6 @@ dds_read_instance(
   return dds_read_impl (false, reader, buf, maxs, si, mask, NULL, handle);
 }
 
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 int
 dds_read_cond(
         dds_entity_t reader,
@@ -231,7 +228,6 @@ dds_read_cond(
   return dds_read_impl (false, reader, buf, maxs, si, 0, condition, DDS_HANDLE_NIL);
 }
 
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 int
 dds_read_next(
         dds_entity_t reader,
@@ -242,7 +238,6 @@ dds_read_next(
   return dds_read_impl (false, reader, buf, 1u, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 int
 dds_take(
         dds_entity_t reader,
@@ -254,7 +249,6 @@ dds_take(
   return dds_read_impl (true, reader, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 int
 dds_takecdr(
         dds_entity_t reader,
@@ -266,7 +260,6 @@ dds_takecdr(
   return dds_readcdr_impl (true, reader, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 int
 dds_take_instance(
         dds_entity_t reader,
@@ -280,7 +273,6 @@ dds_take_instance(
   return dds_read_impl (true, reader, buf, maxs, si, mask, NULL, handle);
 }
 
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 int
 dds_take_cond(
         dds_entity_t reader,
@@ -293,7 +285,6 @@ dds_take_cond(
   return dds_read_impl (true, reader, buf, maxs, si, 0, conditition, DDS_HANDLE_NIL);
 }
 
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 int
 dds_take_next(
         dds_entity_t reader,
@@ -304,7 +295,6 @@ dds_take_next(
   return dds_read_impl (true, reader, buf, 1u, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 void
 dds_return_loan(
         dds_entity_t reader,

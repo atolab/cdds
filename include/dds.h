@@ -1795,6 +1795,7 @@ dds_return_loan(
  * -# data sample with a key fields set
  * -# Returns instance handle or DDS_HANDLE_NIL if instance could not be found from key
  */
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT dds_instance_handle_t
 dds_instance_lookup(
         dds_entity_t entity,
@@ -1811,6 +1812,7 @@ dds_instance_lookup(
  * -# Returns 0 on successful operation, or a non-zero value to indicate an error if the instance
  *    passed doesn't have a key-value
  */
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT int
 dds_instance_get_key(
         dds_entity_t entity,
