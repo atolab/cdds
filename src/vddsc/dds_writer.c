@@ -358,6 +358,7 @@ dds_writer_create(
   return DDS_RETCODE_OK;
 }
 
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
 dds_entity_t
 dds_get_publisher(
         _In_ dds_entity_t writer)

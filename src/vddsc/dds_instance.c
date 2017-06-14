@@ -217,11 +217,11 @@ dds_instance_dispose_ts(
   return ret;
 }
 
-_Pre_satisfies_(e & DDS_ENTITY_KIND_MASK)
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 dds_instance_handle_t
 dds_instance_lookup(
         dds_entity_t entity,
-        const void * data)
+        const void *data)
 {
   dds_instance_handle_t ih;
   const dds_topic * topic;

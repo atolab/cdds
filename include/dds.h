@@ -829,10 +829,10 @@ dds_participant_lookup(
  *   -# listener Any listener functions associated with the new topic (can be NULL)
  *   -# Returns a status, 0 on success or non-zero value to indicate an error
  */
-_Pre_satisfies_((pp & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
 DDS_EXPORT int
 dds_topic_create(
-        dds_entity_t pp,
+        dds_entity_t participant,
         dds_entity_t *topic,
         const dds_topic_descriptor_t *descriptor,
         const char *name,

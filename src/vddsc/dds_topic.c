@@ -207,15 +207,15 @@ static dds_return_t dds_topic_qos_set (dds_entity *e, const dds_qos_t *qos, bool
     return ret;
 }
 
-int dds_topic_create
-(
-  dds_entity_t pp,
-  dds_entity_t * topic,
-  const dds_topic_descriptor_t * desc,
-  const char * name,
-  const dds_qos_t * qos,
-  const dds_listener_t * listener
-)
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+int
+dds_topic_create(
+        dds_entity_t participant,
+        dds_entity_t *topic,
+        const dds_topic_descriptor_t *desc,
+        const char *name,
+        const dds_qos_t *qos,
+        const dds_listener_t *listener)
 {
   static uint32_t next_topicid = 0;
 
@@ -236,7 +236,7 @@ int dds_topic_create
   assert (desc);
   assert (name);
 
-  ret = dds_entity_lock(pp, DDS_KIND_PARTICIPANT, &par);
+  ret = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
   if (ret != DDS_RETCODE_OK) {
       return (int)DDS_ERRNO(ret, DDS_MOD_TOPIC, DDS_ERR_M2);
   }
