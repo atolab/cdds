@@ -10,14 +10,22 @@
 #include "ddsi/q_thread.h"
 #include "kernel/q_osplser.h"
 
-int dds_instance_writedispose (dds_entity_t wr, const void *data)
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+int
+dds_instance_writedispose(
+        dds_entity_t writer,
+        const void *data)
 {
-  return dds_instance_writedispose_ts (wr, data, dds_time ());
+  return dds_instance_writedispose_ts(writer, data, dds_time());
 }
 
-int dds_instance_dispose (dds_entity_t wr, const void *data)
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+int
+dds_instance_dispose(
+        dds_entity_t writer,
+        const void *data)
 {
-  return dds_instance_dispose_ts (wr, data, dds_time ());
+  return dds_instance_dispose_ts(writer, data, dds_time());
 }
 
 static struct tkmap_instance * dds_instance_find
@@ -82,7 +90,11 @@ static const dds_topic * dds_instance_info_by_hdl (dds_entity_t e)
     return topic;
 }
 
-dds_instance_handle_t dds_instance_register (dds_entity_t e, const void * data)
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+dds_instance_handle_t
+dds_instance_register(
+        dds_entity_t writer,
+        const void *data)
 {
   struct tkmap_instance * inst;
   dds_entity *wr;
@@ -90,7 +102,7 @@ dds_instance_handle_t dds_instance_register (dds_entity_t e, const void * data)
 
   assert (data);
 
-  ret = dds_entity_lock(e, DDS_KIND_WRITER, &wr);
+  ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
   if (ret != DDS_RETCODE_OK) {
       return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
   }
@@ -99,12 +111,23 @@ dds_instance_handle_t dds_instance_register (dds_entity_t e, const void * data)
   return inst->m_iid;
 }
 
-int dds_instance_unregister (dds_entity_t wr, const void * data, dds_instance_handle_t handle)
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+int
+dds_instance_unregister(
+        dds_entity_t writer,
+        const void *data,
+        dds_instance_handle_t handle)
 {
-  return dds_instance_unregister_ts (wr, data, handle, dds_time ());
+  return dds_instance_unregister_ts (writer, data, handle, dds_time());
 }
 
-int dds_instance_unregister_ts (dds_entity_t e, const void * data, dds_instance_handle_t handle, dds_time_t tstamp)
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+int
+dds_instance_unregister_ts(
+        dds_entity_t writer,
+        const void *data,
+        dds_instance_handle_t handle,
+        dds_time_t timestamp)
 {
   int ret = DDS_RETCODE_OK;
   bool autodispose = true;
@@ -115,7 +138,7 @@ int dds_instance_unregister_ts (dds_entity_t e, const void * data, dds_instance_
 
   assert (data != NULL || handle != DDS_HANDLE_NIL);
 
-  ret = dds_entity_lock(e, DDS_KIND_WRITER, &wr);
+  ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
   if (ret != DDS_RETCODE_OK) {
       return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
   }
@@ -145,7 +168,7 @@ int dds_instance_unregister_ts (dds_entity_t e, const void * data, dds_instance_
       action |= DDS_WR_DISPOSE_BIT;
     }
 
-    ret = dds_write_impl ((dds_writer*)wr, sample, tstamp, action);
+    ret = dds_write_impl ((dds_writer*)wr, sample, timestamp, action);
   }
 
   if (topic)
@@ -156,64 +179,77 @@ int dds_instance_unregister_ts (dds_entity_t e, const void * data, dds_instance_
   return ret;
 }
 
-int dds_instance_writedispose_ts (dds_entity_t e, const void *data, dds_time_t tstamp)
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+int
+dds_instance_writedispose_ts(
+        dds_entity_t writer,
+        const void *data,
+        dds_time_t timestamp)
 {
   int ret;
   dds_entity *wr;
-  ret = dds_entity_lock(e, DDS_KIND_WRITER, &wr);
+  ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
   if (ret != DDS_RETCODE_OK) {
       return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
   }
-  ret = dds_write_impl ((dds_writer*)wr, data, tstamp, DDS_WR_ACTION_WRITE_DISPOSE);
+  ret = dds_write_impl ((dds_writer*)wr, data, timestamp, DDS_WR_ACTION_WRITE_DISPOSE);
   dds_instance_remove (((dds_writer*)wr)->m_topic, data, DDS_HANDLE_NIL);
   dds_entity_unlock(wr);
   return ret;
 }
 
-int dds_instance_dispose_ts (dds_entity_t e, const void *data, dds_time_t tstamp)
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+int
+dds_instance_dispose_ts(
+        dds_entity_t writer,
+        const void *data,
+        dds_time_t timestamp)
 {
   int ret;
   dds_entity *wr;
-  ret = dds_entity_lock(e, DDS_KIND_WRITER, &wr);
+  ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
   if (ret != DDS_RETCODE_OK) {
       return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
   }
-  ret = dds_write_impl ((dds_writer*)wr, data, tstamp, DDS_WR_ACTION_DISPOSE);
+  ret = dds_write_impl ((dds_writer*)wr, data, timestamp, DDS_WR_ACTION_DISPOSE);
   dds_instance_remove (((dds_writer*)wr)->m_topic, data, DDS_HANDLE_NIL);
   dds_entity_unlock(wr);
   return ret;
 }
 
-dds_instance_handle_t dds_instance_lookup (dds_entity_t e, const void * data)
+_Pre_satisfies_(e & DDS_ENTITY_KIND_MASK)
+dds_instance_handle_t
+dds_instance_lookup(
+        dds_entity_t entity,
+        const void * data)
 {
   dds_instance_handle_t ih;
   const dds_topic * topic;
   struct tkmap * map = gv.m_tkmap;
   serdata_t sd;
 
-  assert (e);
   assert (data);
 
-  topic = dds_instance_info_by_hdl (e);
+  topic = dds_instance_info_by_hdl (entity);
   sd = serialize_key (gv.serpool, topic->m_stopic, data);
   ih = dds_tkmap_lookup (map, sd);
   ddsi_serdata_unref (sd);
   return ih;
 }
 
-int dds_instance_get_key
-(
-  dds_entity_t e,
-  dds_instance_handle_t inst,
-  void * data
-)
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+int
+dds_instance_get_key(
+        dds_entity_t entity,
+        dds_instance_handle_t inst,
+        void *data)
 {
   const dds_topic * topic;
   struct tkmap * map = gv.m_tkmap;
 
   assert (data);
 
-  topic = dds_instance_info_by_hdl (e);
+  topic = dds_instance_info_by_hdl (entity);
   memset (data, 0, topic->m_descriptor->m_size);
   return (dds_tkmap_get_key (map, inst, data)) ?
     DDS_RETCODE_OK : DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER, DDS_MOD_INST, DDS_ERR_M1);

@@ -5,8 +5,12 @@
 #include "kernel/dds_readcond.h"
 #include "ddsi/ddsi_ser.h"
 
-dds_condition_t dds_querycondition_create
-  (dds_entity_t reader, uint32_t mask, dds_querycondition_filter_fn filter)
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+dds_condition_t
+dds_querycondition_create(
+        dds_entity_t reader,
+        uint32_t mask,
+        dds_querycondition_filter_fn filter)
 {
   dds_condition_t cond;
   dds_topic *topic;

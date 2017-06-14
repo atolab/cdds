@@ -258,14 +258,16 @@ static dds_return_t dds_writer_qos_set (dds_entity *e, const dds_qos_t *qos, boo
 }
 
 
-int dds_writer_create
-(
-  dds_entity_t pp_or_pub,
-  dds_entity_t * writer,
-  dds_entity_t topic,
-  const dds_qos_t * qos,
-  const dds_listener_t * listener
-)
+_Pre_satisfies_(((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER  ) ||\
+                ((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
+_Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
+int
+dds_writer_create(
+        dds_entity_t participant_or_publisher,
+        dds_entity_t *writer,
+        dds_entity_t topic,
+        const dds_qos_t *qos,
+        const dds_listener_t *listener)
 {
   int32_t errnr;
   dds_qos_t * wqos;
@@ -278,17 +280,11 @@ int dds_writer_create
   ddsi_tran_conn_t conn = gv.data_conn_mc ? gv.data_conn_mc : gv.data_conn_uc;
   int ret = DDS_RETCODE_OK;
 
-  assert (pp_or_pub);
-  assert (writer);
-  assert (topic);
-  assert ((dds_entity_kind(pp_or_pub) == DDS_KIND_PARTICIPANT) || (dds_entity_kind(pp_or_pub) == DDS_KIND_PUBLISHER));
-  assert (dds_entity_kind(topic) == DDS_KIND_TOPIC);
-
   /* Try claiming a participant. If that's not working, then it could be a subscriber. */
-  errnr = dds_entity_lock(pp_or_pub, DDS_KIND_PARTICIPANT, &parent);
+  errnr = dds_entity_lock(participant_or_publisher, DDS_KIND_PARTICIPANT, &parent);
   if (errnr != DDS_RETCODE_OK) {
       if (errnr == DDS_RETCODE_ILLEGAL_OPERATION) {
-          errnr = dds_entity_lock(pp_or_pub, DDS_KIND_PUBLISHER, &parent);
+          errnr = dds_entity_lock(participant_or_publisher, DDS_KIND_PUBLISHER, &parent);
           if (errnr != DDS_RETCODE_OK) {
               return (int)DDS_ERRNO(errnr, DDS_MOD_WRITER, DDS_ERR_M1);
           }
@@ -362,16 +358,18 @@ int dds_writer_create
   return DDS_RETCODE_OK;
 }
 
-dds_entity_t dds_get_publisher(_In_ dds_entity_t e)
+dds_entity_t
+dds_get_publisher(
+        _In_ dds_entity_t writer)
 {
-    if (e > 0) {
-        if (dds_entity_kind(e) == DDS_KIND_WRITER) {
-            return dds_get_parent(e);
+    if (writer > 0) {
+        if (dds_entity_kind(writer) == DDS_KIND_WRITER) {
+            return dds_get_parent(writer);
         } else {
             return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_READER, DDS_ERR_M1);
         }
     }
-    return e;
+    return writer;
 }
 
 dds_return_t dds_get_publication_matched_status (dds_entity_t entity, dds_publication_matched_status_t * status)

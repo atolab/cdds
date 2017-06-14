@@ -6,7 +6,7 @@
 #include "kernel/dds_waitset.h"
 #include "ddsi/q_globals.h"
 
-dds_condition_t dds_guardcondition_create (void)
+dds_condition_t dds_guardcondition_create(void)
 {
   dds_guardcond * guard = dds_alloc (sizeof (*guard));
   guard->m_cond.m_kind = DDS_TYPE_COND_GUARD;

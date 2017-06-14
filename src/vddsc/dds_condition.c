@@ -7,7 +7,9 @@
 #include "kernel/dds_rhc.h"
 #include "ddsi/q_globals.h"
 
-void dds_condition_delete (dds_condition * cond)
+void
+dds_condition_delete(
+        dds_condition_t cond)
 {
   dds_waitset * ws;
 

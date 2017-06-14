@@ -8,7 +8,11 @@
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
 
-dds_condition_t dds_readcondition_create (dds_entity_t reader, uint32_t mask)
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+dds_condition_t
+dds_readcondition_create(
+        dds_entity_t reader,
+        uint32_t mask)
 {
   dds_readcond * cond = NULL;
   dds_reader * rd;
@@ -30,13 +34,19 @@ dds_condition_t dds_readcondition_create (dds_entity_t reader, uint32_t mask)
   return (dds_condition_t) cond;
 }
 
-dds_entity_t dds_get_datareader(_In_ dds_entity_t rc)
+_Pre_satisfies_(((readcond & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((readcond & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
+dds_entity_t
+dds_get_datareader(
+        _In_ dds_entity_t readcond)
 {
-    if (rc > 0) {
+    if (readcond > 0) {
 #if 0
         /* TODO: CHAM-106: Return actual reader and errors when conditions are entities. */
-        if (dds_entity_kind(rc) == DDS_TYPE_COND_READ) {
-            return dds_get_parent(rc);
+        if (dds_entity_kind(readcond) == DDS_KIND_COND_READ) {
+            return dds_get_parent(readcond);
+        } else if (dds_entity_kind(readcond) == DDS_KIND_COND_QUERY) {
+            return dds_get_parent(readcond);
         } else {
             return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_READER, DDS_ERR_M1);
         }
@@ -44,5 +54,5 @@ dds_entity_t dds_get_datareader(_In_ dds_entity_t rc)
         return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_READER, DDS_ERR_M1);
 #endif
     }
-    return rc;
+    return readcond;
 }

@@ -261,12 +261,16 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
     }
 }
 
-int dds_reader_create (
-  dds_entity_t pp_or_sub,
-  dds_entity_t * reader,
-  dds_entity_t topic,
-  const dds_qos_t * qos,
-  const dds_listener_t * listener)
+_Pre_satisfies_(((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER ) ||\
+                ((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
+_Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
+int
+dds_reader_create(
+        dds_entity_t participant_or_subscriber,
+        dds_entity_t *reader,
+        dds_entity_t topic,
+        const dds_qos_t *qos,
+        const dds_listener_t *listener)
 {
     dds_qos_t * rqos;
     int32_t errnr;
@@ -279,17 +283,11 @@ int dds_reader_create (
     const bool asleep = !vtime_awake_p (thr->vtime);
     int ret = DDS_RETCODE_OK;
 
-    assert (pp_or_sub);
-    assert (reader);
-    assert (topic);
-    assert ((dds_entity_kind(pp_or_sub) == DDS_KIND_PARTICIPANT) || (dds_entity_kind(pp_or_sub) == DDS_KIND_SUBSCRIBER));
-    assert (dds_entity_kind(topic) == DDS_KIND_TOPIC);
-
     /* Try claiming a participant. If that's not working, then it could be a subscriber. */
-    errnr = dds_entity_lock(pp_or_sub, DDS_KIND_PARTICIPANT, &parent);
+    errnr = dds_entity_lock(participant_or_subscriber, DDS_KIND_PARTICIPANT, &parent);
     if (errnr != DDS_RETCODE_OK) {
         if (errnr == DDS_RETCODE_ILLEGAL_OPERATION) {
-            errnr = dds_entity_lock(pp_or_sub, DDS_KIND_SUBSCRIBER, &parent);
+            errnr = dds_entity_lock(participant_or_subscriber, DDS_KIND_SUBSCRIBER, &parent);
             if (errnr != DDS_RETCODE_OK) {
                 return (int)DDS_ERRNO(errnr, DDS_MOD_READER, DDS_ERR_M1);
             }
@@ -424,11 +422,11 @@ uint32_t dds_reader_lock_samples (dds_entity_t reader)
     return ret;
 }
 
-int dds_reader_wait_for_historical_data
-(
-  dds_entity_t reader,
-  dds_duration_t max_wait
-)
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+int
+dds_reader_wait_for_historical_data(
+        dds_entity_t reader,
+        dds_duration_t max_wait)
 {
     int ret;
     dds_reader *rd;
@@ -450,18 +448,25 @@ int dds_reader_wait_for_historical_data
     return ret;
 }
 
-dds_entity_t dds_get_subscriber(_In_ dds_entity_t e)
+_Pre_satisfies_(((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER    ) || \
+                ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
+dds_entity_t
+dds_get_subscriber(
+        _In_ dds_entity_t entity)
 {
-    if (e > 0) {
-        if (dds_entity_kind(e) == DDS_KIND_READER) {
-            return dds_get_parent(e);
-        } else if (dds_entity_kind(e) == DDS_KIND_COND_READ) {
-            return dds_get_subscriber(dds_get_parent(e));
+    if (entity > 0) {
+        if (dds_entity_kind(entity) == DDS_KIND_READER) {
+            return dds_get_parent(entity);
+        } else if (dds_entity_kind(entity) == DDS_KIND_COND_READ) {
+            return dds_get_subscriber(dds_get_parent(entity));
+        } else if (dds_entity_kind(entity) == DDS_KIND_COND_QUERY) {
+            return dds_get_subscriber(dds_get_parent(entity));
         } else {
             return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_READER, DDS_ERR_M1);
         }
     }
-    return e;
+    return entity;
 }
 
 dds_return_t dds_get_subscription_matched_status (dds_entity_t reader, dds_subscription_matched_status_t * status)

@@ -395,8 +395,10 @@ dds_entity_init(
     return (dds_entity_t)(e->m_hdl);
 }
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 dds_return_t
-dds_delete (_In_ dds_entity_t entity)
+dds_delete(
+        _In_ dds_entity_t entity)
 {
     dds_entity *e;
     dds_return_t ret;
@@ -410,8 +412,10 @@ dds_delete (_In_ dds_entity_t entity)
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, 0);
 }
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_entity_t
-dds_get_parent(_In_ dds_entity_t entity)
+dds_get_parent(
+        _In_ dds_entity_t entity)
 {
     dds_entity *e;
     dds_entity_t hdl = entity;
@@ -429,8 +433,10 @@ dds_get_parent(_In_ dds_entity_t entity)
     return hdl;
 }
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_entity_t
-dds_get_participant(_In_ dds_entity_t entity)
+dds_get_participant (
+        _In_ dds_entity_t entity)
 {
     dds_entity *e;
     dds_entity_t hdl = entity;
@@ -448,11 +454,12 @@ dds_get_participant(_In_ dds_entity_t entity)
     return hdl;
 }
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_get_children(
-        _In_ dds_entity_t entity,
+        _In_        dds_entity_t entity,
         _Inout_opt_ dds_entity_t *children,
-        _In_ size_t size)
+        _In_        size_t size)
 {
     dds_entity *e;
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
@@ -475,8 +482,11 @@ dds_get_children(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
-dds_get_qos (_In_ dds_entity_t entity, _Inout_ dds_qos_t * qos)
+dds_get_qos(
+        _In_    dds_entity_t entity,
+        _Inout_ dds_qos_t *qos)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if ((entity > 0) && (qos != NULL)) {
@@ -495,8 +505,11 @@ dds_get_qos (_In_ dds_entity_t entity, _Inout_ dds_qos_t * qos)
 }
 
 /* Interface called whenever a changeable qos is modified */
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
-dds_set_qos (_In_ dds_entity_t entity, _In_ const dds_qos_t * qos)
+dds_set_qos(
+        _In_ dds_entity_t entity,
+        _In_ const dds_qos_t * qos)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (qos != NULL) {
@@ -521,8 +534,11 @@ dds_set_qos (_In_ dds_entity_t entity, _In_ const dds_qos_t * qos)
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
-dds_get_listener (_In_ dds_entity_t entity, _Inout_ dds_listener_t * listener)
+dds_get_listener(
+        _In_ dds_entity_t entity,
+        _Inout_ dds_listener_t * listener)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (listener != NULL) {
@@ -538,8 +554,11 @@ dds_get_listener (_In_ dds_entity_t entity, _Inout_ dds_listener_t * listener)
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
-dds_set_listener (_In_ dds_entity_t entity, _In_opt_ const dds_listener_t * listener)
+dds_set_listener(
+        _In_     dds_entity_t entity,
+        _In_opt_ const dds_listener_t * listener)
 {
     dds_return_t ret;
     dds_entity *e;
@@ -557,8 +576,10 @@ dds_set_listener (_In_ dds_entity_t entity, _In_opt_ const dds_listener_t * list
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
-dds_enable(_In_ dds_entity_t entity)
+dds_enable(
+        _In_ dds_entity_t entity)
 {
     dds_return_t ret;
     dds_entity *e;
@@ -575,16 +596,19 @@ dds_enable(_In_ dds_entity_t entity)
 }
 
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
-dds_get_status_changes (_In_ dds_entity_t entity, _Inout_ uint32_t *mask)
+dds_get_status_changes(
+        _In_    dds_entity_t entity,
+        _Inout_ uint32_t *status)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
-    if (mask != NULL) {
+    if (status != NULL) {
         dds_entity *e;
         ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (ret == DDS_RETCODE_OK) {
             if (e->m_deriver.validate_status) {
-                *mask = e->m_status->m_trigger;
+                *status = e->m_status->m_trigger;
             } else {
                 ret = DDS_RETCODE_ILLEGAL_OPERATION;
             }
@@ -594,16 +618,19 @@ dds_get_status_changes (_In_ dds_entity_t entity, _Inout_ uint32_t *mask)
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
-dds_get_enabled_status(_In_ dds_entity_t entity, _Inout_ uint32_t *mask)
+dds_get_enabled_status(
+        _In_    dds_entity_t entity,
+        _Inout_ uint32_t *status)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
-    if (mask != NULL) {
+    if (status != NULL) {
         dds_entity *e;
         ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (ret == DDS_RETCODE_OK) {
             if (e->m_deriver.validate_status) {
-                *mask = e->m_status_enable;
+                *status = e->m_status_enable;
             } else {
                 ret = DDS_RETCODE_ILLEGAL_OPERATION;
             }
@@ -614,8 +641,11 @@ dds_get_enabled_status(_In_ dds_entity_t entity, _Inout_ uint32_t *mask)
 }
 
 
-dds_return_t
-dds_set_enabled_status (_In_ dds_entity_t entity, _In_ uint32_t mask)
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT dds_return_t
+dds_set_enabled_status(
+        _In_ dds_entity_t entity,
+        _In_ uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     dds_entity *e;
@@ -640,8 +670,12 @@ dds_set_enabled_status (_In_ dds_entity_t entity, _In_ uint32_t mask)
 
 
 /* Read status condition based on mask */
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
-dds_read_status (_In_ dds_entity_t entity, _Inout_ uint32_t * status, _In_ uint32_t mask)
+dds_read_status(
+        _In_    dds_entity_t entity,
+        _Inout_ uint32_t *status,
+        _In_    uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (status != NULL) {
@@ -663,8 +697,12 @@ dds_read_status (_In_ dds_entity_t entity, _Inout_ uint32_t * status, _In_ uint3
 }
 
 /* Take and clear status condition based on mask */
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
-dds_take_status (_In_ dds_entity_t entity, _Inout_ uint32_t * status, _In_ uint32_t mask)
+dds_take_status(
+        _In_    dds_entity_t entity,
+        _Inout_ uint32_t *status,
+        _In_    uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (status != NULL) {
@@ -698,8 +736,11 @@ dds_entity_status_signal(_In_ dds_entity *e)
     os_mutexUnlock (&e->m_mutex);
 }
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
-dds_get_domainid (_In_ dds_entity_t entity, _Inout_ dds_domainid_t *id)
+dds_get_domainid(
+        _In_    dds_entity_t entity,
+        _Inout_ dds_domainid_t *id)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (id != NULL) {
@@ -713,16 +754,19 @@ dds_get_domainid (_In_ dds_entity_t entity, _Inout_ dds_domainid_t *id)
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
-dds_instancehandle_get(_In_ dds_entity_t entity, _Inout_ dds_instance_handle_t *i)
+dds_instancehandle_get(
+        _In_    dds_entity_t entity,
+        _Inout_ dds_instance_handle_t *ihdl)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
-    if (i != NULL) {
+    if (ihdl != NULL) {
         dds_entity *e;
         ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (ret == DDS_RETCODE_OK) {
             if (e->m_deriver.get_instance_hdl) {
-                ret = e->m_deriver.get_instance_hdl(e, i);
+                ret = e->m_deriver.get_instance_hdl(e, ihdl);
             }
             dds_entity_unlock(e);
         }

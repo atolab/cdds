@@ -138,14 +138,18 @@ static void dds_topic_add (dds_domainid_t id, sertopic_t st)
   os_mutexUnlock (&dds_global.m_mutex);
 }
 
-dds_entity_t dds_topic_find (dds_entity_t pp, const char * name)
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+DDS_EXPORT dds_entity_t
+dds_topic_find(
+        dds_entity_t participant,
+        const char *name)
 {
   dds_entity_t tp;
   dds_entity *p = NULL;
   sertopic_t st;
   int32_t ret;
 
-  ret = dds_entity_lock(pp, DDS_KIND_PARTICIPANT, &p);
+  ret = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &p);
   if (ret == DDS_RETCODE_OK) {
       st = dds_topic_lookup (p->m_domain, name);
       if (st) {
@@ -391,14 +395,21 @@ static void dds_topic_mod_filter
   }
 }
 
-void dds_topic_set_filter (dds_entity_t topic, dds_topic_filter_fn filter)
+_Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
+void
+dds_topic_set_filter(
+        dds_entity_t topic,
+        dds_topic_filter_fn filter)
 {
   dds_topic_intern_filter_fn chaining = dds_topic_chaining_filter;
   void *realf = (void *)filter;
   dds_topic_mod_filter (topic, &chaining, &realf, true);
 }
 
-dds_topic_filter_fn dds_topic_get_filter (dds_entity_t topic)
+_Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
+dds_topic_filter_fn
+dds_topic_get_filter(
+        dds_entity_t topic)
 {
   dds_topic_intern_filter_fn filter;
   void *ctx;
@@ -421,7 +432,10 @@ dds_topic_intern_filter_fn dds_topic_get_filter_with_ctx (dds_entity_t topic)
   return (filter == dds_topic_chaining_filter) ? NULL : filter;
 }
 
-char * dds_topic_get_name (dds_entity_t topic)
+_Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
+char*
+dds_topic_get_name(
+        dds_entity_t topic)
 {
     char *name = NULL;
     dds_topic *t;
@@ -432,7 +446,10 @@ char * dds_topic_get_name (dds_entity_t topic)
     return name;
 }
 
-char * dds_topic_get_type_name (dds_entity_t topic)
+_Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
+char*
+dds_topic_get_type_name(
+        dds_entity_t topic)
 {
     char *name = NULL;
     dds_topic *t;

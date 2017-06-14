@@ -98,10 +98,11 @@ static dds_return_t dds_participant_qos_set (dds_entity *e, const dds_qos_t *qos
     return ret;
 }
 
-dds_entity_t dds_create_participant(
-        _In_ const dds_domainid_t domain,
-        _In_opt_ const dds_qos_t * qos,
-        _In_opt_ const dds_listener_t * listener)
+_Must_inspect_result_ dds_entity_t
+dds_create_participant(
+        _In_     const dds_domainid_t domain,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener)
 {
     int ret;
     dds_entity_t e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR, DDS_MOD_PPANT, DDS_ERR_M1);
@@ -185,7 +186,9 @@ fail:
     return e;
 }
 
-dds_entity_t dds_participant_lookup (dds_domainid_t domain_id)
+dds_entity_t
+dds_participant_lookup(
+        dds_domainid_t domain_id)
 {
     dds_entity_t hdl = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR, DDS_MOD_PPANT, DDS_ERR_M4);
     dds_entity *pp = NULL;

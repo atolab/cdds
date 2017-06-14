@@ -75,21 +75,21 @@ static dds_return_t dds_subscriber_status_propagate (dds_entity *sub, uint32_t m
     return DDS_RETCODE_OK;
 }
 
-dds_entity_t dds_create_subscriber
-(
-  _In_ dds_entity_t pp,
-  _In_opt_ const dds_qos_t * qos,
-  _In_opt_ const dds_listener_t * listener
-)
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+_Must_inspect_result_ dds_entity_t
+dds_create_subscriber(
+        _In_     dds_entity_t participant,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener)
 {
-    dds_entity * participant;
+    dds_entity * par;
     dds_subscriber * sub;
     dds_entity_t hdl;
     dds_qos_t * new_qos = NULL;
     dds_return_t ret;
     int32_t errnr;
 
-    errnr = dds_entity_lock(pp, DDS_KIND_PARTICIPANT, &participant);
+    errnr = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
     if (errnr != DDS_RETCODE_OK) {
         return DDS_ERRNO(errnr, DDS_MOD_KERNEL, DDS_ERR_M2);
     }
@@ -98,7 +98,7 @@ dds_entity_t dds_create_subscriber
     if (qos) {
         ret = dds_subscriber_qos_validate(qos, false);
         if (ret != DDS_RETCODE_OK) {
-            dds_entity_unlock(participant);
+            dds_entity_unlock(par);
             return ret;
         }
         new_qos = dds_qos_create();
@@ -107,17 +107,20 @@ dds_entity_t dds_create_subscriber
 
     /* Create subscriber */
     sub = dds_alloc(sizeof(*sub));
-    hdl = dds_entity_init(&sub->m_entity, participant, DDS_KIND_SUBSCRIBER, new_qos, listener, DDS_SUBSCRIBER_STATUS_MASK);
+    hdl = dds_entity_init(&sub->m_entity, par, DDS_KIND_SUBSCRIBER, new_qos, listener, DDS_SUBSCRIBER_STATUS_MASK);
     sub->m_entity.m_deriver.set_qos = dds_subscriber_qos_set;
     sub->m_entity.m_deriver.validate_status = dds_subscriber_status_validate;
     sub->m_entity.m_deriver.propagate_status = dds_subscriber_status_propagate;
     sub->m_entity.m_deriver.get_instance_hdl = dds_subscriber_instance_hdl;
-    dds_entity_unlock(participant);
+    dds_entity_unlock(par);
 
     return hdl;
 }
 
-dds_return_t dds_notify_readers(_In_ dds_entity_t subscriber)
+_Pre_satisfies_((subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER)
+dds_return_t
+dds_notify_readers(
+        _In_ dds_entity_t subscriber)
 {
     dds_entity *iter;
     dds_entity *sub;

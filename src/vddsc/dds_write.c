@@ -18,12 +18,16 @@ typedef os_atomic_uint32_t fake_seq_t;
 uint64_t fake_seq_next (fake_seq_t *x) { return os_atomic_inc32_nv (x); }
 #endif
 
-int dds_write (dds_entity_t e, const void * data)
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+int
+dds_write(
+        dds_entity_t writer,
+        const void *data)
 {
     int ret = DDS_RETCODE_BAD_PARAMETER;
     dds_writer *wr;
     if (data != NULL) {
-        ret = dds_writer_lock(e, &wr);
+        ret = dds_writer_lock(writer, &wr);
         if (ret != DDS_RETCODE_OK) {
             ret = dds_write_impl (wr, data, dds_time (), 0);
             dds_writer_unlock(wr);
@@ -32,28 +36,38 @@ int dds_write (dds_entity_t e, const void * data)
     return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
 }
 
-int dds_writecdr (dds_entity_t e, const void * cdr, size_t sz)
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+int
+dds_writecdr(
+        dds_entity_t writer,
+        const void *cdr,
+        size_t size)
 {
     int ret = DDS_RETCODE_BAD_PARAMETER;
     dds_writer *wr;
     if (cdr != NULL) {
-        ret = dds_writer_lock(e, &wr);
+        ret = dds_writer_lock(writer, &wr);
         if (ret != DDS_RETCODE_OK) {
-            ret = dds_writecdr_impl (wr, cdr, sz, dds_time (), 0);
+            ret = dds_writecdr_impl (wr, cdr, size, dds_time (), 0);
             dds_writer_unlock(wr);
         }
     }
     return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
 }
 
-int dds_write_ts (dds_entity_t e, const void * data, dds_time_t tstamp)
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+int
+dds_write_ts(
+        dds_entity_t writer,
+        const void *data,
+        dds_time_t timestamp)
 {
     int ret = DDS_RETCODE_BAD_PARAMETER;
     dds_writer *wr;
     if (data != NULL) {
-        ret = dds_writer_lock(e, &wr);
+        ret = dds_writer_lock(writer, &wr);
         if (ret != DDS_RETCODE_OK) {
-            ret = dds_write_impl (wr, data, tstamp, 0);
+            ret = dds_write_impl (wr, data, timestamp, 0);
             dds_writer_unlock(wr);
         }
     }
@@ -321,7 +335,10 @@ void dds_write_set_batch (bool enable)
     config.whc_batch = enable ? 1 : 0;
 }
 
-void dds_write_flush (dds_entity_t e)
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+void
+dds_write_flush(
+        dds_entity_t writer)
 {
     struct thread_state1 * const thr = lookup_thread_state ();
     const bool asleep = !vtime_awake_p (thr->vtime);
@@ -331,7 +348,7 @@ void dds_write_flush (dds_entity_t e)
         thread_state_awake (thr);
     }
 
-    if (dds_writer_lock(e, &wr) != DDS_RETCODE_OK) {
+    if (dds_writer_lock(writer, &wr) != DDS_RETCODE_OK) {
         nn_xpack_send (wr->m_xp, true);
         dds_writer_unlock(wr);
     }
