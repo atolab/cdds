@@ -1,4 +1,5 @@
 #include <assert.h>
+#include "dds.h"
 #include "ddsi/q_config.h"
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
@@ -39,19 +40,23 @@ static dds_return_t dds_writer_status_validate (uint32_t mask)
 
 static void dds_writer_status_cb (void * entity, const status_cb_data_t * data)
 {
-    dds_writer * wr = (dds_writer*) entity;
+    dds_writer *wr;
     bool call = false;
     void *metrics = NULL;
 
     /* When data is NULL, it means that the writer is deleted. */
     if (data == NULL) {
-        /* API deletion is possible waiting for this signal that
-         * indicates that no more callbacks will be triggered. */
-        dds_entity_delete_signal (entity);
+        /* Release the initial claim that was done during the create. This
+         * will indicate that further API deletion is now possible. */
+        ut_handle_release(((dds_entity*)entity)->m_hdl, ((dds_entity*)entity)->m_hdllink);
         return;
     }
 
-    os_mutexLock (&wr->m_entity.m_mutex);
+    if (dds_writer_lock(((dds_entity*)entity)->m_hdl, &wr) != DDS_RETCODE_OK) {
+        /* There's a deletion or closing going on. */
+        return;
+    }
+    assert(wr == entity);
 
     /* Reset the status for possible Listener call.
      * When a listener is not called, the status will be set (again). */
@@ -95,7 +100,7 @@ static void dds_writer_status_cb (void * entity, const status_cb_data_t * data)
         }
         default: assert (0);
     }
-    os_mutexUnlock (&wr->m_entity.m_mutex);
+    dds_writer_unlock(wr);
 
 
     /* Indicate to the entity hierarchy that we're busy with a callback.
@@ -115,33 +120,37 @@ static void dds_writer_status_cb (void * entity, const status_cb_data_t * data)
 
     if (call) {
         /* Event was eaten by a listener. */
-        os_mutexLock (&wr->m_entity.m_mutex);
+        if (dds_writer_lock(((dds_entity*)entity)->m_hdl, &wr) == DDS_RETCODE_OK) {
+            assert(wr == entity);
 
-        /* Reset the status. */
-        dds_entity_status_reset(entity, data->status);
+            /* Reset the status. */
+            dds_entity_status_reset(entity, data->status);
 
-        /* Reset the change counts of the metrics. */
-        switch (data->status) {
-            case DDS_OFFERED_DEADLINE_MISSED_STATUS: {
-                wr->m_offered_deadline_missed_status.total_count_change = 0;
-                break;
+            /* Reset the change counts of the metrics. */
+            switch (data->status) {
+                case DDS_OFFERED_DEADLINE_MISSED_STATUS: {
+                    wr->m_offered_deadline_missed_status.total_count_change = 0;
+                    break;
+                }
+                case DDS_LIVELINESS_LOST_STATUS: {
+                    wr->m_liveliness_lost_status.total_count_change = 0;
+                    break;
+                }
+                case DDS_OFFERED_INCOMPATIBLE_QOS_STATUS: {
+                    wr->m_offered_incompatible_qos_status.total_count_change = 0;
+                    break;
+                }
+                case DDS_PUBLICATION_MATCHED_STATUS: {
+                    wr->m_publication_matched_status.total_count_change = 0;
+                    wr->m_publication_matched_status.current_count_change = 0;
+                    break;
+                }
+                default: assert (0);
             }
-            case DDS_LIVELINESS_LOST_STATUS: {
-                wr->m_liveliness_lost_status.total_count_change = 0;
-                break;
-            }
-            case DDS_OFFERED_INCOMPATIBLE_QOS_STATUS: {
-                wr->m_offered_incompatible_qos_status.total_count_change = 0;
-                break;
-            }
-            case DDS_PUBLICATION_MATCHED_STATUS: {
-                wr->m_publication_matched_status.total_count_change = 0;
-                wr->m_publication_matched_status.current_count_change = 0;
-                break;
-            }
-            default: assert (0);
+            dds_writer_unlock(wr);
+        } else {
+            /* There's a deletion or closing going on. */
         }
-        os_mutexUnlock (&wr->m_entity.m_mutex);
     } else {
         /* Nobody was interested through a listener. Set the status to maybe force a trigger. */
         dds_entity_status_set(entity, data->status);
@@ -159,11 +168,12 @@ static uint32_t get_bandwidth_limit (nn_transport_priority_qospolicy_t transport
 #endif
 }
 
-static void dds_writer_delete(dds_entity *e, bool recurse)
+static dds_return_t dds_writer_close(dds_entity *e)
 {
-    dds_writer * wr = (dds_writer*) e;
-    struct thread_state1 * const thr = lookup_thread_state ();
-    const bool asleep = !vtime_awake_p (thr->vtime);
+    dds_return_t ret = DDS_RETCODE_OK;
+    dds_writer *wr = (dds_writer*)e;
+    struct thread_state1 * const thr = lookup_thread_state();
+    const bool asleep = !vtime_awake_p(thr->vtime);
 
     assert(e);
     assert(thr);
@@ -171,18 +181,38 @@ static void dds_writer_delete(dds_entity *e, bool recurse)
     if (asleep) {
       thread_state_awake(thr);
     }
-
     nn_xpack_send (wr->m_xp, false);
-    delete_writer (&e->m_guid);
-    dds_entity_delete_wait (e, thr);
-    nn_xpack_free (wr->m_xp);
-    os_mutexDestroy (&wr->m_call_lock);
-    dds_entity_delete_impl ((dds_entity*) wr->m_topic, false, recurse);
-
+    if (delete_writer (&e->m_guid) != 0) {
+        ret = DDS_RETCODE_ERROR;
+    }
     if (asleep) {
       thread_state_asleep(thr);
     }
+    return ret;
 }
+
+static dds_return_t dds_writer_delete(dds_entity *e)
+{
+    dds_writer *wr = (dds_writer*)e;
+    struct thread_state1 * const thr = lookup_thread_state();
+    const bool asleep = !vtime_awake_p(thr->vtime);
+    dds_return_t ret;
+
+    assert(e);
+    assert(thr);
+
+    if (asleep) {
+      thread_state_awake(thr);
+    }
+    nn_xpack_free(wr->m_xp);
+    if (asleep) {
+      thread_state_asleep(thr);
+    }
+    ret = dds_delete(wr->m_topic->m_entity.m_hdl);
+    os_mutexDestroy(&wr->m_call_lock);
+    return ret;
+}
+
 
 static dds_return_t dds_writer_qos_validate (const dds_qos_t *qos, bool enabled)
 {
@@ -336,10 +366,17 @@ dds_writer_create(
   dds_entity_add_ref (tp);
   wr->m_xp = nn_xpack_new (conn, get_bandwidth_limit(wqos->transport_priority), config.xpack_send_async);
   os_mutexInit (&wr->m_call_lock);
+  wr->m_entity.m_deriver.close = dds_writer_close;
   wr->m_entity.m_deriver.delete = dds_writer_delete;
   wr->m_entity.m_deriver.set_qos = dds_writer_qos_set;
   wr->m_entity.m_deriver.validate_status = dds_writer_status_validate;
   wr->m_entity.m_deriver.get_instance_hdl = dds_writer_instance_hdl;
+
+  /* Extra claim of this writer to make sure that the delete waits until DDSI
+   * has deleted its writer as well. This can be known through the callback. */
+  if (ut_handle_claim(wr->m_entity.m_hdl, wr->m_entity.m_hdllink, DDS_KIND_WRITER, NULL) != UT_HANDLE_OK) {
+      assert(0);
+  }
 
   dds_entity_unlock(tp);
   dds_entity_unlock(parent);
@@ -367,7 +404,7 @@ dds_get_publisher(
         if (dds_entity_kind(writer) == DDS_KIND_WRITER) {
             return dds_get_parent(writer);
         } else {
-            return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_READER, DDS_ERR_M1);
+            return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_WRITER, DDS_ERR_M1);
         }
     }
     return writer;

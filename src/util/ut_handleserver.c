@@ -194,18 +194,18 @@ ut_handle_claim(
         _In_        ut_handle_t hdl,
         _Inout_opt_ struct ut_handlelink *link,
         _In_        int32_t kind,
-        _Out_       void **arg)
+        _Out_opt_   void **arg)
 {
     struct ut_handlelink *info = link;
     ut_handle_retcode_t   ret = UT_HANDLE_OK;
 
-    assert(arg);
+    if (arg != NULL) {
+        *arg = NULL;
+    }
 
     if (hs == NULL) {
         return (ut_handle_t)UT_HANDLE_NOT_INITALIZED;
     }
-
-    *arg = NULL;
 
     os_mutexLock(&hs->mutex);
     if (info == NULL) {
@@ -220,7 +220,9 @@ ut_handle_claim(
     }
     if (ret == UT_HANDLE_OK) {
         info->cnt++;
-        *arg = info->arg;
+        if (arg != NULL) {
+            *arg = info->arg;
+        }
     }
     os_mutexUnlock(&hs->mutex);
 

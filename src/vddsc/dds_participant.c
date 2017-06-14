@@ -14,7 +14,7 @@
 
 static dds_entity * dds_pp_head = NULL;
 
-static void dds_participant_delete(dds_entity *e, bool recurse)
+static dds_return_t dds_participant_delete(dds_entity *e)
 {
     struct thread_state1 * const thr = lookup_thread_state ();
     const bool asleep = !vtime_awake_p (thr->vtime);
@@ -57,6 +57,8 @@ static void dds_participant_delete(dds_entity *e, bool recurse)
     if(dds_pp_head == NULL){
       dds_fini();
     }
+
+    return DDS_RETCODE_OK;
 }
 
 static dds_return_t dds_participant_instance_hdl(dds_entity *e, dds_instance_handle_t *i)

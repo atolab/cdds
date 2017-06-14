@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include "dds.h"
 #include "kernel/dds_reader.h"
 #include "kernel/dds_listener.h"
 #include "kernel/dds_qos.h"
@@ -29,11 +30,11 @@ static dds_return_t dds_reader_instance_hdl(dds_entity *e, dds_instance_handle_t
     return DDS_RETCODE_OK;
 }
 
-static void dds_reader_delete(dds_entity *e, bool recurse)
+static dds_return_t dds_reader_close(dds_entity *e)
 {
-    dds_reader * rd = (dds_reader*) e;
-    struct thread_state1 * const thr = lookup_thread_state ();
-    const bool asleep = !vtime_awake_p (thr->vtime);
+    dds_return_t ret = DDS_RETCODE_OK;
+    struct thread_state1 * const thr = lookup_thread_state();
+    const bool asleep = !vtime_awake_p(thr->vtime);
 
     assert(e);
     assert(thr);
@@ -41,15 +42,23 @@ static void dds_reader_delete(dds_entity *e, bool recurse)
     if (asleep) {
       thread_state_awake(thr);
     }
-
-    delete_reader (&e->m_guid);
-    dds_entity_delete_wait (e, thr);
-    dds_entity_delete_impl ((dds_entity*) rd->m_topic, false, recurse);
-    dds_free (rd->m_loan);
-
+    if (delete_reader(&e->m_guid) != 0) {
+        ret = DDS_RETCODE_ERROR;
+    }
     if (asleep) {
       thread_state_asleep(thr);
     }
+    return ret;
+}
+
+static dds_return_t dds_reader_delete(dds_entity *e)
+{
+    dds_reader *rd = (dds_reader*)e;
+    dds_return_t ret;
+    assert(e);
+    ret = dds_delete(rd->m_topic->m_entity.m_hdl);
+    dds_free(rd->m_loan);
+    return ret;
 }
 
 static dds_return_t dds_reader_qos_validate (const dds_qos_t *qos, bool enabled)
@@ -97,19 +106,24 @@ static dds_return_t dds_reader_status_validate (uint32_t mask)
 
 void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
 {
-    dds_reader * rd = (dds_reader*) entity;
+    dds_reader *rd;
     bool call = false;
     void *metrics = NULL;
 
-    /* When data is NULL, it means that the reader is deleted. */
+
+    /* When data is NULL, it means that the DDSI reader is deleted. */
     if (data == NULL) {
-        /* API deletion is possible waiting for this signal that
-         * indicates that no more callbacks will be triggered. */
-        dds_entity_delete_signal (entity);
+        /* Release the initial claim that was done during the create. This
+         * will indicate that further API deletion is now possible. */
+        ut_handle_release(((dds_entity*)entity)->m_hdl, ((dds_entity*)entity)->m_hdllink);
         return;
     }
 
-    os_mutexLock (&rd->m_entity.m_mutex);
+    if (dds_reader_lock(((dds_entity*)entity)->m_hdl, &rd) != DDS_RETCODE_OK) {
+        /* There's a deletion or closing going on. */
+        return;
+    }
+    assert(rd == entity);
 
     /* Reset the status for possible Listener call.
      * When a listener is not called, the status will be set (again). */
@@ -181,7 +195,7 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
         }
         default: assert (0);
     }
-    os_mutexUnlock (&rd->m_entity.m_mutex);
+    dds_reader_unlock(rd);
 
     /* Indicate to the entity hierarchy that we're busy with a callback.
      * This is done from the top to bottom to prevent possible deadlocks.
@@ -217,43 +231,48 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
 
     if (call) {
         /* Event was eaten by a listener. */
-        os_mutexLock (&rd->m_entity.m_mutex);
+        if (dds_reader_lock(((dds_entity*)entity)->m_hdl, &rd) == DDS_RETCODE_OK) {
+            assert(rd == entity);
+            os_mutexLock (&rd->m_entity.m_mutex);
 
-        /* Reset the change counts of the metrics. */
-        switch (data->status) {
-            case DDS_REQUESTED_DEADLINE_MISSED_STATUS: {
-                rd->m_requested_deadline_missed_status.total_count_change = 0;
-                break;
+            /* Reset the change counts of the metrics. */
+            switch (data->status) {
+                case DDS_REQUESTED_DEADLINE_MISSED_STATUS: {
+                    rd->m_requested_deadline_missed_status.total_count_change = 0;
+                    break;
+                }
+                case DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS: {
+                    rd->m_requested_incompatible_qos_status.total_count_change = 0;
+                    break;
+                }
+                case DDS_SAMPLE_LOST_STATUS: {
+                    rd->m_sample_lost_status.total_count_change = 0;
+                    break;
+                }
+                case DDS_SAMPLE_REJECTED_STATUS: {
+                    rd->m_sample_rejected_status.total_count_change = 0;
+                    break;
+                }
+                case DDS_DATA_AVAILABLE_STATUS: {
+                    /* Nothing to reset. */;
+                    break;
+                }
+                case DDS_LIVELINESS_CHANGED_STATUS: {
+                    rd->m_liveliness_changed_status.alive_count_change = 0;
+                    rd->m_liveliness_changed_status.not_alive_count_change = 0;
+                    break;
+                }
+                case DDS_SUBSCRIPTION_MATCHED_STATUS: {
+                    rd->m_subscription_matched_status.total_count_change = 0;
+                    rd->m_subscription_matched_status.current_count_change = 0;
+                    break;
+                }
+                default: assert (0);
             }
-            case DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS: {
-                rd->m_requested_incompatible_qos_status.total_count_change = 0;
-                break;
-            }
-            case DDS_SAMPLE_LOST_STATUS: {
-                rd->m_sample_lost_status.total_count_change = 0;
-                break;
-            }
-            case DDS_SAMPLE_REJECTED_STATUS: {
-                rd->m_sample_rejected_status.total_count_change = 0;
-                break;
-            }
-            case DDS_DATA_AVAILABLE_STATUS: {
-                /* Nothing to reset. */;
-                break;
-            }
-            case DDS_LIVELINESS_CHANGED_STATUS: {
-                rd->m_liveliness_changed_status.alive_count_change = 0;
-                rd->m_liveliness_changed_status.not_alive_count_change = 0;
-                break;
-            }
-            case DDS_SUBSCRIPTION_MATCHED_STATUS: {
-                rd->m_subscription_matched_status.total_count_change = 0;
-                rd->m_subscription_matched_status.current_count_change = 0;
-                break;
-            }
-            default: assert (0);
+            dds_reader_unlock(rd);
+        } else {
+            /* There's a deletion or closing going on. */
         }
-        os_mutexUnlock (&rd->m_entity.m_mutex);
     } else {
         /* Nobody was interested through a listener. Set the status to maybe force a trigger. */
         dds_entity_status_set(entity, data->status);
@@ -336,10 +355,17 @@ dds_reader_create(
     rd->m_topic = (dds_topic*)tp;
     dds_entity_add_ref (tp);
     rhc = dds_rhc_new (rd, ((dds_topic*)tp)->m_stopic);
+    rd->m_entity.m_deriver.close = dds_reader_close;
     rd->m_entity.m_deriver.delete = dds_reader_delete;
     rd->m_entity.m_deriver.set_qos = dds_reader_qos_set;
     rd->m_entity.m_deriver.validate_status = dds_reader_status_validate;
     rd->m_entity.m_deriver.get_instance_hdl = dds_reader_instance_hdl;
+
+    /* Extra claim of this reader to make sure that the delete waits until DDSI
+     * has deleted its reader as well. This can be known through the callback. */
+    if (ut_handle_claim(rd->m_entity.m_hdl, rd->m_entity.m_hdllink, DDS_KIND_READER, NULL) != UT_HANDLE_OK) {
+        assert(0);
+    }
 
     dds_entity_unlock(tp);
     dds_entity_unlock(parent);

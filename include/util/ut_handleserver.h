@@ -192,7 +192,7 @@ ut_handle_claim(
         _In_        ut_handle_t hdl,
         _Inout_opt_ struct ut_handlelink *link,
         _In_        int32_t kind,
-        _Out_       void **arg);
+        _Out_opt_   void **arg);
 
 
 /*

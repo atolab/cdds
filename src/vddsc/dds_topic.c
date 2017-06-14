@@ -166,9 +166,10 @@ dds_topic_find(
   return tp;
 }
 
-static void dds_topic_delete(dds_entity *e, bool recurse)
+static dds_return_t dds_topic_delete(dds_entity *e)
 {
     dds_topic_free(e->m_domainid, ((dds_topic*) e)->m_stopic);
+    return DDS_RETCODE_OK;
 }
 
 static dds_return_t dds_topic_qos_validate (const dds_qos_t *qos, bool enabled)

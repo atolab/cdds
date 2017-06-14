@@ -180,7 +180,6 @@ typedef struct c_listener {
 
 #define DDS_ENTITY_DELETED      0x0002
 #define DDS_ENTITY_ENABLED      0x0004
-#define DDS_ENTITY_DDSI_DELETED 0x0010
 
 typedef struct dds_domain
 {
@@ -194,9 +193,9 @@ dds_domain;
 struct dds_entity;
 typedef struct dds_entity_deriver {
     /* Close can be used to terminate (blocking) actions on a entity before actually deleting it. */
-    void (*close)(struct dds_entity *e, bool recurse);
+    dds_return_t (*close)(struct dds_entity *e);
     /* Delete is used to actually free the entity. */
-    void (*delete)(struct dds_entity *e, bool recurse);
+    dds_return_t (*delete)(struct dds_entity *e);
     dds_return_t (*set_qos)(struct dds_entity *e, const dds_qos_t *qos, bool enabled);
     dds_return_t (*validate_status)(uint32_t mask);
     dds_return_t (*propagate_status)(struct dds_entity *e, uint32_t mask, bool set);

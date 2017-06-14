@@ -203,138 +203,6 @@ dds_entity_cb_wait_signal (_In_ dds_entity *e)
     }
 }
 
-void
-dds_entity_delete_signal (_In_ dds_entity *e)
-{
-    /* Signal that clean up complete */
-    os_mutexLock (&e->m_mutex);
-    e->m_flags |= DDS_ENTITY_DDSI_DELETED;
-    os_condSignal (&e->m_cond);
-    os_mutexUnlock (&e->m_mutex);
-}
-
-void
-dds_entity_delete_wait (_In_ dds_entity *e, _In_ struct thread_state1 * const thr)
-{
-    /* Wait for DDSI clean up to complete */
-    os_mutexLock (&e->m_mutex);
-    if ((e->m_flags & DDS_ENTITY_DDSI_DELETED) == 0) {
-        thread_state_asleep (thr);
-        do {
-            os_condWait (&e->m_cond, &e->m_mutex);
-        }
-        while ((e->m_flags & DDS_ENTITY_DDSI_DELETED) == 0);
-        thread_state_awake (thr);
-    }
-    os_mutexUnlock (&e->m_mutex);
-}
-
-void
-dds_entity_delete_impl (_In_ dds_entity *e, _In_ bool child, _In_ bool recurse)
-{
-    os_time    timeout = { 10, 0 };
-    dds_entity *iter;
-    dds_entity **iterp;
-    dds_entity *prev = NULL;
-
-    if (dds_entity_lock(e->m_hdl, UT_HANDLE_DONTCARE_KIND, &e) != DDS_RETCODE_OK) {
-        /* TODO: Trace deletion error. */
-        return;
-    }
-
-    if (--e->m_refc != 0) {
-        dds_entity_unlock(e);
-        return;
-    }
-
-    dds_entity_cb_wait(e);
-
-    ut_handle_close(e->m_hdl, e->m_hdllink);
-    e->m_flags |= DDS_ENTITY_DELETED;
-    e->m_status_enable = 0;
-    dds_listener_reset(&e->m_listener);
-
-    dds_entity_unlock(e);
-    dds_entity_cb_wait_signal(e);
-
-    if (e->m_deriver.close) {
-        e->m_deriver.close(e, recurse);
-    }
-
-    /* Remove from parent */
-    if (!child && e->m_parent) {
-        os_mutexLock (&e->m_parent->m_mutex);
-        iter = e->m_parent->m_children;
-        while (iter) {
-            if (iter == e) {
-                /* Remove topic from participant extent */
-                if (prev) {
-                    prev->m_next = e->m_next;
-                } else {
-                    e->m_parent->m_children = e->m_next;
-                }
-                break;
-            }
-            prev = iter;
-            iter = iter->m_next;
-        }
-        os_mutexUnlock (&e->m_parent->m_mutex);
-    }
-
-    /* Recursively delete children */
-    if (recurse) {
-        iterp = &e->m_children;
-        while (*iterp != NULL) {
-            prev = (*iterp);
-            if (dds_entity_kind(prev->m_hdl) == DDS_KIND_TOPIC) {
-                /* Skip the topic element */
-                iterp = &(prev->m_next);
-            } else {
-                /* Remove entity from list */
-                *iterp = prev->m_next;
-                /* clear m_parent, otherwise prev may try to delete this object later */
-                os_mutexLock (&prev->m_mutex);
-                prev->m_parent = NULL;
-                os_mutexUnlock (&prev->m_mutex);
-                dds_entity_delete_impl (prev, true, true);
-            }
-        }
-
-        /* TODO: Get proper reason and comment why the topics are deleted last. */
-        while (e->m_children) {
-            prev = e->m_children;
-            assert (dds_entity_kind(prev->m_hdl) == DDS_KIND_TOPIC);
-            e->m_children = prev->m_next;
-            os_mutexLock (&prev->m_mutex);
-            prev->m_parent = NULL;
-            os_mutexUnlock (&prev->m_mutex);
-            dds_entity_delete_impl (prev, true, true);
-        }
-    } else {
-        /* Delete myself as parent from my children. */
-        for (iter = e->m_children; iter != NULL; iter = iter->m_next) {
-            os_mutexLock (&iter->m_mutex);
-            iter->m_parent = NULL;
-            os_mutexUnlock (&iter->m_mutex);
-        }
-    }
-
-    /* Clean up */
-    if (ut_handle_delete(e->m_hdl, e->m_hdllink, timeout) == UT_HANDLE_OK) {
-        if (e->m_deriver.delete) {
-            e->m_deriver.delete(e, recurse);
-        }
-        dds_qos_delete (e->m_qos);
-        if (e->m_status) {
-            dds_condition_delete (e->m_status);
-        }
-        os_condDestroy (&e->m_cond);
-        os_mutexDestroy (&e->m_mutex);
-        dds_free (e);
-    } else {
-        /* TODO: report deletion timeout error. */
-    }
-}
 
 _Check_return_ dds_entity_t
 dds_entity_init(
@@ -400,15 +268,98 @@ dds_return_t
 dds_delete(
         _In_ dds_entity_t entity)
 {
+    os_time    timeout = { 10, 0 };
     dds_entity *e;
+    dds_entity *child;
+    dds_entity *prev = NULL;
+    dds_entity *next = NULL;
     dds_return_t ret;
+
     ret = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
-    if (ret == DDS_RETCODE_OK) {
-        /* Unlock to make sure that other actions will finish before
-         * continuing the deletion. */
-        dds_entity_unlock(e);
-        dds_entity_delete_impl (e, false, true);
+    if (ret != DDS_RETCODE_OK) {
+        return DDS_ERRNO(ret, DDS_MOD_ENTITY, 0);
     }
+
+    if (--e->m_refc != 0) {
+        dds_entity_unlock(e);
+        return DDS_RETCODE_OK;
+    }
+
+    dds_entity_cb_wait(e);
+
+    ut_handle_close(e->m_hdl, e->m_hdllink);
+    e->m_flags |= DDS_ENTITY_DELETED;
+    e->m_status_enable = 0;
+    dds_listener_reset(&e->m_listener);
+
+    dds_entity_unlock(e);
+    dds_entity_cb_wait_signal(e);
+
+    /* Recursively delete children */
+    child = e->m_children;
+    while ((child != NULL) && (ret == DDS_RETCODE_OK)) {
+        next = child->m_next;
+        /* This will probably delete the child entry from
+         * the current childrens list */
+        ret = dds_delete(child->m_hdl);
+        /* Next child. */
+        child = next;
+    }
+
+    if (ret == DDS_RETCODE_OK) {
+        /* Close the entity. This can terminate threads or kick of
+         * other destroy stuff that takes a while. */
+        if (e->m_deriver.close) {
+            ret = e->m_deriver.close(e);
+        }
+    }
+
+    if (ret == DDS_RETCODE_OK) {
+        /* The ut_handle_delete will wait until the last active claim on that handle
+         * is released. It is possible that this last release will be done by a thread
+         * that was kicked during the close(). */
+        if (ut_handle_delete(e->m_hdl, e->m_hdllink, timeout) != UT_HANDLE_OK) {
+            ret = DDS_RETCODE_TIMEOUT;
+        }
+    }
+
+    if (ret == DDS_RETCODE_OK) {
+        /* Remove from parent */
+        if (e->m_parent) {
+            os_mutexLock (&e->m_parent->m_mutex);
+            child = e->m_parent->m_children;
+            while (child) {
+                if (child == e) {
+                    if (prev) {
+                        prev->m_next = e->m_next;
+                    } else {
+                        e->m_parent->m_children = e->m_next;
+                    }
+                    break;
+                }
+                prev = child;
+                child = child->m_next;
+            }
+            os_mutexUnlock (&e->m_parent->m_mutex);
+        }
+
+        /* Do some specific deletion when needed. */
+        if (e->m_deriver.delete) {
+            ret = e->m_deriver.delete(e);
+        }
+    }
+
+    if (ret == DDS_RETCODE_OK) {
+        /* Destroy last few things. */
+        dds_qos_delete (e->m_qos);
+        if (e->m_status) {
+            dds_condition_delete (e->m_status);
+        }
+        os_condDestroy (&e->m_cond);
+        os_mutexDestroy (&e->m_mutex);
+        dds_free (e);
+    }
+
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, 0);
 }
 
