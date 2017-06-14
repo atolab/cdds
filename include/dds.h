@@ -1053,9 +1053,9 @@ dds_reader_create(
         const dds_listener_t *listener);
 
 /**
- * Description : The operation blocks the calling thread until either all “historical” data is
+ * Description : The operation blocks the calling thread until either all "historical" data is
  * received, or else the duration specified by the max_wait parameter elapses, whichever happens
- * first. A return value of 0 indicates that all the “historical” data was received; a return
+ * first. A return value of 0 indicates that all the "historical" data was received; a return
  * value of TIMEOUT indicates that max_wait elapsed before all the data was received.
  *
  * Arguments :
@@ -1113,7 +1113,7 @@ dds_writer_create(
 
 /*
   Writing data (and variants of it) is straightforward. The first set
-  is equivalent to the second set with -1 passed for "tstamp",
+  is equivalent to the second set with -1 passed for "timestamp",
   meaning, substitute the result of a call to time(). The dispose
   and unregister operations take an object of the topic's type, but
   only touch the key fields; the remained may be undefined.
@@ -1193,7 +1193,7 @@ dds_instance_writedispose(
  * Arguments :
  *   -# wr The writer to which instance is associated
  *   -# data Instance with the key value
- *   -# tstamp Source timestamp
+ *   -# timestamp Source timestamp
  *   -# Returns 0 on success, or non-zero value to indicate an error
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
@@ -1226,7 +1226,7 @@ dds_instance_dispose(
  * Arguments :
  *   -# wr The writer to which instance is associated
  *   -# data Instance with the key value, used to get identify the instance
- *   -# tstamp Source Timestamp
+ *   -# timestamp Source Timestamp
  *   -# Returns 0 on success, or non-zero value to indicate an error
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
@@ -1264,7 +1264,7 @@ dds_writecdr(
  * Arguments :
  *   -# wr The writer entity
  *   -# data value to be written
- *   -# tstamp source timestamp
+ *   -# timestamp source timestamp
  *   -# Returns 0 on success, or non-zero value to indicate an error
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
@@ -1571,10 +1571,9 @@ dds_waitset_wait_until(
  *   -# mask filter the data value based on the set sample, view and instance state
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT int
 dds_read(
-        dds_entity_t reader,
+        dds_entity_t reader_or_condition,
         void **buf,
         uint32_t maxs,
         dds_sample_info_t *si,
@@ -1593,10 +1592,9 @@ dds_read(
  *   -# mask filter the data value based on the set sample, view and instance state
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT int
 dds_read_instance(
-        dds_entity_t reader,
+        dds_entity_t reader_or_condition,
         void **buf,
         uint32_t maxs,
         dds_sample_info_t *si,
@@ -1624,7 +1622,6 @@ dds_read_instance(
  *   -# cond read condition to filter the data samples based on the content
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT int
 dds_read_cond(
         dds_entity_t reader,
@@ -1652,10 +1649,9 @@ dds_read_cond(
  *   -# mask filter the data value based on the set sample, view and instance state
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT int
 dds_take(
-        dds_entity_t reader,
+        dds_entity_t reader_or_condition,
         void **buf,
         uint32_t maxs,
         dds_sample_info_t *si,
@@ -1663,10 +1659,9 @@ dds_take(
 
 struct serdata;
 
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
-int
+DDS_EXPORT int
 dds_takecdr(
-        dds_entity_t reader,
+        dds_entity_t reader_or_condition,
         struct serdata **buf,
         uint32_t maxs,
         dds_sample_info_t *si,
@@ -1685,10 +1680,9 @@ dds_takecdr(
  *   -# handle the instance handle identifying the instance from which to take
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT int
 dds_take_instance(
-        dds_entity_t reader,
+        dds_entity_t reader_or_condition,
         void **buf,
         uint32_t maxs,
         dds_sample_info_t *si,
@@ -1715,7 +1709,6 @@ dds_take_instance(
  *   -# cond read condition to filter the data samples based on the content
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT int
 dds_take_cond(
         dds_entity_t reader,
@@ -1740,10 +1733,9 @@ dds_take_cond(
  * -# si pointer to \ref dds_sample_info_t returned for a data value
  * -# Returns 1 on successful operation, else 0 if there is no data to be read.
  */
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT int
 dds_take_next(
-        dds_entity_t reader,
+        dds_entity_t reader_or_condition,
         void **buf,
         dds_sample_info_t *si);
 
@@ -1757,10 +1749,9 @@ dds_take_next(
  * -# si pointer to \ref dds_sample_info_t returned for a data value
  * -# Returns 1 on successful operation, else 0 if there is no data to be read.
  */
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT int
 dds_read_next(
-        dds_entity_t reader,
+        dds_entity_t reader_or_condition,
         void **buf,
         dds_sample_info_t *si);
 
@@ -1776,10 +1767,9 @@ dds_read_next(
  * -# buf An array of pointers used by read/take operation
  * -# maxs The maximum number of samples provided to the read/take operation
  */
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT void
 dds_return_loan(
-        dds_entity_t reader,
+        dds_entity_t reader_or_condition,
         void **buf,
         uint32_t maxs);
 
@@ -1805,7 +1795,6 @@ dds_return_loan(
  * -# data sample with a key fields set
  * -# Returns instance handle or DDS_HANDLE_NIL if instance could not be found from key
  */
-_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT dds_instance_handle_t
 dds_instance_lookup(
         dds_entity_t entity,
@@ -1822,7 +1811,6 @@ dds_instance_lookup(
  * -# Returns 0 on successful operation, or a non-zero value to indicate an error if the instance
  *    passed doesn't have a key-value
  */
-_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT int
 dds_instance_get_key(
         dds_entity_t entity,

@@ -3,7 +3,7 @@
 
 /** @file
  *
- *  @brief C99v2 DDS header
+ *  @brief C DDS header
  */
 
 #if defined (__cplusplus)
@@ -13,7 +13,8 @@
 #include "os/os_public.h"
 
 /* TODO: Move to appropriate location */
-typedef _Return_type_success_(return >= 0) uintptr_t dds_return_t;
+typedef _Return_type_success_(return >= 0) int32_t dds_return_t;
+typedef _Return_type_success_(return >= 0) int32_t dds_entity_t;
 
 /* Sub components */
 
@@ -45,7 +46,7 @@ extern "C" {
 
 /**
  * Description : Returns the default DDS domain id. This can be configured
- * in xml or set as an evironment variable (LITE_DOMAIN).
+ * in xml or set as an evironment variable (VORTEX_DOMAIN).
  *
  * Arguments :
  *   -# None
@@ -222,7 +223,10 @@ dds_sample_info_t;
  * @retval DDS_RETCODE_PRECONDITION_NOT_MET
  *                  The parent of the given Entity is not enabled.
  */
-DDS_EXPORT dds_return_t dds_enable (_In_ dds_entity_t e);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_return_t
+dds_enable(
+        _In_ dds_entity_t entity);
 
 /*
   All entities are represented by a process-private handle, with one
@@ -253,7 +257,10 @@ DDS_EXPORT dds_return_t dds_enable (_In_ dds_entity_t e);
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_delete (_In_ dds_entity_t e);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT dds_return_t
+dds_delete(
+        _In_ dds_entity_t entity);
 
 
 /**
@@ -277,7 +284,10 @@ DDS_EXPORT dds_return_t dds_delete (_In_ dds_entity_t e);
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_entity_t dds_get_publisher(_In_ dds_entity_t wr);
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
+DDS_EXPORT dds_entity_t
+dds_get_publisher(
+        _In_ dds_entity_t writer);
 
 
 /**
@@ -301,7 +311,12 @@ DDS_EXPORT dds_entity_t dds_get_publisher(_In_ dds_entity_t wr);
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_entity_t dds_get_subscriber(_In_ dds_entity_t rd);
+_Pre_satisfies_(((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER    ) || \
+                ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
+DDS_EXPORT dds_entity_t
+dds_get_subscriber(
+        _In_ dds_entity_t entity);
 
 
 /**
@@ -325,10 +340,18 @@ DDS_EXPORT dds_entity_t dds_get_subscriber(_In_ dds_entity_t rd);
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_entity_t dds_get_datareader(_In_ dds_entity_t readcond);
+_Pre_satisfies_(((readcond & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((readcond & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
+DDS_EXPORT dds_entity_t
+dds_get_datareader(
+        _In_ dds_entity_t readcond);
 
 /* TODO: document. */
-DDS_EXPORT dds_return_t dds_instancehandle_get(_In_ dds_entity_t e, _Out_ dds_instance_handle_t *i);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_return_t
+dds_instancehandle_get(
+        _In_    dds_entity_t entity,
+        _Out_ dds_instance_handle_t *ihdl);
 
 /*
   All entities have a set of "status conditions" (following the DCPS
@@ -349,7 +372,12 @@ DDS_EXPORT dds_return_t dds_instancehandle_get(_In_ dds_entity_t e, _Out_ dds_in
  *   -# Returns 0 on success, or a non-zero error value if the mask does not
  *      correspond to the entity
  */
-DDS_EXPORT dds_return_t dds_read_status (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_return_t
+dds_read_status(
+        _In_    dds_entity_t entity,
+        _Out_ uint32_t *status,
+        _In_    uint32_t mask);
 
 /**
  * Description : Read the status(es) set for the entity based on the enabled
@@ -362,7 +390,12 @@ DDS_EXPORT dds_return_t dds_read_status (_In_ dds_entity_t e, _Out_ uint32_t * s
  *   -# Returns 0 on success, or a non-zero error value if the mask does not
  *      correspond to the entity
  */
-DDS_EXPORT dds_return_t dds_take_status (_In_ dds_entity_t e, _Out_ uint32_t * status, _In_ uint32_t mask);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_return_t
+dds_take_status(
+        _In_    dds_entity_t entity,
+        _Out_ uint32_t *status,
+        _In_    uint32_t mask);
 
 /**
  * Description : Returns the status changes since they were last read.
@@ -371,7 +404,11 @@ DDS_EXPORT dds_return_t dds_take_status (_In_ dds_entity_t e, _Out_ uint32_t * s
  *   -# e Entity on which the statuses are read
  *   -# Returns the curent set of triggered statuses.
  */
-DDS_EXPORT dds_return_t dds_get_status_changes (_In_ dds_entity_t e, _Out_ uint32_t * status);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_return_t
+dds_get_status_changes(
+        _In_    dds_entity_t entity,
+        _Out_ uint32_t *status);
 
 /**
  * Description : This operation returns the status enabled on the entity
@@ -380,7 +417,11 @@ DDS_EXPORT dds_return_t dds_get_status_changes (_In_ dds_entity_t e, _Out_ uint3
  *   -# e Entity to get the status
  *   -# Returns the status that are enabled for the entity
  */
-DDS_EXPORT dds_return_t dds_get_enabled_status (_In_ dds_entity_t e, _Out_ uint32_t * status);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_return_t
+dds_get_enabled_status(
+        _In_    dds_entity_t entity,
+        _Out_ uint32_t *status);
 
 
 /**
@@ -392,7 +433,11 @@ DDS_EXPORT dds_return_t dds_get_enabled_status (_In_ dds_entity_t e, _Out_ uint3
  *   -# Returns 0 on success, or a non-zero error value indicating failure if the mask
  *      does not correspond to the entity.
  */
-DDS_EXPORT dds_return_t dds_set_enabled_status (_In_ dds_entity_t e, _In_ uint32_t mask);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT dds_return_t
+dds_set_enabled_status(
+        _In_ dds_entity_t entity,
+        _In_ uint32_t mask);
 
 /*
   Almost all entities have get/set qos operations defined on them,
@@ -428,7 +473,11 @@ DDS_EXPORT dds_return_t dds_set_enabled_status (_In_ dds_entity_t e, _In_ uint32
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_qos (_In_ dds_entity_t e, _Out_ dds_qos_t * qos);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_return_t
+dds_get_qos(
+        _In_    dds_entity_t entity,
+        _Out_ dds_qos_t *qos);
 
 
 /**
@@ -472,7 +521,11 @@ DDS_EXPORT dds_return_t dds_get_qos (_In_ dds_entity_t e, _Out_ dds_qos_t * qos)
  *                  A few policies within the QoS are not consistent with
  *                  each other.
  */
-DDS_EXPORT dds_return_t dds_set_qos (_In_ dds_entity_t e, _In_ const dds_qos_t * qos);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_return_t
+dds_set_qos(
+        _In_ dds_entity_t entity,
+        _In_ const dds_qos_t * qos);
 
 /*
   Get or set listener associated with an entity, type of listener
@@ -506,7 +559,11 @@ DDS_EXPORT dds_return_t dds_set_qos (_In_ dds_entity_t e, _In_ const dds_qos_t *
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_listener (_In_ dds_entity_t e, _Out_ dds_listener_t * listener);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_return_t
+dds_get_listener(
+        _In_ dds_entity_t entity,
+        _Out_ dds_listener_t * listener);
 
 
 /**
@@ -564,7 +621,11 @@ DDS_EXPORT dds_return_t dds_get_listener (_In_ dds_entity_t e, _Out_ dds_listene
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_opt_ const dds_listener_t * listener);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_return_t
+dds_set_listener(
+        _In_     dds_entity_t entity,
+        _In_opt_ const dds_listener_t * listener);
 
 /*
   Creation functions for various entities. Creating a subscriber or
@@ -585,7 +646,7 @@ DDS_EXPORT dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_opt_ const dd
  *
  * If domain is set (not DDS_DOMAIN_DEFAULT) then it must match if the domain has also
  * been configured or an error status will be returned. Currently only a single domain
- * can be configured by setting the environment variable LITE_DOMAIN, if this is not set
+ * can be configured by setting the environment variable VORTEX_DOMAIN, if this is not set
  * the the default domain is 0. Valid values for domain id are between 0 and 230.
  *
  *
@@ -599,12 +660,11 @@ DDS_EXPORT dds_return_t dds_set_listener (_In_ dds_entity_t e, _In_opt_ const dd
  * @retval DDS_RETCODE_ERROR
  *                  An internal error has occurred.
  */
-DDS_EXPORT dds_entity_t dds_create_participant
-(
-  _In_ const dds_domainid_t domain,
-  _In_opt_ const dds_qos_t * qos,
-  _In_opt_ const dds_listener_t * listener
-);
+DDS_EXPORT _Must_inspect_result_ dds_entity_t
+dds_create_participant(
+        _In_     const dds_domainid_t domain,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener);
 
 
 
@@ -629,7 +689,10 @@ DDS_EXPORT dds_entity_t dds_create_participant
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_entity_t dds_get_parent (_In_ dds_entity_t entity);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_entity_t
+dds_get_parent(
+        _In_ dds_entity_t entity);
 
 
 /**
@@ -654,7 +717,10 @@ DDS_EXPORT dds_entity_t dds_get_parent (_In_ dds_entity_t entity);
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_entity_t dds_get_participant (_In_ dds_entity_t entity);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_entity_t
+dds_get_participant (
+        _In_ dds_entity_t entity);
 
 
 /**
@@ -694,7 +760,12 @@ DDS_EXPORT dds_entity_t dds_get_participant (_In_ dds_entity_t entity);
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_children(_In_ dds_entity_t entity, _Out_opt_ dds_entity_t *children, _In_ size_t size);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_return_t
+dds_get_children(
+        _In_        dds_entity_t entity,
+        _Out_opt_   dds_entity_t *children,
+        _In_        size_t size);
 
 
 /**
@@ -751,29 +822,29 @@ DDS_EXPORT dds_entity_t dds_lookup_participant (_In_ dds_domainid_t domain_id);
  *   -# listener Any listener functions associated with the new topic (can be NULL)
  *   -# Returns a status, 0 on success or non-zero value to indicate an error
  */
-DDS_EXPORT dds_entity_t dds_create_topic
-(
-  _In_ dds_entity_t pp,
-  _In_ const dds_topic_descriptor_t * descriptor,
-  _In_z_ const char * name,
-  _In_opt_ const dds_qos_t * qos,
-  _In_opt_ const dds_listener_t * listener
-);
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+DDS_EXPORT dds_entity_t
+dds_create_topic(
+        _In_ dds_entity_t participant,
+        _In_ const dds_topic_descriptor_t *descriptor,
+        _In_z_ const char *name,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener);
 
 /**
  * Description : Finds a named topic. Returns NULL if does not exist.
- * The returned topic should be released with dds_entity_delete.
+ * The returned topic should be released with dds_delete.
  *
  * Arguments :
  *   -# pp The participant on which to find the topic
  *   -# name The name of the topic to find
  *   -# Returns a topic, NULL if could not be found or error
  */
-DDS_EXPORT dds_entity_t dds_find_topic
-(
-  _In_ dds_entity_t pp,
-  _In_z_ const char * name
-);
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+DDS_EXPORT dds_entity_t
+dds_find_topic(
+        _In_ dds_entity_t participant,
+        _In_z_ const char *name);
 
 /**
  * Description : Returns a topic name.
@@ -784,7 +855,12 @@ DDS_EXPORT dds_entity_t dds_find_topic
  */
 /* TODO: do we need a convenience version as well that allocates and add a _s suffix to this one? */
 /* TODO: Check annotation. Could be _Out_writes_to_(size, return + 1) as well. */
-DDS_EXPORT dds_return_t dds_get_name (_In_ dds_entity_t e, _Out_writes_z_(size) name, _In_ size_t size);
+_Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
+DDS_EXPORT dds_return_t
+dds_get_name(
+        _In_ dds_entity_t topic,
+        _Out_writes_z_(size) name,
+        _In_ size_t size);
 
 /**
  * Description : Returns a topic type name.
@@ -794,41 +870,137 @@ DDS_EXPORT dds_return_t dds_get_name (_In_ dds_entity_t e, _Out_writes_z_(size) 
  *   -# Returns The topic type name or NULL to indicate an error
  */
 /* TODO: do we need a convenience version as well that does allocate? */
-DDS_EXPORT dds_return_t dds_topic_get_type_name (_In_ dds_entity_t topic, _Out_writes_z_(size) name, _In_ size_t size);
+_Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
+DDS_EXPORT dds_return_t
+dds_topic_get_type_name(
+        _In_ dds_entity_t topic,
+        _Out_writes_z_(size) name,
+        _In_ size_t size);
 
 /**
- * Description : Creates a new instance of a DDS subscriber
+ * @brief Creates a new instance of a DDS subscriber
  *
- * Arguments :
- *   -# pp The participant on which the subscriber is being created
- *   -# subscriber The created subscriber entity
- *   -# qos The QoS to set on the new subscriber (can be NULL)
- *   -# listener Any listener functions associated with the new subscriber (can be NULL)
- *   -# Returns a status, 0 on success or non-zero value to indicate an error
+ * @param[in]  participant The participant on which the subscriber is being created
+ * @param[in]  qos         The QoS to set on the new subscriber (can be NULL)
+ * @param[in]  listener    Any listener functions associated with the new subscriber (can be NULL)
+
+ * @returns >0 - Success (valid handle of a subscriber entity).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ *         DDS_RETCODE_BAD_PARAMETER
+ *                  One of the parameters is invalid
  */
-DDS_EXPORT dds_entity_t dds_create_subscriber
-(
-  _In_ dds_entity_t pp,
-  _In_opt_ const dds_qos_t * qos,
-  _In_opt_ const dds_listener_t * listener
-);
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+DDS_EXPORT _Must_inspect_result_ dds_entity_t
+dds_create_subscriber(
+        _In_     dds_entity_t participant,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener);
+
 
 /**
- * Description : Creates a new instance of a DDS publisher
+ * @brief Creates a new instance of a DDS publisher
  *
- * Arguments :
- *   -# pp The participant on which the publisher is being created
- *   -# publisher The created publisher entity
- *   -# qos The QoS to set on the new publisher (can be NULL)
- *   -# listener Any listener functions associated with the new publisher (can be NULL)
- *   -# Returns a status, 0 on success or non-zero value to indicate an error
+ * @param[in]  participant The participant to create a publisher for
+ * @param[in]  qos         The QoS to set on the new publisher (can be NULL)
+ * @param[in]  listener    Any listener functions associated with the new publisher (can be NULL)
+ *
+ * @returns >0 - Success (valid handle of a publisher entity).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
  */
-DDS_EXPORT dds_entity_t dds_create_publisher
-(
-  _In_ dds_entity_t pp,
-  _In_opt_ const dds_qos_t * qos,
-  _In_opt_ const dds_listener_t * listener
-);
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+DDS_EXPORT _Must_inspect_result_ dds_entity_t
+dds_create_publisher(
+        _In_     dds_entity_t participant,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener);
+
+
+/**
+ * @brief Suspends the publications of the Publisher
+ *
+ * This operation is a hint to the Service so it can optimize its performance by e.g., collecting
+ * modifications to DDS writers and then batching them. The Service is not required to use the hint.
+ *
+ * Every invocation of this operation must be matched by a corresponding call to @see dds_resume
+ * indicating that the set of modifications has completed.
+ *
+ * @param[in]  publisher The publisher for which all publications will be suspended
+ *
+ * @returns >0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                Publications suspended successfully.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                The pub parameter is not a valid publisher.
+ * @retval DDS_RETCODE_UNSUPPORTED
+ *                Operation is not supported
+ */
+_Pre_satisfies_((publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER)
+DDS_EXPORT dds_return_t
+dds_suspend(
+        _In_ dds_entity_t publisher);
+
+
+/**
+ * @brief Resumes the publications of the Publisher
+ *
+ * This operation is a hint to the Service to indicate that the application has completed changes
+ * initiated by a previous @see suspend. The Service is not required to use the hint.
+ *
+ * The call to resume_publications must match a previous call to @see suspend_publications.
+ *
+ * @param[in]  publisher The publisher for which all publications will be resumed
+ *
+ * @returns >0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                Publications resumed successfully.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                The pub parameter is not a valid publisher.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                No previous matching @see dds_suspend.
+ * @retval DDS_RETCODE_UNSUPPORTED
+ *                Operation is not supported.
+ */
+_Pre_satisfies_((publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER)
+DDS_EXPORT dds_return_t
+dds_resume(
+        _In_ dds_entity_t publisher);
+
+
+/**
+ * @brief Waits at most for the duration timeout for acks for data in the publisher or writer.
+ *
+ * This operation blocks the calling thread until either all data written by the publisher
+ * or writer is acknowledged by all matched reliable reader entities, or else the duration
+ * specified by the timeout parameter elapses, whichever happens first.
+ *
+ * @param[in]  pub_or_w   The publisher or writer whose acknowledgements must be waited for.
+ *
+ * @returns >0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                All acknowledgements successfully received with the timeout.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                The pub_or_w parameter is not a valid publisher or writer.
+ * @retval DDS_RETCODE_TIMEOUT
+ *                Timeout expired before all acknowledgements from reliable reader entities were received.
+ * @retval DDS_RETCODE_UNSUPPORTED
+ *                Operation is not supported.
+ */
+_Pre_satisfies_(((publisher_or_writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER   ) ||\
+                ((publisher_or_writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER) )
+DDS_EXPORT dds_return_t
+dds_wait_for_acks(
+        _In_ dds_entity_t publisher_or_writer,
+        _In_ dds_duration_t timeout);
+
 
 /**
  * Description : Creates a new instance of a DDS reader
@@ -841,12 +1013,15 @@ DDS_EXPORT dds_entity_t dds_create_publisher
  *   -# listener Any listener functions associated with the new reader (can be NULL)
  *   -# Returns a status, 0 on success or non-zero value to indicate an error
  */
-DDS_EXPORT dds_entity_t dds_create_reader
-(
-  _In_ dds_entity_t pp_or_sub,
-  _In_ dds_entity_t topic,
-  _In_opt_ const dds_qos_t * qos,
-  _In_opt_ const dds_listener_t * listener
+_Pre_satisfies_(((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER ) ||\
+                ((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
+_Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
+DDS_EXPORT dds_entity_t
+dds_create_reader(
+        _In_ dds_entity_t participant_or_subscriber,
+        _In_ dds_entity_t topic,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener
 );
 
 /**
@@ -861,11 +1036,11 @@ DDS_EXPORT dds_entity_t dds_create_reader
  *   -# Returns a status, 0 on success, TIMEOUT on timeout or a  negative value to indicate error
  */
 /* TODO: SAL-annotate TIMEOUT as a succesfull return as well? */
-DDS_EXPORT dds_return_t dds_wait_for_historical_data
-(
-  _In_ dds_entity_t reader,
-  _In_ dds_duration_t max_wait
-);
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+DDS_EXPORT dds_return_t
+dds_wait_for_historical_data(
+        _In_ dds_entity_t reader,
+        _In_ dds_duration_t max_wait);
 
 /**
  * Description : Create a QueryCondtiion associated with a reader.
@@ -878,14 +1053,14 @@ DDS_EXPORT dds_return_t dds_wait_for_historical_data
  *   -# filter The filter function for the query
  *   -# Returns Status, 0 on success or non-zero value to indicate an error
  */
-DDS_EXPORT dds_entity_t dds_create_querycondition
-(
-  _In_ dds_entity_t reader,
-  _In_ uint32_t mask,
-  _In_z_ const char * expression,
-  _In_opt_z_ const char ** parameters,
-  _In_ size_t npars
-);
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+DDS_EXPORT dds_entity_t
+dds_create_querycondition(
+        _In_ dds_entity_t reader,
+        _In_ uint32_t mask,
+        _In_z_ const char * expression,
+        _In_opt_z_ const char ** parameters,
+        _In_ size_t npars);
 
 /**
  * Description : Creates a new instance of a DDS writer
@@ -898,17 +1073,19 @@ DDS_EXPORT dds_entity_t dds_create_querycondition
  *   -# listener Any listener functions associated with the new writer (can be NULL)
  *   -# Returns a status, 0 on success or non-zero value to indicate an error
  */
-DDS_EXPORT dds_entity_t dds_create_writer
-(
-  _In_ dds_entity_t pp_or_pub,
-  _In_ dds_entity_t topic,
-  _In_opt_ const dds_qos_t * qos,
-  _In_opt_ const dds_listener_t * listener
-);
+_Pre_satisfies_(((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER  ) ||\
+                ((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
+_Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
+DDS_EXPORT dds_entity_t
+dds_create_writer(
+        _In_ dds_entity_t participant_or_publisher,
+        _In_ dds_entity_t topic,
+        _In_opt_ const dds_qos_t * qos,
+        _In_opt_ const dds_listener_t * listener);
 
 /*
   Writing data (and variants of it) is straightforward. The first set
-  is equivalent to the second set with -1 passed for "tstamp",
+  is equivalent to the second set with -1 passed for "timestamp",
   meaning, substitute the result of a call to time(). The dispose
   and unregister operations take an object of the topic's type, but
   only touch the key fields; the remained may be undefined.
@@ -922,7 +1099,12 @@ DDS_EXPORT dds_entity_t dds_create_writer
  *   -# Returns an instance handle that could be used for successive write & dispose operations or
  *      NULL, if handle is not allocated
  */
-DDS_EXPORT dds_return_t dds_register_instance (_In_ dds_entity_t wr, _Out_ dds_instance_handle_t * handle, _In_ const void *data);
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_register_instance (
+        _In_ dds_entity_t writer,
+        _Out_ dds_instance_handle_t *handle,
+        _In_ const void *data);
 
 /**
  * Description : Unregisters an instance with a key value from the data writer. Instance can be identified
@@ -936,8 +1118,17 @@ DDS_EXPORT dds_return_t dds_register_instance (_In_ dds_entity_t wr, _Out_ dds_i
  *
  * Note : If an unregistered key ID is passed as instance data, an error is logged and not flagged as return value
  */
-DDS_EXPORT dds_return_t dds_unregister_instance (_In_ dds_entity_t wr, _In_ const void * data);
-DDS_EXPORT dds_return_t dds_unregister_instance_ih (_In_ dds_entity_t wr, _In_ dds_instance_handle_t handle);
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_unregister_instance(
+        _In_ dds_entity_t writer,
+        _In_ const void *data);
+
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_unregister_instance_ih(
+       _In_ dds_entity_t writer,
+       _In_ dds_instance_handle_t handle);
 
   /**
  * Description : Unregisters an instance with a key value from the data writer. Instance can be identified
@@ -952,8 +1143,19 @@ DDS_EXPORT dds_return_t dds_unregister_instance_ih (_In_ dds_entity_t wr, _In_ d
  *
  * Note : If an unregistered key ID is passed as instance data, an error is logged and not flagged as return value
  */
-  DDS_EXPORT dds_return_t dds_unregister_instance_ts (_In_ dds_entity_t wr, _In_ const void * data, _In_ dds_time_t timestamp);
-  DDS_EXPORT dds_return_t dds_unregister_instance_ih_ts (_In_ dds_entity_t wr, _In_ dds_instance_handle_t handle, _In_ dds_time_t timestamp);
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_unregister_instance_ts(
+       _In_ dds_entity_t writer,
+       _In_ const void *data,
+       _In_ dds_time_t timestamp);
+
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_unregister_instance_ih_ts(
+       _In_ dds_entity_t writer,
+       _In_ dds_instance_handle_t handle,
+       _In_ dds_time_t timestamp);
 
 /**
  * Description : Write the keyed data passed, and delete the data instance
@@ -963,7 +1165,11 @@ DDS_EXPORT dds_return_t dds_unregister_instance_ih (_In_ dds_entity_t wr, _In_ d
  *   -# data Instance with the key value
  *   -# Returns 0 on success, or non-zero value to indicate an error
  */
-DDS_EXPORT dds_return_t dds_writedispose (_In_ dds_entity_t wr, _In_ const void *data);
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_writedispose(
+       _In_ dds_entity_t writer,
+       _In_ const void *data);
 
 /**
  * Description : Write the keyed data passed with the source timestamp, and delete the data instance
@@ -971,10 +1177,15 @@ DDS_EXPORT dds_return_t dds_writedispose (_In_ dds_entity_t wr, _In_ const void 
  * Arguments :
  *   -# wr The writer to which instance is associated
  *   -# data Instance with the key value
- *   -# tstamp Source timestamp
+ *   -# timestamp Source timestamp
  *   -# Returns 0 on success, or non-zero value to indicate an error
  */
-DDS_EXPORT dds_return_t dds_writedispose_ts (_In_ dds_entity_t wr, _In_ const void *data, _In_ dds_time_t tstamp);
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_writedispose_ts(
+       _In_ dds_entity_t writer,
+       _In_ const void *data,
+       _In_ dds_time_t timestamp);
 
 /**
  * Description : Delete an instance, identified by the data passed.
@@ -986,8 +1197,17 @@ DDS_EXPORT dds_return_t dds_writedispose_ts (_In_ dds_entity_t wr, _In_ const vo
  *
  * Note : If an invalid key ID is passed as instance data, an error is logged and not flagged as return value
  */
-DDS_EXPORT dds_return_t dds_dispose (_In_ dds_entity_t wr, _In_ const void *data);
-DDS_EXPORT dds_return_t dds_dispose_ih (_In_ dds_entity_t wr, _In_ dds_instance_handle_t handle);
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_dispose(
+       _In_ dds_entity_t writer,
+       _In_ const void *data);
+
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_dispose_ih(
+       _In_ dds_entity_t writer,
+       _In_ dds_instance_handle_t handle);
 
 /**
  * Description : Delete an instance, identified by the and source timestamp
@@ -996,11 +1216,22 @@ DDS_EXPORT dds_return_t dds_dispose_ih (_In_ dds_entity_t wr, _In_ dds_instance_
  * Arguments :
  *   -# wr The writer to which instance is associated
  *   -# data Instance with the key value, used to get identify the instance
- *   -# tstamp Source Timestamp
+ *   -# timestamp Source Timestamp
  *   -# Returns 0 on success, or non-zero value to indicate an error
  */
-DDS_EXPORT dds_return_t dds_dispose_ts (_In_ dds_entity_t wr, _In_ const void *data, _In_ dds_time_t tstamp);
-DDS_EXPORT dds_return_t dds_dispose_ih_ts (_In_ dds_entity_t wr, _In_ dds_instance_handle_t handle, _In_ dds_time_t tstamp);
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_dispose_ts(
+       _In_ dds_entity_t writer,
+       _In_ const void *data,
+       _In_ dds_time_t timestamp);
+
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_dispose_ih_ts(
+       _In_ dds_entity_t writer,
+       _In_ dds_instance_handle_t handle,
+       _In_ dds_time_t timestamp);
 
 /**
  * Description : Write the value of a data instance. With this API, the value of the source timestamp
@@ -1011,13 +1242,23 @@ DDS_EXPORT dds_return_t dds_dispose_ih_ts (_In_ dds_entity_t wr, _In_ dds_instan
  *   -# data value to be written
  *   -# Returns 0 on success, or non-zero value to indicate an error
  */
-DDS_EXPORT dds_return_t dds_write (_In_ dds_entity_t wr, _In_ const void *data);
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_write(
+       _In_ dds_entity_t writer,
+       _In_ const void *data);
+
 /*
  * Untyped API, which take serialized blobs now.
  * Whether they remain exposed like this with X-types isn't entirely clear yet.
  * TODO: make a decide about dds_takecdr
  */
-DDS_EXPORT dds_return_t dds_writecdr (_In_ dds_entity_t wr, _In_reads_bytes_(size) const void *cdr, _In_ size_t size);
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_writecdr(
+       _In_ dds_entity_t writer,
+       _In_reads_bytes_(size) const void *cdr,
+       _In_ size_t size);
 
 /**
  * Description : Write the value of a data instance along with the source timestamp passed.
@@ -1025,10 +1266,15 @@ DDS_EXPORT dds_return_t dds_writecdr (_In_ dds_entity_t wr, _In_reads_bytes_(siz
  * Arguments :
  *   -# wr The writer entity
  *   -# data value to be written
- *   -# tstamp source timestamp
+ *   -# timestamp source timestamp
  *   -# Returns 0 on success, or non-zero value to indicate an error
  */
-DDS_EXPORT dds_return_t dds_write_ts (_In_ dds_entity_t wr, _In_ const void *data, _In_ dds_time_t tstamp);
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_write_ts(
+       _In_ dds_entity_t writer,
+       _In_ const void *data,
+       _In_ dds_time_t timestamp);
 
 /*
   Waitsets allow waiting for an event on some of any set of entities
@@ -1058,7 +1304,11 @@ DDS_EXPORT dds_return_t dds_write_ts (_In_ dds_entity_t wr, _In_ const void *dat
  *   -# rd Reader entity on which the condition is created
  *   -# mask set the sample_state, instance_state and view_state of the sample
  */
-DDS_EXPORT dds_entity_t dds_create_readcondition (_In_ dds_entity_t rd, _In_ uint32_t mask);
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+DDS_EXPORT _Must_inspect_result_ dds_entity_t
+dds_create_readcondition(
+        _In_ dds_entity_t reader,
+        _In_ uint32_t mask);
 
 /*
   Guard conditions may be triggered or not. The status of a guard condition
@@ -1074,7 +1324,11 @@ DDS_EXPORT dds_entity_t dds_create_readcondition (_In_ dds_entity_t rd, _In_ uin
  * Arguments :
  *   -# guard pointer to the condition to be triggered
  */
-DDS_EXPORT dds_return_t dds_waitset_set_trigger (_In_ dds_entity_t ws, _In_ bool trigger);
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
+dds_waitset_set_trigger(
+        _In_ dds_entity_t waitset,
+        _In_ bool trigger);
 
 /*
   Entities can be attached to a waitset or removed from a waitset (in
@@ -1091,7 +1345,10 @@ typedef void * dds_attach_t;
  * Arguments :
  *   -# Returns a pointer to a waitset created
  */
-DDS_EXPORT dds_entity_t dds_create_waitset (_In_ dds_entity_t pp);
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+DDS_EXPORT _Must_inspect_result_ dds_entity_t
+dds_create_waitset(
+        _In_ dds_entity_t participant);
 
 /**
  * Description : Create a waitset with continuations
@@ -1103,7 +1360,13 @@ DDS_EXPORT dds_entity_t dds_create_waitset (_In_ dds_entity_t pp);
  *  -# block Continuation invoked for blocking
  *  -# cont Continuation for trigger
  */
-DDS_EXPORT dds_entity_t dds_create_waitset_cont (_In_ dds_entity_t pp, void (_In_ *block) (_In_ dds_entity_t ws, _In_opt_ void *arg, _In_ dds_time_t abstimeout), void (_In_ *cont) (_In_ dds_entity_t ws, _In_opt_ void *arg, _In_ int ret), _In_ size_t contsize);
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+DDS_EXPORT _Must_inspect_result_ dds_entity_t
+dds_create_waitset_cont(
+        _In_ dds_entity_t participant,
+        void (_In_ *block) (_In_ dds_entity_t waitset, _In_opt_ void *arg, _In_ dds_time_t abstimeout),
+        void (_In_ *cont) (_In_ dds_entity_t waitset, _In_opt_ void *arg, _In_ int ret),
+        _In_ size_t contsize);
 
 /**
  * Description : Retrieve the continuation from a waitset
@@ -1114,7 +1377,11 @@ DDS_EXPORT dds_entity_t dds_create_waitset_cont (_In_ dds_entity_t pp, void (_In
  *  -# ws The waitset to retrieve the continuation from
  *  -# cont Location where to store the continuation
  */
-DDS_EXPORT dds_return_t dds_waitset_get_cont (_In_ dds_entity_t ws, _Outptr_result_maybenull_ void** cont);
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
+dds_waitset_get_cont(
+        _In_ dds_entity_t waitset,
+        _Outptr_result_maybenull_ void** cont);
 
 
 /**
@@ -1126,7 +1393,12 @@ DDS_EXPORT dds_return_t dds_waitset_get_cont (_In_ dds_entity_t ws, _Outptr_resu
  *   -# ws The waitset
  *   -# seq The sequence of returned conditions
  */
-DDS_EXPORT dds_return_t dds_waitset_get_conditions (_In_ dds_entity_t ws, _Out_writes_to_(size, return < 0 ? 0 : return) dds_entity_t *conds, _In_ size_t size);
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
+dds_waitset_get_conditions(
+        _In_ dds_entity_t waitset,
+        _Out_writes_to_(size, return < 0 ? 0 : return) dds_entity_t *conds,
+        _In_ size_t size);
 
 
 /**
@@ -1139,7 +1411,12 @@ DDS_EXPORT dds_return_t dds_waitset_get_conditions (_In_ dds_entity_t ws, _Out_w
  *   -# x attach condition, returned when the the waitset unblocks on condition e
  *   -# Returns 0 on success, else non-zero indicating an error
  */
-DDS_EXPORT dds_return_t dds_waitset_attach (_In_ dds_entity_t ws, _In_ dds_entity_t e, _In_ dds_attach_t x);
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
+dds_waitset_attach(
+        _In_ dds_entity_t waitset,
+        _In_ dds_entity_t entity,
+        _In_ dds_attach_t x);
 
 
 /**
@@ -1151,7 +1428,11 @@ DDS_EXPORT dds_return_t dds_waitset_attach (_In_ dds_entity_t ws, _In_ dds_entit
  *   -# e pointer to a condition to wait for the trigger value
  *   -# Returns 0 on success, else non-zero indicating an error
  */
-DDS_EXPORT dds_return_t dds_waitset_detach (_In_ dds_entity_t ws, _In_ dds_entity_t e);
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
+dds_waitset_detach(
+        _In_ dds_entity_t waitset,
+        _In_ dds_entity_t entity);
 
 /*
   The "dds_waitset_wait" operation blocks until the some of the
@@ -1188,7 +1469,13 @@ DDS_EXPORT dds_return_t dds_waitset_detach (_In_ dds_entity_t ws, _In_ dds_entit
  *   -# reltimeout timeout value associated with a waitset (can be INFINITY or some value)
  *   -# Returns 0 on timeout, else number of signaled waitset conditions
  */
-DDS_EXPORT dds_return_t dds_waitset_wait (_In_ dds_entity_t ws, _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs, _In_ size_t nxs, _In_ dds_duration_t reltimeout);
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
+dds_waitset_wait(
+        _In_ dds_entity_t waitset,
+        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _In_ size_t nxs,
+        _In_ dds_duration_t reltimeout);
 
 /**
  * Description : This API is used to block the current executing thread until some of the
@@ -1203,7 +1490,13 @@ DDS_EXPORT dds_return_t dds_waitset_wait (_In_ dds_entity_t ws, _Out_writes_to_(
  *   -# abstimeout absolute timeout value associated with a waitset (can be INFINITY or some value)
  *   -# Returns 0 if unblocked due to timeout, else number of the waitset conditions that resulted to unblock
  */
-DDS_EXPORT dds_return_t dds_waitset_wait_until (_In_ dds_entity_t ws, _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs, _In_ size_t nxs, _In_ dds_time_t abstimeout);
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
+dds_waitset_wait_until(
+        _In_ dds_entity_t waitset,
+        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _In_ size_t nxs,
+        _In_ dds_time_t abstimeout);
 
 /*
   There are a number of read and take variations.
@@ -1236,6 +1529,8 @@ DDS_EXPORT dds_return_t dds_waitset_wait_until (_In_ dds_entity_t ws, _Out_write
  *               Data values once read will remain in the buffer with the sample_state set to READ
  *               and view_state set to NOT_NEW.
  *
+ * ANY/ANY/ANY
+ *
  * Arguments :
  *   -# rd Reader entity
  *   -# buf an array of pointers to samples into which data is read (pointers can be NULL)
@@ -1244,41 +1539,37 @@ DDS_EXPORT dds_return_t dds_waitset_wait_until (_In_ dds_entity_t ws, _Out_write
  *   -# mask filter the data value based on the set sample, view and instance state
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-DDS_EXPORT dds_return_t dds_read /* ANY/ANY/ANY */
-(
-  _In_ dds_entity_t rd_or_cnd,
-  _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
-  _Out_ dds_sample_info_t * si,
-  _In_ size_t bufsz,
-  _In_ uint32_t maxs,
-);
+DDS_EXPORT dds_return_t
+dds_read(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs);
 
-DDS_EXPORT dds_return_t dds_read_mask
-(
-  _In_ dds_entity_t rd_or_cnd,
-  _Out_ void ** buf,
-  _Out_ dds_sample_info_t * si,
-  _In_ size_t bufsz,
-  _In_ uint32_t maxs,
-  _In_ uint32_t mask /* In case of ReadCondition, both masks are applied (OR'd) */
-);
+DDS_EXPORT dds_return_t
+dds_read_mask(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ uint32_t mask /* In case of ReadCondition, both masks are applied (OR'd) */);
 
-DDS_EXPORT dds_return_t dds_read_wl /* ANY/ANY/ANY, with loan */
-(
-  _In_ dds_entity_t rd_or_cnd,
-  _Out_ void ** buf,
-  _Out_ dds_sample_info_t * si,
-  _In_ uint32_t maxs,
-);
+DDS_EXPORT dds_return_t
+dds_read_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs);
 
-DDS_EXPORT dds_return_t dds_read_mask_wl /* With loan */
-(
-  _In_ dds_entity_t rd_or_cnd,
-  _Out_ void ** buf,
-  _Out_ dds_sample_info_t * si,
-  _In_ uint32_t maxs,
-  _In_ uint32_t mask /* In case of ReadCondition, both masks are applied (OR'd) */
-);
+DDS_EXPORT dds_return_t
+dds_read_mask_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ uint32_t mask /* In case of ReadCondition, both masks are applied (OR'd) */);
 
 
 /**
@@ -1294,45 +1585,41 @@ DDS_EXPORT dds_return_t dds_read_mask_wl /* With loan */
  *   -# mask filter the data value based on the set sample, view and instance state
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-DDS_EXPORT dds_return_t dds_read_instance
-(
-  _In_ dds_entity_t rd_or_cnd,
-  _Out_ void ** buf,
-  _Out_ dds_sample_info_t * si,
-  _In_ size_t bufsz,
-  _In_ uint32_t maxs,
-  _In_ dds_instance_handle_t handle
-);
+DDS_EXPORT dds_return_t
+dds_read_instance(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle);
 
-DDS_EXPORT dds_return_t dds_read_instance_wl
-(
-  _In_ dds_entity_t rd_or_cnd,
-  _Out_ void ** buf,
-  _Out_ dds_sample_info_t * si,
-  _In_ uint32_t maxs,
-  _In_ dds_instance_handle_t handle
-);
+DDS_EXPORT dds_return_t
+dds_read_instance_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle);
 
-DDS_EXPORT dds_return_t dds_read_instance_mask
-(
-  _In_ dds_entity_t rd_or_cnd,
-  _Out_ void ** buf,
-  _Out_ dds_sample_info_t * si,
-  _In_ size_t bufsz,
-  _In_ uint32_t maxs,
-  _In_ dds_instance_handle_t handle,
-  _In_ uint32_t mask
-);
+DDS_EXPORT dds_return_t
+dds_read_instance_mask(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask);
 
-DDS_EXPORT dds_return_t dds_read_instance_mask_wl
-(
-  _In_ dds_entity_t rd_or_cnd,
-  _Out_ void ** buf,
-  _Out_ dds_sample_info_t * si,
-  _In_ uint32_t maxs,
-  _In_ dds_instance_handle_t handle,
-  _In_ uint32_t mask
-);
+DDS_EXPORT dds_return_t
+dds_read_instance_mask_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask);
 
 /**
  * Description : Access the collection of data values (of same type) and sample info from the data reader
@@ -1355,14 +1642,13 @@ DDS_EXPORT dds_return_t dds_read_instance_mask_wl
  *   -# cond read condition to filter the data samples based on the content
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-//DDS_EXPORT int dds_read_cond
-//(
-//  dds_entity_t rd,
-//  void ** buf,
-//  uint32_t maxs,
-//  dds_sample_info_t * si,
-//  dds_condition_t cond
-//);
+//DDS_EXPORT int
+//dds_read_cond(
+//        dds_entity_t reader,
+//        void **buf,
+//        uint32_t maxs,
+//        dds_sample_info_t *si,
+//        dds_condition_t condition);
 
 /**
  * Description : Access the collection of data values (of same type) and sample info from the data reader
@@ -1383,41 +1669,37 @@ DDS_EXPORT dds_return_t dds_read_instance_mask_wl
  *   -# mask filter the data value based on the set sample, view and instance state
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-DDS_EXPORT dds_return_t dds_take
-(
-    _In_ dds_entity_t rd_or_cnd,
-    _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
-    _Out_ dds_sample_info_t * si,
-    _In_ size_t bufsz,
-    _In_ uint32_t maxs,
-);
+DDS_EXPORT dds_return_t
+dds_take(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs);
 
-DDS_EXPORT dds_return_t dds_take_wl
-(
-    _In_ dds_entity_t rd_or_cnd,
-    _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
-    _Out_ dds_sample_info_t * si,
-    _In_ uint32_t maxs,
-);
+DDS_EXPORT dds_return_t
+dds_take_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs);
 
-DDS_EXPORT dds_return_t dds_take_mask
-(
-    _In_ dds_entity_t rd_or_cnd,
-    _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
-    _Out_ dds_sample_info_t * si,
-    _In_ size_t bufsz,
-    _In_ uint32_t maxs,
-    _In_ uint32_t mask
-);
+DDS_EXPORT dds_return_t
+dds_take_mask(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+        _Out_ dds_sample_info_t * si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ uint32_t mask);
 
-DDS_EXPORT dds_return_t dds_take_mask_wl
-(
-    _In_ dds_entity_t rd_or_cnd,
-    _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
-    _Out_ dds_sample_info_t * si,
-    _In_ uint32_t maxs,
-    _In_ uint32_t mask
-);
+DDS_EXPORT dds_return_t
+dds_take_mask_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+        _Out_ dds_sample_info_t * si,
+        _In_ uint32_t maxs,
+        _In_ uint32_t mask);
 
 /*
  * Untyped API, which take serialized blobs now.
@@ -1426,11 +1708,14 @@ DDS_EXPORT dds_return_t dds_take_mask_wl
  * If we want dds_takecdr(), shouldn't there be a dds_readcdr()?
  */
 struct serdata;
-int dds_takecdr
-(
- dds_entity_t rd, struct serdata ** buf, uint32_t maxs,
- dds_sample_info_t * si, uint32_t mask
- );
+
+DDS_EXPORT int
+dds_takecdr(
+        dds_entity_t reader_or_condition,
+        struct serdata **buf,
+        uint32_t maxs,
+        dds_sample_info_t *si,
+        uint32_t mask);
 
 /**
  * Description : Implements the same functionality as dds_take, except that only data
@@ -1445,45 +1730,41 @@ int dds_takecdr
  *   -# handle the instance handle identifying the instance from which to take
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-DDS_EXPORT dds_return_t dds_take_instance
-(
-  _In_ dds_entity_t rd_or_cnd,
-  _Out_ void ** buf,
-  _Out_ dds_sample_info_t * si,
-  _In_ size_t bufsz,
-  _In_ uint32_t maxs,
-  _In_ dds_instance_handle_t handle
-);
+DDS_EXPORT dds_return_t
+dds_take_instance(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle);
 
-DDS_EXPORT dds_return_t dds_take_instance_wl
-(
-  _In_ dds_entity_t rd_or_cnd,
-  _Out_ void ** buf,
-  _Out_ dds_sample_info_t * si,
-  _In_ uint32_t maxs,
-  _In_ dds_instance_handle_t handle
-);
+DDS_EXPORT dds_return_t
+dds_take_instance_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle);
 
-DDS_EXPORT dds_return_t dds_take_instance_mask
-(
-  _In_ dds_entity_t rd_or_cnd,
-  _Out_ void ** buf,
-  _Out_ dds_sample_info_t * si,
-  _In_ size_t bufsz,
-  _In_ uint32_t maxs,
-  _In_ dds_instance_handle_t handle,
-  _In_ uint32_t mask
-);
+DDS_EXPORT dds_return_t
+dds_take_instance_mask(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask);
 
-DDS_EXPORT dds_return_t dds_take_instance_mask_wl
-(
-  _In_ dds_entity_t rd_or_cnd,
-  _Out_ void ** buf,
-  _Out_ dds_sample_info_t * si,
-  _In_ uint32_t maxs,
-  _In_ dds_instance_handle_t handle,
-  _In_ uint32_t mask
-);
+DDS_EXPORT dds_return_t
+dds_take_instance_mask_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask);
 
 
 /*
@@ -1502,8 +1783,17 @@ DDS_EXPORT dds_return_t dds_take_instance_mask_wl
  * -# si pointer to \ref dds_sample_info_t returned for a data value
  * -# Returns 1 on successful operation, else 0 if there is no data to be read.
  */
-DDS_EXPORT dds_return_t dds_take_next (_In_ dds_entity_t rd_or_cnd, _Out_ void ** buf, _Out_ dds_sample_info_t * si);
-DDS_EXPORT dds_return_t dds_take_next_wl (_In_ dds_entity_t rd_or_cnd, _Out_ void ** buf, _Out_ dds_sample_info_t * si);
+DDS_EXPORT dds_return_t
+dds_take_next(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si);
+
+DDS_EXPORT dds_return_t
+dds_take_next_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si);
 
 /**
  * Description : This operation copies the next, non-previously accessed data value and corresponding
@@ -1515,8 +1805,17 @@ DDS_EXPORT dds_return_t dds_take_next_wl (_In_ dds_entity_t rd_or_cnd, _Out_ voi
  * -# si pointer to \ref dds_sample_info_t returned for a data value
  * -# Returns 1 on successful operation, else 0 if there is no data to be read.
  */
-DDS_EXPORT dds_return_t dds_read_next (_In_ dds_entity_t rd_or_cnd, _Out_ void ** buf, _Out_ dds_sample_info_t * si);
-DDS_EXPORT dds_return_t dds_read_next_wl (_In_ dds_entity_t rd_or_cnd, _Out_ void ** buf, _Out_ dds_sample_info_t * si);
+DDS_EXPORT dds_return_t
+dds_read_next(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si);
+
+DDS_EXPORT dds_return_t
+dds_read_next_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si);
 
 /**
  * Description : This operation is used to return loaned samples from a data reader
@@ -1530,7 +1829,12 @@ DDS_EXPORT dds_return_t dds_read_next_wl (_In_ dds_entity_t rd_or_cnd, _Out_ voi
  * -# buf An array of pointers used by read/take operation
  * -# maxs The maximum number of samples provided to the read/take operation
  */
-DDS_EXPORT dds_return_t dds_return_loan (_In_ dds_entity_t rd, _In_ _Post_invalid_ void ** buf, _In_ uint32_t maxs);
+DDS_EXPORT dds_return_t
+dds_return_loan(
+        _In_ dds_entity_t reader_or_condition,
+        _In_ _Post_invalid_ void **buf,
+        _In_ uint32_t maxs);
+
 
 /*
   Instance handle <=> key value mapping.
@@ -1553,7 +1857,11 @@ DDS_EXPORT dds_return_t dds_return_loan (_In_ dds_entity_t rd, _In_ _Post_invali
  * -# data sample with a key fields set
  * -# Returns instance handle or DDS_HANDLE_NIL if instance could not be found from key
  */
-DDS_EXPORT dds_return_t dds_lookup_instance (_In_ dds_entity_t e, _Out_ dds_instance_handle_t *, _In_ const void * data);
+DDS_EXPORT dds_return_t
+dds_lookup_instance(
+        _In_ dds_entity_t entity,
+        _Out_ dds_instance_handle_t *handle,
+        _In_ const void *data);
 
 /**
  * Description : This operation takes an instance handle and return a key-value corresponding to it.
@@ -1566,53 +1874,79 @@ DDS_EXPORT dds_return_t dds_lookup_instance (_In_ dds_entity_t e, _Out_ dds_inst
  * -# Returns 0 on successful operation, or a non-zero value to indicate an error if the instance
  *    passed doesn't have a key-value
  */
-DDS_EXPORT dds_return_t dds_instance_get_key (_In_ dds_entity_t e, _In_ dds_instance_handle_t inst, _Out_ void * data);
+DDS_EXPORT dds_return_t
+dds_instance_get_key(
+        _In_ dds_entity_t entity,
+        _In_ dds_instance_handle_t handle,
+        _Out_ void *data);
 
 /**
- * Description : Begin coherent publishing or begin accessing a coherent set in a subscriber
+ * @brief Begin coherent publishing or begin accessing a coherent set in a subscriber
  *
  * Invoking on a Writer or Reader behaves as if dds_begin_coherent was invoked on its parent
  * Publisher or Subscriber respectively.
  *
- * Arguments :
- * -# e Publisher, Writer, Subscriber or Reader
+ * @param[in]  e - The entity that is prepared for coherent access
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_ERROR
+ *             An internal error has occurred.
+ *         DDS_RETCODE_BAD_PARAMETER
+ *             The provided entity is invalid or not supported
  */
-DDS_EXPORT dds_return_t dds_begin_coherent(_In_ dds_entity_t e);
+_Pre_satisfies_(((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER    ) || \
+                ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER) || \
+                ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER    ) || \
+                ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER) )
+DDS_EXPORT dds_return_t
+dds_begin_coherent(
+        _In_ dds_entity_t entity);
 
 /**
- * Description : End coherent publishing or end accessing a coherent set in a subscriber
+ * @brief End coherent publishing or end accessing a coherent set in a subscriber
  *
  * Invoking on a Writer or Reader behaves as if dds_end_coherent was invoked on its parent
  * Publisher or Subscriber respectively.
  *
- * Arguments :
- * -# e Publisher, Writer, Subscriber or Reader
+ * @param[in] e - The entity on which coherent access is finished
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful
+ *         DDS_RETCODE_BAD_PARAMETER
+ *             The provided entity is invalid or not supported
  */
-DDS_EXPORT dds_return_t dds_end_coherent(_In_ dds_entity_t e);
+_Pre_satisfies_(((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER    ) || \
+                ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER) || \
+                ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER    ) || \
+                ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER) )
+DDS_EXPORT dds_return_t
+dds_end_coherent(
+        _In_ dds_entity_t entity);
 
 /**
- * Description : Generates DATA_AVAILABLE trigger on all readers of the Subscriber
+ * @brief Trigger DATA_AVAILABLE event on contained readers
  *
- * Arguments :
- * -# sub Subscriber
+ * The DATA_AVAILABLE event is broadcast to all readers owned by this subscriber that currently
+ * have new data available. Any on_data_available listener callbacks attached to respective
+ * readers are invoked.
+ *
+ * @param[in] sub A subscriber
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @reval DDS_RETCODE_OK
+ *            The operation was successful
+ *        DDS_RETCODE_BAD_PARAMETER
+ *            The provided subscriber is invalid
  */
-DDS_EXPORT dds_return_t dds_notify_readers(_In_ dds_entity_t sub);
+_Pre_satisfies_((subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER)
+DDS_EXPORT dds_return_t
+dds_notify_readers(
+        _In_ dds_entity_t subscriber);
 
-/**
- * Description : Suspends the publications of the Publisher
- *
- * Arguments :
- * -# pub Publisher
- */
-DDS_EXPORT dds_return_t dds_suspend(_In_ dds_entity_t pub);
-
-/**
- * Description : Resumes the publications of the Publisher
- *
- * Arguments :
- * -# pub Publisher
- */
-DDS_EXPORT dds_return_t dds_resume(_In_ dds_entity_t pub);
 
 /**
  * Description : Resolves the domain-entity identified by id if it exists
@@ -1642,15 +1976,6 @@ DDS_EXPORT dds_return_t dds_get_matched(_In_ dds_entity_t wr_or_r, _Out_writes_t
  * -# e Entity
  */
 DDS_EXPORT dds_return_t dds_assert_liveliness(_In_ dds_entity_t e);
-
-/**
- * Description : Waits at most for the duration timeout for acks for data in the publisher or writer.
- *
- * Arguments :
- * -# pub_or_w Publisher or writer
- * -# timeout Duration the call should maximally wait for the data to be acked.
- */
-DDS_EXPORT dds_return_t dds_wait_for_acks(_In_ dds_entity_t pub_or_w, _In_ dds_duration_t timeout);
 
 /**
  * Description : Checks whether entity c is contained in entity e
