@@ -30,7 +30,7 @@ dds_entity_cb_propagate_begin(_In_ dds_entity *e)
 
         if (ok) {
             os_mutexLock(&e->m_mutex);
-            if (e->m_flags & DDS_ENTITY_DELETED) {
+            if (ut_handle_is_closed(e->m_hdl, e->m_hdllink)) {
                 /* Entity deletion in progress: break off the callback process. */
                 ok = false;
             } else {
@@ -40,7 +40,7 @@ dds_entity_cb_propagate_begin(_In_ dds_entity *e)
             }
             os_mutexUnlock(&e->m_mutex);
             if (!ok) {
-                /* Un-busy the top of the hierarchy. */
+                /* Un-lock the top of the hierarchy. */
                 dds_entity_cb_propagate_end(e->m_parent);
             }
         }
@@ -288,7 +288,6 @@ dds_delete(
     dds_entity_cb_wait(e);
 
     ut_handle_close(e->m_hdl, e->m_hdllink);
-    e->m_flags |= DDS_ENTITY_DELETED;
     e->m_status_enable = 0;
     dds_listener_reset(&e->m_listener);
 

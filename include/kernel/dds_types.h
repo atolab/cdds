@@ -178,8 +178,7 @@ typedef struct c_listener {
 
 /* Entity flag values */
 
-#define DDS_ENTITY_DELETED      0x0002
-#define DDS_ENTITY_ENABLED      0x0004
+#define DDS_ENTITY_ENABLED      0x0001
 
 typedef struct dds_domain
 {
