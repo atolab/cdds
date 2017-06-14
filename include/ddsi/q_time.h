@@ -18,12 +18,6 @@
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
 #define T_NEVER 0x7fffffffffffffffll
 #define T_MILLISECOND 1000000ll
 #define T_SECOND (1000 * T_MILLISECOND)
@@ -61,7 +55,7 @@ extern const nn_duration_t duration_infinite;
 
 int valid_ddsi_timestamp (nn_ddsi_time_t t);
 
-OS_API nn_wctime_t now (void);       /* wall clock time */
+OSAPI_EXPORT nn_wctime_t now (void);       /* wall clock time */
 nn_mtime_t now_mt (void);     /* monotonic time */
 nn_etime_t now_et (void);     /* elapsed time */
 void mtime_to_sec_usec (_Out_ int * __restrict sec, _Out_ int * __restrict usec, _In_ nn_mtime_t t);
@@ -73,10 +67,10 @@ nn_wctime_t add_duration_to_wctime (nn_wctime_t t, int64_t d);
 nn_etime_t add_duration_to_etime (nn_etime_t t, int64_t d);
 
 nn_ddsi_time_t nn_wctime_to_ddsi_time (nn_wctime_t t);
-OS_API nn_wctime_t nn_wctime_from_ddsi_time (nn_ddsi_time_t x);
-OS_API nn_duration_t nn_to_ddsi_duration (int64_t t);
-OS_API int64_t nn_from_ddsi_duration (nn_duration_t x);
-#undef OS_API
+OSAPI_EXPORT nn_wctime_t nn_wctime_from_ddsi_time (nn_ddsi_time_t x);
+OSAPI_EXPORT nn_duration_t nn_to_ddsi_duration (int64_t t);
+OSAPI_EXPORT int64_t nn_from_ddsi_duration (nn_duration_t x);
+
 #if defined (__cplusplus)
 }
 #endif

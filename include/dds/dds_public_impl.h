@@ -159,12 +159,6 @@ dds_condition_seq;
 #define DDS_OP_FLAG_KEY 0x01
 #define DDS_OP_FLAG_DEF 0x02
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
 /**
  * Description : Enable or disable write batching. Overrides default configuration
  * setting for write batching (DDSI2E/Internal/WriteBatch).
@@ -172,7 +166,7 @@ dds_condition_seq;
  * Arguments :
  *   -# enable Enables or disables write batching for all writers.
  */
-OS_API void dds_write_set_batch (bool enable);
+OSAPI_EXPORT void dds_write_set_batch (bool enable);
 
 /**
  * Description : Install tcp/ssl and encryption support. Depends on openssl.
@@ -180,7 +174,7 @@ OS_API void dds_write_set_batch (bool enable);
  * Arguments :
  *   -# None
  */
-OS_API void dds_ssl_plugin (void);
+OSAPI_EXPORT void dds_ssl_plugin (void);
 
 /**
  * Description : Install client durability support. Depends on OSPL server.
@@ -188,9 +182,8 @@ OS_API void dds_ssl_plugin (void);
  * Arguments :
  *   -# None
  */
-OS_API void dds_durability_plugin (void);
+OSAPI_EXPORT void dds_durability_plugin (void);
 
-#undef OS_API
 #if defined (__cplusplus)
 }
 #endif
