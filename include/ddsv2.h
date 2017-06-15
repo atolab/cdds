@@ -871,7 +871,7 @@ dds_get_name(
 /* TODO: do we need a convenience version as well that does allocate? */
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 DDS_EXPORT dds_return_t
-dds_topic_get_type_name(
+dds_get_type_name(
         _In_ dds_entity_t topic,
         _Out_writes_z_(size) char *name,
         _In_ size_t size);

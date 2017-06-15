@@ -422,11 +422,13 @@ dds_get_name(
         _In_ size_t size)
 {
     dds_topic *t;
-    dds_return_t ret;
-    ret = dds_topic_lock(topic, &t);
-    if (ret == DDS_RETCODE_OK) {
-        snprintf(name, size, "%s", t->m_stopic->name);
-        dds_topic_unlock(t);
+    dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
+    if (size > 0) {
+        ret = dds_topic_lock(topic, &t);
+        if (ret == DDS_RETCODE_OK) {
+            (void)snprintf(name, size, "%s", t->m_stopic->name);
+            dds_topic_unlock(t);
+        }
     }
     return DDS_ERRNO(ret, DDS_MOD_TOPIC, 0);
 }
@@ -439,11 +441,13 @@ dds_get_type_name(
         _In_ size_t size)
 {
     dds_topic *t;
-    dds_return_t ret;
-    ret = dds_topic_lock(topic, &t);
-    if (ret == DDS_RETCODE_OK) {
-        snprintf(name, size, "%s", t->m_stopic->typename);
-        dds_topic_unlock(t);
+    dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
+    if (size > 0) {
+        ret = dds_topic_lock(topic, &t);
+        if (ret == DDS_RETCODE_OK) {
+            (void)snprintf(name, size, "%s", t->m_stopic->typename);
+            dds_topic_unlock(t);
+        }
     }
     return DDS_ERRNO(ret, DDS_MOD_TOPIC, 0);
 }
