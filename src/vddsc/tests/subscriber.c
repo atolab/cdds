@@ -10,7 +10,6 @@ static void on_publication_matched(dds_entity_t writer, const dds_publication_ma
 Test(c_subscriber, dds_notify_readers) {
   dds_entity_t participant;
   dds_entity_t subscriber;
-  dds_listener_t *listener;
   dds_return_t ret;
 
   participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
