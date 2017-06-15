@@ -38,9 +38,6 @@ endif()
 add_subdirectory(src)
 #add_subdirectory(vdds-server)
 add_subdirectory(examples)
-if(BUILD_TESTING)
-  add_subdirectory(cunitrunner)
-endif()
 #add_subdirectory(rpc-examples)
 
 include(Packaging) # Pulls in CPack

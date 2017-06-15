@@ -1,12 +1,12 @@
 #include "dds.h"
-#include "cunitrunner/runner.h"
+#include <criterion/criterion.h>
+#include <criterion/logging.h>
 
 #define ASSERT_CALLBACK_EQUAL(fntype, listener, expected) \
     do { \
         dds_on_##fntype##_fn cb; \
         dds_lget_##fntype(listener, &cb); \
-        if (cb == expected) { CU_PASS("Callback 'on_" #fntype " matched expected value '" #expected "'"); } \
-        else { CU_FAIL("Callback 'on_" #fntype "' did not match expected value '" #expected "'"); } \
+        cr_expect_eq(cb, expected, "Callback 'on_" #fntype "' matched expected value '" #expected "'"); \
     } while (0)
 
 #define STR(fntype) #fntype##_cb
@@ -43,12 +43,12 @@ static void subscription_matched_cb(dds_entity_t reader, const dds_subscription_
 
 
 /* tests */
-void test_create_and_delete(void)
+Test(c99_listener, create_and_delete)
 {
     /* Verify create doesn't return null */
     dds_listener_t *listener;
     listener = dds_listener_create(NULL);
-    CU_ASSERT_PTR_NOT_NULL(listener);
+    cr_assert_not_null(listener);
 
     /* Check default cb's are set */
     ASSERT_CALLBACK_EQUAL(inconsistent_topic, listener, DDS_LUNSET);
@@ -69,11 +69,11 @@ void test_create_and_delete(void)
     dds_listener_delete(NULL);
 }
 
-void test_reset(void)
+Test(c99_listener, reset)
 {
     dds_listener_t *listener;
     listener = dds_listener_create(NULL);
-    CU_ASSERT_PTR_NOT_NULL(listener);
+    cr_assert_not_null(listener);
 
     /* Set a listener cb to a non-default value */
     dds_lset_data_available(listener, NULL);
@@ -86,13 +86,13 @@ void test_reset(void)
     dds_listener_delete(listener);
 }
 
-void test_copy(void)
+Test(c99_listener, copy)
 {
     dds_listener_t *listener1 = NULL, *listener2 = NULL;
     listener1 = dds_listener_create(NULL);
     listener2 = dds_listener_create(NULL);
-    CU_ASSERT_PTR_NOT_NULL(listener1);
-    CU_ASSERT_PTR_NOT_NULL(listener2);
+    cr_assert_not_null(listener1);
+    cr_assert_not_null(listener2);
 
     /* Set some listener1 callbacks to non-default values */
     dds_lset_data_available(listener1, NULL);
@@ -113,13 +113,13 @@ void test_copy(void)
     dds_listener_delete(listener2);
 }
 
-void test_merge(void)
+Test(c99_listener, merge)
 {
     dds_listener_t *listener1 = NULL, *listener2 = NULL;
     listener1 = dds_listener_create(NULL);
     listener2 = dds_listener_create(NULL);
-    CU_ASSERT_PTR_NOT_NULL(listener1);
-    CU_ASSERT_PTR_NOT_NULL(listener2);
+    cr_assert_not_null(listener1);
+    cr_assert_not_null(listener2);
 
     /* Set some listener1 callbacks to non-default values */
     dds_lset_data_available(listener1, NULL);
@@ -145,11 +145,11 @@ void test_merge(void)
     dds_listener_delete(listener2);
 }
 
-void test_getters_setters(void)
+Test(c99_listener, getters_setters)
 {
     /* test all individual cb get/set methods */
     dds_listener_t *listener = dds_listener_create(NULL);
-    CU_ASSERT_PTR_NOT_NULL(listener);
+    cr_assert_not_null(listener);
 
     TEST_GET_SET(listener, inconsistent_topic, inconsistent_topic_cb);
     TEST_GET_SET(listener, liveliness_lost, liveliness_lost_cb);
@@ -168,42 +168,3 @@ void test_getters_setters(void)
     dds_listener_delete(listener);
 }
 
-int main (int argc, char **argv)
-{
-    CU_pSuite pSuite;
-
-    if (runner_init(argc, argv)){
-        goto err_init;
-    }
-
-    /* add a suite to the registry */
-    if ((pSuite = CU_add_suite("C::Listener test suite", NULL, NULL)) == NULL){
-       goto err;
-    }
-
-    /* add test cases to the test suite */
-    if (CU_add_test(pSuite, "Create and delete a dds_listener_t instance", test_create_and_delete) == NULL) {
-        goto err;
-    }
-
-    if (CU_add_test(pSuite, "Reset a dds_listener_t instance to its default values", test_reset) == NULL) {
-        goto err;
-    }
-
-    if (CU_add_test(pSuite, "Copy a dds_listener_t instance", test_copy) == NULL) {
-        goto err;
-    }
-
-    if (CU_add_test(pSuite, "Merge two dds_listener_t instances", test_merge) == NULL) {
-        goto err;
-    }
-
-    if (CU_add_test(pSuite, "Get/Set dds_listener_t callbacks", test_getters_setters) == NULL) {
-        goto err;
-    }
-    runner_run();
-err:
-    runner_fini();
-err_init:
-    return CU_get_error();
-}

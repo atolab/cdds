@@ -3,13 +3,12 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
-Test(ts, pc) {
-
+Test(c99_topic, pc) {
   dds_entity_t participant;
   dds_entity_t topic, topic2;
   dds_return_t retCode;
-  int size = 200;
-  char name[size];
+  char name[200];
+  int size = sizeof(name);
 
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
 
@@ -36,5 +35,5 @@ Test(ts, pc) {
   dds_delete (topic);
   dds_delete (topic2);
   dds_delete (participant);
-
 }
+

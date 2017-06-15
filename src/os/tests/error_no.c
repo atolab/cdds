@@ -1,10 +1,10 @@
 #include "dds.h"
-#include "cunitrunner/runner.h"
+#include "CUnit/Runner.h"
 #include "os/os.h"
 
 #define ENABLE_TRACING 0
 
-static int  suite_abstraction_errno_init (void)
+CUnit_Suite_Initialize(error_no)
 {
     int result = DDS_RETCODE_OK;
     os_osInit();
@@ -15,7 +15,7 @@ static int  suite_abstraction_errno_init (void)
     return result;
 }
 
-static int suite_abstraction_errno_clean (void)
+CUnit_Suite_Cleanup(error_no)
 {
     int result = DDS_RETCODE_OK;
 
@@ -26,7 +26,7 @@ static int suite_abstraction_errno_clean (void)
     return result;
 }
 
-static void tc_os_errno (void)
+CUnit_Test(error_no, get_and_set)
 {
   #if ENABLE_TRACING
     printf ("Starting tc_os_errno_001\n");
@@ -49,23 +49,4 @@ static void tc_os_errno (void)
   #if ENABLE_TRACING
     printf ("Ending tc_os_errno\n");
   #endif
-}
-
-int main (int argc, char *argv[])
-{
-    CU_pSuite suite;
-    if(runner_init(argc, argv)){
-        goto err_init;
-    }
-    if((suite = CU_add_suite ("abstraction_errno", suite_abstraction_errno_init, suite_abstraction_errno_clean)) == NULL){
-        goto err;
-    }
-    if(CU_add_test (suite, "tc_os_errno", tc_os_errno) == NULL){
-        goto err;
-    }
-    runner_run();
-err:
-    runner_fini();
-err_init:
-    return CU_get_error();
 }

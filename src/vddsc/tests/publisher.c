@@ -8,9 +8,8 @@
 static void data_available_cb(dds_entity_t reader, void* arg) {}
 
 
-void publisher_creation(void)
+Test(c99_publisher, creation)
 {
-
   const char *singlePartitions[] = { "partition" };
   const char *multiplePartitions[] = { "partition1", "partition2" };
   const char *duplicatePartitions[] = { "partition", "partition" };
@@ -107,9 +106,8 @@ void publisher_creation(void)
 }
 
 
-void publisher_suspend_resume(void)
+Test(c99_publisher, suspend_resume)
 {
-
   dds_entity_t participant, publisher;
   dds_return_t status;
 
@@ -151,7 +149,7 @@ void publisher_suspend_resume(void)
   return;
 }
 
-void publisher_wait_for_acks(void)
+Test(c99_publisher, wait_for_acks)
 {
   dds_entity_t participant, publisher;
   dds_return_t status;
@@ -240,17 +238,8 @@ void publisher_wait_for_acks(void)
   return;
 }
 
-void publisher_coherency(void)
+Test(c99_publisher, coherency)
 {
   return;
-}
-
-
-Test(vddsc, publisher)
-{
-    publisher_creation();
-    publisher_suspend_resume();
-    publisher_wait_for_acks();
-    publisher_coherency();
 }
 

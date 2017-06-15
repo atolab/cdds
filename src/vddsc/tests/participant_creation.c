@@ -19,6 +19,5 @@ Test(ts, pc) {
   cr_assert_neq(participant3, NULL, "dds_participant_create");
 
   dds_delete (participant3);
-
 }
 
