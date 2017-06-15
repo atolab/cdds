@@ -744,7 +744,6 @@ DDS_EXPORT dds_entity_t dds_lookup_participant (_In_ dds_domainid_t domain_id);
  *
  * Arguments :
  *   -# pp The participant on which the topic is being created
- *   -# topic The created topic
  *   -# descriptor The IDL generated topic descriptor
  *   -# name The name of the created topic
  *   -# qos The QoS to set on the new topic (can be NULL)
@@ -794,7 +793,7 @@ DDS_EXPORT dds_return_t dds_get_name (_In_ dds_entity_t e, _Out_writes_z_(size) 
  *   -# Returns The topic type name or NULL to indicate an error
  */
 /* TODO: do we need a convenience version as well that does allocate? */
-DDS_EXPORT dds_return_t dds_topic_get_type_name (_In_ dds_entity_t topic, _Out_writes_z_(size) name, _In_ size_t size);
+DDS_EXPORT dds_return_t dds_get_type_name (_In_ dds_entity_t topic, _Out_writes_z_(size) char * name, _In_ size_t size);
 
 /**
  * Description : Creates a new instance of a DDS subscriber

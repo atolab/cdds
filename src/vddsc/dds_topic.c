@@ -193,14 +193,13 @@ static dds_return_t dds_topic_qos_set (dds_entity_t e, const dds_qos_t *qos, boo
     return ret;
 }
 
-int dds_topic_create
+dds_entity_t dds_create_topic
 (
-  dds_entity_t pp,
-  dds_entity_t * topic,
-  const dds_topic_descriptor_t * desc,
-  const char * name,
-  const dds_qos_t * qos,
-  const dds_listener_t * listener
+  _In_ dds_entity_t pp,
+  _In_ const dds_topic_descriptor_t * desc,
+  _In_z_ const char * name,
+  _In_opt_ const dds_qos_t * qos,
+  _In_opt_ const dds_listener_t * listener
 )
 {
   static uint32_t next_topicid = 0;
@@ -218,7 +217,6 @@ int dds_topic_create
   uint32_t index;
 
   assert (pp);
-  assert (topic);
   assert (desc);
   assert (name);
   assert (pp->m_kind == DDS_TYPE_PARTICIPANT);
@@ -261,7 +259,6 @@ int dds_topic_create
   top = dds_alloc (sizeof (*top));
   top->m_descriptor = desc;
   dds_entity_init (&top->m_entity, pp, DDS_TYPE_TOPIC, new_qos, listener, DDS_TOPIC_STATUS_MASK);
-  *topic = &top->m_entity;
   top->m_entity.m_deriver.delete = dds_topic_delete;
   top->m_entity.m_deriver.set_qos = dds_topic_qos_set;
   top->m_entity.m_deriver.validate_status = dds_topic_status_validate;
@@ -341,10 +338,13 @@ int dds_topic_create
   }
   nn_plist_fini (&plist);
 
+  os_mutexUnlock (&pp->m_mutex);
+  return &top->m_entity;
+
 fail:
 
   os_mutexUnlock (&pp->m_mutex);
-  return ret;
+  return NULL;
 }
 
 static bool dds_topic_chaining_filter (const void *sample, void *ctx)
@@ -415,18 +415,22 @@ dds_topic_intern_filter_fn dds_topic_get_filter_with_ctx (dds_entity_t topic)
   return (filter == dds_topic_chaining_filter) ? NULL : filter;
 }
 
-char * dds_topic_get_name (dds_entity_t topic)
+DDS_EXPORT dds_return_t dds_get_name (_In_ dds_entity_t e, _Out_writes_z_(size) char * name, _In_ size_t size)
 {
-  assert (topic);
-  assert (topic->m_kind == DDS_TYPE_TOPIC);
-  return dds_string_dup (((dds_topic*) topic)->m_stopic->name);
+  if(e == NULL){
+    return DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER, DDS_MOD_TOPIC, 0);
+  }
+  snprintf(name, size, "%s", ((dds_topic*) e)->m_stopic->name);
+  return DDS_RETCODE_OK;
 }
 
-char * dds_topic_get_type_name (dds_entity_t topic)
+DDS_EXPORT dds_return_t dds_get_type_name (_In_ dds_entity_t topic, _Out_writes_z_(size) char * name, _In_ size_t size)
 {
-  assert (topic);
-  assert (topic->m_kind == DDS_TYPE_TOPIC);
-  return dds_string_dup (((dds_topic*) topic)->m_stopic->typename);
+  if(topic == NULL){
+    return DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER, DDS_MOD_TOPIC, 0);
+  }
+  snprintf(name, size, "%s", ((dds_topic*) topic)->m_stopic->name);
+  return DDS_RETCODE_OK;
 }
 
 dds_return_t dds_get_inconsistent_topic_status (dds_entity_t entity, dds_inconsistent_topic_status_t * status)

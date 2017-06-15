@@ -745,22 +745,31 @@ DDS_EXPORT dds_entity_t dds_participant_lookup (dds_domainid_t domain_id);
  *
  * Arguments :
  *   -# pp The participant on which the topic is being created
- *   -# topic The created topic
  *   -# descriptor The IDL generated topic descriptor
  *   -# name The name of the created topic
  *   -# qos The QoS to set on the new topic (can be NULL)
  *   -# listener Any listener functions associated with the new topic (can be NULL)
  *   -# Returns a status, 0 on success or non-zero value to indicate an error
  */
-DDS_EXPORT int dds_topic_create
+DDS_EXPORT dds_entity_t dds_create_topic
 (
-  dds_entity_t pp,
-  dds_entity_t * topic,
-  const dds_topic_descriptor_t * descriptor,
-  const char * name,
-  const dds_qos_t * qos,
-  const dds_listener_t * listener
+  _In_ dds_entity_t pp,
+  _In_ const dds_topic_descriptor_t * descriptor,
+  _In_z_ const char * name,
+  _In_opt_ const dds_qos_t * qos,
+  _In_opt_ const dds_listener_t * listener
 );
+
+/**
+ * Description : Returns a topic name.
+ *
+ * Arguments :
+ *   -# topic The topic
+ *   -# Returns The topic name or NULL to indicate an error
+ */
+/* TODO: do we need a convenience version as well that allocates and add a _s suffix to this one? */
+/* TODO: Check annotation. Could be _Out_writes_to_(size, return + 1) as well. */
+DDS_EXPORT dds_return_t dds_get_name (_In_ dds_entity_t e, _Out_writes_z_(size) char * name, _In_ size_t size);
 
 /**
  * Description : Finds a named topic. Returns NULL if does not exist.
@@ -777,14 +786,7 @@ DDS_EXPORT dds_entity_t dds_topic_find
   const char * name
 );
 
-/**
- * Description : Returns a topic name.
- *
- * Arguments :
- *   -# topic The topic
- *   -# Returns The topic name or NULL to indicate an error
- */
-DDS_EXPORT char * dds_topic_get_name (dds_entity_t topic);
+
 
 /**
  * Description : Returns a topic type name.
@@ -793,7 +795,7 @@ DDS_EXPORT char * dds_topic_get_name (dds_entity_t topic);
  *   -# topic The topic
  *   -# Returns The topic type name or NULL to indicate an error
  */
-DDS_EXPORT char * dds_topic_get_type_name (dds_entity_t topic);
+DDS_EXPORT dds_return_t dds_get_type_name (_In_ dds_entity_t topic, _Out_writes_z_(size) char * name, _In_ size_t size);
 
 typedef bool (*dds_topic_filter_fn) (const void * sample);
 

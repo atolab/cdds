@@ -45,9 +45,8 @@ int pong_main (int argc, char *argv[])
 
   /* A DDS Topic is created for our sample type on the domain participant. */
 
-  status = dds_topic_create
-    (participant, &topic, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
-  if (status < 0 && dds_err_nr(status) == DDS_RETCODE_BAD_PARAMETER)
+  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
+  if (topic == NULL)
   {
     topic = dds_topic_find(participant, "RoundTrip");
     if (topic != NULL)

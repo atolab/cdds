@@ -40,4 +40,4 @@ add_dds_test(listener                 cunitrunner    listener.c)
 add_dds_test(participant_creation     Criterion      participant_creation.c)
 add_dds_test(publisher                Criterion      publisher.c)
 add_dds_test(subscriber               Criterion      subscriber.c)
-
+add_dds_test(topic                    Criterion      topic.c RoundTrip.c)
