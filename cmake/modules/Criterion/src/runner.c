@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +8,7 @@
 
 #include <criterion/criterion.h>
 #include <criterion/hooks.h>
+#include <criterion/internal/ordered-set.h>
 
 #ifdef _WIN32
 #include <stdlib.h>
@@ -16,6 +18,8 @@
 #define LF "\n"
 #endif
 
+static const char *suitepat = "*";
+static const char *testpat = "*";
 static char runfn[NAME_MAX + 1] = { 0 };
 static char listfn[NAME_MAX + 1] = { 0 };
 static char stamp[64] = { 0 };
@@ -288,11 +292,51 @@ print_list_stats(FILE *file, struct criterion_global_stats *stats)
     (void)fprintf(file, list_ftr, stamp);
 }
 
+static int
+patmatch(
+    const char *pat,
+    const char *str)
+{
+    while (*pat) {
+        if (*pat == '?') {
+            /* any character will do */
+            if (*str++ == 0) {
+                return 0;
+            }
+            pat++;
+        } else if (*pat == '*') {
+            /* collapse a sequence of wildcards, requiring as many
+               characters in str as there are ?s in the sequence */
+            while (*pat == '*' || *pat == '?') {
+                if (*pat == '?' && *str++ == 0) {
+                    return 0;
+                }
+                pat++;
+            }
+            /* try matching on all positions where str matches pat */
+            while (*str) {
+                if (*str == *pat && patmatch(pat+1, str+1)) {
+                    return 1;
+                }
+                str++;
+            }
+            return *pat == 0;
+        } else {
+            /* only an exact match */
+            if (*str++ != *pat++) {
+                return 0;
+            }
+        }
+    }
+
+    return *str == 0;
+}
+
 ReportHook(POST_ALL)(struct criterion_global_stats *stats)
 {
     FILE *runfh, *listfh;
 
-    if (listfn != NULL && runfn != NULL) {
+    if (listfn[0] != '\0' && runfn[0] != '\0') {
         runfh = NULL;
         listfh = NULL;
 
@@ -314,27 +358,51 @@ ReportHook(POST_ALL)(struct criterion_global_stats *stats)
     }
 }
 
+/* FIXME: Depending on internal knowledge is not very pretty, but it is the
+          only way to provide a filter that will work on both *nix and non-*nix
+          platforms. */
+ReportHook(PRE_SUITE)(struct criterion_suite_set *set)
+{
+    struct criterion_ordered_set_node *itr;
+    struct criterion_test *test;
+
+    for (itr = set->tests->first; itr != NULL; itr = itr->next) {
+        test = (struct criterion_test *)(itr + 1);
+        if (!patmatch(suitepat, test->category) ||
+            !patmatch(testpat, test->name))
+        {
+            fprintf(stderr, "disabled %s/%s\n", test->category, test->name);
+            fprintf(stderr, "suitepat: %s, testpat: %s\n", suitepat, testpat);
+            test->data->disabled = true;
+        } else {
+            fprintf(stderr, "enabled %s/%s\n", test->category, test->name);
+        }
+    }
+}
+
 int
 main(int argc, char *argv[])
 {
     int result = 0;
     int argno, cr_argc, sz;
     char *pfx, **cr_argv;
-    const char opt[] = "--cunit";
     const char runfmt[] = "%s-Results.xml";
     const char listfmt[] = "%s-Listing.xml";
     const char stampfmt[] = "%a %b %e %H:%M:%S %Y";
     time_t now;
 
-    /* before handing over argc and argv over to criterion, go over the list to
-       extract the custom --cunit option. note that the option is meant to be
-       "hidden" */
+    /* Before handing over argc and argv over to criterion, go over the list to
+       extract the custom options. Note that these are meant to be "hidden" */
     cr_argc = 0;
     if ((cr_argv = calloc(argc, sizeof(*cr_argv))) == NULL) {
         result = 1;
     } else {
         for (argno = 0; argno < argc; argno++) {
-            if (strncmp(opt, argv[argno], sizeof(opt) - 1) == 0) {
+            /* FIXME:
+               Eventually CUnit output format should be supported through an
+               actual logger implementation, but it will do for now.
+               See: http://criterion.readthedocs.io/en/master/output.html */
+            if (strncmp(argv[argno], "--cunit", 7) == 0) {
                 if ((pfx = strchr(argv[argno], '=')) != NULL) {
                     pfx++;
                 } else {
@@ -346,8 +414,23 @@ main(int argc, char *argv[])
                 sz = snprintf(listfn, sizeof(listfn), listfmt, pfx);
                 assert(sz > 0 && sz < sizeof(listfn));
                 now = time(NULL);
-                sz = (int)strftime(stamp, sizeof(stamp), stampfmt, localtime(&now));
+                sz = (int)strftime(
+                    stamp, sizeof(stamp), stampfmt, localtime(&now));
                 assert(sz != 0);
+            } else if (strncmp(argv[argno], "--suite", 7) == 0) {
+                if ((argno + 1) == argc) {
+                    fprintf(stderr, "--suite requires an argument\n");
+                    result = 1;
+                    goto bail;
+                }
+                suitepat = (const char *)argv[++argno];
+            } else if (strncmp(argv[argno], "--test", 6) == 0) {
+                if ((argno + 1) == argc) {
+                    fprintf(stderr, "--test requires an argument\n");
+                    result = 1;
+                    goto bail;
+                }
+                testpat = (const char *)argv[++argno];
             } else {
                 cr_argv[cr_argc++] = argv[argno];
             }
@@ -360,6 +443,8 @@ main(int argc, char *argv[])
         }
 
         criterion_finalize(tests);
+
+bail:
         free(cr_argv);
     }
 

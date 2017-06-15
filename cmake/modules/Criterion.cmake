@@ -39,7 +39,7 @@ function(add_criterion_executable target)
 
     add_test(
       NAME "Criterion_${suite}_${test}"
-      COMMAND ${target} --filter "${suite}/${test}" --cunit=${suite}-${test} --quiet)
+      COMMAND ${target} --suite ${suite} --test ${test} --cunit=${suite}-${test} --quiet)
   endforeach()
 endfunction()
 
