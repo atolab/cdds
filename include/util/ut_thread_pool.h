@@ -18,11 +18,6 @@
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
 /* !!!!!!!!NOTE From here no more includes are allowed!!!!!!! */
 
 typedef struct ut_thread_pool_s *ut_thread_pool;
@@ -34,7 +29,7 @@ typedef struct ut_thread_pool_s *ut_thread_pool;
   on demand up to max_threads.
 */
 
-OS_API ut_thread_pool ut_thread_pool_new
+OSAPI_EXPORT ut_thread_pool ut_thread_pool_new
 (
   uint32_t threads,     /* Initial number of threads in pool (can be 0) */
   uint32_t max_threads, /* Maximum number of threads in pool (0 == infinite) */
@@ -44,11 +39,11 @@ OS_API ut_thread_pool ut_thread_pool_new
 
 /* ut_thread_pool_free: Frees pool, destroying threads. */
 
-OS_API void ut_thread_pool_free (ut_thread_pool pool);
+OSAPI_EXPORT void ut_thread_pool_free (ut_thread_pool pool);
 
 /* ut_thread_pool_purge: Purge threads from pool back to initial set. */
 
-OS_API void ut_thread_pool_purge (ut_thread_pool pool);
+OSAPI_EXPORT void ut_thread_pool_purge (ut_thread_pool pool);
 
 /*
   ut_thread_pool_submit: Submit a thread function and associated argument
@@ -58,14 +53,12 @@ OS_API void ut_thread_pool_purge (ut_thread_pool pool);
   Note that if the pool queue has reached it's maximum os_resultBusy is returned.
 */
 
-OS_API os_result ut_thread_pool_submit
+OSAPI_EXPORT os_result ut_thread_pool_submit
 (
   ut_thread_pool pool,  /* Thread pool instance */
   void (*fn) (void *arg),  /* Function to be invoked by thread from pool */
   void * arg            /* Argument passed to invoked function */
 );
-
-#undef OS_API
 
 #if defined (__cplusplus)
 }

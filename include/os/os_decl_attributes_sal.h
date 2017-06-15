@@ -14,6 +14,8 @@
 
 #if defined(_MSC_VER)
 # include <sal.h>
+  /* SAL-like extension to signify that the following line isn't reached */
+# define _Noreturn_ __declspec(noreturn) _Analysis_noreturn_
 #endif
 
 #ifndef _Acquires_exclusive_lock_

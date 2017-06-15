@@ -36,11 +36,6 @@
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
     /* !!!!!!!!NOTE From here no more includes are allowed!!!!!!! */
 
     /**
@@ -112,8 +107,8 @@ extern "C" {
 #error OS_SOCKET_HAS_IPV6 not defined
 #endif
 
-    OS_API extern const os_in6_addr os_in6addr_any;
-    OS_API extern const os_in6_addr os_in6addr_loopback;
+    extern const os_in6_addr os_in6addr_any;
+    extern const os_in6_addr os_in6addr_loopback;
 
 #ifndef INET6_ADDRSTRLEN
 #define INET6_ADDRSTRLEN 46 /* strlen("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255") + 1 */
@@ -157,7 +152,7 @@ extern "C" {
         unsigned interfaceIndexNo;
     } os_ifAttributes;
 
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_sockQueryInterfaces(
             os_ifAttributes *ifList,
             uint32_t listSize,
@@ -174,30 +169,30 @@ extern "C" {
      * an error occured.
      * @see os_sockQueryInterfaces
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_sockQueryIPv6Interfaces(
             os_ifAttributes *ifList,
             uint32_t listSize,
             uint32_t *validElements);
 
-    OS_API os_socket
+    OSAPI_EXPORT os_socket
     os_sockNew(
             int domain, /* AF_INET */
             int type    /* SOCK_DGRAM */);
 
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_sockBind(
             os_socket s,
             const struct sockaddr *name,
             uint32_t namelen);
 
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_sockGetsockname(
             os_socket s,
             const struct sockaddr *name,
             uint32_t namelen);
 
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_sockSendto(
             os_socket s,
             const void *msg,
@@ -206,7 +201,7 @@ extern "C" {
             size_t tolen,
             size_t *bytesSent);
 
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_sockRecvfrom(
             os_socket s,
             void *buf,
@@ -215,7 +210,7 @@ extern "C" {
             size_t *fromlen,
             size_t *bytesRead);
 
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_sockGetsockopt(
             os_socket s,
             int32_t level, /* SOL_SOCKET */
@@ -223,7 +218,7 @@ extern "C" {
             void *optval,
             uint32_t *optlen);
 
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_sockSetsockopt(
             os_socket s,
             int32_t level, /* SOL_SOCKET */
@@ -244,12 +239,12 @@ extern "C" {
      *         - os_resultInvalid: if s is not a valid socket
      *         - os_resultFail: if an operating system error occurred
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_sockSetNonBlocking(
             os_socket s,
             bool nonblock);
 
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_sockFree(
             os_socket s);
 
@@ -261,14 +256,14 @@ extern "C" {
 #define os_sockSelect(nfds, readfds, writefds, errorfds, timeout) \
     os__sockSelect((readfds), (writefds), (errorfds), (timeout))
 
-    OS_API int32_t
+    OSAPI_EXPORT int32_t
     os__sockSelect(
             fd_set *readfds,
             fd_set *writefds,
             fd_set *errorfds,
             os_time *timeout);
 #else
-    OS_API int32_t
+    OSAPI_EXPORT int32_t
     os_sockSelect(
             int32_t nfds,
             fd_set *readfds,
@@ -278,22 +273,22 @@ extern "C" {
 #endif /* WIN32 */
 
     /* docced in implementation file */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_sockaddrInit(os_sockaddr* sa,
                     bool isIPv4); /* IPvX is poorly abstracted; this is temporary */
 
     /* docced in implementation file */
-    OS_API bool
+    OSAPI_EXPORT bool
     os_sockaddrIPAddressEqual(const os_sockaddr* this_sock,
                               const os_sockaddr* that_sock);
 
-    OS_API int
+    OSAPI_EXPORT int
     os_sockaddrIpAddressCompare(const os_sockaddr* addr1,
                                 const os_sockaddr* addr2) __nonnull_all__
         __attribute_pure__;
 
     /* docced in implementation file */
-    OS_API bool
+    OSAPI_EXPORT bool
     os_sockaddrSameSubnet(const os_sockaddr* thisSock,
                           const os_sockaddr* thatSock,
                           const os_sockaddr* mask);
@@ -305,7 +300,7 @@ extern "C" {
      * @param buflen The (max) size of the buffer
      * @return Pointer to start of string
      */
-    OS_API char*
+    OSAPI_EXPORT char*
     os_sockaddrAddressToString(const os_sockaddr* sa,
                                char* buffer, size_t buflen);
 
@@ -317,7 +312,7 @@ extern "C" {
      * @param buflen The (max) size of the buffer
      * @return Pointer to start of string
      */
-    OS_API char*
+    OSAPI_EXPORT char*
     os_sockaddrAddressPortToString(
             const os_sockaddr* sa,
             char* buffer,
@@ -336,7 +331,7 @@ extern "C" {
     * param will be ignored.
     * @return true on successful conversion. false otherwise
     */
-    _Success_(return) OS_API bool
+    _Success_(return) OSAPI_EXPORT bool
     os_sockaddrStringToAddress(
         _In_z_  const char *addressString,
         _When_(isIPv4, _Out_writes_bytes_(sizeof(os_sockaddr_in)))
@@ -345,7 +340,7 @@ extern "C" {
         _In_ bool isIPv4);
 
     /* docced in implementation file */
-    OS_API bool
+    OSAPI_EXPORT bool
     os_sockaddrIsLoopback(const os_sockaddr* thisSock);
 
     /**
@@ -355,7 +350,7 @@ extern "C" {
      * unknown 0 will be returned.
      * @pre sa is a valid sockaddr pointer
      */
-    OS_API size_t
+    OSAPI_EXPORT size_t
     os_sockaddrSizeof(const os_sockaddr* sa);
 
     /**
@@ -364,7 +359,7 @@ extern "C" {
      * @pre sa is a valid sockaddr pointer
      * @post Address of sa is set to the special IN_ADDR_ANY value
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_sockaddrSetInAddrAny(os_sockaddr* sa);
 
     /**
@@ -374,7 +369,7 @@ extern "C" {
      * @pre sa is a valid sockaddr pointer
      * @post Port number of sa is set to port
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_sockaddrSetPort(os_sockaddr* sa, uint16_t port);
 
     /**
@@ -383,15 +378,13 @@ extern "C" {
      * @return The port number stored in the supplied sockaddr (hence in network byte order)
      * @pre sa is a valid sockaddr pointer
      */
-    OS_API uint16_t
+    OSAPI_EXPORT uint16_t
     os_sockaddrGetPort(const os_sockaddr* const sa);
 
 
     /**
      * @}
      */
-
-#undef OS_API
 
 #if defined (__cplusplus)
 }

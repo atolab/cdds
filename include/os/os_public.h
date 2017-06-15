@@ -29,11 +29,7 @@
 #error "Platform missing from os_public.h list"
 #endif
 
-#ifndef OS_API_EXPORT
-#define OS_API_EXPORT
-#define OS_API_IMPORT
-#endif
-
 #include "os/os_decl_attributes.h"
+#include "os/osapi_export.h"
 
 #endif

@@ -32,12 +32,6 @@
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
 struct nn_xmsgpool;
 struct serstatepool;
 struct nn_dqueue;
@@ -307,8 +301,8 @@ struct q_globals {
   struct logbuf static_logbuf;
 };
 
-extern struct q_globals OS_API gv;
-#undef OS_API
+extern struct q_globals OSAPI_EXPORT gv;
+
 #if defined (__cplusplus)
 }
 #endif

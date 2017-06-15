@@ -5,12 +5,6 @@
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
     /** \brief Sets the priority inheritance mode for mutexes
      *   that are created after this call. (only effective on
      *   platforms that support priority inheritance)
@@ -20,7 +14,7 @@ extern "C" {
      *     mutex is successfuly initialized
      * - returns os_resultSuccess
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_mutexSetPriorityInheritanceMode(
             bool enabled);
 
@@ -33,7 +27,7 @@ extern "C" {
      * - returns os_resultFail if
      *     mutex is not initialized because of a failure
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_mutexInit(
             _Out_ os_mutex *mutex)
         __nonnull((1));
@@ -42,7 +36,7 @@ extern "C" {
      *
      * Never returns on failure
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_mutexDestroy(
             _Inout_ _Post_invalid_ os_mutex *mutex)
         __nonnull_all__;
@@ -54,7 +48,7 @@ extern "C" {
      * @see os_mutexLock_s
      */
     _Acquires_nonreentrant_lock_(&mutex->lock)
-    OS_API void
+    OSAPI_EXPORT void
     os_mutexLock(
             _Inout_ os_mutex *mutex)
     __nonnull_all__;
@@ -75,7 +69,7 @@ extern "C" {
      */
     _Check_return_
     _When_(return == os_resultSuccess, _Acquires_nonreentrant_lock_(&mutex->lock))
-        OS_API os_result
+        OSAPI_EXPORT os_result
         os_mutexLock_s(
                 _Inout_ os_mutex *mutex)
         __nonnull_all__
@@ -99,7 +93,7 @@ extern "C" {
      */
     _Check_return_
     _When_(return == os_resultSuccess, _Acquires_nonreentrant_lock_(&mutex->lock))
-        OS_API os_result
+        OSAPI_EXPORT os_result
         os_mutexTryLock (
                 _Inout_ os_mutex *mutex)
         __nonnull_all__
@@ -108,7 +102,7 @@ extern "C" {
     /** \brief Release the acquired mutex
      */
     _Releases_nonreentrant_lock_(&mutex->lock)
-    OS_API void
+    OSAPI_EXPORT void
     os_mutexUnlock (
             _Inout_ os_mutex *mutex)
     __nonnull_all__;
@@ -121,7 +115,7 @@ extern "C" {
      * - returns os_resultFail if
      *     cond is not initialized and can not be used
      */
-     OS_API void
+     OSAPI_EXPORT void
      os_condInit(
                 _Out_ os_cond *cond,
                 _In_ os_mutex *mutex)
@@ -129,7 +123,7 @@ extern "C" {
 
     /** \brief Destroy the condition variable
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_condDestroy(
             _Inout_ _Post_invalid_ os_cond *cond)
         __nonnull_all__;
@@ -144,7 +138,7 @@ extern "C" {
      * - mutex is still acquired by the calling thread and should
      *   be released by it
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_condWait(
             os_cond *cond,
             os_mutex *mutex)
@@ -172,7 +166,7 @@ extern "C" {
      *     cond is not triggered nor is timed out but
      *     os_condTimedWait has returned because of a failure
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_condTimedWait(
             os_cond *cond,
             os_mutex *mutex,
@@ -187,7 +181,7 @@ extern "C" {
      *   acquired by the calling thread before setting the
      *   condition state and signalling
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_condSignal(
             os_cond *cond)
         __nonnull_all__;
@@ -200,7 +194,7 @@ extern "C" {
      *   acquired by the calling thread before setting the
      *   condition state and signalling
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_condBroadcast(
             os_cond *cond)
         __nonnull_all__;
@@ -214,7 +208,7 @@ extern "C" {
      * - returns os_resultFail
      *     rwlock is not initialized and can not be used
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_rwlockInit(
             _Out_ os_rwlock *rwlock);
 
@@ -229,7 +223,7 @@ extern "C" {
      * - returns os_resultFail if
      *     rwlock is not destroyed
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_rwlockDestroy(
             _Inout_ _Post_invalid_ os_rwlock *rwlock);
 
@@ -249,7 +243,7 @@ extern "C" {
      * - returns os_resultFail if
      *      rwlock is not acquired because of a failure
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_rwlockRead(
             os_rwlock *rwlock);
 
@@ -265,7 +259,7 @@ extern "C" {
      * - returns os_resultFail if
      *      rwlock is not acquired because of a failure
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_rwlockWrite(
             os_rwlock *rwlock);
 
@@ -292,7 +286,7 @@ extern "C" {
      * - returns os_resultFail if
      *      rwlock is not acquired because of a failure
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_rwlockTryRead(
             os_rwlock *rwlock);
 
@@ -315,7 +309,7 @@ extern "C" {
      * - returns os_resultFail if
      *      rwlock is not acquired because of a failure
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_rwlockTryWrite(
             os_rwlock *rwlock);
 
@@ -331,11 +325,9 @@ extern "C" {
      * - returns os_resultFail if
      *     rwlock is not released because of a failure
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_rwlockUnlock(
             os_rwlock *rwlock);
-
-#undef OS_API
 
 #if defined (__cplusplus)
 }

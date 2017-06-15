@@ -1,8 +1,8 @@
+#include "os/os.h"
+
 #include <assert.h>
 #include <stddef.h>
 #include <string.h>
-
-#include "os/os.h"
 
 #define MIN_BUFLEN (64)
 #define MAX_BUFLEN (1024)

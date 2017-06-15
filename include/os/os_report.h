@@ -18,11 +18,6 @@
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
     /* !!!!!!!!NOTE From here no more includes are allowed!!!!!!! */
 
     /* Subcomponents might need to alter the report before actually handing it over
@@ -128,7 +123,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * Labels corresponding to os_reportType values.
      * @see os_reportType
      */
-    OS_API extern const char *os_reportTypeText [];
+    OSAPI_EXPORT extern const char *os_reportTypeText [];
 
     typedef struct os_reportInfo_s {
         char *reportContext;
@@ -139,12 +134,12 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
     } os_reportInfo;
 
     /* Docced in impl file */
-    OS_API extern os_reportType os_reportVerbosity;
+    OSAPI_EXPORT extern os_reportType os_reportVerbosity;
 
-    OS_API void
+    OSAPI_EXPORT void
     os_reportInit(bool forceReInit);
 
-    OS_API void os_reportExit(void);
+    OSAPI_EXPORT void os_reportExit(void);
 
     /** \brief Report message directly and do not treat as formatting string
      *
@@ -159,7 +154,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * @param code error code associated with the report
      * @param message message to report
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_report_noargs(
                      os_reportType type,
                      const char *context,
@@ -168,7 +163,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
                      int32_t code,
                      const char *message);
 
-    OS_API void
+    OSAPI_EXPORT void
     os_report(
               os_reportType type,
               const char *context,
@@ -178,13 +173,13 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
               const char *format,
               ...) __attribute_format__((printf,6,7));
 
-    OS_API os_reportInfo *
+    OSAPI_EXPORT os_reportInfo *
     os_reportGetApiInfo(void);
 
-    OS_API void
+    OSAPI_EXPORT void
     os_reportClearApiInfo(void);
 
-    OS_API int32_t
+    OSAPI_EXPORT int32_t
     os_reportRegisterPlugin(
                             const char *library_file_name,
                             const char *initialize_method_name,
@@ -220,7 +215,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
     (*os_reportPlugin_finalize)(
     os_reportPlugin_context context);
 
-    OS_API int32_t
+    OSAPI_EXPORT int32_t
     os_reportInitPlugin(
                         const char *argument,
                         os_reportPlugin_initialize initFunction,
@@ -230,24 +225,24 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
                         bool suppressDefaultLogs,
                         os_reportPlugin *plugin);
 
-    OS_API int32_t
+    OSAPI_EXPORT int32_t
     os_reportUnregisterPlugin(
                               os_reportPlugin plugin);
 
-    OS_API void
+    OSAPI_EXPORT void
     os_reportDisplayLogLocations(void);
 
-    OS_API char *
+    OSAPI_EXPORT char *
     os_reportGetInfoFileName(void);
 
-    OS_API char *
+    OSAPI_EXPORT char *
     os_reportGetErrorFileName(void);
 
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_reportSetVerbosity(
                           const char* newVerbosityString);
 
-    OS_API void
+    OSAPI_EXPORT void
     os_reportRemoveStaleLogs(void);
 
     /*****************************************
@@ -258,7 +253,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * The os_report_stack operation enables a report stack for the current thread.
      * The stack will be disabled again by the os_report_flush operation.
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_report_stack(void);
 
     /**
@@ -267,7 +262,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * operation that called this operation.
      * The stack will be disabled again by the os_report_flush operation.
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_report_stack_open(
                          const char *file,
                          int lineno,
@@ -277,7 +272,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * The os_report_stack_free operation frees all memory allocated by the current
      * thread for the report stack.
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_report_stack_free(
                          void);
 
@@ -285,7 +280,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * The os_report_flush_required checks if the report stack contains errors or
      * warning which always need to be reported.
      */
-    OS_API bool
+    OSAPI_EXPORT bool
     os_report_flush_required(
                              void);
 
@@ -294,7 +289,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * and if valid is TRUE also writes them into the report device.
      * This operation additionally disables the stack.
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_report_flush(
                     bool valid,
                     const char *context,
@@ -306,7 +301,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * and also writes them into the report device. Thus the report stack is
      * always unwind. This operation additionally disables the stack.
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_report_flush_unconditional(
                                   bool valid,
                                   const char *context,
@@ -322,7 +317,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * The provided callback function is called to convert the function signature.
      * This operation additionally disables the stack.
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_report_flush_context(
                             bool valid,
                             os_report_context_callback callback,
@@ -335,7 +330,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * The provided callback function is called to convert the function signature.
      * This operation additionally disables the stack.
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_report_flush_context_unconditional(
                                           os_report_context_callback callback,
                                           void *arg);
@@ -344,7 +339,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * The os_report_get_context operation returns the context information
      * saved in the report stack
      */
-    OS_API bool
+    OSAPI_EXPORT bool
     os_report_get_context(
                           const char **file,
                           int *lineno,
@@ -360,7 +355,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * with the one exception that all messages in the stack that have been reported
      * are now removed.
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_report_dumpStack(
                         const char *context,
                         const char *file,
@@ -370,18 +365,16 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * The os_report_stack_size operation returns the number of messages in the report stack.
      * This operation will return -1 when no stack is active.
      */
-    OS_API int32_t
+    OSAPI_EXPORT int32_t
     os_report_stack_size(void);
 
     /**
      * The os_report_read operation returns the report message specified by a given index in the stack.
      * This operation will return a null pointer when the index is out of range.
      */
-    OS_API os_reportEventV1
+    OSAPI_EXPORT os_reportEventV1
     os_report_read(
                    int32_t index);
-
-#undef OS_API
 
 #if defined (__cplusplus)
 }

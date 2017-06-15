@@ -772,11 +772,13 @@ static void tc_os_threadWaitExit (void)
 
 static void tc_os_threadFigureIdentity (void)
 {
-    os_threadId   thread_os_threadId;
+#if !defined(_WIN32)
+    os_threadId thread_os_threadId;
     os_threadAttr thread_os_threadAttr;
     char threadId[512];
     char thread_name[512];
     int result;
+#endif /* WIN32 */
     uintmax_t threadNumeric = 0;
 
   #if ENABLE_TRACING

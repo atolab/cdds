@@ -15,9 +15,8 @@ void publisher_creation(void)
   const char *multiplePartitions[] = { "partition1", "partition2" };
   const char *duplicatePartitions[] = { "partition", "partition" };
 
-  dds_entity_t participant, participant2, participant3;
+  dds_entity_t participant;
   dds_entity_t publisher, publisher1;
-  dds_return_t status;
   dds_listener_t *listener;
   dds_qos_t *qos;
 

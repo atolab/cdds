@@ -18,19 +18,11 @@
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
     /* Expands ${X}, ${X:-Y}, ${X:+Y}, ${X:?Y} forms, but not $X */
-    OS_API char *ut_expand_envvars(const char *string);
+    OSAPI_EXPORT char *ut_expand_envvars(const char *string);
 
     /* Expands $X, ${X}, ${X:-Y}, ${X:+Y}, ${X:?Y} forms, $ and \ can be escaped with \ */
-    OS_API char *ut_expand_envvars_sh(const char *string);
-
-#undef OS_API
+    OSAPI_EXPORT char *ut_expand_envvars_sh(const char *string);
 
 #if defined (__cplusplus)
 }

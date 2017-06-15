@@ -18,16 +18,9 @@
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
 /* !!!!!!!!NOTE From here no more includes are allowed!!!!!!! */
 
-OS_API uint32_t ut_crcCalculate (const void *buf, size_t length) __nonnull_all__ __attribute_pure__;
-
-#undef OS_API
+OSAPI_EXPORT uint32_t ut_crcCalculate (const void *buf, size_t length) __nonnull_all__ __attribute_pure__;
 
 #if defined (__cplusplus)
 }

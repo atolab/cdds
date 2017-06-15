@@ -21,12 +21,6 @@
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
 #define LC_FATAL 1u
 #define LC_ERROR 2u
 #define LC_WARNING 4u
@@ -59,8 +53,8 @@ void logbuf_init (logbuf_t lb);
 void logbuf_free (logbuf_t lb);
 
 int nn_vlog (logcat_t cat, const char *fmt, va_list ap);
-OS_API int nn_log (_In_ logcat_t cat, _In_z_ _Printf_format_string_ const char *fmt, ...) __attribute_format__((printf,2,3));
-OS_API int nn_trace (_In_z_ _Printf_format_string_ const char *fmt, ...) __attribute_format__((printf,1,2));
+OSAPI_EXPORT int nn_log (_In_ logcat_t cat, _In_z_ _Printf_format_string_ const char *fmt, ...) __attribute_format__((printf,2,3));
+OSAPI_EXPORT int nn_trace (_In_z_ _Printf_format_string_ const char *fmt, ...) __attribute_format__((printf,1,2));
 void nn_log_set_tstamp (nn_wctime_t tnow);
 
 #define TRACE(args) ((config.enabled_logcats & LC_TRACE) ? (nn_trace args) : 0)
@@ -102,7 +96,6 @@ void nn_log_set_tstamp (nn_wctime_t tnow);
 #define NN_FATAL3(fmt,a,b,c) nn_log (LC_FATAL, ("<Fatal> " fmt),a,b,c)
 #define NN_FATAL4(fmt,a,b,c,d) nn_log (LC_FATAL, ("<Fatal> " fmt),a,b,c,d)
 
-#undef OS_API
 #if defined (__cplusplus)
 }
 #endif

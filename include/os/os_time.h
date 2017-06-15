@@ -17,13 +17,6 @@
 #define OS_TIME_H
 
 #include "os/os_defs.h"
-
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
 /* !!!!!!!!NOTE From here no more includes are allowed!!!!!!! */
 
 #if defined (__cplusplus)
@@ -46,7 +39,7 @@ extern "C" {
    * Possible Results:
    * - returns "the current time"
    */
-  OS_API os_time
+  OSAPI_EXPORT os_time
   os_timeGet(void);
 
     os_time os__timeDefaultTimeGet(void);
@@ -68,7 +61,7 @@ extern "C" {
    *         when available
    * \return wall-time, otherwise
    */
-  OS_API os_time
+  OSAPI_EXPORT os_time
   os_timeGetMonotonic(void);
 
   /** \brief Get high resolution, elapsed (and thus monotonic) time since some
@@ -86,7 +79,7 @@ extern "C" {
    * \return elapsed time since some unspecified fixed past time
    * \return os_timeGetMonotonic() otherwise
    */
-  OS_API os_time
+  OSAPI_EXPORT os_time
   os_timeGetElapsed(void);
 
   /** \brief Add time t1 to time t2
@@ -97,7 +90,7 @@ extern "C" {
    * - returns an unspecified value when
    *     the result does not fit within the time structure
    */
-  OS_API os_time
+  OSAPI_EXPORT os_time
   os_timeAdd(
           os_time t1,
           os_time t2);
@@ -110,7 +103,7 @@ extern "C" {
    * - returns an unspecified value when
    *     the result does not fit within the time structure
    */
-  OS_API os_time
+  OSAPI_EXPORT os_time
   os_timeSub(
           os_time t1,
           os_time t2);
@@ -123,7 +116,7 @@ extern "C" {
    * - returns an unspecified value when
    *     the result does not fit within the time structure
    */
-  OS_API os_time
+  OSAPI_EXPORT os_time
   os_timeMulReal(
           os_time t1,
           double multiply);
@@ -136,7 +129,7 @@ extern "C" {
    * - returns an unspecified value when
    *     the result does not fit within the time structure
    */
-  OS_API os_time
+  OSAPI_EXPORT os_time
   os_timeAbs(
           os_time t);
 
@@ -150,7 +143,7 @@ extern "C" {
    * - returns 0 when
    *     value t1 = value t2
    */
-  OS_API int
+  OSAPI_EXPORT int
   os_timeCompare(
           os_time t1,
           os_time t2);
@@ -164,7 +157,7 @@ extern "C" {
    * Possible Results:
    * - returns floating point representation of t
    */
-  OS_API os_timeReal
+  OSAPI_EXPORT os_timeReal
   os_timeToReal(
           os_time t);
 
@@ -173,7 +166,7 @@ extern "C" {
    * Possible Results:
    * - returns t in os_time representation
    */
-  OS_API os_time
+  OSAPI_EXPORT os_time
   os_realToTime(
           os_timeReal t);
 
@@ -187,7 +180,7 @@ extern "C" {
    *     for example when a negative delay is supplied or when the ns-part is not
    *     normalized.
    */
-  OS_API os_result
+  OSAPI_EXPORT os_result
   os_nanoSleep(
           _In_ os_time delay);
 
@@ -219,7 +212,7 @@ extern "C" {
    * \return The number of bytes written (not including the terminating \0) to buf
    * and 0 if buf was NULL.
    */
-  OS_API size_t
+  OSAPI_EXPORT size_t
   os_ctime_r(
           os_time *t,
           char *buf,
@@ -271,12 +264,10 @@ extern "C" {
    * \pre     The parameter maxBlockingTime is a valid time representation.
    * \post    The struct pointed to by events contains the current values.
    */
-  OS_API os_result
+  OSAPI_EXPORT os_result
   os_timeGetPowerEvents(
           os_timePowerEvents *events,
           os_time maxBlockingTime);
-
-#undef OS_API
 
 #if defined (__cplusplus)
 }
