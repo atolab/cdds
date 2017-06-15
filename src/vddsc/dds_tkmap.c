@@ -232,7 +232,7 @@ struct tkmap_instance * dds_tkmap_find_by_id (_In_ struct tkmap * map, _In_ uint
 
 _Check_return_
 struct tkmap_instance * dds_tkmap_find(
-        _In_ const struct dds_topic * topic,
+        _In_opt_ const struct dds_topic * topic,
         _In_ struct serdata * sd,
         _In_ const bool rd,
         _In_ const bool create)

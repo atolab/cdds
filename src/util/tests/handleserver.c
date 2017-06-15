@@ -217,7 +217,7 @@ typedef struct thread_arg_t {
     ut_handle_t    hdl;
 } thread_arg_t;
 
-uint32_t
+static uint32_t
 deleting_thread(void *a)
 {
     thread_arg_t *arg = (thread_arg_t*)a;

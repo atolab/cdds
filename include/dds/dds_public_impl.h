@@ -85,9 +85,22 @@ dds_topic_descriptor_t;
 #define DDS_DOMAIN_DEFAULT -1
 #define DDS_HANDLE_NIL 0
 
-/* Handles are opaque pointers to implementation types */
+#define DDS_ENTITY_KIND_MASK (0x7F000000) /* Should be same as UT_HANDLE_KIND_MASK. */
+typedef enum dds_entity_kind
+{
+  DDS_KIND_DONTCARE    = 0x00000000,
+  DDS_KIND_TOPIC       = 0x01000000,
+  DDS_KIND_PARTICIPANT = 0x02000000,
+  DDS_KIND_READER      = 0x03000000,
+  DDS_KIND_WRITER      = 0x04000000,
+  DDS_KIND_SUBSCRIBER  = 0x05000000,
+  DDS_KIND_PUBLISHER   = 0x06000000,
+  DDS_KIND_COND_READ   = 0x07000000,
+  DDS_KIND_COND_QUERY  = 0x08000000
+}
+dds_entity_kind_t;
 
-typedef struct dds_entity * dds_entity_t;
+/* Handles are opaque pointers to implementation types */
 typedef struct dds_condition * dds_condition_t;
 typedef uint64_t dds_instance_handle_t;
 typedef int32_t dds_domainid_t;

@@ -21,54 +21,53 @@ void publisher_creation(void)
   dds_qos_t *qos;
 
   /* Use NULL participant */
-  publisher = dds_create_publisher(NULL, NULL, NULL);
-  cr_assert_eq(publisher, NULL, "dds_create_publisher(NULL,NULL,NULL)");
+  publisher = dds_create_publisher(0, NULL, NULL);
+  cr_assert_eq(dds_err_nr(publisher), DDS_RETCODE_ERROR, "dds_create_publisher(NULL,NULL,NULL)");
 
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_neq(participant, NULL, "dds_create_participant(DDS_DOMAIN_DEFAULT,NULL,NULL)");
+  cr_assert_gt(participant, 0, "dds_create_participant(DDS_DOMAIN_DEFAULT,NULL,NULL)");
 
   /* Use non-null participant */
   publisher = dds_create_publisher(participant, NULL, NULL);
-  cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,NULL,NULL)");
+  cr_assert_gt(publisher, 0, "dds_create_publisher(participant,NULL,NULL)");
 
   /* Use entity that is not a participant */
   publisher1 = dds_create_publisher(publisher, NULL, NULL);
-  cr_assert_eq(publisher1, NULL, "dds_create_publisher(publisher,NULL,NULL)");
+  cr_assert_eq(dds_err_nr(publisher1), DDS_RETCODE_ILLEGAL_OPERATION, "dds_create_publisher(publisher,NULL,NULL)");
+  dds_delete(publisher);
 
   /* Create a non-null qos */
   qos = dds_qos_create();
   cr_assert_neq(qos, NULL, "dds_qos_create()");
 
-  dds_delete(publisher);
-
   /* Use qos without partition; in that case the default partition should be used */
   publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,qos,NULL) where qos with default partition");
+  cr_assert_gt(publisher, 0, "dds_create_publisher(participant,qos,NULL) where qos with default partition");
   dds_delete(publisher);
 
   /* Use qos with single partition */
   dds_qset_partition (qos, 1, singlePartitions);
   publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,qos,NULL) where qos with single partition");
+  cr_assert_gt(publisher, 0, "dds_create_publisher(participant,qos,NULL) where qos with single partition");
   dds_delete(publisher);
 
   /* Use qos with multiple partitions */
   dds_qset_partition (qos, 2, multiplePartitions);
   publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,qos,NULL) where qos with multiple partitions");
+  cr_assert_gt(publisher, 0, "dds_create_publisher(participant,qos,NULL) where qos with multiple partitions");
   dds_delete(publisher);
 
   /* Use qos with multiple partitions */
   dds_qset_partition (qos, 2, duplicatePartitions);
   publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,qos,NULL) where qos with duplicate partitions");
+  cr_assert_gt(publisher, 0, "dds_create_publisher(participant,qos,NULL) where qos with duplicate partitions");
   dds_delete(publisher);
 
   /* Use listener(NULL) */
   listener = dds_listener_create(NULL);
   cr_assert_neq(listener, NULL, "dds_listener_create(NULL)");
   publisher = dds_create_publisher(participant, NULL, listener);
-  cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,NULL,listener(NULL))");
+  cr_assert_gt(publisher, 0, "dds_create_publisher(participant,NULL,listener(NULL))");
   dds_delete(publisher);
 
   dds_listener_reset(listener);
@@ -76,7 +75,7 @@ void publisher_creation(void)
   /* Use listener for data_available */
   dds_lset_data_available(listener, NULL);
   publisher = dds_create_publisher(participant, NULL, listener);
-  cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,NULL,listener) with dds_lset_data_available(listener, NULL)");
+  cr_assert_gt(publisher, 0, "dds_create_publisher(participant,NULL,listener) with dds_lset_data_available(listener, NULL)");
   dds_delete(publisher);
 
   dds_listener_reset(listener);
@@ -84,7 +83,7 @@ void publisher_creation(void)
   /* Use DDS_LUNSET for data_available */
   dds_lset_data_available(listener, DDS_LUNSET);
   publisher = dds_create_publisher(participant, NULL, listener);
-  cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,NULL,listener) with dds_lset_data_available(listener, DDS_LUNSET)");
+  cr_assert_gt(publisher, 0, "dds_create_publisher(participant,NULL,listener) with dds_lset_data_available(listener, DDS_LUNSET)");
   dds_delete(publisher);
 
   dds_listener_reset(listener);
@@ -92,13 +91,13 @@ void publisher_creation(void)
   /* Use callback for data_available */
   dds_lset_data_available(listener, data_available_cb);
   publisher = dds_create_publisher(participant, NULL, listener);
-  cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,NULL,listener) with dds_lset_data_available(listener, data_available_cb)");
+  cr_assert_gt(publisher, 0, "dds_create_publisher(participant,NULL,listener) with dds_lset_data_available(listener, data_available_cb)");
   dds_delete(publisher);
 
   /* Use both qos setting and callback listener */
   dds_lset_data_available(listener, data_available_cb);
   publisher = dds_create_publisher(participant, qos, listener);
-  cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,qos,listener) with dds_lset_data_available(listener, data_available_cb)");
+  cr_assert_gt(publisher, 0, "dds_create_publisher(participant,qos,listener) with dds_lset_data_available(listener, data_available_cb)");
   dds_delete(publisher);
 
   dds_listener_delete(listener);
@@ -113,17 +112,17 @@ void publisher_suspend_resume(void)
   dds_entity_t participant, publisher;
   dds_return_t status;
 
-  /* Suspend a NULL publisher */
-  status = dds_suspend(NULL);
+  /* Suspend a 0 publisher */
+  status = dds_suspend(0);
   cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_suspend(NULL)");
 
-  /* Resume a NULL publisher */
-  status = dds_resume(NULL);
+  /* Resume a 0 publisher */
+  status = dds_resume(0);
   cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_resume(NULL)");
 
   /* Uae dds_suspend on something else than a publisher */
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_neq(participant, NULL, "dds_create_participant(DDS_DOMAIN_DEFAULT,NULL,NULL)");
+  cr_assert_gt(participant, 0, "dds_create_participant(DDS_DOMAIN_DEFAULT,NULL,NULL)");
   status = dds_suspend(participant);
   cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_suspend(participant)");
 
@@ -133,7 +132,7 @@ void publisher_suspend_resume(void)
 
   /* Use dds_resume without calling dds_suspend */
   publisher = dds_create_publisher(participant, NULL, NULL);
-  cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,NULL,NULL)");
+  cr_assert_gt(publisher, 0, "dds_create_publisher(participant,NULL,NULL)");
   status = dds_resume(publisher);
   cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_resume(publisher) without prior suspend");
 
@@ -159,24 +158,24 @@ void publisher_wait_for_acks(void)
   dds_duration_t oneSec = ((dds_duration_t)DDS_SECS(1));
   dds_duration_t minusOneSec = ((dds_duration_t)DDS_SECS(-1));
 
-  /* Wait_for_acks on NULL publisher or writer and minusOneSec timeout */
-  status = dds_wait_for_acks(NULL, minusOneSec);
+  /* Wait_for_acks on 0 publisher or writer and minusOneSec timeout */
+  status = dds_wait_for_acks(0, minusOneSec);
   cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_wait_for_acks(NULL,-1)");
 
   /* Wait_for_acks on NULL publisher or writer and zeroSec timeout */
-  status = dds_wait_for_acks(NULL, zeroSec);
+  status = dds_wait_for_acks(0, zeroSec);
   cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_wait_for_acks(NULL,0)");
 
   /* wait_for_acks on NULL publisher or writer and oneSec timeout */
-  status = dds_wait_for_acks(NULL, oneSec);
+  status = dds_wait_for_acks(0, oneSec);
   cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_wait_for_acks(NULL,1)");
 
   /* wait_for_acks on NULL publisher or writer and DDS_INFINITE timeout */
-  status = dds_wait_for_acks(NULL, DDS_INFINITY);
+  status = dds_wait_for_acks(0, DDS_INFINITY);
   cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_wait_for_acks(NULL,DDS_INFINITY)");
 
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_neq(participant, NULL, "dds_create_participant(DDS_DOMAIN_DEFAULT,NULL,NULL)");
+  cr_assert_gt(participant, 0, "dds_create_participant(DDS_DOMAIN_DEFAULT,NULL,NULL)");
 
   /* Wait_for_acks on participant and minusOneSec timeout */
   status = dds_wait_for_acks(participant, minusOneSec);
@@ -195,7 +194,7 @@ void publisher_wait_for_acks(void)
   cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_wait_for_acks(participant,DDS_INFINITY)");
 
   publisher = dds_create_publisher(participant, NULL, NULL);
-  cr_assert_neq(publisher, NULL, "dds_create_publisher(participant,NULL,NULL)");
+  cr_assert_gt(publisher, 0, "dds_create_publisher(participant,NULL,NULL)");
 
   /* Wait_for_acks on publisher and minusOneSec timeout */
   status = dds_wait_for_acks(publisher, minusOneSec);

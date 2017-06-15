@@ -35,7 +35,7 @@ typedef struct ut_handleserver {
 
 
 /* Singleton handle server. */
-ut_handleserver *hs = NULL;
+static ut_handleserver *hs = NULL;
 
 
 _Check_return_ static ut_handle_retcode_t
@@ -92,11 +92,14 @@ ut_handle_create(
 {
     ut_handle_t hdl = (ut_handle_t)UT_HANDLE_OUT_OF_RESOURCES;
 
-    assert(hs);
     /* A kind is obligatory. */
     assert(kind & UT_HANDLE_KIND_MASK);
     /* The kind should extent outside its boundaries. */
     assert(!(kind & ~UT_HANDLE_KIND_MASK));
+
+    if (hs == NULL) {
+        return (ut_handle_t)UT_HANDLE_NOT_INITALIZED;
+    }
 
     os_mutexLock(&hs->mutex);
 
@@ -191,15 +194,18 @@ ut_handle_claim(
         _In_        ut_handle_t hdl,
         _Inout_opt_ struct ut_handlelink *link,
         _In_        int32_t kind,
-        _Out_       void **arg)
+        _Out_opt_   void **arg)
 {
     struct ut_handlelink *info = link;
     ut_handle_retcode_t   ret = UT_HANDLE_OK;
 
-    assert(hs);
-    assert(arg);
+    if (arg != NULL) {
+        *arg = NULL;
+    }
 
-    *arg = NULL;
+    if (hs == NULL) {
+        return (ut_handle_t)UT_HANDLE_NOT_INITALIZED;
+    }
 
     os_mutexLock(&hs->mutex);
     if (info == NULL) {
@@ -214,7 +220,9 @@ ut_handle_claim(
     }
     if (ret == UT_HANDLE_OK) {
         info->cnt++;
-        *arg = info->arg;
+        if (arg != NULL) {
+            *arg = info->arg;
+        }
     }
     os_mutexUnlock(&hs->mutex);
 
