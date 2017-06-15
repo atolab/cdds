@@ -35,7 +35,7 @@ typedef struct ut_handleserver {
 
 
 /* Singleton handle server. */
-ut_handleserver *hs = NULL;
+static ut_handleserver *hs = NULL;
 
 
 _Check_return_ static ut_handle_retcode_t
