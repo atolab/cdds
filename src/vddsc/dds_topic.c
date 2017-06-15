@@ -164,10 +164,10 @@ static dds_return_t dds_topic_qos_validate (const dds_qos_t *qos, bool enabled)
     assert(qos);
     /* Check consistency. */
     consistent &= dds_qos_validate_common(qos);
-    consistent &= (qos->present & QP_TOPIC_DATA) && ! validate_octetseq (&qos->topic_data);
-    consistent &= (qos->present & QP_DURABILITY_SERVICE) && (validate_durability_service_qospolicy (&qos->durability_service) != 0);
-    consistent &= ((qos->present & QP_LIFESPAN) && (validate_duration (&qos->lifespan.duration) != 0)) ||
-                  ((qos->present & QP_HISTORY) && (qos->present & QP_RESOURCE_LIMITS) && (validate_history_and_resource_limits (&qos->history, &qos->resource_limits) != 0));
+    consistent &= (qos->present & QP_GROUP_DATA) ? validate_octetseq (&qos->group_data) : true;
+    consistent &= (qos->present & QP_DURABILITY_SERVICE) ? (validate_durability_service_qospolicy(&qos->durability_service) == 0) : true;
+    consistent &= (qos->present & QP_LIFESPAN) ? (validate_duration(&qos->lifespan.duration) == 0) : true;
+    consistent &= ((qos->present & QP_HISTORY) && (qos->present & QP_RESOURCE_LIMITS)) ? (validate_history_and_resource_limits(&qos->history, &qos->resource_limits) == 0) : true;
     if (consistent) {
         ret = DDS_RETCODE_OK;
         if (enabled) {

@@ -3,8 +3,87 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
-Test(ts, pc) {
+Test(vddsc, topic_creation)
+{
+  dds_entity_t participant;
+  dds_entity_t topic, topic2;
+  dds_return_t retCode;
+  dds_listener_t *listener;
+  dds_qos_t *qos;
 
+  participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+
+  /* Creating initial topic (with listener) should succeed. */
+  listener = dds_listener_create(NULL);
+  cr_assert_neq(listener, NULL, "dds_listener_create(NULL)");
+  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
+  cr_assert_neq(topic, NULL, "dds_create_topic(RoundTrip) 1st");
+
+  /* Creating the same topic (without listener) should fail.  */
+  topic2 = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
+  cr_assert_eq(topic2, NULL, "dds_create_topic(RoundTrip) 2nd");
+
+
+  /* Creating the same topic (same type, different name) should succeed.  */
+  topic2 = dds_create_topic (participant, &RoundTripModule_DataType_desc, "TrippedyTrip", NULL, NULL);
+  cr_assert_neq(topic2, NULL, "dds_create_topic(TrippedyTrip)");
+  dds_delete(topic2);
+
+  /* Re-creating previously created topic should succeed.  */
+  topic2 = dds_create_topic (participant, &RoundTripModule_DataType_desc, "TrippedyTrip", NULL, NULL);
+  cr_assert_neq(topic2, NULL, "dds_create_topic(TrippedyTrip)");
+  dds_delete(topic2);
+
+  /* Creating the same topic (with default QoS) should succeed.  */
+  qos = dds_qos_create();
+  topic2 = dds_create_topic (participant, &RoundTripModule_DataType_desc, "TrippedyTrip2", qos, NULL);
+  cr_assert_neq(topic2, NULL, "dds_create_topic(Compatible)");
+  dds_delete(topic2);
+  dds_qos_delete(qos);
+
+  /* Creating the same topic (with inconsistent QoS) should fail.  */
+  qos = dds_qos_create();
+  dds_qset_lifespan(qos, -2000000000);
+  topic2 = dds_create_topic (participant, &RoundTripModule_DataType_desc, "Inconsistent", qos, NULL);
+  cr_assert_eq(topic2, NULL, "dds_create_topic(Inconsistent)");
+  dds_qos_delete(qos);
+
+  /* Creating the different topic with same name should fail.  */
+  topic2 = dds_create_topic (participant, &RoundTripModule_Address_desc, "RoundTrip", NULL, NULL);
+  cr_assert_eq(topic2, NULL, "dds_create_topic(RoundTrip) other");
+
+  dds_delete (topic);
+  dds_listener_delete(listener);
+  dds_delete (participant);
+}
+
+Test(vddsc, topic_find)
+{
+    dds_entity_t participant;
+    dds_entity_t topic, found;
+
+    participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+
+    found = dds_topic_find(participant, "RoundTripFind");
+    cr_assert_eq(found, NULL, "dds_topic_find(RoundTripFind) 1st");
+
+    topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTripFind", NULL, NULL);
+    cr_assert_neq(topic, NULL, "dds_create_topic(RoundTripFind)");
+
+    found = dds_topic_find(participant, "RoundTripFind");
+    cr_assert_neq(found, NULL, "dds_topic_find(RoundTripFind) 2nd");
+    dds_delete(found);
+
+    dds_delete(topic);
+
+    found = dds_topic_find(participant, "RoundTripFind");
+    cr_assert_eq(found, NULL, "dds_topic_find(RoundTripFind) 3nd");
+
+    dds_delete(participant);
+}
+
+Test(vddsc, topic_names)
+{
   dds_entity_t participant;
   dds_entity_t topic, topic2;
   dds_return_t retCode;
@@ -36,5 +115,4 @@ Test(ts, pc) {
   dds_delete (topic);
   dds_delete (topic2);
   dds_delete (participant);
-
 }
