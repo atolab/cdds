@@ -1,5 +1,5 @@
 #include "dds.h"
-#include "cunitrunner/runner.h"
+#include "CUnit/Runner.h"
 #include "os/os.h"
 
 #ifdef __VXWORKS__
@@ -247,7 +247,7 @@ uint32_t concurrent_tryread_thread (_In_ void *arg)
     return 0;
 }
 
-static int  suite_abstraction_rwlock_init (void)
+CUnit_Suite_Initialize(rwlock)
 {
     int result = 0;
     os_osInit();
@@ -263,7 +263,7 @@ static int  suite_abstraction_rwlock_init (void)
     return result;
 }
 
-static int suite_abstraction_rwlock_clean (void)
+CUnit_Suite_Cleanup(rwlock)
 {
     int result = DDS_RETCODE_OK;
 
@@ -274,7 +274,7 @@ static int suite_abstraction_rwlock_clean (void)
     return result;
 }
 
-static void tc_os_rwlockInit (void)
+CUnit_Test(rwlock, init)
 {
   #if ENABLE_TRACING
     /* Initilalize reader/writer lock with PRIVATE scope and Success result */
@@ -293,7 +293,7 @@ static void tc_os_rwlockInit (void)
   #endif
 }
 
-static void tc_os_rwlockRead (void)
+CUnit_Test(rwlock, read, false)
 {
     os_time rdelay = { 3, 0 };
     struct Par par[RWLOCK_THREADS];
@@ -459,7 +459,7 @@ static void tc_os_rwlockRead (void)
   #endif
 }
 
-static void tc_os_rwlockWrite (void)
+CUnit_Test(rwlock, write, false)
 {
   #if ENABLE_TRACING
     /* Test critical section WRITE access with locking and PRIVATE scope */
@@ -487,7 +487,7 @@ static void tc_os_rwlockWrite (void)
   #endif
 }
 
-static void tc_os_rwlockTryRead (void)
+CUnit_Test(rwlock, tryread, false)
 {
   #if ENABLE_TRACING
     /* Test critical section READ access with trylocking and PRIVATE scope */
@@ -528,7 +528,7 @@ static void tc_os_rwlockTryRead (void)
   #endif
 }
 
-static void tc_os_rwlockTryWrite (void)
+CUnit_Test(rwlock, trywrite, false)
 {
   #if ENABLE_TRACING
     /* Test critical section WRITE access with trylocking and PRIVATE scope */
@@ -569,7 +569,7 @@ static void tc_os_rwlockTryWrite (void)
   #endif
 }
 
-static void tc_os_rwlockUnlock (void)
+CUnit_Test(rwlock, unlock, false)
 {
   #if ENABLE_TRACING
     /* Unlock rwlock with PRIVATE scope and Success result and claimed with read */
@@ -612,7 +612,7 @@ static void tc_os_rwlockUnlock (void)
   #endif
 }
 
-static void tc_os_rwlockDestroy (void)
+CUnit_Test(rwlock, destroy, false)
 {
   #if ENABLE_TRACING
     /* Deinitialize rwlock with PRIVATE scope and Success result */
@@ -629,43 +629,4 @@ static void tc_os_rwlockDestroy (void)
   #if ENABLE_TRACING
     printf ("Ending tc_rwlockDestroy\n");
   #endif
-}
-
-int main (int argc, char *argv[])
-{
-    CU_pSuite suite;
-
-    if (runner_init(argc, argv)){
-        goto err_init;
-    }
-
-    if ((suite = CU_add_suite ("abstraction_rwlock", suite_abstraction_rwlock_init, suite_abstraction_rwlock_clean)) == NULL){
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_rwlockInit", tc_os_rwlockInit) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_rwlockRead", tc_os_rwlockRead) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_rwlockWrite", tc_os_rwlockWrite) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_rwlockTryRead", tc_os_rwlockTryRead) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_rwlockTryWrite", tc_os_rwlockTryWrite) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_rwlockUnlock", tc_os_rwlockUnlock) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_rwlockDestroy", tc_os_rwlockDestroy) == NULL) {
-        goto err;
-    }
-    runner_run();
-err:
-    runner_fini();
-err_init:
-    return CU_get_error();
 }

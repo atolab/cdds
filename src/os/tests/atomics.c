@@ -1,5 +1,5 @@
 #include "os/os.h"
-#include "cunitrunner/runner.h"
+#include "CUnit/Runner.h"
 
 #define ENABLE_TRACING  0
 
@@ -10,41 +10,7 @@ uintptr_t _osaddress = 0;
 ptrdiff_t _ptrdiff = 0;
 void * _osvoidp = (uintptr_t *)0;
 
-static int suite_abstraction_atomics_init (void)
-{
-   int result = 0;
-
-#if ENABLE_TRACING
-   printf("Run suite_abstraction_atomcis_init\n");
-#endif
-
-   return result;
-}
-
-static int suite_abstraction_atomics_clean (void)
-{
-   int result = 0;
-
-#if ENABLE_TRACING
-   printf("Run suite_abstraction_atomics_clean\n");
-#endif
-
-   return result;
-}
-
-static void tc_os_atomicsInit (void)
-{
-#if ENABLE_TRACING
-   /* Initilalization */
-   printf ("Starting tc_os_atomicsInit_001\n");
-#endif
-
-#if ENABLE_TRACING
-   printf ("Ending tc_atomicsInit\n");
-#endif
-}
-
-static void tc_os_atomics_LD_ST (void)
+CUnit_Test(atomics, LD_ST)
 {
    volatile os_atomic_uint32_t uint32 = OS_ATOMIC_UINT32_INIT(5);
 #if OS_ATOMIC64_SUPPORT
@@ -92,7 +58,7 @@ static void tc_os_atomics_LD_ST (void)
 #endif
 }
 
-static void tc_os_atomics_CAS (void)
+CUnit_Test(atomics, CAS)
 {
    /* Compare and Swap
     * if (ptr == expected) { ptr = newval; }
@@ -160,7 +126,7 @@ static void tc_os_atomics_CAS (void)
 #endif
 }
 
-static void tc_os_atomics_INC (void)
+CUnit_Test(atomics, INC)
 {
    volatile os_atomic_uint32_t uint32 = OS_ATOMIC_UINT32_INIT(0);
 #if OS_ATOMIC64_SUPPORT
@@ -223,7 +189,7 @@ static void tc_os_atomics_INC (void)
 #endif
 }
 
-static void tc_os_atomics_DEC (void)
+CUnit_Test(atomics, DEC)
 {
    volatile os_atomic_uint32_t uint32 = OS_ATOMIC_UINT32_INIT(1);
 #if OS_ATOMIC64_SUPPORT
@@ -286,7 +252,7 @@ static void tc_os_atomics_DEC (void)
 #endif
 }
 
-static void tc_os_atomics_ADD (void)
+CUnit_Test(atomics, ADD)
 {
    volatile os_atomic_uint32_t uint32 = OS_ATOMIC_UINT32_INIT(1);
 #if OS_ATOMIC64_SUPPORT
@@ -364,7 +330,7 @@ static void tc_os_atomics_ADD (void)
 #endif
 }
 
-static void tc_os_atomics_SUB (void)
+CUnit_Test(atomics, SUB)
 {
    volatile os_atomic_uint32_t uint32 = OS_ATOMIC_UINT32_INIT(5);
 #if OS_ATOMIC64_SUPPORT
@@ -442,7 +408,7 @@ static void tc_os_atomics_SUB (void)
 #endif
 }
 
-static void tc_os_atomics_AND (void)
+CUnit_Test(atomics, AND)
 {
    /* AND Operation:
 
@@ -528,7 +494,7 @@ static void tc_os_atomics_AND (void)
 #endif
 }
 
-static void tc_os_atomics_OR (void)
+CUnit_Test(atomics, OR)
 {
    /* OR Operation:
 
@@ -614,28 +580,3 @@ static void tc_os_atomics_OR (void)
 #endif
 }
 
-int main (int argc, char *argv[])
-{
-    CU_pSuite suite;
-    if(runner_init(argc, argv)){
-        goto err_init;
-    }
-
-    suite = CU_add_suite ("abstraction_atomics",
-                        suite_abstraction_atomics_init,
-                        suite_abstraction_atomics_clean);
-    CU_add_test (suite, "tc_os_atomicsInit", tc_os_atomicsInit);
-    CU_add_test (suite, "tc_os_atomics_LD_ST", tc_os_atomics_LD_ST);
-    CU_add_test (suite, "tc_os_atomics_CAS", tc_os_atomics_CAS);
-    CU_add_test (suite, "tc_os_atomics_INC", tc_os_atomics_INC);
-    CU_add_test (suite, "tc_os_atomics_DEC", tc_os_atomics_DEC);
-    CU_add_test (suite, "tc_os_atomics_ADD", tc_os_atomics_ADD);
-    CU_add_test (suite, "tc_os_atomics_SUB", tc_os_atomics_SUB);
-    CU_add_test (suite, "tc_os_atomics_AND", tc_os_atomics_AND);
-    CU_add_test (suite, "tc_os_atomics_OR", tc_os_atomics_OR);
-
-    runner_run();
-    runner_fini();
-err_init:
-    return CU_get_error();
-}

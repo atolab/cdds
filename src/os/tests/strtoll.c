@@ -1,5 +1,5 @@
 #include "dds.h"
-#include "cunitrunner/runner.h"
+#include "CUnit/Runner.h"
 #include "os/os.h"
 
 long long ll;
@@ -21,7 +21,7 @@ long long llmin = OS_MIN_INTEGER(long long);
 long long llmax = OS_MAX_INTEGER(long long);
 unsigned long long ullmax = OS_MAX_INTEGER(unsigned long long);
 
-static int suite_abstraction_strtoll_init (void)
+CUnit_Suite_Initialize(strtoll)
 {
     int result = DDS_RETCODE_OK;
     os_osInit();
@@ -40,7 +40,7 @@ static int suite_abstraction_strtoll_init (void)
     return result;
 }
 
-static int suite_abstraction_strtoll_clean (void)
+CUnit_Suite_Cleanup(strtoll)
 {
     int result = DDS_RETCODE_OK;
 
@@ -51,7 +51,7 @@ static int suite_abstraction_strtoll_clean (void)
     return result;
 }
 
-static void tc_os_strtoll (void)
+CUnit_Test(strtoll, strtoll)
 {
   #if ENABLE_TRACING
     printf ("Starting tc_os_strtoll_001a\n");
@@ -157,7 +157,6 @@ static void tc_os_strtoll (void)
     str = (const char *)str_llrange;
     ll = os_strtoll(str, &ptr, 10);
     CU_ASSERT (ll == llmax && *ptr == '1');
-    printf("str_llrange: %s\nll: %lld, *ptr: %s\n", str_llrange, ll, ptr);
 
   #if ENABLE_TRACING
     printf ("Starting tc_os_strtoll_003a\n");
@@ -280,7 +279,7 @@ static void tc_os_strtoll (void)
   #endif
 }
 
-static void tc_os_strtoull (void)
+CUnit_Test(strtoll, strtoull)
 {
   #if ENABLE_TRACING
     printf ("Starting tc_os_strtoull_001a\n");
@@ -308,7 +307,7 @@ static void tc_os_strtoull (void)
   #endif
 }
 
-static void tc_os_atoll (void)
+CUnit_Test(strtoll, atoll)
 {
   #if ENABLE_TRACING
     printf ("Starting tc_os_atoll_001\n");
@@ -322,7 +321,7 @@ static void tc_os_atoll (void)
   #endif
 }
 
-static void tc_os_atoull (void)
+CUnit_Test(strtoll, atoull)
 {
   #if ENABLE_TRACING
     printf ("Starting tc_os_atoull_001\n");
@@ -336,7 +335,7 @@ static void tc_os_atoull (void)
   #endif
 }
 
-static void tc_os_lltostr (void)
+CUnit_Test(strtoll, lltostr)
 {
   #if ENABLE_TRACING
     printf ("Starting tc_os_lltostr_001\n");
@@ -393,7 +392,7 @@ static void tc_os_lltostr (void)
   #endif
 }
 
-static void tc_os_ulltostr (void)
+CUnit_Test(strtoll, ulltostr)
 {
   #if ENABLE_TRACING
     printf ("Starting tc_os_ulltostr_001\n");
@@ -414,38 +413,3 @@ static void tc_os_ulltostr (void)
   #endif
 }
 
-int main (int argc, char *argv[])
-{
-    CU_pSuite suite;
-
-    if (runner_init(argc, argv)){
-        goto err_init;
-    }
-
-    if ((suite = CU_add_suite ("abstraction_strtoll", suite_abstraction_strtoll_init, suite_abstraction_strtoll_clean)) == NULL){
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_strtoll", tc_os_strtoll) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_strtoull", tc_os_strtoull) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_atoll", tc_os_atoll) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_atoull", tc_os_atoull) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_lltostr", tc_os_lltostr) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_ulltostr", tc_os_ulltostr) == NULL) {
-        goto err;
-    }
-    runner_run();
-err:
-    runner_fini();
-err_init:
-    return CU_get_error();
-}
