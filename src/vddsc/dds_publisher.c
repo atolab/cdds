@@ -73,7 +73,9 @@ dds_create_publisher(
       return ret;
     }
     new_qos = dds_qos_create ();
-    dds_qos_copy (new_qos, qos);
+    /* Only returns failure when one of the qos args is NULL, which
+     * is not the case here. */
+    (void)dds_qos_copy(new_qos, qos);
   }
 
   /* Create publisher */

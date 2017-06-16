@@ -38,22 +38,26 @@ static dds_return_t dds_topic_status_validate (uint32_t mask)
   status (only defined status on a topic).
 */
 
-static void dds_topic_status_cb (struct dds_topic * topic)
+static void dds_topic_status_cb (struct dds_topic * cb_t)
 {
+    dds_topic *topic;
     bool call = false;
     void *metrics = NULL;
 
-    os_mutexLock (&topic->m_entity.m_mutex);
+    if (dds_topic_lock(((dds_entity*)cb_t)->m_hdl, &topic) != DDS_RETCODE_OK) {
+        /* There's a deletion or closing going on. */
+        return;
+    }
+    assert(topic == cb_t);
 
     /* Reset the status for possible Listener call.
      * When a listener is not called, the status will be set (again). */
-    dds_entity_status_reset((dds_entity*)topic, DDS_INCONSISTENT_TOPIC_STATUS);
 
     /* Update status metrics. */
     topic->m_inconsistent_topic_status.total_count++;
     topic->m_inconsistent_topic_status.total_count_change++;
 
-    os_mutexUnlock (&topic->m_entity.m_mutex);
+    dds_topic_unlock(topic);
 
     /* Indicate to the entity hierarchy that we're busy with a callback.
      * This is done from the top to bottom to prevent possible deadlocks.
@@ -76,12 +80,11 @@ static void dds_topic_status_cb (struct dds_topic * topic)
 
     if (call) {
         /* Event was eaten by a listener. */
-        os_mutexLock (&topic->m_entity.m_mutex);
-
-        /* Reset the change counts of the metrics. */
-        topic->m_inconsistent_topic_status.total_count_change = 0;
-
-        os_mutexUnlock (&topic->m_entity.m_mutex);
+        if (dds_topic_lock(((dds_entity*)cb_t)->m_hdl, &topic) == DDS_RETCODE_OK) {
+            /* Reset the change counts of the metrics. */
+            topic->m_inconsistent_topic_status.total_count_change = 0;
+            dds_topic_unlock(topic);
+        }
     } else {
         /* Nobody was interested through a listener. Set the status to maybe force a trigger. */
         dds_entity_status_set((dds_entity*)topic, DDS_INCONSISTENT_TOPIC_STATUS);
@@ -264,7 +267,9 @@ dds_create_topic(
 
     if (qos) {
         new_qos = dds_qos_create();
-        dds_qos_copy(new_qos, qos);
+        /* Only returns failure when one of the qos args is NULL, which
+         * is not the case here. */
+        (void)dds_qos_copy(new_qos, qos);
     }
 
     /* Create topic */

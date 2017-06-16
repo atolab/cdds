@@ -337,7 +337,9 @@ dds_writer_create(
   wqos = dds_qos_create ();
   if (qos)
   {
-    dds_qos_copy (wqos, qos);
+    /* Only returns failure when one of the qos args is NULL, which
+     * is not the case here. */
+    (void)dds_qos_copy(wqos, qos);
   }
   if (pub && pub->m_entity.m_qos)
   {

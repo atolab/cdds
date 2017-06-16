@@ -327,7 +327,9 @@ dds_reader_create(
     /* Merge qos from topic and subscriber */
     rqos = dds_qos_create ();
     if (qos) {
-        dds_qos_copy (rqos, qos);
+        /* Only returns failure when one of the qos args is NULL, which
+         * is not the case here. */
+        (void)dds_qos_copy(rqos, qos);
     }
 
     if (sub && sub->m_entity.m_qos) {

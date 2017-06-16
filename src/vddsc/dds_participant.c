@@ -137,7 +137,9 @@ dds_create_participant(
             goto fail;
         }
         new_qos = dds_qos_create ();
-        dds_qos_copy (new_qos, qos);
+        /* Only returns failure when one of the qos args is NULL, which
+         * is not the case here. */
+        (void)dds_qos_copy(new_qos, qos);
         dds_qos_merge (&plist.qos, new_qos);
     } else {
         /* Use default qos. */
