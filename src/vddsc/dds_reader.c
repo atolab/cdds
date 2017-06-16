@@ -260,13 +260,12 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
     }
 }
 
-int dds_reader_create
+dds_entity_t dds_create_reader
 (
-  dds_entity_t pp_or_sub,
-  dds_entity_t * reader,
-  dds_entity_t topic,
-  const dds_qos_t * qos,
-  const dds_listener_t * listener
+  _In_ dds_entity_t pp_or_sub,
+  _In_ dds_entity_t topic,
+  _In_opt_ const dds_qos_t * qos,
+  _In_opt_ const dds_listener_t * listener
 )
 {
   dds_qos_t * rqos;
@@ -278,7 +277,6 @@ int dds_reader_create
   const bool asleep = !vtime_awake_p (thr->vtime);
 
   assert (pp_or_sub);
-  assert (reader);
   assert (topic);
   assert (tp->m_stopic);
   assert ((pp_or_sub->m_kind & DDS_IS_PP_OR_SUB) != 0);
@@ -319,7 +317,6 @@ int dds_reader_create
 
   /* Create reader and associated read cache */
   rd = dds_alloc (sizeof (*rd));
-  *reader = &rd->m_entity;
   dds_entity_init (&rd->m_entity, pp_or_sub, DDS_TYPE_READER, rqos, listener, DDS_READER_STATUS_MASK);
   rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
   rd->m_topic = tp;

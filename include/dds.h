@@ -877,6 +877,26 @@ DDS_EXPORT dds_entity_t dds_create_publisher
  * @retval DDS_RETCODE_UNSUPPORTED
  *                Operation is not supported
  */
+
+/**
+ * Description : Creates a new instance of a DDS reader
+ *
+ * Arguments :
+ *   -# pp_or_sub The participant or subscriber on which the reader is being created
+ *   -# reader The created reader entity
+ *   -# topic The topic to read
+ *   -# qos The QoS to set on the new reader (can be NULL)
+ *   -# listener Any listener functions associated with the new reader (can be NULL)
+ *   -# Returns a status, 0 on success or non-zero value to indicate an error
+ */
+DDS_EXPORT dds_entity_t dds_create_reader
+(
+  _In_ dds_entity_t pp_or_sub,
+  _In_ dds_entity_t topic,
+  _In_opt_ const dds_qos_t * qos,
+  _In_opt_ const dds_listener_t * listener
+);
+
 DDS_EXPORT dds_return_t dds_suspend
 (
   _In_ dds_entity_t pub
@@ -936,27 +956,6 @@ DDS_EXPORT dds_return_t dds_wait_for_acks
 (
   _In_ dds_entity_t pub_or_w,
   _In_ dds_duration_t timeout
-);
-
-
-/**
- * Description : Creates a new instance of a DDS reader
- *
- * Arguments :
- *   -# pp_or_sub The participant or subscriber on which the reader is being created
- *   -# reader The created reader entity
- *   -# topic The topic to read
- *   -# qos The QoS to set on the new reader (can be NULL)
- *   -# listener Any listener functions associated with the new reader (can be NULL)
- *   -# Returns a status, 0 on success or non-zero value to indicate an error
- */
-DDS_EXPORT int dds_reader_create
-(
-  dds_entity_t pp_or_sub,
-  dds_entity_t * reader,
-  dds_entity_t topic,
-  const dds_qos_t * qos,
-  const dds_listener_t * listener
 );
 
 /**
@@ -1379,13 +1378,40 @@ DDS_EXPORT int dds_waitset_wait_until (dds_waitset_t ws, dds_attach_t *xs, size_
  *   -# mask filter the data value based on the set sample, view and instance state
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-DDS_EXPORT int dds_read
+DDS_EXPORT dds_return_t dds_read /* ANY/ANY/ANY */
 (
-  dds_entity_t rd,
-  void ** buf,
-  uint32_t maxs,
-  dds_sample_info_t * si,
-  uint32_t mask
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+  _Out_ dds_sample_info_t * si,
+  _In_ size_t bufsz,
+  _In_ uint32_t maxs
+);
+
+DDS_EXPORT dds_return_t dds_read_wl /* ANY/ANY/ANY, with loan */
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ uint32_t maxs
+);
+
+DDS_EXPORT dds_return_t dds_read_mask
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ size_t bufsz,
+  _In_ uint32_t maxs,
+  _In_ uint32_t mask /* In case of ReadCondition, both masks are applied (OR'd) */
+);
+
+DDS_EXPORT dds_return_t dds_read_mask_wl /* With loan */
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ uint32_t maxs,
+  _In_ uint32_t mask /* In case of ReadCondition, both masks are applied (OR'd) */
 );
 
 /**
@@ -1460,13 +1486,40 @@ DDS_EXPORT int dds_read_cond
  *   -# mask filter the data value based on the set sample, view and instance state
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-DDS_EXPORT int dds_take
+DDS_EXPORT dds_return_t dds_take
 (
-  dds_entity_t rd,
-  void ** buf,
-  uint32_t maxs,
-  dds_sample_info_t * si,
-  uint32_t mask
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+  _Out_ dds_sample_info_t * si,
+  _In_ size_t bufsz,
+  _In_ uint32_t maxs
+);
+
+DDS_EXPORT dds_return_t dds_take_wl
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+  _Out_ dds_sample_info_t * si,
+  _In_ uint32_t maxs
+);
+
+DDS_EXPORT dds_return_t dds_take_mask
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+  _Out_ dds_sample_info_t * si,
+  _In_ size_t bufsz,
+  _In_ uint32_t maxs,
+  _In_ uint32_t mask
+);
+
+DDS_EXPORT dds_return_t dds_take_mask_wl
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+  _Out_ dds_sample_info_t * si,
+  _In_ uint32_t maxs,
+  _In_ uint32_t mask
 );
 
 struct serdata;

@@ -307,8 +307,7 @@ static void data_available_handler (dds_entity_t reader, void *varg)
 {
   struct data_available_handler_arg *arg = varg;
   dds_time_t postTakeTime, difference;
-  int status = dds_take (reader, samples, MAX_SAMPLES, info, 0);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  int sampleCount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
   postTakeTime = dds_time ();
 
   if (arg->isping)
@@ -330,7 +329,7 @@ static void data_available_handler (dds_entity_t reader, void *varg)
     info[0].source_timestamp = postTakeTime;
   }
 
-  status = dds_write_ts (arg->writer, &sub_data[0], info[0].source_timestamp);
+  int status = dds_write_ts (arg->writer, &sub_data[0], info[0].source_timestamp);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 }
 
@@ -387,6 +386,7 @@ int main (int argc, char *argv[])
   dds_time_t waitTimeout = DDS_SECS (1);
   unsigned long i;
   int status;
+  int samplesCount;
   dds_condition_t readCond;
   dds_listener_t rd_listener;
   int opt;
@@ -509,12 +509,10 @@ int main (int argc, char *argv[])
   memset (&rd_listener, 0, sizeof (rd_listener));
   rd_listener.on_data_available = data_available_handler;
   rd_listener.arg = &dah_arg;
-  status = dds_reader_create (subscriber, &reader, topic, drQos, (mode == LISTENER) ? &rd_listener : NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  reader = dds_create_reader (subscriber, topic, drQos, (mode == LISTENER) ? &rd_listener : NULL);
 
   dds_qset_durability (drQos, DDS_DURABILITY_TRANSIENT_LOCAL);
-  status = dds_reader_create (subscriber, &addrreader, addrtopic, drQos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  addrreader = dds_create_reader (subscriber, addrtopic, drQos, NULL);
   dds_qos_delete (drQos);
 
   publisher = dds_create_publisher (participant, pubQos, NULL);
@@ -569,7 +567,7 @@ int main (int argc, char *argv[])
       memset (buf, 0, sizeof (buf));
       memset (&addrsample, 0, sizeof (addrsample));
       do {
-        status = dds_take (addrreader, addrsamples, 1, infos, 0);
+        samplesCount = dds_take (addrreader, addrsamples, infos, 1, 0);
         DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
       } while (status != 1);
       memset(&peeraddr, 0, sizeof(peeraddr));
@@ -673,15 +671,15 @@ int main (int argc, char *argv[])
         if (status != 0)
         {
           /* Take sample and check that it is valid */
-          status = dds_take (reader, samples, MAX_SAMPLES, info, 0);
-          DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+          samplesCount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+          DDS_ERR_CHECK (samplesCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
           postTakeTime = dds_time ();
 
           if (!dds_condition_triggered (terminated))
           {
-            if (status != 1)
+            if (samplesCount != 1)
             {
-              fprintf (stdout, "%s%d%s", "ERROR: Ping received ", status,
+              fprintf (stdout, "%s%d%s", "ERROR: Ping received ", samplesCount,
                        " samples but was expecting 1. Are multiple pong applications running?\n");
 
               return (0);
@@ -694,7 +692,7 @@ int main (int argc, char *argv[])
           }
 
           /* Update stats */
-          if (status > 0)
+          if (samplesCount > 0)
           {
             difference = postTakeTime - info[0].source_timestamp;
             exampleAddTimingToTimeStats (&roundTrip, difference);
@@ -754,7 +752,7 @@ int main (int argc, char *argv[])
         DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
         /* Take samples */
-        samplecount = dds_take (reader, samples, MAX_SAMPLES, info, 0);
+        samplecount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
         DDS_ERR_CHECK (samplecount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
         for (j = 0; !dds_condition_triggered (terminated) && j < samplecount; j++)
         {

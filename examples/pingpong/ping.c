@@ -162,6 +162,7 @@ int main (int argc, char *argv[])
   dds_time_t waitTimeout = DDS_SECS (1);
   unsigned long i;
   int status;
+  int samplesCount;
   bool invalid = false;
   bool warmUp = true;
   dds_condition_t readCond;
@@ -216,8 +217,7 @@ int main (int argc, char *argv[])
   /* A DDS_DataReader is created on the Subscriber & Topic with a modified QoS. */
   drQos = dds_qos_create ();
   dds_qset_reliability (drQos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
-  status = dds_reader_create (subscriber, &reader, topic, drQos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  reader = dds_create_reader (subscriber, topic, drQos, NULL);
   dds_qos_delete (drQos);
 
   status = dds_create_publisher (participant, pubQos, NULL);
@@ -310,8 +310,8 @@ int main (int argc, char *argv[])
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     if (status > 0) /* data */
     {
-      status = dds_take (reader, samples, MAX_SAMPLES, info, 0);
-      DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+      samplesCount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+      DDS_ERR_CHECK (samplesCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     }
 
     time = dds_time ();
@@ -344,13 +344,13 @@ int main (int argc, char *argv[])
     {
       /* Take sample and check that it is valid */
       preTakeTime = dds_time ();
-      status = dds_take (reader, samples, MAX_SAMPLES, info, 0);
-      DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+      samplesCount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+      DDS_ERR_CHECK (samplesCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
       postTakeTime = dds_time ();
 
       if (!dds_condition_triggered (terminated))
       {
-        if (status != 1)
+        if (samplesCount != 1)
         {
           fprintf (stdout, "%s%d%s", "ERROR: Ping received ", status,
                   " samples but was expecting 1. Are multiple pong applications running?\n");

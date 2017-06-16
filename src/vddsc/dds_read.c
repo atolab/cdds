@@ -193,13 +193,49 @@ static int dds_readcdr_impl
   return ret;
 }
 
-int dds_read
+dds_return_t dds_read
 (
-  dds_entity_t rd, void ** buf, uint32_t maxs,
-  dds_sample_info_t * si, uint32_t mask
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ size_t bufsz,
+  _In_ uint32_t maxs
 )
 {
-  return dds_read_impl (false, rd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
+  return dds_read_impl (false, rd_or_cnd, buf, maxs, si, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE, NULL, DDS_HANDLE_NIL);
+}
+
+dds_return_t dds_read_wl /* ANY/ANY/ANY, with loan */
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ uint32_t maxs
+){
+  return dds_read_impl (true, rd_or_cnd, buf, maxs, si, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE, NULL, DDS_HANDLE_NIL);
+}
+
+dds_return_t dds_read_mask
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ size_t bufsz,
+  _In_ uint32_t maxs,
+  _In_ uint32_t mask /* In case of ReadCondition, both masks are applied (OR'd) */
+){
+  return dds_read_impl (false, rd_or_cnd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
+}
+
+dds_return_t dds_read_mask_wl /* With loan */
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf,
+  _Out_ dds_sample_info_t * si,
+  _In_ uint32_t maxs,
+  _In_ uint32_t mask /* In case of ReadCondition, both masks are applied (OR'd) */
+){
+  return dds_read_impl (true, rd_or_cnd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
 int dds_read_instance
@@ -228,13 +264,49 @@ int dds_read_next (dds_entity_t rd, void ** buf, dds_sample_info_t * si)
   return dds_read_impl (false, rd, buf, 1u, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
-int dds_take
+dds_return_t dds_take
 (
-  dds_entity_t rd, void ** buf, uint32_t maxs,
-  dds_sample_info_t * si, uint32_t mask
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+  _Out_ dds_sample_info_t * si,
+  _In_ size_t bufsz,
+  _In_ uint32_t maxs
 )
 {
-  return dds_read_impl (true, rd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
+  return dds_read_impl (true, rd_or_cnd, buf, maxs, si, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE, NULL, DDS_HANDLE_NIL);
+}
+
+dds_return_t dds_take_wl
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+  _Out_ dds_sample_info_t * si,
+  _In_ uint32_t maxs
+){
+  return dds_read_impl (true, rd_or_cnd, buf, maxs, si, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE, NULL, DDS_HANDLE_NIL);
+}
+
+dds_return_t dds_take_mask
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+  _Out_ dds_sample_info_t * si,
+  _In_ size_t bufsz,
+  _In_ uint32_t maxs,
+  _In_ uint32_t mask
+){
+  return dds_read_impl (false, rd_or_cnd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
+}
+
+dds_return_t dds_take_mask_wl
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+  _Out_ dds_sample_info_t * si,
+  _In_ uint32_t maxs,
+  _In_ uint32_t mask
+){
+  return dds_read_impl (true, rd_or_cnd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
 int dds_takecdr

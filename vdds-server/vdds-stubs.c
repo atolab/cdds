@@ -333,7 +333,7 @@ int dds_writer_create(dds_entity_t pp_or_pub, dds_entity_t *writer, dds_entity_t
     return rep.status;
 }
 
-int dds_reader_create(dds_entity_t pp_or_sub, dds_entity_t *reader, dds_entity_t topic, const dds_qos_t *qos, const dds_readerlistener_t *listener)
+dds_entity_t dds_create_reader(dds_entity_t pp_or_sub, dds_entity_t topic, const dds_qos_t *qos, const dds_readerlistener_t *listener)
 {
     struct reqhdr req;
     struct rephdr rep;
@@ -347,7 +347,6 @@ int dds_reader_create(dds_entity_t pp_or_sub, dds_entity_t *reader, dds_entity_t
     if (simple_reply(fp, &rep) < 0) {
         return -DDS_RETCODE_ERROR;
     }
-    *reader = rep.u.entity.e;
     return rep.status;
 }
 
@@ -364,7 +363,14 @@ int frd_blob(FILE *fp, size_t *sz, void **blob)
     return 0;
 }
 
-int dds_take(dds_entity_t rd, void ** buf, uint32_t maxs, dds_sample_info_t * si, uint32_t mask)
+dds_return_t dds_take
+(
+  _In_ dds_entity_t rd_or_cnd,
+  _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
+  _Out_ dds_sample_info_t * si,
+  _In_ size_t bufsz,
+  _In_ uint32_t maxs
+)
 {
     struct reqhdr req;
     struct rephdr rep;
@@ -372,10 +378,10 @@ int dds_take(dds_entity_t rd, void ** buf, uint32_t maxs, dds_sample_info_t * si
     assert(buf);
     assert(maxs > 0);
     assert(si);
+    assert(bufsz > 0);
     req.code = VDDSREQ_TAKE;
-    req.u.take.rd = rd;
+    req.u.take.rd = rd_or_cnd;
     req.u.take.maxs = maxs;
-    req.u.take.mask = mask;
     if (simple(fp, &req, &rep) < 0) {
         return -DDS_RETCODE_ERROR;
     }

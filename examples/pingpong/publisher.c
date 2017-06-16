@@ -148,8 +148,7 @@ int main (int argc, char **argv)
     qos = dds_qos_create ();
     for (i = 0; i < localReaders; i++)
     {
-      status = dds_reader_create (sub, &rds[i], topic, qos, NULL);
-      DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+      rds[i] = dds_create_reader (sub, topic, qos, NULL);
       dds_set_enabled_status(rds[i], 0);
     }
     dds_qos_delete (qos);
@@ -283,7 +282,7 @@ int main (int argc, char **argv)
     ThroughputModule_DataType s;
     void *ms[1] = { &s };
     dds_sample_info_t is[1];
-    int n = dds_take (rds[i], ms, 1, is, 0);
+    int n = dds_take (rds[i], ms, is, 1, 0);
     DDS_ERR_CHECK (n, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     if (n == 0)
       s.count = 0;

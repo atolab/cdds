@@ -1250,7 +1250,7 @@ DDS_EXPORT dds_return_t dds_read /* ANY/ANY/ANY */
   _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
   _Out_ dds_sample_info_t * si,
   _In_ size_t bufsz,
-  _In_ uint32_t maxs,
+  _In_ uint32_t maxs
 );
 
 DDS_EXPORT dds_return_t dds_read_mask
@@ -1389,7 +1389,7 @@ DDS_EXPORT dds_return_t dds_take
     _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
     _Out_ dds_sample_info_t * si,
     _In_ size_t bufsz,
-    _In_ uint32_t maxs,
+    _In_ uint32_t maxs
 );
 
 DDS_EXPORT dds_return_t dds_take_wl
