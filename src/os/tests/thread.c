@@ -975,6 +975,12 @@ CUnit_Test(thread, memget)
     /* Check os_threadMemGet for main thread and allocated index */
     printf ("Starting tc_os_threadMemGet_002\n");
   #endif
+    /* FIXME: This test is no good. Apart from the fact that a valid thread
+              memory index should be used (os_threadMemoryIndex), this also
+              does not work if the test is executed in a self-contained
+              manner using the CUnit runner. For now just work around it by
+              first doing a os_threadMemMalloc. */
+    (void)os_threadMemMalloc(3, 100);
     returnval = os_threadMemGet (3);
     CU_ASSERT (returnval != NULL);
 
@@ -997,6 +1003,10 @@ CUnit_Test(thread, memfree)
     /* Check os_threadMemFree for main thread and allocated index */
     printf ("Starting tc_os_threadMemFree_002\n");
   #endif
+    /* FIXME: See comments on memget test. */
+    (void)os_threadMemMalloc(3, 100);
+    returnval = os_threadMemGet(3);
+    CU_ASSERT(returnval != NULL);
     os_threadMemFree (3);
     returnval = os_threadMemGet (3);
     CU_ASSERT (returnval == NULL);
