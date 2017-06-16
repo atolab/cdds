@@ -1138,5 +1138,7 @@ _Check_return_ _Ret_maybenull_ void *ut_avlCIterSucc (_In_ const ut_avlCTreedef_
 
 _Check_return_ _Ret_maybenull_ void *ut_avlCIterNext (_Inout_ _When_ (return == 0, _Post_invalid_) ut_avlCIter_t *iter)
 {
-    return ut_avlIterNext (&iter->t);
+    /* Added this in-between t variable to satisfy SAL. */
+    ut_avlIter_t *t = &(iter->t);
+    return ut_avlIterNext(t);
 }
