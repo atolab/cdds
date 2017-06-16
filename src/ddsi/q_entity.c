@@ -632,7 +632,7 @@ static void delete_builtin_endpoint (const struct nn_guid *ppguid, unsigned enti
   if (is_writer_entityid (to_entityid (entityid)))
     delete_writer_nolinger (&guid);
   else
-    delete_reader (&guid);
+    (void)delete_reader (&guid);
 }
 
 static struct participant *ref_participant (struct participant *pp, const struct nn_guid *guid_of_refing_entity)

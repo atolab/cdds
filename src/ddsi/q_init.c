@@ -1320,7 +1320,7 @@ void rtps_term (void)
     while ((rd = ephash_enum_reader_next (&est_rd)) != NULL)
     {
       if (!is_builtin_entityid (rd->e.guid.entityid, ownvendorid))
-        delete_reader (&rd->e.guid);
+        (void)delete_reader (&rd->e.guid);
     }
     ephash_enum_reader_fini (&est_rd);
     thread_state_awake (self);
