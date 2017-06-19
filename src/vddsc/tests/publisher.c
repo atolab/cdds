@@ -2,6 +2,12 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
+/* We are deliberately testing some bad arguments that SAL will complain about.
+ * So, silence SAL regarding these issues. */
+#pragma warning(push)
+#pragma warning(disable: 28020)
+
+
 #define cr_assert_status_eq(s1, s2, ...) cr_assert_eq(dds_err_nr(s1), s2, __VA_ARGS__)
 
 /* Dummy callback */
@@ -10,7 +16,6 @@ static void data_available_cb(dds_entity_t reader, void* arg) {}
 
 void publisher_creation(void)
 {
-
   const char *singlePartitions[] = { "partition" };
   const char *multiplePartitions[] = { "partition1", "partition2" };
   const char *duplicatePartitions[] = { "partition", "partition" };
@@ -45,6 +50,10 @@ void publisher_creation(void)
   cr_assert_gt(publisher, 0, "dds_create_publisher(participant,qos,NULL) where qos with default partition");
   dds_delete(publisher);
 
+/* Somehow, the compiler thinks the char arrays might not be zero-terminated... */
+#pragma warning(push)
+#pragma warning(disable: 6054)
+
   /* Use qos with single partition */
   dds_qset_partition (qos, 1, singlePartitions);
   publisher = dds_create_publisher(participant, qos, NULL);
@@ -62,6 +71,8 @@ void publisher_creation(void)
   publisher = dds_create_publisher(participant, qos, NULL);
   cr_assert_gt(publisher, 0, "dds_create_publisher(participant,qos,NULL) where qos with duplicate partitions");
   dds_delete(publisher);
+
+#pragma warning(pop)
 
   /* Use listener(NULL) */
   listener = dds_listener_create(NULL);
@@ -253,3 +264,4 @@ Test(vddsc, publisher)
     publisher_coherency();
 }
 
+#pragma warning(pop)

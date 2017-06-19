@@ -809,9 +809,9 @@ CUnit_Test(thread, figure_identity)
             uintmax_t threadNumeric = 0;
           #ifdef _WRS_KERNEL
             int dum;
-            sscanf (threadId, "%s (%d %d)", thread_name, &threadNumeric, &dum);
+            (void)sscanf (threadId, "%s (%d %d)", thread_name, &threadNumeric, &dum);
           #else
-            sscanf (threadId, "%s 0x%"SCNxMAX, thread_name, &threadNumeric);
+            (void)sscanf (threadId, "%s 0x%"SCNxMAX, thread_name, &threadNumeric);
           #endif
             CU_ASSERT (strcmp (thread_name, "threadFigureIdentity") == 0 && threadNumeric == os_threadIdToInteger(thread_os_threadId));
         } else {
@@ -837,9 +837,9 @@ CUnit_Test(thread, figure_identity)
 
         os_threadFigureIdentity (threadId, sizeof(threadId));
       #if defined WIN32
-        sscanf (threadId, "%d", &threadNumeric);
+        (void)sscanf (threadId, "%d", &threadNumeric);
       #else /* VXWORKS */
-        sscanf (index(threadId,'(') + 1, "%d", &threadNumeric);
+        (void)sscanf (index(threadId,'(') + 1, "%d", &threadNumeric);
       #endif
         CU_ASSERT (threadNumeric == os_threadIdToInteger(os_threadIdSelf()));
     }
