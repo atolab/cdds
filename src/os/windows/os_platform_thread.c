@@ -68,15 +68,15 @@ os_threadMemInit(void)
     tlsMemArray = os_malloc (sizeof(void *) * OS_THREAD_MEM_ARRAY_SIZE);
     memset(tlsMemArray, 0, sizeof(void *) * OS_THREAD_MEM_ARRAY_SIZE);
     result = TlsSetValue(tlsIndex, tlsMemArray);
-	if (!result) {
-		//OS_INIT_FAIL("os_threadMemInit: failed to set TLS");
-		goto err_setTls;
-	}
-	return os_resultSuccess;
+    if (!result) {
+        //OS_INIT_FAIL("os_threadMemInit: failed to set TLS");
+        goto err_setTls;
+    }
+    return os_resultSuccess;
 
 err_setTls:
-	os_free(tlsMemArray);
-	return os_resultFail;
+    os_free(tlsMemArray);
+    return os_resultFail;
 }
 
 static void
@@ -87,11 +87,15 @@ os_threadMemExit(void)
 
     tlsMemArray = (void **)TlsGetValue(tlsIndex);
     if (tlsMemArray != NULL) {
+/*The compiler doesn't realize that tlsMemArray has always size OS_THREAD_MEM_ARRAY_SIZE. */
+#pragma warning(push)
+#pragma warning(disable: 6001)
         for (i = 0; i < OS_THREAD_MEM_ARRAY_SIZE; i++) {
             if (tlsMemArray[i] != NULL) {
                 os_free(tlsMemArray[i]);
             }
         }
+#pragma warning(pop)
         os_free(tlsMemArray);
         TlsSetValue(tlsIndex, NULL);
     }
@@ -106,14 +110,14 @@ os_result
 os_threadModuleInit(void)
 {
     if ((tlsIndex = TlsAlloc()) == TLS_OUT_OF_INDEXES) {
-		//OS_INIT_FAIL("os_threadModuleInit: could not allocate thread-local memory (System Error Code: %i)", os_getErrno());
-		goto err_tlsAllocFail;
-	}
-	os_threadHookInit();
-	return os_resultSuccess;
+        //OS_INIT_FAIL("os_threadModuleInit: could not allocate thread-local memory (System Error Code: %i)", os_getErrno());
+        goto err_tlsAllocFail;
+    }
+    os_threadHookInit();
+    return os_resultSuccess;
 
 err_tlsAllocFail:
-	return os_resultFail;
+    return os_resultFail;
 }
 
 /** \brief Deinitialize the thread module
@@ -202,6 +206,11 @@ void os_threadSetThreadName( DWORD dwThreadID, char* threadName)
    info.dwThreadID = dwThreadID;
    info.dwFlags = 0;
 
+/* Empty try/except that catches everything is done on purpose to set the
+ * thread name. This code equals the official example on msdn, including
+ * the warning suppressions. */
+#pragma warning(push)
+#pragma warning(disable: 6320 6322)
    __try
    {
       RaiseException( MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(ULONG_PTR), (ULONG_PTR*)&info );
@@ -209,6 +218,7 @@ void os_threadSetThreadName( DWORD dwThreadID, char* threadName)
    __except(EXCEPTION_EXECUTE_HANDLER)
    {
    }
+#pragma warning(pop)
 #endif /* No reason why the restshouldn't though */
 
     tssThreadName = (char *)os_threadMemGet(OS_THREAD_NAME);
@@ -340,7 +350,7 @@ os_threadCreate(
         }
     }
     if (SetThreadPriority (threadHandle, effective_priority) == 0) {
-		OS_REPORT(OS_INFO, "os_threadCreate", os_getErrno(), "SetThreadPriority failed with %i", os_getErrno());
+        OS_REPORT(OS_INFO, "os_threadCreate", os_getErrno(), "SetThreadPriority failed with %i", os_getErrno());
     }
 
    /* ES: dds2086: Close handle should not be performed here. Instead the handle
@@ -447,7 +457,7 @@ os_threadFigureIdentity(
 int
 os_threadGetThreadName(
     char *buffer,
-	uint32_t length)
+    uint32_t length)
 {
     char *name;
 
