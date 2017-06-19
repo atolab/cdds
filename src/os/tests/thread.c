@@ -1,6 +1,7 @@
 #include "dds.h"
 #include "CUnit/Runner.h"
 #include "os/os.h"
+#include "assert.h"
 
 #define ENABLE_TRACING 0
 
@@ -10,18 +11,24 @@ int           startCallbackCount;
 int           stopCallbackCount;
 void          *returnval;
 
-static void sleepSeconds (int seconds)
+static void
+sleepMsec(int32_t msec)
 {
-  os_time sdelay;
-  sdelay.tv_sec = seconds;
-  sdelay.tv_nsec = 0;
-  os_nanoSleep (sdelay);
+    os_time delay;
+
+    assert(msec > 0);
+    assert(msec < 1000);
+
+    delay.tv_sec = 0;
+    delay.tv_nsec = msec*1000*1000;
+
+    os_nanoSleep(delay);
 }
 
 uint32_t new_thread (_In_ void *args)
 {
   snprintf (arg_result, sizeof (arg_result), "%s", (char *)args);
-  sleepSeconds (3);
+  sleepMsec (500);
   return 0;
 }
 
@@ -31,7 +38,7 @@ uint32_t threadId_thread (_In_opt_ void *args)
 {
   if (args != NULL)
   {
-    sleepSeconds (3);
+    sleepMsec (500);
   }
   thread_id_from_thread = os_threadIdToInteger (os_threadIdSelf ());
   return (uint32_t)thread_id_from_thread; /* Truncates potentially; just used for checking passing a result-value. */
@@ -57,7 +64,7 @@ static uint32_t threadMain(_In_opt_ void *args)
 {
   OS_UNUSED_ARG(args);
   threadCalled = 1;
-  sleepSeconds(1);
+  sleepMsec(500);
   return 0;
 }
 
