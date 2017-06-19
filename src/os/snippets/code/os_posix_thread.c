@@ -367,7 +367,6 @@ os_threadCreate (
 
              if (result != 0) {
                 char errmsg[64];
-                errmsg[0] = '\0';
                 (void)os_strerror_r(result, errmsg, sizeof(errmsg));
                 OS_REPORT (OS_WARNING, "os_threadCreate", 2,
                              "pthread_attr_setschedpolicy failed for SCHED_FIFO with "\

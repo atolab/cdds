@@ -234,7 +234,6 @@ os_sockSetDscpValueWithTos(
     if (setsockopt(sock, IPPROTO_IP, IP_TOS, (char *)&value, (int)sizeof(value)) == SOCKET_ERROR) {
         char errmsg[1024];
         int errNo = os_getErrno();
-        errmsg[0] = '\0';
         (void) os_strerror_r(errNo, errmsg, sizeof errmsg);
         OS_REPORT(OS_WARNING, "os_sockSetDscpValue", 0, "Failed to set diffserv value to %ld: %d %s", value, errNo, errmsg);
         result = os_resultFail;
@@ -387,7 +386,6 @@ os_sockSetDscpValueWithQos(
     if (!qosResult) {
         char errmsg[1024];
         errNo = os_getErrno();
-        errmsg[0] = '\0';
         (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
         OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0, "QOSCreateHandle failed: %d %s", errNo, errmsg);
         goto err_create_handle;
@@ -401,7 +399,6 @@ os_sockSetDscpValueWithQos(
     if (!qosResult) {
         char errmsg[1024];
         errNo = os_getErrno();
-        errmsg[0] = '\0';
         (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
         OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0, "QOSAddSocketToFlow failed: %d %s", errNo, errmsg);
         qwaveQOSCloseHandleFunc(qosHandle);
@@ -429,7 +426,6 @@ os_sockSetDscpValueWithQos(
             } else {
                 char errmsg[1024];
                 errNo = os_getErrno();
-                errmsg[0] = '\0';
                 (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
                 OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0, "QOSSetFlow failed: %d %s", errNo, errmsg);
             }

@@ -17,6 +17,7 @@
 #define _POSIX_C_SOURCE 200112L
 
 #include <string.h>
+#include <assert.h>
 
 #include "os/os.h"
 
@@ -35,5 +36,11 @@ os_setErrno (int err)
 int
 os_strerror_r (int err, char *str, size_t len)
 {
-    return strerror_r(err, str, len);
+    int ret;
+    assert(str);
+    assert(len > 0);
+    len--;
+    ret = strerror_r(err, str, len);
+    str[len] = '\0';
+    return ret;
 }
