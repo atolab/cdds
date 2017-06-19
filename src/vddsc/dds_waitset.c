@@ -90,9 +90,9 @@ static int dds_waitset_wait_impl_locked
       waitset->timeout_counter++;
       dds_duration_t dt = abstimeout - tnow;
       os_time to;
-      if ((sizeof (to.tv_sec) == 4) && ((dt / DDS_NSECS_IN_SEC) >= INT32_MAX))
+      if ((dt / (dds_duration_t)DDS_NSECS_IN_SEC) >= (dds_duration_t)OS_TIME_INFINITE_SEC)
       {
-        to.tv_sec = INT32_MAX;
+        to.tv_sec = OS_TIME_INFINITE_SEC;
         to.tv_nsec = DDS_NSECS_IN_SEC - 1;
       }
       else
@@ -224,7 +224,11 @@ int dds_waitset_remove_condition_locked (_In_ dds_waitset * ws, _In_ dds_conditi
   return DDS_RETCODE_OK;
 }
 
-dds_waitset_t dds_waitset_create_cont (void (*block) (dds_waitset_t ws, void *arg, dds_time_t abstimeout), void (*cont) (dds_waitset_t ws, void *arg, int ret), size_t contsize)
+dds_waitset_t
+dds_waitset_create_cont(
+        void (*block) (dds_waitset_t waitset, void *arg, dds_time_t abstimeout),
+        void (*cont) (dds_waitset_t waitset, void *arg, int ret),
+        size_t contsize)
 {
   dds_waitset * waitset = dds_alloc (sizeof (*waitset) + contsize);
   os_mutexInit (&waitset->conds_lock);
@@ -235,12 +239,16 @@ dds_waitset_t dds_waitset_create_cont (void (*block) (dds_waitset_t ws, void *ar
   return waitset;
 }
 
-void *dds_waitset_get_cont (dds_waitset_t ws)
+void*
+dds_waitset_get_cont(
+        dds_waitset_t waitset)
 {
-  return ws+1;
+  return waitset+1;
 }
 
-dds_waitset_t dds_waitset_create (void)
+dds_waitset_t
+dds_waitset_create(
+        void)
 {
   return dds_waitset_create_cont(0, 0, 0);
 }

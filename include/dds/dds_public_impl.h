@@ -85,9 +85,22 @@ dds_topic_descriptor_t;
 #define DDS_DOMAIN_DEFAULT -1
 #define DDS_HANDLE_NIL 0
 
-/* Handles are opaque pointers to implementation types */
+#define DDS_ENTITY_KIND_MASK (0x7F000000) /* Should be same as UT_HANDLE_KIND_MASK. */
+typedef enum dds_entity_kind
+{
+  DDS_KIND_DONTCARE    = 0x00000000,
+  DDS_KIND_TOPIC       = 0x01000000,
+  DDS_KIND_PARTICIPANT = 0x02000000,
+  DDS_KIND_READER      = 0x03000000,
+  DDS_KIND_WRITER      = 0x04000000,
+  DDS_KIND_SUBSCRIBER  = 0x05000000,
+  DDS_KIND_PUBLISHER   = 0x06000000,
+  DDS_KIND_COND_READ   = 0x07000000,
+  DDS_KIND_COND_QUERY  = 0x08000000
+}
+dds_entity_kind_t;
 
-typedef struct dds_entity * dds_entity_t;
+/* Handles are opaque pointers to implementation types */
 typedef struct dds_condition * dds_condition_t;
 typedef uint64_t dds_instance_handle_t;
 typedef int32_t dds_domainid_t;
@@ -159,12 +172,6 @@ dds_condition_seq;
 #define DDS_OP_FLAG_KEY 0x01
 #define DDS_OP_FLAG_DEF 0x02
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
 /**
  * Description : Enable or disable write batching. Overrides default configuration
  * setting for write batching (DDSI2E/Internal/WriteBatch).
@@ -172,7 +179,7 @@ dds_condition_seq;
  * Arguments :
  *   -# enable Enables or disables write batching for all writers.
  */
-OS_API void dds_write_set_batch (bool enable);
+OSAPI_EXPORT void dds_write_set_batch (bool enable);
 
 /**
  * Description : Install tcp/ssl and encryption support. Depends on openssl.
@@ -180,7 +187,7 @@ OS_API void dds_write_set_batch (bool enable);
  * Arguments :
  *   -# None
  */
-OS_API void dds_ssl_plugin (void);
+OSAPI_EXPORT void dds_ssl_plugin (void);
 
 /**
  * Description : Install client durability support. Depends on OSPL server.
@@ -188,9 +195,8 @@ OS_API void dds_ssl_plugin (void);
  * Arguments :
  *   -# None
  */
-OS_API void dds_durability_plugin (void);
+OSAPI_EXPORT void dds_durability_plugin (void);
 
-#undef OS_API
 #if defined (__cplusplus)
 }
 #endif

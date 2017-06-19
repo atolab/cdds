@@ -196,7 +196,7 @@ int db_topic_create(struct client *cl, const struct reqhdr *req)
         return protocol_error(rc);
     }
     rep.code = VDDSREP_ENTITY;
-    if ((rep.status = dds_topic_create(req->u.topic_create.pp, &rep.u.entity.e, desc, name, NULL, NULL)) != DDS_RETCODE_OK) {
+    if ((rep.u.entity.e = dds_create_topic(req->u.topic_create.pp, desc, name, NULL, NULL)) == NULL) {
         if ((rep.u.entity.e = dds_topic_find(req->u.topic_create.pp, name)) != DDS_HANDLE_NIL) {
             rep.status = DDS_RETCODE_OK;
         }

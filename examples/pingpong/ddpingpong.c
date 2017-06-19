@@ -31,8 +31,10 @@
 
 #include "os/os.h"
 
+#include "dds.h"
 #include "RoundTrip.h"
 #include "kernel/dds_reader.h"
+#include "util/ut_handleserver.h"
 
 #define TIME_STATS_SIZE_INCREMENT 50000
 #define MAX_SAMPLES 100
@@ -470,7 +472,6 @@ int main (int argc, char *argv[])
   os_mutexInit(&statslock);
 
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   if ((udpsock = socket (AF_INET, SOCK_DGRAM, 0)) == -1) {
     perror ("create udp socket"); exit (1);
@@ -486,11 +487,8 @@ int main (int argc, char *argv[])
   }
 
   /* A DDS_Topic is created for our sample type on the domain participant. */
-  status = dds_topic_create (participant, &topic, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-  status = dds_topic_create (participant, &addrtopic, &RoundTripModule_Address_desc, "UDPRoundTrip", NULL, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
+  addrtopic = dds_create_topic (participant, &RoundTripModule_Address_desc, "UDPRoundTrip", NULL, NULL);
 
   /* A DDS_Publisher is created on the domain participant. */
   pubQos = dds_qos_create ();
@@ -516,7 +514,7 @@ int main (int argc, char *argv[])
   dds_qos_delete (drQos);
 
   publisher = dds_create_publisher (participant, pubQos, NULL);
-  DDS_ENTITY_CHECK (publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  DDS_ERR_CHECK (publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (pubQos);
 
   /* A DDS_DataWriter is created on the Publisher & Topic with a modified Qos. */
@@ -538,7 +536,7 @@ int main (int argc, char *argv[])
   if (mode != LISTENER)
   {
     readCond = dds_readcondition_create (reader, DDS_ANY_STATE);
-    status = dds_waitset_attach (waitSet, readCond, reader);
+    status = dds_waitset_attach (waitSet, readCond, (dds_attach_t)(intptr_t)reader);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   }
   else
@@ -622,23 +620,31 @@ int main (int argc, char *argv[])
     if (mode == DIRECT)
     {
       static struct reader_cbarg arg;
-      arg.tp = (struct sertopic *) ((struct dds_reader *)reader)->m_rd->topic;
-      arg.tk = get_tkmap_instance(arg.tp);
-      arg.xp = ((struct dds_writer *)writer)->m_xp;
-      arg.wr = ((struct dds_writer *)writer)->m_wr;
-      arg.tstart = dds_time();
-      arg.tprint = arg.tstart + DDS_SECS(1);
-      if (isping)
-      {
-        arg.roundTrip = &roundTrip;
-        arg.roundTripOverall = logfile ? &roundTripOverall : NULL;
+      struct dds_reader *rd;
+      struct dds_writer *wr;
+      if (ut_handle_claim(reader, NULL, DDS_KIND_READER, (void**)&rd) == UT_HANDLE_OK) {
+          if (ut_handle_claim(writer, NULL, DDS_KIND_WRITER, (void**)&wr) == UT_HANDLE_OK) {
+              arg.tp = (struct sertopic *) rd->m_rd->topic;
+              arg.tk = get_tkmap_instance(arg.tp);
+              arg.xp = wr->m_xp;
+              arg.wr = wr->m_wr;
+              arg.tstart = dds_time();
+              arg.tprint = arg.tstart + DDS_SECS(1);
+              if (isping)
+              {
+                arg.roundTrip = &roundTrip;
+                arg.roundTripOverall = logfile ? &roundTripOverall : NULL;
+              }
+              else
+              {
+                arg.roundTrip = NULL;
+                arg.roundTripOverall = NULL;
+              }
+              dds_reader_ddsi2direct (reader, reader_cb, &arg);
+              ut_handle_release(writer, NULL);
+          }
+          ut_handle_release(reader, NULL);
       }
-      else
-      {
-        arg.roundTrip = NULL;
-        arg.roundTripOverall = NULL;
-      }
-      dds_reader_ddsi2direct (reader, reader_cb, &arg);
     }
 
     if (isping)

@@ -27,12 +27,6 @@
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
 /* FIXME: should eventually move to abstraction layer */
 typedef enum q__schedPrioClass {
   Q__SCHED_PRIO_RELATIVE,
@@ -427,7 +421,7 @@ struct ddsi_plugin
 
 };
 
-extern struct config OS_API config;
+extern struct config OSAPI_EXPORT config;
 extern struct ddsi_plugin ddsi_plugin;
 
 struct cfgst;
@@ -444,7 +438,7 @@ int is_ignored_partition (const char *partition, const char *topic);
 #ifdef DDSI_INCLUDE_NETWORK_CHANNELS
 struct config_channel_listelem *find_channel (nn_transport_priority_qospolicy_t transport_priority);
 #endif
-#undef OS_API
+
 #if defined (__cplusplus)
 }
 #endif

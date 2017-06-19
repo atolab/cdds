@@ -27,12 +27,6 @@
 #if defined (__cplusplus)
 extern "C" {
 #endif
-
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
     /* !!!!!!!!NOTE From here no more includes are allowed!!!!!!! */
 
     /** \brief Get host or processor name
@@ -44,7 +38,7 @@ extern "C" {
      * - returns os_resultFail if
      *     actual hostname is longer than buffersize
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_gethostname(
                    char *hostname,
                    size_t buffersize);
@@ -61,7 +55,7 @@ extern "C" {
      * - returns NULL if
      *     variable is not found
      */
-    OS_API char *
+    OSAPI_EXPORT char *
     os_getenv(
               const char *variable);
 
@@ -81,7 +75,7 @@ extern "C" {
      * putenv. putenv behaviour varies from unsafe to leaky across different
      * platforms. Use ::os_setenv instead.
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_putenv(
               char *variable_definition);
 
@@ -96,7 +90,7 @@ extern "C" {
      *     environment variable could not be set according the
      *     variable_definition
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_setenv(
               const char *name, const char *value);
 
@@ -105,7 +99,7 @@ extern "C" {
      * Possible Results:
      * - "<file-seperator-character>"
      */
-    OS_API const char *
+    OSAPI_EXPORT const char *
     os_fileSep(void);
 
     /** \brief Get path seperator
@@ -113,7 +107,7 @@ extern "C" {
      * Possible Results:
      * - "<file-seperator-character>"
      */
-    OS_API const char *
+    OSAPI_EXPORT const char *
     os_pathSep(void);
 
 #define OS_PATHSEPCHAR OS_OS_PATHSEPCHAR
@@ -136,7 +130,7 @@ extern "C" {
      * - return os_resultFail if
      *     requested file access is not granted
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_access(
               const char *file_path,
               int32_t permission);
@@ -160,7 +154,7 @@ extern "C" {
      *     search is done in the PATH.
      * - return NULL if no file was found in PATH
      */
-    OS_API char *
+    OSAPI_EXPORT char *
     os_locate(
               const char *name,
               int32_t permission);
@@ -179,7 +173,7 @@ extern "C" {
      * - return -1 if
      *     requested dir could not be created
      */
-    OS_API int32_t
+    OSAPI_EXPORT int32_t
     os_mkdir(
              const char *path,
              os_mode_t mode);
@@ -200,7 +194,7 @@ extern "C" {
      *
      * When path creation fails an appropriate error message is reported
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_mkpath(
               const char *path,
               os_mode_t mode);
@@ -219,7 +213,7 @@ extern "C" {
      * - return char *
      *     to a string that is the parent directory of path
      */
-    OS_API char * os_dirname_r(char *path);
+    OSAPI_EXPORT char * os_dirname_r(char *path);
 
     /** \brief rindex wrapper
      *
@@ -234,7 +228,7 @@ extern "C" {
      *     char c is not found in string s
      * - return address of last occurance of c in s
      */
-    OS_API char *
+    OSAPI_EXPORT char *
     os_rindex(
               const char *s,
               int c);
@@ -252,7 +246,7 @@ extern "C" {
      *     char c is not found in string s
      * - return address of first occurance of c in s
      */
-    OS_API char *
+    OSAPI_EXPORT char *
     os_index(
              const char *s,
              int c);
@@ -273,7 +267,7 @@ extern "C" {
      * - return duplicate of the string s1 allocated via
      *     os_malloc
      */
-    OS_API char *
+    OSAPI_EXPORT char *
     os_strdup(
               const char *s1) __nonnull_all__
     __attribute_malloc__
@@ -284,7 +278,7 @@ extern "C" {
      *
      * See strsep()
      */
-    OS_API char *
+    OSAPI_EXPORT char *
     os_strsep(
               char **stringp,
               const char *delim);
@@ -307,7 +301,7 @@ extern "C" {
      *   Thus, a return value of size or more means that the output was truncated.
      */
 
-    OS_API int
+    OSAPI_EXPORT int
     os_vsnprintf(
                  char *str,
                  size_t size,
@@ -355,7 +349,7 @@ extern "C" {
      * - return OS_LLONG_MAX and errno == ERANGE
      * - return value(str)
      */
-    OS_API long long
+    OSAPI_EXPORT long long
     os_strtoll(
                const char *str,
                char **endptr,
@@ -377,7 +371,7 @@ extern "C" {
      * - return OS_ULLONG_MAX and errno == ERANGE
      * - return value(str)
      */
-    OS_API unsigned long long
+    OSAPI_EXPORT unsigned long long
     os_strtoull(
                 const char *str,
                 char **endptr,
@@ -393,7 +387,7 @@ extern "C" {
      * Possible results:
      * - return os_strtoll(str, 10)
      */
-    OS_API long long
+    OSAPI_EXPORT long long
     os_atoll(
              const char *str);
 
@@ -407,7 +401,7 @@ extern "C" {
      * Possible results:
      * - return os_strtoll(str, 10)
      */
-    OS_API unsigned long long
+    OSAPI_EXPORT unsigned long long
     os_atoull(
               const char *str);
 
@@ -423,7 +417,7 @@ extern "C" {
      * - return 0 and errno == EINVAL in case of conversion error
      * - return value(str)
      */
-    OS_API char *
+    OSAPI_EXPORT char *
     os_lltostr(
                long long num,
                char *str,
@@ -442,7 +436,7 @@ extern "C" {
      * - return 0 and errno == EINVAL in case of conversion error
      * - return value(str)
      */
-    OS_API char *
+    OSAPI_EXPORT char *
     os_ulltostr(
                 unsigned long long num,
                 char *str,
@@ -466,7 +460,7 @@ extern "C" {
      * Possible results:
      * - return value(str)
      */
-    OS_API double
+    OSAPI_EXPORT double
     os_strtod(const char *nptr, char **endptr);
 
     /** \brief strtof wrapper
@@ -486,7 +480,7 @@ extern "C" {
      * Possible results:
      * - return value(str)
      */
-    OS_API float
+    OSAPI_EXPORT float
     os_strtof(const char *nptr, char **endptr);
 
     /** \brief os_strtod mirror
@@ -509,7 +503,7 @@ extern "C" {
      * Possible results:
      * - return value(str)
      */
-    OS_API int
+    OSAPI_EXPORT int
     os_dtostr(double src, char *str, size_t size);
 
     /** \brief os_strtof mirror
@@ -532,7 +526,7 @@ extern "C" {
      * Possible results:
      * - return value(str)
      */
-    OS_API int
+    OSAPI_EXPORT int
     os_ftostr(float src, char *str, size_t size);
 
     /** \brief strcasecm wrapper
@@ -547,7 +541,7 @@ extern "C" {
      * - return <0 and s1 is less than s2
      * - return >0 and s1 is greater than s2
      */
-    OS_API int
+    OSAPI_EXPORT int
     os_strcasecmp(
                   const char *s1,
                   const char *s2);
@@ -564,7 +558,7 @@ extern "C" {
      * - return <0 and s1 is less than s2 (maximum the first n characters)
      * - return >0 and s1 is greater than s2 (maximum the first n characters)
      */
-    OS_API int
+    OSAPI_EXPORT int
     os_strncasecmp(
                    const char *s1,
                    const char *s2,
@@ -580,7 +574,7 @@ extern "C" {
      * Possible results:
      * - return ptr to next token or NULL if there are no tokens left.
      */
-    OS_API char *
+    OSAPI_EXPORT char *
     os_strtok_r(char *str, const char *delim, char **saveptr);
 
     struct os_stat {
@@ -600,7 +594,7 @@ extern "C" {
         os_time   stat_mtime;
     };
 
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_stat(
             const char *path,
             struct os_stat *buf);
@@ -611,7 +605,7 @@ extern "C" {
      *
      */
 
-    OS_API os_result os_remove (const char *name);
+    OSAPI_EXPORT os_result os_remove (const char *name);
 
     /** \brief Renames a file or directory
      *
@@ -619,7 +613,7 @@ extern "C" {
      *
      */
 
-    OS_API os_result os_rename (const char *oldpath, const char *newpath);
+    OSAPI_EXPORT os_result os_rename (const char *oldpath, const char *newpath);
 
     /** \brief Transforms the given filepath into a platform specific filepath.
      *
@@ -633,7 +627,7 @@ extern "C" {
      * - returns normalized filepath conform current platform
      * - return NULL if out of memory.
      */
-    OS_API char *
+    OSAPI_EXPORT char *
     os_fileNormalize(
                      const char *filepath);
 
@@ -647,7 +641,7 @@ extern "C" {
      * - os_resultSuccess if function succeeded
      * - os_resultFail    if function failed
      */
-    OS_API os_result
+    OSAPI_EXPORT os_result
     os_fsync(
              FILE *fHandle);
 
@@ -663,7 +657,7 @@ extern "C" {
      * - char * of the absolute path of the temporary location.  This will return
      * always return a valid value, using a default if necessary
      */
-    OS_API const char *
+    OSAPI_EXPORT const char *
     os_getTempDir(void);
 
     /**
@@ -678,7 +672,7 @@ extern "C" {
      * nothing was written). On error, -1 is returned
      *
      */
-    OS_API ssize_t os_write(
+    OSAPI_EXPORT ssize_t os_write(
         _In_ int fd,
         _In_reads_bytes_(count) void const* buf,
         _In_ size_t count);
@@ -695,11 +689,9 @@ extern "C" {
      * does not exist, NULL is returned.
      *
      */
-    OS_API void *
+    OSAPI_EXPORT void *
     os_bsearch(const void *key, const void *base, size_t nmemb, size_t size,
                int (*compar) (const void *, const void *));
-
-#undef OS_API
 
 #if defined (__cplusplus)
 }

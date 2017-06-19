@@ -166,16 +166,14 @@ int ping_main (int argc, char *argv[])
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   /* A DDS_Topic is created for our sample type on the domain participant. */
-  status = dds_topic_create
-    (participant, &topic, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
 
   /* A DDS_Publisher is created on the domain participant. */
   pubQos = dds_qos_create ();
   dds_qset_partition (pubQos, 1, pubPartitions);
 
   publisher = dds_create_publisher (participant, pubQos, NULL);
-  DDS_ENTITY_CHECK (publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  DDS_ERR_CHECK (publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (pubQos);
 
   /* A DDS_Subscriber is created on the domain participant. */

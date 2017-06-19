@@ -45,9 +45,8 @@ int pong_main (int argc, char *argv[])
 
   /* A DDS Topic is created for our sample type on the domain participant. */
 
-  status = dds_topic_create
-    (participant, &topic, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
-  if (status < 0 && dds_err_nr(status) == DDS_RETCODE_BAD_PARAMETER)
+  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
+  if (topic == NULL)
   {
     topic = dds_topic_find(participant, "RoundTrip");
     if (topic != NULL)
@@ -60,7 +59,7 @@ int pong_main (int argc, char *argv[])
   qos = dds_qos_create ();
   dds_qset_partition (qos, 1, pubPartitions);
   publisher = dds_create_publisher (participant, qos, NULL);
-  DDS_ENTITY_CHECK(publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  DDS_ERR_CHECK(publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (qos);
 
   /* A DDS Subscriber is created on the domain participant. */

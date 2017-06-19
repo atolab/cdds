@@ -4,7 +4,7 @@
 
 /* Add --verbose command line argument to get the cr_log_info traces (if there are any). */
 
-static dds_entity_t entity = NULL;
+static dds_entity_t entity = -1;
 
 #define cr_assert_status_eq(s1, s2, ...) cr_assert_eq(dds_err_nr(s1), s2, __VA_ARGS__)
 
@@ -12,7 +12,7 @@ void entity_creation()
 {
     /* Use participant as entity in the tests. */
     entity = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_neq(entity, NULL, "dds_create_participant");
+    cr_assert_gt(entity, 0, "dds_create_participant");
 }
 
 void entity_enabling()
@@ -20,7 +20,7 @@ void entity_enabling()
     dds_return_t status;
 
     /* Check enabling with bad parameters. */
-    status = dds_enable(NULL);
+    status = dds_enable(0);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_enable (NULL)");
 
     /* Check actual enabling. */
@@ -61,19 +61,19 @@ void entity_qos()
      * for the specific entity children, not for the generic part. */
 
     /* Check getting QoS with bad parameters. */
-    status = dds_get_qos (NULL, NULL);
+    status = dds_get_qos (0, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_qos(NULL, NULL)");
     status = dds_get_qos (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_qos(entity, NULL)");
-    status = dds_get_qos (NULL, qos);
+    status = dds_get_qos (0, qos);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_qos(NULL, qos)");
 
     /* Check setting QoS with bad parameters. */
-    status = dds_set_qos (NULL, NULL);
+    status = dds_set_qos (0, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_qos(NULL, NULL)");
     status = dds_set_qos (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_qos(entity, NULL)");
-    status = dds_set_qos (NULL, qos);
+    status = dds_set_qos (0, qos);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_qos(NULL, qos)");
 
     /* Check set/get with entity without initial qos. */
@@ -111,11 +111,11 @@ void entity_listeners(void)
     dds_lset_publication_matched(l2,        (dds_on_publication_matched_fn)         4321);
 
     /* Check getting Listener with bad parameters. */
-    status = dds_get_listener (NULL, NULL);
+    status = dds_get_listener (0, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_listener(NULL, NULL)");
     status = dds_get_listener (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_listener(entity, NULL)");
-    status = dds_get_listener (NULL, l1);
+    status = dds_get_listener (0, l1);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_listener(NULL, listener)");
 
     /* Get Listener, which should be unset. */
@@ -131,9 +131,9 @@ void entity_listeners(void)
     cr_assert_eq(cb1, DDS_LUNSET, "Listener not initialized to NULL");
 
     /* Check setting Listener with bad parameters. */
-    status = dds_set_listener (NULL, NULL);
+    status = dds_set_listener (0, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_listener(NULL, NULL)");
-    status = dds_set_listener (NULL, l2);
+    status = dds_set_listener (0, l2);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_listener(NULL, listener)");
 
     /* Getting after setting should return set listener. */
@@ -181,46 +181,47 @@ void entity_status(void)
      * for the specific entity children, not for the generic part. */
 
     /* Check getting Status with bad parameters. */
-    status = dds_get_enabled_status (NULL, NULL);
+    status = dds_get_enabled_status (0, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_enabled_status(NULL, NULL)");
     status = dds_get_enabled_status (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_enabled_status(entity, NULL)");
-    status = dds_get_enabled_status (NULL, &s1);
+    status = dds_get_enabled_status (0, &s1);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_enabled_status(NULL, status)");
 
     /* Get Status, which should be 0 for a participant. */
     status = dds_get_enabled_status (entity, &s1);
-    cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_enabled_status(entity, status)");
+    cr_assert_status_eq(status, DDS_RETCODE_ILLEGAL_OPERATION, "dds_get_enabled_status(entity, status)");
     cr_assert_eq(s1, 0, "Enabled status mask is not 0");
 
     /* Check setting Status with bad parameters. */
-    status = dds_set_enabled_status (NULL, 0);
+    status = dds_set_enabled_status (0, 0);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_enabled_status(NULL, 0)");
 
     /* I shouldn't be able to set statuses on a participant. */
     status = dds_set_enabled_status (entity, 0);
-    cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_set_enabled_status(entity, 0)");
+    cr_assert_status_eq(status, DDS_RETCODE_ILLEGAL_OPERATION, "dds_set_enabled_status(entity, 0)");
     status = dds_set_enabled_status (entity, DDS_DATA_AVAILABLE_STATUS);
-    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_enabled_status(entity, status)");
+    cr_assert_status_eq(status, DDS_RETCODE_ILLEGAL_OPERATION, "dds_set_enabled_status(entity, status)");
 
     /* Check getting Status changes with bad parameters. */
-    status = dds_get_status_changes (NULL, NULL);
+    status = dds_get_status_changes (0, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_status_changes(NULL, NULL)");
     status = dds_get_status_changes (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_status_changes(entity, NULL)");
-    status = dds_get_status_changes (NULL, &s1);
+    status = dds_get_status_changes (0, &s1);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_status_changes(NULL, status)");
-
-    /* Get Status change, which should be 0 for a participant. */
     status = dds_get_status_changes (entity, &s1);
-    cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_status_changes(entity, status)");
-    cr_assert_eq(s1, 0, "Status changed mask is not 0");
+    cr_assert_status_eq(status, DDS_RETCODE_ILLEGAL_OPERATION, "dds_get_status_changes(entity, status)");
 
-    /* Status read and take shouldn't work on participant. */
+    /* Status read and take shouldn't work either. */
+    status = dds_read_status (0, &s1, 0);
+    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_read_status(NULL, status, 0)");
     status = dds_read_status (entity, &s1, 0);
-    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_read_status(entity, status, 0)");
+    cr_assert_status_eq(status, DDS_RETCODE_ILLEGAL_OPERATION, "dds_read_status(entity, status, 0)");
+    status = dds_take_status (0, &s1, 0);
+    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_take_status(NULL, status, 0)");
     status = dds_take_status (entity, &s1, 0);
-    cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_take_status(entity, status, 0)");
+    cr_assert_status_eq(status, DDS_RETCODE_ILLEGAL_OPERATION, "dds_take_status(entity, status, 0)");
 }
 
 
@@ -233,11 +234,11 @@ void entity_handle(void)
      * for the specific entity children, not for the generic part. */
 
     /* Check getting Handle with bad parameters. */
-    status = dds_instancehandle_get (NULL, NULL);
+    status = dds_instancehandle_get (0, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(NULL, NULL)");
     status = dds_instancehandle_get (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(entity, NULL)");
-    status = dds_instancehandle_get (NULL, &hdl);
+    status = dds_instancehandle_get (0, &hdl);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(NULL, handle)");
 
     /* Get Instance Handle, which should not be 0 for a participant. */
@@ -249,27 +250,24 @@ void entity_handle(void)
 void entity_get_entities(void)
 {
     dds_return_t status;
-    dds_entity_t par = NULL;
+    dds_entity_t par;
     dds_entity_t child;
 
     /* ---------- Get Parent ------------ */
 
     /* Check getting Parent with bad parameters. */
-    par = dds_get_parent (NULL);
-    /* TODO: CHAM-104: this should return DDS_RETCODE_BAD_PARAMETER. */
-    cr_assert_eq(par, NULL, "Parent was returned (despite of bad parameter)");
+    par = dds_get_parent (0);
+    cr_assert_eq(dds_err_nr(par), DDS_RETCODE_BAD_PARAMETER, "Parent was returned (despite of bad parameter)");
 
     /* Get Parent, a participant doesn't have a parent. */
     par = dds_get_parent (entity);
-    /* TODO: CHAM-104: What should this return? */
-    cr_assert_eq(par, NULL, "Parent was returned (despite of it being a participant)");
+    cr_assert_eq(dds_err_nr(par), DDS_RETCODE_ILLEGAL_OPERATION, "Parent was returned (despite of it being a participant)");
 
     /* ---------- Get Participant ------------ */
 
     /* Check getting Participant with bad parameters. */
-    par = dds_get_participant (NULL);
-    /* TODO: CHAM-104: this should return DDS_RETCODE_BAD_PARAMETER. */
-    cr_assert_eq(par, NULL, "Participant was returned (despite of bad parameter)");
+    par = dds_get_participant (0);
+    cr_assert_eq(dds_err_nr(par), DDS_RETCODE_BAD_PARAMETER, "Participant was returned (despite of bad parameter)");
 
     /* Get Participant, a participants' participant is itself. */
     par = dds_get_participant (entity);
@@ -278,15 +276,15 @@ void entity_get_entities(void)
     /* ---------- Get Children ------------ */
 
     /* Check getting Children with bad parameters. */
-    status = dds_get_children (NULL, &child, 1);
+    status = dds_get_children (0, &child, 1);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_children(NULL, child, 1)");
     status = dds_get_children (entity, NULL, 1);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_children(entity, NULL, 1)");
     status = dds_get_children (entity, &child, 0);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_children(entity, child, 0)");
-    status = dds_get_children (NULL, NULL, 1);
+    status = dds_get_children (0, NULL, 1);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_children(NULL, NULL, 1)");
-    status = dds_get_children (NULL, &child, 0);
+    status = dds_get_children (0, &child, 0);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_children(NULL, child, 0)");
 
     /* Get Children, of which there are currently none. */
@@ -310,11 +308,11 @@ void entity_get_domainid(void)
     dds_domainid_t id;
 
     /* Check getting ID with bad parameters. */
-    status = dds_get_domainid (NULL, NULL);
+    status = dds_get_domainid (0, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_domainid(NULL, NULL)");
     status = dds_get_domainid (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_domainid(entity, NULL)");
-    status = dds_get_domainid (NULL, &id);
+    status = dds_get_domainid (0, &id);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_domainid(NULL, id)");
 
     /* Get and check the domain id. */
@@ -326,11 +324,11 @@ void entity_get_domainid(void)
 void entity_deletion(void)
 {
     dds_return_t status;
-    status = dds_delete(NULL);
+    status = dds_delete(0);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_delete(NULL)");
     status = dds_delete(entity);
     cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_delete(entity)");
-    entity = NULL;
+    entity = 0;
 }
 
 Test(vddsc, entity_api)

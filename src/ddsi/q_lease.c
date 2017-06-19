@@ -245,7 +245,7 @@ void check_and_handle_lease_expiration (UNUSED_ARG (struct thread_state1 *self),
         delete_proxy_writer (&g, 1);
         break;
       case EK_READER:
-        delete_reader (&g);
+        (void)delete_reader (&g);
         break;
       case EK_PROXY_READER:
         delete_proxy_reader (&g, 1);

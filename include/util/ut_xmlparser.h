@@ -18,12 +18,6 @@
 extern "C" {
 #endif
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
     typedef int (*ut_xmlpProcElemOpen_t) (void *varg, uintptr_t parentinfo, uintptr_t *eleminfo, const char *name);
     typedef int (*ut_xmlpProcAttr_t) (void *varg, uintptr_t eleminfo, const char *name, const char *value);
     typedef int (*ut_xmlpProcElemData_t) (void *varg, uintptr_t eleminfo, const char *data);
@@ -40,14 +34,12 @@ extern "C" {
 
     struct ut_xmlpState;
 
-    OS_API struct ut_xmlpState *ut_xmlpNewFile (FILE *fp, void *varg, const struct ut_xmlpCallbacks *cb);
-    OS_API struct ut_xmlpState *ut_xmlpNewString (const char *string, void *varg, const struct ut_xmlpCallbacks *cb);
-    OS_API void ut_xmlpFree (struct ut_xmlpState *st);
-    OS_API int ut_xmlpParse (struct ut_xmlpState *st);
+    OSAPI_EXPORT struct ut_xmlpState *ut_xmlpNewFile (FILE *fp, void *varg, const struct ut_xmlpCallbacks *cb);
+    OSAPI_EXPORT struct ut_xmlpState *ut_xmlpNewString (const char *string, void *varg, const struct ut_xmlpCallbacks *cb);
+    OSAPI_EXPORT void ut_xmlpFree (struct ut_xmlpState *st);
+    OSAPI_EXPORT int ut_xmlpParse (struct ut_xmlpState *st);
 
-    OS_API int ut_xmlUnescapeInsitu (char *buffer, size_t *n);
-
-#undef OS_API
+    OSAPI_EXPORT int ut_xmlUnescapeInsitu (char *buffer, size_t *n);
 
 #if defined (__cplusplus)
 }

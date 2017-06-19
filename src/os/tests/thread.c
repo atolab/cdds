@@ -1,5 +1,5 @@
 #include "dds.h"
-#include "cunitrunner/runner.h"
+#include "CUnit/Runner.h"
 #include "os/os.h"
 
 #define ENABLE_TRACING 0
@@ -146,7 +146,7 @@ static int threadStartCallbackFAIL(os_threadId id, void *arg)
     return 1;
 }
 
-static int  suite_abstraction_thread_init (void)
+CUnit_Suite_Initialize(thread)
 {
     int result = 0;
     os_osInit();
@@ -157,7 +157,7 @@ static int  suite_abstraction_thread_init (void)
     return result;
 }
 
-static int suite_abstraction_thread_clean (void)
+CUnit_Suite_Cleanup(thread)
 {
     int result = DDS_RETCODE_OK;
 
@@ -168,7 +168,7 @@ static int suite_abstraction_thread_clean (void)
     return result;
 }
 
-static void tc_os_threadCreate (void)
+CUnit_Test(thread, create)
 {
     int result;
     os_threadId   thread_os_threadId;
@@ -570,7 +570,7 @@ static void tc_os_threadCreate (void)
   #endif
 }
 
-static void tc_os_threadIdSelf (void)
+CUnit_Test(thread, idself)
 {
     os_threadId   thread_os_threadId;
     os_threadAttr thread_os_threadAttr;
@@ -612,7 +612,7 @@ static void tc_os_threadIdSelf (void)
   #endif
 }
 
-static void tc_os_threadWaitExit (void)
+CUnit_Test(thread, join)
 {
     os_threadId   thread_os_threadId;
     os_threadAttr thread_os_threadAttr;
@@ -770,13 +770,15 @@ static void tc_os_threadWaitExit (void)
   #endif
 }
 
-static void tc_os_threadFigureIdentity (void)
+CUnit_Test(thread, figure_identity)
 {
-    os_threadId   thread_os_threadId;
+#if !defined(_WIN32)
+    os_threadId thread_os_threadId;
     os_threadAttr thread_os_threadAttr;
     char threadId[512];
     char thread_name[512];
     int result;
+#endif /* WIN32 */
     uintmax_t threadNumeric = 0;
 
   #if ENABLE_TRACING
@@ -886,7 +888,7 @@ static void tc_os_threadFigureIdentity (void)
   #endif
 }
 
-static void tc_os_threadAttrInit (void)
+CUnit_Test(thread, attr_init)
 {
     os_threadAttr thread_os_threadAttr;
   #if ENABLE_TRACING
@@ -922,7 +924,7 @@ static void tc_os_threadAttrInit (void)
   #endif
 }
 
-static void tc_os_threadMemMalloc (void)
+CUnit_Test(thread, memmalloc)
 {
   #if ENABLE_TRACING
     /* Check os_threadMemMalloc with success result for main thread */
@@ -960,7 +962,7 @@ static void tc_os_threadMemMalloc (void)
   #endif
 }
 
-static void tc_os_threadMemGet (void)
+CUnit_Test(thread, memget)
 {
   #if ENABLE_TRACING
     /* Check os_threadMemGet for main thread and non allocated index */
@@ -973,6 +975,12 @@ static void tc_os_threadMemGet (void)
     /* Check os_threadMemGet for main thread and allocated index */
     printf ("Starting tc_os_threadMemGet_002\n");
   #endif
+    /* FIXME: This test is no good. Apart from the fact that a valid thread
+              memory index should be used (os_threadMemoryIndex), this also
+              does not work if the test is executed in a self-contained
+              manner using the CUnit runner. For now just work around it by
+              first doing a os_threadMemMalloc. */
+    (void)os_threadMemMalloc(3, 100);
     returnval = os_threadMemGet (3);
     CU_ASSERT (returnval != NULL);
 
@@ -981,7 +989,7 @@ static void tc_os_threadMemGet (void)
   #endif
 }
 
-static void tc_os_threadMemFree (void)
+CUnit_Test(thread, memfree)
 {
   #if ENABLE_TRACING
     /* Check os_threadMemFree for main thread and non allocated index */
@@ -995,6 +1003,10 @@ static void tc_os_threadMemFree (void)
     /* Check os_threadMemFree for main thread and allocated index */
     printf ("Starting tc_os_threadMemFree_002\n");
   #endif
+    /* FIXME: See comments on memget test. */
+    (void)os_threadMemMalloc(3, 100);
+    returnval = os_threadMemGet(3);
+    CU_ASSERT(returnval != NULL);
     os_threadMemFree (3);
     returnval = os_threadMemGet (3);
     CU_ASSERT (returnval == NULL);
@@ -1004,7 +1016,7 @@ static void tc_os_threadMemFree (void)
   #endif
 }
 
-static void tc_os_threadModule (void)
+CUnit_Test(thread, module)
 {
     os_threadId   thread_os_threadId;
     os_threadAttr thread_os_threadAttr;
@@ -1175,46 +1187,3 @@ static void tc_os_threadModule (void)
   #endif
 }
 
-int main (int argc, char *argv[])
-{
-    CU_pSuite suite;
-
-    if (runner_init(argc, argv)){
-        goto err_init;
-    }
-    if ((suite = CU_add_suite ("abstraction_thread", suite_abstraction_thread_init, suite_abstraction_thread_clean)) == NULL){
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_threadCreate", tc_os_threadCreate) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_threadIdSelf", tc_os_threadIdSelf) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_threadWaitExit", tc_os_threadWaitExit) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_threadFigureIdentity", tc_os_threadFigureIdentity) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_threadAttrInit", tc_os_threadAttrInit) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_threadMemMalloc", tc_os_threadMemMalloc) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_threadMemGet", tc_os_threadMemGet) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_threadMemFree", tc_os_threadMemFree) == NULL) {
-        goto err;
-    }
-    if (CU_add_test (suite, "tc_os_threadModule", tc_os_threadModule) == NULL) {
-        goto err;
-    }
-    runner_run();
-err:
-    runner_fini();
-err_init:
-    return CU_get_error();
-}

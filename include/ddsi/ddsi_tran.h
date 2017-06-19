@@ -17,12 +17,6 @@
 #include "ddsi/q_globals.h"
 #include "ddsi/q_protocol.h"
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
 /* Types supporting handles */
 
 #define DDSI_TRAN_CONN 1
@@ -179,7 +173,7 @@ void ddsi_factory_conn_init (ddsi_tran_factory_t factory, ddsi_tran_conn_t conn)
 
 #define ddsi_conn_handle(c) (ddsi_tran_handle (&(c)->m_base))
 #define ddsi_conn_locator(c,l) (ddsi_tran_locator (&(c)->m_base,(l)))
-OS_API ssize_t ddsi_conn_write (ddsi_tran_conn_t conn, const struct msghdr * msg, size_t len, uint32_t flags);
+OSAPI_EXPORT ssize_t ddsi_conn_write (ddsi_tran_conn_t conn, const struct msghdr * msg, size_t len, uint32_t flags);
 ssize_t ddsi_conn_read (ddsi_tran_conn_t conn, unsigned char * buf, size_t len);
 bool ddsi_conn_peer_locator (ddsi_tran_conn_t conn, nn_locator_t * loc);
 void ddsi_conn_add_ref (ddsi_tran_conn_t conn);
@@ -193,5 +187,5 @@ ddsi_tran_conn_t ddsi_listener_accept (ddsi_tran_listener_t listener);
 int ddsi_listener_listen (ddsi_tran_listener_t listener);
 void ddsi_listener_unblock (ddsi_tran_listener_t listener);
 void ddsi_listener_free (ddsi_tran_listener_t listener);
-#undef OS_API
+
 #endif

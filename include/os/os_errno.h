@@ -24,17 +24,11 @@ extern "C" {
 
 #include <errno.h> /* Required on Windows platforms too */
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
     /** \brief Get error code set by last operation that failed
      *
      * @return Error code
      */
-    OS_API int
+    OSAPI_EXPORT int
     os_getErrno (
                  void);
 
@@ -43,7 +37,7 @@ extern "C" {
      * @return void
      * @param err Error code
      */
-    OS_API void
+    OSAPI_EXPORT void
     os_setErrno (
                  int err);
 
@@ -55,7 +49,7 @@ extern "C" {
      * @param buf Buffer to store description in
      * @oaram bufsz Number of bytes available in buf
      */
-    OS_API int
+    OSAPI_EXPORT int
     os_strerror_r (
         _In_ int err,
         _Out_writes_z_(bufsz) char *buf,
@@ -67,11 +61,9 @@ extern "C" {
      * @return Pointer to string allocated in thread specific memory
      * @param err Error number
      */
-    OS_API const char *
+    OSAPI_EXPORT const char *
     os_strerror (
         _In_ int err);
-
-#undef OS_API
 
 #if defined (__cplusplus)
 }

@@ -25,14 +25,12 @@ static int dds_read_impl
 )
 {
   uint32_t i;
-  int ret = DDS_RETCODE_OK;
-  struct dds_reader * rd = (dds_reader*) reader;
+  int32_t ret = DDS_RETCODE_OK;
+  struct dds_reader * rd;
   struct thread_state1 * const thr = lookup_thread_state ();
   const bool asleep = !vtime_awake_p (thr->vtime);
   const bool lock = maxs != 0;
 
-  assert (reader);
-  assert (reader->m_kind == DDS_TYPE_READER);
   assert (buf);
   assert (si);
 
@@ -47,79 +45,82 @@ static int dds_read_impl
   {
     thread_state_awake (thr);
   }
-  os_mutexLock (&reader->m_mutex);
-  if (maxs == 0)
-  {
-    maxs = dds_rhc_samples (rd->m_rd->rhc);
-  }
-
-  /* Allocate samples if not provided (assuming all or none provided) */
-
-  if (buf[0] == NULL)
-  {
-    char * loan;
-    const size_t sz = rd->m_topic->m_descriptor->m_size;
-    const uint32_t loan_size = (uint32_t) (sz * maxs);
-
-    /* Allocate, use or reallocate loan cached on reader */
-
-    if (rd->m_loan_out)
-    {
-      loan = dds_alloc (loan_size);
-    }
-    else
-    {
-      if (rd->m_loan)
+  ret = dds_reader_lock(reader, &rd);
+  if (ret == DDS_RETCODE_OK) {
+      if (maxs == 0)
       {
-        if (rd->m_loan_size < loan_size)
+        maxs = dds_rhc_samples (rd->m_rd->rhc);
+      }
+
+      /* Allocate samples if not provided (assuming all or none provided) */
+
+      if (buf[0] == NULL)
+      {
+        char * loan;
+        const size_t sz = rd->m_topic->m_descriptor->m_size;
+        const uint32_t loan_size = (uint32_t) (sz * maxs);
+
+        /* Allocate, use or reallocate loan cached on reader */
+
+        if (rd->m_loan_out)
         {
-          rd->m_loan = dds_realloc_zero (rd->m_loan, loan_size);
-          rd->m_loan_size = loan_size;
+          loan = dds_alloc (loan_size);
         }
+        else
+        {
+          if (rd->m_loan)
+          {
+            if (rd->m_loan_size < loan_size)
+            {
+              rd->m_loan = dds_realloc_zero (rd->m_loan, loan_size);
+              rd->m_loan_size = loan_size;
+            }
+          }
+          else
+          {
+            rd->m_loan = dds_alloc (loan_size);
+            rd->m_loan_size = loan_size;
+          }
+          loan = rd->m_loan;
+          rd->m_loan_out = true;
+        }
+        for (i = 0; i < maxs; i++)
+        {
+          buf[i] = loan;
+          loan += sz;
+        }
+      }
+      if (cond)
+      {
+        dds_read_fn fn = take ? dds_rhc_take_w_condition : dds_rhc_read_w_condition;
+        ret = (fn) (rd->m_rd->rhc, lock, buf, si, maxs, cond, hand);
       }
       else
       {
-        rd->m_loan = dds_alloc (loan_size);
-        rd->m_loan_size = loan_size;
+        dds_readc_fc fn = take ? dds_rhc_take : dds_rhc_read;
+        ret = (fn)
+        (
+          rd->m_rd->rhc, lock, buf, si, maxs,
+          mask & DDS_ANY_SAMPLE_STATE,
+          mask & DDS_ANY_VIEW_STATE,
+          mask & DDS_ANY_INSTANCE_STATE,
+          hand
+        );
       }
-      loan = rd->m_loan;
-      rd->m_loan_out = true;
-    }
-    for (i = 0; i < maxs; i++)
-    {
-      buf[i] = loan;
-      loan += sz;
-    }
-  }
-  if (cond)
-  {
-    dds_read_fn fn = take ? dds_rhc_take_w_condition : dds_rhc_read_w_condition;
-    ret = (fn) (rd->m_rd->rhc, lock, buf, si, maxs, cond, hand);
-  }
-  else
-  {
-    dds_readc_fc fn = take ? dds_rhc_take : dds_rhc_read;
-    ret = (fn)
-    (
-      rd->m_rd->rhc, lock, buf, si, maxs,
-      mask & DDS_ANY_SAMPLE_STATE,
-      mask & DDS_ANY_VIEW_STATE,
-      mask & DDS_ANY_INSTANCE_STATE,
-      hand
-    );
-  }
 
-  /* read/take resets data available status */
-  dds_entity_status_reset(reader, DDS_DATA_AVAILABLE_STATUS);
+      /* read/take resets data available status */
+      dds_entity_status_reset(rd, DDS_DATA_AVAILABLE_STATUS);
 
-  /* reset DATA_ON_READERS status on subscriber after successful read/take */
+      /* reset DATA_ON_READERS status on subscriber after successful read/take */
 
-  if (reader->m_parent->m_kind == DDS_TYPE_SUBSCRIBER)
-  {
-    dds_subscriber * sub = (dds_subscriber*) reader->m_parent;
-    dds_entity_status_reset(&sub->m_entity, DDS_DATA_ON_READERS_STATUS);
+      if (dds_entity_kind(((dds_entity*)rd)->m_parent->m_hdl) == DDS_KIND_SUBSCRIBER)
+      {
+        dds_entity_status_reset(((dds_entity*)rd)->m_parent, DDS_DATA_ON_READERS_STATUS);
+      }
+      dds_reader_unlock(rd);
+  } else {
+      ret = DDS_ERRNO(ret, DDS_MOD_READER, 0);
   }
-  os_mutexUnlock (&reader->m_mutex);
 
   if (asleep)
   {
@@ -136,15 +137,13 @@ static int dds_readcdr_impl
  dds_condition_t cond, dds_instance_handle_t hand
  )
 {
-  int ret = DDS_RETCODE_OK;
-  struct dds_reader * rd = (dds_reader*) reader;
+  int32_t ret = DDS_RETCODE_OK;
+  struct dds_reader * rd;
   struct thread_state1 * const thr = lookup_thread_state ();
   const bool asleep = !vtime_awake_p (thr->vtime);
   const bool lock = maxs != 0;
 
   assert (take);
-  assert (reader);
-  assert (reader->m_kind == DDS_TYPE_READER);
   assert (buf);
   assert (si);
   assert (cond == NULL);
@@ -162,28 +161,28 @@ static int dds_readcdr_impl
   {
     thread_state_awake (thr);
   }
-  os_mutexLock (&reader->m_mutex);
+  ret = dds_reader_lock(reader, &rd);
+  if (ret == DDS_RETCODE_OK) {
+      ret = dds_rhc_takecdr
+        (
+         rd->m_rd->rhc, lock, buf, si, maxs,
+         mask & DDS_ANY_SAMPLE_STATE,
+         mask & DDS_ANY_VIEW_STATE,
+         mask & DDS_ANY_INSTANCE_STATE,
+         hand
+         );
 
-  ret = dds_rhc_takecdr
-    (
-     rd->m_rd->rhc, lock, buf, si, maxs,
-     mask & DDS_ANY_SAMPLE_STATE,
-     mask & DDS_ANY_VIEW_STATE,
-     mask & DDS_ANY_INSTANCE_STATE,
-     hand
-     );
+      /* read/take resets data available status */
+      dds_entity_status_reset(rd, DDS_DATA_AVAILABLE_STATUS);
 
-  /* read/take resets data available status */
-  dds_entity_status_reset(reader, DDS_DATA_AVAILABLE_STATUS);
+      /* reset DATA_ON_READERS status on subscriber after successful read/take */
 
-  /* reset DATA_ON_READERS status on subscriber after successful read/take */
-
-  if (reader->m_parent->m_kind == DDS_TYPE_SUBSCRIBER)
-  {
-    dds_subscriber * sub = (dds_subscriber*) reader->m_parent;
-    dds_entity_status_reset(&sub->m_entity, DDS_DATA_ON_READERS_STATUS);
+      if (dds_entity_kind(((dds_entity*)rd)->m_parent->m_hdl) == DDS_KIND_SUBSCRIBER)
+      {
+        dds_entity_status_reset(((dds_entity*)rd)->m_parent, DDS_DATA_ON_READERS_STATUS);
+      }
+      dds_reader_unlock(rd);
   }
-  os_mutexUnlock (&reader->m_mutex);
 
   if (asleep)
   {
@@ -238,30 +237,39 @@ dds_return_t dds_read_mask_wl /* With loan */
   return dds_read_impl (true, rd_or_cnd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
-int dds_read_instance
-(
-  dds_entity_t rd, void ** buf, uint32_t maxs, dds_sample_info_t * si,
-  dds_instance_handle_t hand, uint32_t mask
-)
+int
+dds_read_instance(
+        dds_entity_t reader,
+        void **buf,
+        uint32_t maxs,
+        dds_sample_info_t *si,
+        dds_instance_handle_t handle,
+        uint32_t mask)
 {
-  assert (hand != DDS_HANDLE_NIL);
-  return dds_read_impl (false, rd, buf, maxs, si, mask, NULL, hand);
+  assert (handle != DDS_HANDLE_NIL);
+  return dds_read_impl (false, reader, buf, maxs, si, mask, NULL, handle);
 }
 
-int dds_read_cond
-(
-  dds_entity_t rd, void ** buf, uint32_t maxs,
-  dds_sample_info_t * si, dds_condition_t cond
-)
+int
+dds_read_cond(
+        dds_entity_t reader,
+        void **buf,
+        uint32_t maxs,
+        dds_sample_info_t *si,
+        dds_condition_t condition)
 {
-  assert (cond);
-  return dds_read_impl (false, rd, buf, maxs, si, 0, cond, DDS_HANDLE_NIL);
+  assert (condition);
+  return dds_read_impl (false, reader, buf, maxs, si, 0, condition, DDS_HANDLE_NIL);
 }
 
-int dds_read_next (dds_entity_t rd, void ** buf, dds_sample_info_t * si)
+int
+dds_read_next(
+        dds_entity_t reader,
+        void **buf,
+        dds_sample_info_t *si)
 {
   uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
-  return dds_read_impl (false, rd, buf, 1u, si, mask, NULL, DDS_HANDLE_NIL);
+  return dds_read_impl (false, reader, buf, 1u, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
 dds_return_t dds_take
@@ -309,72 +317,88 @@ dds_return_t dds_take_mask_wl
   return dds_read_impl (true, rd_or_cnd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
-int dds_takecdr
-(
- dds_entity_t rd, struct serdata ** buf, uint32_t maxs,
- dds_sample_info_t * si, uint32_t mask
- )
+int
+dds_takecdr(
+        dds_entity_t reader,
+        struct serdata **buf,
+        uint32_t maxs,
+        dds_sample_info_t *si,
+        uint32_t mask)
 {
-  return dds_readcdr_impl (true, rd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
+  return dds_readcdr_impl (true, reader, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
-int dds_take_instance
-(
-  dds_entity_t rd, void ** buf, uint32_t maxs, dds_sample_info_t * si,
-  dds_instance_handle_t hand, uint32_t mask
-)
+int
+dds_take_instance(
+        dds_entity_t reader,
+        void **buf,
+        uint32_t maxs,
+        dds_sample_info_t *si,
+        dds_instance_handle_t handle,
+        uint32_t mask)
 {
-  assert (hand != DDS_HANDLE_NIL);
-  return dds_read_impl (true, rd, buf, maxs, si, mask, NULL, hand);
+  assert (handle != DDS_HANDLE_NIL);
+  return dds_read_impl (true, reader, buf, maxs, si, mask, NULL, handle);
 }
 
-int dds_take_cond
-(
-  dds_entity_t rd, void ** buf, uint32_t maxs,
-  dds_sample_info_t * si, dds_condition_t cond
-)
+int
+dds_take_cond(
+        dds_entity_t reader,
+        void **buf,
+        uint32_t maxs,
+        dds_sample_info_t *si,
+        dds_condition_t conditition)
 {
-  assert (cond);
-  return dds_read_impl (true, rd, buf, maxs, si, 0, cond, DDS_HANDLE_NIL);
+  assert (conditition);
+  return dds_read_impl (true, reader, buf, maxs, si, 0, conditition, DDS_HANDLE_NIL);
 }
 
-int dds_take_next (dds_entity_t rd, void ** buf, dds_sample_info_t * si)
+int
+dds_take_next(
+        dds_entity_t reader,
+        void **buf,
+        dds_sample_info_t *si)
 {
   uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
-  return dds_read_impl (true, rd, buf, 1u, si, mask, NULL, DDS_HANDLE_NIL);
+  return dds_read_impl (true, reader, buf, 1u, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
-void dds_return_loan (dds_entity_t rd, void ** buf, uint32_t count)
+void
+dds_return_loan(
+        dds_entity_t reader,
+        void **buf,
+        uint32_t maxs)
 {
   uint32_t i;
+  uint32_t ret;
   const dds_topic_descriptor_t * desc;
-  dds_reader * reader = (dds_reader*) rd;
+  dds_reader * rd;
 
-  assert (rd);
-  assert (rd->m_kind == DDS_TYPE_READER);
   assert (buf);
 
-  os_mutexLock (&rd->m_mutex);
-  desc = reader->m_topic->m_descriptor;
+  ret = dds_reader_lock(reader, &rd);
+  if (ret == DDS_RETCODE_OK) {
+      desc = rd->m_topic->m_descriptor;
 
-  /* Only free sample contents if may have been allocated */
+      /* Only free sample contents if may have been allocated */
 
-  if (desc->m_flagset & DDS_TOPIC_NO_OPTIMIZE)
-  {
-    for (i = 0; i < count; i++)
-    {
-      dds_sample_free (buf[i], desc, DDS_FREE_CONTENTS);
-    }
+      if (desc->m_flagset & DDS_TOPIC_NO_OPTIMIZE)
+      {
+        for (i = 0; i < maxs; i++)
+        {
+          dds_sample_free (buf[i], desc, DDS_FREE_CONTENTS);
+        }
+      }
+
+      /* If possible return loan buffer to reader */
+
+      if (buf[0] == rd->m_loan)
+      {
+        rd->m_loan_out = false;
+        memset (rd->m_loan, 0, rd->m_loan_size);
+        buf[0] = NULL;
+      }
+      dds_reader_unlock(rd);
   }
-
-  /* If possible return loan buffer to reader */
-
-  if (buf[0] == reader->m_loan)
-  {
-    reader->m_loan_out = false;
-    memset (reader->m_loan, 0, reader->m_loan_size);
-    buf[0] = NULL;
-  }
-  os_mutexUnlock (&rd->m_mutex);
   dds_free (buf[0]);
 }

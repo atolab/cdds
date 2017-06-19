@@ -6,7 +6,7 @@
 
 #define DDS_PUBLISHER_STATUS_MASK   0
 
-static dds_return_t dds_publisher_instance_hdl(dds_entity_t e, dds_instance_handle_t *i)
+static dds_return_t dds_publisher_instance_hdl(dds_entity *e, dds_instance_handle_t *i)
 {
     assert(e);
     assert(i);
@@ -34,7 +34,7 @@ static dds_return_t dds_publisher_qos_validate (_In_ const dds_qos_t *qos, _In_ 
     return ret;
 }
 
-static dds_return_t dds_publisher_qos_set (dds_entity_t e, const dds_qos_t *qos, bool enabled)
+static dds_return_t dds_publisher_qos_set (dds_entity *e, const dds_qos_t *qos, bool enabled)
 {
     dds_return_t ret = dds_publisher_qos_validate(qos, enabled);
     if (ret == DDS_RETCODE_OK) {
@@ -46,97 +46,90 @@ static dds_return_t dds_publisher_qos_set (dds_entity_t e, const dds_qos_t *qos,
     return ret;
 }
 
-dds_entity_t dds_create_publisher
-(
-  _In_ dds_entity_t pp,
-  _In_opt_ const dds_qos_t * qos,
-  _In_opt_ const dds_listener_t * listener
-)
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+_Must_inspect_result_ dds_entity_t
+dds_create_publisher(
+        _In_     dds_entity_t participant,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener)
 {
+  dds_entity * par;
   dds_publisher * pub;
+  dds_entity_t hdl;
   dds_qos_t * new_qos = NULL;
   dds_return_t ret;
+  int32_t errnr;
 
-
-  /* Check participant */
-  if (!dds_entity_is_kind(pp, DDS_TYPE_PARTICIPANT))
-  {
-      /* TODO: Temporary implementation
-       * It should actually return a handle indicating a BAD_PARAMETER, but as long
-       * as there is no implementation of an handle server NULL is returned instead.
-       */
-      return NULL;
+  errnr = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
+  if (errnr != DDS_RETCODE_OK) {
+      return DDS_ERRNO(errnr, DDS_MOD_KERNEL, DDS_ERR_M2);
   }
 
   /* Validate qos */
-
-  if (qos)
-  {
+  if (qos) {
     ret = dds_publisher_qos_validate(qos, false);
-    if (ret != DDS_RETCODE_OK)
-    {
-      goto fail;
+    if (ret != DDS_RETCODE_OK) {
+      dds_entity_unlock(par);
+      return ret;
     }
     new_qos = dds_qos_create ();
-    dds_qos_copy (new_qos, qos);
+    /* Only returns failure when one of the qos args is NULL, which
+     * is not the case here. */
+    (void)dds_qos_copy(new_qos, qos);
   }
 
   /* Create publisher */
-  os_mutexLock (&pp->m_mutex);
   pub = dds_alloc (sizeof (*pub));
-  dds_entity_init (&pub->m_entity, pp, DDS_TYPE_PUBLISHER, new_qos, listener, DDS_PUBLISHER_STATUS_MASK);
+  hdl = dds_entity_init (&pub->m_entity, par, DDS_KIND_PUBLISHER, new_qos, listener, DDS_PUBLISHER_STATUS_MASK);
   pub->m_entity.m_deriver.set_qos = dds_publisher_qos_set;
   pub->m_entity.m_deriver.get_instance_hdl = dds_publisher_instance_hdl;
-  os_mutexUnlock (&pp->m_mutex);
-  return &pub->m_entity;
+  dds_entity_unlock(par);
 
-fail:
-
-  /* TODO: return ret when handles have been implemented correctly */
-  return NULL;
+  return hdl;
 }
 
 
-dds_return_t dds_suspend
-(
-  _In_ dds_entity_t pub
-)
+_Pre_satisfies_((publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER)
+DDS_EXPORT dds_return_t
+dds_suspend(
+        _In_ dds_entity_t publisher)
 {
   dds_return_t ret;
 
   /* TODO: Currently unsupported. */
-  OS_UNUSED_ARG(pub);
+  OS_UNUSED_ARG(publisher);
 
   ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_WRITER, 0);
   return ret;
 }
 
 
-dds_return_t dds_resume
-(
-  _In_ dds_entity_t pub
-)
+_Pre_satisfies_((publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER)
+dds_return_t
+dds_resume(
+        _In_ dds_entity_t publisher)
 {
   dds_return_t ret;
 
   /* TODO: Currently unsupported. */
-  OS_UNUSED_ARG(pub);
+  OS_UNUSED_ARG(publisher);
 
   ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_WRITER, 0);
   return ret;
 }
 
 
-dds_return_t dds_wait_for_acks
-(
-  _In_ dds_entity_t pub_or_w,
-  _In_ dds_duration_t timeout
-)
+_Pre_satisfies_(((publisher_or_writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER   ) ||\
+                ((publisher_or_writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER) )
+dds_return_t
+dds_wait_for_acks(
+        _In_ dds_entity_t publisher_or_writer,
+        _In_ dds_duration_t timeout)
 {
   dds_return_t ret;
 
   /* TODO: Currently unsupported. */
-  OS_UNUSED_ARG(pub_or_w);
+  OS_UNUSED_ARG(publisher_or_writer);
   OS_UNUSED_ARG(timeout);
 
   ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_WRITER, 0);

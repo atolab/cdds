@@ -21,12 +21,6 @@
 #include "dds.h"
 #include "kernel/dds_topic.h"
 
-#if VDDS_BUILD
-#define OS_API OS_API_EXPORT
-#else
-#define OS_API OS_API_IMPORT
-#endif
-
 #ifndef PLATFORM_IS_LITTLE_ENDIAN
 #  if OS_ENDIANNESS == OS_BIG_ENDIAN
 #    define PLATFORM_IS_LITTLE_ENDIAN 0
@@ -172,7 +166,7 @@ serstatepool_t ddsi_serstatepool_new (void);
 void ddsi_serstatepool_free (serstatepool_t pool);
 
 serdata_t ddsi_serdata_ref (serdata_t serdata);
-OS_API void ddsi_serdata_unref (serdata_t serdata);
+OSAPI_EXPORT void ddsi_serdata_unref (serdata_t serdata);
 int ddsi_serdata_refcount_is_1 (serdata_t serdata);
 nn_mtime_t ddsi_serdata_twrite (const struct serdata * serdata);
 void ddsi_serdata_set_twrite (struct serdata * serdata, nn_mtime_t twrite);
@@ -180,19 +174,19 @@ uint32_t ddsi_serdata_size (const struct serdata * serdata);
 int ddsi_serdata_is_key (const struct serdata * serdata);
 int ddsi_serdata_is_empty (const struct serdata * serdata);
 
-OS_API void ddsi_serstate_append_blob (serstate_t st, size_t align, size_t sz, const void *data);
-OS_API void ddsi_serstate_set_msginfo
+OSAPI_EXPORT void ddsi_serstate_append_blob (serstate_t st, size_t align, size_t sz, const void *data);
+OSAPI_EXPORT void ddsi_serstate_set_msginfo
 (
   serstate_t st, unsigned statusinfo, nn_wctime_t timestamp,
   void * dummy
 );
-OS_API serstate_t ddsi_serstate_new (serstatepool_t pool, const struct sertopic * topic);
-OS_API serdata_t ddsi_serstate_fix (serstate_t st);
+OSAPI_EXPORT serstate_t ddsi_serstate_new (serstatepool_t pool, const struct sertopic * topic);
+OSAPI_EXPORT serdata_t ddsi_serstate_fix (serstate_t st);
 nn_mtime_t ddsi_serstate_twrite (const struct serstate *serstate);
 void ddsi_serstate_set_twrite (struct serstate *serstate, nn_mtime_t twrite);
 void ddsi_serstate_release (serstate_t st);
 void * ddsi_serstate_append (serstate_t st, size_t n);
 void * ddsi_serstate_append_align (serstate_t st, size_t a);
 void * ddsi_serstate_append_aligned (serstate_t st, size_t n, size_t a);
-#undef OS_API
+
 #endif

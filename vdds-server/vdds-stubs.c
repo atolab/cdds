@@ -194,7 +194,7 @@ struct sertopic *make_sertopic(const char *name, const char *typename, const dds
     return st;
 }
 
-int dds_topic_create(dds_entity_t pp, dds_entity_t *topic, const dds_topic_descriptor_t *descriptor, const char *name, const dds_qos_t *qos, const dds_topiclistener_t *listener)
+dds_entity_t dds_create_topic(_In_ dds_entity_t pp,_In_ const dds_topic_descriptor_t * descriptor, _In_z_ const char * name, _In_opt_ const dds_qos_t * qos,  _In_opt_ const dds_listener_t * listener)
 {
     struct reqhdr req;
     struct rephdr rep;
@@ -217,8 +217,7 @@ int dds_topic_create(dds_entity_t pp, dds_entity_t *topic, const dds_topic_descr
     if (simple_reply(fp, &rep) < 0) {
         return -DDS_RETCODE_ERROR;
     }
-    *topic = rep.u.entity.e;
-    return rep.status;
+    return rep.u.entity.e;
 }
 
 dds_entity_t dds_topic_find(dds_entity_t pp, const char *name)

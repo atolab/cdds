@@ -366,8 +366,9 @@ os_threadCreate (
              result = pthread_attr_setschedpolicy (&attr, SCHED_FIFO);
 
              if (result != 0) {
-                 char errmsg[64];
-                 os_strerror_r(result, errmsg, sizeof(errmsg));
+                char errmsg[64];
+                errmsg[0] = '\0';
+                (void)os_strerror_r(result, errmsg, sizeof(errmsg));
                 OS_REPORT (OS_WARNING, "os_threadCreate", 2,
                              "pthread_attr_setschedpolicy failed for SCHED_FIFO with "\
                              "error %d (%s) for thread '%s', reverting to SCHED_OTHER.",
