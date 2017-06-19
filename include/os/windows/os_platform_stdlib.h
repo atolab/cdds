@@ -38,6 +38,10 @@ extern "C" {
 
 #define MAXHOSTNAMELEN MAX_HOSTNAME_LEN
 
+#if _MSC_VER < 1900
+extern int snprintf(char *s, size_t n, const char *format, ...);
+#endif
+
 #if defined (__cplusplus)
 }
 #endif

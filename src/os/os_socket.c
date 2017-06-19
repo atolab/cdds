@@ -308,13 +308,13 @@ os_sockaddrStringToAddress(
     if (ret != 0) {
         fmt = "getaddrinfo(\"%s\") failed: %s";
         OS_REPORT(
-            OS_DEBUG, __func__, 0, fmt, addressString, os_gai_strerror(ret));
+            OS_DEBUG, OS_FUNCTION, 0, fmt, addressString, os_gai_strerror(ret));
     } else if (res != NULL) {
         memcpy(addressOut, res->ai_addr, res->ai_addrlen);
         freeaddrinfo(res);
     } else {
         fmt = "getaddrinfo(\"%s\") did not return any results";
-        OS_REPORT(OS_DEBUG, __func__, 0, fmt, addressString);
+        OS_REPORT(OS_DEBUG, OS_FUNCTION, 0, fmt, addressString);
     }
 
     return (ret == 0 && res != NULL);

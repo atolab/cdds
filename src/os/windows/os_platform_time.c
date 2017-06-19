@@ -24,9 +24,9 @@
 
 #include <assert.h>
 
-/* NoGetSystemTimePreciseAsFileTime can be derived from the version set in 
- * _WIN32_WINNT, but didn't bother doing so yet. */
-#if NoGetSystemTimePreciseAsFileTime
+#if defined(_WIN32_WINNT) && _WIN32_WINNT > 0x0603
+#define UseGetSystemTimePriciseAsFileTime
+
 /* GetSystemTimeAsFileTimeFunc is set when available (on Windows 8 and later). */
 static VOID (WINAPI *GetSystemTimePreciseAsFileTimeFunc) (_Out_ LPFILTETIME);
 static HANDLE Kernel32ModuleHandle;
@@ -59,14 +59,14 @@ os__timeDefaultTimeGet(void)
      * then the actual resolution of this clock can be retrieved using the
      * GetSystemTimeAdjustment. See for example OSPL-4394.
      */
-#if NoGetSystemTimePreciseAsFileTime
+#ifdef UseGetSystemTimePreciseAsFileTime
 	if (GetSystemTimePreciseAsFileTimeFunc) {
 		GetSystemTimePreciseAsFileTimeFunc(&ft);
 	} else {
 		GetSystemTimeAsFileTime(&ft);
 	}
 #else
-	GetSystemTimePreciseAsFileTime(&ft);
+	GetSystemTimeAsFileTime(&ft);
 #endif
     ns100.LowPart = ft.dwLowDateTime;
     ns100.HighPart = ft.dwHighDateTime;
@@ -79,7 +79,7 @@ os__timeDefaultTimeGet(void)
 void
 os_timeModuleInit(void)
 {
-#if NoGetSystemTimePreciseAsFileTime
+#ifdef UseGetSystemTimePreciseAsFileTime
     /* Resolve the time-functions from the Kernel32-library. */
 
     /* This os_timeModuleInit is currently called from DllMain. This means
@@ -97,9 +97,9 @@ os_timeModuleInit(void)
 void
 os_timeModuleExit(void)
 {
-#if NoGetSystemTimePreciseAsFileTime
-    if(Kernel32ModuleHandle){
-		GetSystemTimePreciseAsFileTimeFunc = NULL;
+#ifdef UseGetSystemTimePreciseAsFileTime
+    if (Kernel32ModuleHandle) {
+        GetSystemTimePreciseAsFileTimeFunc = NULL;
         FreeLibrary(Kernel32ModuleHandle);
         Kernel32ModuleHandle = NULL;
     }
