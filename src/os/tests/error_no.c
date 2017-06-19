@@ -39,7 +39,7 @@ CUnit_Test(error_no, get_and_set)
   #endif
     os_setErrno (0);
     /* Call strtol with an invalid format on purpose. */
-    strtol ("1000000000000000000000000000000000000000000000000", NULL, 10);
+    (void)strtol ("1000000000000000000000000000000000000000000000000", NULL, 10);
     CU_ASSERT (os_getErrno () != 0);
 
   #if ENABLE_TRACING

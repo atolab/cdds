@@ -27,7 +27,7 @@ sleepMsec(int32_t msec)
 
 uint32_t new_thread (_In_ void *args)
 {
-  snprintf (arg_result, sizeof (arg_result), "%s", (char *)args);
+  (void)snprintf (arg_result, sizeof (arg_result), "%s", (char *)args);
   sleepMsec (500);
   return 0;
 }
@@ -786,7 +786,6 @@ CUnit_Test(thread, figure_identity)
     char thread_name[512];
     int result;
 #endif /* WIN32 */
-    uintmax_t threadNumeric = 0;
 
   #if ENABLE_TRACING
     /* Figure out the identity of the thread, where it's name is known */
@@ -807,6 +806,7 @@ CUnit_Test(thread, figure_identity)
         CU_ASSERT (result == os_resultSuccess);
 
         if (result == os_resultSuccess) {
+            uintmax_t threadNumeric = 0;
           #ifdef _WRS_KERNEL
             int dum;
             sscanf (threadId, "%s (%d %d)", thread_name, &threadNumeric, &dum);
@@ -851,9 +851,9 @@ CUnit_Test(thread, figure_identity)
         os_threadFigureIdentity (threadId, sizeof(threadId));
 
       #ifdef WIN32
-        sscanf (threadId, "%d", &threadNumeric);
+        (void)sscanf (threadId, "%d", &threadNumeric);
       #else
-        sscanf (threadId, "%"PRIxPTR, &threadNumeric);
+        (void)sscanf (threadId, "%"PRIxPTR, &threadNumeric);
       #endif
 
       #ifndef INTEGRITY
@@ -883,7 +883,7 @@ CUnit_Test(thread, figure_identity)
        char threadIdString[512];
        unsigned int threadIdLen;
 
-       snprintf (threadIdString, sizeof(threadIdString), "0x%"PRIxMAX, os_threadIdToInteger(os_threadIdSelf()));
+       (void)snprintf (threadIdString, sizeof(threadIdString), "0x%"PRIxMAX, os_threadIdToInteger(os_threadIdSelf()));
        threadIdLen = os_threadFigureIdentity (threadId, sizeof(threadId));
 
        CU_ASSERT (threadIdLen == strlen(threadIdString));

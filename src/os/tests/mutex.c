@@ -37,7 +37,6 @@ os_time             pdelay = { 1, 0 };
 os_procId           mutex_os_procId;
 os_procId           mutex_os_procId1;
 os_procId           mutex_os_procId2;
-os_result           result;
 char                buffer[512];
 int                 supported_resultBusy;
 int                 loop;
@@ -289,6 +288,8 @@ CUnit_Test(mutex, lock, false)
 
 CUnit_Test(mutex, trylock, false)
 {
+    os_result result;
+
   #if ENABLE_TRACING
     /* Test critical section access with trylocking and PRIVATE scope */
     printf ("Starting tc_os_mutexTryLock_001\n");
