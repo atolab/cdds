@@ -1038,7 +1038,12 @@ static void rebuild_make_locs_nrds(int **locs_nrds, int nreaders, int nlocs, con
     for (j = 0; j < nreaders; j++)
       if (covered[j * nlocs + i] >= 0)
         n++;
+
+/* The compiler doesn't realize that ln is large enough. */
+#pragma warning(push)
+#pragma warning(disable: 6386)
     ln[i] = n;
+#pragma warning(pop)
   }
   *locs_nrds = ln;
 }
