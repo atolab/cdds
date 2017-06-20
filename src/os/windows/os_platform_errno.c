@@ -26,11 +26,11 @@ nowadays is just an an alias for GetLastError as intended by Microsoft:
 http://www.sockets.com/winsock.htm#Deviation_ErrorCodes
 
 There is no relationship between GetLastError and errno.
-GetLastError gets the last error that occurred in a Windows API function (for the current thread).
-errno contains the last error that occurred in the C runtime library
-So if you call a winapi function like CreateFile you check GetLastError
-(assuming that the function call failed), while if you call a C runtime library function
-like fopen you check errno (again assuming that the call failed).
+GetLastError returns the last error that occurred in a Windows API function
+(for the current thread). errno contains the last error that occurred in the C
+runtime library. Normally if a WinAPI call fails, e.g. CreateFile, GetLastError
+should be used to retrieve the error. If a C runtime library function fails,
+e.g. fopen, errno contains the error number.
 */
 
 int
@@ -56,13 +56,14 @@ os_strerror_r(
     _Out_writes_z_(len) char *str,
     _In_ size_t len)
 {
-    int res = 0;
+    int res = 0, errs[2];
     DWORD cnt;
 
     assert(str != NULL);
     assert(len > 0);
 
-    len--;
+    str[0] = '\0'; /* null-terminate in case nothing is written */
+    errs[0] = os_getErrno();
     cnt = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
         FORMAT_MESSAGE_IGNORE_INSERTS |
         FORMAT_MESSAGE_MAX_WIDTH_MASK,
@@ -73,15 +74,21 @@ os_strerror_r(
         (DWORD)len,
         NULL);
 
+    errs[1] = os_getErrno();
     if (cnt == 0) {
-        if (os_getErrno() == ERROR_MORE_DATA) {
+        if (errs[1] == ERROR_MORE_DATA) {
             res = ERANGE;
         } else {
             res = EINVAL;
         }
     }
 
-    str[len] = '\0';
+    /* os_strerror_r should not modify errno itself */
+    if (errs[0] != errs[1]) {
+        os_setErrno(errs[0]);
+    }
+
+    str[len - 1] = '\0'; /* always null-terminate, just to be safe */
 
     return res;
 }

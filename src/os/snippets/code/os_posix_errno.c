@@ -36,11 +36,14 @@ os_setErrno (int err)
 int
 os_strerror_r (int err, char *str, size_t len)
 {
-    int ret;
-    assert(str);
+    int res;
+
+    assert(str != NULL);
     assert(len > 0);
-    len--;
-    ret = strerror_r(err, str, len);
-    str[len] = '\0';
-    return ret;
+
+    str[0] = '\0'; /* null-terminate in case nothing is written */
+    res = strerror_r(err, str, len);
+    str[len - 1] = '\0'; /* always null-terminate, just to be safe */
+
+    return res;
 }
