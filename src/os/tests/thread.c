@@ -837,24 +837,21 @@ CUnit_Test(thread, figure_identity)
 
         os_threadFigureIdentity (threadId, sizeof(threadId));
       #if defined WIN32
-        printf("*** %s - WIN32\n", OS_FUNCTION);
-        (void)sscanf (threadId, "%x", &threadNumeric);
+         (void)sscanf (threadId, "%"PRIx32, &threadNumeric);
        #else /* VXWORKS */
-        printf("*** %s - VXWORKS\n", OS_FUNCTION);
-        (void)sscanf (index(threadId,'(') + 1, "%d", &threadNumeric);
+         (void)sscanf (index(threadId,'(') + 1, "%"PRIx32, &threadNumeric);
       #endif
-        printf("*** %s -  threadNumeric=%d, os_threadIdToInteger(os_threadIdSelf())=%d\n", OS_FUNCTION, threadNumeric, os_threadIdToInteger(os_threadIdSelf()));
         CU_ASSERT (threadNumeric == os_threadIdToInteger(os_threadIdSelf()));
     }
   #else
     {
-        char threadId[512];
-        uintptr_t threadNumeric;
+     char threadId[512];
+     uintptr_t threadNumeric;
 
-        os_threadFigureIdentity (threadId, sizeof(threadId));
+     os_threadFigureIdentity (threadId, sizeof(threadId));
 
       #ifdef WIN32
-        (void)sscanf (threadId, "%d", &threadNumeric);
+        (void)sscanf (threadId, "%"PRIx32, &threadNumeric);
       #else
         (void)sscanf (threadId, "%"PRIxPTR, &threadNumeric);
       #endif
