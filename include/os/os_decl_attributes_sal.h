@@ -34,7 +34,7 @@
 #define _Always_(a)
 #endif
 #ifndef _Analysis_assume_
-#define _Analysis_assume_
+#define _Analysis_assume_(e)
 #endif
 #ifndef _Analysis_assume_lock_acquired_
 #define _Analysis_assume_lock_acquired_(e)

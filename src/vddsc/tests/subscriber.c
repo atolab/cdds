@@ -26,7 +26,7 @@ Test(c_subscriber, dds_notify_readers) {
 
   /* todo implement tests */
   ret = dds_notify_readers(subscriber);
-  cr_expect_eq(dds_err_nr(ret), DDS_RETCODE_UNSUPPORTED, "Invalid return code %ld", ret);
+  cr_expect_eq(dds_err_nr(ret), DDS_RETCODE_UNSUPPORTED, "Invalid return code %d", ret);
 
   dds_delete(subscriber);
   dds_delete(participant);
