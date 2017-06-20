@@ -837,11 +837,13 @@ CUnit_Test(thread, figure_identity)
 
         os_threadFigureIdentity (threadId, sizeof(threadId));
       #if defined WIN32
+        printf("*** %s - WIN32\n", OS_FUNCTION);
         (void)sscanf (threadId, "%d", &threadNumeric);
        #else /* VXWORKS */
+        printf("*** %s - VXWORKS\n", OS_FUNCTION);
         (void)sscanf (index(threadId,'(') + 1, "%d", &threadNumeric);
       #endif
-        printf("***** threadNumeric=%d, os_threadIdToInteger(os_threadIdSelf())\n", threadNumeric, os_threadIdToInteger(os_threadIdSelf()));
+        printf("*** %s -  threadNumeric=%d, os_threadIdToInteger(os_threadIdSelf())=%d\n", OS_FUNCTION, threadNumeric, os_threadIdToInteger(os_threadIdSelf()));
         CU_ASSERT (threadNumeric == os_threadIdToInteger(os_threadIdSelf()));
     }
   #else
