@@ -397,7 +397,7 @@ dds_entity_t dds_create_writer(
   {
     thread_state_asleep (thr);
   }
-  return DDS_RETCODE_OK;
+  return writer;
 }
 
 _Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))

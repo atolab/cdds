@@ -2,7 +2,6 @@
 #include "RoundTrip.h"
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
-#include "os/os.h"
 
 Test(vddsc, reader_creation)
 {
@@ -74,7 +73,9 @@ Test(vddsc, reader_read)
 
   /*Create a writer */
   publisher = dds_create_publisher (participant, qos, NULL);
+  cr_assert_gt(publisher, 0, "publisher greater than 0");
   writer = dds_create_writer (publisher, topic, NULL, NULL);
+  cr_assert_gt(writer, 0, "writer greater than 0");
 
   memset (data, 0, sizeof (data));
   for (int i = 0; i < MAX_SAMPLES; i++)
