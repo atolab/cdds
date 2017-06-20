@@ -450,7 +450,7 @@ os_threadFigureIdentity(
    } else {
        size = snprintf (threadIdentity, threadIdentitySize, "0x%"PRIx32, GetCurrentThreadId());
    }
-
+   printf("*** %s: threadIdentity=%s\n", threadIdentity);
    return size;
 }
 
