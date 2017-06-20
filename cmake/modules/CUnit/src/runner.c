@@ -193,5 +193,9 @@ cu_runner_run(
         CU_basic_run_tests();
     }
 
+    if (CU_get_error() == 0) {
+        return (CU_get_number_of_failures() != 0);
+    }
+
     return CU_get_error();
 }
