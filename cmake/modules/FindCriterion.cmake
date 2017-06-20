@@ -9,5 +9,9 @@ if (CRITERION_FOUND AND NOT TARGET Criterion)
 
   set_property(TARGET Criterion PROPERTY INTERFACE_LINK_LIBRARIES "${CRITERION_LIB}")
   set_property(TARGET Criterion PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CRITERION_INC}")
-endif()
 
+  if (DEFINED ENV{WORKSPACE})
+    # Jenkins doesn't like colorized output
+    set(CRITERION_OUTPUT_MODE "--ascii")
+  endif()
+endif()
