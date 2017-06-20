@@ -25,7 +25,7 @@
 #include <assert.h>
 
 #if defined(_WIN32_WINNT) && _WIN32_WINNT > 0x0603
-#define UseGetSystemTimePriciseAsFileTime
+#define UseGetSystemTimePreciseAsFileTime
 
 /* GetSystemTimeAsFileTimeFunc is set when available (on Windows 8 and later). */
 static VOID (WINAPI *GetSystemTimePreciseAsFileTimeFunc) (_Out_ LPFILTETIME);
