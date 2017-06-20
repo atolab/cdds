@@ -838,9 +838,10 @@ CUnit_Test(thread, figure_identity)
         os_threadFigureIdentity (threadId, sizeof(threadId));
       #if defined WIN32
         (void)sscanf (threadId, "%d", &threadNumeric);
-      #else /* VXWORKS */
+       #else /* VXWORKS */
         (void)sscanf (index(threadId,'(') + 1, "%d", &threadNumeric);
       #endif
+        printf("***** threadNumeric=%d, os_threadIdToInteger(os_threadIdSelf())\n", threadNumeric, os_threadIdToInteger(os_threadIdSelf()));
         CU_ASSERT (threadNumeric == os_threadIdToInteger(os_threadIdSelf()));
     }
   #else
