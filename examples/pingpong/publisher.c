@@ -223,7 +223,7 @@ int main (int argc, char **argv)
 
       if (burstCount < burstSize)
       {
-        status = dds_write (writer, &sample);
+        status = (int) dds_write (writer, &sample);
         if (dds_err_nr (status) == DDS_RETCODE_TIMEOUT)
         {
           timedOut = true;

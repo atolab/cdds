@@ -302,7 +302,7 @@ int main (int argc, char *argv[])
   printf ("# Waiting for startup jitter to stabilise\n");
   while (!dds_condition_triggered (terminated) && difference < DDS_SECS(5))
   {
-    status = dds_write (writer, &pub_data);
+    status = (int) dds_write (writer, &pub_data);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     status = dds_waitset_wait (waitSet, wsresults, wsresultsize, waitTimeout);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
@@ -331,7 +331,7 @@ int main (int argc, char *argv[])
   {
     /* Write a sample that pong can send back */
     preWriteTime = dds_time ();
-    status = dds_write (writer, &pub_data);
+    status = (int) dds_write (writer, &pub_data);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     postWriteTime = dds_time ();
 

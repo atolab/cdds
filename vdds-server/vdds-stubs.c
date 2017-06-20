@@ -256,7 +256,7 @@ int dds_write_impl(dds_entity_t wr, const void *data, bool sync)
     return rep.status;
 }
 
-int dds_write(dds_entity_t wr, const void *data)
+dds_return_t dds_write(_In_ dds_entity_t writer, _In_ const void *data)
 {
     return dds_write_impl(wr, data, true);
 }

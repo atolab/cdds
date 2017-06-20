@@ -46,3 +46,71 @@ Test(vddsc, reader_creation)
   dds_delete(subscriber);
   dds_delete(participant);
 }
+#define MAX_SAMPLES 10
+Test(vddsc, reader_read)
+{
+  int sample_received = 0;
+  dds_entity_t reader;
+  void * samples[MAX_SAMPLES];
+  dds_sample_info_t info[MAX_SAMPLES];
+  dds_entity_t participant;
+  dds_entity_t topic;
+  dds_listener_t *listener;
+  dds_qos_t *qos;
+  dds_entity_t publisher;
+  dds_entity_t writer;
+  int status, samplecount;
+  RoundTripModule_DataType data[MAX_SAMPLES];
+
+  /* Create a reader */
+  participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  listener = dds_listener_create(NULL);
+  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
+  qos = dds_qos_create ();
+
+
+  reader = dds_create_reader (participant, topic, qos, NULL);
+
+  /*Create a writer */
+  publisher = dds_create_publisher (participant, qos, listener);
+  writer = dds_create_writer (publisher, topic, qos, listener); // listener NULL?
+
+  memset (data, 0, sizeof (data));
+  for (int i = 0; i < MAX_SAMPLES; i++)
+  {
+    samples[i] = &data[i];
+  }
+
+  for (int j = 0;  j < MAX_SAMPLES; j++)
+  {
+      RoundTripModule_DataType * valid_sample = &data[j];
+      status = dds_write(writer, valid_sample);
+  }
+  int samplecount = dds_read (reader, samples, info, MAX_SAMPLES, 0);
+  cr_assert_eq (samplecount, MAX_SAMPLES);
+  for(int i = 0; i< samplecount; i++)
+  {
+    cr_assert_eq(info[i].valid_data, TRUE);
+    cr_assert_eq(info[i].instance_state, DDS_IST_ALIVE);
+    cr_assert_eq(info[i].sample_state, DDS_SST_NOT_READ);
+    cr_assert_eq(info[i].view_state, DDS_VST_NEW);
+  }
+
+  int samplecount = dds_read (reader, samples, info, MAX_SAMPLES, 0);
+  cr_assert_eq (samplecount, MAX_SAMPLES);
+  for(int i = 0; i< samplecount; i++)
+  {
+    cr_assert_eq(info[i].valid_data, TRUE);
+    cr_assert_eq(info[i].instance_state, DDS_IST_ALIVE);
+    cr_assert_eq(info[i].sample_state, DDS_SST_READ);
+    cr_assert_eq(info[i].view_state, DDS_VST_NEW);
+  }
+
+  dds_delete(writer);
+  dds_delete(publisher);
+  dds_delete (reader);
+  dds_qos_delete (qos);
+  dds_delete(topic);
+  dds_listener_delete(listener);
+  dds_delete(participant);
+}

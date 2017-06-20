@@ -19,10 +19,10 @@ uint64_t fake_seq_next (fake_seq_t *x) { return os_atomic_inc32_nv (x); }
 #endif
 
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-int
+dds_return_t
 dds_write(
-        dds_entity_t writer,
-        const void *data)
+       _In_ dds_entity_t writer,
+       _In_ const void *data)
 {
     int ret = DDS_RETCODE_BAD_PARAMETER;
     dds_writer *wr;

@@ -666,7 +666,7 @@ int main (int argc, char *argv[])
 
       startTime = dds_time ();
       /* Write a sample that pong can send back */
-      status = dds_write (writer, &pub_data);
+      status = (int) dds_write (writer, &pub_data);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
       for (i = 0; !dds_condition_triggered (terminated); i++)
@@ -724,7 +724,7 @@ int main (int argc, char *argv[])
         /* Write a sample that pong can send back */
         if (mode == WAITSET)
         {
-          status = dds_write (writer, &pub_data);
+          status = (int) dds_write (writer, &pub_data);
           DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
         }
         else

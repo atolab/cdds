@@ -111,7 +111,7 @@ int pong_main (int argc, char *argv[])
         /* If sample is valid, send it back to ping */
 
         RoundTripModule_DataType * valid_sample = &data[j];
-        status = dds_write (writer, valid_sample);
+        status = (int) dds_write (writer, valid_sample);
         DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
       }
     }

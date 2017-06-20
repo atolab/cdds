@@ -1245,10 +1245,10 @@ dds_instance_dispose_ts(
  *   -# Returns 0 on success, or non-zero value to indicate an error
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT int
+DDS_EXPORT dds_return_t
 dds_write(
-        dds_entity_t writer,
-        const void *data);
+       _In_ dds_entity_t writer,
+       _In_ const void *data);
 
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT int
