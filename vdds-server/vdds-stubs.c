@@ -314,7 +314,7 @@ int dds_instance_dispose(dds_entity_t wr, const void *data)
     return -DDS_RETCODE_ERROR;
 }
 
-int dds_writer_create(dds_entity_t pp_or_pub, dds_entity_t *writer, dds_entity_t topic, const dds_qos_t *qos, const dds_writerlistener_t *listener)
+dds_entity_t dds_create_writer(_In_ dds_entity_t participant_or_publisher, _In_ dds_entity_t topic, _In_opt_ const dds_qos_t * qos, _In_opt_ const dds_listener_t * listener)
 {
     struct reqhdr req;
     struct rephdr rep;
@@ -328,7 +328,6 @@ int dds_writer_create(dds_entity_t pp_or_pub, dds_entity_t *writer, dds_entity_t
     if (simple_reply(fp, &rep) < 0) {
         return -DDS_RETCODE_ERROR;
     }
-    *writer = rep.u.entity.e;
     return rep.status;
 }
 

@@ -993,8 +993,7 @@ DDS_EXPORT dds_entity_t dds_create_reader
 );
 
 _Pre_satisfies_((publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER)
-DDS_EXPORT dds_return_t
-dds_suspend(
+DDS_EXPORT dds_return_t dds_suspend(
         _In_ dds_entity_t publisher);
 
 /**
@@ -1104,13 +1103,12 @@ dds_querycondition_create(
 _Pre_satisfies_(((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER  ) ||\
                 ((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
 _Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
-DDS_EXPORT int
-dds_writer_create(
-        dds_entity_t participant_or_publisher,
-        dds_entity_t *writer,
-        dds_entity_t topic,
-        const dds_qos_t *qos,
-        const dds_listener_t *listener);
+DDS_EXPORT dds_entity_t
+dds_create_writer(
+        _In_ dds_entity_t participant_or_publisher,
+        _In_ dds_entity_t topic,
+        _In_opt_ const dds_qos_t * qos,
+        _In_opt_ const dds_listener_t * listener);
 
 /*
   Writing data (and variants of it) is straightforward. The first set

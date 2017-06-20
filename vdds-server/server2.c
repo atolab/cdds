@@ -259,7 +259,7 @@ int db_writer_reader_create(struct client *cl, const struct reqhdr *req)
     }
     rep.code = VDDSREP_ENTITY;
     if (req->code == VDDSREQ_WRITER_CREATE) {
-        rep.status = dds_writer_create(req->u.writer_create.pp_or_pub, &rep.u.entity.e, req->u.writer_create.topic, blob, NULL);
+    	ep.u.entity.e = dds_create_writer (req->u.writer_create.pp_or_pub, req->u.writer_create.topic, blob, NULL);
     } else {
         assert(req->code == VDDSREQ_READER_CREATE);
         rep.u.entity.e = dds_create_reader(req->u.reader_create.pp_or_sub, req->u.writer_create.topic, blob, NULL);

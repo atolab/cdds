@@ -82,7 +82,7 @@ int pong_main (int argc, char *argv[])
   qos = dds_qos_create ();
   dds_qset_reliability (qos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
   dds_qset_writer_data_lifecycle (qos, false);
-  status = dds_writer_create (publisher, &writer, topic, qos, NULL);
+  writer = dds_create_writer (publisher, topic, qos, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (qos);
 

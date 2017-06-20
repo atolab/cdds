@@ -193,7 +193,7 @@ int ping_main (int argc, char *argv[])
   dwQos = dds_qos_create ();
   dds_qset_reliability (dwQos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
   dds_qset_writer_data_lifecycle (dwQos, false);
-  status = dds_writer_create (publisher, &writer, topic, dwQos, NULL);
+  writer = dds_create_writer (publisher, topic, dwQos, NULL);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (dwQos);
 

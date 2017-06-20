@@ -291,13 +291,11 @@ static dds_return_t dds_writer_qos_set (dds_entity *e, const dds_qos_t *qos, boo
 _Pre_satisfies_(((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER  ) ||\
                 ((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
 _Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
-int
-dds_writer_create(
-        dds_entity_t participant_or_publisher,
-        dds_entity_t *writer,
-        dds_entity_t topic,
-        const dds_qos_t *qos,
-        const dds_listener_t *listener)
+dds_entity_t dds_create_writer(
+        _In_ dds_entity_t participant_or_publisher,
+        _In_ dds_entity_t topic,
+        _In_opt_ const dds_qos_t * qos,
+        _In_opt_ const dds_listener_t * listener)
 {
   int32_t errnr;
   dds_qos_t * wqos;
@@ -363,7 +361,7 @@ dds_writer_create(
 
   /* Create writer */
   wr = dds_alloc (sizeof (*wr));
-  *writer = dds_entity_init (&wr->m_entity, parent, DDS_KIND_WRITER, wqos, listener, DDS_WRITER_STATUS_MASK);
+  dds_entity_init (&wr->m_entity, parent, DDS_KIND_WRITER, wqos, listener, DDS_WRITER_STATUS_MASK);
   wr->m_topic = (dds_topic*)tp;
   dds_entity_add_ref (tp);
   wr->m_xp = nn_xpack_new (conn, get_bandwidth_limit(wqos->transport_priority), config.xpack_send_async);
