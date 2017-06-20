@@ -350,7 +350,7 @@ dds_get_datareader(
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_instancehandle_get(
-        _In_    dds_entity_t entity,
+        _In_  dds_entity_t entity,
         _Out_ dds_instance_handle_t *ihdl);
 
 /*
@@ -375,9 +375,9 @@ dds_instancehandle_get(
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_read_status(
-        _In_    dds_entity_t entity,
+        _In_  dds_entity_t entity,
         _Out_ uint32_t *status,
-        _In_    uint32_t mask);
+        _In_  uint32_t mask);
 
 /**
  * Description : Read the status(es) set for the entity based on the enabled
@@ -393,9 +393,9 @@ dds_read_status(
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_take_status(
-        _In_    dds_entity_t entity,
+        _In_  dds_entity_t entity,
         _Out_ uint32_t *status,
-        _In_    uint32_t mask);
+        _In_  uint32_t mask);
 
 /**
  * Description : Returns the status changes since they were last read.
@@ -407,7 +407,7 @@ dds_take_status(
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_get_status_changes(
-        _In_    dds_entity_t entity,
+        _In_  dds_entity_t entity,
         _Out_ uint32_t *status);
 
 /**
@@ -420,7 +420,7 @@ dds_get_status_changes(
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_get_enabled_status(
-        _In_    dds_entity_t entity,
+        _In_  dds_entity_t entity,
         _Out_ uint32_t *status);
 
 
@@ -476,7 +476,7 @@ dds_set_enabled_status(
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_get_qos(
-        _In_    dds_entity_t entity,
+        _In_  dds_entity_t entity,
         _Out_ dds_qos_t *qos);
 
 
@@ -562,7 +562,7 @@ dds_set_qos(
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_get_listener(
-        _In_ dds_entity_t entity,
+        _In_  dds_entity_t entity,
         _Out_ dds_listener_t * listener);
 
 
@@ -795,7 +795,11 @@ dds_get_children(
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_domainid (_In_ dds_entity_t pp, _Out_ dds_domainid_t *id);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_return_t
+dds_get_domainid(
+        _In_  dds_entity_t entity,
+        _Out_ dds_domainid_t *id);
 
 /**
  * Description : Returns a participant created on a domain. Note that if
@@ -857,9 +861,10 @@ dds_find_topic(
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 DDS_EXPORT dds_return_t
 dds_get_name(
-        _In_ dds_entity_t topic,
+        _In_                 dds_entity_t topic,
         _Out_writes_z_(size) char *name,
-        _In_ size_t size);
+        _In_                 size_t size);
+
 
 /**
  * Description : Returns a topic type name.

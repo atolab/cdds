@@ -32,7 +32,7 @@ dds_listener_delete(_In_ _Post_invalid_ dds_listener_t * __restrict listener)
 
 
 void
-dds_listener_reset(_Inout_ dds_listener_t * __restrict listener)
+dds_listener_reset(_Out_ dds_listener_t * __restrict listener)
 {
     if (listener) {
         c_listener_t *l = listener;
@@ -53,7 +53,7 @@ dds_listener_reset(_Inout_ dds_listener_t * __restrict listener)
 }
 
 void
-dds_listener_copy(_Inout_ dds_listener_t * __restrict dst, _In_ const dds_listener_t * __restrict src)
+dds_listener_copy(_Out_ dds_listener_t * __restrict dst, _In_ const dds_listener_t * __restrict src)
 {
     if (src && dst) {
         const c_listener_t *srcl = src;

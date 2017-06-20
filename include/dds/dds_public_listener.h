@@ -80,7 +80,7 @@ OS_API void dds_listener_delete (_In_ _Post_invalid_ dds_listener_t * __restrict
  *
  * @param[in,out] listener pointer to the listener struct to reset
  */
-OS_API void dds_listener_reset (_Inout_ dds_listener_t * __restrict listener);
+OS_API void dds_listener_reset (_Out_ dds_listener_t * __restrict listener);
 
 /**
  * @brief Copy the listener callbacks from source to destination
@@ -88,7 +88,7 @@ OS_API void dds_listener_reset (_Inout_ dds_listener_t * __restrict listener);
  * @param[in,out] dst The pointer to the destination listener structure, where the content is to copied
  * @param[in] src The pointer to the source listener structure to be copied
  */
-OS_API void dds_listener_copy (_Inout_ dds_listener_t * __restrict dst, _In_ const dds_listener_t * __restrict src);
+OS_API void dds_listener_copy (_Out_ dds_listener_t * __restrict dst, _In_ const dds_listener_t * __restrict src);
 
 /**
  * @brief Copy the listener callbacks from source to destination, unless already set

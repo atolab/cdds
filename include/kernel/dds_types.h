@@ -70,10 +70,12 @@ struct rhc;
 #define DDS_ERR_M19 0x130000
 #define DDS_ERR_M20 0x140000
 
-/* To construct return status */
-
-#define DDS_ERRNO(e,m,n) ((e <= 0) ? e : -((n) | (m) | (e)))
-
+/* To construct return status
+ * Use '+' instead of '|'. Otherwise, the SAL checking doesn't
+ * understand when a return value is negative or positive and
+ * complains a lot about "A successful path through the function
+ * does not set the named _Out_ parameter." */
+#define DDS_ERRNO(e,m,n) ((e <= 0) ? e : -((n) + (m) + (e)))
 
 /*
   Have separate kinds for entity and condition, matching DDS type

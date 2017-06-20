@@ -143,7 +143,7 @@ dds_qos_t * dds_qos_create (void)
   return qos;
 }
 
-void dds_qos_reset (_Inout_ dds_qos_t * __restrict qos)
+void dds_qos_reset (_Out_ dds_qos_t * __restrict qos)
 {
   if (qos)
   {
@@ -161,7 +161,7 @@ void dds_qos_delete (_In_ _Post_invalid_ dds_qos_t * __restrict qos)
   }
 }
 
-dds_return_t dds_qos_copy (_Inout_ dds_qos_t * __restrict dst, _In_ const dds_qos_t * __restrict src)
+dds_return_t dds_qos_copy (_Out_ dds_qos_t * __restrict dst, _In_ const dds_qos_t * __restrict src)
 {
   if (src && dst) {
       nn_xqos_copy (dst, src);

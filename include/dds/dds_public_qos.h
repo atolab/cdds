@@ -183,7 +183,7 @@ OS_API void dds_qos_delete (_In_ _Post_invalid_ dds_qos_t * __restrict qos);
  *
  * @param[in,out] qos - Pointer to the dds_qos_t structure
  */
-OS_API void dds_qos_reset (_Inout_ dds_qos_t * __restrict qos);
+OS_API void dds_qos_reset (_Out_ dds_qos_t * __restrict qos);
 
 /**
  * @brief Copy all QoS-policies from one structure to another
@@ -191,7 +191,7 @@ OS_API void dds_qos_reset (_Inout_ dds_qos_t * __restrict qos);
  * @param[in,out] dst - Pointer to the destination dds_qos_t structure
  * @param[in] src - Pointer to the source dds_qos_t structure
  */
-OS_API dds_return_t dds_qos_copy (_Inout_ dds_qos_t * __restrict dst, _In_ const dds_qos_t * __restrict src);
+OS_API dds_return_t dds_qos_copy (_Out_ dds_qos_t * __restrict dst, _In_ const dds_qos_t * __restrict src);
 
 /**
  * @brief Copy all QoS-policies from one structure to another, unless already set

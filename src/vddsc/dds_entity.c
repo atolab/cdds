@@ -408,7 +408,7 @@ _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_get_children(
         _In_        dds_entity_t entity,
-        _Inout_opt_ dds_entity_t *children,
+        _Out_opt_   dds_entity_t *children,
         _In_        size_t size)
 {
     dds_entity *e;
@@ -417,8 +417,13 @@ dds_get_children(
         ((children == NULL) && (size == 0)) ){
         ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (ret == DDS_RETCODE_OK) {
+            dds_entity* iter;
+            /* Initialize first child to satisfy SAL. */
+            if (children) {
+                children[0] = 0;
+            }
             ret = 0;
-            dds_entity* iter = e->m_children;
+            iter = e->m_children;
             while (iter) {
                 if ((size_t)ret < size) { /*To fix the warning of signed/unsigned mismatch, type casting is done for the variable 'ret'*/
                     children[ret] = iter->m_hdl;
@@ -436,7 +441,7 @@ _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_get_qos(
         _In_    dds_entity_t entity,
-        _Inout_ dds_qos_t *qos)
+        _Out_   dds_qos_t *qos)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if ((entity > 0) && (qos != NULL)) {
@@ -487,8 +492,8 @@ dds_set_qos(
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_get_listener(
-        _In_ dds_entity_t entity,
-        _Inout_ dds_listener_t * listener)
+        _In_  dds_entity_t   entity,
+        _Out_ dds_listener_t *listener)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (listener != NULL) {
@@ -550,7 +555,7 @@ _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_get_status_changes(
         _In_    dds_entity_t entity,
-        _Inout_ uint32_t *status)
+        _Out_   uint32_t *status)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (status != NULL) {
@@ -572,7 +577,7 @@ _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_get_enabled_status(
         _In_    dds_entity_t entity,
-        _Inout_ uint32_t *status)
+        _Out_   uint32_t *status)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (status != NULL) {
@@ -624,7 +629,7 @@ _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_read_status(
         _In_    dds_entity_t entity,
-        _Inout_ uint32_t *status,
+        _Out_   uint32_t *status,
         _In_    uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
@@ -651,7 +656,7 @@ _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_take_status(
         _In_    dds_entity_t entity,
-        _Inout_ uint32_t *status,
+        _Out_   uint32_t *status,
         _In_    uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
@@ -690,7 +695,7 @@ _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_get_domainid(
         _In_    dds_entity_t entity,
-        _Inout_ dds_domainid_t *id)
+        _Out_   dds_domainid_t *id)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (id != NULL) {
@@ -708,7 +713,7 @@ _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_instancehandle_get(
         _In_    dds_entity_t entity,
-        _Inout_ dds_instance_handle_t *ihdl)
+        _Out_   dds_instance_handle_t *ihdl)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if (ihdl != NULL) {
@@ -717,6 +722,8 @@ dds_instancehandle_get(
         if (ret == DDS_RETCODE_OK) {
             if (e->m_deriver.get_instance_hdl) {
                 ret = e->m_deriver.get_instance_hdl(e, ihdl);
+            } else {
+                ret = DDS_RETCODE_ILLEGAL_OPERATION;
             }
             dds_entity_unlock(e);
         }
