@@ -2,6 +2,7 @@
 #include "RoundTrip.h"
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
+#include "os/os.h"
 
 Test(vddsc, reader_creation)
 {
@@ -68,12 +69,12 @@ Test(vddsc, reader_read)
   topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
   qos = dds_qos_create ();
 
-
+  dds_qset_history(qos, DDS_HISTORY_KEEP_ALL, MAX_SAMPLES);
   reader = dds_create_reader (participant, topic, qos, NULL);
 
   /*Create a writer */
-  publisher = dds_create_publisher (participant, qos, listener);
-  writer = dds_create_writer (publisher, topic, qos, listener); // listener NULL?
+  publisher = dds_create_publisher (participant, qos, NULL);
+  writer = dds_create_writer (publisher, topic, NULL, NULL);
 
   memset (data, 0, sizeof (data));
   for (int i = 0; i < MAX_SAMPLES; i++)
@@ -85,25 +86,26 @@ Test(vddsc, reader_read)
   {
       RoundTripModule_DataType * valid_sample = &data[j];
       status = dds_write(writer, valid_sample);
+      cr_assert_eq(status, DDS_RETCODE_OK);
   }
-  int samplecount = dds_read (reader, samples, info, MAX_SAMPLES, 0);
+  samplecount = dds_read (reader, samples, info, MAX_SAMPLES, MAX_SAMPLES);
   cr_assert_eq (samplecount, MAX_SAMPLES);
   for(int i = 0; i< samplecount; i++)
   {
-    cr_assert_eq(info[i].valid_data, TRUE);
+    cr_assert_eq(info[i].valid_data, true);
     cr_assert_eq(info[i].instance_state, DDS_IST_ALIVE);
     cr_assert_eq(info[i].sample_state, DDS_SST_NOT_READ);
     cr_assert_eq(info[i].view_state, DDS_VST_NEW);
   }
 
-  int samplecount = dds_read (reader, samples, info, MAX_SAMPLES, 0);
+  samplecount = dds_read (reader, samples, info, MAX_SAMPLES, MAX_SAMPLES);
   cr_assert_eq (samplecount, MAX_SAMPLES);
   for(int i = 0; i< samplecount; i++)
   {
-    cr_assert_eq(info[i].valid_data, TRUE);
+    cr_assert_eq(info[i].valid_data, true);
     cr_assert_eq(info[i].instance_state, DDS_IST_ALIVE);
     cr_assert_eq(info[i].sample_state, DDS_SST_READ);
-    cr_assert_eq(info[i].view_state, DDS_VST_NEW);
+    cr_assert_eq(info[i].view_state, DDS_VST_OLD);
   }
 
   dds_delete(writer);

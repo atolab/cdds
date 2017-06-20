@@ -28,7 +28,7 @@ dds_write(
     dds_writer *wr;
     if (data != NULL) {
         ret = dds_writer_lock(writer, &wr);
-        if (ret != DDS_RETCODE_OK) {
+        if (ret == DDS_RETCODE_OK) {
             ret = dds_write_impl (wr, data, dds_time (), 0);
             dds_writer_unlock(wr);
         }
@@ -47,7 +47,7 @@ dds_writecdr(
     dds_writer *wr;
     if (cdr != NULL) {
         ret = dds_writer_lock(writer, &wr);
-        if (ret != DDS_RETCODE_OK) {
+        if (ret == DDS_RETCODE_OK) {
             ret = dds_writecdr_impl (wr, cdr, size, dds_time (), 0);
             dds_writer_unlock(wr);
         }
@@ -66,7 +66,7 @@ dds_write_ts(
     dds_writer *wr;
     if (data != NULL) {
         ret = dds_writer_lock(writer, &wr);
-        if (ret != DDS_RETCODE_OK) {
+        if (ret == DDS_RETCODE_OK) {
             ret = dds_write_impl (wr, data, timestamp, 0);
             dds_writer_unlock(wr);
         }
