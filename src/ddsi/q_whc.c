@@ -288,7 +288,11 @@ void whc_free (struct whc *whc)
     while (whcn)
     {
       struct whc_node *tmp = whcn;
+/* The compiler doesn't realize that whcn->prev_seq is always initialized. */
+#pragma warning(push)
+#pragma warning(disable: 6001)
       whcn = whcn->prev_seq;
+#pragma warning(pop)
       free_whc_node_contents (whc, tmp);
       os_free (tmp);
     }

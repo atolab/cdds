@@ -46,7 +46,6 @@ typedef struct {
 os_threadAttr       rwlock_os_threadAttr;
 os_threadId         rwlock_os_threadId[RWLOCK_THREADS];
 static int          i;
-os_result           result;
 char                buffer[512];
 os_procId           rwlock_os_procId;
 int                 supported_resultBusy;
@@ -489,6 +488,7 @@ CUnit_Test(rwlock, write, false)
 
 CUnit_Test(rwlock, tryread, false)
 {
+    os_result result;
   #if ENABLE_TRACING
     /* Test critical section READ access with trylocking and PRIVATE scope */
     printf ("Starting tc_os_rwlockTryRead_001\n");
@@ -530,6 +530,7 @@ CUnit_Test(rwlock, tryread, false)
 
 CUnit_Test(rwlock, trywrite, false)
 {
+    os_result result;
   #if ENABLE_TRACING
     /* Test critical section WRITE access with trylocking and PRIVATE scope */
     printf ("Starting tc_os_rwlockTryWrite_001\n");
@@ -571,6 +572,7 @@ CUnit_Test(rwlock, trywrite, false)
 
 CUnit_Test(rwlock, unlock, false)
 {
+    os_result result;
   #if ENABLE_TRACING
     /* Unlock rwlock with PRIVATE scope and Success result and claimed with read */
     printf ("Starting tc_os_rwlockUnlock_001\n");

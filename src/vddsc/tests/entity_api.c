@@ -2,6 +2,11 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
+/* We are deliberately testing some bad arguments that SAL will complain about.
+ * So, silence SAL regarding these issues. */
+#pragma warning(push)
+#pragma warning(disable: 6387 28020)
+
 /* Add --verbose command line argument to get the cr_log_info traces (if there are any). */
 
 static dds_entity_t entity = -1;
@@ -345,3 +350,4 @@ Test(vddsc, entity_api)
 
 }
 
+#pragma warning(pop)

@@ -36,18 +36,18 @@ like fopen you check errno (again assuming that the call failed).
 int
 os_getErrno(void)
 {
-	DWORD err = GetLastError();
-	if (err != 0) {
-		errno = (int)err;
-	}
-	return errno;
+    DWORD err = GetLastError();
+    if (err != 0) {
+        errno = (int)err;
+    }
+    return errno;
 }
 
 void
 os_setErrno(int err)
 {
-	SetLastError(err);
-	errno = err;
+    SetLastError(err);
+    errno = err;
 }
 
 int
@@ -56,28 +56,32 @@ os_strerror_r(
     _Out_writes_z_(len) char *str,
     _In_ size_t len)
 {
-	int res = 0;
-	DWORD cnt;
+    int res = 0;
+    DWORD cnt;
 
-	assert(str != NULL);
+    assert(str != NULL);
+    assert(len > 0);
 
-	cnt = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
-		FORMAT_MESSAGE_IGNORE_INSERTS |
-		FORMAT_MESSAGE_MAX_WIDTH_MASK,
-		NULL,
-		err,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPTSTR)str,
-		(DWORD)len,
-		NULL);
+    len--;
+    cnt = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS |
+        FORMAT_MESSAGE_MAX_WIDTH_MASK,
+        NULL,
+        err,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPTSTR)str,
+        (DWORD)len,
+        NULL);
 
-	if (cnt == 0) {
-		if (os_getErrno() == ERROR_MORE_DATA) {
-			res = ERANGE;
-		} else {
-			res = EINVAL;
-		}
-	}
-	
-	return res;
+    if (cnt == 0) {
+        if (os_getErrno() == ERROR_MORE_DATA) {
+            res = ERANGE;
+        } else {
+            res = EINVAL;
+        }
+    }
+
+    str[len] = '\0';
+
+    return res;
 }

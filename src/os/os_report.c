@@ -403,7 +403,6 @@ static FILE * open_socket (char *host, unsigned short port)
 err_connect:
     (void) close((int)sock); /* Type casting is done for the warning of possible loss of data for Parameter "sock" with the type of "os_socket" */
 err_socket:
-    msg[0] = '\0';
     (void)os_strerror_r(os_getErrno(), msg, sizeof(msg));
     os__report_fprintf(stderr, "%s: %s\n", errstr, msg);
 

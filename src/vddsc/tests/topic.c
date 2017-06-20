@@ -3,6 +3,11 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
+/* We are deliberately testing some bad arguments that SAL will complain about.
+ * So, silence SAL regarding these issues. */
+#pragma warning(push)
+#pragma warning(disable: 6387 28020)
+
 Test(vddsc, topic_creation)
 {
   dds_entity_t participant;
@@ -116,3 +121,5 @@ Test(vddsc, topic_names)
   dds_delete (topic2);
   dds_delete (participant);
 }
+
+#pragma warning(pop)

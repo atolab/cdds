@@ -4,6 +4,11 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
+/* We are deliberately testing some bad arguments that SAL will complain about.
+ * So, silence SAL regarding these issues. */
+#pragma warning(push)
+#pragma warning(disable: 6387 28020)
+
 static void on_data_available(dds_entity_t reader, void* arg) {}
 static void on_publication_matched(dds_entity_t writer, const dds_publication_matched_status_t status, void* arg) {}
 
@@ -92,3 +97,4 @@ Test(c_subscriber, dds_create_subscriber) {
   dds_delete(participant);
 }
 
+#pragma warning(pop)
