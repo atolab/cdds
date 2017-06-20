@@ -832,26 +832,26 @@ CUnit_Test(thread, figure_identity)
   #endif
   #if (defined _WRS_KERNEL || defined WIN32)
     {
-        char threadId[512];
-        int threadNumeric;
+      char threadId[512];
+      int threadNumeric;
 
         os_threadFigureIdentity (threadId, sizeof(threadId));
       #if defined WIN32
-        (void)sscanf (threadId, "%d", &threadNumeric);
+        (void)sscanf (threadId, "%"PRIx32, &threadNumeric);
       #else /* VXWORKS */
-        (void)sscanf (index(threadId,'(') + 1, "%d", &threadNumeric);
+        (void)sscanf (index(threadId,'(') + 1, "%"PRIx32, &threadNumeric);
       #endif
         CU_ASSERT (threadNumeric == os_threadIdToInteger(os_threadIdSelf()));
     }
   #else
     {
-        char threadId[512];
-        uintptr_t threadNumeric;
+      char threadId[512];
+      uintptr_t threadNumeric;
 
         os_threadFigureIdentity (threadId, sizeof(threadId));
 
       #ifdef WIN32
-        (void)sscanf (threadId, "%d", &threadNumeric);
+        (void)sscanf (threadId, "%"PRIxPTR, &threadNumeric);
       #else
         (void)sscanf (threadId, "%"PRIxPTR, &threadNumeric);
       #endif
