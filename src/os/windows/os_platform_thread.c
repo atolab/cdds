@@ -511,7 +511,7 @@ os_threadMemMalloc(
         tlsMemArray = (void **)TlsGetValue(tlsIndex);
 
         if (tlsMemArray == NULL) {
-            printf("*** %s - 2. tlsMemArray=NULL\n", OS_FUNCTION);
+            printf("*** %s - 2. tlsMemArray=NULL, errno=%i\n", OS_FUNCTION, os_getErrno());
 
             os_threadMemInit ();
             printf("*** %s - 3. os_threadMemInit hurdle taken\n", OS_FUNCTION);
