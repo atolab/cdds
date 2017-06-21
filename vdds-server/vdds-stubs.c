@@ -361,13 +361,17 @@ int frd_blob(FILE *fp, size_t *sz, void **blob)
     return 0;
 }
 
-dds_return_t dds_take
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t
+dds_take
 (
-  _In_ dds_entity_t rd_or_cnd,
-  _Out_ void ** buf, /* _Out_writes_to_ annotation would be nice, however we don't know the size of the elements. Solution for that? Is there a better annotation? */
-  _Out_ dds_sample_info_t * si,
-  _In_ size_t bufsz,
-  _In_ uint32_t maxs
+        _In_ dds_entity_t rd_or_cnd,
+        _Out_ void ** buf,
+        _Out_ dds_sample_info_t * si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs
 )
 {
     struct reqhdr req;
