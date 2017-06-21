@@ -134,8 +134,9 @@ os_threadModuleExit(void)
    if (data != NULL) {
       LocalFree((HLOCAL) data);
    }
-
+   printf("*** %s - 1\n", OS_FUNCTION);
    TlsFree(tlsIndex);
+   printf("*** %s - 2\n", OS_FUNCTION);
    os_threadHookExit();
    printf("*** %s - end\n", OS_FUNCTION);
 
