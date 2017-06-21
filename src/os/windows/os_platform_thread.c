@@ -505,19 +505,20 @@ os_threadMemMalloc(
 
         tlsMemArray = (void **)TlsGetValue(tlsIndex);
 
-        printf("*** %s - 2. tlsMemArray=%p\n", OS_FUNCTION, *tlsMemArray);
-
         if (tlsMemArray == NULL) {
+            printf("*** %s - 2. tlsMemArray=NULL\n", OS_FUNCTION);
+
             os_threadMemInit ();
+            printf("*** %s - 3. os_threadMemInit hurdle taken\n", OS_FUNCTION);
             tlsMemArray = (void **)TlsGetValue(tlsIndex);
-            printf("*** %s - 3. tlsMemArray=%p\n", OS_FUNCTION, tlsMemArray);
+            printf("*** %s - 4. tlsMemArray=%p\n", OS_FUNCTION, tlsMemArray);
         }
         if (tlsMemArray != NULL) {
-            printf("*** %s - 4. tlsMemArray=%p\n", OS_FUNCTION, *tlsMemArray);
+            printf("*** %s - 5. tlsMemArray=%p\n", OS_FUNCTION, *tlsMemArray);
             if (tlsMemArray[index] == NULL) {
                 threadMemLoc = os_malloc(size);
                 tlsMemArray[index] = threadMemLoc;
-                printf("*** %s - 5. threadMemLoc=%p\n", OS_FUNCTION, threadMemLoc);
+                printf("*** %s - 6. threadMemLoc=%p\n", OS_FUNCTION, threadMemLoc);
 
             }
         }
