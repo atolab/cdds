@@ -132,11 +132,12 @@ os_threadModuleExit(void)
 
    printf("*** %s - start, tlsIndex=%d\n", OS_FUNCTION, tlsIndex);
    if (data != NULL) {
+	  printf("*** %s - 1\n", OS_FUNCTION);
       LocalFree((HLOCAL) data);
    }
-   printf("*** %s - 1\n", OS_FUNCTION);
-   TlsFree(tlsIndex);
    printf("*** %s - 2\n", OS_FUNCTION);
+   TlsFree(tlsIndex);
+   printf("*** %s - 3\n", OS_FUNCTION);
    os_threadHookExit();
    printf("*** %s - end\n", OS_FUNCTION);
 
