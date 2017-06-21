@@ -935,7 +935,7 @@ CUnit_Test(thread, memmalloc)
 {
   #if ENABLE_TRACING
     /* Check os_threadMemMalloc with success result for main thread */
-    printf ("Starting tc_os_threadMemMalloc_001, OS_THREAD_MEM_ARRAY_SIZE=%d\n", OS_THREAD_MEM_ARRAY_SIZE);
+    printf ("Starting tc_os_threadMemMalloc_001\n");
   #endif
     returnval = os_threadMemMalloc (3, 100);
     CU_ASSERT (returnval != NULL);
