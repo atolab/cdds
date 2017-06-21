@@ -938,6 +938,8 @@ CUnit_Test(thread, memmalloc)
     printf ("Starting tc_os_threadMemMalloc_001\n");
   #endif
     returnval = os_threadMemMalloc (3, 100);
+    printf("*** %s - errno=%i\n", OS_FUNCTION, os_getErrno());
+
     CU_ASSERT (returnval != NULL);
 
   #if ENABLE_TRACING
