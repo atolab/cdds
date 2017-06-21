@@ -211,7 +211,7 @@ dds_return_t dds_read_wl /* ANY/ANY/ANY, with loan */
   _Out_ dds_sample_info_t * si,
   _In_ uint32_t maxs
 ){
-  return dds_read_impl (true, rd_or_cnd, buf, maxs, si, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE, NULL, DDS_HANDLE_NIL);
+  return dds_read_impl (false, rd_or_cnd, buf, maxs, si, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE, NULL, DDS_HANDLE_NIL);
 }
 
 dds_return_t dds_read_mask
@@ -234,7 +234,7 @@ dds_return_t dds_read_mask_wl /* With loan */
   _In_ uint32_t maxs,
   _In_ uint32_t mask /* In case of ReadCondition, both masks are applied (OR'd) */
 ){
-  return dds_read_impl (true, rd_or_cnd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
+  return dds_read_impl (false, rd_or_cnd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
 int
@@ -303,7 +303,7 @@ dds_return_t dds_take_mask
   _In_ uint32_t maxs,
   _In_ uint32_t mask
 ){
-  return dds_read_impl (false, rd_or_cnd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
+  return dds_read_impl (true, rd_or_cnd, buf, maxs, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
 dds_return_t dds_take_mask_wl
