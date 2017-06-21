@@ -130,12 +130,15 @@ os_threadModuleExit(void)
 {
    LPVOID data = TlsGetValue(tlsIndex);
 
+   printf("*** %s - start, tlsIndex=%d\n", OS_FUNCTION, tlsIndex);
    if (data != NULL) {
       LocalFree((HLOCAL) data);
    }
 
    TlsFree(tlsIndex);
    os_threadHookExit();
+   printf("*** %s - end\n", OS_FUNCTION);
+
 }
 
 os_result
