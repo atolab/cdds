@@ -223,6 +223,7 @@ void os_threadSetThreadName( DWORD dwThreadID, char* threadName)
    __except(EXCEPTION_EXECUTE_HANDLER)
    {
    }
+#pragma warning(pop)
 #endif /* No reason why the restshouldn't though */
 
     tssThreadName = (char *)os_threadMemGet(OS_THREAD_NAME);
