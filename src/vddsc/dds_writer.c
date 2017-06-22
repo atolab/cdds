@@ -216,6 +216,9 @@ static dds_return_t dds_writer_delete(dds_entity *e)
 
 static dds_return_t dds_writer_qos_validate (const dds_qos_t *qos, bool enabled)
 {
+#if 1
+    return DDS_RETCODE_OK; //TODO: CHAM-170 Properly implement
+#else
     dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_WRITER, 0);
     bool consistent = true;
     assert(qos);
@@ -235,6 +238,7 @@ static dds_return_t dds_writer_qos_validate (const dds_qos_t *qos, bool enabled)
         }
     }
     return ret;
+#endif
 }
 
 static dds_return_t dds_writer_qos_set (dds_entity *e, const dds_qos_t *qos, bool enabled)
@@ -291,13 +295,12 @@ static dds_return_t dds_writer_qos_set (dds_entity *e, const dds_qos_t *qos, boo
 _Pre_satisfies_(((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER  ) ||\
                 ((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
 _Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
-int
-dds_writer_create(
-        dds_entity_t participant_or_publisher,
-        dds_entity_t *writer,
-        dds_entity_t topic,
-        const dds_qos_t *qos,
-        const dds_listener_t *listener)
+dds_entity_t
+dds_create_writer(
+        _In_ dds_entity_t participant_or_publisher,
+        _In_ dds_entity_t topic,
+        _In_opt_ const dds_qos_t * qos,
+        _In_opt_ const dds_listener_t * listener)
 {
   int32_t errnr;
   dds_qos_t * wqos;
@@ -309,6 +312,7 @@ dds_writer_create(
   const bool asleep = !vtime_awake_p (thr->vtime);
   ddsi_tran_conn_t conn = gv.data_conn_mc ? gv.data_conn_mc : gv.data_conn_uc;
   int ret = DDS_RETCODE_OK;
+  dds_entity_t writer;
 
   /* Try claiming a participant. If that's not working, then it could be a subscriber. */
   errnr = dds_entity_lock(participant_or_publisher, DDS_KIND_PARTICIPANT, &parent);
@@ -363,8 +367,9 @@ dds_writer_create(
 
   /* Create writer */
   wr = dds_alloc (sizeof (*wr));
-  *writer = dds_entity_init (&wr->m_entity, parent, DDS_KIND_WRITER, wqos, listener, DDS_WRITER_STATUS_MASK);
+  writer = dds_entity_init (&wr->m_entity, parent, DDS_KIND_WRITER, wqos, listener, DDS_WRITER_STATUS_MASK);
   wr->m_topic = (dds_topic*)tp;
+  dds_entity_unlock(tp);
   dds_entity_add_ref (tp);
   wr->m_xp = nn_xpack_new (conn, get_bandwidth_limit(wqos->transport_priority), config.xpack_send_async);
   os_mutexInit (&wr->m_call_lock);
@@ -380,21 +385,20 @@ dds_writer_create(
       assert(0);
   }
 
-  dds_entity_unlock(tp);
-  dds_entity_unlock(parent);
-
   if (asleep)
   {
     thread_state_awake (thr);
   }
+//TODO: CHAM-170 Fix unsafe tp usage
   wr->m_wr = new_writer (&wr->m_entity.m_guid, NULL, &parent->m_participant->m_guid, ((dds_topic*)tp)->m_stopic,
                          wqos, dds_writer_status_cb, wr);
+  dds_entity_unlock(parent);
   assert (wr->m_wr);
   if (asleep)
   {
     thread_state_asleep (thr);
   }
-  return DDS_RETCODE_OK;
+  return writer;
 }
 
 _Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))

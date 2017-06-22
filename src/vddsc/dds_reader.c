@@ -68,11 +68,12 @@ static dds_return_t dds_reader_qos_validate (const dds_qos_t *qos, bool enabled)
     assert(qos);
     /* Check consistency. */
     consistent &= dds_qos_validate_common(qos);
-    consistent &= (qos->present & QP_USER_DATA) && ! validate_octetseq (&qos->user_data);
-    consistent &= (qos->present & QP_PRISMTECH_READER_DATA_LIFECYCLE) && (validate_reader_data_lifecycle (&qos->reader_data_lifecycle) != 0);
-    consistent &= (qos->present & QP_TIME_BASED_FILTER) && (validate_duration (&qos->time_based_filter.minimum_separation) != 0);
-    consistent &= ((qos->present & QP_HISTORY)           && (qos->present & QP_RESOURCE_LIMITS) && (validate_history_and_resource_limits (&qos->history, &qos->resource_limits) != 0)) ||
-                  ((qos->present & QP_TIME_BASED_FILTER) && (qos->present & QP_DEADLINE)        && (!validate_deadline_and_timebased_filter (qos->deadline.deadline, qos->time_based_filter.minimum_separation)));
+    consistent &= (qos->present & QP_USER_DATA) ? validate_octetseq (&qos->user_data) : true;
+    consistent &= (qos->present & QP_PRISMTECH_READER_DATA_LIFECYCLE) ? (validate_reader_data_lifecycle (&qos->reader_data_lifecycle) == 0) : true;
+    consistent &= (qos->present & QP_TIME_BASED_FILTER) ? (validate_duration (&qos->time_based_filter.minimum_separation) == 0) : true;
+    consistent &= ((qos->present & QP_HISTORY)           && (qos->present & QP_RESOURCE_LIMITS)) ? (validate_history_and_resource_limits (&qos->history, &qos->resource_limits) == 0) :
+                  ((qos->present & QP_TIME_BASED_FILTER) && (qos->present & QP_DEADLINE))        ? (validate_deadline_and_timebased_filter (qos->deadline.deadline, qos->time_based_filter.minimum_separation)) : true;
+
     if (consistent) {
         ret = DDS_RETCODE_OK;
         if (enabled) {
@@ -283,10 +284,9 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
 _Pre_satisfies_(((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER ) ||\
                 ((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
 _Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
-int
-dds_reader_create(
+dds_entity_t
+dds_create_reader(
         dds_entity_t participant_or_subscriber,
-        dds_entity_t *reader,
         dds_entity_t topic,
         const dds_qos_t *qos,
         const dds_listener_t *listener)
@@ -298,6 +298,7 @@ dds_reader_create(
     dds_reader * rd;
     struct rhc * rhc;
     dds_entity * tp;
+    dds_entity_t hdl;
     struct thread_state1 * const thr = lookup_thread_state ();
     const bool asleep = !vtime_awake_p (thr->vtime);
     int ret = DDS_RETCODE_OK;
@@ -352,11 +353,12 @@ dds_reader_create(
 
     /* Create reader and associated read cache */
     rd = dds_alloc (sizeof (*rd));
-    *reader = dds_entity_init (&rd->m_entity, parent, DDS_KIND_READER, rqos, listener, DDS_READER_STATUS_MASK);
+    hdl = dds_entity_init (&rd->m_entity, parent, DDS_KIND_READER, rqos, listener, DDS_READER_STATUS_MASK);
     rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
     rd->m_topic = (dds_topic*)tp;
-    dds_entity_add_ref (tp);
     rhc = dds_rhc_new (rd, ((dds_topic*)tp)->m_stopic);
+    dds_entity_unlock(tp);
+    dds_entity_add_ref (tp);
     rd->m_entity.m_deriver.close = dds_reader_close;
     rd->m_entity.m_deriver.delete = dds_reader_delete;
     rd->m_entity.m_deriver.set_qos = dds_reader_qos_set;
@@ -369,7 +371,6 @@ dds_reader_create(
         assert(0);
     }
 
-    dds_entity_unlock(tp);
     dds_entity_unlock(parent);
 
     if (asleep) {
@@ -387,7 +388,7 @@ dds_reader_create(
         (dds_global.m_dur_reader) (rd, rhc);
     }
 
-    return DDS_RETCODE_OK;
+    return hdl;
 }
 
 void dds_reader_ddsi2direct (dds_entity_t entity, ddsi2direct_directread_cb_t cb, void *cbarg)

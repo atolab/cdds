@@ -19,16 +19,16 @@ uint64_t fake_seq_next (fake_seq_t *x) { return os_atomic_inc32_nv (x); }
 #endif
 
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-int
+dds_return_t
 dds_write(
-        dds_entity_t writer,
-        const void *data)
+       _In_ dds_entity_t writer,
+       _In_ const void *data)
 {
     int ret = DDS_RETCODE_BAD_PARAMETER;
     dds_writer *wr;
     if (data != NULL) {
         ret = dds_writer_lock(writer, &wr);
-        if (ret != DDS_RETCODE_OK) {
+        if (ret == DDS_RETCODE_OK) {
             ret = dds_write_impl (wr, data, dds_time (), 0);
             dds_writer_unlock(wr);
         }
@@ -47,7 +47,7 @@ dds_writecdr(
     dds_writer *wr;
     if (cdr != NULL) {
         ret = dds_writer_lock(writer, &wr);
-        if (ret != DDS_RETCODE_OK) {
+        if (ret == DDS_RETCODE_OK) {
             ret = dds_writecdr_impl (wr, cdr, size, dds_time (), 0);
             dds_writer_unlock(wr);
         }
@@ -66,7 +66,7 @@ dds_write_ts(
     dds_writer *wr;
     if (data != NULL) {
         ret = dds_writer_lock(writer, &wr);
-        if (ret != DDS_RETCODE_OK) {
+        if (ret == DDS_RETCODE_OK) {
             ret = dds_write_impl (wr, data, timestamp, 0);
             dds_writer_unlock(wr);
         }

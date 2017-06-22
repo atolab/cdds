@@ -74,8 +74,7 @@ int pong_main (int argc, char *argv[])
 
   qos = dds_qos_create ();
   dds_qset_reliability (qos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
-  status = dds_reader_create (subscriber, &reader, topic, qos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  reader = dds_create_reader (subscriber, topic, qos, NULL);
   dds_qos_delete (qos);
 
   /* A DDS DataWriter is created on the Publisher & Topic with a modififed Qos. */
@@ -83,8 +82,7 @@ int pong_main (int argc, char *argv[])
   qos = dds_qos_create ();
   dds_qset_reliability (qos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
   dds_qset_writer_data_lifecycle (qos, false);
-  status = dds_writer_create (publisher, &writer, topic, qos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  writer = dds_create_writer (publisher, topic, qos, NULL);
   dds_qos_delete (qos);
 
   waitSet = dds_waitset_create ();
@@ -103,7 +101,7 @@ int pong_main (int argc, char *argv[])
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     /* Take samples */
-    samplecount = dds_take (reader, samples, MAX_SAMPLES, info, 0);
+    samplecount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
     DDS_ERR_CHECK (samplecount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     for (j = 0; j < samplecount; j++)
     {
@@ -112,7 +110,7 @@ int pong_main (int argc, char *argv[])
         /* If sample is valid, send it back to ping */
 
         RoundTripModule_DataType * valid_sample = &data[j];
-        status = dds_write (writer, valid_sample);
+        status = (int) dds_write (writer, valid_sample);
         DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
       }
     }

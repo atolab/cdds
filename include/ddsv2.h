@@ -1673,6 +1673,7 @@ dds_read_instance_mask_wl(
  *   -# mask filter the data value based on the set sample, view and instance state
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
+
 DDS_EXPORT dds_return_t
 dds_take(
         _In_ dds_entity_t reader_or_condition,
