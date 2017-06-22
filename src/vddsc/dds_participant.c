@@ -72,10 +72,13 @@ static dds_return_t dds_participant_instance_hdl(dds_entity *e, dds_instance_han
 static dds_return_t dds_participant_qos_validate (const dds_qos_t *qos, bool enabled)
 {
     dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_PPANT, 0);
-    bool consistent;
+    bool consistent = true;
     assert(qos);
+
     /* Check consistency. */
-    consistent = ! ((qos->present & QP_USER_DATA) && ! validate_octetseq (&qos->user_data));
+    consistent &= (qos->present & QP_USER_DATA) ? validate_octetseq(&qos->user_data) : true;
+    consistent &= (qos->present & QP_PRISMTECH_ENTITY_FACTORY) ? \
+            validate_entityfactory_qospolicy(&qos->entity_factory) : true;
     if (consistent) {
         if (enabled) {
             /* TODO: Improve/check immutable check. */

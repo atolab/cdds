@@ -219,6 +219,12 @@
 #ifndef _In_z_
 #define _In_z_
 #endif
+#ifndef _In_z_count_
+#define _In_z_count_(s)
+#endif
+#ifndef _In_z_opt_count_
+#define _In_z_opt_count_(s)
+#endif
 #ifndef _Inout_
 #define _Inout_
 #endif
@@ -440,6 +446,9 @@
 #endif
 #ifndef _Outptr_result_bytebuffer_
 #define _Outptr_result_bytebuffer_(s)
+#endif
+#ifndef _Outptr_result_bytebuffer_all_maybenull_
+#define _Outptr_result_bytebuffer_all_maybenull_(s)
 #endif
 #ifndef _Outptr_result_bytebuffer_maybenull_
 #define _Outptr_result_bytebuffer_maybenull_(s)
