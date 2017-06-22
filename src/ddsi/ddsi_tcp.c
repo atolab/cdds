@@ -456,11 +456,11 @@ static ssize_t ddsi_tcp_conn_write_plain (ddsi_tcp_conn_t conn, const void * buf
 #ifdef MSG_NOSIGNAL
   sendflags |= MSG_NOSIGNAL;
 #endif
-  #pragma warning(suppress : 4267) /* Parameter len has type int on Win32/64. There is no way to specify more, so the warning on possible loss of precision is suppressed. */
+OS_WARNING_MSVC_OFF(4267);
   ret = send (conn->m_sock, buf, len, sendflags);
   *err = (ret == -1) ? os_getErrno () : 0;
-
   return ret;
+  OS_WARNING_MSVC_ON(4267);
 }
 
 #ifdef DDSI_INCLUDE_SSL
