@@ -520,6 +520,8 @@ os_threadMemMalloc(
          */
 
         if ((tlsMemArray == NULL) && (os_getErrno() != ERROR_SUCCESS)) {
+            printf("*** %s - 2. tlsMemArray=NULL, errno != ERROR_SUCCESS, errno=%i\n", OS_FUNCTION, os_getErrno());
+
         	/* TlsGetValue has failed, it may be that tlsIndex is present */
             if ((tlsIndex = TlsAlloc()) == TLS_OUT_OF_INDEXES) {
                  goto err_tlsAllocFail;
@@ -527,20 +529,20 @@ os_threadMemMalloc(
             tlsMemArray = (void **)TlsGetValue(tlsIndex);
         }
         if ((tlsMemArray == NULL) && (os_getErrno() == ERROR_SUCCESS)) {
-            printf("*** %s - 2. tlsMemArray=NULL, errno=%i\n", OS_FUNCTION, os_getErrno());
+            printf("*** %s - 3. tlsMemArray=NULL, errno=%i\n", OS_FUNCTION, os_getErrno());
 
             if (os_threadMemInit() == os_resultSuccess) {
-                printf("*** %s - 3. os_threadMemInit hurdle taken\n", OS_FUNCTION);
+                printf("*** %s - 4. os_threadMemInit hurdle taken\n", OS_FUNCTION);
                 tlsMemArray = (void **)TlsGetValue(tlsIndex);
-                printf("*** %s - 4. tlsMemArray=%p\n", OS_FUNCTION, tlsMemArray);
+                printf("*** %s - 5. tlsMemArray=%p\n", OS_FUNCTION, tlsMemArray);
             }
         }
         if (tlsMemArray != NULL) {
-            printf("*** %s - 5. tlsMemArray=%p\n", OS_FUNCTION, *tlsMemArray);
+            printf("*** %s - 6. tlsMemArray=%p\n", OS_FUNCTION, *tlsMemArray);
             if (tlsMemArray[index] == NULL) {
                 threadMemLoc = os_malloc(size);
                 tlsMemArray[index] = threadMemLoc;
-                printf("*** %s - 6. threadMemLoc=%p\n", OS_FUNCTION, threadMemLoc);
+                printf("*** %s - 7. threadMemLoc=%p\n", OS_FUNCTION, threadMemLoc);
 
             }
         }
