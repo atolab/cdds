@@ -510,13 +510,30 @@ os_threadMemMalloc(
 
         tlsMemArray = (void **)TlsGetValue(tlsIndex);
 
-        if (tlsMemArray == NULL) {
+        /* From Windows tlsGetValue documentation:
+         * The data stored in a TLS slot can have a value of 0 because it still has its
+         * initial value or because the thread called the TlsSetValue function with 0.
+         * Therefore, if the return value is 0, you must check whether GetLastError
+         * returns ERROR_SUCCESS before determining that the function has failed.
+         * If GetLastError returns ERROR_SUCCESS, then the function has succeeded and
+         * the data stored in the TLS slot is 0. Otherwise, the function has failed.
+         */
+
+        if ((tlsMemArray == NULL) && (os_getErrno() != ERROR_SUCCESS)) {
+        	/* TlsGetValue has failed, it may be that tlsIndex is present */
+            if ((tlsIndex = TlsAlloc()) == TLS_OUT_OF_INDEXES) {
+                 goto err_tlsAllocFail;
+            }
+            tlsMemArray = (void **)TlsGetValue(tlsIndex);
+        }
+        if ((tlsMemArray == NULL) && (os_getErrno() == ERROR_SUCCESS)) {
             printf("*** %s - 2. tlsMemArray=NULL, errno=%i\n", OS_FUNCTION, os_getErrno());
 
-            os_threadMemInit ();
-            printf("*** %s - 3. os_threadMemInit hurdle taken\n", OS_FUNCTION);
-            tlsMemArray = (void **)TlsGetValue(tlsIndex);
-            printf("*** %s - 4. tlsMemArray=%p\n", OS_FUNCTION, tlsMemArray);
+            if (os_threadMemInit() == os_resultSuccess) {
+                printf("*** %s - 3. os_threadMemInit hurdle taken\n", OS_FUNCTION);
+                tlsMemArray = (void **)TlsGetValue(tlsIndex);
+                printf("*** %s - 4. tlsMemArray=%p\n", OS_FUNCTION, tlsMemArray);
+            }
         }
         if (tlsMemArray != NULL) {
             printf("*** %s - 5. tlsMemArray=%p\n", OS_FUNCTION, *tlsMemArray);
@@ -530,6 +547,9 @@ os_threadMemMalloc(
     }
     printf("*** %s - end, threadMemAlloc = %p\n", OS_FUNCTION, threadMemLoc);
     return threadMemLoc;
+
+err_tlsAllocFail:
+    return NULL;
 }
 
 /** \brief Free thread private memory
