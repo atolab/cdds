@@ -337,10 +337,11 @@ static ddsi_tcp_conn_t ddsi_tcp_cache_find (const struct msghdr * msg)
 
 static ssize_t ddsi_tcp_conn_read_plain (ddsi_tcp_conn_t tcp, void * buf, size_t len, int * err)
 {
-  #pragma warning(suppress : 4267) /* Parameter len has type int on Win32/64. There is no way to specify more, so the warning on possible loss of precision is suppressed. */
+OS_WARNING_MSVC_OFF(4267);
   ssize_t ret = recv (tcp->m_sock, buf, len, 0);
   *err = (ret == -1) ? os_getErrno () : 0;
   return ret;
+OS_WARNING_MSVC_ON(4267);
 }
 
 #ifdef DDSI_INCLUDE_SSL
