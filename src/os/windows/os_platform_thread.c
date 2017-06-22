@@ -131,7 +131,7 @@ os_threadModuleExit(void)
    LPVOID data = TlsGetValue(tlsIndex);
 
    printf("*** %s - start, tlsIndex=%d, data=%p, errno=%i\n", OS_FUNCTION, tlsIndex, data, os_getErrno());
-   if ((data != NULL) && (os_getErrno() == ERROR_SUCCESS)) {
+   if (data != NULL) {
 	  printf("*** %s - 1\n", OS_FUNCTION);
       LocalFree((HLOCAL) data);
    }
@@ -575,7 +575,7 @@ os_threadMemFree(
 
     if ((0 <= index) && (index < OS_THREAD_MEM_ARRAY_SIZE)) {
         tlsMemArray = (void **)TlsGetValue(tlsIndex);
-        if (tlsMemArray != NULL) {
+        if ((tlsMemArray != NULL) && (os_getErrno() == ERROR_SUCCESS)) {
             threadMemLoc = tlsMemArray[index];
             if (threadMemLoc != NULL) {
                 tlsMemArray[index] = NULL;
@@ -583,6 +583,7 @@ os_threadMemFree(
             }
         }
     }
+    return;
 }
 
 /** \brief Get thread private memory
