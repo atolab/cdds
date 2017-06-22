@@ -519,6 +519,34 @@ os_threadMemMalloc(
          * the data stored in the TLS slot is 0. Otherwise, the function has failed.
          */
 
+        if (os_getErrno() != ERROR_SUCCESS) {
+        	printf("*** %s - 2. tlsMemArray=%p, errno=%i\n", OS_FUNCTION, *tlsMemArray, os_getErrno());
+        	goto err;
+        }
+        else if (tlsMemArray == NULL) {
+        	printf("*** %s - 3. tlsMemArray=%p, errno=%i\n", OS_FUNCTION, *tlsMemArray, os_getErrno());
+        	goto err;
+        }
+        else {
+        	printf("*** %s - 4. tlsMemArray=%p, errno=%i\n", OS_FUNCTION, *tlsMemArray, os_getErrno());
+			if (tlsMemArray[index] == NULL) {
+                 threadMemLoc = os_malloc(size);
+				 tlsMemArray[index] = threadMemLoc;
+				 printf("*** %s - 5. threadMemLoc=%p\n", OS_FUNCTION, threadMemLoc);
+
+			 }
+        }
+        printf("*** %s - end, threadMemAlloc = %p\n", OS_FUNCTION, threadMemLoc);
+        return threadMemLoc;
+err:
+    return NULL;
+
+#if 0
+
+
+
+
+
         if ((tlsMemArray == NULL) && (os_getErrno() != ERROR_SUCCESS)) {
             printf("*** %s - 2. tlsMemArray=NULL, errno != ERROR_SUCCESS, errno=%i\n", OS_FUNCTION, os_getErrno());
 
@@ -552,6 +580,8 @@ os_threadMemMalloc(
 
 err_tlsAllocFail:
     return NULL;
+#endif
+
 }
 
 /** \brief Free thread private memory
