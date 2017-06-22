@@ -259,6 +259,7 @@ int main (int argc, char **argv)
     dds_qset_resource_limits (drQos, maxSamples, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
 
     reader = dds_create_reader (subscriber, topic, drQos, NULL);
+    DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     dds_qos_delete (drQos);
 
     /* A Read Condition is created which is triggered when data is available to read */

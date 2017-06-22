@@ -93,6 +93,7 @@ int main (int argc, char *argv[])
   dds_qset_reliability (qos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
   dds_qset_writer_data_lifecycle (qos, false);
   writer = dds_create_writer (publisher, topic, qos, NULL);
+  DDS_ERR_CHECK (writer, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (qos);
 
   /* A DDS Subscriber is created on the domain participant. */
@@ -108,6 +109,7 @@ int main (int argc, char *argv[])
   qos = dds_qos_create ();
   dds_qset_reliability (qos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
   reader = dds_create_reader (subscriber, topic, qos, NULL);
+  DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (qos);
 
   terminated = dds_guardcondition_create ();

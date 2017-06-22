@@ -187,6 +187,7 @@ int ping_main (int argc, char *argv[])
   drQos = dds_qos_create ();
   dds_qset_reliability (drQos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
   reader = dds_create_reader (subscriber, topic, drQos, NULL);
+  DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (drQos);
 
   /* A DDS_DataWriter is created on the Publisher & Topic with a modified Qos. */
@@ -194,6 +195,7 @@ int ping_main (int argc, char *argv[])
   dds_qset_reliability (dwQos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
   dds_qset_writer_data_lifecycle (dwQos, false);
   writer = dds_create_writer (publisher, topic, dwQos, NULL);
+  DDS_ERR_CHECK (writer, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (dwQos);
 
   waitSet = dds_waitset_create ();

@@ -509,9 +509,11 @@ int main (int argc, char *argv[])
   rd_listener.on_data_available = data_available_handler;
   rd_listener.arg = &dah_arg;
   reader = dds_create_reader (subscriber, topic, drQos, (mode == LISTENER) ? &rd_listener : NULL);
+  DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   dds_qset_durability (drQos, DDS_DURABILITY_TRANSIENT_LOCAL);
   addrreader = dds_create_reader (subscriber, addrtopic, drQos, NULL);
+  DDS_ERR_CHECK (addrreader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (drQos);
 
   publisher = dds_create_publisher (participant, pubQos, NULL);
@@ -523,10 +525,12 @@ int main (int argc, char *argv[])
   dds_qset_reliability (dwQos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
   dds_qset_writer_data_lifecycle (dwQos, false);
   writer = dds_create_writer (publisher, topic, dwQos, NULL);
+  DDS_ERR_CHECK (writer, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   dds_qset_writer_data_lifecycle (dwQos, true);
   dds_qset_durability (dwQos, DDS_DURABILITY_TRANSIENT_LOCAL);
   addrwriter = dds_create_writer (publisher, addrtopic, dwQos, NULL);
+  DDS_ERR_CHECK (addrwriter, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (dwQos);
 
   terminated = dds_guardcondition_create ();
@@ -676,15 +680,15 @@ int main (int argc, char *argv[])
         if (status != 0)
         {
           /* Take sample and check that it is valid */
-          samplesCount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
-          DDS_ERR_CHECK (samplesCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+          sampleCount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+          DDS_ERR_CHECK (sampleCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
           postTakeTime = dds_time ();
 
           if (!dds_condition_triggered (terminated))
           {
-            if (samplesCount != 1)
+            if (sampleCount != 1)
             {
-              fprintf (stdout, "%s%d%s", "ERROR: Ping received ", samplesCount,
+              fprintf (stdout, "%s%d%s", "ERROR: Ping received ", sampleCount,
                        " samples but was expecting 1. Are multiple pong applications running?\n");
 
               return (0);
@@ -697,7 +701,7 @@ int main (int argc, char *argv[])
           }
 
           /* Update stats */
-          if (samplesCount > 0)
+          if (sampleCount > 0)
           {
             difference = postTakeTime - info[0].source_timestamp;
             exampleAddTimingToTimeStats (&roundTrip, difference);

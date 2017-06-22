@@ -148,6 +148,7 @@ int main (int argc, char **argv)
     for (i = 0; i < localReaders; i++)
     {
       rds[i] = dds_create_reader (sub, topic, qos, NULL);
+      DDS_ERR_CHECK (rds[i], DDS_CHECK_REPORT | DDS_CHECK_EXIT);
       dds_set_enabled_status(rds[i], 0);
     }
     dds_qos_delete (qos);
@@ -168,6 +169,7 @@ int main (int argc, char **argv)
   dds_qset_history (dwQos, DDS_HISTORY_KEEP_ALL, 0);
   dds_qset_resource_limits (dwQos, maxSamples, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
   writer = dds_create_writer (publisher, topic, dwQos, NULL);
+  DDS_ERR_CHECK (writer, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (dwQos);
 
   /* Enable write batching */

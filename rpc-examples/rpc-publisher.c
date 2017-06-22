@@ -93,6 +93,7 @@ int main (int argc, char **argv)
   dds_qset_history (dwQos, DDS_HISTORY_KEEP_ALL, 0);
   dds_qset_resource_limits (dwQos, maxSamples, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
   writer = dds_create_writer (publisher, topic, dwQos, NULL);
+  DDS_ERR_CHECK (writer, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (dwQos);
 
   /* Enable write batching */

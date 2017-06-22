@@ -287,6 +287,7 @@ int main (int argc, char **argv)
     rd_listener.on_data_available = data_available_handler_listener;
 
     reader = dds_create_reader (subscriber, topic, drQos, pollingDelay < -1 || pollingDelay > 0 ? NULL : &rd_listener);
+    DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     dds_qos_delete (drQos);
 
     /* A Read Condition is created which is triggered when data is available to read */
