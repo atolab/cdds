@@ -1095,26 +1095,25 @@ dds_querycondition_create(
         dds_querycondition_filter_fn filter);
 
 /**
- * Description : Creates a new instance of a DDS writer
+ * @brief Creates a new instance of a DDS writer
  *
- * Arguments :
- *   -# pp_or_pub The participant or publisher on which the writer is being created
- *   -# writer The created writer entity
- *   -# topic The topic to write
- *   -# qos The QoS to set on the new writer (can be NULL)
- *   -# listener Any listener functions associated with the new writer (can be NULL)
- *   -# Returns a status, 0 on success or non-zero value to indicate an error
+ * @param[in]  participant_or_publisher The participant or publisher on which the writer is being created
+ * @param[in]  topic The topic to write
+ * @param[in]  qos The QoS to set on the new writer (can be NULL)
+ * @param[in]  listener Any listener functions associated with the new writer (can be NULL)
+ *
+ * @returns >0 - Success (valid handle of a writer entity).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
  */
 _Pre_satisfies_(((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER  ) ||\
                 ((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
 _Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
-DDS_EXPORT int
-dds_writer_create(
-        dds_entity_t participant_or_publisher,
-        dds_entity_t *writer,
-        dds_entity_t topic,
-        const dds_qos_t *qos,
-        const dds_listener_t *listener);
+DDS_EXPORT dds_entity_t
+dds_create_writer(
+        _In_     dds_entity_t participant_or_publisher,
+        _In_     dds_entity_t topic,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener);
 
 /*
   Writing data (and variants of it) is straightforward. The first set
@@ -1123,8 +1122,13 @@ dds_writer_create(
   and unregister operations take an object of the topic's type, but
   only touch the key fields; the remained may be undefined.
 */
+
 /**
- * Description : Registers an instance with a key value to the data writer
+ * @brief Registers an instance with a key value to the data writer
+ *
+ * @param[in]  writer The writer to which instance has been associated
+ * @param[in]  data Instance with the key value
+ *
  *
  * Arguments :
  *   -# wr The writer to which instance has be associated
@@ -1242,20 +1246,31 @@ dds_instance_dispose_ts(
         dds_time_t timestamp);
 
 /**
- * Description : Write the value of a data instance. With this API, the value of the source timestamp
- *               is automatically made available to the data reader by the service
+ * @brief Write the value of a data instance
  *
- * Arguments :
- *   -# wr The writer entity
- *   -# data value to be written
- *   -# Returns 0 on success, or non-zero value to indicate an error
+ * With this API, the value of the source timestamp is automatically made
+ * available to the data reader by the service.
+ *
+ * @param[in]  writer The writer entity
+ * @param[in]  data Value to be written
+ *
+ * @returns - dds_return_t indicating success or failure
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT int
+DDS_EXPORT dds_return_t
 dds_write(
-        dds_entity_t writer,
-        const void *data);
+        _In_ dds_entity_t writer,
+        _In_ const void *data);
 
+/**
+ * @brief Write a CDR serialized value of a data instance
+ *
+ * @param[in]  writer The writer entity
+ * @param[in]  cdr CDR serialized value to be written
+ * @param[in]  size Size (in bytes) of CDR encoded data to be written
+ *
+ * @returns - A dds_return_t indicating success or failure
+ */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT int
 dds_writecdr(
@@ -1264,20 +1279,20 @@ dds_writecdr(
         size_t size);
 
 /**
- * Description : Write the value of a data instance along with the source timestamp passed.
+ * @brief Write the value of a data instance along with the source timestamp passed.
  *
- * Arguments :
- *   -# wr The writer entity
- *   -# data value to be written
- *   -# timestamp source timestamp
- *   -# Returns 0 on success, or non-zero value to indicate an error
+ * @param[in]  writer The writer entity
+ * @param[in]  data Value to be written
+ * @param[in]  timestamp Source timestamp
+ *
+ * @returns - A dds_return_t indicating success or failure
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT int
 dds_write_ts(
-        dds_entity_t writer,
-        const void *data,
-        dds_time_t timestamp);
+        _In_ dds_entity_t writer,
+        _In_ const void *data,
+        _In_ dds_time_t timestamp);
 
 /**
  * Description : Flushes all the samples from the write cache.
