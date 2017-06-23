@@ -96,24 +96,15 @@ typedef enum dds_entity_kind
   DDS_KIND_SUBSCRIBER  = 0x05000000,
   DDS_KIND_PUBLISHER   = 0x06000000,
   DDS_KIND_COND_READ   = 0x07000000,
-  DDS_KIND_COND_QUERY  = 0x08000000
+  DDS_KIND_COND_QUERY  = 0x08000000,
+  DDS_KIND_WAITSET     = 0x0A000000,
 }
 dds_entity_kind_t;
 
 /* Handles are opaque pointers to implementation types */
-typedef struct dds_condition * dds_condition_t;
 typedef uint64_t dds_instance_handle_t;
 typedef int32_t dds_domainid_t;
-typedef struct dds_waitset * dds_waitset_t;
 
-
-typedef struct dds_condition_seq
-{
-  uint32_t _length;
-  dds_condition_t * _buffer;
-  bool _release;
-}
-dds_condition_seq;
 
 /* Topic encoding instruction types */
 

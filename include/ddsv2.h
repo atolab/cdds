@@ -1314,25 +1314,6 @@ dds_create_readcondition(
         _In_ dds_entity_t reader,
         _In_ uint32_t mask);
 
-/*
-  Guard conditions may be triggered or not. The status of a guard condition
-  can always be retrieved via the dds_condition_triggered function. To trigger
-  or reset a guard condition it must first be associated with a waitset or
-  an error status will be returned.
-*/
-/**
- * Description : Sets the trigger_value associated with a guard condition
- *               The guard condition should be associated with a waitset, before
- *               setting the trigger value.
- *
- * Arguments :
- *   -# guard pointer to the condition to be triggered
- */
-_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
-DDS_EXPORT dds_return_t
-dds_waitset_set_trigger(
-        _In_ dds_entity_t waitset,
-        _In_ bool trigger);
 
 /*
   Entities can be attached to a waitset or removed from a waitset (in
@@ -1437,6 +1418,26 @@ DDS_EXPORT dds_return_t
 dds_waitset_detach(
         _In_ dds_entity_t waitset,
         _In_ dds_entity_t entity);
+
+/**
+ * Description : Sets the trigger_value associated with a waitset.
+ *
+ * When the waitset is attached to itself and the trigger value is
+ * set to 'true', then the waitset will wake up just like with an
+ * other status change of the attached entities.
+ *
+ * This can be used to forcefully wake up a waitset, for instance
+ * when the application wants to shut down.
+ *
+ * Arguments :
+ *   -# waitset pointer to the condition to be triggered
+ *   -# trigger true, waitset will wake up or not wait at all
+ */
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
+dds_waitset_set_trigger(
+        _In_ dds_entity_t waitset,
+        _In_ bool trigger);
 
 /*
   The "dds_waitset_wait" operation blocks until the some of the
@@ -1646,13 +1647,6 @@ dds_read_instance_mask_wl(
  *   -# cond read condition to filter the data samples based on the content
  *   -# Returns the number of samples read, 0 indicates no data to read.
  */
-//DDS_EXPORT int
-//dds_read_cond(
-//        dds_entity_t reader,
-//        void **buf,
-//        uint32_t maxs,
-//        dds_sample_info_t *si,
-//        dds_condition_t condition);
 
 /**
  * Description : Access the collection of data values (of same type) and sample info from the data reader
@@ -2004,7 +1998,10 @@ DDS_EXPORT dds_time_t dds_time(void);
  * Arguments :
  * -# e Entity for which to check for triggered status
  */
-DDS_EXPORT dds_return_t dds_entity_triggered(_In_ dds_entity_t e);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT dds_return_t
+dds_triggered(
+        _In_ dds_entity_t entity);
 
 /* TODO: dds_create_contentfilteredtopic -> dds_create_topic_w_query and use dds_get_query and the like. */
 DDS_EXPORT dds_entity_t dds_create_contentfilteredtopic(_In_ dds_entity_t pp, _In_z_ const char * name, _In_ dds_entity_t related_topic, _In_z_ const char *expression, _In_reads_opt_z_(npars) const char ** parameters, _In_ size_t npars);

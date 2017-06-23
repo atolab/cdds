@@ -301,7 +301,7 @@ int main (int argc, char *argv[])
 
   startTime = dds_time ();
   printf ("# Waiting for startup jitter to stabilise\n");
-  while (!dds_condition_triggered (terminated) && difference < DDS_SECS(5))
+  while ((dds_triggered(waitSet) == 0) && (difference < DDS_SECS(5)))
   {
     status = (int) dds_write (writer, &pub_data);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
@@ -316,7 +316,7 @@ int main (int argc, char *argv[])
     time = dds_time ();
     difference = time - startTime;
   }
-  if (!dds_condition_triggered (terminated))
+  if (dds_triggered(waitSet) == 0)
   {
     warmUp = false;
     printf("# Warm up complete.\n\n");
@@ -328,7 +328,7 @@ int main (int argc, char *argv[])
   }
 
   startTime = dds_time ();
-  for (i = 0; !dds_condition_triggered (terminated) && (!numSamples || i < numSamples); i++)
+  for (i = 0; (dds_triggered(waitSet) == 0) && (!numSamples || i < numSamples); i++)
   {
     /* Write a sample that pong can send back */
     preWriteTime = dds_time ();
@@ -347,7 +347,7 @@ int main (int argc, char *argv[])
       DDS_ERR_CHECK (sampleCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
       postTakeTime = dds_time ();
 
-      if (!dds_condition_triggered (terminated))
+      if (dds_triggered(waitSet) == 0)
       {
         if (sampleCount != 1)
         {

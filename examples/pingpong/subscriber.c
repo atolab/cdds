@@ -317,7 +317,7 @@ int main (int argc, char **argv)
 
     printf ("Waiting for samples...\n");
 
-    while (!dds_condition_triggered (terminated) && (maxCycles == 0 || cycles < maxCycles))
+    while ((dds_triggered(waitSet) == 0) && (maxCycles == 0 || cycles < maxCycles))
     {
       if (pollingDelay == -1 || pollingDelay == 0)
       {

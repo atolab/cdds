@@ -28,6 +28,14 @@ struct dds_guardcond;
 struct sertopic;
 struct rhc;
 
+/* Internal entity status flags */
+
+#define DDS_INTERNAL_STATUS_MASK     (0xFF000000)
+
+#define DDS_WAITSET_TRIGGER_STATUS   (0x01000000)
+#define DDS_DELETING_STATUS          (0x02000000)
+
+
 /* Module identifiers for error codes */
 
 #define DDS_MOD_QOS 0x0100
@@ -77,87 +85,9 @@ struct rhc;
  * does not set the named _Out_ parameter." */
 #define DDS_ERRNO(e,m,n) ((e <= 0) ? e : -((n) + (m) + (e)))
 
-/*
-  Have separate kinds for entity and condition, matching DDS type
-  hierarchy. Have distinct values so will detect if an entity is passed
-  as a condition or vice versa.
-*/
-typedef enum dds_cond_kind
-{
-  DDS_TYPE_COND_GUARD  = 0x00000040,
-  DDS_TYPE_COND_READ   = 0x00000080,
-  DDS_TYPE_COND_QUERY  = 0x00000100|DDS_TYPE_COND_READ,
-  DDS_TYPE_COND_STATUS = 0x00000200
-}
-dds_cond_kind_deprecated_t;
-
-/* Link between waitset and condition */
-
-typedef struct dds_ws_cond_link
-{
-  dds_attach_t m_attach;
-  struct dds_waitset * m_waitset;
-  struct dds_condition * m_cond;
-  struct dds_ws_cond_link * m_ws_next;
-  struct dds_ws_cond_link * m_cond_next;
-}
-dds_ws_cond_link;
-
-typedef struct dds_waitset
-{
-  os_mutex conds_lock;
-  os_cond cv;
-  uint64_t triggered;
-  uint32_t timeout_counter;
-  uint32_t m_nconds;
-  dds_ws_cond_link * m_conds;
-  void (*block) (struct dds_waitset *ws, void *arg, dds_time_t abstimeout);
-  void (*cont) (struct dds_waitset *ws, void *arg, int ret);
-  size_t trp_nxs;
-  dds_attach_t *trp_xs;
-  dds_time_t trp_abstimeout;
-}
-dds_waitset;
-
-typedef struct dds_condition
-{
-  dds_cond_kind_deprecated_t m_kind;
-  uint32_t m_trigger;
-  dds_ws_cond_link * m_waitsets;
-  os_mutex * m_lock;
-}
-dds_condition;
 
 typedef bool (*dds_querycondition_filter_with_ctx_fn) (const void * sample, const void *ctx);
 
-typedef struct dds_readcond
-{
-  dds_condition m_cond;
-  struct rhc * m_rhc;
-  uint32_t m_qminv;
-  uint32_t m_sample_states;
-  uint32_t m_view_states;
-  uint32_t m_instance_states;
-  nn_guid_t m_rd_guid;
-  struct dds_readcond * m_rhc_next;
-  struct
-  {
-    void * m_cxx_ctx;
-    union
-    {
-      dds_querycondition_filter_fn m_filter;
-      dds_querycondition_filter_with_ctx_fn m_filter_with_ctx;
-    } u;
-  } m_query;
-}
-dds_readcond;
-
-typedef struct dds_guardcond
-{
-  dds_condition m_cond;
-  os_mutex m_lock;
-}
-dds_guardcond;
 
 /* The listener struct. */
 
@@ -204,6 +134,18 @@ typedef struct dds_entity_deriver {
 }
 dds_entity_deriver;
 
+typedef void (*dds_entity_callback)(dds_entity_t observer, dds_entity_t observed, uint32_t status);
+
+typedef struct dds_entity_observer
+{
+    /* Ref-counted to be able to use it outside the lock.
+     * Using it outside the lock is safe because we use handles. */
+    uint32_t m_refc;
+    dds_entity_callback m_cb;
+    dds_entity_t m_observer;
+    struct dds_entity_observer *m_next;
+}
+dds_entity_observer;
 
 typedef struct dds_entity
 {
@@ -215,8 +157,6 @@ typedef struct dds_entity
   struct dds_entity * m_children;
   struct dds_entity * m_participant;
   struct dds_domain * m_domain;
-  /* TODO: dds_condition will become an entity, so entity shouldn't have a condition!!! circular dependency!!! BAD!!! */
-  dds_condition * m_status;
   dds_qos_t * m_qos;
   dds_domainid_t m_domainid;
   nn_guid_t m_guid;
@@ -227,6 +167,8 @@ typedef struct dds_entity
   os_mutex m_mutex;
   os_cond m_cond;
   c_listener_t m_listener;
+  uint32_t m_trigger;
+  dds_entity_observer *m_observers;
   struct ut_handlelink *m_hdllink;
 }
 dds_entity;
@@ -302,6 +244,39 @@ typedef struct dds_topic
   dds_inconsistent_topic_status_t m_inconsistent_topic_status;
 }
 dds_topic;
+
+typedef struct dds_readcond
+{
+  dds_entity m_entity;
+  struct rhc * m_rhc;
+  uint32_t m_qminv;
+  uint32_t m_sample_states;
+  uint32_t m_view_states;
+  uint32_t m_instance_states;
+  nn_guid_t m_rd_guid;
+  struct dds_readcond * m_rhc_next;
+  struct
+  {
+      dds_querycondition_filter_fn m_filter;
+  } m_query;
+}
+dds_readcond;
+
+typedef struct dds_attachment
+{
+    dds_entity_t entity;
+    dds_attach_t arg;
+    struct dds_attachment* next;
+}
+dds_attachment;
+
+typedef struct dds_waitset
+{
+  dds_entity m_entity;
+  dds_attachment *observed;
+  dds_attachment *triggered;
+}
+dds_waitset;
 
 typedef struct dds_iid
 {

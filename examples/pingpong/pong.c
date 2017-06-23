@@ -123,7 +123,7 @@ int main (int argc, char *argv[])
   printf ("Waiting for samples from ping to send back...\n");
   fflush (stdout);
 
-  while (!dds_condition_triggered (terminated))
+  while (dds_triggered(waitSet) == 0)
   {
     /* Wait for a sample from ping */
 
@@ -133,7 +133,7 @@ int main (int argc, char *argv[])
     /* Take samples */
     samplecount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
     DDS_ERR_CHECK (samplecount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-    for (j = 0; !dds_condition_triggered (terminated) && j < samplecount; j++)
+    for (j = 0; (dds_triggered(waitSet) == 0) && (j < samplecount); j++)
     {
       /* If writer has been disposed terminate pong */
 

@@ -162,7 +162,7 @@ static double exampleGetMedianFromTimeStats (ExampleTimeStats *stats)
   return median;
 }
 
-static dds_condition_t terminated;
+static dds_entity_t waitSet;
 static volatile sig_atomic_t terminated_flag;
 
 #ifdef _WIN32
@@ -176,7 +176,7 @@ static bool CtrlHandler (DWORD fdwCtrlType)
 static void CtrlHandler (int fdwCtrlType)
 {
   terminated_flag = 1;
-  dds_guard_trigger (terminated);
+  dds_waitset_set_trigger(waitSet, true);
 }
 #endif
 
@@ -365,7 +365,6 @@ int main (int argc, char *argv[])
   dds_entity_t writer, addrwriter;
   dds_entity_t publisher;
   dds_entity_t subscriber;
-  dds_waitset_t waitSet;
   enum mode { WAITSET, LISTENER, DIRECT, UDP } mode = LISTENER;
   int isping = 0;
 
@@ -390,7 +389,6 @@ int main (int argc, char *argv[])
   unsigned long i;
   int status;
   int sampleCount;
-  dds_condition_t readCond;
   dds_listener_t rd_listener;
   int opt;
   const char *logfile = NULL;
@@ -533,21 +531,16 @@ int main (int argc, char *argv[])
   DDS_ERR_CHECK (addrwriter, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (dwQos);
 
-  terminated = dds_guardcondition_create ();
-  waitSet = dds_waitset_create ();
+  waitSet = dds_create_waitset(participant);
 
   if (mode != LISTENER)
   {
-    readCond = dds_readcondition_create (reader, DDS_ANY_STATE);
-    status = dds_waitset_attach (waitSet, readCond, (dds_attach_t)(intptr_t)reader);
+    status = dds_waitset_attach (waitSet, reader, (dds_attach_t)(intptr_t)reader);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   }
-  else
-  {
-    readCond = 0;
-  }
 
-  status = dds_waitset_attach (waitSet, terminated, terminated);
+  /* Attach waitset to itself to be able to trigger it. */
+  status = dds_waitset_attach (waitSet, waitSet, (dds_attach_t)(intptr_t)waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   setvbuf(stdout, NULL, _IONBF, 0);
@@ -672,7 +665,7 @@ int main (int argc, char *argv[])
       status = (int) dds_write (writer, &pub_data);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-      for (i = 0; !dds_condition_triggered (terminated); i++)
+      for (i = 0; dds_triggered(waitSet) == 0; i++)
       {
         /* Wait for response from pong */
         status = dds_waitset_wait (waitSet, wsresults, wsresultsize, (mode != WAITSET) ? DDS_INFINITY : waitTimeout);
@@ -684,7 +677,7 @@ int main (int argc, char *argv[])
           DDS_ERR_CHECK (sampleCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
           postTakeTime = dds_time ();
 
-          if (!dds_condition_triggered (terminated))
+          if (dds_triggered(waitSet) == 0)
           {
             if (sampleCount != 1)
             {
@@ -751,7 +744,7 @@ int main (int argc, char *argv[])
       printf ("Waiting for samples from ping to send back...\n");
       fflush (stdout);
 
-      while (!dds_condition_triggered (terminated))
+      while (dds_triggered(waitSet) == 0)
       {
         /* Wait for a sample from ping */
         int samplecount;
@@ -763,14 +756,14 @@ int main (int argc, char *argv[])
         /* Take samples */
         samplecount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
         DDS_ERR_CHECK (samplecount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-        for (j = 0; !dds_condition_triggered (terminated) && j < samplecount; j++)
+        for (j = 0; (dds_triggered(waitSet) == 0) && (j < samplecount); j++)
         {
           /* If writer has been disposed terminate pong */
 
           if (info[j].instance_state == DDS_IST_NOT_ALIVE_DISPOSED)
           {
             printf ("Received termination request. Terminating.\n");
-            dds_guard_trigger (terminated);
+            dds_waitset_set_trigger(waitSet, true);
             break;
           }
           else if (info[j].valid_data)
@@ -809,17 +802,14 @@ int main (int argc, char *argv[])
   exampleDeleteTimeStats (&roundTrip);
   exampleDeleteTimeStats (&roundTripOverall);
 
-  if (readCond)
+  if (mode != LISTENER)
   {
-    status = dds_waitset_detach (waitSet, readCond);
+    status = dds_waitset_detach (waitSet, reader);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   }
-  status = dds_waitset_detach (waitSet, terminated);
+  status = dds_waitset_detach (waitSet, waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  if (readCond)
-    dds_condition_delete (readCond);
-  dds_condition_delete (terminated);
-  status = dds_waitset_delete (waitSet);
+  status = dds_delete (waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_delete (participant);
 

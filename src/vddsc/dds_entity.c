@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <string.h>
 #include "kernel/dds_entity.h"
-#include "kernel/dds_condition.h"
 #include "kernel/dds_listener.h"
 #include "os/os_report.h"
 
@@ -10,6 +9,24 @@
 #error "DDS_ENTITY_KIND_MASK != UT_HANDLE_KIND_MASK"
 #endif
 
+static bool
+dds_entity_observer_delete(
+        _In_     dds_entity          *observed,
+        _In_     dds_entity_observer *cur,
+        _In_opt_ dds_entity_observer *prev);
+
+static void
+dds_entity_observers_keep(
+        _In_ dds_entity *observed);
+
+static void
+dds_entity_observers_release(
+        _In_ dds_entity *observed);
+
+static void
+dds_entity_observers_signal(
+        _In_ dds_entity *observed,
+        _In_ uint32_t status);
 
 void
 dds_entity_add_ref (_In_ dds_entity * e)
@@ -220,20 +237,17 @@ dds_entity_init(
     e->m_qos = qos;
     e->m_cb_waiting = 0;
     e->m_cb_count = 0;
+    e->m_observers = NULL;
+    e->m_trigger = 0;
 
     /* TODO: CHAM-96: Implement dynamic enabling of entity. */
     e->m_flags |= DDS_ENTITY_ENABLED;
 
     /* set the status enable based on kind */
-    e->m_status_enable = mask;
+    e->m_status_enable = mask | DDS_INTERNAL_STATUS_MASK;
 
     os_mutexInit (&e->m_mutex);
     os_condInit (&e->m_cond, &e->m_mutex);
-
-    /* alloc status condition */
-    e->m_status = dds_alloc(sizeof(dds_condition));
-    e->m_status->m_kind = DDS_TYPE_COND_STATUS;
-    e->m_status->m_lock = &e->m_mutex;
 
     if (parent) {
         e->m_domain = parent->m_domain;
@@ -290,9 +304,19 @@ dds_delete(
     ut_handle_close(e->m_hdl, e->m_hdllink);
     e->m_status_enable = 0;
     dds_listener_reset(&e->m_listener);
+    e->m_trigger |= DDS_DELETING_STATUS;
 
     dds_entity_unlock(e);
     dds_entity_cb_wait_signal(e);
+
+    /* Signal observers that this entity will be deleted. */
+    dds_entity_status_signal(e);
+
+    /* Remove all possible observers. */
+    dds_entity_observers_release(e);
+
+    /* Expect all observers to have been removed. */
+    assert(e->m_observers == NULL);
 
     /* Recursively delete children */
     child = e->m_children;
@@ -351,9 +375,6 @@ dds_delete(
     if (ret == DDS_RETCODE_OK) {
         /* Destroy last few things. */
         dds_qos_delete (e->m_qos);
-        if (e->m_status) {
-            dds_condition_delete (e->m_status);
-        }
         os_condDestroy (&e->m_cond);
         os_mutexDestroy (&e->m_mutex);
         dds_free (e);
@@ -563,7 +584,7 @@ dds_get_status_changes(
         ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (ret == DDS_RETCODE_OK) {
             if (e->m_deriver.validate_status) {
-                *status = e->m_status->m_trigger;
+                *status = e->m_trigger;
             } else {
                 ret = DDS_RETCODE_ILLEGAL_OPERATION;
             }
@@ -585,7 +606,7 @@ dds_get_enabled_status(
         ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (ret == DDS_RETCODE_OK) {
             if (e->m_deriver.validate_status) {
-                *status = e->m_status_enable;
+                *status = (e->m_status_enable & ~DDS_INTERNAL_STATUS_MASK);
             } else {
                 ret = DDS_RETCODE_ILLEGAL_OPERATION;
             }
@@ -609,8 +630,10 @@ dds_set_enabled_status(
         if (e->m_deriver.validate_status) {
             ret = e->m_deriver.validate_status(mask);
             if (ret == DDS_RETCODE_OK) {
+                /* Don't block internal status triggers. */
+                mask |= DDS_INTERNAL_STATUS_MASK;
                 e->m_status_enable = mask;
-                e->m_status->m_trigger &= mask;
+                e->m_trigger &= mask;
                 if (e->m_deriver.propagate_status) {
                     ret = e->m_deriver.propagate_status(e, mask, true);
                 }
@@ -640,7 +663,7 @@ dds_read_status(
             if (e->m_deriver.validate_status) {
                 ret = e->m_deriver.validate_status(mask);
                 if (ret == DDS_RETCODE_OK) {
-                    *status = e->m_status->m_trigger & mask;
+                    *status = e->m_trigger & mask;
                 }
             } else {
                 ret = DDS_RETCODE_ILLEGAL_OPERATION;
@@ -667,11 +690,11 @@ dds_take_status(
             if (e->m_deriver.validate_status) {
                 ret = e->m_deriver.validate_status(mask);
                 if (ret == DDS_RETCODE_OK) {
-                    *status = e->m_status->m_trigger & mask;
+                    *status = e->m_trigger & mask;
                     if (e->m_deriver.propagate_status) {
                         ret = e->m_deriver.propagate_status(e, *status, false);
                     }
-                    e->m_status->m_trigger &= ~mask;
+                    e->m_trigger &= ~mask;
                 }
             } else {
                 ret = DDS_RETCODE_ILLEGAL_OPERATION;
@@ -685,9 +708,22 @@ dds_take_status(
 void
 dds_entity_status_signal(_In_ dds_entity *e)
 {
+    uint32_t status = e->m_trigger;
+
     assert(e);
+
     os_mutexLock (&e->m_mutex);
-    dds_cond_callback_signal(e->m_status);
+    dds_entity_observers_keep(e);
+    status = e->m_trigger;
+    os_mutexUnlock (&e->m_mutex);
+
+    /* Signal the observers in an unlocked state.
+     * This is safe because we use handles and the current entity
+     * will not be deleted while we're in this signaling state. */
+    dds_entity_observers_signal(e, status);
+
+    os_mutexLock (&e->m_mutex);
+    dds_entity_observers_release(e);
     os_mutexUnlock (&e->m_mutex);
 }
 
@@ -731,26 +767,30 @@ dds_instancehandle_get(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
-_Check_return_ int32_t
+_Check_return_ dds_return_t
 dds_entity_lock(_In_ dds_entity_t hdl, _In_ dds_entity_kind_t kind, _Out_ dds_entity **e)
 {
+    dds_return_t ret = hdl;
     ut_handle_t utr;
     assert(e);
-    utr = ut_handle_claim(hdl, NULL, kind, (void**)e);
-    if (utr == UT_HANDLE_OK) {
-        os_mutexLock(&((*e)->m_mutex));
-        /* The handle could have been closed while we were waiting for the mutex. */
-        if (ut_handle_is_closed(hdl, (*e)->m_hdllink)) {
-            os_mutexUnlock(&((*e)->m_mutex));
-            utr = UT_HANDLE_CLOSED;
+    if (hdl >= 0) {
+        utr = ut_handle_claim(hdl, NULL, kind, (void**)e);
+        if (utr == UT_HANDLE_OK) {
+            os_mutexLock(&((*e)->m_mutex));
+            /* The handle could have been closed while we were waiting for the mutex. */
+            if (ut_handle_is_closed(hdl, (*e)->m_hdllink)) {
+                os_mutexUnlock(&((*e)->m_mutex));
+                utr = UT_HANDLE_CLOSED;
+            }
         }
+        ret = ((utr == UT_HANDLE_OK)           ? DDS_RETCODE_OK                :
+               (utr == UT_HANDLE_UNEQUAL_KIND) ? DDS_RETCODE_ILLEGAL_OPERATION :
+               (utr == UT_HANDLE_INVALID)      ? DDS_RETCODE_BAD_PARAMETER     :
+               (utr == UT_HANDLE_DELETED)      ? DDS_RETCODE_ALREADY_DELETED   :
+               (utr == UT_HANDLE_CLOSED)       ? DDS_RETCODE_ALREADY_DELETED   :
+                                                 DDS_RETCODE_ERROR             );
     }
-    return((utr == UT_HANDLE_OK)           ? DDS_RETCODE_OK                :
-           (utr == UT_HANDLE_UNEQUAL_KIND) ? DDS_RETCODE_ILLEGAL_OPERATION :
-           (utr == UT_HANDLE_INVALID)      ? DDS_RETCODE_BAD_PARAMETER     :
-           (utr == UT_HANDLE_DELETED)      ? DDS_RETCODE_ALREADY_DELETED   :
-           (utr == UT_HANDLE_CLOSED)       ? DDS_RETCODE_ALREADY_DELETED   :
-                                             DDS_RETCODE_ERROR             );
+    return ret;
 }
 
 void dds_entity_unlock(_In_ dds_entity *e)
@@ -759,3 +799,159 @@ void dds_entity_unlock(_In_ dds_entity *e)
     os_mutexUnlock(&e->m_mutex);
     ut_handle_release(e->m_hdl, e->m_hdllink);
 }
+
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+dds_return_t
+dds_triggered(
+        _In_ dds_entity_t entity)
+{
+    dds_return_t ret;
+    dds_entity *e;
+    ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+    if (ret == DDS_RETCODE_OK) {
+        ret = (e->m_trigger != 0);
+        dds_entity_unlock(e);
+    } else {
+        ret = DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M1);
+    }
+    return ret;
+}
+
+dds_return_t
+dds_entity_observer_register_nl(
+        _In_ dds_entity*  observed,
+        _In_ dds_entity_t observer,
+        _In_ dds_entity_callback cb)
+{
+    dds_return_t ret = DDS_RETCODE_OK;
+    dds_entity_observer *o = os_malloc(sizeof(dds_entity_observer));
+    assert(observed);
+    o->m_cb = cb;
+    o->m_refc = 1;
+    o->m_observer = observer;
+    o->m_next = NULL;
+    if (observed->m_observers == NULL) {
+        observed->m_observers = o;
+    } else {
+        dds_entity_observer *idx = observed->m_observers;
+        while ((idx->m_next != NULL) && (o != NULL)) {
+            if (idx->m_observer == observer) {
+                os_free(o);
+                o = NULL;
+                ret = DDS_RETCODE_PRECONDITION_NOT_MET;
+            }
+            idx = idx->m_next;
+        }
+        if (o != NULL) {
+            idx->m_next = o;
+        }
+    }
+
+    return ret;
+}
+
+dds_return_t
+dds_entity_observer_register(
+        _In_ dds_entity_t observed,
+        _In_ dds_entity_t observer,
+        _In_ dds_entity_callback cb)
+{
+    dds_return_t ret;
+    dds_entity *e;
+    assert(cb);
+    ret = dds_entity_lock(observed, DDS_KIND_DONTCARE, &e);
+    if (ret == DDS_RETCODE_OK) {
+        ret = dds_entity_observer_register_nl(e, observer, cb);
+        dds_entity_unlock(e);
+    }
+    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M1);
+}
+
+dds_return_t
+dds_entity_observer_unregister_nl(
+        _In_ dds_entity*  observed,
+        _In_ dds_entity_t observer)
+{
+    dds_return_t ret = DDS_RETCODE_PRECONDITION_NOT_MET;
+    dds_entity_observer *prev = NULL;
+    dds_entity_observer *idx  = observed->m_observers;
+    while ((idx != NULL) && (ret == DDS_RETCODE_PRECONDITION_NOT_MET)) {
+        if (idx->m_observer == observer) {
+            dds_entity_observer_delete(observed, idx, prev);
+            ret = DDS_RETCODE_OK;
+        } else {
+            idx = idx->m_next;
+        }
+    }
+    return ret;
+}
+
+dds_return_t
+dds_entity_observer_unregister(
+        _In_ dds_entity_t observed,
+        _In_ dds_entity_t observer)
+{
+    dds_return_t ret;
+    dds_entity *e;
+    ret = dds_entity_lock(observed, DDS_KIND_DONTCARE, &e);
+    if (ret == DDS_RETCODE_OK) {
+        ret = dds_entity_observer_unregister_nl(e, observer);
+        dds_entity_unlock(e);
+    }
+    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M1);
+}
+
+static bool
+dds_entity_observer_delete(_In_ dds_entity *observed, _In_ dds_entity_observer *cur, _In_opt_ dds_entity_observer *prev)
+{
+    bool deleted = false;
+    cur->m_refc--;
+    if (cur->m_refc == 0) {
+        if (prev == NULL) {
+            observed->m_observers = cur->m_next;
+        } else {
+            prev->m_next = cur->m_next;
+        }
+        os_free(cur);
+        deleted = true;
+    }
+    return deleted;
+}
+
+static void
+dds_entity_observers_keep(_In_ dds_entity *observed)
+{
+    dds_entity_observer *idx = observed->m_observers;
+    while (idx != NULL) {
+        idx->m_refc++;
+        idx = idx->m_next;
+    }
+}
+
+
+static void
+dds_entity_observers_release(_In_ dds_entity *observed)
+{
+    dds_entity_observer *next;
+    dds_entity_observer *prev = NULL;
+    dds_entity_observer *idx = observed->m_observers;
+    while (idx != NULL) {
+        next = idx->m_next;
+        if (!dds_entity_observer_delete(observed, idx, prev)) {
+            prev = idx;
+        }
+        idx = next;
+    }
+}
+
+
+static void
+dds_entity_observers_signal(_In_ dds_entity *observed, _In_ uint32_t status)
+{
+    dds_entity_observer *idx = observed->m_observers;
+    while (idx != NULL) {
+        idx->m_cb(idx->m_observer, observed->m_hdl, status);
+        idx = idx->m_next;
+    }
+}
+

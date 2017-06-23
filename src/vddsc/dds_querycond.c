@@ -1,74 +1,45 @@
 #include <assert.h>
 #include "kernel/dds_types.h"
 #include "kernel/dds_entity.h"
+#include "kernel/dds_reader.h"
+#include "kernel/dds_topic.h"
 #include "kernel/dds_querycond.h"
 #include "kernel/dds_readcond.h"
 #include "ddsi/ddsi_ser.h"
 
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
-dds_condition_t
-dds_querycondition_create(
-        dds_entity_t reader,
-        uint32_t mask,
-        dds_querycondition_filter_fn filter)
+DDS_EXPORT dds_entity_t
+dds_create_querycondition(
+        _In_ dds_entity_t reader,
+        _In_ uint32_t mask,
+        _In_ dds_querycondition_filter_fn filter)
 {
-  dds_condition_t cond;
-  dds_topic *topic;
-  dds_entity *r;
-  int32_t ret;
+    dds_entity_t topic;
+    dds_entity_t hdl;
+    dds_reader *r;
+    dds_topic  *t;
+    int32_t ret;
 
-  assert (filter);
-  cond = dds_readcondition_create (reader, mask);
-  if (cond) {
-      cond->m_kind = DDS_TYPE_COND_QUERY;
-      ((dds_readcond*) cond)->m_query.u.m_filter = filter;
-      ((dds_readcond*) cond)->m_query.m_cxx_ctx = NULL;
+    ret = dds_reader_lock(reader, &r);
+    if (ret == DDS_RETCODE_OK) {
+        dds_readcond *cond = dds_create_readcond(r, DDS_KIND_COND_QUERY, mask);
+        hdl = cond->m_entity.m_hdl;
+        cond->m_query.m_filter = filter;
+        topic = r->m_topic->m_entity.m_hdl;
+        dds_reader_unlock(r);
+        ret = dds_topic_lock(topic, &t);
+        if (ret == DDS_RETCODE_OK) {
+            if (t->m_stopic->filter_sample == NULL) {
+                t->m_stopic->filter_sample = dds_alloc(t->m_descriptor->m_size);
+            }
+            dds_topic_unlock(t);
+        } else {
+            dds_delete(hdl);
+            hdl = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+        }
+    } else {
+        hdl = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M2);
+    }
 
-      ret = dds_entity_lock(reader, DDS_KIND_READER, &r);
-      if (ret == DDS_RETCODE_OK) {
-          topic = (dds_topic *)(((dds_reader *)r)->m_topic);
-          dds_entity_unlock(r);
-          os_mutexLock (&topic->m_entity.m_mutex);
-          if (topic->m_stopic->filter_sample == NULL)
-          {
-            topic->m_stopic->filter_sample = dds_alloc (topic->m_descriptor->m_size);
-          }
-          os_mutexUnlock (&topic->m_entity.m_mutex);
-      } else {
-          dds_condition_delete(cond);
-          cond = NULL;
-      }
-  }
-  return cond;
-}
-
-void dds_querycondition_from_readcondition
-   (dds_condition_t cond, dds_entity_t reader)
-{
-  dds_topic *topic;
-  dds_entity *r;
-  int32_t ret;
-
-  cond->m_kind = DDS_TYPE_COND_QUERY;
-  ((dds_readcond*) cond)->m_query.u.m_filter = NULL;
-  ((dds_readcond*) cond)->m_query.m_cxx_ctx = NULL;
-
-  ret = dds_entity_lock(reader, DDS_KIND_READER, &r);
-  if (ret == DDS_RETCODE_OK) {
-      topic = (dds_topic *)(((dds_reader *)r)->m_topic);
-      dds_entity_unlock(r);
-      os_mutexLock (&topic->m_entity.m_mutex);
-      if (topic->m_stopic->filter_sample == NULL)
-      {
-        topic->m_stopic->filter_sample = dds_alloc (topic->m_descriptor->m_size);
-      }
-      os_mutexUnlock (&topic->m_entity.m_mutex);
-  }
-}
-
-
-void dds_querycondition_set_filter_with_ctx(dds_querycondition_filter_with_ctx_fn filter, dds_condition_t cond, void *ctx)
-{
-  ((dds_readcond*) cond)->m_query.u.m_filter_with_ctx = filter;
-  ((dds_readcond*) cond)->m_query.m_cxx_ctx = ctx;
+    return hdl;
 }

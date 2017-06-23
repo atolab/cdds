@@ -7,7 +7,7 @@
 #include "ddsi/q_ephash.h"
 #include "ddsi/q_entity.h"
 
-typedef int (*dds_read_fn) (struct rhc *, bool, void **, dds_sample_info_t *, uint32_t, const dds_condition *, dds_instance_handle_t);
+typedef int (*dds_read_fn) (struct rhc *, bool, void **, dds_sample_info_t *, uint32_t, dds_readcond *, dds_instance_handle_t);
 typedef int (*dds_readc_fc) (struct rhc *, bool, void **, dds_sample_info_t *, uint32_t, unsigned, unsigned, unsigned, dds_instance_handle_t);
 
 /*
@@ -17,11 +17,12 @@ typedef int (*dds_readc_fc) (struct rhc *, bool, void **, dds_sample_info_t *, u
   has been locked. This is used to support C++ API reading length unlimited
   which is interpreted as "all relevant samples in cache".
 */
+/* TODO: Remove cond argument. */
 static int dds_read_impl
 (
-  bool take, dds_entity_t reader, void ** buf,
+  bool take, dds_entity_t reader_or_condition, void ** buf,
   uint32_t maxs, dds_sample_info_t * si, uint32_t mask,
-  dds_condition_t cond, dds_instance_handle_t hand
+  dds_readcond * cond, dds_instance_handle_t hand
 )
 {
   uint32_t i;
@@ -34,18 +35,13 @@ static int dds_read_impl
   assert (buf);
   assert (si);
 
-#ifndef NDEBUG
-  if (cond)
-  {
-    assert (cond->m_kind & DDS_TYPE_COND_READ);
-  }
-#endif
+  /* TODO: Handle stuff when reader_or_condition is cond. */
 
   if (asleep)
   {
     thread_state_awake (thr);
   }
-  ret = dds_reader_lock(reader, &rd);
+  ret = dds_reader_lock(reader_or_condition, &rd);
   if (ret == DDS_RETCODE_OK) {
       if (maxs == 0)
       {
@@ -130,11 +126,12 @@ static int dds_read_impl
   return ret;
 }
 
+/* TODO: Remove cond argument. */
 static int dds_readcdr_impl
 (
  bool take, dds_entity_t reader, struct serdata ** buf,
  uint32_t maxs, dds_sample_info_t * si, uint32_t mask,
- dds_condition_t cond, dds_instance_handle_t hand
+ dds_readcond *cond, dds_instance_handle_t hand
  )
 {
   int32_t ret = DDS_RETCODE_OK;
@@ -150,12 +147,7 @@ static int dds_readcdr_impl
   assert (hand == DDS_HANDLE_NIL);
   assert (maxs > 0);
 
-#ifndef NDEBUG
-  if (cond)
-  {
-    assert (cond->m_kind & DDS_TYPE_COND_READ);
-  }
-#endif
+  /* TODO: Handle stuff when reader_or_condition is cond. */
 
   if (asleep)
   {
@@ -261,17 +253,6 @@ dds_read_instance(
   return dds_read_impl (false, reader, buf, maxs, si, mask, NULL, handle);
 }
 
-int
-dds_read_cond(
-        dds_entity_t reader,
-        void **buf,
-        uint32_t maxs,
-        dds_sample_info_t *si,
-        dds_condition_t condition)
-{
-  assert (condition);
-  return dds_read_impl (false, reader, buf, maxs, si, 0, condition, DDS_HANDLE_NIL);
-}
 
 int
 dds_read_next(
@@ -361,18 +342,6 @@ dds_take_instance(
 {
   assert (handle != DDS_HANDLE_NIL);
   return dds_read_impl (true, reader, buf, maxs, si, mask, NULL, handle);
-}
-
-int
-dds_take_cond(
-        dds_entity_t reader,
-        void **buf,
-        uint32_t maxs,
-        dds_sample_info_t *si,
-        dds_condition_t conditition)
-{
-  assert (conditition);
-  return dds_read_impl (true, reader, buf, maxs, si, 0, conditition, DDS_HANDLE_NIL);
 }
 
 int

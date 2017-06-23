@@ -8,30 +8,44 @@
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
 
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
-dds_condition_t
-dds_readcondition_create(
-        dds_entity_t reader,
-        uint32_t mask)
+
+_Must_inspect_result_ dds_readcond*
+dds_create_readcond(
+        _In_ dds_reader *rd,
+        _In_ dds_entity_kind_t kind,
+        _In_ uint32_t mask)
 {
-  dds_readcond * cond = NULL;
-  dds_reader * rd;
-  int32_t ret;
+    dds_readcond * cond = os_malloc(sizeof(*cond));
+    cond->m_entity.m_hdl = dds_entity_init(&cond->m_entity, (dds_entity*)rd, kind, NULL, NULL, mask);
+    cond->m_rhc = rd->m_rd->rhc;
+    cond->m_sample_states = mask & DDS_ANY_SAMPLE_STATE;
+    cond->m_view_states = mask & DDS_ANY_VIEW_STATE;
+    cond->m_instance_states = mask & DDS_ANY_INSTANCE_STATE;
+    cond->m_rd_guid = ((dds_entity*)rd)->m_guid;
+    dds_rhc_add_readcondition (cond);
+    return cond;
+}
 
-  ret = dds_reader_lock(reader, &rd);
-  if (ret == DDS_RETCODE_OK) {
-      cond = dds_alloc (sizeof (*cond));
-      cond->m_cond.m_kind = DDS_TYPE_COND_READ;
-      cond->m_rhc = rd->m_rd->rhc;
-      cond->m_sample_states = mask & DDS_ANY_SAMPLE_STATE;
-      cond->m_view_states = mask & DDS_ANY_VIEW_STATE;
-      cond->m_instance_states = mask & DDS_ANY_INSTANCE_STATE;
-      cond->m_rd_guid = ((dds_entity*)rd)->m_guid;
-      dds_rhc_add_readcondition (cond);
-      dds_reader_unlock(rd);
-  }
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+_Must_inspect_result_ dds_entity_t
+dds_create_readcondition(
+        _In_ dds_entity_t reader,
+        _In_ uint32_t mask)
+{
+    dds_entity_t hdl;
+    dds_reader * rd;
+    int32_t ret;
 
-  return (dds_condition_t) cond;
+    ret = dds_reader_lock(reader, &rd);
+    if (ret == DDS_RETCODE_OK) {
+        dds_readcond *cond = dds_create_readcond(rd, DDS_KIND_COND_READ, mask);
+        hdl = cond->m_entity.m_hdl;
+        dds_reader_unlock(rd);
+    } else {
+        hdl = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M2);
+    }
+
+    return hdl;
 }
 
 _Pre_satisfies_(((readcond & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -41,8 +55,6 @@ dds_get_datareader(
         _In_ dds_entity_t readcond)
 {
     if (readcond > 0) {
-#if 0
-        /* TODO: CHAM-106: Return actual reader and errors when conditions are entities. */
         if (dds_entity_kind(readcond) == DDS_KIND_COND_READ) {
             return dds_get_parent(readcond);
         } else if (dds_entity_kind(readcond) == DDS_KIND_COND_QUERY) {
@@ -50,9 +62,6 @@ dds_get_datareader(
         } else {
             return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_READER, DDS_ERR_M1);
         }
-#else
-        return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_READER, DDS_ERR_M1);
-#endif
     }
     return readcond;
 }
