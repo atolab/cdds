@@ -117,6 +117,7 @@ os_threadModuleInit(void)
     return os_resultSuccess;
 
 err_tlsAllocFail:
+    printf("*** %s - ERROR\n", OS_FUNCTION);
     return os_resultFail;
 }
 
