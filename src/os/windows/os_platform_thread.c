@@ -131,6 +131,7 @@ os_threadModuleExit(void)
    LPVOID data = TlsGetValue(tlsIndex);
 
    if (data != NULL) {
+	  printf("*** %s - tlsIndex=%d, tlsGetValue[%d]=%p\n", OS_FUNCTION, tlsIndex, tlsIndex, data);
       LocalFree((HLOCAL) data);
    }
 
@@ -500,6 +501,7 @@ os_threadMemMalloc(
 
     if ((0 <= index) && (index < OS_THREAD_MEM_ARRAY_SIZE)) {
         tlsMemArray = (void **)TlsGetValue(tlsIndex);
+  	    printf("*** %s - tlsIndex=%d, tlsGetValue[%d]=%p, errno=%d\n", OS_FUNCTION, tlsIndex, tlsIndex, tlsMemArray, os_getErrno());
         if (tlsMemArray == NULL) {
             os_threadMemInit ();
             tlsMemArray = (void **)TlsGetValue(tlsIndex);
