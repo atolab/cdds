@@ -1012,11 +1012,17 @@ CUnit_Test(thread, memfree)
   #endif
     /* FIXME: See comments on memget test. */
     (void)os_threadMemMalloc(3, 100);
+    printf("*** %s - 1\n", OS_FUNCTION);
     returnval = os_threadMemGet(3);
+    printf("*** %s - 2\n", OS_FUNCTION);
     CU_ASSERT(returnval != NULL);
+    printf("*** %s - 3\n", OS_FUNCTION);
     os_threadMemFree (3);
+    printf("*** %s - 4\n", OS_FUNCTION);
     returnval = os_threadMemGet (3);
+    printf("*** %s - 5\n", OS_FUNCTION);
     CU_ASSERT (returnval == NULL);
+    printf("*** %s - 6\n", OS_FUNCTION);
 
   #if ENABLE_TRACING
     printf ("Ending tc_threadMemFree\n");
