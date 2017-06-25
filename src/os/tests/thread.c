@@ -3,7 +3,7 @@
 #include "os/os.h"
 #include "assert.h"
 
-#define ENABLE_TRACING 0
+#define ENABLE_TRACING 1
 
 char          arg_result[30];
 int           threadCalled;
