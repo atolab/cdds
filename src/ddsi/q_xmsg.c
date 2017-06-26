@@ -1211,13 +1211,13 @@ static socklen_t sockaddr_size (const os_sockaddr_storage *a)
 
 /* Turns out Darwin uses "int" for msg_iovlen, but glibc uses "size_t". The simplest
    way out is to do the assignment with the conversion warnings disabled */
-OSPL_DIAG_OFF(conversion)
+OS_WARNING_GNUC_OFF(conversion)
 static void set_msghdr_iov (struct msghdr *mhdr, struct iovec *iov, size_t iovlen)
 {
   mhdr->msg_iov = iov;
   mhdr->msg_iovlen = iovlen;
 }
-OSPL_DIAG_ON(conversion)
+OS_WARNING_GNUC_ON(conversion)
 
 static ssize_t nn_xpack_send1 (const nn_locator_t *loc, void * varg)
 {

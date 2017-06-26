@@ -1040,10 +1040,9 @@ static void rebuild_make_locs_nrds(int **locs_nrds, int nreaders, int nlocs, con
         n++;
 
 /* The compiler doesn't realize that ln is large enough. */
-#pragma warning(push)
-#pragma warning(disable: 6386)
+OS_WARNING_MSVC_OFF(6386);
     ln[i] = n;
-#pragma warning(pop)
+OS_WARNING_MSVC_ON(6386);
   }
   *locs_nrds = ln;
 }

@@ -1447,10 +1447,9 @@ void rtps_term (void)
   {
     struct ospl_in_addr_node *n = gv.recvips;
 /* The compiler doesn't realize that n->next is always initialized. */
-#pragma warning(push)
-#pragma warning(disable: 6001)
+OS_WARNING_MSVC_OFF(6001);
     gv.recvips = n->next;
-#pragma warning(pop)
+OS_WARNING_MSVC_ON(6001);
     os_free (n);
   }
 

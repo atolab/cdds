@@ -30,7 +30,8 @@ int main (int argc, char *argv[])
 {
   dds_duration_t waitTimeout = DDS_INFINITY;
   unsigned int i;
-  int status, samplecount, j;
+  dds_return_t status, samplecount;
+  int j;
   dds_attach_t wsresults[1];
   size_t wsresultsize = 1U;
   dds_entity_t participant;
@@ -92,8 +93,8 @@ int main (int argc, char *argv[])
   qos = dds_qos_create ();
   dds_qset_reliability (qos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
   dds_qset_writer_data_lifecycle (qos, false);
-  status = dds_writer_create (publisher, &writer, topic, qos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  writer = dds_create_writer (publisher, topic, qos, NULL);
+  DDS_ERR_CHECK (writer, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (qos);
 
   /* A DDS Subscriber is created on the domain participant. */
@@ -108,8 +109,8 @@ int main (int argc, char *argv[])
 
   qos = dds_qos_create ();
   dds_qset_reliability (qos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
-  status = dds_reader_create (subscriber, &reader, topic, qos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  reader = dds_create_reader (subscriber, topic, qos, NULL);
+  DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (qos);
 
   terminated = dds_guardcondition_create ();
@@ -131,7 +132,7 @@ int main (int argc, char *argv[])
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     /* Take samples */
-    samplecount = dds_take (reader, samples, MAX_SAMPLES, info, 0);
+    samplecount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
     DDS_ERR_CHECK (samplecount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     for (j = 0; !dds_condition_triggered (terminated) && j < samplecount; j++)
     {

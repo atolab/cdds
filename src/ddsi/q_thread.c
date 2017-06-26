@@ -67,8 +67,7 @@ void thread_states_init (_In_ unsigned maxthreads)
     os_malloc_aligned_cacheline (maxthreads * sizeof (*thread_states.ts));
   memset (thread_states.ts, 0, maxthreads * sizeof (*thread_states.ts));
 /* The compiler doesn't realize that ts is large enough. */
-#pragma warning(push)
-#pragma warning(disable: 6386)
+OS_WARNING_MSVC_OFF(6386);
   for (i = 0; i < thread_states.nthreads; i++)
   {
     thread_states.ts[i].state = THREAD_STATE_ZERO;
@@ -77,7 +76,7 @@ void thread_states_init (_In_ unsigned maxthreads)
     thread_states.ts[i].lb = NULL;
     thread_states.ts[i].name = NULL;
   }
-#pragma warning(pop)
+OS_WARNING_MSVC_ON(6386);
 }
 
 void thread_states_fini (void)

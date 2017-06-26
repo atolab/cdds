@@ -1036,23 +1036,26 @@ dds_wait_for_acks(
 
 
 /**
- * Description : Creates a new instance of a DDS reader
+ * @brief Creates a new instance of a DDS reader
  *
- * Arguments :
- *   -# pp_or_sub The participant or subscriber on which the reader is being created
- *   -# reader The created reader entity
- *   -# topic The topic to read
- *   -# qos The QoS to set on the new reader (can be NULL)
- *   -# listener Any listener functions associated with the new reader (can be NULL)
- *   -# Returns a status, 0 on success or non-zero value to indicate an error
+ * @param[in]  participant_or_subscriber The participant or subscriber on which the reader is being created
+ *
+ * @param[in]  topic The topic to read
+ *
+ * @param[in]  qos The QoS to set on the new reader (can be NULL)
+ *
+ * @param[in]  listener Any listener functions associated with the new reader (can be NULL)
+ *
+ * @returns >0 - Success (valid handle of a reader entity)
+ * @returns <0 - Failure (use dds_err_nr() to get error value)
+ *
  */
 _Pre_satisfies_(((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER ) ||\
                 ((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
 _Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
-DDS_EXPORT int
-dds_reader_create(
+DDS_EXPORT dds_entity_t
+dds_create_reader(
         dds_entity_t participant_or_subscriber,
-        dds_entity_t *reader,
         dds_entity_t topic,
         const dds_qos_t *qos,
         const dds_listener_t *listener);
@@ -1095,26 +1098,28 @@ dds_querycondition_create(
         dds_querycondition_filter_fn filter);
 
 /**
- * Description : Creates a new instance of a DDS writer
+ * @brief Creates a new instance of a DDS writer
  *
- * Arguments :
- *   -# pp_or_pub The participant or publisher on which the writer is being created
- *   -# writer The created writer entity
- *   -# topic The topic to write
- *   -# qos The QoS to set on the new writer (can be NULL)
- *   -# listener Any listener functions associated with the new writer (can be NULL)
- *   -# Returns a status, 0 on success or non-zero value to indicate an error
+ * @param[in]  pp_or_pub The participant or publisher on which the writer is being created
+ *
+ * @param[in]  topic The topic to write
+ *
+ * @param[in]  The QoS to set on the new writer (can be NULL)
+ *
+ * @param[in]  listener Any listener functions associated with the new writer (can be NULL)
+ *
+ * @returns >0 - Success (valid handle of a writer entity)
+ * @returns <0 - Failure (use dds_err_nr() to get error value)
  */
 _Pre_satisfies_(((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER  ) ||\
                 ((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
 _Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
-DDS_EXPORT int
-dds_writer_create(
-        dds_entity_t participant_or_publisher,
-        dds_entity_t *writer,
-        dds_entity_t topic,
-        const dds_qos_t *qos,
-        const dds_listener_t *listener);
+DDS_EXPORT dds_entity_t
+dds_create_writer(
+        _In_ dds_entity_t participant_or_publisher,
+        _In_ dds_entity_t topic,
+        _In_opt_ const dds_qos_t * qos,
+        _In_opt_ const dds_listener_t * listener);
 
 /*
   Writing data (and variants of it) is straightforward. The first set
@@ -1242,19 +1247,20 @@ dds_instance_dispose_ts(
         dds_time_t timestamp);
 
 /**
- * Description : Write the value of a data instance. With this API, the value of the source timestamp
- *               is automatically made available to the data reader by the service
+ * @brief Write the value of a data instance. With this API, the value of the source timestamp
+ *       is automatically made available to the data reader by the service
  *
- * Arguments :
- *   -# wr The writer entity
- *   -# data value to be written
- *   -# Returns 0 on success, or non-zero value to indicate an error
+ * @param[in]  writer The writer entity
+ *
+ * @param[in]  data value to be written
+ *
+ * @returns  A dds_return_t indicating success or failure
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT int
+DDS_EXPORT dds_return_t
 dds_write(
-        dds_entity_t writer,
-        const void *data);
+       _In_ dds_entity_t writer,
+       _In_ const void *data);
 
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT int
@@ -1557,32 +1563,121 @@ dds_waitset_wait_until(
 */
 
 /**
- * Description : Access the collection of data values (of same type) and sample info from the
- *               data reader based on the mask set.
- *               Return value provides information about number of samples read, which will
- *               be <= maxs. Based on the count, the buffer will contain data to be read only
- *               when valid_data bit in sample info structure is set.
- *               The buffer required for data values, could be allocated explicitly or can
- *               use the memory from data reader to prevent copy. In the latter case, buffer and
- *               sample_info should be returned back, once it is no longer using the Data.
- *               Data values once read will remain in the buffer with the sample_state set to READ
- *               and view_state set to NOT_NEW.
+ * @brief Access and read the collection of data values (of same type) and sample info from the data reader
  *
- * Arguments :
- *   -# rd Reader entity
- *   -# buf an array of pointers to samples into which data is read (pointers can be NULL)
- *   -# maxs maximum number of samples to read
- *   -# si pointer to an array of \ref dds_sample_info_t returned for each data value
- *   -# mask filter the data value based on the set sample, view and instance state
- *   -# Returns the number of samples read, 0 indicates no data to read.
+ * Return value provides information about number of samples read, which will
+ * be <= maxs. Based on the count, the buffer will contain data to be read only
+ * when valid_data bit in sample info structure is set.
+ * The buffer required for data values, could be allocated explicitly or can
+ * use the memory from data reader to prevent copy. In the latter case, buffer and
+ * sample_info should be returned back, once it is no longer using the Data.
+ * Data values once read will remain in the buffer with the sample_state set to READ
+ * and view_state set to NOT_NEW.
+ *
+ * @param[in]  rd_or_cnd Reader or condition entity
+ *
+ * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
+ *
+ * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
+ *
+ * @param[in]  bufsz The size of buffer provided
+ *
+ * @param[in]  maxs maximum number of samples to read
+ *
+ * @returns A dds_return_t indicating success or failure
  */
-DDS_EXPORT int
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
 dds_read(
-        dds_entity_t reader_or_condition,
-        void **buf,
-        uint32_t maxs,
-        dds_sample_info_t *si,
-        uint32_t mask);
+        _In_ dds_entity_t rd_or_cnd,
+        _Out_ void ** buf,
+        _Out_ dds_sample_info_t * si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs);
+
+/**
+ * @brief Access and read loaned samples of data reader
+ *
+ * After dds_read_wl function is being called and the data has been handled, dds_return_loan function must be called to possibly free memory
+ *
+ * @param[in]  rd_or_cnd Reader or condition entity
+ *
+ * @param[in]  buf an array of pointers to samples into w@hich data is read (pointers can be NULL)
+ *
+ * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
+ *
+ * @param[in]  maxs maximum number of samples to read
+ *
+ * @returns A dds_return_t indicating success or failure
+ */
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_read_wl(
+        _In_ dds_entity_t rd_or_cnd,
+        _Out_ void ** buf,
+        _Out_ dds_sample_info_t * si,
+        _In_ uint32_t maxs);
+
+/**
+ * @brief Read the collection of data values and sample info from the data reader based on mask
+ *
+ * @param[in]  rd_or_cnd Reader or condition entity
+ *
+ * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
+ *
+ * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
+ *
+ * @param[in]  bufsz size of buffer provided
+ *
+ * @param[in]  maxs maximum number of samples to read
+ *
+ * @param[in]  mask filter the data value based on the set sample, view and instance state
+ *
+ * @returns A dds_return_t indicating success or failure
+ */
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_read_mask(
+        _In_ dds_entity_t rd_or_cnd,
+        _Out_ void ** buf,
+        _Out_ dds_sample_info_t * si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ uint32_t mask);
+
+/**
+ * @brief  Access and read loaned samples of data reader based on mask
+ *
+ * After dds_read_mask_wl function is being called and the data has been handled, dds_return_loan function must be called to possibly free memory
+ *
+ * @param[in]  rd_or_cnd Reader or condition entity
+ *
+ * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
+ *
+ * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
+ *
+ * @param[in]  maxs maximum number of samples to read
+ *
+ * @param[in]  mask filter the data value based on the set sample, view and instance state
+ *
+ * @returns A dds_return_t indicating success or failure
+ */
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_read_mask_wl(
+        _In_ dds_entity_t rd_or_cnd,
+        _Out_ void ** buf,
+        _Out_ dds_sample_info_t * si,
+        _In_ uint32_t maxs,
+        _In_ uint32_t mask);
 
 /**
  * Description : Implements the same functionality as dds_read, except that only data
@@ -1636,31 +1731,121 @@ dds_read_cond(
         dds_condition_t condition);
 
 /**
- * Description : Access the collection of data values (of same type) and sample info from the data reader
- *               based on the mask set. Data value once read is removed from the Data Reader cannot to
- *               'read' or 'taken' again.
- *               Return value provides information about number of samples read, which will
- *               be <= maxs. Based on the count, the buffer will contain data to be read only
- *               when valid_data bit in sample info structure is set.
- *               The buffer required for data values, could be allocated explicitly or can
- *               use the memory from data reader to prevent copy. In the latter case, buffer and
- *               sample_info should be returned back, once it is no longer using the Data.
+ * @brief  Access the collection of data values (of same type) and sample info from the data reader
  *
- * Arguments :
- *   -# rd Reader entity
- *   -# buf an array of pointers to samples into which data is read (pointers can be NULL)
- *   -# maxs maximum number of samples to read
- *   -# si pointer to an array of \ref dds_sample_info_t returned for each data value
- *   -# mask filter the data value based on the set sample, view and instance state
- *   -# Returns the number of samples read, 0 indicates no data to read.
+ * Data value once read is removed from the Data Reader cannot to
+ * 'read' or 'taken' again.
+ * Return value provides information about number of samples read, which will
+ * be <= maxs. Based on the count, the buffer will contain data to be read only
+ * when valid_data bit in sample info structure is set.
+ * The buffer required for data values, could be allocated explicitly or can
+ * use the memory from data reader to prevent copy. In the latter case, buffer and
+ * sample_info should be returned back, once it is no longer using the Data.
+ *
+ * @param[in]  rd_or_cnd Reader or condition entity
+ *
+ * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
+ *
+ * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
+ *
+ * @param[in]  bufsz size of buffer provided
+ *
+ * @param[in]  maxs maximum number of samples to read
+ *
+ * @returns  A dds_return_t indicating success or failure
  */
-DDS_EXPORT int
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
 dds_take(
-        dds_entity_t reader_or_condition,
-        void **buf,
-        uint32_t maxs,
-        dds_sample_info_t *si,
-        uint32_t mask);
+        _In_ dds_entity_t rd_or_cnd,
+        _Out_ void ** buf,
+        _Out_ dds_sample_info_t * si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs);
+
+/**
+ * @brief Access loaned samples of data reader
+ *
+ * After dds_take_wl function is being called and the data has been handled, dds_return_loan function must be called to possibly free memory
+ *
+ * @param[in]  rd_or_cnd Reader or condition entity
+ *
+ * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
+ *
+ * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
+ *
+ * @param[in]  maxs maximum number of samples to read
+ *
+ * @returns A dds_return_t indicating success or failure
+ */
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_take_wl(
+        _In_ dds_entity_t rd_or_cnd,
+        _Out_ void ** buf,
+        _Out_ dds_sample_info_t * si,
+        _In_ uint32_t maxs);
+
+/**
+ * @brief  Take the collection of data values (of same type) and sample info from the data reader based on mask
+ *
+ * @param[in]  rd_or_cnd Reader or condition entity
+ *
+ * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
+ *
+ * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
+ *
+ * @param[in]  bufsz The size of buffer provided
+ *
+ * @param[in]  maxs maximum number of samples to read
+ *
+ * @param[in]  mask filter the data value based on the set sample, view and instance state
+ *
+ * @returns A dds_return_t indicating success or failure
+ */
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_take_mask(
+_In_ dds_entity_t rd_or_cnd,
+        _Out_ void ** buf,
+        _Out_ dds_sample_info_t * si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ uint32_t mask);
+
+/**
+ * @brief  Access loaned samples of data reader based on mask
+ *
+ * After dds_take_mask_wl function is being called and the data has been handled, dds_return_loan function must be called to possibly free memory
+ *
+ * @param[in]  rd_or_cnd Reader or condition entity
+ *
+ * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
+ *
+ * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
+ *
+ * @param[in]  maxs maximum number of samples to read
+ *
+ * @param[in]  mask filter the data value based on the set sample, view and instance state
+ *
+ * @returns A dds_return_t indicating success or failure
+ */
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_take_mask_wl(
+        _In_ dds_entity_t rd_or_cnd,
+        _Out_ void ** buf,
+        _Out_ dds_sample_info_t * si,
+        _In_ uint32_t maxs,
+        _In_ uint32_t mask);
 
 struct serdata;
 

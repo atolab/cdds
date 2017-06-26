@@ -100,19 +100,32 @@ extern "C" {
 #define OSPL_GCC_DIAG_DO_PRAGMA(x) _Pragma (#x)
 #define OSPL_GCC_DIAG_PRAGMA(x) OSPL_GCC_DIAG_DO_PRAGMA(GCC diagnostic x)
 #if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
-#define OSPL_DIAG_OFF(x) OSPL_GCC_DIAG_PRAGMA(push) OSPL_GCC_DIAG_PRAGMA(ignored OSPL_GCC_DIAG_JOINSTR(-W,x))
-#define OSPL_DIAG_ON(x) OSPL_GCC_DIAG_PRAGMA(pop)
+#define OS_WARNING_GNUC_OFF(x) OSPL_GCC_DIAG_PRAGMA(push) OSPL_GCC_DIAG_PRAGMA(ignored OSPL_GCC_DIAG_JOINSTR(-W,x))
+#define OS_WARNING_GNUC_ON(x) OSPL_GCC_DIAG_PRAGMA(pop)
 #else
-#define OSPL_DIAG_OFF(x) OSPL_GCC_DIAG_PRAGMA(ignored OSPL_GCC_DIAG_JOINSTR(-W,x))
-#define OSPL_DIAG_ON(x)  OSPL_GCC_DIAG_PRAGMA(warning OSPL_GCC_DIAG_JOINSTR(-W,x))
+#define OS_WARNING_GNUC_OFF(x) OSPL_GCC_DIAG_PRAGMA(ignored OSPL_GCC_DIAG_JOINSTR(-W,x))
+#define OS_WARNING_GNUC_ON(x)  OSPL_GCC_DIAG_PRAGMA(warning OSPL_GCC_DIAG_JOINSTR(-W,x))
 #endif
 #else
-#define OSPL_DIAG_OFF(x)
-#define OSPL_DIAG_ON(x)
+#define OS_WARNING_GNUC_OFF(x)
+#define OS_WARNING_GNUC_ON(x)
 #endif
 #else
-#define OSPL_DIAG_OFF(x)
-#define OSPL_DIAG_ON(x)
+#define OS_WARNING_GNUC_OFF(x)
+#define OS_WARNING_GNUC_ON(x)
+#endif
+
+#ifdef _MSC_VER
+
+#define OS_WARNING_MSVC_OFF(x)               \
+__pragma (warning(push))             \
+__pragma (warning(disable: ## x))
+
+#define OS_WARNING_MSVC_ON(x)               \
+__pragma (warning(pop))
+#else
+#define OS_WARNING_MSVC_OFF(x)
+#define OS_WARNING_MSVC_ON(x)
 #endif
 
 /**
