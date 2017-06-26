@@ -161,7 +161,7 @@ int main (int argc, char *argv[])
   size_t wsresultsize = 1U;
   dds_time_t waitTimeout = DDS_SECS (1);
   unsigned long i;
-  int status;
+  dds_return_t status;
   bool invalid = false;
   bool warmUp = true;
   dds_condition_t readCond;
@@ -214,8 +214,8 @@ int main (int argc, char *argv[])
   /* A DDS_DataReader is created on the Subscriber & Topic with a modified QoS. */
   drQos = dds_qos_create ();
   dds_qset_reliability (drQos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
-  status = dds_reader_create (subscriber, &reader, topic, drQos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  reader = dds_create_reader (subscriber, topic, drQos, NULL);
+  DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (drQos);
 
   status = dds_create_publisher (participant, pubQos, NULL);
@@ -226,8 +226,8 @@ int main (int argc, char *argv[])
   dwQos = dds_qos_create ();
   dds_qset_reliability (dwQos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
   dds_qset_writer_data_lifecycle (dwQos, false);
-  status = dds_writer_create (publisher, &writer, topic, dwQos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  writer = dds_create_writer (publisher, topic, dwQos, NULL);
+  DDS_ERR_CHECK (writer, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (dwQos);
 
   terminated = dds_guardcondition_create ();
@@ -308,7 +308,7 @@ int main (int argc, char *argv[])
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     if (status > 0) /* data */
     {
-      status = dds_take (reader, samples, MAX_SAMPLES, info, 0);
+      status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     }
 
@@ -342,7 +342,7 @@ int main (int argc, char *argv[])
     {
       /* Take sample and check that it is valid */
       preTakeTime = dds_time ();
-      status = dds_take (reader, samples, MAX_SAMPLES, info, 0);
+      status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
       postTakeTime = dds_time ();
 

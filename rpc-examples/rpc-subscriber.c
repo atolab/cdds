@@ -116,7 +116,7 @@ static int data_available_handler (dds_entity_t reader)
 
   /* Take samples and iterate through them */
 
-  samples_received = dds_take (reader, samples, MAX_SAMPLES, info, 0);
+  samples_received = dds_take (reader, samples, info, MAX_SAMPLES, 0);
   DDS_ERR_CHECK (samples_received, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   for (i = 0; i < samples_received; i++)
@@ -258,8 +258,8 @@ int main (int argc, char **argv)
     dds_qset_history (drQos, DDS_HISTORY_KEEP_ALL, 0);
     dds_qset_resource_limits (drQos, maxSamples, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
 
-    status = dds_reader_create (subscriber, &reader, topic, drQos, NULL);
-    DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+    reader = dds_create_reader (subscriber, topic, drQos, NULL);
+    DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     dds_qos_delete (drQos);
 
     /* A Read Condition is created which is triggered when data is available to read */

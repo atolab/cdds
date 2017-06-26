@@ -137,9 +137,9 @@ static bool data_available_handler (dds_entity_t reader)
   /* Take samples and iterate through them */
 
   if (pollingDelay == -1) {
-    samples_received = dds_read (reader, samples, MAX_SAMPLES, info, 0);
+    samples_received = dds_read (reader, samples, info, MAX_SAMPLES, 0);
   } else {
-    samples_received = dds_take (reader, samples, MAX_SAMPLES, info, 0);
+    samples_received = dds_take (reader, samples, info, MAX_SAMPLES, 0);
   }
   DDS_ERR_CHECK (samples_received, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
@@ -286,8 +286,8 @@ int main (int argc, char **argv)
     memset (&rd_listener, 0, sizeof (rd_listener));
     rd_listener.on_data_available = data_available_handler_listener;
 
-    status = dds_reader_create (subscriber, &reader, topic, drQos, pollingDelay < -1 || pollingDelay > 0 ? NULL : &rd_listener);
-    DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+    reader = dds_create_reader (subscriber, topic, drQos, pollingDelay < -1 || pollingDelay > 0 ? NULL : &rd_listener);
+    DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     dds_qos_delete (drQos);
 
     /* A Read Condition is created which is triggered when data is available to read */

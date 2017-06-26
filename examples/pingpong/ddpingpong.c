@@ -309,7 +309,7 @@ static void data_available_handler (dds_entity_t reader, void *varg)
 {
   struct data_available_handler_arg *arg = varg;
   dds_time_t postTakeTime, difference;
-  int status = dds_take (reader, samples, MAX_SAMPLES, info, 0);
+  dds_return_t status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   postTakeTime = dds_time ();
 
@@ -388,7 +388,7 @@ int main (int argc, char *argv[])
   size_t wsresultsize = 1U;
   dds_time_t waitTimeout = DDS_SECS (1);
   unsigned long i;
-  int status;
+  dds_return_t status;
   dds_condition_t readCond;
   dds_listener_t rd_listener;
   int opt;
@@ -499,7 +499,7 @@ int main (int argc, char *argv[])
   dds_qset_partition (subQos, 1, subPartitions);
 
   subscriber = dds_create_subscriber (participant, subQos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  DDS_ERR_CHECK (subscriber, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (subQos);
   /* A DDS_DataReader is created on the Subscriber & Topic with a modified QoS. */
   drQos = dds_qos_create ();
@@ -507,12 +507,12 @@ int main (int argc, char *argv[])
   memset (&rd_listener, 0, sizeof (rd_listener));
   rd_listener.on_data_available = data_available_handler;
   rd_listener.arg = &dah_arg;
-  status = dds_reader_create (subscriber, &reader, topic, drQos, (mode == LISTENER) ? &rd_listener : NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  reader = dds_create_reader (subscriber, topic, drQos, (mode == LISTENER) ? &rd_listener : NULL);
+  DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   dds_qset_durability (drQos, DDS_DURABILITY_TRANSIENT_LOCAL);
-  status = dds_reader_create (subscriber, &addrreader, addrtopic, drQos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  addrreader = dds_create_reader (subscriber, addrtopic, drQos, NULL);
+  DDS_ERR_CHECK (addrreader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (drQos);
 
   publisher = dds_create_publisher (participant, pubQos, NULL);
@@ -523,13 +523,13 @@ int main (int argc, char *argv[])
   dwQos = dds_qos_create ();
   dds_qset_reliability (dwQos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
   dds_qset_writer_data_lifecycle (dwQos, false);
-  status = dds_writer_create (publisher, &writer, topic, dwQos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  writer = dds_create_writer (publisher, topic, dwQos, NULL);
+  DDS_ERR_CHECK (writer, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   dds_qset_writer_data_lifecycle (dwQos, true);
   dds_qset_durability (dwQos, DDS_DURABILITY_TRANSIENT_LOCAL);
-  status = dds_writer_create (publisher, &addrwriter, addrtopic, dwQos, NULL);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  addrwriter = dds_create_writer (publisher, addrtopic, dwQos, NULL);
+  DDS_ERR_CHECK (addrwriter, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (dwQos);
 
   terminated = dds_guardcondition_create ();
@@ -567,7 +567,7 @@ int main (int argc, char *argv[])
       memset (buf, 0, sizeof (buf));
       memset (&addrsample, 0, sizeof (addrsample));
       do {
-        status = dds_take (addrreader, addrsamples, 1, infos, 0);
+        status = dds_take (addrreader, addrsamples, infos, 1, 0);
         DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
       } while (status != 1);
       memset(&peeraddr, 0, sizeof(peeraddr));
@@ -679,7 +679,7 @@ int main (int argc, char *argv[])
         if (status != 0)
         {
           /* Take sample and check that it is valid */
-          status = dds_take (reader, samples, MAX_SAMPLES, info, 0);
+          status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
           DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
           postTakeTime = dds_time ();
 
@@ -760,7 +760,7 @@ int main (int argc, char *argv[])
         DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
         /* Take samples */
-        samplecount = dds_take (reader, samples, MAX_SAMPLES, info, 0);
+        samplecount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
         DDS_ERR_CHECK (samplecount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
         for (j = 0; !dds_condition_triggered (terminated) && j < samplecount; j++)
         {
