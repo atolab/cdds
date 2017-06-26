@@ -1322,7 +1322,7 @@ bool dds_rhc_store
     }
   }
 
-  if (trigger_waitsets)
+  if (rhc->reader && trigger_waitsets)
   {
       dds_entity_status_signal((dds_entity*)(rhc->reader));
   }

@@ -17,7 +17,7 @@
 
 static void
 dds_waitset_swap(
-        _Out_     dds_attachment **dst,
+        _Inout_   dds_attachment **dst,
         _In_      dds_attachment **src,
         _In_opt_  dds_attachment  *prev,
         _In_      dds_attachment  *idx)
@@ -208,7 +208,6 @@ dds_create_waitset(
 {
     dds_entity_t hdl;
     dds_entity *par;
-    dds_waitset *ws;
     dds_return_t ret;
     ret = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
     if (ret == DDS_RETCODE_OK) {
@@ -239,9 +238,9 @@ dds_waitset_get_conditions(
 
 static void
 dds_waitset_move(
-        _In_  dds_attachment **src,
-        _Out_ dds_attachment **dst,
-        _In_  dds_entity_t entity)
+        _In_    dds_attachment **src,
+        _Inout_ dds_attachment **dst,
+        _In_    dds_entity_t entity)
 {
     dds_attachment *idx = *src;
     dds_attachment *prev = NULL;
