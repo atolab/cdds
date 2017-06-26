@@ -41,22 +41,10 @@ teardown(void)
     RoundTripModule_DataType_free (&data, DDS_FREE_CONTENTS);
     memset(&data, 0, sizeof(data));
 
-    if (writer > 0) {
-        dds_delete(writer);
-        writer = 0;
-    }
-    if (publisher > 0) {
-        dds_delete(publisher);
-        publisher = 0;
-    }
-    if (topic > 0) {
-        dds_delete(topic);
-        topic = 0;
-    }
-    if (participant > 0) {
-        dds_delete(participant);
-        participant = 0;
-    }
+    dds_delete(writer);
+    dds_delete(publisher);
+    dds_delete(topic);
+    dds_delete(participant);
 }
 
 Test(dds_write, basic, .init = setup, .fini = teardown)
@@ -75,7 +63,7 @@ Test(dds_write, null_writer, .init = setup, .fini = teardown)
     cr_assert_eq(dds_err_nr(status), DDS_RETCODE_BAD_PARAMETER);
 }
 
-Test(dds_write, bad_writer)
+Test(dds_write, bad_writer, .init = setup, .fini = teardown)
 {
     dds_return_t status;
 
@@ -108,14 +96,6 @@ Test(dds_write_ts, basic, .init = setup, .fini = teardown)
 
     status = dds_write_ts(writer, &data, dds_time());
     cr_assert_eq(dds_err_nr(status), DDS_RETCODE_OK);
-}
-
-Test(dds_write_ts, null_sample, .init = setup, .fini = teardown)
-{
-    dds_return_t status;
-
-    status = dds_write_ts(writer, NULL, dds_time());
-    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_BAD_PARAMETER);
 }
 
 Test(dds_write_ts, bad_timestamp, .init = setup, .fini = teardown)

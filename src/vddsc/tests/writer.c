@@ -24,22 +24,10 @@ setup(void)
 static void
 teardown(void)
 {
-    if (writer > 0) {
-        dds_delete(writer);
-        writer = 0;
-    }
-    if (publisher > 0) {
-        dds_delete(publisher);
-        publisher = 0;
-    }
-    if (topic > 0) {
-        dds_delete(topic);
-        topic = 0;
-    }
-    if (participant > 0) {
-        dds_delete(participant);
-        participant = 0;
-    }
+    dds_delete(writer);
+    dds_delete(publisher);
+    dds_delete(topic);
+    dds_delete(participant);
 }
 
 Test(dds_create_writer, basic, .init = setup, .fini = teardown)
@@ -77,7 +65,7 @@ Test(dds_create_writer, publisher, .init = setup, .fini = teardown)
     cr_assert_gt(writer, 0);
 }
 
-Test(dds_create_writer, closed_publisher, .init = setup, .fini = teardown)
+Test(dds_create_writer, deleted_publisher, .init = setup, .fini = teardown)
 {
     dds_delete(publisher);
 
@@ -95,4 +83,12 @@ Test(dds_writer_create, bad_topic, .init = setup, .fini = teardown)
 {
     writer = dds_create_writer(publisher, publisher, NULL, NULL);
     cr_assert_eq(dds_err_nr(writer), DDS_RETCODE_ILLEGAL_OPERATION);
+}
+
+Test(dds_create_writer, deleted_topic, .init = setup, .fini = teardown)
+{
+    dds_delete(topic);
+
+    writer = dds_create_writer(publisher, topic, NULL, NULL);
+    cr_assert_eq(dds_err_nr(writer), DDS_RETCODE_ALREADY_DELETED);
 }

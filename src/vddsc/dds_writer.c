@@ -222,8 +222,8 @@ static dds_return_t dds_writer_qos_validate (const dds_qos_t *qos, bool enabled)
     assert(qos);
 
     /* Check consistency. */
-    if (dds_qos_validate_common(qos) != 1
-     || ((qos->present & QP_USER_DATA) && validate_octetseq(&qos->user_data) != 1)
+    if (dds_qos_validate_common(qos) != true
+     || ((qos->present & QP_USER_DATA) && validate_octetseq(&qos->user_data) != true)
      || ((qos->present & QP_DURABILITY_SERVICE) && validate_durability_service_qospolicy(&qos->durability_service) != 0)
      || ((qos->present & QP_LIFESPAN) && validate_duration(&qos->lifespan.duration) != 0)
      || ((qos->present & QP_HISTORY) && (qos->present & QP_RESOURCE_LIMITS) && validate_history_and_resource_limits(&qos->history, &qos->resource_limits) != 0))

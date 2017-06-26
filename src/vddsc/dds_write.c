@@ -30,7 +30,7 @@ dds_write(
 
     if (data != NULL) {
         ret = dds_writer_lock(writer, &wr);
-        DDS_ERRNO(ret, DDS_MOD_INST, DDS_ERR_M2);
+        ret = DDS_ERRNO(ret, DDS_MOD_INST, DDS_ERR_M2);
         if (ret == DDS_RETCODE_OK) {
             ret = dds_write_impl(wr, data, dds_time(), 0);
             dds_writer_unlock(wr);
@@ -70,7 +70,7 @@ dds_write_ts(
         DDS_RETCODE_BAD_PARAMETER, DDS_MOD_INST, DDS_ERR_M1);
     dds_writer *wr;
 
-    if (data != NULL) {
+    if (data != NULL && timestamp >= 0) {
         ret = dds_writer_lock(writer, &wr);
         ret = DDS_ERRNO(ret, DDS_MOD_INST, DDS_ERR_M2);
         if (ret == DDS_RETCODE_OK) {

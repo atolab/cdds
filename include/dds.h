@@ -1122,13 +1122,8 @@ dds_create_writer(
   and unregister operations take an object of the topic's type, but
   only touch the key fields; the remained may be undefined.
 */
-
 /**
- * @brief Registers an instance with a key value to the data writer
- *
- * @param[in]  writer The writer to which instance has been associated
- * @param[in]  data Instance with the key value
- *
+ * Description : Registers an instance with a key value to the data writer
  *
  * Arguments :
  *   -# wr The writer to which instance has be associated
