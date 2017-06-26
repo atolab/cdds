@@ -97,7 +97,9 @@ validate_deadline_and_timebased_filter(
     );
 }
 
-bool dds_qos_validate_common (const dds_qos_t *qos)
+bool
+dds_qos_validate_common (
+    const dds_qos_t *qos)
 {
     return !(
         ((qos->present & QP_DURABILITY) && (validate_durability_qospolicy (&qos->durability) != 0)) ||
@@ -113,7 +115,8 @@ bool dds_qos_validate_common (const dds_qos_t *qos)
 }
 
 static void
-dds_qos_init_defaults (dds_qos_t * __restrict qos)
+dds_qos_init_defaults (
+    _Inout_ dds_qos_t * __restrict qos)
 {
     assert (qos);
     memset (qos, 0, sizeof (*qos));
@@ -148,8 +151,7 @@ dds_qos_init_defaults (dds_qos_t * __restrict qos)
 _Ret_notnull_
 dds_qos_t * dds_qos_create (void)
 {
-    dds_qos_t *qos;
-    qos = (dds_qos_t*) dds_alloc (sizeof (dds_qos_t));
+    dds_qos_t *qos = dds_alloc (sizeof (dds_qos_t));
     dds_qos_init_defaults (qos);
     return qos;
 }
@@ -762,13 +764,13 @@ void dds_qget_reader_data_lifecycle
 
 void dds_qget_durability_service
 (
-  _In_ const dds_qos_t * qos,
-  _Out_opt_ dds_duration_t * service_cleanup_delay,
-  _Out_opt_ dds_history_kind_t * history_kind,
-  _Out_opt_ int32_t * history_depth,
-  _Out_opt_ int32_t * max_samples,
-  _Out_opt_ int32_t * max_instances,
-  _Out_opt_ int32_t * max_samples_per_instance
+    _In_ const dds_qos_t * qos,
+    _Out_opt_ dds_duration_t * service_cleanup_delay,
+    _Out_opt_ dds_history_kind_t * history_kind,
+    _Out_opt_ int32_t * history_depth,
+    _Out_opt_ int32_t * max_samples,
+    _Out_opt_ int32_t * max_instances,
+    _Out_opt_ int32_t * max_samples_per_instance
 )
 {
     if (qos) {
