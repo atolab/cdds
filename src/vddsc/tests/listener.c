@@ -48,7 +48,7 @@ static void subscription_matched_cb(dds_entity_t reader, const dds_subscription_
 
 
 /* tests */
-void test_create_and_delete(void)
+Test(vddsc_listener, create_and_delete)
 {
     /* Verify create doesn't return null */
     dds_listener_t *listener;
@@ -74,7 +74,7 @@ void test_create_and_delete(void)
     dds_listener_delete(NULL);
 }
 
-void test_reset(void)
+Test(vddsc_listener, reset)
 {
     dds_listener_t *listener;
     listener = dds_listener_create(NULL);
@@ -91,7 +91,7 @@ void test_reset(void)
     dds_listener_delete(listener);
 }
 
-void test_copy(void)
+Test(vddsc_listener, copy)
 {
     dds_listener_t *listener1 = NULL, *listener2 = NULL;
     listener1 = dds_listener_create(NULL);
@@ -118,7 +118,7 @@ void test_copy(void)
     dds_listener_delete(listener2);
 }
 
-void test_merge(void)
+Test(vddsc_listener, merge)
 {
     dds_listener_t *listener1 = NULL, *listener2 = NULL;
     listener1 = dds_listener_create(NULL);
@@ -150,7 +150,7 @@ void test_merge(void)
     dds_listener_delete(listener2);
 }
 
-void test_getters_setters(void)
+Test(vddsc_listener, getters_setters)
 {
     /* test all individual cb get/set methods */
     dds_listener_t *listener = dds_listener_create(NULL);
@@ -171,15 +171,6 @@ void test_getters_setters(void)
     TEST_GET_SET(listener, data_available, data_available_cb);
 
     dds_listener_delete(listener);
-}
-
-Test(c99_listener, test)
-{
-    test_create_and_delete();
-    test_reset();
-    test_copy();
-    test_merge();
-    test_getters_setters();
 }
 
 #pragma warning(pop)
