@@ -168,7 +168,7 @@ CUnit_Test(os_thread, create)
 
     /* Check os_threadCreate with Success result\n\t\t
        (check thread creation and check argument passing) */
-    printf ("Starting tc_os_threadCreate_001\n");
+    printf ("Starting os_thread_create_001\n");
     os_threadAttrInit (&thread_os_threadAttr);
     result = os_threadCreate (&thread_os_threadId, "ThreadCreate1", &thread_os_threadAttr, &new_thread, "os_threadCreate");
     CU_ASSERT (result == os_resultSuccess);
@@ -192,11 +192,11 @@ CUnit_Test(os_thread, create)
     }
 
     /* Check os_threadCreate with Failed result */
-    printf ("Starting tc_os_threadCreate_002\n");
+    printf ("Starting os_thread_create_002\n");
     printf ("N.A - Failure cannot be forced\n");
 
     /* Check os_threadCreate with scheduling class SCHED_DEFAULT */
-    printf ("Starting tc_os_threadCreate_003\n");
+    printf ("Starting s_thread_create_003\n");
     os_threadAttrInit (&thread_os_threadAttr);
     thread_os_threadAttr.schedClass = OS_SCHED_DEFAULT;
     result = os_threadCreate (&thread_os_threadId, "ThreadCreate3", &thread_os_threadAttr, &new_thread, "os_threadCreate");
@@ -225,7 +225,7 @@ CUnit_Test(os_thread, create)
 /* SCHED_TIMESHARE not supported by vxworks kernel */
 #ifndef _WRS_KERNEL
     /* Check os_threadCreate with scheduling class SCHED_TIMESHARE */
-    printf ("Starting tc_os_threadCreate_004\n");
+    printf ("Starting os_thread_create_004\n");
     os_threadAttrInit (&thread_os_threadAttr);
     thread_os_threadAttr.schedClass = OS_SCHED_TIMESHARE;
     result = os_threadCreate (&thread_os_threadId, "ThreadCreate4", &thread_os_threadAttr, &new_thread, "os_threadCreate");
@@ -251,20 +251,15 @@ CUnit_Test(os_thread, create)
     }
 #endif
 
-  #if ENABLE_TRACING
     /* Check os_threadCreate with scheduling class SCHED_REALTIME */
-    printf ("Starting tc_os_threadCreate_005\n");
-  #endif
-    #if ! defined WIN32 && ! defined _WRS_KERNEL
-    #ifndef VXWORKS_RTP
-    if (getuid() != 0 && geteuid() != 0)
-    {
-      #if ENABLE_TRACING
+    printf ("Starting tc_os_thread_create_005\n");
+#if ! defined WIN32 && ! defined _WRS_KERNEL
+#ifndef VXWORKS_RTP
+    if (getuid() != 0 && geteuid() != 0) {
         printf ("N.A - Need root privileges to do the test\n");
-      #endif
     }
     else
-    #endif /* VXWORKS_RTP */
+#endif /* VXWORKS_RTP */
     {
         os_threadAttrInit (&thread_os_threadAttr);
         thread_os_threadAttr.schedClass = OS_SCHED_REALTIME;
@@ -281,44 +276,34 @@ CUnit_Test(os_thread, create)
             if (result_int == DDS_RETCODE_OK) {
                 CU_ASSERT (policy == SCHED_FIFO);
             } else {
-              #if ENABLE_TRACING
                 printf ("pthread_getschedparam failed\n");
-              #endif
             }
             result = os_threadWaitExit (thread_os_threadId, NULL);
         } else {
-          #if ENABLE_TRACING
             printf ("os_threadCreate failed\n");
-          #endif
         }
     }
-  #else /* WIN32 */
-    #if ENABLE_TRACING
+#else /* WIN32 */
     printf ("N.A - Not tested on Windows or vxworks kernel\n");
-    #endif
-  #endif
+#endif
 
-  #if ENABLE_TRACING
     /* Check os_threadCreate with scheduling class SCHED_TIMESHARE and min priority */
-    printf ("Starting tc_os_threadCreate_006\n");
-  #endif
-  #ifndef WIN32
+    printf ("Starting os_thread_create_006\n");
+#ifndef WIN32
     os_threadAttrInit (&thread_os_threadAttr);
     thread_os_threadAttr.schedClass = OS_SCHED_TIMESHARE;
-    #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
       thread_os_threadAttr.schedPriority = 250;
-    #else
+#else
       thread_os_threadAttr.schedPriority = sched_get_priority_min (SCHED_OTHER);
-    #endif
+#endif
     result = os_threadCreate (&thread_os_threadId, "ThreadCreate6", &thread_os_threadAttr, &new_thread, "os_threadCreate");
-  #ifdef _WRS_KERNEL
-    #if ENABLE_TRACING
+#ifdef _WRS_KERNEL
     if (result == os_resultSuccess)
         printf ("os_threadCreate failed - Expected failure from VXWORKS\n");
     else
         printf ("OS_SCHED_TIMESHARE not supported\n");
-    #endif
-  #else
+#else
     CU_ASSERT (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
@@ -331,44 +316,35 @@ CUnit_Test(os_thread, create)
         if (result_int == DDS_RETCODE_OK) {
             CU_ASSERT (sched_param.sched_priority == sched_get_priority_min (SCHED_OTHER));
         } else {
-          #if ENABLE_TRACING
             printf ("pthread_getschedparam failed\n");
-          #endif
         }
         result = os_threadWaitExit (thread_os_threadId, NULL);
     } else {
-      #if ENABLE_TRACING
         printf ("os_threadCreate failed.\n");
-      #endif
     }
-  #endif /* VXWORKS */
-  #else
-    #if ENABLE_TRACING
+#endif /* _WRS_KERNEL */
+#else
     printf ("N.A - Not tested on Windows.\n");
-    #endif
-  #endif /* WIN32 */
+#endif /* WIN32 */
 
-  #if ENABLE_TRACING
     /* Check os_threadCreate with scheduling class SCHED_TIMESHARE and max priority */
-    printf ("Starting tc_os_threadCreate_007\n");
-  #endif
-  #ifndef WIN32
+    printf ("Starting os_thread_create_007\n");
+#ifndef WIN32
     os_threadAttrInit (&thread_os_threadAttr);
     thread_os_threadAttr.schedClass = OS_SCHED_TIMESHARE;
-    #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
         thread_os_threadAttr.schedPriority = 60;
-    #else
+#else
         thread_os_threadAttr.schedPriority = sched_get_priority_max (SCHED_OTHER);
-    #endif
+#endif
     result = os_threadCreate (&thread_os_threadId, "ThreadCreate7", &thread_os_threadAttr, &new_thread, "os_threadCreate");
-  #ifdef _WRS_KERNEL
-    #if ENABLE_TRACING
-    if (result == os_resultSuccess)
+#ifdef _WRS_KERNEL
+    if (result == os_resultSuccess) {
         printf ("os_threadCreate failed - Expected failure from VXWORKS\n");
-    else
+    } else {
         printf ("OS_SCHED_TIMESHARE not supported\n");
-    #endif
-  #else
+    }
+#else
     CU_ASSERT (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
@@ -381,50 +357,40 @@ CUnit_Test(os_thread, create)
         if (result_int == DDS_RETCODE_OK) {
             CU_ASSERT (sched_param.sched_priority == sched_get_priority_max (SCHED_OTHER));
         } else {
-          #if ENABLE_TRACING
             printf ("pthread_getschedparam failed\n");
-          #endif
         }
         result = os_threadWaitExit (thread_os_threadId, NULL);
     } else {
-      #if ENABLE_TRACING
         printf ("os_threadCreate failed.\n");
-      #endif
     }
-  #endif /* VXWORKS */
-  #else
-    #if ENABLE_TRACING
+#endif /* _WRS_KERNEL */
+#else
     printf ("N.A - Not tested on Windows.\n");
-    #endif
-  #endif /* WIN32 */
+#endif /* WIN32 */
 
-  #if ENABLE_TRACING
     /* Check os_threadCreate with scheduling class SCHED_REALTIME and min priority */
-    printf ("Starting tc_os_threadCreate_008\n");
-  #endif
-  #ifndef WIN32
-    #ifndef VXWORKS_RTP
+    printf ("Starting os_thread_create_008\n");
+#ifndef WIN32
+#ifndef VXWORKS_RTP
     if (getuid() != 0 && geteuid() != 0)
     {
-      #if ENABLE_TRACING
         printf ("N.A - Need root privileges to do the test\n");
-      #endif
     }
     else
-    #endif /* VXWORKS_RTP */
+#endif /* VXWORKS_RTP */
     {
         os_threadAttrInit (&thread_os_threadAttr);
         thread_os_threadAttr.schedClass = OS_SCHED_REALTIME;
-      #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
         thread_os_threadAttr.schedPriority = 250;
-      #else
+#else
         thread_os_threadAttr.schedPriority = sched_get_priority_min (SCHED_FIFO);
-      #endif
+#endif
         result = os_threadCreate (&thread_os_threadId, "ThreadCreate8", &thread_os_threadAttr, &new_thread, "os_threadCreate");
         CU_ASSERT (result == os_resultSuccess);
 
         if (result == os_resultSuccess) {
-          #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
             TASK_ID id;
             int pri;
             STATUS status;
@@ -434,7 +400,7 @@ CUnit_Test(os_thread, create)
             status = taskPriorityGet(id,&pri);
             CU_ASSERT (status == OK);
             CU_ASSERT (pri == 250);
-          #else
+#else
             int policy;
             struct sched_param sched_param;
 
@@ -444,57 +410,47 @@ CUnit_Test(os_thread, create)
             if (result_int == 0) {
                 CU_ASSERT (sched_param.sched_priority == sched_get_priority_min (SCHED_FIFO));
             } else {
-              #if ENABLE_TRACING
                 printf ("pthread_getschedparam failed.\n");
-              #endif
              }
-           #endif /* VXWORKS */
+#endif /* _WRS_KERNEL */
             result = os_threadWaitExit (thread_os_threadId, NULL);
         } else {
-          #if ENABLE_TRACING
             printf ("os_threadCreate failed.\n");
-          #endif
         }
     }
-  #else /* WIN32 */
-    #if ENABLE_TRACING
+#else /* WIN32 */
     printf ("N.A - Not tested on Windows\n");
-    #endif
-  #endif
+#endif
 
-  #if ENABLE_TRACING
     /* Check os_threadCreate with scheduling class SCHED_REALTIME and max priority */
-    printf ("Starting tc_os_threadCreate_009\n");
-  #endif
-  #ifndef WIN32
-    #ifndef VXWORKS_RTP
+    printf ("Starting os_thread_create_009\n");
+#ifndef WIN32
+#ifndef VXWORKS_RTP
     if (getuid() != 0 && geteuid() != 0)
     {
-      #if ENABLE_TRACING
         printf ("N.A - Need root privileges to do the test\n");
-      #endif
     }
     else
-    #endif /* VXWORKS_RTP */
+#endif /* VXWORKS_RTP */
     {
         os_threadAttrInit (&thread_os_threadAttr);
         thread_os_threadAttr.schedClass = OS_SCHED_REALTIME;
-      #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
         thread_os_threadAttr.schedPriority = 250;
-      #else
+#else
         thread_os_threadAttr.schedPriority = sched_get_priority_max (SCHED_FIFO);
-      #endif
+#endif
         result = os_threadCreate (&thread_os_threadId, "ThreadCreate9", &thread_os_threadAttr, &new_thread, "os_threadCreate");
         CU_ASSERT (result == os_resultSuccess);
 
         if (result == os_resultSuccess) {
-          #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
             int status;
             sleepSeconds (2);
             status = 0;
             taskPriorityGet(taskNameToId("ThreadCreate9"),&status);
             CU_ASSERT (status == 250);
-          #else
+#else
             int policy;
             struct sched_param sched_param;
 
@@ -504,60 +460,46 @@ CUnit_Test(os_thread, create)
             if (result_int == 0) {
                 CU_ASSERT (sched_param.sched_priority == sched_get_priority_max (SCHED_FIFO));
             } else {
-              #if ENABLE_TRACING
                 printf ("pthread_getschedparam failed.\n");
-              #endif
             }
-          #endif
+#endif
             result = os_threadWaitExit (thread_os_threadId, NULL);
         } else {
-          #if ENABLE_TRACING
             printf ("os_threadCreate failed.\n");
-          #endif
         }
     }
-  #else /* WIN32 */
-    #if ENABLE_TRACING
+#else /* WIN32 */
     printf ("N.A - Not tested on Windows\n");
-    #endif
-  #endif
+#endif
 
-  #if ENABLE_TRACING
     /* Check os_threadCreate by checking scheduling scope PTHREAD_SCOPE_SYSTEM */
-    printf ("Starting tc_os_threadCreate_010\n");
+    printf ("Starting os_thread_create_010\n");
     printf ("N.A - No way to queuery scope from running thread");
-  #endif
 
-  #if ENABLE_TRACING
     /* Check os_threadCreate and stacksize sttribute */
-    printf ("Starting tc_os_threadCreate_011\n");
+    printf ("Starting os_thread_create_011\n");
     printf ("N.A - No way to queuery scope from running thread");
-  #endif
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_threadCreate\n");
-  #endif
+    printf ("Ending os_thread_create\n");
 }
 
-CUnit_Test(thread, idself)
+CUnit_Test(os_thread, idself)
 {
     os_threadId   thread_os_threadId;
     os_threadAttr thread_os_threadAttr;
     int result;
     uint32_t result_from_thread;
 
-  #if ENABLE_TRACING
     /* Check if own thread ID is correctly provided */
     printf ("Starting tc_os_threadIdSelf_001\n");
-  #endif
     os_threadAttrInit (&thread_os_threadAttr);
     result = os_threadCreate (&thread_os_threadId, "OwnThreadId", &thread_os_threadAttr, &threadId_thread, NULL);
     CU_ASSERT (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
-      #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
         sleepSeconds(1);
-      #endif
+#endif
         result = os_threadWaitExit (thread_os_threadId, &result_from_thread);
         CU_ASSERT (result == os_resultSuccess);
 
@@ -566,41 +508,33 @@ CUnit_Test(thread, idself)
             CU_ASSERT (thread_id_from_thread == tmp_thread_os_threadId);
             CU_ASSERT (result_from_thread == (uint32_t)tmp_thread_os_threadId);
         } else {
-          #if ENABLE_TRACING
             printf ("os_threadWaitExit failed.\n");
-          #endif
         }
     } else {
-      #if ENABLE_TRACING
         printf ("os_threadCreate failed.\n");
-      #endif
     }
 
-  #if ENABLE_TRACING
     printf ("Ending tc_threadIdSelf\n");
-  #endif
 }
 
-CUnit_Test(thread, join)
+CUnit_Test(os_thread, join)
 {
     os_threadId   thread_os_threadId;
     os_threadAttr thread_os_threadAttr;
     int result;
     uint32_t result_from_thread;
 
-  #if ENABLE_TRACING
     /* Wait for thread to terminate and get the return value with Success result,
        while thread is still running */
-    printf ("Starting tc_os_threadWaitExit_001\n");
-  #endif
+    printf("Starting os_thread_join_001\n");
     os_threadAttrInit (&thread_os_threadAttr);
     result = os_threadCreate (&thread_os_threadId, "threadWaitExit", &thread_os_threadAttr, &threadId_thread, (void *)1);
     CU_ASSERT (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
-      #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
         sleepSeconds(1);
-      #endif
+#endif
         result = os_threadWaitExit (thread_os_threadId, &result_from_thread);
         CU_ASSERT (result == os_resultSuccess);
 
@@ -608,29 +542,23 @@ CUnit_Test(thread, join)
             CU_ASSERT (thread_id_from_thread == os_threadIdToInteger(thread_os_threadId));
             CU_ASSERT (result_from_thread == (uint32_t)thread_id_from_thread);
         } else {
-          #if ENABLE_TRACING
             printf ("os_threadWaitExit failed.\n");
-          #endif
         }
     } else {
-      #if ENABLE_TRACING
         printf ("os_threadCreate failed.\n");
-      #endif
     }
 
-  #if ENABLE_TRACING
     /* Wait for thread to terminate and get the return value with Success result,
        while thread is already terminated */
-    printf ("Starting tc_os_threadWaitExit_002\n");
-  #endif
+    printf ("Starting os_thread_join_002\n");
     os_threadAttrInit (&thread_os_threadAttr);
     result = os_threadCreate (&thread_os_threadId, "threadWaitExit", &thread_os_threadAttr, &threadId_thread, NULL);
     CU_ASSERT (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
-      #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
         sleepSeconds(1);
-      #endif
+#endif
         result = os_threadWaitExit (thread_os_threadId, &result_from_thread);
         CU_ASSERT(result == os_resultSuccess);
 
@@ -638,42 +566,32 @@ CUnit_Test(thread, join)
             CU_ASSERT (thread_id_from_thread == os_threadIdToInteger(thread_os_threadId));
             CU_ASSERT (result_from_thread == (uint32_t)thread_id_from_thread);
         } else {
-         #if ENABLE_TRACING
             printf ("os_threadWaitExit failed.\n");
-          #endif
         }
     } else {
-      #if ENABLE_TRACING
         printf ("os_threadCreate failed.\n");
-      #endif
     }
 
-  #if ENABLE_TRACING
     /* Get thread return value with Fail result because result is already read */
-    printf ("Starting tc_os_threadWaitExit_003\n");
-  #endif
+    printf ("Starting tc_os_thread_join_003\n");
     os_threadAttrInit (&thread_os_threadAttr);
     result = os_threadCreate (&thread_os_threadId, "threadWaitExit", &thread_os_threadAttr, &threadId_thread, NULL);
     CU_ASSERT (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
-      #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
         sleepSeconds(1);
-      #endif
+#endif
         result = os_threadWaitExit (thread_os_threadId, NULL);
         CU_ASSERT (result == os_resultSuccess);
     } else {
-      #if ENABLE_TRACING
         printf ("os_threadCreate failed.\n");
-      #endif
     }
 
-  #if ENABLE_TRACING
     /* Wait for thread to terminate and get the return value by multiple threads,
        one thread gets Success other Fail */
-    printf ("Starting tc_os_threadWaitExit_004\n");
-  #endif
-  #ifndef WIN32
+    printf ("Starting tc_os_thread_join_004\n");
+#ifndef WIN32
     os_threadAttrInit (&thread_os_threadAttr);
     {
         os_threadId threadWait1;
@@ -686,60 +604,46 @@ CUnit_Test(thread, join)
 
         if (result == os_resultSuccess && result1 == os_resultSuccess)
         {
-          #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
             sleepSeconds(1);
-          #endif
+#endif
             result1 = os_threadWaitExit (threadWait1, NULL);
 
             if (result1 != os_resultSuccess) {
-              #if ENABLE_TRACING
                 printf ("os_threadWaitExit 1 failed\n");
-              #endif
                 CU_ASSERT (result1 == os_resultSuccess);
             }
         } else {
-          #if ENABLE_TRACING
             printf ("os_threadCreate failed.\n");
-          #endif
         }
     }
-  #else /* WIN32 */
-  #if ENABLE_TRACING
+#else /* WIN32 */
     printf ("N.A - Not tested on Windows.\n");
-  #endif
-  #endif
+#endif
 
-  #if ENABLE_TRACING
     /* Wait for thread to terminate and pass NULL for the
        return value address - not interrested */
     printf ("Starting tc_os_threadWaitExit_005\n");
-  #endif
     os_threadAttrInit (&thread_os_threadAttr);
     result = os_threadCreate (&thread_os_threadId, "threadWaitExit", &thread_os_threadAttr, &threadId_thread, NULL);
     CU_ASSERT  (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
-      #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
         sleepSeconds(1);
-      #endif
+#endif
         result = os_threadWaitExit (thread_os_threadId, NULL);
         CU_ASSERT (result == os_resultSuccess);
-      #if ENABLE_TRACING
         if (result != os_resultSuccess)
             printf ("os_threadWaitExit failed.\n");
-      #endif
     } else {
-      #if ENABLE_TRACING
         printf ("os_threadCreate failed.\n");
-      #endif
     }
 
-  #if ENABLE_TRACING
     printf ("Ending tc_threadWaitExit\n");
-  #endif
 }
 
-CUnit_Test(thread, figure_identity)
+CUnit_Test(os_thread, figure_identity)
 {
 #if !defined(_WIN32)
     os_threadId thread_os_threadId;
@@ -749,86 +653,76 @@ CUnit_Test(thread, figure_identity)
     int result;
 #endif /* WIN32 */
 
-  #if ENABLE_TRACING
     /* Figure out the identity of the thread, where it's name is known */
-    printf ("Starting tc_os_threadFigureIdentity_001\n");
-  #endif
-  #ifdef WIN32
+    printf ("Starting os_thread_figure_identity_001\n");
+#ifdef WIN32
     /* Untested because the identifier does not contain the name on Windows */
-  #else
+#else
     os_threadAttrInit (&thread_os_threadAttr);
     result = os_threadCreate (&thread_os_threadId, "threadFigureIdentity", &thread_os_threadAttr, &threadIdentity_thread, threadId);
     CU_ASSERT (result == os_resultSuccess);
 
     if (result == os_resultSuccess) {
-      #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
         sleepSeconds(1);
-      #endif
+#endif
         result = os_threadWaitExit (thread_os_threadId, NULL);
         CU_ASSERT (result == os_resultSuccess);
 
         if (result == os_resultSuccess) {
             uintmax_t threadNumeric = 0;
-          #ifdef _WRS_KERNEL
+#ifdef _WRS_KERNEL
             int dum;
             (void)sscanf (threadId, "%s (%d %d)", thread_name, &threadNumeric, &dum);
-          #else
+#else
             (void)sscanf (threadId, "%s 0x%"SCNxMAX, thread_name, &threadNumeric);
-          #endif
+#endif
             CU_ASSERT (strcmp (thread_name, "threadFigureIdentity") == 0 && threadNumeric == os_threadIdToInteger(thread_os_threadId));
         } else {
-          #if ENABLE_TRACING
             printf ("os_threadWaitExit failed.\n");
-          #endif
         }
     } else {
-      #if ENABLE_TRACING
         printf ("os_threadCreate failed.\n");
-      #endif
     }
-  #endif /* WIN32 */
+#endif /* WIN32 */
 
-  #if ENABLE_TRACING
     /* Figure out the identity of the thread, where it's name is unknown */
-    printf ("Starting tc_os_threadFigureIdentity_002\n");
-  #endif
-  #if (defined _WRS_KERNEL || defined WIN32)
+    printf ("Starting os_thread_figure_identity_002\n");
+#if (defined _WRS_KERNEL || defined WIN32)
     {
       char threadId[512];
       int threadNumeric;
 
         os_threadFigureIdentity (threadId, sizeof(threadId));
-      #if defined WIN32
+#if defined WIN32
         (void)sscanf (threadId, "%"PRIx32, &threadNumeric);
-      #else /* VXWORKS */
+#else /* VXWORKS */
         (void)sscanf (index(threadId,'(') + 1, "%"PRIx32, &threadNumeric);
-      #endif
+#endif
         CU_ASSERT (threadNumeric == os_threadIdToInteger(os_threadIdSelf()));
     }
-  #else
+#else
     {
       char threadId[512];
       uintptr_t threadNumeric;
 
         os_threadFigureIdentity (threadId, sizeof(threadId));
 
-      #ifdef WIN32
+#ifdef WIN32
         (void)sscanf (threadId, "%"PRIxPTR, &threadNumeric);
-      #else
+#else
         (void)sscanf (threadId, "%"PRIxPTR, &threadNumeric);
-      #endif
+#endif
 
-      #ifndef INTEGRITY
+#ifndef INTEGRITY
         CU_ASSERT (threadNumeric == (uintptr_t)os_threadIdToInteger(os_threadIdSelf()));
-      #endif
+#endif
     }
-  #endif
+#endif
 
-  #if ENABLE_TRACING
     /* Figure out the identity of the thread, check the return parameter */
-    printf ("Starting tc_os_threadFigureIdentity_003\n");
-  #endif
-  #ifdef _WRS_KERNEL
+    printf ("Starting os_thread_figure_identity_003\n");
+#ifdef _WRS_KERNEL
    {
        char threadId[512];
        char threadIdString[512];
@@ -839,7 +733,7 @@ CUnit_Test(thread, figure_identity)
        threadIdLen = os_threadFigureIdentity (threadId, sizeof(threadId));
        CU_ASSERT (threadIdLen == strlen(threadIdString));
    }
-  #else
+#else
    {
        char threadId[512];
        char threadIdString[512];
@@ -850,100 +744,74 @@ CUnit_Test(thread, figure_identity)
 
        CU_ASSERT (threadIdLen == strlen(threadIdString));
    }
-  #endif
+#endif
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_threadFigureIdentity\n");
-  #endif
+   printf ("Ending os_thread_figure_identity\n");
 }
 
-CUnit_Test(thread, attr_init)
+CUnit_Test(os_thread, attr_init)
 {
     os_threadAttr thread_os_threadAttr;
-  #if ENABLE_TRACING
     /* Check default attributes: schedClass */
-    printf ("Starting tc_os_threadAttrInit_001\n");
-  #endif
+    printf ("Starting os_thread_attr_init_001\n");
     os_threadAttrInit (&thread_os_threadAttr);
     CU_ASSERT (thread_os_threadAttr.schedClass == OS_SCHED_DEFAULT);
 
-  #if ENABLE_TRACING
     /* Check default attributes: schedPriority */
-    printf ("Starting tc_os_threadAttrInit_002\n");
-  #endif
-  #if !(defined _WRS_KERNEL || defined WIN32 || defined __APPLE__)
+    printf ("Starting os_thread_attr_init_002\n");
+#if !(defined _WRS_KERNEL || defined WIN32 || defined __APPLE__)
     os_threadAttrInit (&thread_os_threadAttr);
     CU_ASSERT (thread_os_threadAttr.schedPriority == ((sched_get_priority_min (SCHED_OTHER) + sched_get_priority_max (SCHED_OTHER)) / 2 ));
-  #else
-    #if ENABLE_TRACING
+#else
     /* OSX priorities are different (min=15 and max=47) */
     printf ("N.A - Not tested for VxWorks, Windows and OSX\n");
-    #endif
-  #endif
+#endif
 
-  #if ENABLE_TRACING
     /* Check default attributes: stacksize */
-    printf ("Starting tc_os_threadAttrInit_003\n");
-  #endif
+    printf ("Starting os_thread_attr_init_003\n");
     os_threadAttrInit (&thread_os_threadAttr);
     CU_ASSERT (thread_os_threadAttr.stackSize == 0);
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_threadAttrInit\n");
-  #endif
+    printf ("Ending os_thread_attr_init\n");
 }
 
-CUnit_Test(thread, memmalloc)
+CUnit_Test(os_thread, memmalloc)
 {
-  #if ENABLE_TRACING
     /* Check os_threadMemMalloc with success result for main thread */
-    printf ("Starting tc_os_threadMemMalloc_001\n");
-  #endif
+    printf ("Starting os_thread_memmalloc_001\n");
     returnval = os_threadMemMalloc (3, 100);
     CU_ASSERT (returnval != NULL);
 
-  #if ENABLE_TRACING
     /* Check os_threadMemMalloc with fail result for main thread
        for index already in use */
-    printf ("Starting tc_os_threadMemMalloc_002\n");
-  #endif
+    printf ("Starting os_thread_memmalloc_002\n");
     returnval = os_threadMemMalloc (3, 100);
     CU_ASSERT (returnval == NULL);
 
-  #if ENABLE_TRACING
     /* Check os_threadMemMalloc with fail result for main thread
        for index < 0 */
-    printf ("Starting tc_os_threadMemMalloc_003\n");
-  #endif
+    printf ("Starting os_thread_memmalloc_003\n");
     returnval = os_threadMemMalloc (-1, 100);
     CU_ASSERT (returnval == NULL);
 
-  #if ENABLE_TRACING
     /* Check os_threadMemMalloc with fail result for main thread
        for index >= OS_THREAD_MEM_ARRAY_SIZE */
-    printf ("Starting tc_os_threadMemMalloc_004\n");
-  #endif
+    printf ("Starting os_thread_memmalloc_004\n");
     returnval = os_threadMemMalloc (OS_THREAD_MEM_ARRAY_SIZE, 100);
     CU_ASSERT (returnval == NULL);
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_threadMemMalloc\n");
-  #endif
+    printf ("Ending tc_thread_memmalloc\n");
 }
 
-CUnit_Test(thread, memget)
+CUnit_Test(os_thread, memget)
 {
-  #if ENABLE_TRACING
     /* Check os_threadMemGet for main thread and non allocated index */
-    printf ("Starting tc_os_threadMemGet_001\n");
-  #endif
+    printf ("Starting os_thread_memget_001\n");
     returnval = os_threadMemGet (OS_THREAD_WARNING);
     CU_ASSERT (returnval == NULL);
 
-  #if ENABLE_TRACING
     /* Check os_threadMemGet for main thread and allocated index */
-    printf ("Starting tc_os_threadMemGet_002\n");
-  #endif
+    printf ("Starting os_thread_memget_002\n");
     /* FIXME: This test is no good. Apart from the fact that a valid thread
               memory index should be used (os_threadMemoryIndex), this also
               does not work if the test is executed in a self-contained
@@ -953,25 +821,19 @@ CUnit_Test(thread, memget)
     returnval = os_threadMemGet (3);
     CU_ASSERT (returnval != NULL);
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_threadMemGet\n");
-  #endif
+    printf ("Ending tc_thread_memget\n");
 }
 
-CUnit_Test(thread, memfree)
+CUnit_Test(os_thread, memfree)
 {
-  #if ENABLE_TRACING
     /* Check os_threadMemFree for main thread and non allocated index */
-    printf ("Starting tc_os_threadMemFree_001\n");
-  #endif
+    printf ("Starting os_thread_memfree_001\n");
     os_threadMemFree (OS_THREAD_WARNING);
     returnval = os_threadMemGet (OS_THREAD_WARNING);
     CU_ASSERT (returnval == NULL);
 
-  #if ENABLE_TRACING
     /* Check os_threadMemFree for main thread and allocated index */
-    printf ("Starting tc_os_threadMemFree_002\n");
-  #endif
+    printf ("Starting os_thread_memfree_002\n");
     /* FIXME: See comments on memget test. */
     (void)os_threadMemMalloc(3, 100);
     returnval = os_threadMemGet(3);
@@ -980,12 +842,10 @@ CUnit_Test(thread, memfree)
     returnval = os_threadMemGet (3);
     CU_ASSERT (returnval == NULL);
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_threadMemFree\n");
-  #endif
+    printf ("Ending os_thread_memfree\n");
 }
 
-CUnit_Test(thread, module)
+CUnit_Test(os_thread, module)
 {
     os_threadId   thread_os_threadId;
     os_threadAttr thread_os_threadAttr;
@@ -1009,10 +869,8 @@ CUnit_Test(thread, module)
        printf ("Child thread could not be started");
     }
 
-  #if ENABLE_TRACING
     /* Check only startCb is called on created thread */
-    printf ("Starting tc_os_threadModule_001\n");
-  #endif
+    printf ("Starting os_thread_module_001\n");
     startCallbackCount = 0;
     stopCallbackCount = 0;
     threadCalled = 0;
@@ -1026,10 +884,8 @@ CUnit_Test(thread, module)
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 0 && threadCalled == 1);
 
-  #if ENABLE_TRACING
     /* Check startCb and stopCb are called on created thread */
-    printf ("Starting tc_os_threadModule_002\n");
-  #endif
+    printf ("Starting os_thread_module_002\n");
     startCallbackCount = 0;
     stopCallbackCount = 0;
     threadCalled = 0;
@@ -1043,10 +899,8 @@ CUnit_Test(thread, module)
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 1 && threadCalled == 1);
 
-  #if ENABLE_TRACING
     /* Check startCb and stopCb are called and startArg is passed */
-    printf ("Starting tc_os_threadModule_003\n");
-  #endif
+    printf ("Starting os_thread_module_003\n");
     startCallbackCount = 0;
     stopCallbackCount = 0;
     threadCalled = 0;
@@ -1061,10 +915,8 @@ CUnit_Test(thread, module)
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 0 && stopCallbackCount == 1 && mainCount == 1 && threadCalled == 1);
 
-  #if ENABLE_TRACING
     /* Check startCb and stopCb are called and stopArg is passed */
-    printf ("Starting tc_os_threadModule_004\n");
-  #endif
+    printf ("Starting os_thread_module_004\n");
     startCallbackCount = 0;
     stopCallbackCount = 0;
     threadCalled = 0;
@@ -1079,10 +931,8 @@ CUnit_Test(thread, module)
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 0 && mainCount == 1 && threadCalled == 1);
 
-  #if ENABLE_TRACING
     /* Check startCb and stopCb are called and startArg and stopArg are passed */
-    printf ("Starting tc_os_threadModule_005\n");
-  #endif
+    printf ("Starting os_thread_module_005\n");
     startCallbackCount = 0;
     stopCallbackCount = 0;
     threadCalled = 0;
@@ -1097,10 +947,8 @@ CUnit_Test(thread, module)
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 0 && stopCallbackCount == 0 && mainCount == 2 && threadCalled == 1);
 
-  #if ENABLE_TRACING
     /* Check stopCb is called on created thread */
-    printf ("Starting tc_os_threadModule_006\n");
-  #endif
+    printf ("Starting os_thread_module_006\n");
     startCallbackCount = 0;
     stopCallbackCount = 0;
     threadCalled = 0;
@@ -1115,10 +963,8 @@ CUnit_Test(thread, module)
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 0 && stopCallbackCount == 0 && mainCount == 1);
 
-  #if ENABLE_TRACING
     /* Check startCb is called on created thread */
-    printf ("Starting tc_os_threadModule_007\n");
-  #endif
+    printf ("Starting os_thread_module_007\n");
     startCallbackCount = 0;
     stopCallbackCount = 0;
     threadCalled = 0;
@@ -1133,10 +979,8 @@ CUnit_Test(thread, module)
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 0 && mainCount == 0 && threadCalled == 1);
 
-  #if ENABLE_TRACING
     /* Check startCb is called, but thread main is not called */
-    printf ("Starting tc_os_threadModule_008\n");
-  #endif
+    printf ("Starting os_thread_module_008\n");
     startCallbackCount = 0;
     stopCallbackCount = 0;
     threadCalled = 0;
@@ -1151,8 +995,6 @@ CUnit_Test(thread, module)
     os_threadWaitExit(thread_os_threadId, NULL);
     CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 0 && mainCount == 0 && threadCalled == 0);
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_threadModule\n");
-  #endif
+    printf ("Ending tc_thread_module\n");
 }
 
