@@ -234,7 +234,6 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
         /* Event was eaten by a listener. */
         if (dds_reader_lock(((dds_entity*)entity)->m_hdl, &rd) == DDS_RETCODE_OK) {
             assert(rd == entity);
-            os_mutexLock (&rd->m_entity.m_mutex);
 
             /* Reset the change counts of the metrics. */
             switch (data->status) {
