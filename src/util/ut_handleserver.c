@@ -204,7 +204,7 @@ ut_handle_claim(
     }
 
     if (hs == NULL) {
-        return (ut_handle_t)UT_HANDLE_NOT_INITALIZED;
+        return (ut_handle_t)UT_HANDLE_INVALID;
     }
 
     os_mutexLock(&hs->mutex);
