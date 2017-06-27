@@ -497,16 +497,21 @@ os_threadMemMalloc(
     int32_t index,
     size_t size)
 {
-   void **tlsMemArray;
-   void *threadMemLoc = NULL;
+    void **tlsMemArray;
+    void *threadMemLoc = NULL;
+
+    int orig_err = os_getErrno();
+    os_setErrno(ERROR_SUCCESS);
 
     if ((0 <= index) && (index < OS_THREAD_MEM_ARRAY_SIZE)) {
         tlsMemArray = (void **)TlsGetValue(tlsIndex);
   	    printf("*** %s - 1. tlsIndex=%d, tlsGetValue[%d]=%p, errno=%d\n", OS_FUNCTION, tlsIndex, tlsIndex, tlsMemArray, os_getErrno());
-        if (tlsMemArray == NULL) {
+        if (tlsMemArray == NULL && os_getErrno() != ERROR_SUCCESS) {
             os_threadMemInit ();
             tlsMemArray = (void **)TlsGetValue(tlsIndex);
       	    printf("*** %s - 2. tlsIndex=%d, tlsGetValue[%d]=%p, errno=%d\n", OS_FUNCTION, tlsIndex, tlsIndex, tlsMemArray, os_getErrno());
+        } else {
+        	os_setErrno(orig_err);
         }
         if (tlsMemArray != NULL) {
             if (tlsMemArray[index] == NULL) {
