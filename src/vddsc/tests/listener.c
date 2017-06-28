@@ -384,6 +384,8 @@ vddsc_listener_cb_init(void)
 static void
 vddsc_listener_cb_fini(void)
 {
+    dds_qos_delete(g_qos);
+    dds_listener_delete(g_listener);
     dds_delete(g_participant);
     os_condDestroy(&g_cond);
     os_mutexDestroy(&g_mutex);
@@ -408,7 +410,6 @@ Test(c99_listener, matched, .init=vddsc_listener_cb_init, .fini=vddsc_listener_c
 {
     dds_entity_t writer;
     dds_entity_t reader;
-    dds_return_t ret;
     uint32_t triggered;
 
     /* We are interested in matched notifications. */

@@ -144,10 +144,12 @@ dds_entity_listener_propagation(
                 ret = dds_entity_listener_propagation(e->m_parent, src, status, metrics, propagate);
             }
 
+            os_mutexLock(&(e->m_mutex));
             /* We are done with our callback. */
             e->m_cb_count--;
             /* Wake up possible waiting threads. */
             os_condBroadcast(&e->m_cond);
+            os_mutexUnlock(&(e->m_mutex));
         }
     }
     return ret;
