@@ -41,7 +41,7 @@ static dds_return_t dds_writer_status_validate (uint32_t mask)
 static void dds_writer_status_cb (void * entity, const status_cb_data_t * data)
 {
     dds_writer *wr;
-    bool call = false;
+    dds_return_t ret;
     void *metrics = NULL;
 
     /* When data is NULL, it means that the writer is deleted. */
@@ -100,25 +100,16 @@ static void dds_writer_status_cb (void * entity, const status_cb_data_t * data)
         }
         default: assert (0);
     }
+
+    /* The writer needs to be unlocked when propagating the (possible) listener
+     * call because the application should be able to call this writer within
+     * the callback function. */
     dds_writer_unlock(wr);
 
-
-    /* Indicate to the entity hierarchy that we're busy with a callback.
-     * This is done from the top to bottom to prevent possible deadlocks.
-     * We can't really lock the entities because they have to be possibly
-     * accessible from listener callbacks. */
-    if (!dds_entity_cb_propagate_begin(entity)) {
-        /* An entity in the hierarchy is probably being deleted. */
-        return;
-    }
-
     /* Is anybody interested within the entity hierarchy through listeners? */
-    call = dds_entity_cp_propagate_call(entity, entity, data->status, metrics, true);
+    ret = dds_entity_listener_propagation(entity, entity, data->status, metrics, true);
 
-    /* Let possible waits continue. */
-    dds_entity_cb_propagate_end(entity);
-
-    if (call) {
+    if (ret == DDS_RETCODE_OK) {
         /* Event was eaten by a listener. */
         if (dds_writer_lock(((dds_entity*)entity)->m_hdl, &wr) == DDS_RETCODE_OK) {
             assert(wr == entity);
@@ -151,10 +142,14 @@ static void dds_writer_status_cb (void * entity, const status_cb_data_t * data)
         } else {
             /* There's a deletion or closing going on. */
         }
-    } else {
-        /* Nobody was interested through a listener. Set the status to maybe force a trigger. */
+    } else if (ret == DDS_RETCODE_NO_DATA) {
+        /* Nobody was interested through a listener (NO_DATA == NO_CALL): set the status. */
         dds_entity_status_set(entity, data->status);
+        /* Notify possible interested observers. */
         dds_entity_status_signal(entity);
+    } else {
+        /* Something went wrong up the hierarchy.
+         * Likely, a parent is in the process of being deleted. */
     }
 }
 

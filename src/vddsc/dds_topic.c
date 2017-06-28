@@ -41,7 +41,7 @@ static dds_return_t dds_topic_status_validate (uint32_t mask)
 static void dds_topic_status_cb (struct dds_topic * cb_t)
 {
     dds_topic *topic;
-    bool call = false;
+    dds_return_t ret;
     void *metrics = NULL;
 
     if (dds_topic_lock(((dds_entity*)cb_t)->m_hdl, &topic) != DDS_RETCODE_OK) {
@@ -57,38 +57,34 @@ static void dds_topic_status_cb (struct dds_topic * cb_t)
     topic->m_inconsistent_topic_status.total_count++;
     topic->m_inconsistent_topic_status.total_count_change++;
 
+
+    /* The topic needs to be unlocked when propagating the (possible) listener
+     * call because the application should be able to call this topic within
+     * the callback function. */
     dds_topic_unlock(topic);
 
-    /* Indicate to the entity hierarchy that we're busy with a callback.
-     * This is done from the top to bottom to prevent possible deadlocks.
-     * We can't really lock the entities because they have to be possibly
-     * accessible from listener callbacks. */
-    if (!dds_entity_cb_propagate_begin((dds_entity*)topic)) {
-        /* An entity in the hierarchy is probably being deleted. */
-        return;
-    }
-
     /* Is anybody interested within the entity hierarchy through listeners? */
-    call = dds_entity_cp_propagate_call((dds_entity*)topic,
-                                        (dds_entity*)topic,
-                                        DDS_INCONSISTENT_TOPIC_STATUS,
-                                        (void*)&(topic->m_inconsistent_topic_status),
-                                        true);
+    ret = dds_entity_listener_propagation((dds_entity*)topic,
+                                          (dds_entity*)topic,
+                                          DDS_INCONSISTENT_TOPIC_STATUS,
+                                          (void*)&(topic->m_inconsistent_topic_status),
+                                          true);
 
-    /* Let possible waits continue. */
-    dds_entity_cb_propagate_end((dds_entity*)topic);
-
-    if (call) {
+    if (ret == DDS_RETCODE_OK) {
         /* Event was eaten by a listener. */
         if (dds_topic_lock(((dds_entity*)cb_t)->m_hdl, &topic) == DDS_RETCODE_OK) {
             /* Reset the change counts of the metrics. */
             topic->m_inconsistent_topic_status.total_count_change = 0;
             dds_topic_unlock(topic);
         }
-    } else {
-        /* Nobody was interested through a listener. Set the status to maybe force a trigger. */
+    } else if (ret == DDS_RETCODE_NO_DATA) {
+        /* Nobody was interested through a listener (NO_DATA == NO_CALL): set the status. */
         dds_entity_status_set((dds_entity*)topic, DDS_INCONSISTENT_TOPIC_STATUS);
+        /* Notify possible interested observers. */
         dds_entity_status_signal((dds_entity*)topic);
+    } else {
+        /* Something went wrong up the hierarchy.
+         * Likely, a parent is in the process of being deleted. */
     }
 }
 
