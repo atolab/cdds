@@ -1,11 +1,4 @@
-include_directories(generated)
-
-set(PFX "RoundTrip")
-set(C_FILE "${PFX}.c")
-set(H_FILE "${PFX}.h")
-set(MY_TEMP_IDLC_GEN_COMMAND "../../idlc/dds_idlc")
-set(IDL_FILE "${CMAKE_CURRENT_SOURCE_DIR}/generated/${PFX}.idl")
-add_custom_command(OUTPUT "${C_FILE}" "${H_FILE}" COMMAND "${MY_TEMP_IDLC_GEN_COMMAND}" "${IDL_FILE}" DEPENDS "${IDL_FILE}")
-add_executable(ddpingpong ddpingpong.c "${C_FILE}")
+idlc_generate(RoundTrip_SRCS RoundTrip_HDRS "generated/RoundTrip.idl")
+add_executable(ddpingpong ddpingpong.c ${RoundTrip_SRCS})
 target_link_libraries(ddpingpong Vortex::DDSC)
 target_include_directories(ddpingpong PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
