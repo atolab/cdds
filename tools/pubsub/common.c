@@ -1,21 +1,21 @@
 #define RTLD_DEFAULT	((void *) 0)
 
-#include <dlfcn.h>
-#include <time.h>
+//#include <dlfcn.h>
+//#include <time.h>
 #include <string.h>
-#include <sys/time.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <signal.h>
-#include <unistd.h>
-#include <stdarg.h>
-#include <math.h>
+//#include <sys/time.h>
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <stdint.h>
+//#include <inttypes.h>
+//#include <signal.h>
+//#include <unistd.h>
+//#include <stdarg.h>
+//#include <math.h>
 
 #include "testtype.h"
 #include "common.h"
-#include "porting.h"
+//#include "porting.h"
 #include "os/os.h"
 
 //#define DEBUG
@@ -132,7 +132,7 @@ struct hist {
 
 struct hist *hist_new (unsigned nbins, uint64_t binwidth, uint64_t bin0)
 {
-  struct hist *h = malloc (sizeof (*h) + nbins * sizeof (*h->bins));
+  struct hist *h = os_malloc (sizeof (*h) + nbins * sizeof (*h->bins));
   h->nbins = nbins;
   h->binwidth = binwidth;
   h->bin0 = bin0;
@@ -143,7 +143,7 @@ struct hist *hist_new (unsigned nbins, uint64_t binwidth, uint64_t bin0)
 
 void hist_free (struct hist *h)
 {
-  free (h);
+  os_free (h);
 }
 
 void hist_reset_minmax (struct hist *h)
@@ -181,7 +181,7 @@ static void xsnprintf (char *buf, size_t bufsz, size_t *p, const char *fmt, ...)
     int n;
     va_list ap;
     va_start(ap, fmt);
-    n = vsnprintf(buf + *p, bufsz - *p, fmt, ap);
+    n = os_vsnprintf(buf + *p, bufsz - *p, fmt, ap);
     va_end(ap);
     *p += (size_t)n;
   }
@@ -345,9 +345,9 @@ int change_publisher_partitions (dds_entity_t pub, unsigned npartitions, const c
 	if ((qos = dds_qos_create()) == NULL)
 		return DDS_RETCODE_OUT_OF_RESOURCES;
 
-	dds_get_qos(pub, qos);	//Todo: Changed mathod signature.
+	rc = dds_get_qos(pub, qos);	//Todo: Changed mathod signature.
 	dds_qset_partition(qos, npartitions, partitions);
-	rc = dds_get_qos(pub, qos);
+	rc = dds_set_qos(pub, qos);
 	dds_qos_delete(qos);
 	return rc;
 }
@@ -360,7 +360,7 @@ int change_subscriber_partitions (dds_entity_t sub, unsigned npartitions, const 
   if ((qos = dds_qos_create()) == NULL)
     return DDS_RETCODE_OUT_OF_RESOURCES;
 
-  dds_get_qos(sub, qos);
+  rc = dds_get_qos(sub, qos);
   dds_qset_partition(qos, npartitions, partitions);
   rc = dds_set_qos (sub, qos);
   dds_qos_delete(qos);
@@ -372,7 +372,7 @@ static dds_qos_t *get_topic_qos (dds_entity_t t)
   dds_qos_t *tQos = dds_qos_create();
   if ((tQos) == NULL)
       error ("get_topic_qos: dds_qos_create\n");
-  dds_get_qos(t, tQos);
+  int rc = dds_get_qos(t, tQos);
   if(tQos == NULL)
     error ("dds_qos_get_topic_qos\n");
   return tQos;
@@ -381,13 +381,13 @@ static dds_qos_t *get_topic_qos (dds_entity_t t)
 struct qos *new_tqos (void)
 {
   struct qos *a;
-  if ((a = malloc (sizeof (*a))) == NULL)
-    error ("new_tqos: malloc\n");
+  if ((a = os_malloc (sizeof (*a))) == NULL)
+    error ("new_tqos: os_malloc\n");
   a->qt = QT_TOPIC;
   a->u.topic.q = dds_qos_create();
   if ((a->u.topic.q) == NULL)
     error ("new_tqos: dds_qos_create\n");
-  dds_get_default_topic_qos(a->u.topic.q);
+//  dds_get_default_topic_qos(a->u.topic.q); //Todo: Removed from ddsv2 since it cant be set anyway. an empty qos behaves the same by definition.
 
   /* Not all defaults are those of DCPS: */
   dds_qset_reliability(a->u.topic.q, DDS_RELIABILITY_RELIABLE, DDS_SECS(1));
@@ -398,33 +398,33 @@ struct qos *new_tqos (void)
 struct qos *new_pubqos (void)
 {
   struct qos *a;
-  if ((a = malloc (sizeof (*a))) == NULL)
-    error ("new_pubqos: malloc\n");
+  if ((a = os_malloc (sizeof (*a))) == NULL)
+    error ("new_pubqos: os_malloc\n");
   a->qt = QT_PUBLISHER;
   a->u.pub.q = dds_qos_create();
   if ((a->u.pub.q) == NULL)
     error ("new_pubqos: dds_qos_create\n");
-  dds_get_default_publisher_qos(a->u.pub.q);
+//  dds_get_default_publisher_qos(a->u.pub.q); //Todo: Removed from ddsv2 since it cant be set anyway. an empty qos behaves the same by definition.
   return a;
 }
 
 struct qos *new_subqos (void)
 {
   struct qos *a;
-  if ((a = malloc (sizeof (*a))) == NULL)
-    error ("new_subqos: malloc\n");
+  if ((a = os_malloc (sizeof (*a))) == NULL)
+    error ("new_subqos: os_malloc\n");
   a->qt = QT_SUBSCRIBER;
   a->u.sub.q = dds_qos_create();
   if ((a->u.sub.q) == NULL)
       error ("new_subqos: dds_qos_create\n");
-  dds_get_default_subscriber_qos(a->u.sub.q);
+//  dds_get_default_subscriber_qos(a->u.sub.q);//Todo: Removed from ddsv2 since it cant be set anyway. an empty qos behaves the same by definition.
   return a;
 }
 
 dds_qos_t *new_subqosNew (void)
 {
   dds_qos_t *qosAll = dds_qos_create();
-  dds_get_default_subscriber_qos(qosAll);
+//  dds_get_default_subscriber_qos(qosAll);//Todo: Removed from ddsv2 since it cant be set anyway. an empty qos behaves the same by definition.
   return qosAll;
 }
 
@@ -432,15 +432,15 @@ struct qos *new_rdqos (dds_entity_t s, dds_entity_t t)
 {
 	dds_qos_t *tQos = get_topic_qos (t);
 	struct qos *a;
-	if ((a = malloc (sizeof (*a))) == NULL)
-		error ("new_rdqos: malloc\n");
+	if ((a = os_malloc (sizeof (*a))) == NULL)
+		error ("new_rdqos: os_malloc\n");
 	a->qt = QT_READER;
 	a->u.rd.t = t;
 	a->u.rd.s = s;
 	a->u.rd.q = dds_qos_create();
 	if ((a->u.rd.q) == NULL)
 		error ("new_rdqos: dds_qos_create\n");
-	dds_get_default_reader_qos(a->u.rd.q);
+//	dds_get_default_reader_qos(a->u.rd.q);//Todo: Removed from ddsv2 since it cant be set anyway. an empty qos behaves the same by definition.
 	if(tQos != NULL)
 		dds_qos_copy(a->u.rd.q, tQos);
 	dds_qos_delete(tQos);
@@ -451,15 +451,15 @@ struct qos *new_wrqos (dds_entity_t p, dds_entity_t t)
 {
 	dds_qos_t *tQos = get_topic_qos (t);
 	struct qos *a;
-	if ((a = malloc (sizeof (*a))) == NULL)
-		error ("new_wrqos: malloc\n");
+	if ((a = os_malloc (sizeof (*a))) == NULL)
+		error ("new_wrqos: os_malloc\n");
 	a->qt = QT_WRITER;
 	a->u.wr.t = t;
 	a->u.wr.p = p;
 	a->u.wr.q = dds_qos_create();
 	if ((a->u.wr.q) == NULL)
 		error ("new_wrqos: dds_qos_create\n");
-	dds_get_default_writer_qos(a->u.wr.q);
+//	dds_get_default_writer_qos(a->u.wr.q);//Todo: Removed from ddsv2 since it cant be set anyway. an empty qos behaves the same by definition.
 	if(tQos != NULL)
 		dds_qos_copy(a->u.wr.q, tQos);
 	dds_qos_delete(tQos);
@@ -479,7 +479,7 @@ void free_qos (struct qos *a)
     case QT_READER: dds_qos_delete (a->u.rd.q); break;
     case QT_WRITER: dds_qos_delete (a->u.rd.q); break;
   }
-  free (a);
+  os_free (a);
 }
 
 dds_entity_t new_topic (const char *name, const dds_topic_descriptor_t *topicDesc, const struct qos *a)
@@ -491,6 +491,7 @@ dds_entity_t new_topic (const char *name, const dds_topic_descriptor_t *topicDes
 
 	tp = dds_create_topic(dp, topicDesc, name, a->u.topic.q, NULL);
 //	errorMsg(ret, "new_topic: dds_topic_create");
+	printf("topic create: return number: %d\n str: %s\nreturn code: %d\n", tp, dds_err_str(tp), dds_err_nr(tp));
 
 	return tp;
 }
@@ -533,7 +534,7 @@ dds_entity_t new_publisher (const struct qos *a, unsigned npartitions, const cha
 		error ("new_publisher: dds_qos_create\n");
 
 	if (a == NULL) {
-		dds_get_default_publisher_qos(pQos);
+//		dds_get_default_publisher_qos(pQos);//Todo: Removed from ddsv2 since it cant be set anyway. an empty qos behaves the same by definition.
 		dds_qset_partition(pQos, npartitions, partitions);
 		p = dds_create_publisher(dp, pQos, NULL); // Todo: Changed method name
 //		DDS_ENTITY_CHECK (p, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
@@ -558,7 +559,7 @@ dds_entity_t new_subscriber (const struct qos *a, unsigned npartitions, const ch
 	  error ("new_subscriber: dds_qos_create\n");
 
 	if (a == NULL) {
-		dds_get_default_subscriber_qos(sQos);
+//		dds_get_default_subscriber_qos(sQos);//Todo: Removed from ddsv2 since it cant be set anyway. an empty qos behaves the same by definition.
 		dds_qset_partition(sQos, npartitions, partitions);
 		s = dds_create_subscriber(dp, sQos, NULL);
 		errorMsg(ret, "new_subscriber: dds_subscriber_create\n");
@@ -575,36 +576,13 @@ dds_entity_t new_subscriber (const struct qos *a, unsigned npartitions, const ch
 
 dds_entity_t new_datawriter_listener (const struct qos *a, const dds_listener_t *l)
 {
-//	PRINTD("1\n");
-//	dds_entity_t publish;
-//	dds_entity_t tt;
-//	dds_entity_t wrt;
-//	PRINTD("2\n");
-//	publish = dds_create_publisher(dp, NULL, NULL);
-//	int ret = dds_topic_create(dp, &tt, ts_Keyed128, "thisName", NULL, NULL);
-//	PRINTD("5\n");
-//	PRINTD("status topic: %d\n",ret);
-//	ret = dds_writer_create(publish, &wrt, tt, NULL, NULL);
-//	PRINTD("status writer: %d\n", ret);
-
-	PRINTD("1 After qos setting for reader and writer\n");
-	int ret = 0;
-	PRINTD("2 After qos setting for reader and writer\n");
 	dds_entity_t wr;
-	PRINTD("3 After qos setting for reader and writer\n");
 	if (a->qt != QT_WRITER) {
-		PRINTD("4 After qos setting for reader and writer\n");
 		error ("new_datawriter called with non-writer qos\n");
 	}
-	PRINTD("4_4 After qos setting for reader and writer\n");
-//	if((ret = dds_writer_create(a->u.wr.p, &wr, a->u.wr.t, a->u.wr.q, NULL)) != DDS_RETCODE_OK) {
-//		PRINTD("5 After qos setting for reader and writer\n");
-//	}
-	if ((ret = dds_writer_create(a->u.wr.p, &wr, a->u.wr.t, a->u.wr.q, l)) != DDS_RETCODE_OK) {
-		PRINTD("5 After qos setting for reader and writer\n");
-		error ("dds_writer_create failed with value %d: %s\n",ret,dds_strerror(ret));
+	if ((wr = dds_create_writer(a->u.wr.p, a->u.wr.t, a->u.wr.q, l)) < DDS_RETCODE_OK) {
+		error ("dds_writer_create failed with value %d: %s\n",dds_err_nr(wr),dds_err_str(wr));
 	}
-	PRINTD("6 After qos setting for reader and writer\n");
 	return wr;
 }
 
@@ -619,12 +597,9 @@ dds_entity_t new_datareader_listener (const struct qos *a, const dds_listener_t 
 	dds_entity_t rd = 0;
 	if (a->qt != QT_READER)
 		error ("new_datareader called with non-reader qos\n");
-	if((ret = dds_reader_create(a->u.rd.s, &rd, a->u.rd.t, a->u.rd.q, l)) != DDS_RETCODE_OK)
-		printf("ERROR: %s\n",dds_err_str(ret));
-	printf("error no: %d\n",ret);
-	printf("dds_err_nro: %d\n",dds_err_nr(ret));
-	printf("dds_err_str(dds_err_nr) : %s\n",dds_err_str(dds_err_nr(ret)));
-	error ("dds_reader_create failed with value %d: %s\n",ret,dds_strerror(dds_err_nr(ret)));
+	if((rd = dds_create_reader(a->u.rd.s, a->u.rd.t, a->u.rd.q, l)) < DDS_RETCODE_OK) { //Todo: signature changed
+		error ("dds_reader_create failed with value %d: %s\n",dds_err_nr(rd),dds_err_str(rd));
+	}
 	return rd;
 }
 
@@ -821,7 +796,7 @@ static void *unescape (const char *str, size_t *len)
 {
   /* results in a blob without explicit terminator, i.e., can't get
      any longer than strlen(str) */
-  unsigned char *x = malloc (strlen (str)), *p = x;
+  unsigned char *x = os_malloc (strlen (str)), *p = x;
   while (*str)
   {
     if (*str != '\\')
@@ -874,7 +849,7 @@ void qos_user_data (struct qos *a, const char *arg)
 	  dds_qset_userdata(qp, unesc, len);
 	}
 
-	free (unesc);
+	os_free (unesc);
 }
 
 int double_to_dds_duration (dds_duration_t *dd, double d)
@@ -964,19 +939,19 @@ void qos_liveliness (struct qos *a, const char *arg)
 	}
 	else if (sscanf (arg, "p:%lf%n", &lease_duration, &pos) == 1 && arg[pos] == 0)
 	{
-	if (lease_duration <= 0 || double_to_dds_duration (&dd, lease_duration) < 0)
-	  error ("liveliness qos: %s: lease duration out of range\n", arg);
-	dds_qset_liveliness(qp, DDS_LIVELINESS_MANUAL_BY_PARTICIPANT, lease_duration);
+		if (lease_duration <= 0 || double_to_dds_duration (&dd, lease_duration) < 0)
+		  error ("liveliness qos: %s: lease duration out of range\n", arg);
+		dds_qset_liveliness(qp, DDS_LIVELINESS_MANUAL_BY_PARTICIPANT, lease_duration);
 	}
 	else if (sscanf (arg, "w:%lf%n", &lease_duration, &pos) == 1 && arg[pos] == 0)
 	{
-	if (lease_duration <= 0 || double_to_dds_duration (&dd, lease_duration) < 0)
-	  error ("liveliness qos: %s: lease duration out of range\n", arg);
-	dds_qset_liveliness(qp, DDS_LIVELINESS_MANUAL_BY_TOPIC, lease_duration);
+		if (lease_duration <= 0 || double_to_dds_duration (&dd, lease_duration) < 0)
+		  error ("liveliness qos: %s: lease duration out of range\n", arg);
+		dds_qset_liveliness(qp, DDS_LIVELINESS_MANUAL_BY_TOPIC, lease_duration);
 	}
 	else
 	{
-	error ("liveliness qos: %s: invalid\n", arg);
+		error ("liveliness qos: %s: invalid\n", arg);
 	}
 }
 
@@ -1185,10 +1160,10 @@ void qos_autodispose_unregistered_instances (struct qos *a, const char *arg)
 
 //static unsigned split_string (char ***xs, const char *in, const char *sep)
 //{
-//  char *incopy = strdup (in), *cursor = incopy, *tok;
+//  char *incopy = os_strdup (in), *cursor = incopy, *tok;
 //  unsigned n = 0;
 //  *xs = NULL;
-//  while ((tok = strsep (&cursor, sep)) != NULL)
+//  while ((tok = os_strsep (&cursor, sep)) != NULL)
 //  {
 //    *xs = realloc (*xs, (n+1) * sizeof (**xs));
 //    (*xs)[n++] = tok;
@@ -1234,7 +1209,7 @@ void set_qosprovider (const char *arg)
     uri = arg;
   else {
     uri = p+1;
-    profile = strdup(arg);
+    profile = os_strdup(arg);
     profile[p-arg] = 0;
   }
   PRINTD("set_qosprovider:: uri: %s, profile: %s\n",uri,profile);
@@ -1245,7 +1220,7 @@ void set_qosprovider (const char *arg)
   dds_string_free((char *) p);
   dds_string_free((char *) xs);
   dds_string_free((char *) uri);
-  free(profile);
+  os_free(profile);
 }
 
 void setqos_from_args (struct qos *q, int n, const char *args[])
@@ -1253,9 +1228,9 @@ void setqos_from_args (struct qos *q, int n, const char *args[])
   int i;
   for (i = 0; i < n; i++)
   {
-    char *args_copy = strdup (args[i]), *cursor = args_copy;
+    char *args_copy = os_strdup (args[i]), *cursor = args_copy;
     const char *arg;
-    while ((arg = strsep (&cursor, ",")) != NULL)
+    while ((arg = os_strsep (&cursor, ",")) != NULL)
     {
       if (arg[0] && arg[1] == '=') {
         const char *a = arg + 2;
@@ -1280,7 +1255,7 @@ void setqos_from_args (struct qos *q, int n, const char *args[])
             fprintf (stderr, "%s: unknown QoS\n", arg);
             exit (1);
         }
-      } else if (qosprov == NULL) {
+      } else if (!qosprov) {
         fprintf (stderr, "QoS specification %s requires a QoS provider but none set\n", arg);
         exit (1);
       } else {
@@ -1312,8 +1287,8 @@ void setqos_from_args (struct qos *q, int n, const char *args[])
 //        }
       }
     }
-    free((char *)arg);
-    free (args_copy);
+    os_free((char *)arg);
+    os_free (args_copy);
   }
 }
 

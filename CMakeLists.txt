@@ -44,6 +44,7 @@ add_subdirectory(src)
 #add_subdirectory(vdds-server)
 add_subdirectory(examples)
 #add_subdirectory(rpc-examples)
+add_subdirectory(tools)
 
 include(Packaging) # Pulls in CPack
 
