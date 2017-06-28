@@ -385,14 +385,28 @@ dds_create_writer(
       assert(0);
   }
 
+  /* TODO: When calling new_writer, we should unlock the parent.
+   *       The reason for that is that it is possible that this new_writer call generates
+   *       a call to dds_writer_status_cb (when it notices a publication match f.i.),
+   *       which will try to lock the parent when handling that event in the listeners.
+   *       Causing a deadlock off course.
+   *
+   *       In other tickets, this piece of code has changed, so we probably will have some
+   *       merge conflicts. We should come up with a proper solution after the merge.
+   *       Probably just unlock the parent and topic mutex, without releasing their handles,
+   *       which will delay their possible deletions until we release their handles.
+   *       This means that their content will not be deleted but they're still unlocked.
+   */
+  dds_entity_unlock(parent);
+
   if (asleep)
   {
     thread_state_awake (thr);
   }
+
 //TODO: CHAM-170 Fix unsafe tp usage
   wr->m_wr = new_writer (&wr->m_entity.m_guid, NULL, &parent->m_participant->m_guid, ((dds_topic*)tp)->m_stopic,
                          wqos, dds_writer_status_cb, wr);
-  dds_entity_unlock(parent);
   assert (wr->m_wr);
   if (asleep)
   {

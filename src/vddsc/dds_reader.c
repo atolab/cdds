@@ -370,6 +370,18 @@ dds_create_reader(
         assert(0);
     }
 
+    /* TODO: When calling new_reader, we should unlock the parent.
+     *       The reason for that is that it is possible that this new_reader call generates
+     *       a call to dds_reader_status_cb (when it notices a subscription match f.i.),
+     *       which will try to lock the parent when handling that event in the listeners.
+     *       Causing a deadlock off course.
+     *
+     *       In other tickets, this piece of code could have changed, so we probably will have
+     *       some merge conflicts. We should come up with a proper solution after the merge.
+     *       Probably just unlock the parent and topic mutex, without releasing their handles,
+     *       which will delay their possible deletions until we release their handles.
+     *       This means that their content will not be deleted but they're still unlocked.
+     */
     dds_entity_unlock(parent);
 
     if (asleep) {

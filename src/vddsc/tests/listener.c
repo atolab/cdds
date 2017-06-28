@@ -362,8 +362,6 @@ vddsc_listener_cb_init(void)
             os_procIdSelf(),
             (int)os_threadIdToInteger(os_threadIdSelf()));
 
-    printf("Topic name: %s\n", name);
-
     os_mutexInit(&g_mutex);
     os_condInit(&g_cond, &g_mutex);
 
