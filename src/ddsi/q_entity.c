@@ -1281,6 +1281,14 @@ static void writer_drop_local_connection (const struct nn_guid *wr_guid, struct 
       ut_avlDelete (&wr_local_readers_treedef, &wr->local_readers, m);
     }
     local_reader_ary_remove (&wr->rdary, rd);
+    if (wr->status_cb)
+    {
+      status_cb_data_t data;
+      data.status = DDS_PUBLICATION_MATCHED_STATUS;
+      data.add = false;
+      data.handle = rd->e.iid;
+      (wr->status_cb) (wr->status_cb_entity, &data);
+    }
     os_mutexUnlock (&wr->e.lock);
     free_wr_rd_match (m);
   }
@@ -1549,14 +1557,15 @@ static void writer_add_local_connection (struct writer *wr, struct reader *rd)
 
   nn_log(LC_DISCOVERY, "\n");
 
-  if (rd->status_cb)
+  if (wr->status_cb)
   {
     status_cb_data_t data;
-    data.status = DDS_LIVELINESS_CHANGED_STATUS;
+    data.status = DDS_PUBLICATION_MATCHED_STATUS;
     data.add = true;
-    data.handle = wr->e.iid;
-    (rd->status_cb) (rd->status_cb_entity, &data);
+    data.handle = rd->e.iid;
+    (wr->status_cb) (wr->status_cb_entity, &data);
   }
+
 }
 
 static void reader_add_connection (struct reader *rd, struct proxy_writer *pwr, nn_count_t *init_count)
@@ -1647,9 +1656,13 @@ static void reader_add_local_connection (struct reader *rd, struct writer *wr)
     if (rd->status_cb)
     {
       status_cb_data_t data;
-      data.status = DDS_SUBSCRIPTION_MATCHED_STATUS;
       data.add = true;
       data.handle = wr->e.iid;
+
+      data.status = DDS_LIVELINESS_CHANGED_STATUS;
+      (rd->status_cb) (rd->status_cb_entity, &data);
+
+      data.status = DDS_SUBSCRIPTION_MATCHED_STATUS;
       (rd->status_cb) (rd->status_cb_entity, &data);
     }
   }
