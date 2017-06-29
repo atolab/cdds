@@ -106,8 +106,9 @@ static void deliver_locally (struct writer *wr, int64_t seq, serdata_t payload, 
       for (i = 0; rdary[i]; i++)
       {
         TRACE (("reader %x:%x:%x:%x\n", PGUID (rdary[i]->e.guid)));
-        if (! (ddsi_plugin.rhc_store_fn) (rdary[i]->rhc, &sampleinfo, payload, tk))
-          abort();
+        if (! (ddsi_plugin.rhc_store_fn) (rdary[i]->rhc, &sampleinfo, payload, tk)) {
+            /* TODO: Implement possible retry loop. At least print a warning. */
+        }
       }
     }
     os_mutexUnlock (&wr->rdary.rdary_lock);
@@ -134,8 +135,9 @@ static void deliver_locally (struct writer *wr, int64_t seq, serdata_t payload, 
       if ((rd = ephash_lookup_reader_guid (&m->rd_guid)) != NULL)
       {
         TRACE (("reader-via-guid %x:%x:%x:%x\n", PGUID (rd->e.guid)));
-        if (! (ddsi_plugin.rhc_store_fn) (rd->rhc, &sampleinfo, payload, tk))
-          abort();
+        if (! (ddsi_plugin.rhc_store_fn) (rd->rhc, &sampleinfo, payload, tk)) {
+            /* TODO: Implement possible retry loop. At least print a warning. */
+        }
       }
     }
     os_mutexUnlock (&wr->e.lock);
