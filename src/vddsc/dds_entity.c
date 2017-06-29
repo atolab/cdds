@@ -897,7 +897,7 @@ dds_entity_observer_unregister_nl(
     dds_return_t ret = DDS_RETCODE_PRECONDITION_NOT_MET;
     dds_entity_observer *prev = NULL;
     dds_entity_observer *idx  = observed->m_observers;
-    while ((idx != NULL) && (ret == DDS_RETCODE_PRECONDITION_NOT_MET)) {
+    while (idx != NULL) {
         if (idx->m_observer == observer) {
             if (prev == NULL) {
                 observed->m_observers = idx->m_next;
@@ -905,6 +905,7 @@ dds_entity_observer_unregister_nl(
                 prev->m_next = idx->m_next;
             }
             os_free(idx);
+            idx = NULL;
             ret = DDS_RETCODE_OK;
         } else {
             prev = idx;
