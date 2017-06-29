@@ -12,7 +12,7 @@
 static void on_data_available(dds_entity_t reader, void* arg) {}
 static void on_publication_matched(dds_entity_t writer, const dds_publication_matched_status_t status, void* arg) {}
 
-Test(c_subscriber, dds_notify_readers) {
+Test(vddsc_subscriber, notify_readers) {
   dds_entity_t participant;
   dds_entity_t subscriber;
   dds_return_t ret;
@@ -32,7 +32,7 @@ Test(c_subscriber, dds_notify_readers) {
   dds_delete(participant);
 }
 
-Test(c_subscriber, dds_create_subscriber) {
+Test(vddsc_subscriber, create) {
 
   dds_entity_t participant;
   dds_entity_t subscriber;

@@ -8,7 +8,7 @@
 #pragma warning(push)
 #pragma warning(disable: 6387 28020)
 
-Test(vddsc, topic_creation)
+Test(vddsc_topic, create)
 {
   dds_entity_t participant;
   dds_entity_t topic, topic2;
@@ -61,7 +61,7 @@ Test(vddsc, topic_creation)
   dds_delete (participant);
 }
 
-Test(vddsc, topic_find)
+Test(vddsc_topic, find)
 {
     dds_entity_t participant;
     dds_entity_t topic, found;
@@ -88,7 +88,7 @@ Test(vddsc, topic_find)
 
 #define MAX_NAME_SIZE (200)
 
-Test(vddsc, topic_names)
+Test(vddsc_topic, get_name)
 {
   dds_entity_t participant;
   dds_entity_t topic, topic2;

@@ -2,7 +2,7 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
-Test(ts, pc) {
+Test(vddsc_participant, create_and_delete) {
 
   dds_entity_t participant, participant2, participant3;
 

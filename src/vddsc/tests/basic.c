@@ -2,7 +2,7 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
-Test(c99_basic, test)
+Test(vddsc_basic, test)
 {
   dds_entity_t participant;
   dds_return_t status;
@@ -15,4 +15,3 @@ Test(c99_basic, test)
   status = dds_delete(participant);
   cr_assert_eq(status, DDS_RETCODE_OK);
 }
-
