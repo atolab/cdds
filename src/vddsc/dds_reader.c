@@ -204,8 +204,14 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
 
     /* DATA_AVAILABLE is handled differently to normal status changes. */
     if (data->status == DDS_DATA_AVAILABLE_STATUS) {
-        /* First, try to ship it off to its parent subscriber or participant as DDS_DATA_ON_READERS_STATUS. */
-        ret = dds_entity_listener_propagation(rd->m_entity.m_parent, entity, DDS_DATA_ON_READERS_STATUS, NULL, true);
+        dds_entity *parent = rd->m_entity.m_parent;
+        /* First, try to ship it off to its parent(s) DDS_DATA_ON_READERS_STATUS.
+         * But that only makes sense when the parent is actually a subscriber (a subscriber
+         * needs to be supplied when calling the data_on_readers listener function). */
+        ret = DDS_RETCODE_NO_DATA;
+        if (dds_entity_kind(parent->m_hdl) == DDS_KIND_SUBSCRIBER) {
+            ret = dds_entity_listener_propagation(parent, parent, DDS_DATA_ON_READERS_STATUS, NULL, true);
+        }
 
         if (ret == DDS_RETCODE_NO_DATA) {
             /* No parent was interested (NO_DATA == NO_CALL).
@@ -213,11 +219,11 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
             ret = dds_entity_listener_propagation(entity, entity, DDS_DATA_AVAILABLE_STATUS, NULL, false);
         }
 
-        if (ret == DDS_RETCODE_NO_DATA) {
-            /* Nobody was interested (NO_DATA == NO_CALL). Set the status on the parent. */
-            dds_entity_status_set(rd->m_entity.m_parent, DDS_DATA_ON_READERS_STATUS);
-            /* Notify possible interested observers of the parent. */
-            dds_entity_status_signal(rd->m_entity.m_parent);
+        if ((ret == DDS_RETCODE_NO_DATA) && (dds_entity_kind(parent->m_hdl) == DDS_KIND_SUBSCRIBER)) {
+            /* Nobody was interested (NO_DATA == NO_CALL). Set the status on the subscriber. */
+            dds_entity_status_set(parent, DDS_DATA_ON_READERS_STATUS);
+            /* Notify possible interested observers of the subscriber. */
+            dds_entity_status_signal(parent);
         }
     } else {
         /* Is anybody interested within the entity hierarchy through listeners? */
@@ -277,6 +283,7 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
          * Likely, a parent is in the process of being deleted. */
     }
 }
+
 
 _Pre_satisfies_(((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER ) ||\
                 ((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
