@@ -9,12 +9,17 @@ endif()
 # Maven documentation mentions intalling maven under C:\Program Files on
 # Windows and under /opt on *NIX platforms
 if(WIN32)
-  if("$ENV{ProgramFiles}")
-    list(APPEND _dirs "$ENV{ProgramFiles}")
+  set(_program_files_env "ProgramFiles")
+  set(_program_files $ENV{${_program_files_env}})
+  set(_program_files_x86_env "ProgramFiles(x86)")
+  set(_program_files_x86 $ENV{${_program_files_x86_env}})
+
+  if(_program_files)
+    list(APPEND _dirs "${_program_files}")
   endif()
 
-  if("$ENV{ProgramFiles(x86)}")
-    list(APPEND _dirs "$ENV{ProgramFiles(x86)}")
+  if(_program_files_x86)
+    list(APPEND _dirs "${_program_files_x86}")
   endif()
 else()
   list(APPEND _dirs "/opt")
