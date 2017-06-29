@@ -96,10 +96,10 @@ struct readerspec {
   unsigned idx;
 };
 
-enum writermode {
-  WM_NONE,
-  WM_AUTO,
-  WM_INPUT
+enum writermode { //Todo: changed prefix to WRM from WM. Because it is giving error in windows.
+  WRM_NONE,
+  WRM_AUTO,
+  WRM_INPUT
 };
 
 struct writerspec {
@@ -143,7 +143,7 @@ static const struct writerspec def_writerspec = {
   .register_instances = 0,
   .duplicate_writer_flag = 0,
   .burstsize = 1,
-  .mode = WM_INPUT
+  .mode = WRM_INPUT
 };
 
 struct wrspeclist {
@@ -1459,7 +1459,8 @@ static void pub_do_auto (const struct writerspec *spec)
 {
 	PRINTD("starting of pub_do_auto\n");
 	int result;
-	dds_instance_handle_t handle[nkeyvals];
+//	dds_instance_handle_t handle[nkeyvals];
+	dds_instance_handle_t *handle = (dds_instance_handle_t*) os_malloc(sizeof(dds_instance_handle_t)*nkeyvals);
   uint64_t ntot = 0, tfirst, tlast, tprev, tfirst0, tstop;
   struct hist *hist = hist_new (30, 1000, 0);
   int k = 0;
@@ -2485,7 +2486,7 @@ static void addspec(unsigned whatfor, unsigned *specsofar, unsigned *specidx, st
     s->rd = def_readerspec;
     s->wr = def_writerspec;
     if (fdin == -1 && fdservsock == -1)
-      s->wr.mode = WM_NONE;
+      s->wr.mode = WRM_NONE;
     if (!want_reader)
       s->rd.mode = MODE_NONE;
     *specsofar = 0;
@@ -2772,19 +2773,19 @@ int main (int argc, char *argv[])
           if (fdin > 0) close (fdin);
           if (fdservsock != -1) { close (fdservsock); fdservsock = -1; }
           fdin = 0;
-          spec[specidx].wr.mode = WM_INPUT;
+          spec[specidx].wr.mode = WRM_INPUT;
         }
         else if (sscanf (optarg, "%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
         {
-          spec[specidx].wr.mode = (nkeyvals == 0) ? WM_NONE : WM_AUTO;
+          spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
         else if (sscanf (optarg, "%d:%lf*%u%n", &nkeyvals, &spec[specidx].wr.writerate, &spec[specidx].wr.burstsize, &pos) == 3 && optarg[pos] == 0)
         {
-          spec[specidx].wr.mode = (nkeyvals == 0) ? WM_NONE : WM_AUTO;
+          spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
         else if (sscanf (optarg, "%d:%lf%n", &nkeyvals, &spec[specidx].wr.writerate, &pos) == 2 && optarg[pos] == 0)
         {
-          spec[specidx].wr.mode = (nkeyvals == 0) ? WM_NONE : WM_AUTO;
+          spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
         else if (sscanf (optarg, ":%d%n", &port, &pos) == 1 && optarg[pos] == 0)
         {
@@ -2792,7 +2793,7 @@ int main (int argc, char *argv[])
           if (fdservsock != -1) { close (fdservsock); fdservsock = -1; }
           fdservsock = open_tcpserver_sock (port);
           fdin = -1;
-          spec[specidx].wr.mode = WM_INPUT;
+          spec[specidx].wr.mode = WRM_INPUT;
         }
         else
         {
@@ -2803,7 +2804,7 @@ int main (int argc, char *argv[])
             fprintf (stderr, "%s: can't open\n", optarg);
             exit (1);
           }
-          spec[specidx].wr.mode = WM_INPUT;
+          spec[specidx].wr.mode = WRM_INPUT;
         }
         break;
       }
@@ -2947,14 +2948,14 @@ int main (int argc, char *argv[])
         want_reader = 1;
       switch(spec[i].wr.mode)
       {
-        case WM_NONE:
+        case WRM_NONE:
           break;
-        case WM_AUTO:
+        case WRM_AUTO:
           want_writer = 1;
           if (spec[i].wr.topicsel == ARB)
             error ("auto-write mode requires non-ARB topic\n");
           break;
-        case WM_INPUT:
+        case WRM_INPUT:
           want_writer = 1;
       }
     }
@@ -3070,7 +3071,7 @@ int main (int argc, char *argv[])
       free_qos (qos);
     }
 
-    if (spec[i].wr.mode != WM_NONE)
+    if (spec[i].wr.mode != WRM_NONE)
     {
       int ret = 0;
       qos = new_wrqos (pub, spec[i].tp);
@@ -3174,12 +3175,12 @@ int main (int argc, char *argv[])
       struct wrspeclist *wsl;
       switch (spec[i].wr.mode)
       {
-        case WM_NONE:
+        case WRM_NONE:
           break;
-        case WM_AUTO:
+        case WRM_AUTO:
           pthread_create(&spec[i].wrtid, NULL, pubthread_auto, &spec[i].wr);
           break;
-        case WM_INPUT:
+        case WRM_INPUT:
           wsl = os_malloc(sizeof(*wsl));
           wsl->spec = &spec[i].wr;
           if (wrspecs) {
@@ -3221,7 +3222,7 @@ int main (int argc, char *argv[])
     }
     for (i = 0; i <= specidx; i++)
     {
-      if (spec[i].wr.mode == WM_AUTO)
+      if (spec[i].wr.mode == WRM_AUTO)
         pthread_join(spec[i].wrtid, NULL);
     }
     if (!term_called)
