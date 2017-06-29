@@ -13,7 +13,6 @@
 #   define FORCE_SCHEDULING()
 #endif
 
-#define ENABLE_TRACING 0
 #define BUSYLOOP       (100000)
 #define MAX_LOOPS      (20)
 
@@ -149,13 +148,11 @@ uint32_t concurrent_trylock_thread (_In_opt_ void *arg)
     return 0;
 }
 
-CUnit_Suite_Initialize(mutex)
+CUnit_Suite_Initialize(os_mutex)
 {
     int result = 0;
     os_osInit();
-  #if ENABLE_TRACING
-    printf("Run suite_abstraction_mutex_init\n");
-  #endif
+    printf("Run os_mutex_Initialize\n");
   #ifdef OS_LINUX_MUTEX_H149C
     supported_resultBusy = 1;
   #else
@@ -165,52 +162,40 @@ CUnit_Suite_Initialize(mutex)
     return result;
 }
 
-CUnit_Suite_Cleanup(mutex)
+CUnit_Suite_Cleanup(os_mutex)
 {
     int result = DDS_RETCODE_OK;
 
-  #if ENABLE_TRACING
-    printf("Run suite_abstraction_mutex_clean\n");
-  #endif
+    printf("Run os_mutex_Cleanup\n");
     os_free (sd);
     os_osExit();
     return result;
 }
 
-CUnit_Test(mutex, init)
+CUnit_Test(os_mutex, init)
 {
-  #if ENABLE_TRACING
     /* Initialize mutex with PRIVATE scope and Success result  */
-    printf ("Starting tc_os_mutexInit_001\n");
-  #endif
+    printf ("Starting os_mutex_init_001\n");
     sd = os_malloc (sizeof (*sd));
     os_mutexInit (&sd->global_mutex);
 
-  #if ENABLE_TRACING
     /* Initialize mutex with PRIVATE scope and Fail result  */
-    printf ("Starting tc_os_mutexInit_002\n");
+    printf ("Starting os_mutex_init_002\n");
     printf ("N.A - Failure cannot be forced.\n");
-  #endif
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_mutexInit\n");
-  #endif
+    printf ("Ending os_mutex_init\n");
 }
 
-CUnit_Test(mutex, lock, false)
+CUnit_Test(os_mutex, lock, false)
 {
-  #if ENABLE_TRACING
     /* Test critical section access with locking and PRIVATE scope  */
-    printf ("Starting tc_os_mutexLock_001\n");
-  #endif
+    printf ("Starting tc_os_mutex_lock_001\n");
     os_threadAttrInit (&mutex_os_threadAttr);
 
     FORCE_SCHEDULING();
 
     delay1.tv_sec = 3;
-  #if ENABLE_TRACING
     printf ("Testing for %d.%9.9d seconds without lock\n", delay1.tv_sec, delay1.tv_nsec);
-  #endif
     sd->stop = 0;
     sd->nolock_corrupt_count = 0;
     sd->nolock_loop_count = 0;
@@ -229,14 +214,10 @@ CUnit_Test(mutex, lock, false)
     os_threadWaitExit (mutex_os_threadId[1], NULL);
     os_threadWaitExit (mutex_os_threadId[2], NULL);
     os_threadWaitExit (mutex_os_threadId[3], NULL);
-  #if ENABLE_TRACING
     printf ("All threads stopped\n");
-  #endif
 
     delay1.tv_sec = 3;
-  #if ENABLE_TRACING
     printf ("Testing for %d.%9.9d seconds with lock\n", delay1.tv_sec, delay1.tv_nsec);
-  #endif
     sd->stop = 0;
     sd->nolock_corrupt_count = 0;
     sd->nolock_loop_count = 0;
@@ -255,104 +236,74 @@ CUnit_Test(mutex, lock, false)
     os_threadWaitExit (mutex_os_threadId[1], NULL);
     os_threadWaitExit (mutex_os_threadId[2], NULL);
     os_threadWaitExit (mutex_os_threadId[3], NULL);
-  #if ENABLE_TRACING
     printf ("All threads stopped\n");
-  #endif
 
     CU_ASSERT (sd->lock_corrupt_count == 0 || sd->lock_loop_count > 0);
 
-  #if ENABLE_TRACING
     /* Lock mutex with PRIVATE scope and Success result */
-    printf ("Starting tc_os_mutexLock_002\n");
-  #endif
+    printf ("Starting tc_os_mutex_lock_002\n");
     os_mutexLock (&sd->global_mutex); //Cannot be checked
     os_mutexUnlock (&sd->global_mutex);
 
-  #if ENABLE_TRACING
     /* Lock mutex with PRIVATE scope and Fail result */
-    printf ("Starting tc_os_mutexLock_003\n");
+    printf ("Starting tc_os_mutex_lock_003\n");
     printf ("N.A - Failure cannot be forced\n");
-  #endif
 
-  #if ENABLE_TRACING
     /* mutexLock_s with PRIVATE scope and Success result */
-    printf ("Starting tc_os_mutexLock_004\n");
-  #endif
+    printf ("Starting tc_os_mutex_lock_004\n");
     CU_ASSERT (os_mutexLock_s (&sd->global_mutex) == os_resultSuccess);
     os_mutexUnlock (&sd->global_mutex);
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_mutexLock\n");
-  #endif
+    printf ("Ending os_mutex_lock\n");
 }
 
-CUnit_Test(mutex, trylock, false)
+CUnit_Test(os_mutex, trylock, false)
 {
     os_result result;
 
-  #if ENABLE_TRACING
     /* Test critical section access with trylocking and PRIVATE scope */
-    printf ("Starting tc_os_mutexTryLock_001\n");
-  #endif
+    printf ("Starting os_mutex_trylock_001\n");
     CU_ASSERT (sd->trylock_corrupt_count == 0 || sd->trylock_loop_count > 0);
 
-  #if ENABLE_TRACING
     /* TryLock mutex with PRIVATE scope and Success result */
-    printf ("Starting tc_os_mutexTryLock_002\n");
-  #endif
+    printf ("Starting os_mutex_trylock_002\n");
     result = os_mutexTryLock (&sd->global_mutex);
     CU_ASSERT (result == os_resultSuccess);
 
-  #if ENABLE_TRACING
     /* TryLock mutex with PRIVATE scope and Busy result */
-    printf ("Starting tc_os_mutexTryLock_003\n");
+    printf ("Starting os_mutex_trylock_003\n");
   #if defined(__VXWORKS__) && !defined(_WRS_KERNEL)
     printf ("N.A - Mutexes are recursive on VxWorks RTP so this test is  disabled\n");
-  #endif
   #endif
 
     result = os_mutexTryLock (&sd->global_mutex);
     CU_ASSERT (result == os_resultBusy);
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_mutexTryLock\n");
-  #endif
+    printf ("Ending os_mutex_trylock\n");
 }
 
-CUnit_Test(mutex, unlock, false)
+CUnit_Test(os_mutex, unlock, false)
 {
-  #if ENABLE_TRACING
     /* Unlock mutex with PRIVATE scope and Success result */
-    printf ("Starting tc_os_mutexUnlock_001\n");
-  #endif
+    printf ("Starting os_mutex_unlock_001\n");
     os_mutexUnlock (&sd->global_mutex); // Cannot be checked directly - Success is assumed
 
-  #if ENABLE_TRACING
     /* Unlock mutex with PRIVATE scope and Fail result */
-    printf ("Starting tc_os_mutexUnlock_002\n");
+    printf ("Starting os_mutex_unlock_002\n");
     printf ("N.A - Failure cannot be forced\n");
-  #endif
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_mutexUnlock\n");
-  #endif
+    printf ("Ending os_mutex_unlock\n");
 }
 
-CUnit_Test(mutex, destroy, false)
+CUnit_Test(os_mutex, destroy, false)
 {
-  #if ENABLE_TRACING
     /* Deinitialize mutex with PRIVATE scope and Success result */
-    printf ("Starting tc_os_mutexDestroy_001\n");
-  #endif
+    printf ("Starting os_mutex_destroy_001\n");
     os_mutexDestroy(&sd->global_mutex); // Cannot be checked directly - Success is assumed
 
-  #if ENABLE_TRACING
     /* Deinitialize mutex with PRIVATE scope and Fail result */
-    printf ("Starting tc_os_mutexDestroy_002\n");
+    printf ("Starting os_mutex_destroy_002\n");
     printf ("N.A - Failure cannot be forced\n");
-  #endif
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_mutexDestroy\n");
-  #endif
+    printf ("Ending os_mutex_destroy\n");
 }
