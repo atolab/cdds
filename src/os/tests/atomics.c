@@ -1,8 +1,6 @@
 #include "os/os.h"
 #include "CUnit/Runner.h"
 
-#define ENABLE_TRACING  0
-
 uint32_t _osuint32 = 0;
 uint64_t _osuint64 = 0;
 // os_address is uintptr_t
@@ -10,7 +8,7 @@ uintptr_t _osaddress = 0;
 ptrdiff_t _ptrdiff = 0;
 void * _osvoidp = (uintptr_t *)0;
 
-CUnit_Test(atomics, LD_ST)
+CUnit_Test(os_atomics, load_store)
 {
    volatile os_atomic_uint32_t uint32 = OS_ATOMIC_UINT32_INIT(5);
 #if OS_ATOMIC64_SUPPORT
@@ -19,46 +17,36 @@ CUnit_Test(atomics, LD_ST)
    volatile os_atomic_uintptr_t uintptr = OS_ATOMIC_UINTPTR_INIT(5);
    volatile os_atomic_voidp_t voidp = OS_ATOMIC_VOIDP_INIT((uintptr_t)5);
 
-#if ENABLE_TRACING
    /* Test uint32 LD-ST */
-   printf ("Starting tc_os_atomics_LD_ST_001\n");
-#endif
+   printf ("Starting os_atomics_load_store_001\n");
    CU_ASSERT (os_atomic_ld32 (&uint32) == 5); /* Returns contents of uint32 */
    os_atomic_st32 (&uint32, _osuint32); /* Writes os_uint32 into uint32 */
    CU_ASSERT (os_atomic_ld32 (&uint32) == _osuint32);
 
-#if ENABLE_TRACING
    /* Test uint64 LD-ST */
-   printf ("Starting tc_os_atomics_LD_ST_002\n");
-#endif
+   printf ("Starting os_atomics_load_store_002\n");
 #if OS_ATOMIC64_SUPPORT
    CU_ASSERT (os_atomic_ld64 (&uint64) == 5);
    os_atomic_st64 (&uint64, _osuint64);
    CU_ASSERT (os_atomic_ld64 (&uint64) == _osuint64);
 #endif
 
-#if ENABLE_TRACING
    /* Test uintptr LD-ST */
-   printf ("Starting tc_os_atomics_LD_ST_003\n");
-#endif
+   printf ("Starting os_atomics_load_store_003\n");
    CU_ASSERT (os_atomic_ldptr (&uintptr) == 5);
    os_atomic_stptr (&uintptr, _osaddress);
    CU_ASSERT (os_atomic_ldptr (&uintptr) == _osaddress);
 
-#if ENABLE_TRACING
    /* Test uintvoidp LD-ST */
-   printf ("Starting tc_os_atomics_LD_ST_004\n");
-#endif
+   printf ("Starting os_atomics_load_store_004\n");
    CU_ASSERT (os_atomic_ldvoidp (&voidp) == (uintptr_t*)5);
    os_atomic_stvoidp (&voidp, _osvoidp);
    CU_ASSERT (os_atomic_ldvoidp (&voidp) == (uintptr_t*)_osvoidp);
 
-#if ENABLE_TRACING
-   printf ("Ending tc_atomics_LD_ST\n");
-#endif
+   printf ("Ending atomics_load_store\n");
 }
 
-CUnit_Test(atomics, CAS)
+CUnit_Test(os_atomics, compare_and_swap)
 {
    /* Compare and Swap
     * if (ptr == expected) { ptr = newval; }
@@ -79,20 +67,16 @@ CUnit_Test(atomics, CAS)
    void *void_newval = (uintptr_t*)5;
    int ret = 0;
 
-#if ENABLE_TRACING
    /* Test os_atomic_cas32 */
-   printf ("Starting tc_os_atomics_CAS_001\n");
-#endif
+   printf ("Starting os_atomics_compare_and_swap_001\n");
    ret = os_atomic_cas32 (&uint32, expected, newval);
    CU_ASSERT (os_atomic_ld32 (&uint32) == newval && ret == 1);
    os_atomic_st32 (&uint32, _osuint32);
    ret = os_atomic_cas32 (&uint32, expected, newval);
    CU_ASSERT (os_atomic_ld32 (&uint32) != newval && ret == 0);
 
-#if ENABLE_TRACING
    /* Test os_atomic_cas64 */
-   printf ("Starting tc_os_atomics_CAS_002\n");
-#endif
+   printf ("Starting os_atomics_compare_and_swap_002\n");
 #if OS_ATOMIC64_SUPPORT
    ret = os_atomic_cas64 (&uint64, expected, newval);
    CU_ASSERT (os_atomic_ld64 (&uint64) == newval && ret == 1);
@@ -101,32 +85,26 @@ CUnit_Test(atomics, CAS)
    CU_ASSERT (os_atomic_ld64 (&uint64) != newval && ret == 0);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_casptr */
-   printf ("Starting tc_os_atomics_CAS_003\n");
-#endif
+   printf ("Starting os_atomics_compare_and_swap_003\n");
    ret = os_atomic_casptr (&uintptr, addr_expected, addr_newval);
    CU_ASSERT (os_atomic_ldptr (&uintptr) == addr_newval && ret == 1);
    os_atomic_stptr (&uintptr, _osaddress);
    ret = os_atomic_casptr (&uintptr, addr_expected, addr_newval);
    CU_ASSERT (os_atomic_ldptr (&uintptr) != addr_newval && ret == 0);
 
-#if ENABLE_TRACING
    /* Test os_atomic_casvoidp */
-   printf ("Starting tc_os_atomics_CAS_003\n");
-#endif
+   printf ("Starting os_atomics_compare_and_swap_003\n");
    ret = os_atomic_casvoidp (&uintvoidp, void_expected, void_newval);
    CU_ASSERT (os_atomic_ldvoidp (&uintvoidp) == (uintptr_t*)void_newval && ret == 1);
    os_atomic_stvoidp (&uintvoidp, _osvoidp);
    ret = os_atomic_casvoidp (&uintvoidp, void_expected, void_newval);
    CU_ASSERT (os_atomic_ldvoidp (&uintvoidp) == (uintptr_t*)1 && ret == 0);
 
-#if ENABLE_TRACING
-   printf ("Ending tc_atomics_CAS\n");
-#endif
+   printf ("Ending atomics_compare_and_swap\n");
 }
 
-CUnit_Test(atomics, INC)
+CUnit_Test(os_atomics, increment)
 {
    volatile os_atomic_uint32_t uint32 = OS_ATOMIC_UINT32_INIT(0);
 #if OS_ATOMIC64_SUPPORT
@@ -138,58 +116,44 @@ CUnit_Test(atomics, INC)
    _osaddress = 0;
    _osvoidp = (uintptr_t *)0;
 
-#if ENABLE_TRACING
    /* Test os_inc32 */
-   printf ("Starting tc_os_atomics_INC_001\n");
-#endif
+   printf ("Starting os_atomics_increment_001\n");
    os_atomic_inc32 (&uint32);
    CU_ASSERT (os_atomic_ld32 (&uint32) == 1);
 
-#if ENABLE_TRACING
    /* Test os_inc64 */
-   printf ("Starting tc_os_atomics_INC_002\n");
-#endif
+   printf ("Starting os_atomics_increment_002\n");
 #if OS_ATOMIC64_SUPPORT
    os_atomic_inc64 (&uint64);
    CU_ASSERT (os_atomic_ld64 (&uint64) == 1);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_incptr */
-   printf ("Starting tc_os_atomics_INC_003\n");
-#endif
+   printf ("Starting os_atomics_increment_003\n");
    os_atomic_incptr (&uintptr);
    CU_ASSERT (os_atomic_ldptr (&uintptr) == 1);
 
-#if ENABLE_TRACING
    /* Test os_atomic_inc32_nv */
-   printf ("Starting tc_os_atomics_INC_004\n");
-#endif
+   printf ("Starting os_atomics_increment_004\n");
    os_atomic_st32 (&uint32, _osuint32);
    CU_ASSERT (os_atomic_inc32_nv (&uint32) == 1);
 
-#if ENABLE_TRACING
    /* Test os_atomic_inc64_nv */
-   printf ("Starting tc_os_atomics_INC_005\n");
-#endif
+   printf ("Starting os_atomics_increment_005\n");
 #if OS_ATOMIC64_SUPPORT
    os_atomic_st64 (&uint64, _osuint64);
    CU_ASSERT (os_atomic_inc64_nv (&uint64) == 1);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_incptr_nv */
-   printf ("Starting tc_os_atomics_INC_006\n");
-#endif
+   printf ("Starting os_atomics_increment_006\n");
    os_atomic_stptr (&uintptr, _osaddress);
    CU_ASSERT (os_atomic_incptr_nv(&uintptr) == 1);
 
-#if ENABLE_TRACING
-   printf ("Ending tc_atomics_INC\n");
-#endif
+   printf ("Ending atomics_increment\n");
 }
 
-CUnit_Test(atomics, DEC)
+CUnit_Test(os_atomics, decrement)
 {
    volatile os_atomic_uint32_t uint32 = OS_ATOMIC_UINT32_INIT(1);
 #if OS_ATOMIC64_SUPPORT
@@ -201,58 +165,44 @@ CUnit_Test(atomics, DEC)
    _osaddress = 1;
    _osvoidp = (uintptr_t *)1;
 
-#if ENABLE_TRACING
    /* Test os_atomic_dec32 */
-   printf ("Starting tc_os_atomics_DEC_001\n");
-#endif
+   printf ("Starting os_atomics_decrement_001\n");
    os_atomic_dec32 (&uint32);
    CU_ASSERT (os_atomic_ld32 (&uint32) == 0);
 
-#if ENABLE_TRACING
    /* Test os_atomic_dec64 */
-   printf ("Starting tc_os_atomics_DEC_002\n");
-#endif
+   printf ("Starting os_atomics_decrement_002\n");
 #if OS_ATOMIC64_SUPPORT
    os_atomic_dec64 (&uint64);
    CU_ASSERT (os_atomic_ld64 (&uint64) == 0);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_decptr */
-   printf ("Starting tc_os_atomics_DEC_003\n");
-#endif
+   printf ("Starting os_atomics_decrement_003\n");
    os_atomic_decptr (&uintptr);
    CU_ASSERT (os_atomic_ldptr (&uintptr) == 0);
 
-#if ENABLE_TRACING
    /* Test os_atomic_dec32_nv */
-   printf ("Starting tc_os_atomics_DEC_004\n");
-#endif
+   printf ("Starting os_atomics_decrement_004\n");
    os_atomic_st32 (&uint32, _osuint32);
    CU_ASSERT (os_atomic_dec32_nv (&uint32) == 0);
 
-#if ENABLE_TRACING
    /* Test os_atomic_dec64_nv */
-   printf ("Starting tc_os_atomics_DEC_005\n");
-#endif
+   printf ("Starting os_atomics_decrement_005\n");
 #if OS_ATOMIC64_SUPPORT
    os_atomic_st64 (&uint64, _osuint64);
    CU_ASSERT (os_atomic_dec64_nv (&uint64) == 0);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_decptr_nv */
-   printf ("Starting tc_os_atomics_DEC_006\n");
-#endif
+   printf ("Starting os_atomics_decrement_006\n");
    os_atomic_stptr (&uintptr, _osaddress);
    CU_ASSERT (os_atomic_decptr_nv(&uintptr) == 0);
 
-#if ENABLE_TRACING
-   printf ("Ending tc_atomics_DEC\n");
-#endif
+   printf ("Ending atomics_decrement\n");
 }
 
-CUnit_Test(atomics, ADD)
+CUnit_Test(os_atomics, add)
 {
    volatile os_atomic_uint32_t uint32 = OS_ATOMIC_UINT32_INIT(1);
 #if OS_ATOMIC64_SUPPORT
@@ -265,72 +215,54 @@ CUnit_Test(atomics, ADD)
    _osaddress = 2;
    _ptrdiff = 2;
 
-#if ENABLE_TRACING
    /* Test os_atomic_add32 */
-   printf ("Starting tc_os_atomics_ADD_001\n");
-#endif
+   printf ("Starting os_atomics_add_001\n");
    os_atomic_add32 (&uint32, _osuint32);
    CU_ASSERT (os_atomic_ld32 (&uint32) == 3);
 
-#if ENABLE_TRACING
    /* Test os_atomic_add64 */
-   printf ("Starting tc_os_atomics_ADD_002\n");
-#endif
+   printf ("Starting os_atomics_add_002\n");
 #if OS_ATOMIC64_SUPPORT
    os_atomic_add64 (&uint64, _osuint64);
    CU_ASSERT (os_atomic_ld64 (&uint64) == 3);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_addptr */
-   printf ("Starting tc_os_atomics_ADD_003\n");
-#endif
+   printf ("Starting os_atomics_add_003\n");
    os_atomic_addptr (&uintptr, _osaddress);
    CU_ASSERT (os_atomic_ldptr (&uintptr) == 3);
 
-#if ENABLE_TRACING
    /* Test os_atomic_addvoidp */
-   printf ("Starting tc_os_atomics_ADD_004\n");
-#endif
+   printf ("Starting os_atomics_add_004\n");
    os_atomic_addvoidp (&uintvoidp, _ptrdiff);
    CU_ASSERT (os_atomic_ldvoidp (&uintvoidp) == (uintptr_t*)3);
 
-#if ENABLE_TRACING
    /* Test os_atomic_add32_nv */
-   printf ("Starting tc_os_atomics_ADD_005\n");
-#endif
+   printf ("Starting os_atomics_add_005\n");
    os_atomic_st32 (&uint32, 1);
    CU_ASSERT (os_atomic_add32_nv (&uint32, _osuint32) == 3);
 
-#if ENABLE_TRACING
    /* Test os_atomic_add64_nv */
-   printf ("Starting tc_os_atomics_ADD_006\n");
-#endif
+   printf ("Starting os_atomics_add_006\n");
 #if OS_ATOMIC64_SUPPORT
    os_atomic_st64 (&uint64, 1);
    CU_ASSERT (os_atomic_add64_nv (&uint64, _osuint64) == 3);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_addptr_nv */
-   printf ("Starting tc_os_atomics_ADD_007\n");
-#endif
+   printf ("Starting os_atomics_add_007\n");
    os_atomic_stptr (&uintptr, 1);
    CU_ASSERT (os_atomic_addptr_nv (&uintptr, _osaddress) == 3);
 
-#if ENABLE_TRACING
    /* Test os_atomic_addvoidp_nv */
-   printf ("Starting tc_os_atomics_ADD_008\n");
-#endif
+   printf ("Starting os_atomics_add_008\n");
    os_atomic_stvoidp (&uintvoidp, (uintptr_t*)1);
    CU_ASSERT (os_atomic_addvoidp_nv (&uintvoidp, _ptrdiff) == (uintptr_t*)3);
 
-#if ENABLE_TRACING
-   printf ("Ending tc_atomics_ADD\n");
-#endif
+   printf ("Ending atomics_add\n");
 }
 
-CUnit_Test(atomics, SUB)
+CUnit_Test(os_atomics, subtract)
 {
    volatile os_atomic_uint32_t uint32 = OS_ATOMIC_UINT32_INIT(5);
 #if OS_ATOMIC64_SUPPORT
@@ -343,72 +275,54 @@ CUnit_Test(atomics, SUB)
    _osaddress = 2;
    _ptrdiff = 2;
 
-#if ENABLE_TRACING
    /* Test os_atomic_sub32 */
-   printf ("Starting tc_os_atomics_SUB_001\n");
-#endif
+   printf ("Starting os_atomics_subtract_001\n");
    os_atomic_sub32 (&uint32, _osuint32);
    CU_ASSERT (os_atomic_ld32 (&uint32) == 3);
 
-#if ENABLE_TRACING
    /* Test os_atomic_sub64 */
-   printf ("Starting tc_os_atomics_SUB_002\n");
-#endif
+   printf ("Starting os_atomics_subtract_002\n");
 #if OS_ATOMIC64_SUPPORT
    os_atomic_sub64 (&uint64, _osuint64);
    CU_ASSERT (os_atomic_ld64 (&uint64) == 3);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_subptr */
-   printf ("Starting tc_os_atomics_SUB_003\n");
-#endif
+   printf ("Starting os_atomics_subtract_003\n");
    os_atomic_subptr (&uintptr, _osaddress);
    CU_ASSERT (os_atomic_ldptr (&uintptr) == 3);
 
-#if ENABLE_TRACING
    /* Test os_atomic_subvoidp */
-   printf ("Starting tc_os_atomics_SUB_004\n");
-#endif
+   printf ("Starting os_atomics_subtract_004\n");
    os_atomic_subvoidp (&uintvoidp, _ptrdiff);
    CU_ASSERT (os_atomic_ldvoidp (&uintvoidp) == (uintptr_t*)3);
 
-#if ENABLE_TRACING
    /* Test os_atomic_sub32_nv */
-   printf ("Starting tc_os_atomics_SUB_005\n");
-#endif
+   printf ("Starting os_atomics_subtract_005\n");
    os_atomic_st32 (&uint32, 5);
    CU_ASSERT (os_atomic_sub32_nv (&uint32, _osuint32) == 3);
 
-#if ENABLE_TRACING
    /* Test os_atomic_sub64_nv */
-   printf ("Starting tc_os_atomics_SUB_006\n");
-#endif
+   printf ("Starting os_atomics_subtract_006\n");
 #if OS_ATOMIC64_SUPPORT
    os_atomic_st64 (&uint64, 5);
    CU_ASSERT (os_atomic_sub64_nv (&uint64, _osuint64) == 3);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_subptr_nv */
-   printf ("Starting tc_os_atomics_SUB_007\n");
-#endif
+   printf ("Starting os_atomics_subtract_007\n");
    os_atomic_stptr (&uintptr, 5);
    CU_ASSERT (os_atomic_subptr_nv (&uintptr, _osaddress) == 3);
 
-#if ENABLE_TRACING
    /* Test os_atomic_subvoidp_nv */
-   printf ("Starting tc_os_atomics_SUB_008\n");
-#endif
+   printf ("Starting os_atomics_subtract_008\n");
    os_atomic_stvoidp (&uintvoidp, (uintptr_t*)5);
    CU_ASSERT (os_atomic_subvoidp_nv (&uintvoidp, _ptrdiff) == (void *)3);
 
-#if ENABLE_TRACING
-   printf ("Ending tc_atomics_SUB\n");
-#endif
+   printf ("Ending atomics_subtract\n");
 }
 
-CUnit_Test(atomics, AND)
+CUnit_Test(os_atomics, and)
 {
    /* AND Operation:
 
@@ -426,75 +340,55 @@ CUnit_Test(atomics, AND)
    _osuint64 = 500;
    _osaddress = 500;
 
-#if ENABLE_TRACING
    /* Test os_atomic_and32 */
-   printf ("Starting tc_os_atomics_AND_001\n");
-#endif
+   printf ("Starting os_atomics_and_001\n");
    os_atomic_and32 (&uint32, _osuint32);
    CU_ASSERT (os_atomic_ld32 (&uint32) == 148);
 
-#if ENABLE_TRACING
    /* Test os_atomic_and64 */
-   printf ("Starting tc_os_atomics_AND_002\n");
-#endif
+   printf ("Starting os_atomics_and_002\n");
 #if OS_ATOMIC64_SUPPORT
    os_atomic_and64 (&uint64, _osuint64);
    CU_ASSERT (os_atomic_ld64 (&uint64) == 148);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_andptr */
-   printf ("Starting tc_os_atomics_AND_003\n");
-#endif
+   printf ("Starting os_atomics_and_003\n");
    os_atomic_andptr (&uintptr, _osaddress);
    CU_ASSERT (os_atomic_ldptr (&uintptr) == 148);
 
-#if ENABLE_TRACING
    /* Test os_atomic_and32_ov */
-   printf ("Starting tc_os_atomics_AND_004\n");
-#endif
+   printf ("Starting os_atomics_and_004\n");
    CU_ASSERT (os_atomic_and32_ov (&uint32, _osuint32) == 148);
 
-#if ENABLE_TRACING
    /* Test os_atomic_and64_ov */
-   printf ("Starting tc_os_atomics_AND_005\n");
-#endif
+   printf ("Starting os_atomics_and_005\n");
 #if OS_ATOMIC64_SUPPORT
    CU_ASSERT (os_atomic_and64_ov (&uint64, _osuint64) == 148);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_andptr_ov */
-   printf ("Starting tc_os_atomics_AND_006\n");
-#endif
+   printf ("Starting os_atomics_and_006\n");
    CU_ASSERT (os_atomic_andptr_ov (&uintptr, _osaddress) == 148);
 
-#if ENABLE_TRACING
    /* Test os_atomic_and32_nv */
-   printf ("Starting tc_os_atomics_AND_007\n");
-#endif
+   printf ("Starting os_atomics_and_007\n");
    CU_ASSERT (os_atomic_and32_nv (&uint32, _osuint32) == 148);
 
-#if ENABLE_TRACING
    /* Test os_atomic_and64_nv */
-   printf ("Starting tc_os_atomics_AND_008\n");
-#endif
+   printf ("Starting os_atomics_and_008\n");
 #if OS_ATOMIC64_SUPPORT
    CU_ASSERT (os_atomic_and64_nv (&uint64, _osuint64) == 148);
  #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_andptr_nv */
-   printf ("Starting tc_os_atomics_AND_009\n");
-#endif
+   printf ("Starting os_atomics_and_009\n");
    CU_ASSERT (os_atomic_andptr_nv (&uintptr, _osaddress) == 148);
 
-#if ENABLE_TRACING
-   printf ("Ending tc_atomics_AND\n");
-#endif
+   printf ("Ending atomics_and\n");
 }
 
-CUnit_Test(atomics, OR)
+CUnit_Test(os_atomics, or)
 {
    /* OR Operation:
 
@@ -512,71 +406,51 @@ CUnit_Test(atomics, OR)
    _osuint64 = 500;
    _osaddress = 500;
 
-#if ENABLE_TRACING
    /* Test os_atomic_or32 */
-   printf ("Starting tc_os_atomics_OR_001\n");
-#endif
+   printf ("Starting os_atomics_or_001\n");
    os_atomic_or32 (&uint32, _osuint32);
    CU_ASSERT (os_atomic_ld32 (&uint32) == 502);
 
-#if ENABLE_TRACING
    /* Test os_atomic_or64 */
-   printf ("Starting tc_os_atomics_OR_002\n");
-#endif
+   printf ("Starting os_atomics_or_002\n");
 #if OS_ATOMIC64_SUPPORT
    os_atomic_or64 (&uint64, _osuint64);
    CU_ASSERT (os_atomic_ld64 (&uint64) == 502);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_orptr */
-   printf ("Starting tc_os_atomics_OR_003\n");
-#endif
+   printf ("Starting os_atomics_or_003\n");
    os_atomic_orptr (&uintptr, _osaddress);
    CU_ASSERT (os_atomic_ldptr (&uintptr) == 502);
 
-#if ENABLE_TRACING
    /* Test os_atomic_or32_ov */
-   printf ("Starting tc_os_atomics_OR_004\n");
-#endif
+   printf ("Starting os_atomics_or_004\n");
    CU_ASSERT (os_atomic_or32_ov (&uint32, _osuint32) == 502);
 
-#if ENABLE_TRACING
    /* Test os_atomic_or64_ov */
-   printf ("Starting tc_os_atomics_OR_005\n");
-#endif
+   printf ("Starting os_atomics_or_005\n");
 #if OS_ATOMIC64_SUPPORT
    CU_ASSERT (os_atomic_or64_ov (&uint64, _osuint64) == 502);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_orptr_ov */
-   printf ("Starting tc_os_atomics_OR_006\n");
-#endif
+   printf ("Starting os_atomics_or_006\n");
    CU_ASSERT (os_atomic_orptr_ov (&uintptr, _osaddress) == 502);
 
-#if ENABLE_TRACING
    /* Test os_atomic_or32_nv */
-   printf ("Starting tc_os_atomics_OR_007\n");
-#endif
+   printf ("Starting os_atomics_or_007\n");
    CU_ASSERT (os_atomic_or32_nv (&uint32, _osuint32) == 502);
 
-#if ENABLE_TRACING
    /* Test os_atomic_or64_nv */
-   printf ("Starting tc_os_atomics_OR_008\n");
-#endif
+   printf ("Starting os_atomics_or_008\n");
 #if OS_ATOMIC64_SUPPORT
    CU_ASSERT (os_atomic_or64_nv (&uint64, _osuint64) == 502);
 #endif
 
-#if ENABLE_TRACING
    /* Test os_atomic_orptr_nv */
-   printf ("Starting tc_os_atomics_OR_009\n");
-#endif
+   printf ("Starting os_atomics_or_009\n");
    CU_ASSERT (os_atomic_orptr_nv (&uintptr, _osaddress) == 502);
 
-#if ENABLE_TRACING
-   printf ("Ending tc_atomics_OR\n");
-#endif
+   printf ("Ending atomics_or\n");
 }
 

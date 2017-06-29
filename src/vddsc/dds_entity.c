@@ -12,12 +12,19 @@
 
 
 void
-dds_entity_add_ref (_In_ dds_entity * e)
+dds_entity_add_ref(_In_ dds_entity * e)
 {
     assert (e);
     os_mutexLock (&e->m_mutex);
     e->m_refc++;
     os_mutexUnlock (&e->m_mutex);
+}
+
+void
+dds_entity_add_ref_nolock(_In_ dds_entity *e)
+{
+    assert(e);
+    e->m_refc++;
 }
 
 _Check_return_ dds_return_t

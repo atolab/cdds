@@ -416,7 +416,7 @@ fini_triggering_test(void)
 /****************************************************************************
  * API tests
  ****************************************************************************/
-void test_create_and_delete(void)
+Test(vddsc_listener, create_and_delete)
 {
     /* Verify create doesn't return null */
     dds_listener_t *listener;
@@ -442,7 +442,7 @@ void test_create_and_delete(void)
     dds_listener_delete(NULL);
 }
 
-void test_reset(void)
+Test(vddsc_listener, reset)
 {
     dds_listener_t *listener;
     listener = dds_listener_create(NULL);
@@ -459,7 +459,7 @@ void test_reset(void)
     dds_listener_delete(listener);
 }
 
-void test_copy(void)
+Test(vddsc_listener, copy)
 {
     dds_listener_t *listener1 = NULL, *listener2 = NULL;
     listener1 = dds_listener_create(NULL);
@@ -486,7 +486,7 @@ void test_copy(void)
     dds_listener_delete(listener2);
 }
 
-void test_merge(void)
+Test(vddsc_listener, merge)
 {
     dds_listener_t *listener1 = NULL, *listener2 = NULL;
     listener1 = dds_listener_create(NULL);
@@ -518,7 +518,7 @@ void test_merge(void)
     dds_listener_delete(listener2);
 }
 
-void test_getters_setters(void)
+Test(vddsc_listener, getters_setters)
 {
     /* test all individual cb get/set methods */
     dds_listener_t *listener = dds_listener_create(NULL);
@@ -541,21 +541,12 @@ void test_getters_setters(void)
     dds_listener_delete(listener);
 }
 
-Test(c99_listener, test)
-{
-    test_create_and_delete();
-    test_reset();
-    test_copy();
-    test_merge();
-    test_getters_setters();
-}
-
 
 
 /****************************************************************************
  * Triggering tests
  ****************************************************************************/
-Test(c99_listener, matched, .init=init_triggering_base, .fini=fini_triggering_base)
+Test(vddsc_listener, matched, .init=init_triggering_base, .fini=fini_triggering_base)
 {
     uint32_t triggered;
 
@@ -585,7 +576,7 @@ Test(c99_listener, matched, .init=init_triggering_base, .fini=fini_triggering_ba
     dds_delete(g_reader);
 }
 
-Test(c99_listener, publication_matched, .init=init_triggering_test, .fini=fini_triggering_test)
+Test(vddsc_listener, publication_matched, .init=init_triggering_test, .fini=fini_triggering_test)
 {
     dds_instance_handle_t reader_hdl;
     dds_return_t ret;
@@ -628,7 +619,7 @@ Test(c99_listener, publication_matched, .init=init_triggering_test, .fini=fini_t
     cr_assert_eq(cb_publication_matched_status.last_subscription_handle, reader_hdl);
 }
 
-Test(c99_listener, subscription_matched, .init=init_triggering_test, .fini=fini_triggering_test)
+Test(vddsc_listener, subscription_matched, .init=init_triggering_test, .fini=fini_triggering_test)
 {
     dds_instance_handle_t writer_hdl;
     dds_return_t ret;
@@ -671,7 +662,7 @@ Test(c99_listener, subscription_matched, .init=init_triggering_test, .fini=fini_
     cr_assert_eq(cb_subscription_matched_status.last_publication_handle, writer_hdl);
 }
 
-Test(c99_listener, incompatible_qos, .init=init_triggering_base, .fini=fini_triggering_base)
+Test(vddsc_listener, incompatible_qos, .init=init_triggering_base, .fini=fini_triggering_base)
 {
     dds_return_t ret;
     uint32_t triggered;
@@ -714,7 +705,7 @@ Test(c99_listener, incompatible_qos, .init=init_triggering_base, .fini=fini_trig
     dds_delete(g_reader);
 }
 
-Test(c99_listener, data_available, .init=init_triggering_test, .fini=fini_triggering_test)
+Test(vddsc_listener, data_available, .init=init_triggering_test, .fini=fini_triggering_test)
 {
     dds_return_t ret;
     uint32_t triggered;
@@ -744,7 +735,7 @@ Test(c99_listener, data_available, .init=init_triggering_test, .fini=fini_trigge
     cr_assert_eq(status, 0);
 }
 
-Test(c99_listener, data_on_readers, .init=init_triggering_test, .fini=fini_triggering_test)
+Test(vddsc_listener, data_on_readers, .init=init_triggering_test, .fini=fini_triggering_test)
 {
     dds_return_t ret;
     uint32_t triggered;
@@ -781,7 +772,7 @@ Test(c99_listener, data_on_readers, .init=init_triggering_test, .fini=fini_trigg
 }
 
 
-Test(c99_listener, sample_lost, .init=init_triggering_test_bysource, .fini=fini_triggering_test)
+Test(vddsc_listener, sample_lost, .init=init_triggering_test_bysource, .fini=fini_triggering_test)
 {
     dds_return_t ret;
     uint32_t triggered;
@@ -818,7 +809,7 @@ Test(c99_listener, sample_lost, .init=init_triggering_test_bysource, .fini=fini_
     cr_assert_eq(status, 0);
 }
 
-Test(c99_listener, sample_rejected, .init=init_triggering_test_bylimits, .fini=fini_triggering_test)
+Test(vddsc_listener, sample_rejected, .init=init_triggering_test_bylimits, .fini=fini_triggering_test)
 {
     dds_return_t ret;
     uint32_t triggered;
@@ -851,7 +842,7 @@ Test(c99_listener, sample_rejected, .init=init_triggering_test_bylimits, .fini=f
     cr_assert_eq(status, 0);
 }
 
-Test(c99_listener, liveliness_changed, .init=init_triggering_test_byliveliness, .fini=fini_triggering_base)
+Test(vddsc_listener, liveliness_changed, .init=init_triggering_test_byliveliness, .fini=fini_triggering_base)
 {
     dds_instance_handle_t writer_hdl;
     dds_return_t ret;
@@ -900,7 +891,7 @@ Test(c99_listener, liveliness_changed, .init=init_triggering_test_byliveliness, 
 /* This is basically the same as the Lite test, but inconsistent topic is not triggered.
  * That is actually what I would expect, because the code doesn't seem to be the way
  * to go to test for inconsistent topic. */
-Test(c99_listener, inconsistent_topic, .init=init_triggering_base, .fini=fini_triggering_base)
+Test(vddsc_listener, inconsistent_topic, .init=init_triggering_base, .fini=fini_triggering_base)
 {
     dds_entity_t wr_topic;
     dds_entity_t rd_topic;

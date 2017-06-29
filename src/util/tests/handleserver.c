@@ -6,7 +6,7 @@
 /* Add --verbose command line argument to get the cr_log_info traces (if there are any). */
 
 /*****************************************************************************************/
-Test(util, handleserver_basic)
+Test(util_handleserver, basic)
 {
     const os_time zero  = { 0, 0 };
     int32_t kind = 0x10000000;
@@ -38,7 +38,7 @@ Test(util, handleserver_basic)
 
 
 /*****************************************************************************************/
-Test(util, handleserver_close)
+Test(util_handleserver, close)
 {
     const os_time zero  = { 0, 0 };
     int32_t kind = 0x10000000;
@@ -75,7 +75,7 @@ Test(util, handleserver_close)
 }
 
 /*****************************************************************************************/
-Test(util, handleserver_link)
+Test(util_handleserver, link)
 {
     const os_time zero  = { 0, 0 };
     int32_t kind = 0x10000000;
@@ -111,7 +111,7 @@ Test(util, handleserver_link)
 
 
 /*****************************************************************************************/
-Test(util, handleserver_types)
+Test(util_handleserver, types)
 {
     const os_time zero  = { 0, 0 };
     int32_t kind1 = 0x10000000;
@@ -174,7 +174,7 @@ Test(util, handleserver_types)
 
 
 /*****************************************************************************************/
-Test(util, handleserver_timeout)
+Test(util_handleserver, timeout)
 {
     const os_time zero  = { 0, 0 };
     int32_t kind = 0x10000000;
@@ -246,7 +246,7 @@ thread_reached_state(thread_state_t *actual, thread_state_t expected, int32_t ms
     return (*actual == expected) ? os_resultSuccess : os_resultTimeout;
 }
 
-Test(util, handleserver_wakeup)
+Test(util_handleserver, wakeup)
 {
     const os_time zero  = {  0, 0 };
     int32_t kind = 0x10000000;

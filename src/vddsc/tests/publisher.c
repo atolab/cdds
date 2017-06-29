@@ -14,7 +14,7 @@
 static void data_available_cb(dds_entity_t reader, void* arg) {}
 
 
-void publisher_creation(void)
+Test(vddsc_publisher, create)
 {
   const char *singlePartitions[] = { "partition" };
   const char *multiplePartitions[] = { "partition1", "partition2" };
@@ -27,7 +27,7 @@ void publisher_creation(void)
 
   /* Use NULL participant */
   publisher = dds_create_publisher(0, NULL, NULL);
-  cr_assert_eq(dds_err_nr(publisher), DDS_RETCODE_ERROR, "dds_create_publisher(NULL,NULL,NULL)");
+  cr_assert_eq(dds_err_nr(publisher), DDS_RETCODE_BAD_PARAMETER, "dds_create_publisher(NULL,NULL,NULL)");
 
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   cr_assert_gt(participant, 0, "dds_create_participant(DDS_DOMAIN_DEFAULT,NULL,NULL)");
@@ -116,8 +116,7 @@ void publisher_creation(void)
   dds_delete (participant);
 }
 
-
-void publisher_suspend_resume(void)
+Test(vddsc_publisher, suspend_resume)
 {
 
   dds_entity_t participant, publisher;
@@ -161,7 +160,7 @@ void publisher_suspend_resume(void)
   return;
 }
 
-void publisher_wait_for_acks(void)
+Test(vddsc_publisher, wait_for_acks)
 {
   dds_entity_t participant, publisher;
   dds_return_t status;
@@ -250,18 +249,9 @@ void publisher_wait_for_acks(void)
   return;
 }
 
-void publisher_coherency(void)
+Test(vddsc_publisher, coherency)
 {
   return;
-}
-
-
-Test(vddsc, publisher)
-{
-    publisher_creation();
-    publisher_suspend_resume();
-    publisher_wait_for_acks();
-    publisher_coherency();
 }
 
 #pragma warning(pop)
