@@ -22,8 +22,6 @@
  *       instance, dds_waitset_get_conditions().
  * TODO: Test the second attach of one entity, which should fail.
  * TODO: Create a separate test file for specific Condition API stuff.
- * TODO: Investigate the intermittent crash when executing the tests in parallel and topic
- *       names are not unique.
  * TODO: etc.
  */
 
@@ -100,7 +98,7 @@ vddsc_waitset_init(void)
             os_procIdSelf(),
             (int)os_threadIdToInteger(os_threadIdSelf()));
 #else
-    /* Single topic name causes intermittent crash when executing in parallel. */
+    /* Single topic name causes interference when tests are executed in parallel. */
     snprintf(name, 100, "%s", "vddsc_waitset_test");
 #endif
 

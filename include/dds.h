@@ -972,11 +972,11 @@ dds_create_publisher(
  * @retval DDS_RETCODE_UNSUPPORTED
  *                Operation is not supported
  */
-
 _Pre_satisfies_((publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER)
 DDS_EXPORT dds_return_t
 dds_suspend(
         _In_ dds_entity_t publisher);
+
 
 /**
  * @brief Resumes the publications of the Publisher
@@ -1259,18 +1259,6 @@ dds_write_ts(
         const void *data,
         dds_time_t timestamp);
 
-/**
- * Description : Flushes all the samples from the write cache.
- *               By default, data sent by write API, is queued in the write cache
- *
- * Arguments :
- *   -# wr The writer entity
- */
-_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT void
-dds_write_flush(
-        dds_entity_t writer);
-
 /*
   Waitsets allow waiting for an event on some of any set of entities
   (all can in principle be waited for via their status conditions;
@@ -1290,8 +1278,6 @@ dds_write_flush(
   The DCPS "query" condition is not currently supported.
 */
 
-
-
 /**
  * Description : Create a ReadCondition associated to a reader.
  *               Based on the mask value set, the readcondition gets triggered when
@@ -1306,7 +1292,6 @@ DDS_EXPORT _Must_inspect_result_ dds_entity_t
 dds_create_readcondition(
         _In_ dds_entity_t reader,
         _In_ uint32_t mask);
-
 
 
 /*
@@ -1328,18 +1313,6 @@ _Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
 DDS_EXPORT _Must_inspect_result_ dds_entity_t
 dds_create_waitset(
         _In_ dds_entity_t participant);
-
-#if 0 /* Seems not needed. */
-DDS_EXPORT dds_waitset_t
-dds_waitset_create_cont(
-        void (*block) (dds_waitset_t waitset, void *arg, dds_time_t abstimeout),
-        void (*cont) (dds_waitset_t waitset, void *arg, int ret),
-        size_t contsize);
-
-DDS_EXPORT void*
-dds_waitset_get_cont(
-        dds_waitset_t waitset);
-#endif
 
 
 /**
@@ -1366,7 +1339,7 @@ dds_waitset_get_conditions(
  * Arguments :
  *   -# ws pointer to a waitset
  *   -# e pointer to a condition to wait for the trigger value
- *   -# x attach condition, could be used to know the reason for the waitset to unblock (can be NULL)
+ *   -# x attach condition, returned when the the waitset unblocks on condition e
  *   -# Returns 0 on success, else non-zero indicating an error
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
