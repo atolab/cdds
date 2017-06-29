@@ -20,12 +20,17 @@ configure_file(
     "cmake/dds_idlc${EXTENSION}.in" "${IDLC}"
     @ONLY
     NEWLINE_STYLE ${LINE_ENDINGS})
+
 # FIXME: C++ IDL compiler depends idlpp. Leave it disabled for now.
 #configure_file(
 #    "cmake/dds_idlcpp${EXTENSION}.in"
 #    "dds_idlcpp${EXTENSION}"
 #    @ONLY
 #    NEWLINE_STYLE ${LINE_ENDINGS})
+
+if(NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows"))
+    execute_process(COMMAND chmod +x "idlc/${IDLC}")
+endif()
 
 # Maven is executed within the idlc directory located in the build directory
 # and generated sources are stored in idlc/target. Non-generated sources,
@@ -39,19 +44,13 @@ set(basedir "${CMAKE_CURRENT_SOURCE_DIR}")
 mark_as_advanced(basedir)
 configure_file("pom.xml" "pom.xml")
 
-if(NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows"))
-    execute_process(COMMAND chmod +x "idlc/${IDLC}")
-endif()
-
 add_custom_command(
-    OUTPUT "${IDLC_JAR}"
-    COMMAND "${Maven_EXECUTABLE}" package)
+    OUTPUT  "${IDLC_JAR}"
+    COMMAND "${Maven_EXECUTABLE}"
+    ARGS    "package"
+    DEPENDS "pom.xml" ${IDLC_G4_SOURCES} ${IDLC_JAVA_SOURCES} ${IDLC_ST_SOURCES})
 
-add_custom_target(
-    idlc ALL
-    DEPENDS "${IDLC_JAR}"
-    SOURCES ${IDLC_G4_SOURCES} ${IDLC_JAVA_SOURCES} ${IDLC_ST_SOURCES})
-
+add_custom_target(idlc ALL DEPENDS "${IDLC_JAR}")
 
 function(IDLC_GENERATE SRCS HDRS)
     if(NOT ARGN)
@@ -75,7 +74,7 @@ function(IDLC_GENERATE SRCS HDRS)
             OUTPUT   "${SRC}" "${HDR}"
             COMMAND  "${IDLC_DIR}/${IDLC}"
             ARGS     "${ABS_FIL}"
-            DEPENDS  "${ABS_FIL}"
+            DEPENDS  "${ABS_FIL}" idlc
             COMMENT  "Running idlc on ${FIL}"
             VERBATIM)
     endforeach()
