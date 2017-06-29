@@ -17,7 +17,8 @@ dds_entity_t dds_entity_init (
         _In_opt_ const dds_listener_t *listener,
         _In_     uint32_t mask);
 
-void dds_entity_add_ref (_In_ dds_entity * e);
+void dds_entity_add_ref(_In_ dds_entity * e);
+void dds_entity_add_ref_nolock(_In_ dds_entity *e);
 
 _Check_return_
 bool dds_entity_cb_propagate_begin(_In_ dds_entity *e);
