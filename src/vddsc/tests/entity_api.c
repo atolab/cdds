@@ -14,7 +14,7 @@ static dds_entity_t entity = -1;
 #define cr_assert_status_eq(s1, s2, ...) cr_assert_eq(dds_err_nr(s1), s2, __VA_ARGS__)
 
 /* Fixture to create prerequisite entity */
-void create_entity()
+void create_entity(void)
 {
     cr_assert_eq(entity, -1, "entity already created pre create_entity fixture");
     entity = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
@@ -22,7 +22,7 @@ void create_entity()
 }
 
 /* Fixture to delete prerequisite entity */
-void delete_entity()
+void delete_entity(void)
 {
     cr_assert_gt(entity, 0, "entity not created pre delete_entity fixture");
     dds_return_t ret = dds_delete(entity);
