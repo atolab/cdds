@@ -1202,7 +1202,7 @@ public class GenVisitor extends com.prismtech.vortex.parser.IDLBaseVisitor <Void
     try
     {
       bos = new BufferedOutputStream (new FileOutputStream (filename));
-      bos.write (file.render ().getBytes ());
+      bos.write (file.render ().getBytes ("UTF-8"));
     }
     finally
     {
