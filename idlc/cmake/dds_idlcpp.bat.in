@@ -1,9 +1,9 @@
 @echo off
 
 if "%CLASSPATH%"=="" (
-    set CLASSPATH=@IDLC_JAR@
+    set "CLASSPATH=@IDLC_JAR@"
 ) else (
-    set CLASSPATH=@IDLC_JAR@;%CLASSPATH%
+    set "CLASSPATH=@IDLC_JAR@;%CLASSPATH%"
 )
 
 java com.prismtech.vortex.compilers.Idlcpp %*
