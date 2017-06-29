@@ -540,14 +540,18 @@ waiting_thread_start(struct thread_arg_t *arg, dds_entity_t expected)
 
     assert(arg);
 
-    /* Waiting in other thread, which should block. */
+    /* Create an other thread that will blocking wait on the waitset. */
     arg->expected = expected;
     arg->state   = STARTING;
     os_threadAttrInit(&thread_attr);
     osr = os_threadCreate(&thread_id, "waiting_thread", &thread_attr, waiting_thread, arg);
     cr_assert_eq(osr, os_resultSuccess, "os_threadCreate");
+
+    /* The thread should reach 'waiting' state. */
     osr = thread_reached_state(&(arg->state), WAITING, 1000);
     cr_assert_eq(osr, os_resultSuccess, "waiting returned %d", osr);
+
+    /* But thread should block and thus NOT reach 'stopped' state. */
     osr = thread_reached_state(&(arg->state), STOPPED, 100);
     cr_assert_eq(osr, os_resultTimeout, "waiting returned %d", osr);
 

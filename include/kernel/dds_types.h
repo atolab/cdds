@@ -138,9 +138,6 @@ typedef void (*dds_entity_callback)(dds_entity_t observer, dds_entity_t observed
 
 typedef struct dds_entity_observer
 {
-    /* Ref-counted to be able to use it outside the lock.
-     * Using it outside the lock is safe because we use handles. */
-    uint32_t m_refc;
     dds_entity_callback m_cb;
     dds_entity_t m_observer;
     struct dds_entity_observer *m_next;

@@ -8,8 +8,8 @@
 extern "C" {
 #endif
 
-_Check_return_
-dds_entity_t dds_entity_init (
+_Check_return_ dds_entity_t
+dds_entity_init(
         _In_     dds_entity * e,
         _In_opt_ dds_entity * parent,
         _In_     dds_entity_kind_t kind,
@@ -17,7 +17,9 @@ dds_entity_t dds_entity_init (
         _In_opt_ const dds_listener_t *listener,
         _In_     uint32_t mask);
 
-void dds_entity_add_ref (_In_ dds_entity * e);
+void
+dds_entity_add_ref(
+        _In_ dds_entity * e);
 
 _Check_return_
 bool dds_entity_cb_propagate_begin(_In_ dds_entity *e);
@@ -33,18 +35,43 @@ bool dds_entity_cp_propagate_call(_In_ dds_entity *e, _In_ dds_entity *src, _In_
 
 /* The mutex needs to be unlocked when calling this because the entity can be called
  * within the signal callback from other contexts. That shouldn't deadlock. */
-void dds_entity_status_signal(_In_ dds_entity *e);
+void
+dds_entity_status_signal(
+        _In_ dds_entity *e);
 
-_Check_return_
-dds_return_t dds_entity_lock(_In_ dds_entity_t hdl, _In_ dds_entity_kind_t kind, _Out_ dds_entity **e);
-void dds_entity_unlock(_In_ dds_entity *e);
+_Check_return_ dds_return_t
+dds_entity_lock(
+        _In_ dds_entity_t hdl,
+        _In_ dds_entity_kind_t kind,
+        _Out_ dds_entity **e);
+
+void
+dds_entity_unlock(
+        _In_ dds_entity *e);
 
 #define dds_entity_kind(hdl) (hdl & DDS_ENTITY_KIND_MASK)
 
-dds_return_t dds_entity_observer_register_nl  (_In_ dds_entity*  observed, _In_ dds_entity_t observer, _In_ dds_entity_callback cb);
-dds_return_t dds_entity_observer_register     (_In_ dds_entity_t observed, _In_ dds_entity_t observer, _In_ dds_entity_callback cb);
-dds_return_t dds_entity_observer_unregister_nl(_In_ dds_entity*  observed, _In_ dds_entity_t observer);
-dds_return_t dds_entity_observer_unregister   (_In_ dds_entity_t observed, _In_ dds_entity_t observer);
+_Check_return_ dds_return_t
+dds_entity_observer_register_nl(
+        _In_ dds_entity*  observed,
+        _In_ dds_entity_t observer,
+        _In_ dds_entity_callback cb);
+
+_Check_return_ dds_return_t
+dds_entity_observer_register(
+        _In_ dds_entity_t observed,
+        _In_ dds_entity_t observer,
+        _In_ dds_entity_callback cb);
+
+dds_return_t
+dds_entity_observer_unregister_nl(
+        _In_ dds_entity*  observed,
+        _In_ dds_entity_t observer);
+
+dds_return_t
+dds_entity_observer_unregister(
+        _In_ dds_entity_t observed,
+        _In_ dds_entity_t observer);
 
 
 #if defined (__cplusplus)

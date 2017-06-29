@@ -9,18 +9,8 @@
 #error "DDS_ENTITY_KIND_MASK != UT_HANDLE_KIND_MASK"
 #endif
 
-static bool
-dds_entity_observer_delete(
-        _In_     dds_entity          *observed,
-        _In_     dds_entity_observer *cur,
-        _In_opt_ dds_entity_observer *prev);
-
 static void
-dds_entity_observers_keep(
-        _In_ dds_entity *observed);
-
-static void
-dds_entity_observers_release(
+dds_entity_observers_delete(
         _In_ dds_entity *observed);
 
 static void
@@ -221,6 +211,7 @@ dds_entity_cb_wait_signal (_In_ dds_entity *e)
 }
 
 
+
 _Check_return_ dds_entity_t
 dds_entity_init(
         _In_     dds_entity * e,
@@ -277,6 +268,8 @@ dds_entity_init(
     return (dds_entity_t)(e->m_hdl);
 }
 
+
+
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 dds_return_t
 dds_delete(
@@ -312,12 +305,6 @@ dds_delete(
     /* Signal observers that this entity will be deleted. */
     dds_entity_status_signal(e);
 
-    /* Remove all possible observers. */
-    dds_entity_observers_release(e);
-
-    /* Expect all observers to have been removed. */
-    assert(e->m_observers == NULL);
-
     /* Recursively delete children */
     child = e->m_children;
     while ((child != NULL) && (ret == DDS_RETCODE_OK)) {
@@ -347,6 +334,9 @@ dds_delete(
     }
 
     if (ret == DDS_RETCODE_OK) {
+        /* Remove all possible observers. */
+        dds_entity_observers_delete(e);
+
         /* Remove from parent */
         if (e->m_parent) {
             os_mutexLock (&e->m_parent->m_mutex);
@@ -383,6 +373,8 @@ dds_delete(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, 0);
 }
 
+
+
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_entity_t
 dds_get_parent(
@@ -404,6 +396,8 @@ dds_get_parent(
     return hdl;
 }
 
+
+
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_entity_t
 dds_get_participant (
@@ -424,6 +418,8 @@ dds_get_participant (
     }
     return hdl;
 }
+
+
 
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
@@ -458,11 +454,13 @@ dds_get_children(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
+
+
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_get_qos(
-        _In_    dds_entity_t entity,
-        _Out_   dds_qos_t *qos)
+        _In_  dds_entity_t entity,
+        _Out_ dds_qos_t *qos)
 {
     dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     if ((entity > 0) && (qos != NULL)) {
@@ -480,7 +478,8 @@ dds_get_qos(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
-/* Interface called whenever a changeable qos is modified */
+
+
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_set_qos(
@@ -510,6 +509,8 @@ dds_set_qos(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
+
+
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_get_listener(
@@ -529,6 +530,8 @@ dds_get_listener(
     }
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
+
+
 
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
@@ -552,6 +555,8 @@ dds_set_listener(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
+
+
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_enable(
@@ -570,6 +575,7 @@ dds_enable(
     }
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
+
 
 
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
@@ -594,6 +600,8 @@ dds_get_status_changes(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
+
+
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_get_enabled_status(
@@ -615,6 +623,7 @@ dds_get_enabled_status(
     }
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
+
 
 
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
@@ -647,7 +656,7 @@ dds_set_enabled_status(
 }
 
 
-/* Read status condition based on mask */
+
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_read_status(
@@ -674,7 +683,8 @@ dds_read_status(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
-/* Take and clear status condition based on mask */
+
+
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_take_status(
@@ -705,27 +715,21 @@ dds_take_status(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
+
+
 void
-dds_entity_status_signal(_In_ dds_entity *e)
+dds_entity_status_signal(
+        _In_ dds_entity *e)
 {
-    uint32_t status = e->m_trigger;
-
     assert(e);
-
-    os_mutexLock (&e->m_mutex);
-    dds_entity_observers_keep(e);
-    status = e->m_trigger;
-    os_mutexUnlock (&e->m_mutex);
-
     /* Signal the observers in an unlocked state.
      * This is safe because we use handles and the current entity
-     * will not be deleted while we're in this signaling state. */
-    dds_entity_observers_signal(e, status);
-
-    os_mutexLock (&e->m_mutex);
-    dds_entity_observers_release(e);
-    os_mutexUnlock (&e->m_mutex);
+     * will not be deleted while we're in this signaling state
+     * due to a claimed handle. */
+    dds_entity_observers_signal(e, e->m_trigger);
 }
+
+
 
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
@@ -744,6 +748,8 @@ dds_get_domainid(
     }
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
+
+
 
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
@@ -767,8 +773,13 @@ dds_instancehandle_get(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
+
+
 _Check_return_ dds_return_t
-dds_entity_lock(_In_ dds_entity_t hdl, _In_ dds_entity_kind_t kind, _Out_ dds_entity **e)
+dds_entity_lock(
+        _In_ dds_entity_t hdl,
+        _In_ dds_entity_kind_t kind,
+        _Out_ dds_entity **e)
 {
     dds_return_t ret = hdl;
     ut_handle_t utr;
@@ -793,12 +804,18 @@ dds_entity_lock(_In_ dds_entity_t hdl, _In_ dds_entity_kind_t kind, _Out_ dds_en
     return ret;
 }
 
-void dds_entity_unlock(_In_ dds_entity *e)
+
+
+void
+dds_entity_unlock(
+        _In_ dds_entity *e)
 {
     assert(e);
     os_mutexUnlock(&e->m_mutex);
     ut_handle_release(e->m_hdl, e->m_hdllink);
 }
+
+
 
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 dds_return_t
@@ -817,7 +834,9 @@ dds_triggered(
     return ret;
 }
 
-dds_return_t
+
+
+_Check_return_ dds_return_t
 dds_entity_observer_register_nl(
         _In_ dds_entity*  observed,
         _In_ dds_entity_t observer,
@@ -827,7 +846,6 @@ dds_entity_observer_register_nl(
     dds_entity_observer *o = os_malloc(sizeof(dds_entity_observer));
     assert(observed);
     o->m_cb = cb;
-    o->m_refc = 1;
     o->m_observer = observer;
     o->m_next = NULL;
     if (observed->m_observers == NULL) {
@@ -850,7 +868,9 @@ dds_entity_observer_register_nl(
     return ret;
 }
 
-dds_return_t
+
+
+_Check_return_ dds_return_t
 dds_entity_observer_register(
         _In_ dds_entity_t observed,
         _In_ dds_entity_t observer,
@@ -867,6 +887,8 @@ dds_entity_observer_register(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M1);
 }
 
+
+
 dds_return_t
 dds_entity_observer_unregister_nl(
         _In_ dds_entity*  observed,
@@ -877,14 +899,22 @@ dds_entity_observer_unregister_nl(
     dds_entity_observer *idx  = observed->m_observers;
     while ((idx != NULL) && (ret == DDS_RETCODE_PRECONDITION_NOT_MET)) {
         if (idx->m_observer == observer) {
-            dds_entity_observer_delete(observed, idx, prev);
+            if (prev == NULL) {
+                observed->m_observers = idx->m_next;
+            } else {
+                prev->m_next = idx->m_next;
+            }
+            os_free(idx);
             ret = DDS_RETCODE_OK;
         } else {
+            prev = idx;
             idx = idx->m_next;
         }
     }
     return ret;
 }
+
+
 
 dds_return_t
 dds_entity_observer_unregister(
@@ -901,52 +931,28 @@ dds_entity_observer_unregister(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M1);
 }
 
-static bool
-dds_entity_observer_delete(_In_ dds_entity *observed, _In_ dds_entity_observer *cur, _In_opt_ dds_entity_observer *prev)
-{
-    bool deleted = false;
-    cur->m_refc--;
-    if (cur->m_refc == 0) {
-        if (prev == NULL) {
-            observed->m_observers = cur->m_next;
-        } else {
-            prev->m_next = cur->m_next;
-        }
-        os_free(cur);
-        deleted = true;
-    }
-    return deleted;
-}
-
-static void
-dds_entity_observers_keep(_In_ dds_entity *observed)
-{
-    dds_entity_observer *idx = observed->m_observers;
-    while (idx != NULL) {
-        idx->m_refc++;
-        idx = idx->m_next;
-    }
-}
 
 
 static void
-dds_entity_observers_release(_In_ dds_entity *observed)
+dds_entity_observers_delete(
+        _In_ dds_entity *observed)
 {
     dds_entity_observer *next;
-    dds_entity_observer *prev = NULL;
     dds_entity_observer *idx = observed->m_observers;
     while (idx != NULL) {
         next = idx->m_next;
-        if (!dds_entity_observer_delete(observed, idx, prev)) {
-            prev = idx;
-        }
+        os_free(idx);
         idx = next;
     }
+    observed->m_observers = NULL;
 }
 
 
+
 static void
-dds_entity_observers_signal(_In_ dds_entity *observed, _In_ uint32_t status)
+dds_entity_observers_signal(
+        _In_ dds_entity *observed,
+        _In_ uint32_t status)
 {
     dds_entity_observer *idx = observed->m_observers;
     while (idx != NULL) {

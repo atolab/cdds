@@ -157,9 +157,9 @@ dds_waitset_close_list(
     dds_attachment *next;
     while (idx != NULL) {
         next = idx->next;
-        (void)dds_entity_observer_unregister(idx->entity, waitset);
-         os_free(idx);
-         idx = next;
+        dds_entity_observer_unregister(idx->entity, waitset);
+        os_free(idx);
+        idx = next;
     }
     *list = NULL;
 }
