@@ -234,7 +234,6 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
         /* Event was eaten by a listener. */
         if (dds_reader_lock(((dds_entity*)entity)->m_hdl, &rd) == DDS_RETCODE_OK) {
             assert(rd == entity);
-            os_mutexLock (&rd->m_entity.m_mutex);
 
             /* Reset the change counts of the metrics. */
             switch (data->status) {
@@ -286,10 +285,10 @@ _Pre_satisfies_(((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_
 _Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
 dds_entity_t
 dds_create_reader(
-        dds_entity_t participant_or_subscriber,
-        dds_entity_t topic,
-        const dds_qos_t *qos,
-        const dds_listener_t *listener)
+        _In_ dds_entity_t participant_or_subscriber,
+        _In_ dds_entity_t topic,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener)
 {
     dds_qos_t * rqos;
     int32_t errnr;
@@ -298,7 +297,7 @@ dds_create_reader(
     dds_reader * rd;
     struct rhc * rhc;
     dds_entity * tp;
-    dds_entity_t hdl;
+    dds_entity_t reader;
     struct thread_state1 * const thr = lookup_thread_state ();
     const bool asleep = !vtime_awake_p (thr->vtime);
     int ret = DDS_RETCODE_OK;
@@ -353,12 +352,11 @@ dds_create_reader(
 
     /* Create reader and associated read cache */
     rd = dds_alloc (sizeof (*rd));
-    hdl = dds_entity_init (&rd->m_entity, parent, DDS_KIND_READER, rqos, listener, DDS_READER_STATUS_MASK);
+    reader = dds_entity_init (&rd->m_entity, parent, DDS_KIND_READER, rqos, listener, DDS_READER_STATUS_MASK);
     rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
     rd->m_topic = (dds_topic*)tp;
     rhc = dds_rhc_new (rd, ((dds_topic*)tp)->m_stopic);
-    dds_entity_unlock(tp);
-    dds_entity_add_ref (tp);
+    dds_entity_add_ref_nolock (tp);
     rd->m_entity.m_deriver.close = dds_reader_close;
     rd->m_entity.m_deriver.delete = dds_reader_delete;
     rd->m_entity.m_deriver.set_qos = dds_reader_qos_set;
@@ -371,6 +369,7 @@ dds_create_reader(
         assert(0);
     }
 
+    dds_entity_unlock(tp);
     dds_entity_unlock(parent);
 
     if (asleep) {
@@ -388,7 +387,7 @@ dds_create_reader(
         (dds_global.m_dur_reader) (rd, rhc);
     }
 
-    return hdl;
+    return reader;
 }
 
 void dds_reader_ddsi2direct (dds_entity_t entity, ddsi2direct_directread_cb_t cb, void *cbarg)

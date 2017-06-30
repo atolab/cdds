@@ -23,6 +23,7 @@ const dds_topic_descriptor_t <scopedname(...)>_desc =
   <if(keys)><length(keys)><else>0<endif>u,
   "<colonscopedname(...)>",
   <if(keys)><scopedname(...)>_keys<else>NULL<endif>,
+  <length(marshalling)>,
   <scopedname(...)>_ops,
   <if(xml)>"\<MetaData version=\"1.0.0\"><xml>\</MetaData>"<else>NULL<endif>
 };

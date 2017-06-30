@@ -30,7 +30,8 @@ int main (int argc, char *argv[])
 {
   dds_duration_t waitTimeout = DDS_INFINITY;
   unsigned int i;
-  int status, samplecount, j;
+  dds_return_t status, samplecount;
+  int j;
   dds_attach_t wsresults[1];
   size_t wsresultsize = 1U;
   dds_entity_t participant;

@@ -140,7 +140,7 @@ int ping_main (int argc, char *argv[])
   size_t wsresultsize = 1U;
   dds_time_t waitTimeout = DDS_INFINITY;
   unsigned long i;
-  int status, sampleCount;
+  int status;
   bool invalid = false;
   bool warmUp = true;
   dds_condition_t readCond;
@@ -258,8 +258,8 @@ int ping_main (int argc, char *argv[])
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     if (status > 0) /* data */
     {
-      sampleCount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
-      DDS_ERR_CHECK (sampleCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+      status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+      DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     }
 
     time = dds_time ();
@@ -292,13 +292,14 @@ int ping_main (int argc, char *argv[])
     {
       /* Take sample and check that it is valid */
       preTakeTime = dds_time ();
-      sampleCount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
-      DDS_ERR_CHECK (sampleCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+      status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+      DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
       postTakeTime = dds_time ();
 
-      if (sampleCount != 1)
+      if (status != 1)
       {
-        fprintf (stdout, "%s%d%s", "ERROR: Ping received ", sampleCount,
+        fprintf (stdout, "%s%d%s", "ERROR: Ping received ", status,
                  " samples but was expecting 1. Are multiple pong applications running?\n");
         return (0);
       }

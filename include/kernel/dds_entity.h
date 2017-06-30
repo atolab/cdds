@@ -19,7 +19,10 @@ dds_entity_init(
 
 void
 dds_entity_add_ref(
-        _In_ dds_entity * e);
+        _In_ dds_entity *e);
+void
+dds_entity_add_ref_nolock(
+        _In_ dds_entity *e);
 
 _Check_return_
 bool dds_entity_cb_propagate_begin(_In_ dds_entity *e);

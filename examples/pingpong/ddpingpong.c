@@ -309,8 +309,8 @@ static void data_available_handler (dds_entity_t reader, void *varg)
 {
   struct data_available_handler_arg *arg = varg;
   dds_time_t postTakeTime, difference;
-  int sampleCount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
-  DDS_ERR_CHECK (sampleCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT); /* sampleCount will be negative if dds_take() fails and DDS_ERR_CHECK checks for negative values */
+  dds_return_t status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   postTakeTime = dds_time ();
 
   if (arg->isping)
@@ -332,7 +332,7 @@ static void data_available_handler (dds_entity_t reader, void *varg)
     info[0].source_timestamp = postTakeTime;
   }
 
-  int status = dds_write_ts (arg->writer, &sub_data[0], info[0].source_timestamp);
+  status = dds_write_ts (arg->writer, &sub_data[0], info[0].source_timestamp);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 }
 
@@ -387,8 +387,7 @@ int main (int argc, char *argv[])
   size_t wsresultsize = 1U;
   dds_time_t waitTimeout = DDS_SECS (1);
   unsigned long i;
-  int status;
-  int sampleCount;
+  dds_return_t status;
   dds_listener_t rd_listener;
   int opt;
   const char *logfile = NULL;
@@ -561,9 +560,9 @@ int main (int argc, char *argv[])
       memset (buf, 0, sizeof (buf));
       memset (&addrsample, 0, sizeof (addrsample));
       do {
-        sampleCount = dds_take (addrreader, addrsamples, infos, 1, 0);
-        DDS_ERR_CHECK (sampleCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-      } while (sampleCount != 1);
+        status = dds_take (addrreader, addrsamples, infos, 1, 0);
+        DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+      } while (status != 1);
       memset(&peeraddr, 0, sizeof(peeraddr));
       peeraddr.sin_family = AF_INET;
       if (!inet_pton(AF_INET, addrsample.ip, &peeraddr.sin_addr))
@@ -673,15 +672,15 @@ int main (int argc, char *argv[])
         if (status != 0)
         {
           /* Take sample and check that it is valid */
-          sampleCount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
-          DDS_ERR_CHECK (sampleCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+          status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+          DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
           postTakeTime = dds_time ();
 
           if (dds_triggered(waitSet) == 0)
           {
-            if (sampleCount != 1)
+            if (status != 1)
             {
-              fprintf (stdout, "%s%d%s", "ERROR: Ping received ", sampleCount,
+              fprintf (stdout, "%s%d%s", "ERROR: Ping received ", status,
                        " samples but was expecting 1. Are multiple pong applications running?\n");
 
               return (0);
@@ -694,7 +693,7 @@ int main (int argc, char *argv[])
           }
 
           /* Update stats */
-          if (sampleCount > 0)
+          if (status > 0)
           {
             difference = postTakeTime - info[0].source_timestamp;
             exampleAddTimingToTimeStats (&roundTrip, difference);

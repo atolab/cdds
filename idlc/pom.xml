@@ -63,20 +63,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.1</version>
-                <configuration>
-                    <encoding>UTF-8</encoding>
-                    <excludes>
-                        <!-- Disable support for RMI to avoid having to pull in
-                             rmipp.jar in the local repository (~18MB). -->
-                        <exclude>**/RmippCmdOptions.java</exclude>
-                        <exclude>**/Rmipp.java</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
                 <version>4.5</version>

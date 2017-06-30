@@ -128,14 +128,14 @@ err_tlsAllocFail:
 void
 os_threadModuleExit(void)
 {
-   LPVOID data = TlsGetValue(tlsIndex);
+    void **tlsMemArray = TlsGetValue(tlsIndex);
 
-   if (data != NULL) {
-      LocalFree((HLOCAL) data);
-   }
+    if (tlsMemArray != NULL) {
+        os_free(tlsMemArray);
+    }
 
-   TlsFree(tlsIndex);
-   os_threadHookExit();
+    TlsFree(tlsIndex);
+    os_threadHookExit();
 }
 
 os_result

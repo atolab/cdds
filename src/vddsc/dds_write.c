@@ -21,19 +21,23 @@ uint64_t fake_seq_next (fake_seq_t *x) { return os_atomic_inc32_nv (x); }
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 dds_return_t
 dds_write(
-       _In_ dds_entity_t writer,
-       _In_ const void *data)
+        _In_ dds_entity_t writer,
+        _In_ const void *data)
 {
-    int ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_return_t ret = DDS_ERRNO(
+        DDS_RETCODE_BAD_PARAMETER, DDS_MOD_INST, DDS_ERR_M1);
     dds_writer *wr;
+
     if (data != NULL) {
         ret = dds_writer_lock(writer, &wr);
+        ret = DDS_ERRNO(ret, DDS_MOD_INST, DDS_ERR_M2);
         if (ret == DDS_RETCODE_OK) {
-            ret = dds_write_impl (wr, data, dds_time (), 0);
+            ret = dds_write_impl(wr, data, dds_time(), 0);
             dds_writer_unlock(wr);
         }
     }
-    return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
+
+    return ret;
 }
 
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
@@ -56,22 +60,26 @@ dds_writecdr(
 }
 
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-int
+dds_return_t
 dds_write_ts(
-        dds_entity_t writer,
-        const void *data,
-        dds_time_t timestamp)
+        _In_ dds_entity_t writer,
+        _In_ const void *data,
+        _In_ dds_time_t timestamp)
 {
-    int ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_return_t ret = DDS_ERRNO(
+        DDS_RETCODE_BAD_PARAMETER, DDS_MOD_INST, DDS_ERR_M1);
     dds_writer *wr;
-    if (data != NULL) {
+
+    if (data != NULL && timestamp >= 0) {
         ret = dds_writer_lock(writer, &wr);
+        ret = DDS_ERRNO(ret, DDS_MOD_INST, DDS_ERR_M2);
         if (ret == DDS_RETCODE_OK) {
-            ret = dds_write_impl (wr, data, timestamp, 0);
+            ret = dds_write_impl(wr, data, timestamp, 0);
             dds_writer_unlock(wr);
         }
     }
-    return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
+
+    return ret;
 }
 
 #include "ddsi/q_radmin.h"

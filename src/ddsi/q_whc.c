@@ -289,10 +289,9 @@ void whc_free (struct whc *whc)
     {
       struct whc_node *tmp = whcn;
 /* The compiler doesn't realize that whcn->prev_seq is always initialized. */
-#pragma warning(push)
-#pragma warning(disable: 6001)
+OS_WARNING_MSVC_OFF(6001);
       whcn = whcn->prev_seq;
-#pragma warning(pop)
+OS_WARNING_MSVC_ON(6001);
       free_whc_node_contents (whc, tmp);
       os_free (tmp);
     }

@@ -4,7 +4,7 @@
 #include <criterion/logging.h>
 #define MAX_SAMPLES 10
 
-Test(vddsc, reader_creation)
+Test(vddsc_reader, create)
 {
   dds_entity_t participant;
   dds_entity_t reader, reader2, reader3;
@@ -47,7 +47,7 @@ Test(vddsc, reader_creation)
   dds_delete(participant);
 }
 
-Test(vddsc, reader_read)
+Test(vddsc_reader, read)
 {
   int sample_received = 0;
   dds_entity_t reader;
@@ -118,7 +118,7 @@ Test(vddsc, reader_read)
   dds_delete(participant);
 }
 
-Test(vddsc, reader_readWithLoan)
+Test(vddsc_reader, read_with_loan)
 {
   int sample_received = 0;
   dds_entity_t reader;
@@ -186,7 +186,7 @@ Test(vddsc, reader_readWithLoan)
   dds_delete(participant);
 }
 
-Test(vddsc, reader_readMask)
+Test(vddsc_reader, read_mask)
 {
   int sample_received = 0;
   dds_entity_t reader;
@@ -260,7 +260,7 @@ Test(vddsc, reader_readMask)
   dds_delete(participant);
 }
 
-Test(vddsc, reader_readMaskWithLoan)
+Test(vddsc_reader, read_mask_with_loan)
 {
   int sample_received = 0;
   dds_entity_t reader;
@@ -334,7 +334,8 @@ Test(vddsc, reader_readMaskWithLoan)
   dds_listener_delete(listener);
   dds_delete(participant);
 }
-Test(vddsc, reader_take)
+
+Test(vddsc_reader, take)
 {
   int sample_received = 0;
   dds_entity_t reader;
@@ -398,7 +399,7 @@ Test(vddsc, reader_take)
   dds_delete(participant);
 }
 
-Test(vddsc, reader_takeWithLoan)
+Test(vddsc_reader, take_with_loan)
 {
   int sample_received = 0;
   dds_entity_t reader;
@@ -462,7 +463,7 @@ Test(vddsc, reader_takeWithLoan)
   dds_delete(participant);
 }
 
-Test(vddsc, reader_takeMask)
+Test(vddsc_reader, take_mask)
 {
   int sample_received = 0;
   dds_entity_t reader;
@@ -526,7 +527,8 @@ Test(vddsc, reader_takeMask)
   dds_listener_delete(listener);
   dds_delete(participant);
 }
-Test(vddsc, reader_takeMaskWithLoan)
+
+Test(vddsc_reader, take_mask_with_loan)
 {
   int sample_received = 0;
   dds_entity_t reader;

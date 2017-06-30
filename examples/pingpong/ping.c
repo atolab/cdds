@@ -161,8 +161,7 @@ int main (int argc, char *argv[])
   size_t wsresultsize = 1U;
   dds_time_t waitTimeout = DDS_SECS (1);
   unsigned long i;
-  int status;
-  int sampleCount;
+  dds_return_t status;
   bool invalid = false;
   bool warmUp = true;
   dds_condition_t readCond;
@@ -309,8 +308,8 @@ int main (int argc, char *argv[])
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     if (status > 0) /* data */
     {
-      sampleCount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
-      DDS_ERR_CHECK (sampleCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+      status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+      DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     }
 
     time = dds_time ();
@@ -343,8 +342,8 @@ int main (int argc, char *argv[])
     {
       /* Take sample and check that it is valid */
       preTakeTime = dds_time ();
-      sampleCount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
-      DDS_ERR_CHECK (sampleCount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+      status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+      DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
       postTakeTime = dds_time ();
 
       if (dds_triggered(waitSet) == 0)

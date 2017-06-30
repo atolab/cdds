@@ -1202,7 +1202,7 @@ public class GenVisitor extends com.prismtech.vortex.parser.IDLBaseVisitor <Void
     try
     {
       bos = new BufferedOutputStream (new FileOutputStream (filename));
-      bos.write (file.render ().getBytes ());
+      bos.write (file.render ().getBytes ("UTF-8"));
     }
     finally
     {
@@ -1301,30 +1301,27 @@ public class GenVisitor extends com.prismtech.vortex.parser.IDLBaseVisitor <Void
       }
 
       /* Write all the ready types in that module */
-
-      tmpwritten = new HashSet <ScopedName> ();
-      do
-      {
-        tmpwritten.clear ();
-        for (ScopedName sn : depsorder)
-        {
-          NamedType nt = alltypes.get (sn);
-          if (module.contains (nt) && nt.depsOK (written))
+      if (module != null) {
+        tmpwritten = new HashSet <ScopedName> ();
+        do {
+          tmpwritten.clear ();
+          for (ScopedName sn : depsorder)
           {
-            nt.getToplevelXML (str, mod);
-            module.remove (nt);
-            tmpwritten.add (sn);
+            NamedType nt = alltypes.get (sn);
+            if (module.contains (nt) && nt.depsOK (written))
+            {
+              nt.getToplevelXML (str, mod);
+              module.remove (nt);
+              tmpwritten.add (sn);
+            }
           }
+          written.addAll (tmpwritten);
+        } while (!tmpwritten.isEmpty ());
+
+        /* Terminate when there's nothing left */
+        if (module.isEmpty ()) {
+          modules.remove (modname);
         }
-        written.addAll (tmpwritten);
-      }
-      while (!tmpwritten.isEmpty ());
-
-      /* Terminate when there's nothing left */
-
-      if ((module != null) && module.isEmpty ())
-      {
-        modules.remove (modname);
       }
     }
 

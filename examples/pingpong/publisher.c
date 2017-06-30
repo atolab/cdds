@@ -42,7 +42,7 @@ static void CtrlHandler (int fdwCtrlType)
 int main (int argc, char **argv)
 {
   unsigned long i;
-  int status;
+  dds_return_t status;
   int result = EXIT_SUCCESS;
   uint32_t payloadSize = 8192;
   unsigned int burstInterval = 0;

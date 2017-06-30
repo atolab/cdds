@@ -42,7 +42,7 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/dds
         COMPONENT dev)
 
 # TODO: improve test inclusion.
-if(BUILD_TESTING)
+if((BUILD_TESTING) AND ((NOT DEFINED MSVC_VERSION) OR (MSVC_VERSION GREATER "1800")))
   add_subdirectory(vddsc/tests)
   add_subdirectory(util/tests)
 endif()

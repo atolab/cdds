@@ -21,13 +21,11 @@ long long llmin = OS_MIN_INTEGER(long long);
 long long llmax = OS_MAX_INTEGER(long long);
 unsigned long long ullmax = OS_MAX_INTEGER(unsigned long long);
 
-CUnit_Suite_Initialize(strtoll)
+CUnit_Suite_Initialize(os_str_convert)
 {
     int result = DDS_RETCODE_OK;
     os_osInit();
-  #if ENABLE_TRACING
-    printf("Run suite_abstraction_strtoll_init\n");
-  #endif
+    printf("Run os_str_convert_Initialize\n");
 
     (void)snprintf (str_llmin, sizeof(str_llmin), "%lld", llmin);
     (void)snprintf (str_llmax, sizeof(str_llmax), "%lld", llmax);
@@ -40,376 +38,274 @@ CUnit_Suite_Initialize(strtoll)
     return result;
 }
 
-CUnit_Suite_Cleanup(strtoll)
+CUnit_Suite_Cleanup(os_str_convert)
 {
     int result = DDS_RETCODE_OK;
 
-  #if ENABLE_TRACING
-    printf("Run suite_abstraction_strtoll_clean\n");
-  #endif
+    printf("Run os_str_convert_Cleanup\n");
     os_osExit();
     return result;
 }
 
-CUnit_Test(strtoll, strtoll)
+CUnit_Test(os_str_convert, strtoll)
 {
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_001a\n");
-  #endif
+    printf ("Starting os_strtoll_001a\n");
     str = "gibberish";
     ll = os_strtoll(str, &ptr, 0);
     CU_ASSERT (ll == 0 && ptr == str);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_001b\n");
-  #endif
+    printf ("Starting os_strtoll_001b\n");
     str = "+gibberish";
     ll = os_strtoll(str, &ptr, 0);
     CU_ASSERT (ll == 0 && ptr == str);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_001c\n");
-  #endif
+    printf ("Starting os_strtoll_001c\n");
     str = "-gibberish";
     ll = os_strtoll(str, &ptr, 0);
     CU_ASSERT (ll == 0 && ptr == str);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_001d\n");
-  #endif
+    printf ("Starting os_strtoll_001d\n");
     str = "gibberish";
     ptr = NULL;
     errno=0;
     ll = os_strtoll(str, &ptr, 36);
     CU_ASSERT (ll == 46572948005345 && errno == 0 && ptr && *ptr == '\0');
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_001e\n");
-  #endif
+    printf ("Starting os_strtoll_001e\n");
     str = "1050505055";
     ptr = NULL;
     errno = 0;
     ll = os_strtoll(str, &ptr, 37);
     CU_ASSERT (ll == 0LL && errno == EINVAL && ptr == str);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_001f\n");
-  #endif
+    printf ("Starting os_strtoll_001f\n");
     str = " \t \n 1050505055";
     ll = os_strtoll(str, NULL, 10);
     CU_ASSERT (ll == 1050505055LL);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_001g\n");
-  #endif
+    printf ("Starting os_strtoll_001g\n");
     str = " \t \n -1050505055";
     ptr = NULL;
     ll = os_strtoll(str, &ptr, 10);
     CU_ASSERT (ll == -1050505055LL);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_001h\n");
-  #endif
+    printf ("Starting os_strtoll_001h\n");
     str = " \t \n - \t \n 1050505055";
     ptr = NULL;
     ll = os_strtoll(str, &ptr, 10);
     CU_ASSERT (ll == 0LL && ptr == str);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_002a\n");
-  #endif
+    printf ("Starting os_strtoll_002a\n");
     str = "10x";
     ptr = NULL;
     ll = os_strtoll(str, &ptr, 10);
     CU_ASSERT (ll == 10LL && ptr && *ptr == 'x');
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_002b\n");
-  #endif
+    printf ("Starting os_strtoll_002b\n");
     str = "+10x";
     ll = os_strtoll(str, &ptr, 10);
     CU_ASSERT (ll == 10LL && ptr && *ptr == 'x');
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_002c\n");
-  #endif
+    printf ("Starting os_strtoll_002c\n");
     str = "-10x";
     ll = os_strtoll(str, &ptr, 10);
     CU_ASSERT (ll == -10LL && ptr && *ptr == 'x');
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_002d\n");
-  #endif
+    printf ("Starting os_strtoll_002d\n");
     str = (const char *)str_llmax;
     ll = os_strtoll(str, NULL, 10);
     CU_ASSERT (ll == llmax);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_002e\n");
-  #endif
+    printf ("Starting os_strtoll_002e\n");
     str = (const char *)str_llmin;
     ll = os_strtoll(str, NULL, 10);
     CU_ASSERT (ll == llmin);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_002f\n");
-  #endif
+    printf ("Starting os_strtoll_002f\n");
     str = (const char *)str_llrange;
     ll = os_strtoll(str, &ptr, 10);
     CU_ASSERT (ll == llmax && *ptr == '1');
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_003a\n");
-  #endif
+    printf ("Starting os_strtoll_003a\n");
     str = "0x100";
     ll = os_strtoll(str, NULL, 16);
     CU_ASSERT (ll == 0x100LL);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_003b\n");
-  #endif
+    printf ("Starting os_strtoll_003b\n");
     str = "0X100";
     ll = os_strtoll(str, NULL, 16);
     CU_ASSERT (ll == 0x100LL);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_003c\n");
-  #endif
+    printf ("Starting os_strtoll_003c\n");
     str = "0x1DEFCAB";
     ll = os_strtoll(str, NULL, 16);
     CU_ASSERT (ll == 0x1DEFCABLL);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_003d\n");
-  #endif
+    printf ("Starting os_strtoll_003d\n");
     str = "0x1defcab";
     ll = os_strtoll(str, NULL, 16);
     CU_ASSERT (ll == 0x1DEFCABLL);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_003e\n");
-  #endif
+    printf ("Starting os_strtoll_003e\n");
     str = (char *)str_xllmin;
     ll = os_strtoll(str, NULL, 16);
     CU_ASSERT (ll == llmin);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_003f\n");
-  #endif
+    printf ("Starting os_strtoll_003f\n");
     str = (char *)str_xllmax;
     ll = os_strtoll(str, NULL, 16);
     CU_ASSERT (ll == llmax);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_003g\n");
-  #endif
+    printf ("Starting os_strtoll_003g\n");
     str = "0x100";
     ll = os_strtoll(str, NULL, 0);
     CU_ASSERT (ll == 0x100LL);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_003h\n");
-  #endif
+    printf ("Starting os_strtoll_003h\n");
     str = "100";
     ll = os_strtoll(str, NULL, 16);
     CU_ASSERT (ll == 0x100LL);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_003i\n");
-  #endif
+    printf ("Starting os_strtoll_003i\n");
     /* calling os_strtoll with \"%s\" and base 10, expected result 0 */
     str = "0x100";
     ll = os_strtoll(str, &ptr, 10);
     CU_ASSERT (ll == 0 && ptr && *ptr == 'x');
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_003j\n");
-  #endif
+    printf ("Starting os_strtoll_003j\n");
     /* calling os_strtoll with \"%s\" and base 0, expected result 256 */
     str = "0x100g";
     ll = os_strtoll(str, &ptr, 0);
     CU_ASSERT (ll == 256 && ptr && *ptr == 'g');
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_004a\n");
-  #endif
+    printf ("Starting os_strtoll_004a\n");
     str = "0100";
     ll = os_strtoll(str, NULL, 0);
     CU_ASSERT(ll == 64LL);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_004b\n");
-  #endif
+    printf ("Starting os_strtoll_004b\n");
     str = "0100";
     ll = os_strtoll(str, NULL, 8);
     CU_ASSERT(ll == 64LL);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_004c\n");
-  #endif
+    printf ("Starting os_strtoll_004c\n");
     str = "100";
     ll = os_strtoll(str, NULL, 8);
     CU_ASSERT(ll == 64LL);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_004d\n");
-  #endif
+    printf ("Starting os_strtoll_004d\n");
     /* calling os_strtoll with \"%s\" and base 10, expected result 100 */
     str = "0100";
     ll = os_strtoll(str, &ptr, 10);
     CU_ASSERT(ll == 100);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_004e\n");
-  #endif
+    printf ("Starting os_strtoll_004e\n");
     /* calling os_strtoll with \"%s\" and base 0, expected result 64 */
     str = "01008";
     ll = os_strtoll(str, &ptr, 8);
     CU_ASSERT(ll == 64LL && ptr && *ptr == '8');
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoll_004f\n");
-  #endif
+    printf ("Starting os_strtoll_004f\n");
     str = "00001010";
     ll = os_strtoll(str, NULL, 2);
     CU_ASSERT(ll == 10LL);
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_os_strtoll\n");
-  #endif
+    printf ("Ending os_strtoll\n");
 }
 
-CUnit_Test(strtoll, strtoull)
+CUnit_Test(os_str_convert, strtoull)
 {
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoull_001a\n");
-  #endif
+    printf ("Starting os_strtoull_001a\n");
     str = "0xffffffffffffffff";
     ull = os_strtoull(str, NULL, 0);
     CU_ASSERT(ull == ullmax);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoull_001b\n");
-  #endif
+    printf ("Starting os_strtoull_001b\n");
     str = "-1";
     ull = os_strtoull(str, NULL, 0);
     CU_ASSERT(ull == ullmax);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_strtoull_001c\n");
-  #endif
+    printf ("Starting os_strtoull_001c\n");
     str = "-2";
     ull = os_strtoull(str, NULL, 0);
     CU_ASSERT(ull == (ullmax - 1));
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_os_strtoull\n");
-  #endif
+    printf ("Ending os_strtoull\n");
 }
 
-CUnit_Test(strtoll, atoll)
+CUnit_Test(os_str_convert, atoll)
 {
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_atoll_001\n");
-  #endif
+    printf ("Starting os_atoll_001\n");
     str = "10";
     ll = os_atoll(str);
     CU_ASSERT(ll == 10);
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_os_atoll\n");
-  #endif
+    printf ("Ending os_atoll\n");
 }
 
-CUnit_Test(strtoll, atoull)
+CUnit_Test(os_str_convert, atoull)
 {
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_atoull_001\n");
-  #endif
+    printf ("Starting os_atoull_001\n");
     str = "10";
     ull = os_atoull(str);
     CU_ASSERT(ull == 10);
 
-  #if ENABLE_TRACING
     printf ("Ending tc_os_atoull\n");
-  #endif
 }
 
-CUnit_Test(strtoll, lltostr)
+CUnit_Test(os_str_convert, lltostr)
 {
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_lltostr_001\n");
-  #endif
+    printf ("Starting os_lltostr_001\n");
     ll = llmax;
     ptr = os_lltostr(ll, buf, 0, NULL);
     CU_ASSERT(ptr == NULL);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_lltostr_002\n");
-  #endif
+    printf ("Starting os_lltostr_002\n");
     /* calling os_lltostr with %lld with buffer size of 5, expected result \"5432\" */
     ll = 54321;
     ptr = os_lltostr(ll, buf, 5, NULL);
     CU_ASSERT(strcmp(ptr, "5432") == 0);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_lltostr_003a\n");
-  #endif
+    printf ("Starting os_lltostr_003a\n");
     ll = llmax;
     ptr = os_lltostr(ll, buf, sizeof(buf), NULL);
     CU_ASSERT(strcmp(ptr, str_llmax) == 0);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_lltostr_003b\n");
-  #endif
+    printf ("Starting os_lltostr_003b\n");
     ll = llmin;
     ptr = os_lltostr(ll, buf, sizeof(buf), NULL);
     CU_ASSERT(strcmp(ptr, str_llmin) == 0);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_lltostr_004\n");
-  #endif
+    printf ("Starting os_lltostr_004\n");
     ll = 1;
     ptr = os_lltostr(ll, buf, sizeof(buf), NULL);
     CU_ASSERT(strcmp(ptr, "1") == 0);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_lltostr_005\n");
-  #endif
+    printf ("Starting os_lltostr_005\n");
     ll = 0;
     ptr = os_lltostr(ll, buf, sizeof(buf), NULL);
     CU_ASSERT(strcmp(ptr, "0") == 0);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_lltostr_006\n");
-  #endif
+    printf ("Starting os_lltostr_006\n");
     ll = -1;
     ptr = os_lltostr(ll, buf, sizeof(buf), NULL);
     CU_ASSERT(strcmp(ptr, "-1") == 0);
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_os_lltostr\n");
-  #endif
+    printf ("Ending os_lltostr\n");
 }
 
-CUnit_Test(strtoll, ulltostr)
+CUnit_Test(os_str_convert, ulltostr)
 {
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_ulltostr_001\n");
-  #endif
+    printf ("Starting os_ulltostr_001\n");
     ull = ullmax;
     ptr = os_ulltostr(ull, buf, sizeof(buf), NULL);
     CU_ASSERT(strcmp(ptr, str_ullmax) == 0);
 
-  #if ENABLE_TRACING
-    printf ("Starting tc_os_ulltostr_002\n");
-  #endif
+    printf ("Starting os_ulltostr_002\n");
     ull = 0ULL;
     ptr = os_ulltostr(ull, buf, sizeof(buf), NULL);
     CU_ASSERT(strcmp(ptr, "0") == 0);
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_os_ulltostr\n");
-  #endif
+    printf ("Ending os_ulltostr\n");
 }
 

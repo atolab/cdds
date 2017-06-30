@@ -65,10 +65,10 @@ typedef struct nn_xqos dds_qos_t;
  */
 typedef enum dds_durability_kind
 {
-  DDS_DURABILITY_VOLATILE,
-  DDS_DURABILITY_TRANSIENT_LOCAL,
-  DDS_DURABILITY_TRANSIENT,
-  DDS_DURABILITY_PERSISTENT
+    DDS_DURABILITY_VOLATILE,
+    DDS_DURABILITY_TRANSIENT_LOCAL,
+    DDS_DURABILITY_TRANSIENT,
+    DDS_DURABILITY_PERSISTENT
 }
 dds_durability_kind_t;
 
@@ -78,8 +78,8 @@ dds_durability_kind_t;
  */
 typedef enum dds_history_kind
 {
-  DDS_HISTORY_KEEP_LAST,
-  DDS_HISTORY_KEEP_ALL
+    DDS_HISTORY_KEEP_LAST,
+    DDS_HISTORY_KEEP_ALL
 }
 dds_history_kind_t;
 
@@ -89,8 +89,8 @@ dds_history_kind_t;
  */
 typedef enum dds_ownership_kind
 {
-  DDS_OWNERSHIP_SHARED,
-  DDS_OWNERSHIP_EXCLUSIVE
+    DDS_OWNERSHIP_SHARED,
+    DDS_OWNERSHIP_EXCLUSIVE
 }
 dds_ownership_kind_t;
 
@@ -100,9 +100,9 @@ dds_ownership_kind_t;
  */
 typedef enum dds_liveliness_kind
 {
-  DDS_LIVELINESS_AUTOMATIC,
-  DDS_LIVELINESS_MANUAL_BY_PARTICIPANT,
-  DDS_LIVELINESS_MANUAL_BY_TOPIC
+    DDS_LIVELINESS_AUTOMATIC,
+    DDS_LIVELINESS_MANUAL_BY_PARTICIPANT,
+    DDS_LIVELINESS_MANUAL_BY_TOPIC
 }
 dds_liveliness_kind_t;
 
@@ -112,8 +112,8 @@ dds_liveliness_kind_t;
  */
 typedef enum dds_reliability_kind
 {
-  DDS_RELIABILITY_BEST_EFFORT,
-  DDS_RELIABILITY_RELIABLE
+    DDS_RELIABILITY_BEST_EFFORT,
+    DDS_RELIABILITY_RELIABLE
 }
 dds_reliability_kind_t;
 
@@ -123,8 +123,8 @@ dds_reliability_kind_t;
  */
 typedef enum dds_destination_order_kind
 {
-  DDS_DESTINATIONORDER_BY_RECEPTION_TIMESTAMP,
-  DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP
+    DDS_DESTINATIONORDER_BY_RECEPTION_TIMESTAMP,
+    DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP
 }
 dds_destination_order_kind_t;
 
@@ -134,8 +134,8 @@ dds_destination_order_kind_t;
  */
 typedef struct dds_history_qospolicy
 {
-  dds_history_kind_t kind;
-  int32_t depth;
+    dds_history_kind_t kind;
+    int32_t depth;
 }
 dds_history_qospolicy_t;
 
@@ -145,9 +145,9 @@ dds_history_qospolicy_t;
  */
 typedef struct dds_resource_limits_qospolicy
 {
-  int32_t max_samples;
-  int32_t max_instances;
-  int32_t max_samples_per_instance;
+    int32_t max_samples;
+    int32_t max_instances;
+    int32_t max_samples_per_instance;
 }
 dds_resource_limits_qospolicy_t;
 
@@ -157,9 +157,9 @@ dds_resource_limits_qospolicy_t;
  */
 typedef enum dds_presentation_access_scope_kind
 {
-  DDS_PRESENTATION_INSTANCE,
-  DDS_PRESENTATION_TOPIC,
-  DDS_PRESENTATION_GROUP
+    DDS_PRESENTATION_INSTANCE,
+    DDS_PRESENTATION_TOPIC,
+    DDS_PRESENTATION_GROUP
 }
 dds_presentation_access_scope_kind_t;
 
@@ -169,29 +169,42 @@ dds_presentation_access_scope_kind_t;
  * @returns - Pointer to the initialized dds_qos_t structure, NULL if unsuccessful.
  */
 _Ret_notnull_
-OS_API dds_qos_t * dds_qos_create (void);
+OS_API
+dds_qos_t * dds_qos_create (void);
 
 /**
  * @brief Delete memory allocated to QoS-policies structure
  *
  * @param[in] qos - Pointer to dds_qos_t structure
  */
-OS_API void dds_qos_delete (_In_ _Post_invalid_ dds_qos_t * __restrict qos);
+OS_API
+void dds_qos_delete (
+    _In_ _Post_invalid_ dds_qos_t * __restrict qos
+);
 
 /**
  * @brief Reset a QoS-policies structure to default values
  *
  * @param[in,out] qos - Pointer to the dds_qos_t structure
  */
-OS_API void dds_qos_reset (_Out_ dds_qos_t * __restrict qos);
+OS_API
+void dds_qos_reset (
+    _Out_ dds_qos_t * __restrict qos
+);
 
 /**
  * @brief Copy all QoS-policies from one structure to another
  *
  * @param[in,out] dst - Pointer to the destination dds_qos_t structure
  * @param[in] src - Pointer to the source dds_qos_t structure
+ *
+ * @returns - Return-code indicating success or failure
  */
-OS_API dds_return_t dds_qos_copy (_Out_ dds_qos_t * __restrict dst, _In_ const dds_qos_t * __restrict src);
+OS_API
+dds_return_t dds_qos_copy (
+    _Out_ dds_qos_t * __restrict dst,
+    _In_ const dds_qos_t * __restrict src
+);
 
 /**
  * @brief Copy all QoS-policies from one structure to another, unless already set
@@ -201,47 +214,12 @@ OS_API dds_return_t dds_qos_copy (_Out_ dds_qos_t * __restrict dst, _In_ const d
  * @param[in,out] dst - Pointer to the destination qos structure
  * @param[in] src - Pointer to the source qos structure
  */
-OS_API void dds_qos_merge (_Inout_ dds_qos_t * __restrict dst, _In_ const dds_qos_t * __restrict src);
-
-/**
- * Description : Retrieves the default value of the domain participant qos
- *
- * Arguments :
- *   -# qos pointer that contains default values of the policies for participant
- */
-OS_API void dds_get_default_participant_qos (dds_qos_t * __restrict qos);
-
-/**
- * Description : Retrieves the default value of the topic qos
- *
- * Arguments :
- *   -# qos pointer that contains default values of the policies for topic
- */
-OS_API void dds_get_default_topic_qos (dds_qos_t * __restrict qos);
-
-/**
- * Description : Retrieves the default value of the publisher qos
- *
- * Arguments :
- *   -# qos pointer that contains default values of the policies for publisher
- */
-OS_API void dds_get_default_publisher_qos (dds_qos_t * __restrict qos);
-
-/**
- * Description : Retrieves the default value of the data writer qos
- *
- * Arguments :
- *   -# qos pointer that contains default values of the policies for data writer
- */
-OS_API void dds_get_default_writer_qos (dds_qos_t * __restrict qos);
-
-/**
- * Description : Retrieves the default value of the data reader qos
- *
- * Arguments :
- *   -# qos pointer that contains default values of the policies for data reader
- */
-OS_API void dds_get_default_reader_qos (dds_qos_t * __restrict qos);
+OS_API
+void dds_qos_merge
+(
+    _Inout_ dds_qos_t * __restrict dst,
+    _In_ const dds_qos_t * __restrict src
+);
 
 /**
  * @brief Set the userdata of a qos structure.
@@ -254,8 +232,8 @@ OS_API
 void dds_qset_userdata
 (
     _Inout_ dds_qos_t * __restrict qos,
-    _In_ const void * __restrict value,
-    _In_range_(>, 0) size_t sz
+    _In_reads_bytes_opt_(sz) const void * __restrict value,
+    _In_ size_t sz
 );
 
 /**
@@ -269,8 +247,8 @@ OS_API
 void dds_qset_topicdata
 (
     _Inout_ dds_qos_t * __restrict qos,
-    _In_ const void * __restrict value,
-    _In_range_(>, 0) size_t sz
+    _In_reads_bytes_opt_(sz) const void * __restrict value,
+    _In_ size_t sz
 );
 
 /**
@@ -284,8 +262,8 @@ OS_API
 void dds_qset_groupdata
 (
     _Inout_ dds_qos_t * __restrict qos,
-    _In_ const void * __restrict value,
-    _In_range_(>, 0) size_t sz
+    _In_reads_bytes_opt_(sz) const void * __restrict value,
+    _In_ size_t sz
 );
 
 /**
@@ -308,7 +286,8 @@ void dds_qset_durability
  * @param[in] kind - History kind value \ref DCPS_QoS_History
  * @param[in] depth - History depth value \ref DCPS_QoS_History
  */
-OS_API void dds_qset_history
+OS_API
+void dds_qset_history
 (
     _Inout_ dds_qos_t * __restrict qos,
     _In_range_(DDS_HISTORY_KEEP_LAST, DDS_HISTORY_KEEP_ALL) dds_history_kind_t kind,
@@ -454,7 +433,7 @@ void dds_qset_partition
 (
     _Inout_ dds_qos_t * __restrict qos,
     _In_ uint32_t n,
-    _In_reads_z_(n) const char ** __restrict ps
+    _In_z_count_(n) const char ** __restrict ps
 );
 
 /**
@@ -541,13 +520,13 @@ void dds_qset_reader_data_lifecycle
 OS_API
 void dds_qset_durability_service
 (
-  _Inout_ dds_qos_t * __restrict qos,
-  _In_range_(0, DDS_INFINITY) dds_duration_t service_cleanup_delay,
-  _In_range_(DDS_HISTORY_KEEP_LAST, DDS_HISTORY_KEEP_ALL) dds_history_kind_t history_kind,
-  _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t history_depth,
-  _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t max_samples,
-  _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t max_instances,
-  _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t max_samples_per_instance
+    _Inout_ dds_qos_t * __restrict qos,
+    _In_range_(0, DDS_INFINITY) dds_duration_t service_cleanup_delay,
+    _In_range_(DDS_HISTORY_KEEP_LAST, DDS_HISTORY_KEEP_ALL) dds_history_kind_t history_kind,
+    _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t history_depth,
+    _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t max_samples,
+    _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t max_instances,
+    _In_range_(>=, DDS_LENGTH_UNLIMITED) int32_t max_samples_per_instance
 );
 
 /**
@@ -761,8 +740,8 @@ OS_API
 void dds_qget_partition
 (
     _In_ const dds_qos_t * __restrict qos,
-    _Inout_opt_ uint32_t *n,
-    _Inout_opt_ char *** ps
+    _Out_ uint32_t *n,
+    _Outptr_result_maybenull_ char *** ps
 );
 
 /**
@@ -847,13 +826,13 @@ void dds_qget_reader_data_lifecycle
  */
 OS_API void dds_qget_durability_service
 (
-  _In_ const dds_qos_t * qos,
-  _Out_opt_ dds_duration_t * service_cleanup_delay,
-  _Out_opt_ dds_history_kind_t * history_kind,
-  _Out_opt_ int32_t * history_depth,
-  _Out_opt_ int32_t * max_samples,
-  _Out_opt_ int32_t * max_instances,
-  _Out_opt_ int32_t * max_samples_per_instance
+    _In_ const dds_qos_t * qos,
+    _Out_opt_ dds_duration_t * service_cleanup_delay,
+    _Out_opt_ dds_history_kind_t * history_kind,
+    _Out_opt_ int32_t * history_depth,
+    _Out_opt_ int32_t * max_samples,
+    _Out_opt_ int32_t * max_instances,
+    _Out_opt_ int32_t * max_samples_per_instance
 );
 
 #undef OS_API

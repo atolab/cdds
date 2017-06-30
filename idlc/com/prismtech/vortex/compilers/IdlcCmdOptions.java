@@ -7,12 +7,6 @@ public class IdlcCmdOptions extends CmdOptions
     super ("dds_idlc", args);
   }
 
-  public IdlcCmdOptions (RmippCmdOptions rmiopts)
-  {
-    super (rmiopts);
-    forcpp = true;
-  }
-
   public IdlcCmdOptions (IdlcppCmdOptions cppopts)
   {
     super (cppopts);

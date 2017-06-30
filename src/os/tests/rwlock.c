@@ -246,13 +246,11 @@ uint32_t concurrent_tryread_thread (_In_ void *arg)
     return 0;
 }
 
-CUnit_Suite_Initialize(rwlock)
+CUnit_Suite_Initialize(os_rwlock)
 {
     int result = 0;
     os_osInit();
-  #if ENABLE_TRACING
-    printf("Run suite_abstraction_rwlock_init\n");
-  #endif
+    printf("Run os_rwlock_Initialize\n");
   #ifdef OS_LINUX_RWLOCK_H149C
     supported_resultBusy = 1;
   #else
@@ -262,48 +260,36 @@ CUnit_Suite_Initialize(rwlock)
     return result;
 }
 
-CUnit_Suite_Cleanup(rwlock)
+CUnit_Suite_Cleanup(os_rwlock)
 {
     int result = DDS_RETCODE_OK;
 
-  #if ENABLE_TRACING
-    printf("Run suite_abstraction_rwlock_clean\n");
-  #endif
+    printf("Run os_rwlock_Cleanup\n");
     os_osExit();
     return result;
 }
 
-CUnit_Test(rwlock, init)
+CUnit_Test(os_rwlock, init)
 {
-  #if ENABLE_TRACING
     /* Initilalize reader/writer lock with PRIVATE scope and Success result */
-    printf ("Starting tc_os_rwlockInit_001\n");
-  #endif
+    printf ("Starting os_rwlock_init_001\n");
     os_rwlockInit (&sd.global_rwlock);
 
-  #if ENABLE_TRACING
     /* Initilalize reader/writer lock with Fail result */
-    printf ("Starting tc_os_rwlockInit_002\n");
-    printf ("Failure cannot be forced");
-  #endif
+    printf ("Starting os_rwlock_init_001\n");
+    printf ("N.A - Failure cannot be forced\n");
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_rwlockInit\n");
-  #endif
+    printf ("Ending os_rwlock_init\n");
 }
 
-CUnit_Test(rwlock, read, false)
+CUnit_Test(os_rwlock, read, false)
 {
     os_time rdelay = { 3, 0 };
     struct Par par[RWLOCK_THREADS];
-  #if ENABLE_TRACING
     /* Test critical section access without locking to show problem */
-    printf ("Starting tc_os_rwlockRead_001\n");
-  #endif
+    printf ("Starting os_rwlock_read_001\n");
     rdelay.tv_sec = 3;
-  #if ENABLE_TRACING
     printf ("Testing for %d.%9.9d seconds without lock\n", rdelay.tv_sec, rdelay.tv_nsec);
-  #endif
     sd.read_corrupt_count = 0;
     sd.write_corrupt_count = 0;
     sd.concurrent_read_access = 0;
@@ -341,7 +327,6 @@ CUnit_Test(rwlock, read, false)
     os_threadWaitExit (rwlock_os_threadId[6], NULL);
     os_threadWaitExit (rwlock_os_threadId[7], NULL);
 
-  #if ENABLE_TRACING
     printf ("All threads stopped\n");
     for (i = 2; i < 4;  i++) {
         printf ("total read access %d, concurrent read access %d for thread %d\n",
@@ -363,7 +348,6 @@ CUnit_Test(rwlock, read, false)
     sprintf (buffer, "Corrupt counter = %d, Loop counter is %d",
         sd.read_corrupt_count + sd.write_corrupt_count + sd.tryread_corrupt_count + sd.trywrite_corrupt_count,
         sd.concurrent_read_access + sd.concurrent_write_access + sd.concurrent_tryread_access + sd.concurrent_trywrite_access);
-  #endif
 
     CU_ASSERT((sd.read_corrupt_count > 0 ||
                sd.write_corrupt_count > 0 ||
@@ -374,14 +358,10 @@ CUnit_Test(rwlock, read, false)
               sd.concurrent_tryread_access > 0 &&
               sd.concurrent_trywrite_access > 0);
 
-  #if ENABLE_TRACING
     /* Test critical section READ access with locking and PRIVATE scope */
-    printf ("Starting tc_os_rwlockRead_002\n");
-  #endif
+    printf ("Starting os_rwlock_read_002\n");
     rdelay.tv_sec = 3;
-  #if ENABLE_TRACING
     printf ("Testing for %d.%9.9d seconds with lock\n", rdelay.tv_sec, rdelay.tv_nsec);
-  #endif
     sd.read_corrupt_count = 0;
     sd.write_corrupt_count = 0;
     sd.concurrent_read_access = 0;
@@ -419,7 +399,6 @@ CUnit_Test(rwlock, read, false)
     os_threadWaitExit (rwlock_os_threadId[6], NULL);
     os_threadWaitExit (rwlock_os_threadId[7], NULL);
 
-  #if ENABLE_TRACING
     printf ("All threads stopped\n");
     for (i = 2; i < 4;  i++) {
         printf ("total read access %d, concurrent read access %d for thread %d\n",
@@ -431,204 +410,145 @@ CUnit_Test(rwlock, read, false)
     }
 
     sprintf (buffer, "Corrupt read counter = %d, Read loop counter is %d", sd.read_corrupt_count, sd.concurrent_read_access);
-  #endif
     CU_ASSERT (sd.read_corrupt_count == 0 && sd.concurrent_read_access > 0);
 
-  #if ENABLE_TRACING
     /* Test read on rwlock with PRIVATE scope and Success result & not locked */
-    printf ("Starting tc_os_rwlockRead_003\n");
-  #endif
+    printf ("Starting os_rwlock_read_003\n");
     os_rwlockRead (&sd.global_rwlock); // Cannot be checked
     os_rwlockUnlock (&sd.global_rwlock);
 
-  #if ENABLE_TRACING
     /* Test read on rwlock with PRIVATE scope and Success result & locked by read */
-    printf ("Starting tc_os_rwlockRead_004\n");
+    printf ("Starting os_rwlock_read_004\n");
     printf ("N.A - Not implemented\n");
-  #endif
 
-  #if ENABLE_TRACING
     /* Test read on rwlock with PRIVATE scope and Fail result */
-    printf ("Starting tc_os_rwlockRead_005\n");
+    printf ("Starting os_rwlock_read_005\n");
     printf ("N.A - Failure cannot be forced\n");
-  #endif
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_rwlockRead\n");
-  #endif
+    printf ("Ending os_rwlock_read\n");
 }
 
-CUnit_Test(rwlock, write, false)
+CUnit_Test(os_rwlock, write, false)
 {
-  #if ENABLE_TRACING
     /* Test critical section WRITE access with locking and PRIVATE scope */
-    printf ("Starting tc_os_rwlockWrite_001\n");
+    printf ("Starting os_rwlock_write_001\n");
 
     sprintf (buffer, "Corrupt write counter = %d, Write loop counter is %d", sd.write_corrupt_count, sd.concurrent_write_access);
-  #endif
     CU_ASSERT (sd.write_corrupt_count == 0 && sd.concurrent_write_access > 0);
 
-  #if ENABLE_TRACING
     /* Test write on rwlock with PRIVATE scope and Success result */
-    printf ("Starting tc_os_rwlockWrite_002\n");
-  #endif
+    printf ("Starting os_rwlock_write_002\n");
     os_rwlockWrite (&sd.global_rwlock); //Cannot be checked
     os_rwlockUnlock (&sd.global_rwlock);
 
-  #if ENABLE_TRACING
     /* Test write on rwlock with PRIVATE scope and Fail result */
-    printf ("Starting tc_os_rwlockWrite_003\n");
+    printf ("Starting os_rwlock_write_003\n");
     printf ("N.A - Failure cannot be forced\n");
-  #endif
 
-  #if ENABLE_TRACING
     printf ("Ending tc_rwlockWrite\n");
-  #endif
 }
 
 CUnit_Test(rwlock, tryread, false)
 {
     os_result result;
-  #if ENABLE_TRACING
     /* Test critical section READ access with trylocking and PRIVATE scope */
-    printf ("Starting tc_os_rwlockTryRead_001\n");
+    printf ("Starting os_rwlock_tryread_001\n");
 
     sprintf (buffer, "Corrupt tryread counter = %d, Tryread loop counter is %d, Busy counter = %d", sd.tryread_corrupt_count, sd.concurrent_tryread_access, sd.tryread_busy_count);
-  #endif
     CU_ASSERT (sd.tryread_corrupt_count == 0 && sd.concurrent_tryread_access > 0);
 
-  #if ENABLE_TRACING
     /* Test try read on rwlock with PRIVATE scope and Success result & not locked */
-    printf ("Starting tc_os_rwlockTryRead_002\n");
-  #endif
+    printf ("Starting os_rwlock_tryread_002\n");
     result = os_rwlockTryRead (&sd.global_rwlock);
     CU_ASSERT (result == os_resultSuccess);
     os_rwlockUnlock (&sd.global_rwlock);
 
-  #if ENABLE_TRACING
     /* Test try read on rwlock with PRIVATE scope and Success result & locked by read */
-    printf ("Starting tc_os_rwlockTryRead_003\n");
+    printf ("Starting os_rwlock_tryread_003\n");
     printf ("N.A - Not implemented\n");
-  #endif
 
-  #if ENABLE_TRACING
     /* Test try read on rwlock with PRIVATE scope and Busy result & locked by write */
-    printf ("Starting tc_os_rwlockTryRead_004\n");
+    printf ("Starting os_rwlock_tryread_004\n");
     printf ("N.A - Not implemented\n");
-  #endif
 
-  #if ENABLE_TRACING
     /* Test try read on rwlock with PRIVATE scope and Fail result */
-    printf ("Starting tc_os_rwlockTryRead_004\n");
+    printf ("Starting os_rwlock_tryread_005\n");
     printf ("N.A - Failure cannot be forced\n");
-  #endif
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_rwlockTryRead\n");
-  #endif
+    printf ("Ending os_rwlock_tryread\n");
 }
 
-CUnit_Test(rwlock, trywrite, false)
+CUnit_Test(os_rwlock, trywrite, false)
 {
     os_result result;
-  #if ENABLE_TRACING
     /* Test critical section WRITE access with trylocking and PRIVATE scope */
-    printf ("Starting tc_os_rwlockTryWrite_001\n");
+    printf ("Starting os_rwlock_trywrite_001\n");
 
     sprintf (buffer, "Corrupt trywrite counter = %d, Trywrite loop counter is %d, Busy counter = %d", sd.trywrite_corrupt_count, sd.concurrent_trywrite_access, sd.trywrite_busy_count);
-  #endif
     CU_ASSERT (sd.trywrite_corrupt_count == 0 && sd.concurrent_trywrite_access > 0);
 
-  #if ENABLE_TRACING
     /* Test try write on rwlock with PRIVATE scope and Success result */
-    printf ("Starting tc_os_rwlockTryWrite_002\n");
-  #endif
+    printf ("Starting os_rwlock_trywrite_002\n");
     result = os_rwlockTryWrite (&sd.global_rwlock);
     CU_ASSERT (result == os_resultSuccess);
     os_rwlockUnlock (&sd.global_rwlock);
 
-  #if ENABLE_TRACING
     /* Test try write on rwlock with PRIVATE scope and Busy result & locked by read */
-    printf ("Starting tc_os_rwlockTryWrite_003\n");
+    printf ("Starting os_rwlock_trywrite_003\n");
     printf ("N.A - Not implemented\n");
-  #endif
 
-  #if ENABLE_TRACING
     /* Test try write on rwlock with PRIVATE scope and Busy result & locked by write */
-    printf ("Starting tc_os_rwlockTryWrite_004\n");
+    printf ("Starting os_rwlock_trywrite_004\n");
     printf ("N.A - Not implemented\n");
-  #endif
 
-  #if ENABLE_TRACING
     /* Test try write on rwlock with PRIVATE scope and Fail result */
-    printf ("Starting tc_os_rwlockTryWrite_005\n");
+    printf ("Starting os_rwlock_trywrite_005\n");
     printf ("N.A - Failure cannot be forced\n");
-  #endif
 
-  #if ENABLE_TRACING
-    printf ("Ending tc_rwlockTryWrite\n");
-  #endif
+    printf ("Ending os_rwlock_trywrite\n");
 }
 
-CUnit_Test(rwlock, unlock, false)
+CUnit_Test(os_rwlock, unlock, false)
 {
     os_result result;
-  #if ENABLE_TRACING
     /* Unlock rwlock with PRIVATE scope and Success result and claimed with read */
-    printf ("Starting tc_os_rwlockUnlock_001\n");
-  #endif
+    printf ("Starting os_rwlock_unlock_001\n");
     os_rwlockRead (&sd.global_rwlock);
     os_rwlockUnlock (&sd.global_rwlock); //Cannot be checked
 
-  #if ENABLE_TRACING
     /* Unlock rwlock with PRIVATE scope and Success result and claimed with try read */
-    printf ("Starting tc_os_rwlockUnlock_002\n");
-  #endif
+    printf ("Starting os_rwlock_unlock_002\n");
     result = os_rwlockTryRead (&sd.global_rwlock);
     CU_ASSERT (result == os_resultSuccess);
     os_rwlockUnlock (&sd.global_rwlock);
 
-  #if ENABLE_TRACING
     /* Unlock rwlock with PRIVATE scope and Success result and claimed with write */
-    printf ("Starting tc_os_rwlockUnlock_003\n");
-  #endif
+    printf ("Starting os_rwlock_unlock_003\n");
     os_rwlockWrite (&sd.global_rwlock);
     os_rwlockUnlock (&sd.global_rwlock); //Cannot be checked
 
-  #if ENABLE_TRACING
     /* Unlock rwlock with PRIVATE scope and Success result and claimed with try write */
-    printf ("Starting tc_os_rwlockUnlock_004\n");
-  #endif
+    printf ("Starting os_rwlock_unlock_004\n");
     result = os_rwlockTryWrite (&sd.global_rwlock);
     CU_ASSERT (result == os_resultSuccess);
     os_rwlockUnlock (&sd.global_rwlock);
 
-  #if ENABLE_TRACING
     /* Unlock rwlock with PRIVATE scope and Fail result */
-    printf ("Starting tc_os_rwlockUnlock_005\n");
+    printf ("Starting os_rwlock_unlock_005\n");
     printf ("N.A - Failure cannot be forced\n");
-  #endif
 
-  #if ENABLE_TRACING
     printf ("Ending tc_rwlockUnlock\n");
-  #endif
 }
 
-CUnit_Test(rwlock, destroy, false)
+CUnit_Test(os_rwlock, destroy, false)
 {
-  #if ENABLE_TRACING
     /* Deinitialize rwlock with PRIVATE scope and Success result */
-    printf ("Starting tc_os_rwlockDestroy_001\n");
-  #endif
+    printf ("Starting os_rwlock_destroy_001\n");
     os_rwlockDestroy (&sd.global_rwlock); //Cannot be checked
 
-  #if ENABLE_TRACING
     /* Deinitialize rwlock with PRIVATE scope and Fail result */
-    printf ("Starting tc_os_rwlockDestroy_002\n");
+    printf ("Starting os_rwlock_destroy_002\n");
     printf ("N.A - Failure cannot be forced\n");
-  #endif
 
-  #if ENABLE_TRACING
     printf ("Ending tc_rwlockDestroy\n");
-  #endif
 }

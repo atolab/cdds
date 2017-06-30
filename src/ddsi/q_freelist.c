@@ -102,8 +102,7 @@ void nn_freelist_fini (_Inout_ _Post_invalid_ struct nn_freelist *fl, _In_ void 
   }
 /* The compiler can't make sense of all these linked lists and doesn't
  * realize that the next pointers are always initialized here. */
-#pragma warning(push)
-#pragma warning(disable: 6001)
+OS_WARNING_MSVC_OFF(6001);
   while ((m = fl->mlist) != NULL)
   {
     fl->mlist = m->next;
@@ -116,7 +115,7 @@ void nn_freelist_fini (_Inout_ _Post_invalid_ struct nn_freelist *fl, _In_ void 
     fl->emlist = m->next;
     os_free (m);
   }
-#pragma warning(pop)
+OS_WARNING_MSVC_ON(6001);
 }
 
 static os_atomic_uint32_t freelist_inner_idx_off = OS_ATOMIC_UINT32_INIT(0);
