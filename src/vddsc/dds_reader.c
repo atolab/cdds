@@ -356,8 +356,7 @@ dds_create_reader(
     rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
     rd->m_topic = (dds_topic*)tp;
     rhc = dds_rhc_new (rd, ((dds_topic*)tp)->m_stopic);
-    dds_entity_unlock(tp);
-    dds_entity_add_ref (tp);
+    dds_entity_add_ref_nolock (tp);
     rd->m_entity.m_deriver.close = dds_reader_close;
     rd->m_entity.m_deriver.delete = dds_reader_delete;
     rd->m_entity.m_deriver.set_qos = dds_reader_qos_set;
@@ -370,6 +369,7 @@ dds_create_reader(
         assert(0);
     }
 
+    dds_entity_unlock(tp);
     dds_entity_unlock(parent);
 
     if (asleep) {
