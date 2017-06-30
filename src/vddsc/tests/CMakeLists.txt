@@ -30,6 +30,7 @@ function(add_dds_test NAME SUITE)
     endif()
 endfunction()
 
+idlc_generate(RoundTrip_SRCS RoundTrip_HDRS RoundTrip.idl)
 
 #################################################################################
 # The tests
@@ -40,7 +41,11 @@ add_dds_test(listener                 Criterion      listener.c)
 add_dds_test(participant_creation     Criterion      participant_creation.c)
 add_dds_test(publisher                Criterion      publisher.c)
 add_dds_test(subscriber               Criterion      subscriber.c)
-add_dds_test(topic                    Criterion      topic.c RoundTrip.c)
-add_dds_test(reader                   Criterion      reader.c RoundTrip.c)
-add_dds_test(writer                   Criterion      writer.c RoundTrip.c)
-add_dds_test(write                    Criterion      write.c RoundTrip.c)
+add_dds_test(topic                    Criterion      topic.c ${RoundTrip_SRCS})
+target_include_directories(topic PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+add_dds_test(reader                   Criterion      reader.c ${RoundTrip_SRCS})
+target_include_directories(reader PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+add_dds_test(writer                   Criterion      writer.c ${RoundTrip_SRCS})
+target_include_directories(writer PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+add_dds_test(write                    Criterion      write.c ${RoundTrip_SRCS})
+target_include_directories(write PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")

@@ -1,0 +1,15 @@
+module RoundTripModule
+{
+  struct DataType
+  {
+    sequence<octet> payload;
+  };
+  #pragma keylist DataType
+
+  struct Address
+  {
+    string ip;
+    long port;
+  };
+  #pragma keylist Address ip port
+};
