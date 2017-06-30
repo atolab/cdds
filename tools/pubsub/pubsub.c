@@ -6,7 +6,7 @@
 //#include <time.h>
 #include <string.h>
 //#include <sys/time.h>
-//#include <stdio.h>
+#include <stdio.h>
 //#include <stdlib.h>
 //#include <stdint.h>
 //#include <inttypes.h>
@@ -20,6 +20,10 @@
 //#include <sys/fcntl.h>
 //#include <arpa/inet.h>
 //#include <netdb.h>
+
+#ifndef _WIN
+#define _WIN 1
+#endif
 
 #if USE_EDITLINE
 #include <histedit.h>
@@ -174,7 +178,11 @@ static void *sigthread(void *varg __attribute__ ((unused)))
   {
     char c;
     ssize_t r;
+#ifdef _WIN
+    if((r = _read(sigpipe[0], &c, 1)) < 0)
+#else
     if ((r = read (sigpipe[0], &c, 1)) < 0)
+#endif
     {
       if (os_getErrno() == os_sockEINTR)
         continue;
