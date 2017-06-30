@@ -124,7 +124,6 @@ static ssize_t ddsi_udp_conn_write (ddsi_tran_conn_t conn, const struct msghdr *
   {
     switch (err)
     {
-      case os_sockEINTR:
       case os_sockEPERM:
       case os_sockECONNRESET:
 #ifdef os_sockENETUNREACH
