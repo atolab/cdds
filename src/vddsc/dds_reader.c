@@ -369,6 +369,9 @@ dds_create_reader(
         assert(0);
     }
 
+    dds_entity_unlock(tp);
+    dds_entity_unlock(parent);
+
     if (asleep) {
         thread_state_awake (thr);
     }
@@ -383,9 +386,6 @@ dds_create_reader(
     if (dds_global.m_dur_reader && (rd->m_entity.m_qos->durability.kind > NN_TRANSIENT_LOCAL_DURABILITY_QOS)) {
         (dds_global.m_dur_reader) (rd, rhc);
     }
-
-    dds_entity_unlock(tp);
-    dds_entity_unlock(parent);
 
     return reader;
 }
