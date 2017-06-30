@@ -380,6 +380,9 @@ dds_create_writer(
         assert(0);
     }
 
+    dds_entity_unlock(tp);
+    dds_entity_unlock(pp_or_pub);
+
     if (asleep) {
         thread_state_awake(thr);
     }
@@ -390,6 +393,7 @@ dds_create_writer(
         thread_state_asleep(thr);
     }
 
+    return writer;
 err_bad_qos:
     dds_entity_unlock(tp);
 err_tp_lock:
