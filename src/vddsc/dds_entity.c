@@ -289,25 +289,37 @@ dds_delete(
     dds_entity *next = NULL;
     dds_return_t ret;
 
+    printf("[%d] %s %d\n", (int)(dds_time() / 1000000), __FILE__, __LINE__);
+
     ret = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
     if (ret != DDS_RETCODE_OK) {
         return DDS_ERRNO(ret, DDS_MOD_ENTITY, 0);
     }
+
+    printf("[%d] %s %d\n", (int)(dds_time() / 1000000), __FILE__, __LINE__);
 
     if (--e->m_refc != 0) {
         dds_entity_unlock(e);
         return DDS_RETCODE_OK;
     }
 
+    printf("[%d] %s %d\n", (int)(dds_time() / 1000000), __FILE__, __LINE__);
+
     dds_entity_cb_wait(e);
+
+    printf("[%d] %s %d\n", (int)(dds_time() / 1000000), __FILE__, __LINE__);
 
     ut_handle_close(e->m_hdl, e->m_hdllink);
     e->m_status_enable = 0;
     dds_listener_reset(&e->m_listener);
     e->m_trigger |= DDS_DELETING_STATUS;
 
+    printf("[%d] %s %d\n", (int)(dds_time() / 1000000), __FILE__, __LINE__);
+
     dds_entity_unlock(e);
     dds_entity_cb_wait_signal(e);
+
+    printf("[%d] %s %d\n", (int)(dds_time() / 1000000), __FILE__, __LINE__);
 
     /* Signal observers that this entity will be deleted. */
     dds_entity_status_signal(e);
@@ -322,6 +334,7 @@ dds_delete(
         /* Next child. */
         child = next;
     }
+    printf("[%d] %s %d\n", (int)(dds_time() / 1000000), __FILE__, __LINE__);
 
     if (ret == DDS_RETCODE_OK) {
         /* Close the entity. This can terminate threads or kick of
@@ -339,11 +352,14 @@ dds_delete(
             ret = DDS_RETCODE_TIMEOUT;
         }
     }
+    printf("[%d] %s %d\n", (int)(dds_time() / 1000000), __FILE__, __LINE__);
 
     if (ret == DDS_RETCODE_OK) {
+        printf("[%d] %s %d\n", (int)(dds_time() / 1000000), __FILE__, __LINE__);
         /* Remove all possible observers. */
         dds_entity_observers_delete(e);
 
+        printf("[%d] %s %d\n", (int)(dds_time() / 1000000), __FILE__, __LINE__);
         /* Remove from parent */
         if (e->m_parent) {
             os_mutexLock (&e->m_parent->m_mutex);
@@ -363,11 +379,13 @@ dds_delete(
             os_mutexUnlock (&e->m_parent->m_mutex);
         }
 
+        printf("[%d] %s %d\n", (int)(dds_time() / 1000000), __FILE__, __LINE__);
         /* Do some specific deletion when needed. */
         if (e->m_deriver.delete) {
             ret = e->m_deriver.delete(e);
         }
     }
+    printf("[%d] %s %d\n", (int)(dds_time() / 1000000), __FILE__, __LINE__);
 
     if (ret == DDS_RETCODE_OK) {
         /* Destroy last few things. */
@@ -376,6 +394,7 @@ dds_delete(
         os_mutexDestroy (&e->m_mutex);
         dds_free (e);
     }
+    printf("[%d] %s %d\n", (int)(dds_time() / 1000000), __FILE__, __LINE__);
 
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, 0);
 }
@@ -858,17 +877,19 @@ dds_entity_observer_register_nl(
     if (observed->m_observers == NULL) {
         observed->m_observers = o;
     } else {
+        dds_entity_observer *last;
         dds_entity_observer *idx = observed->m_observers;
-        while ((idx->m_next != NULL) && (o != NULL)) {
+        while ((idx != NULL) && (o != NULL)) {
             if (idx->m_observer == observer) {
                 os_free(o);
                 o = NULL;
                 ret = DDS_RETCODE_PRECONDITION_NOT_MET;
             }
+            last = idx;
             idx = idx->m_next;
         }
         if (o != NULL) {
-            idx->m_next = o;
+            last->m_next = o;
         }
     }
 
@@ -891,7 +912,7 @@ dds_entity_observer_register(
         ret = dds_entity_observer_register_nl(e, observer, cb);
         dds_entity_unlock(e);
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M1);
+    return ret;
 }
 
 
@@ -936,7 +957,7 @@ dds_entity_observer_unregister(
         ret = dds_entity_observer_unregister_nl(e, observer);
         dds_entity_unlock(e);
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M1);
+    return ret;
 }
 
 

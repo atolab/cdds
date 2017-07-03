@@ -8,9 +8,9 @@
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
 
-
 static dds_return_t
-dds_readcond_delete(dds_entity *e)
+dds_readcond_delete(
+        dds_entity *e)
 {
     dds_rhc_remove_readcondition((dds_readcond*)e);
     return DDS_RETCODE_OK;
@@ -23,7 +23,7 @@ dds_create_readcond(
         _In_ uint32_t mask)
 {
     dds_readcond * cond = dds_alloc(sizeof(*cond));
-    cond->m_entity.m_hdl = dds_entity_init(&cond->m_entity, (dds_entity*)rd, kind, NULL, NULL, mask);
+    cond->m_entity.m_hdl = dds_entity_init(&cond->m_entity, (dds_entity*)rd, kind, NULL, NULL, 0);
     cond->m_entity.m_deriver.delete = dds_readcond_delete;
     cond->m_rhc = rd->m_rd->rhc;
     cond->m_sample_states = mask & DDS_ANY_SAMPLE_STATE;

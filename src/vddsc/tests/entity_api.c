@@ -212,7 +212,7 @@ Test(vddsc_entity, status, .init = create_entity, .fini = delete_entity)
 
     /* Get Status, which should be 0 for a participant. */
     status1 = dds_get_enabled_status (entity, &s1);
-    cr_assert_status_eq(status1, DDS_RETCODE_ILLEGAL_OPERATION, "dds_get_enabled_status(entity, status)");
+    cr_assert_status_eq(status1, DDS_RETCODE_OK, "dds_get_enabled_status(entity, status)");
     cr_assert_eq(s1, 0, "Enabled status mask is not 0");
 
     /* Check setting Status with bad parameters. */
@@ -221,9 +221,9 @@ Test(vddsc_entity, status, .init = create_entity, .fini = delete_entity)
 
     /* I shouldn't be able to set statuses on a participant. */
     status1 = dds_set_enabled_status (entity, 0);
-    cr_assert_status_eq(status1, DDS_RETCODE_ILLEGAL_OPERATION, "dds_set_enabled_status(entity, 0)");
+    cr_assert_status_eq(status1, DDS_RETCODE_OK, "dds_set_enabled_status(entity, 0) %d", dds_err_nr(status1));
     status1 = dds_set_enabled_status (entity, DDS_DATA_AVAILABLE_STATUS);
-    cr_assert_status_eq(status1, DDS_RETCODE_ILLEGAL_OPERATION, "dds_set_enabled_status(entity, status)");
+    cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_set_enabled_status(entity, status)");
 
     /* Check getting Status changes with bad parameters. */
     status1 = dds_get_status_changes (0, NULL);
@@ -233,17 +233,17 @@ Test(vddsc_entity, status, .init = create_entity, .fini = delete_entity)
     status1 = dds_get_status_changes (0, &s1);
     cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_get_status_changes(NULL, status)");
     status1 = dds_get_status_changes (entity, &s1);
-    cr_assert_status_eq(status1, DDS_RETCODE_ILLEGAL_OPERATION, "dds_get_status_changes(entity, status)");
+    cr_assert_status_eq(status1, DDS_RETCODE_OK, "dds_get_status_changes(entity, status)");
 
     /* Status read and take shouldn't work either. */
     status1 = dds_read_status (0, &s1, 0);
     cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_read_status(NULL, status, 0)");
     status1 = dds_read_status (entity, &s1, 0);
-    cr_assert_status_eq(status1, DDS_RETCODE_ILLEGAL_OPERATION, "dds_read_status(entity, status, 0)");
+    cr_assert_status_eq(status1, DDS_RETCODE_OK, "dds_read_status(entity, status, 0)");
     status1 = dds_take_status (0, &s1, 0);
     cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_take_status(NULL, status, 0)");
     status1 = dds_take_status (entity, &s1, 0);
-    cr_assert_status_eq(status1, DDS_RETCODE_ILLEGAL_OPERATION, "dds_take_status(entity, status, 0)");
+    cr_assert_status_eq(status1, DDS_RETCODE_OK, "dds_take_status(entity, status, 0)");
 }
 
 

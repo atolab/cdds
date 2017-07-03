@@ -261,7 +261,7 @@ dds_readcond;
 
 typedef struct dds_attachment
 {
-    dds_entity_t entity;
+    dds_entity  *entity;
     dds_attach_t arg;
     struct dds_attachment* next;
 }

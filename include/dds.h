@@ -1360,9 +1360,9 @@ dds_create_waitset(
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
-dds_waitset_get_conditions(
+dds_waitset_get_entities(
         _In_ dds_entity_t waitset,
-        _Out_writes_to_(size, return < 0 ? 0 : return) dds_entity_t *conds,
+        _Out_writes_to_(size, return < 0 ? 0 : return) dds_entity_t *entities,
         _In_ size_t size);
 
 
