@@ -361,8 +361,7 @@ dds_create_reader(
     rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
     rd->m_topic = (dds_topic*)tp;
     rhc = dds_rhc_new (rd, ((dds_topic*)tp)->m_stopic);
-    dds_entity_unlock(tp);
-    dds_entity_add_ref (tp);
+    dds_entity_add_ref_nolock (tp);
     rd->m_entity.m_deriver.close = dds_reader_close;
     rd->m_entity.m_deriver.delete = dds_reader_delete;
     rd->m_entity.m_deriver.set_qos = dds_reader_qos_set;
@@ -375,25 +374,16 @@ dds_create_reader(
         assert(0);
     }
 
-    /* TODO: When calling new_reader, we should unlock the parent.
-     *       The reason for that is that it is possible that this new_reader call generates
-     *       a call to dds_reader_status_cb (when it notices a subscription match f.i.),
-     *       which will try to lock the parent when handling that event in the listeners.
-     *       Causing a deadlock off course.
-     *
-     *       In other tickets, this piece of code could have changed, so we probably will have
-     *       some merge conflicts. We should come up with a proper solution after the merge.
-     *       Probably just unlock the parent and topic mutex, without releasing their handles,
-     *       which will delay their possible deletions until we release their handles.
-     *       This means that their content will not be deleted but they're still unlocked.
-     */
-    dds_entity_unlock(parent);
+    os_mutexUnlock(&tp->m_mutex);
+    os_mutexUnlock(&parent->m_mutex);
 
     if (asleep) {
         thread_state_awake (thr);
     }
     rd->m_rd = new_reader(&rd->m_entity.m_guid, NULL, &parent->m_participant->m_guid, ((dds_topic*)tp)->m_stopic,
                           rqos, rhc, dds_reader_status_cb, rd);
+    os_mutexLock(&parent->m_mutex);
+    os_mutexLock(&tp->m_mutex);
     assert (rd->m_rd);
     if (asleep) {
         thread_state_asleep (thr);
@@ -403,7 +393,8 @@ dds_create_reader(
     if (dds_global.m_dur_reader && (rd->m_entity.m_qos->durability.kind > NN_TRANSIENT_LOCAL_DURABILITY_QOS)) {
         (dds_global.m_dur_reader) (rd, rhc);
     }
-
+    dds_entity_unlock(tp);
+    dds_entity_unlock(parent);
     return reader;
 }
 
