@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
 
 #ifdef __VXWORKS__
 void os_stdlibInitialize(void);
