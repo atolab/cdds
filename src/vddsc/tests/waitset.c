@@ -166,12 +166,12 @@ vddsc_waitset_attached_fini(void)
 {
     /* Detach all entities to the waitset. */
     dds_waitset_detach(waitset, participant);
-    dds_waitset_detach(waitset, waitset);
-    dds_waitset_detach(waitset, writer);
-    dds_waitset_detach(waitset, reader);
     dds_waitset_detach(waitset, topic);
     dds_waitset_detach(waitset, publisher);
     dds_waitset_detach(waitset, subscriber);
+    dds_waitset_detach(waitset, waitset);
+    dds_waitset_detach(waitset, writer);
+    dds_waitset_detach(waitset, reader);
 
     vddsc_waitset_fini();
 }
@@ -780,9 +780,9 @@ static uint32_t NumberOfSetBits(uint32_t i)
 
 /*************************************************************************************************/
 TheoryDataPoints(vddsc_waitset_get_entities, array_sizes) = {
-        DataPoints(uint32_t, 0, 1, 7, MAX_ENTITIES_CNT),
+        DataPoints(size_t, 0, 1, 7, MAX_ENTITIES_CNT),
 };
-Theory((uint32_t size), vddsc_waitset_get_entities, array_sizes, .init=vddsc_waitset_attached_init, .fini=vddsc_waitset_attached_fini)
+Theory((size_t size), vddsc_waitset_get_entities, array_sizes, .init=vddsc_waitset_attached_init, .fini=vddsc_waitset_attached_fini)
 {
     uint32_t found = 0;
     dds_return_t i;
@@ -794,7 +794,7 @@ Theory((uint32_t size), vddsc_waitset_get_entities, array_sizes, .init=vddsc_wai
     cr_assert_eq(ret, 7, "entities cnt %d (err %d)", ret, dds_err_nr(ret));
 
     /* Found entities should be only present once. */
-    ret = (size < ret) ? size : ret;
+    ret = ((dds_return_t)size < ret) ? (dds_return_t)size : ret;
     for (i = 0; i < ret; i++) {
         if (entities[i] == participant) {
             cr_assert(!(found & FOUND_PARTICIPANT), "Participant found twice");

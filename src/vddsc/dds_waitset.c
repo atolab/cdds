@@ -171,6 +171,7 @@ dds_waitset_remove_from_list(
             /* We're done. */
             return true;
         }
+        prev = idx;
         idx = idx->next;
     }
     return false;
