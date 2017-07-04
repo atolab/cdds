@@ -2471,8 +2471,8 @@ struct spec {
 	dds_duration_t findtopic_timeout;
 	struct readerspec rd;
 	struct writerspec wr;
-	pthread_t rdtid;
-	pthread_t wrtid;
+	os_threadId rdtid;
+	os_threadId wrtid;
 };
 
 static void addspec(unsigned whatfor, unsigned *specsofar, unsigned *specidx, struct spec **spec, int want_reader)
@@ -2582,8 +2582,8 @@ int main (int argc, char *argv[])
 	int want_writer = 1;
 	int disable_signal_handlers = 0;
 	unsigned sleep_at_end = 0;
-	pthread_t sigtid;
-	pthread_t inptid;
+	os_threadId sigtid;
+	os_threadId inptid;
 	#define SPEC_TOPICSEL 1
 	#define SPEC_TOPICNAME 2
 	unsigned spec_sofar = 0;
@@ -3171,7 +3171,8 @@ int main (int argc, char *argv[])
   {
     if (pipe (sigpipe) != 0)
       error("pipe(sigpipe): errno %d\n", os_getErrno());
-    pthread_create(&sigtid, NULL, sigthread, NULL);
+    os_threadCreate(&sigtid, NULL, NULL, (os_threadRoutine)sigthread, NULL);
+//    pthread_create(&sigtid, NULL, sigthread, NULL);
     signal (SIGINT, sigh);
     signal (SIGTERM, sigh);
   }
@@ -3186,7 +3187,8 @@ int main (int argc, char *argv[])
         case WRM_NONE:
           break;
         case WRM_AUTO:
-          pthread_create(&spec[i].wrtid, NULL, pubthread_auto, &spec[i].wr);
+          os_threadCreate(&spec[i].wrtid, NULL, NULL, (os_threadRoutine)pubthread_auto, &spec[i].wr);
+//          pthread_create(&spec[i].wrtid, NULL, pubthread_auto, &spec[i].wr);
           break;
         case WRM_INPUT:
           wsl = os_malloc(sizeof(*wsl));
@@ -3204,19 +3206,22 @@ int main (int argc, char *argv[])
     if (wrspecs) /* start with first wrspec */
     {
       wrspecs = wrspecs->next;
-      pthread_create(&inptid, NULL, pubthread, wrspecs);
+      os_threadCreate(&inptid, NULL, NULL, (os_threadRoutine)pubthread, wrspecs);
+//      pthread_create(&inptid, NULL, pubthread, wrspecs);
     }
   }
   else if (dur > 0) /* note: abusing inptid */
   {
-    pthread_create(&inptid, NULL, autotermthread, NULL);
+	os_threadCreate(&inptid, NULL, NULL, (os_threadRoutine)autotermthread, NULL);
+//    pthread_create(&inptid, NULL, autotermthread, NULL);
   }
   for (i = 0; i <= specidx; i++)
   {
     if (spec[i].rd.mode != MODE_NONE)
     {
       spec[i].rd.idx = i;
-      pthread_create(&spec[i].rdtid, NULL, subthread, &spec[i].rd);
+      os_threadCreate(&spec[i].rdtid, NULL, NULL, (os_threadRoutine)subthread, &spec[i].rd);
+//      pthread_create(&spec[i].rdtid, NULL, subthread, &spec[i].rd);
     }
   }
   if (want_writer || dur > 0)
@@ -3224,27 +3229,30 @@ int main (int argc, char *argv[])
     int term_called = 0;
     if (!want_writer || wrspecs)
     {
-      pthread_join(inptid, NULL);
+      os_threadWaitExit(inptid, NULL);
+//      pthread_join(inptid, NULL);
       term_called = 1;
       terminate ();
     }
     for (i = 0; i <= specidx; i++)
     {
       if (spec[i].wr.mode == WRM_AUTO)
-        pthread_join(spec[i].wrtid, NULL);
+    	os_threadWaitExit(spec[i].wrtid, NULL);
+//        pthread_join(spec[i].wrtid, NULL);
     }
     if (!term_called)
       terminate ();
   }
   if (want_reader)
   {
-    void *ret;
+	uint32_t ret;
     exitcode = 0;
     for (i = 0; i <= specidx; i++)
     {
       if (spec[i].rd.mode != MODE_NONE)
       {
-        pthread_join (spec[i].rdtid, &ret);
+    	os_threadWaitExit(spec[i].rdtid, &ret);
+//        pthread_join (spec[i].rdtid, &ret);
         if ((uintptr_t) ret > exitcode)
           exitcode = (uintptr_t) ret;
       }
@@ -3255,7 +3263,8 @@ int main (int argc, char *argv[])
   {
     const char c = 0;
     os_write(sigpipe[1], &c, 1);
-    pthread_join(sigtid, NULL);
+    os_threadWaitExit(sigtid, NULL);
+//    pthread_join(sigtid, NULL);
     for(i = 0; i < 2; i++)
     {
       close(sigpipe[i]);
