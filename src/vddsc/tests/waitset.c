@@ -788,9 +788,15 @@ Theory((size_t size), vddsc_waitset_get_entities, array_sizes, .init=vddsc_waits
     dds_return_t i;
     dds_return_t ret;
     dds_entity_t entities[MAX_ENTITIES_CNT];
+
+    /* Make sure at least one entity is in the waitsets' internal triggered list. */
+    ret = dds_waitset_set_trigger(waitset, true);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to prerequisite trigger entity");
+
+    /* Get the actual attached entities. */
     ret = dds_waitset_get_entities(waitset, entities, size);
 
-    /* vddsc_waitset_attached_init attached 7 entities. */
+    /* vddsc_waitset_attached_init() attached 7 entities. */
     cr_assert_eq(ret, 7, "entities cnt %d (err %d)", ret, dds_err_nr(ret));
 
     /* Found entities should be only present once. */

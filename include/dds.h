@@ -735,9 +735,10 @@ dds_get_participant (
  * will return the number of found children. It is possible that the given
  * size of the list is not the same as the number of found children. If
  * less children are found, then the last few entries in the list are
- * untouched. When more chilren are found, then only 'size' number of
+ * untouched. When more children are found, then only 'size' number of
  * entries are inserted into the list, but still complete count of the
- * found children is returned.
+ * found children is returned. Which children are returned in the latter
+ * case is undefined.
  *
  * When supplying NULL as list and 0 as size, you can use this to acquire
  * the number of children without having to pre-allocate a list.
@@ -1338,10 +1339,23 @@ dds_create_readcondition(
 typedef void * dds_attach_t;
 
 /**
- * Description : Create a waitset and allocate the resources required
+ * @brief Create a waitset and allocate the resources required
  *
- * Arguments :
- *   -# Returns a pointer to a waitset created
+ * A WaitSet object allows an application to wait until one or more of the
+ * conditions of the attached entities evaluates to TRUE or until the timeout
+ * expires.
+ *
+ * @param[in]  participant  Domain participant which the WaitSet contains.
+ *
+ * @returns >0 - Success (valid waitset).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
 DDS_EXPORT _Must_inspect_result_ dds_entity_t
@@ -1350,13 +1364,32 @@ dds_create_waitset(
 
 
 /**
- * Description : Get the conditions associated with a waitset. The sequence of
- * returned conditions is only valid as long as the waitset in not modified.
- * The returned sequence buffer is a copy and should be freed.
+ * @brief Acquire previously attached entities.
  *
- * Arguments :
- *   -# ws The waitset
- *   -# seq The sequence of returned conditions
+ * This functions takes a pre-allocated list to put the entities in and
+ * will return the number of found entities. It is possible that the given
+ * size of the list is not the same as the number of found entities. If
+ * less entities are found, then the last few entries in the list are
+ * untouched. When more entities are found, then only 'size' number of
+ * entries are inserted into the list, but still the complete count of the
+ * found entities is returned. Which entities are returned in the latter
+ * case is undefined.
+ *
+ * @param[in]  waitset  Waitset from which to get its attached entities.
+ * @param[out] entities Pre-allocated array to contain the found entities.
+ * @param[in]  size     Size of the pre-allocated entities' list.
+ *
+ * @returns >=0 - Success (number of found children, can be larger than 'size').
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The entities parameter is NULL, while a size is provided.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The waitset has already been deleted.
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
@@ -1367,14 +1400,45 @@ dds_waitset_get_entities(
 
 
 /**
- * Description : Associate a status, guard or read condition with a waitset.
- *               Multiple conditions could be attached to a single waitset.
+ * @brief This operation attaches an Entity to the WaitSet.
  *
- * Arguments :
- *   -# ws pointer to a waitset
- *   -# e pointer to a condition to wait for the trigger value
- *   -# x attach condition, returned when the the waitset unblocks on condition e
- *   -# Returns 0 on success, else non-zero indicating an error
+ * This operation attaches an Entity to the WaitSet. The dds_waitset_wait()
+ * will block when none of the attached entities are triggered. 'Triggered'
+ * (dds_triggered()) doesn't mean the same for every entity:
+ *  - Reader/Writer/Publisher/Subscriber/Topic/Participant
+ *      - These are triggered when their status changed.
+ *  - WaitSet
+ *      - Triggered when trigger value was set to true by the application.
+ *        It stays triggered until application sets the trigger value to
+ *        false (dds_waitset_set_trigger()). This can be used to wake up an
+ *        waitset for different reasons (f.i. termination) than the 'normal'
+ *        status change (like new data).
+ *  - ReadCondition/QueryCondition
+ *      - Triggered when data is available on the related Reader that matches
+ *        the Condition.
+ *
+ * Multiple entities can be attached to a single waitset. A particular entity
+ * can be attached to multiple waitsets. However, a particular entity can not
+ * be attached to a particular waitset multiple times.
+ *
+ * @param[in]  waitset  The waitset to attach the given entity to.
+ * @param[in]  entity   The entity to attach.
+ * @param[in]  x        Blob that will be supplied when the waitset wait is
+ *                      triggerd by the given entity.
+ *
+ * @returns   0 - Success (entity attached).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The given waitset or entity are not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The waitset has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                  The entity was already attached.
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
@@ -1385,13 +1449,24 @@ dds_waitset_attach(
 
 
 /**
- * Description : Disassociate the condition attached with a waitset.
- *               Number of call(s) to detach from the conditions should match attach call(s).
+ * @brief This operation detaches an Entity to the WaitSet.
  *
- * Arguments :
- *   -# ws pointer to a waitset
- *   -# e pointer to a condition to wait for the trigger value
- *   -# Returns 0 on success, else non-zero indicating an error
+ * @param[in]  waitset  The waitset to detach the given entity from.
+ * @param[in]  entity   The entity to detach.
+ *
+ * @returns   0 - Success (entity attached).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The given waitset or entity are not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The waitset has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                  The entity is not attached.
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
@@ -1400,18 +1475,33 @@ dds_waitset_detach(
         _In_ dds_entity_t entity);
 
 /**
- * Description : Sets the trigger_value associated with a waitset.
+ * @brief Sets the trigger_value associated with a waitset.
  *
  * When the waitset is attached to itself and the trigger value is
  * set to 'true', then the waitset will wake up just like with an
  * other status change of the attached entities.
  *
  * This can be used to forcefully wake up a waitset, for instance
- * when the application wants to shut down.
+ * when the application wants to shut down. So, when the trigger
+ * value is true, the waitset will wake up or not wait at all.
  *
- * Arguments :
- *   -# waitset pointer to the condition to be triggered
- *   -# trigger true, waitset will wake up or not wait at all
+ * The trigger value will remain true until the application sets it
+ * false again deliberately.
+ *
+ * @param[in]  waitset  The waitset to set the trigger value on.
+ * @param[in]  trigger  The trigger value to set.
+ *
+ * @returns   0 - Success (entity attached).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The given waitset is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The waitset has already been deleted.
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
@@ -1419,40 +1509,68 @@ dds_waitset_set_trigger(
         _In_ dds_entity_t waitset,
         _In_ bool trigger);
 
-/*
-  The "dds_waitset_wait" operation blocks until the some of the
-  attached entities has an enabled and set status condition, or
-  "reltimeout" has elapsed. The "dds_waitset_wait_until" operation
-  is the same as the "dds_wait" except that it takes an absolute timeout.
-
-  Upon successful return, the array "xs" is filled with 0 < M <= nxs
-  values of the "x"s corresponding to the triggering entities, as
-  specified in attach_to_waitset, and M is returned. In case of a
-  time out, the return value is 0.
-
-  Deleting the waitset while the application is blocked results in an
-  error code (i.e. < 0) returned by "wait".
-
-  Multiple threads may block on a single waitset at the same time;
-  the calls are entirely independent.
-
-  An empty waitset never triggers (i.e., dds_waitset_wait on an empty
-  waitset is essentially equivalent to dds_sleepfor).
-*/
-
 /**
- * Description : This API is used to block the current executing thread until some of the
- *               attached condition(s) is triggered or 'reltimeout' has elapsed.
- *               On successful return, the array xs is filled with the value corresponding
- *               to triggered entities as specified in the attach, and nxs with count.
+ * @brief This operation allows an application thread to wait for the a status
+ *        change or other trigger on (one of) the entities that are attached to
+ *        the WaitSet.
  *
+ * The "dds_waitset_wait" operation blocks until the some of the attached
+ * entities have triggered or "reltimeout" has elapsed.
+ * 'Triggered' (dds_triggered()) doesn't mean the same for every entity:
+ *  - Reader/Writer/Publisher/Subscriber/Topic/Participant
+ *      - These are triggered when their status changed.
+ *  - WaitSet
+ *      - Triggered when trigger value was set to true by the application.
+ *        It stays triggered until application sets the trigger value to
+ *        false (dds_waitset_set_trigger()). This can be used to wake up an
+ *        waitset for different reasons (f.i. termination) than the 'normal'
+ *        status change (like new data).
+ *  - ReadCondition/QueryCondition
+ *      - Triggered when data is available on the related Reader that matches
+ *        the Condition.
  *
- * Arguments :
- *   -# ws pointer to a waitset
- *   -# xs pointer to an array of attached_conditions based on the conditions associated with a waitset (can be NULL)
- *   -# nxs number of attached conditions (can be zero)
- *   -# reltimeout timeout value associated with a waitset (can be INFINITY or some value)
- *   -# Returns 0 on timeout, else number of signaled waitset conditions
+ * This functions takes a pre-allocated list to put the "xs" blobs in (that
+ * were provided during the attach of the related entities) and will return
+ * the number of triggered entities. It is possible that the given size
+ * of the list is not the same as the number of triggered entities. If less
+ * entities were triggered, then the last few entries in the list are
+ * untouched. When more entities are triggered, then only 'size' number of
+ * entries are inserted into the list, but still the complete count of the
+ * triggered entities is returned. Which "xs" blobs are returned in the
+ * latter case is undefined.
+ *
+ * In case of a time out, the return value is 0.
+ *
+ * Deleting the waitset while the application is blocked results in an
+ * error code (i.e. < 0) returned by "wait".
+ *
+ * Multiple threads may block on a single waitset at the same time;
+ * the calls are entirely independent.
+ *
+ * An empty waitset never triggers (i.e., dds_waitset_wait on an empty
+ * waitset is essentially equivalent to a sleep).
+ *
+ * The "dds_waitset_wait_until" operation is the same as the
+ * "dds_waitset_wait" except that it takes an absolute timeout.
+ *
+ * @param[in]  waitset    The waitset to set the trigger value on.
+ * @param[out] xs         Pre-allocated list to store the 'blobs' that were
+ *                        provided during the attach of the triggered entities.
+ * @param[in]  nxs        The size of the pre-allocated blobs list.
+ * @param[in]  reltimeout Relative timeout
+ *
+ * @returns  >0 - Success (number of entities triggered).
+ * @returns   0 - Time out (no entities were triggered).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The given waitset is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The waitset has already been deleted.
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
@@ -1463,17 +1581,70 @@ dds_waitset_wait(
         _In_ dds_duration_t reltimeout);
 
 /**
- * Description : This API is used to block the current executing thread until some of the
- *               attached condition(s) is triggered or 'abstimeout' has elapsed.
- *               On successful return, the array xs is filled with the value corresponding
- *               to triggered entities as specified in the attach, and nxs with count.
+ * @brief This operation allows an application thread to wait for the a status
+ *        change or other trigger on (one of) the entities that are attached to
+ *        the WaitSet.
  *
- * Arguments :
- *   -# ws pointer to a waitset
- *   -# xs pointer to an array of attached_conditions based on the conditions associated with a waitset (can be NULL)
- *   -# nxs number of attached conditions (can be NULL)
- *   -# abstimeout absolute timeout value associated with a waitset (can be INFINITY or some value)
- *   -# Returns 0 if unblocked due to timeout, else number of the waitset conditions that resulted to unblock
+ * The "dds_waitset_wait" operation blocks until the some of the attached
+ * entities have triggered or "abstimeout" has been reached.
+ * 'Triggered' (dds_triggered()) doesn't mean the same for every entity:
+ *  - Reader/Writer/Publisher/Subscriber/Topic/Participant
+ *      - These are triggered when their status changed.
+ *  - WaitSet
+ *      - Triggered when trigger value was set to true by the application.
+ *        It stays triggered until application sets the trigger value to
+ *        false (dds_waitset_set_trigger()). This can be used to wake up an
+ *        waitset for different reasons (f.i. termination) than the 'normal'
+ *        status change (like new data).
+ *  - ReadCondition/QueryCondition
+ *      - Triggered when data is available on the related Reader that matches
+ *        the Condition.
+ *
+ * This functions takes a pre-allocated list to put the "xs" blobs in (that
+ * were provided during the attach of the related entities) and will return
+ * the number of triggered entities. It is possible that the given size
+ * of the list is not the same as the number of triggered entities. If less
+ * entities were triggered, then the last few entries in the list are
+ * untouched. When more entities are triggered, then only 'size' number of
+ * entries are inserted into the list, but still the complete count of the
+ * triggered entities is returned. Which "xs" blobs are returned in the
+ * latter case is undefined.
+ *
+ * In case of a time out, the return value is 0.
+ *
+ * Deleting the waitset while the application is blocked results in an
+ * error code (i.e. < 0) returned by "wait".
+ *
+ * Multiple threads may block on a single waitset at the same time;
+ * the calls are entirely independent.
+ *
+ * An empty waitset never triggers (i.e., dds_waitset_wait on an empty
+ * waitset is essentially equivalent to a sleep).
+ *
+ * The "dds_waitset_wait" operation is the same as the
+ * "dds_waitset_wait_until" except that it takes an relative timeout.
+ *
+ * The "dds_waitset_wait" operation is the same as the "dds_wait"
+ * except that it takes an absolute timeout.
+ *
+ * @param[in]  waitset    The waitset to set the trigger value on.
+ * @param[out] xs         Pre-allocated list to store the 'blobs' that were
+ *                        provided during the attach of the triggered entities.
+ * @param[in]  nxs        The size of the pre-allocated blobs list.
+ * @param[in]  abstimeout Absolute timeout
+ *
+ * @returns  >0 - Success (number of entities triggered).
+ * @returns   0 - Time out (no entities were triggered).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The given waitset is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The waitset has already been deleted.
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
