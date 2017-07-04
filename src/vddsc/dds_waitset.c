@@ -62,6 +62,10 @@ dds_waitset_wait_impl(
     dds_attachment *next;
     dds_attachment *prev;
 
+    if ((xs == NULL) || (nxs == 0)) {
+        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_WAITSET, DDS_ERR_M1);
+    }
+
     /* Locking the waitset here will delay a possible deletion until it is
      * unlocked. Even when the related mutex is unlocked by a conditioned wait. */
     ret = dds_waitset_lock(waitset, &ws);
@@ -393,9 +397,12 @@ dds_waitset_wait(
         _In_ size_t nxs,
         _In_ dds_duration_t reltimeout)
 {
-  dds_time_t tnow = dds_time();
-  dds_time_t abstimeout = (DDS_INFINITY - reltimeout <= tnow) ? DDS_NEVER : (tnow + reltimeout);
-  return dds_waitset_wait_impl(waitset, xs, nxs, abstimeout, tnow);
+    if (reltimeout >= 0) {
+        dds_time_t tnow = dds_time();
+        dds_time_t abstimeout = (DDS_INFINITY - reltimeout <= tnow) ? DDS_NEVER : (tnow + reltimeout);
+        return dds_waitset_wait_impl(waitset, xs, nxs, abstimeout, tnow);
+    }
+    return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_WAITSET, DDS_ERR_M1);
 }
 
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)

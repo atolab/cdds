@@ -620,6 +620,141 @@ Theory((dds_entity_t *ws), vddsc_waitset_set_trigger, non_waitsets, .init=vddsc_
 
 /**************************************************************************************************
  *
+ * These will check the waitset wait in various invalid ways.
+ * The happy days scenario is tested by vddsc_waitset_triggering::*.
+ *
+ *************************************************************************************************/
+/*************************************************************************************************/
+Test(vddsc_waitset_wait, deleted_waitset, .init=vddsc_waitset_attached_init, .fini=vddsc_waitset_attached_fini)
+{
+    dds_attach_t triggered;
+    dds_return_t ret;
+    dds_delete(waitset);
+    ret = dds_waitset_wait(waitset, &triggered, 1, DDS_SECS(1));
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_waitset_wait, invalid_waitsets) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t ws), vddsc_waitset_wait, invalid_waitsets, .init=vddsc_waitset_basic_init, .fini=vddsc_waitset_basic_fini)
+{
+    dds_attach_t triggered;
+    dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+    dds_return_t ret;
+
+    if (ws < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = ws;
+    }
+
+    ret = dds_waitset_wait(ws, &triggered, 1, DDS_SECS(1));
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_waitset_wait, non_waitsets) = {
+        DataPoints(dds_entity_t*, &participant, &topic, &writer, &reader, &publisher, &subscriber, &readcond),
+};
+Theory((dds_entity_t *ws), vddsc_waitset_wait, non_waitsets, .init=vddsc_waitset_init, .fini=vddsc_waitset_fini)
+{
+    dds_attach_t triggered;
+    dds_return_t ret;
+    ret = dds_waitset_wait(*ws, &triggered, 1, DDS_SECS(1));
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+static dds_attach_t attachment;
+TheoryDataPoints(vddsc_waitset_wait, invalid_params) = {
+        DataPoints(dds_attach_t *, &attachment, NULL),
+        DataPoints(size_t, 0, 1, 100),
+        DataPoints(int, -1, 0, 1),
+};
+Theory((dds_attach_t *a, size_t size, int msec), vddsc_waitset_wait, invalid_params, .init=vddsc_waitset_basic_init, .fini=vddsc_waitset_basic_fini)
+{
+    dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+    dds_return_t ret;
+
+    /* Only test when the combination of parameters is actually invalid. */
+    cr_assume((a == NULL) || (size <= 0) || (msec < 0));
+
+    ret = dds_waitset_wait(waitset, a, size, DDS_MSECS(msec));
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d != expected %d", dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_waitset_wait_until, deleted_waitset, .init=vddsc_waitset_attached_init, .fini=vddsc_waitset_attached_fini)
+{
+    dds_attach_t triggered;
+    dds_return_t ret;
+    dds_delete(waitset);
+    ret = dds_waitset_wait_until(waitset, &triggered, 1, dds_time());
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_waitset_wait_until, invalid_waitsets) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t ws), vddsc_waitset_wait_until, invalid_waitsets, .init=vddsc_waitset_basic_init, .fini=vddsc_waitset_basic_fini)
+{
+    dds_attach_t triggered;
+    dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+    dds_return_t ret;
+
+    if (ws < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = ws;
+    }
+
+    ret = dds_waitset_wait_until(ws, &triggered, 1, dds_time());
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_waitset_wait_until, non_waitsets) = {
+        DataPoints(dds_entity_t*, &participant, &topic, &writer, &reader, &publisher, &subscriber, &readcond),
+};
+Theory((dds_entity_t *ws), vddsc_waitset_wait_until, non_waitsets, .init=vddsc_waitset_init, .fini=vddsc_waitset_fini)
+{
+    dds_attach_t triggered;
+    dds_return_t ret;
+    ret = dds_waitset_wait_until(*ws, &triggered, 1, dds_time());
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+static dds_attach_t attachment;
+TheoryDataPoints(vddsc_waitset_wait_until, invalid_params) = {
+        DataPoints(dds_attach_t *, &attachment, NULL),
+        DataPoints(size_t, 0, 1, 100)
+};
+Theory((dds_attach_t *a, size_t size), vddsc_waitset_wait_until, invalid_params, .init=vddsc_waitset_basic_init, .fini=vddsc_waitset_basic_fini)
+{
+    dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+    dds_return_t ret;
+
+    /* Only test when the combination of parameters is actually invalid. */
+    cr_assume((a == NULL) || (size <= 0));
+
+    ret = dds_waitset_wait_until(waitset, a, size, dds_time());
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d != expected %d", dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER);
+}
+/*************************************************************************************************/
+
+
+
+/**************************************************************************************************
+ *
  * These will check the waitset getting the attached entities.
  *
  *************************************************************************************************/
