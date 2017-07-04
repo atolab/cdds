@@ -152,6 +152,14 @@ int32_t qos_match_p (const nn_xqos_t *rd, const nn_xqos_t *wr)
   assert ((rd->present & musthave) == musthave);
   assert ((wr->present & musthave) == musthave);
 #endif
+  if (strcmp (rd->topic_name, wr->topic_name) != 0)
+  {
+    return Q_INVALID_QOS_POLICY_ID;
+  }
+  if (strcmp (rd->type_name, wr->type_name) != 0)
+  {
+    return Q_INVALID_QOS_POLICY_ID;
+  }
   if (rd->relaxed_qos_matching.value || wr->relaxed_qos_matching.value)
   {
     if (rd->reliability.kind != wr->reliability.kind)
@@ -205,14 +213,6 @@ int32_t qos_match_p (const nn_xqos_t *rd, const nn_xqos_t *wr)
     {
       return Q_DESTINATIONORDER_QOS_POLICY_ID;
     }
-  }
-  if (strcmp (rd->topic_name, wr->topic_name) != 0)
-  {
-    return Q_INVALID_QOS_POLICY_ID;
-  }
-  if (strcmp (rd->type_name, wr->type_name) != 0)
-  {
-    return Q_INVALID_QOS_POLICY_ID;
   }
   if (!partitions_match_p (rd, wr))
   {

@@ -7,6 +7,18 @@
 #pragma warning(push)
 #pragma warning(disable: 6387 28020)
 
+
+/****************************************************************************
+ * TODO: (CHAM-279) Add DDS_INCONSISTENT_TOPIC_STATUS test
+ * TODO: (CHAM-277) Add DDS_OFFERED/REQUESTED_DEADLINE_MISSED_STATUS test
+ * TODO: (CHAM-278) Add DDS_LIVELINESS_LOST_STATUS test
+ ****************************************************************************/
+
+
+
+/****************************************************************************
+ * Convenience test macros.
+ ****************************************************************************/
 #define ASSERT_CALLBACK_EQUAL(fntype, listener, expected) \
     do { \
         dds_on_##fntype##_fn cb; \
