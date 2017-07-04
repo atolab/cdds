@@ -256,9 +256,9 @@ int dds_write_impl(dds_entity_t wr, const void *data, bool sync)
     return rep.status;
 }
 
-int dds_write(dds_entity_t wr, const void *data)
+dds_return_t dds_write(_In_ dds_entity_t writer, _In_ const void *data)
 {
-    return dds_write_impl(wr, data, true);
+    return dds_write_impl(writer, data, true);
 }
 
 int dds_write_async(dds_entity_t wr, const void *data)
@@ -314,13 +314,13 @@ int dds_instance_dispose(dds_entity_t wr, const void *data)
     return -DDS_RETCODE_ERROR;
 }
 
-int dds_writer_create(dds_entity_t pp_or_pub, dds_entity_t *writer, dds_entity_t topic, const dds_qos_t *qos, const dds_writerlistener_t *listener)
+dds_entity_t dds_create_writer(_In_ dds_entity_t participant_or_publisher, _In_ dds_entity_t topic, _In_opt_ const dds_qos_t * qos, _In_opt_ const dds_listener_t * listener)
 {
     struct reqhdr req;
     struct rephdr rep;
     assert(listener == NULL);
     req.code = VDDSREQ_WRITER_CREATE;
-    req.u.writer_create.pp_or_pub = pp_or_pub;
+    req.u.writer_create.pp_or_pub = participant_or_publisher;
     req.u.writer_create.topic = topic;
     if (fwrite(&req, sizeof(req), 1, fp) != 1 || fwr_blob(fp, qos, sizeof(*qos)) < 0 || fflush(fp) != 0) {
         return -DDS_RETCODE_ERROR;
@@ -328,11 +328,10 @@ int dds_writer_create(dds_entity_t pp_or_pub, dds_entity_t *writer, dds_entity_t
     if (simple_reply(fp, &rep) < 0) {
         return -DDS_RETCODE_ERROR;
     }
-    *writer = rep.u.entity.e;
     return rep.status;
 }
 
-int dds_reader_create(dds_entity_t pp_or_sub, dds_entity_t *reader, dds_entity_t topic, const dds_qos_t *qos, const dds_readerlistener_t *listener)
+dds_entity_t dds_create_reader(dds_entity_t pp_or_sub, dds_entity_t topic, const dds_qos_t *qos, const dds_listener_t *listener)
 {
     struct reqhdr req;
     struct rephdr rep;
@@ -346,7 +345,6 @@ int dds_reader_create(dds_entity_t pp_or_sub, dds_entity_t *reader, dds_entity_t
     if (simple_reply(fp, &rep) < 0) {
         return -DDS_RETCODE_ERROR;
     }
-    *reader = rep.u.entity.e;
     return rep.status;
 }
 
@@ -363,7 +361,10 @@ int frd_blob(FILE *fp, size_t *sz, void **blob)
     return 0;
 }
 
-int dds_take(dds_entity_t rd, void ** buf, uint32_t maxs, dds_sample_info_t * si, uint32_t mask)
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t dds_take( _In_ dds_entity_t rd_or_cnd, _Out_ void ** buf, _Out_ dds_sample_info_t * si, _In_ size_t bufsz, _In_ uint32_t maxs)
 {
     struct reqhdr req;
     struct rephdr rep;
@@ -371,10 +372,10 @@ int dds_take(dds_entity_t rd, void ** buf, uint32_t maxs, dds_sample_info_t * si
     assert(buf);
     assert(maxs > 0);
     assert(si);
+    assert(bufsz > 0);
     req.code = VDDSREQ_TAKE;
-    req.u.take.rd = rd;
+    req.u.take.rd = rd_or_cnd;
     req.u.take.maxs = maxs;
-    req.u.take.mask = mask;
     if (simple(fp, &req, &rep) < 0) {
         return -DDS_RETCODE_ERROR;
     }

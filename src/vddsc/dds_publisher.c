@@ -48,6 +48,13 @@ static dds_return_t dds_publisher_qos_set (dds_entity *e, const dds_qos_t *qos, 
     return ret;
 }
 
+static dds_return_t dds_publisher_status_validate (uint32_t mask)
+{
+    return (mask & ~(DDS_PUBLISHER_STATUS_MASK)) ?
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_KERNEL, 0) :
+                     DDS_RETCODE_OK;
+}
+
 _Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
 _Must_inspect_result_ dds_entity_t
 dds_create_publisher(
@@ -85,6 +92,7 @@ dds_create_publisher(
   hdl = dds_entity_init (&pub->m_entity, par, DDS_KIND_PUBLISHER, new_qos, listener, DDS_PUBLISHER_STATUS_MASK);
   pub->m_entity.m_deriver.set_qos = dds_publisher_qos_set;
   pub->m_entity.m_deriver.get_instance_hdl = dds_publisher_instance_hdl;
+  pub->m_entity.m_deriver.validate_status = dds_publisher_status_validate;
   dds_entity_unlock(par);
 
   return hdl;

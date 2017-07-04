@@ -173,15 +173,16 @@ static dds_return_t dds_writer_close(dds_entity *e)
     dds_return_t ret = DDS_RETCODE_OK;
     dds_writer *wr = (dds_writer*)e;
     struct thread_state1 * const thr = lookup_thread_state();
-    const bool asleep = !vtime_awake_p(thr->vtime);
+    const bool asleep = thr ? !vtime_awake_p(thr->vtime) : false;
 
     assert(e);
-    assert(thr);
 
     if (asleep) {
       thread_state_awake(thr);
     }
-    nn_xpack_send (wr->m_xp, false);
+    if (thr) {
+        nn_xpack_send (wr->m_xp, false);
+    }
     if (delete_writer (&e->m_guid) != 0) {
         ret = DDS_RETCODE_ERROR;
     }
@@ -195,7 +196,7 @@ static dds_return_t dds_writer_delete(dds_entity *e)
 {
     dds_writer *wr = (dds_writer*)e;
     struct thread_state1 * const thr = lookup_thread_state();
-    const bool asleep = !vtime_awake_p(thr->vtime);
+    const bool asleep = thr ? !vtime_awake_p(thr->vtime) : false;
     dds_return_t ret;
 
     assert(e);
@@ -204,7 +205,9 @@ static dds_return_t dds_writer_delete(dds_entity *e)
     if (asleep) {
       thread_state_awake(thr);
     }
-    nn_xpack_free(wr->m_xp);
+    if (thr) {
+        nn_xpack_free(wr->m_xp);
+    }
     if (asleep) {
       thread_state_asleep(thr);
     }

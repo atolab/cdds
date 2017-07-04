@@ -233,17 +233,9 @@ extern void dds_fini (void)
     if (ddsi_plugin.init_fn)
     {
 #ifndef _WIN32
-#if VL_BUILD_VALGRIND
-      dds_sleepfor (DDS_SECS (2));
-#else
-      dds_sleepfor (DDS_MSECS (500));
-#endif
       rtps_term ();
       nn_servicelease_free (gv.servicelease);
       downgrade_main_thread ();
-#if VL_BUILD_VALGRIND
-      dds_sleepfor (DDS_MSECS (2));
-#endif
       thread_states_fini ();
       config_fini ();
 #endif
@@ -252,7 +244,6 @@ extern void dds_fini (void)
     }
     os_osExit ();
     dds_string_free (dds_init_exe);
-    dds_sleepfor (DDS_MSECS (500));
     dds_global.m_default_domain = DDS_DOMAIN_DEFAULT;
   }
 }

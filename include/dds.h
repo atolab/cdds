@@ -810,7 +810,6 @@ dds_get_domainid(
  *   -# domain_id The domain id
  *   -# Returns Pariticant for domain
  */
-/* TODO: This dds_participant_lookup will be removed in favor of a domain type on which you can do 'dds_get_children'. */
 DDS_EXPORT dds_entity_t
 dds_participant_lookup(
         dds_domainid_t domain_id);
@@ -1055,10 +1054,10 @@ _Pre_satisfies_(((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_
 _Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
 DDS_EXPORT dds_entity_t
 dds_create_reader(
-        dds_entity_t participant_or_subscriber,
-        dds_entity_t topic,
-        const dds_qos_t *qos,
-        const dds_listener_t *listener);
+        _In_ dds_entity_t participant_or_subscriber,
+        _In_ dds_entity_t topic,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener);
 
 /**
  * Description : The operation blocks the calling thread until either all "historical" data is
@@ -1077,7 +1076,6 @@ dds_reader_wait_for_historical_data(
         dds_entity_t reader,
         dds_duration_t max_wait);
 
-typedef bool (*dds_querycondition_filter_fn) (const void * sample);
 
 /**
  * Description : Create a QueryCondtiion associated with a reader.
@@ -1090,12 +1088,13 @@ typedef bool (*dds_querycondition_filter_fn) (const void * sample);
  *   -# filter The filter function for the query
  *   -# Returns Status, 0 on success or non-zero value to indicate an error
  */
+typedef bool (*dds_querycondition_filter_fn) (const void * sample);
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
-DDS_EXPORT dds_condition_t
-dds_querycondition_create(
-        dds_entity_t reader,
-        uint32_t mask,
-        dds_querycondition_filter_fn filter);
+DDS_EXPORT dds_entity_t
+dds_create_querycondition(
+        _In_ dds_entity_t reader,
+        _In_ uint32_t mask,
+        _In_ dds_querycondition_filter_fn filter);
 
 /**
  * @brief Creates a new instance of a DDS writer
@@ -1117,6 +1116,7 @@ dds_create_writer(
         _In_     dds_entity_t topic,
         _In_opt_ const dds_qos_t *qos,
         _In_opt_ const dds_listener_t *listener);
+
 
 /*
   Writing data (and variants of it) is straightforward. The first set
@@ -1260,6 +1260,7 @@ dds_write(
         _In_ dds_entity_t writer,
         _In_ const void *data);
 
+
 /**
  * @brief Write a CDR serialized value of a data instance
  *
@@ -1292,18 +1293,6 @@ dds_write_ts(
         _In_ const void *data,
         _In_ dds_time_t timestamp);
 
-/**
- * Description : Flushes all the samples from the write cache.
- *               By default, data sent by write API, is queued in the write cache
- *
- * Arguments :
- *   -# wr The writer entity
- */
-_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT void
-dds_write_flush(
-        dds_entity_t writer);
-
 /*
   Waitsets allow waiting for an event on some of any set of entities
   (all can in principle be waited for via their status conditions;
@@ -1323,19 +1312,6 @@ dds_write_flush(
   The DCPS "query" condition is not currently supported.
 */
 
-
-/**
- * Description : Create a specific condition.
- *               This is mainly used to provide the means to manually wakeup a waitset.
- *
- * Arguments :
- *   -# Returns a pointer to the created condition
- */
-DDS_EXPORT dds_condition_t
-dds_guardcondition_create(
-        void);
-
-
 /**
  * Description : Create a ReadCondition associated to a reader.
  *               Based on the mask value set, the readcondition gets triggered when
@@ -1346,60 +1322,11 @@ dds_guardcondition_create(
  *   -# mask set the sample_state, instance_state and view_state of the sample
  */
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
-DDS_EXPORT dds_condition_t
-dds_readcondition_create(
-        dds_entity_t reader,
-        uint32_t mask);
+DDS_EXPORT _Must_inspect_result_ dds_entity_t
+dds_create_readcondition(
+        _In_ dds_entity_t reader,
+        _In_ uint32_t mask);
 
-/**
- * Description : Deletes the condition. The condition is detached from any waitsets
- *               to which it is attached.
- *
- * Arguments :
- *   -# cond pointer of a guard condition or readcondition
- */
-DDS_EXPORT void
-dds_condition_delete(
-        dds_condition_t condition);
-
-/*
-  Guard conditions may be triggered or not. The status of a guard condition
-  can always be retrieved via the dds_condition_triggered function. To trigger
-  or reset a guard condition it must first be associated with a waitset or
-  an error status will be returned.
-*/
-/**
- * Description : Sets the trigger_value associated with a guard condition
- *               The guard condition should be associated with a waitset, before
- *               setting the trigger value.
- *
- * Arguments :
- *   -# guard pointer to the condition to be triggered
- */
-DDS_EXPORT void
-dds_guard_trigger(
-        dds_condition_t guard);
-
-/**
- * Description : Resets the trigger_value associated with a guard condition
- *
- * Arguments :
- *   -# guard pointer to the condition to be reset
- */
-DDS_EXPORT void
-dds_guard_reset(
-        dds_condition_t guard);
-
-/**
- * Description : Check the trigger_value associated with a condition
- *
- * Arguments :
- *   -# pointer to the condition to evaluate
- *   -# Returns true if the condition is already triggered, else returns false.
- */
-DDS_EXPORT bool
-dds_condition_triggered(
-        dds_condition_t guard);
 
 /*
   Entities can be attached to a waitset or removed from a waitset (in
@@ -1416,19 +1343,10 @@ typedef void * dds_attach_t;
  * Arguments :
  *   -# Returns a pointer to a waitset created
  */
-DDS_EXPORT dds_waitset_t
-dds_waitset_create(
-        void);
-
-DDS_EXPORT dds_waitset_t
-dds_waitset_create_cont(
-        void (*block) (dds_waitset_t waitset, void *arg, dds_time_t abstimeout),
-        void (*cont) (dds_waitset_t waitset, void *arg, int ret),
-        size_t contsize);
-
-DDS_EXPORT void*
-dds_waitset_get_cont(
-        dds_waitset_t waitset);
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+DDS_EXPORT _Must_inspect_result_ dds_entity_t
+dds_create_waitset(
+        _In_ dds_entity_t participant);
 
 
 /**
@@ -1440,21 +1358,12 @@ dds_waitset_get_cont(
  *   -# ws The waitset
  *   -# seq The sequence of returned conditions
  */
-DDS_EXPORT void
-dds_waitset_get_conditions(
-        dds_waitset_t waitset,
-        dds_condition_seq *seq);
-
-/**
- * Description : Deletes the waitset, detaching any attached conditions.
- *
- * Arguments :
- *   -# ws pointer to a waitset
- *   -# Returns 0 on success, else non-zero indicating an error
- */
-DDS_EXPORT int
-dds_waitset_delete(
-        dds_waitset_t waitset);
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
+dds_waitset_get_entities(
+        _In_ dds_entity_t waitset,
+        _Out_writes_to_(size, return < 0 ? 0 : return) dds_entity_t *entities,
+        _In_ size_t size);
 
 
 /**
@@ -1464,14 +1373,15 @@ dds_waitset_delete(
  * Arguments :
  *   -# ws pointer to a waitset
  *   -# e pointer to a condition to wait for the trigger value
- *   -# x attach condition, could be used to know the reason for the waitset to unblock (can be NULL)
+ *   -# x attach condition, returned when the the waitset unblocks on condition e
  *   -# Returns 0 on success, else non-zero indicating an error
  */
-DDS_EXPORT int
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
 dds_waitset_attach(
-        dds_waitset_t waitset,
-        dds_condition_t condition,
-        dds_attach_t x);
+        _In_ dds_entity_t waitset,
+        _In_ dds_entity_t entity,
+        _In_ dds_attach_t x);
 
 
 /**
@@ -1483,10 +1393,31 @@ dds_waitset_attach(
  *   -# e pointer to a condition to wait for the trigger value
  *   -# Returns 0 on success, else non-zero indicating an error
  */
-DDS_EXPORT int
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
 dds_waitset_detach(
-        dds_waitset_t waitset,
-        dds_condition_t condition);
+        _In_ dds_entity_t waitset,
+        _In_ dds_entity_t entity);
+
+/**
+ * Description : Sets the trigger_value associated with a waitset.
+ *
+ * When the waitset is attached to itself and the trigger value is
+ * set to 'true', then the waitset will wake up just like with an
+ * other status change of the attached entities.
+ *
+ * This can be used to forcefully wake up a waitset, for instance
+ * when the application wants to shut down.
+ *
+ * Arguments :
+ *   -# waitset pointer to the condition to be triggered
+ *   -# trigger true, waitset will wake up or not wait at all
+ */
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
+dds_waitset_set_trigger(
+        _In_ dds_entity_t waitset,
+        _In_ bool trigger);
 
 /*
   The "dds_waitset_wait" operation blocks until the some of the
@@ -1523,12 +1454,13 @@ dds_waitset_detach(
  *   -# reltimeout timeout value associated with a waitset (can be INFINITY or some value)
  *   -# Returns 0 on timeout, else number of signaled waitset conditions
  */
-DDS_EXPORT int
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
 dds_waitset_wait(
-        dds_waitset_t waitset,
-        dds_attach_t *xs,
-        size_t nxs,
-        dds_duration_t reltimeout);
+        _In_ dds_entity_t waitset,
+        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _In_ size_t nxs,
+        _In_ dds_duration_t reltimeout);
 
 /**
  * Description : This API is used to block the current executing thread until some of the
@@ -1543,12 +1475,13 @@ dds_waitset_wait(
  *   -# abstimeout absolute timeout value associated with a waitset (can be INFINITY or some value)
  *   -# Returns 0 if unblocked due to timeout, else number of the waitset conditions that resulted to unblock
  */
-DDS_EXPORT int
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
 dds_waitset_wait_until(
-        dds_waitset_t waitset,
-        dds_attach_t *xs,
-        size_t nxs,
-        dds_time_t abstimeout);
+        _In_ dds_entity_t waitset,
+        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _In_ size_t nxs,
+        _In_ dds_time_t abstimeout);
 
 /*
   There are a number of read and take variations.
@@ -1593,14 +1526,14 @@ dds_waitset_wait_until(
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_read(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs);
 
@@ -1619,14 +1552,14 @@ dds_read(
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_read_wl(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ uint32_t maxs);
 
 /**
@@ -1646,14 +1579,14 @@ dds_read_wl(
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_read_mask(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs,
         _In_ uint32_t mask);
@@ -1675,16 +1608,17 @@ dds_read_mask(
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_read_mask_wl(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ uint32_t maxs,
         _In_ uint32_t mask);
+
 
 /**
  * Description : Implements the same functionality as dds_read, except that only data
@@ -1735,7 +1669,7 @@ dds_read_cond(
         void **buf,
         uint32_t maxs,
         dds_sample_info_t *si,
-        dds_condition_t condition);
+        dds_entity_t condition);
 
 /**
  * @brief  Access the collection of data values (of same type) and sample info from the data reader
@@ -1761,14 +1695,14 @@ dds_read_cond(
  *
  * @returns  A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_take(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs);
 
@@ -1787,14 +1721,14 @@ dds_take(
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_take_wl(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ uint32_t maxs);
 
 /**
@@ -1814,14 +1748,14 @@ dds_take_wl(
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_take_mask(
-_In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+_In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs,
         _In_ uint32_t mask);
@@ -1843,14 +1777,14 @@ _In_ dds_entity_t rd_or_cnd,
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_take_mask_wl(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ uint32_t maxs,
         _In_ uint32_t mask);
 
@@ -1886,33 +1820,6 @@ dds_take_instance(
         dds_instance_handle_t handle,
         uint32_t mask);
 
-/**
- * Description : Access the collection of data values (of same type) and sample info from the data reader
- *               based on the read condition set. Data value once read is removed from the Data Reader
- *               cannot to 'read' or 'taken' again.
- *               Read condition must be attached to the data reader before associating with data_take.
- *               Return value provides information about number of samples read, which will
- *               be <= maxs. Based on the count, the buffer will contain data to be read only
- *               when valid_data bit in sample info structure is set.
- *               The buffer required for data values, could be allocated explicitly or can
- *               use the memory from data reader to prevent copy. In the latter case, buffer and
- *               sample_info should be returned back, once it is no longer using the Data.
- *
- * Arguments :
- *   -# rd Reader entity
- *   -# buf an array of pointers to samples into which data is read (pointers can be NULL)
- *   -# maxs maximum number of samples to read
- *   -# si pointer to an array of \ref dds_sample_info_t returned for each data value
- *   -# cond read condition to filter the data samples based on the content
- *   -# Returns the number of samples read, 0 indicates no data to read.
- */
-DDS_EXPORT int
-dds_take_cond(
-        dds_entity_t reader,
-        void **buf,
-        uint32_t maxs,
-        dds_sample_info_t *si,
-        dds_condition_t conditition);
 
 /*
   The read/take next functions return a single sample. The returned sample
@@ -2104,6 +2011,17 @@ DDS_EXPORT dds_return_t
 dds_notify_readers(
         _In_ dds_entity_t subscriber);
 
+
+/**
+ * Description : Checks whether the entity has one of its enabled statuses triggered.
+ *
+ * Arguments :
+ * -# e Entity for which to check for triggered status
+ */
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT dds_return_t
+dds_triggered(
+        _In_ dds_entity_t entity);
 
 #if defined (__cplusplus)
 }

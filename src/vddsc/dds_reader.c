@@ -285,10 +285,10 @@ _Pre_satisfies_(((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_
 _Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
 dds_entity_t
 dds_create_reader(
-        dds_entity_t participant_or_subscriber,
-        dds_entity_t topic,
-        const dds_qos_t *qos,
-        const dds_listener_t *listener)
+        _In_ dds_entity_t participant_or_subscriber,
+        _In_ dds_entity_t topic,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener)
 {
     dds_qos_t * rqos;
     int32_t errnr;

@@ -12,8 +12,6 @@
 #include "ddsi/q_ddsi_discovery.h"
 #include "os/os_atomics.h"
 
-#define dds_topic_lock(hdl, obj) dds_entity_lock(hdl, DDS_KIND_TOPIC, (dds_entity**)obj)
-#define dds_topic_unlock(obj)    dds_entity_unlock((dds_entity*)obj);
 
 #define DDS_TOPIC_STATUS_MASK                                    \
                         DDS_INCONSISTENT_TOPIC_STATUS

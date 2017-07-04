@@ -10,9 +10,8 @@
 
 #include "os/os.h"
 
+#include "kernel/dds_entity.h"
 #include "kernel/dds_reader.h"
-#include "kernel/dds_condition.h"
-#include "kernel/dds_waitset.h"
 #include "kernel/dds_rhc.h"
 #include "kernel/dds_tkmap.h"
 #include "util/ut_hopscotch.h"
@@ -1323,9 +1322,9 @@ bool dds_rhc_store
     }
   }
 
-  if (trigger_waitsets)
+  if (rhc->reader && trigger_waitsets)
   {
-    signal_conditions (rhc);
+      dds_entity_status_signal((dds_entity*)(rhc->reader));
   }
 
   return delivered;
@@ -1425,7 +1424,7 @@ void dds_rhc_unregister_wr
 
   if (trigger_waitsets)
   {
-    signal_conditions (rhc);
+      dds_entity_status_signal((dds_entity*)(rhc->reader));
   }
 }
 
@@ -1615,12 +1614,8 @@ static int dds_rhc_read_w_qminv
                 set_sample_info (info_seq + n, inst, sample);
                 deserialize_into ((char*) values[n], sample->sample);
                 if (cond == NULL
-                    || cond->m_cond.m_kind != DDS_TYPE_COND_QUERY
-                    || ( cond->m_query.m_cxx_ctx != NULL
-                         && cond->m_query.u.m_filter_with_ctx(values[n],cond->m_query.m_cxx_ctx ))
-                    || ( cond->m_query.m_cxx_ctx == NULL
-                         && cond->m_query.u.m_filter != NULL
-                         && cond->m_query.u.m_filter(values[n])))
+                    || (dds_entity_kind(cond->m_entity.m_hdl) != DDS_KIND_COND_QUERY)
+                    || (cond->m_query.m_filter != NULL && cond->m_query.m_filter(values[n])))
                 {
                   if (!sample->isread)
                   {
@@ -1689,7 +1684,7 @@ static int dds_rhc_read_w_qminv
 
   if (trigger_waitsets)
   {
-    signal_conditions (rhc);
+      dds_entity_status_signal((dds_entity*)(rhc->reader));
   }
 
   return n;
@@ -1751,13 +1746,8 @@ static int dds_rhc_take_w_qminv
                 set_sample_info (info_seq + n, inst, sample);
                 deserialize_into ((char*) values[n], sample->sample);
                 if (cond == NULL
-                    || cond->m_cond.m_kind != DDS_TYPE_COND_QUERY
-                    || ( cond->m_query.m_cxx_ctx != NULL
-                         && cond->m_query.u.m_filter_with_ctx(values[n],
-                                                              cond->m_query.m_cxx_ctx ))
-                    || ( cond->m_query.m_cxx_ctx == NULL
-                         && cond->m_query.u.m_filter != NULL
-                         && cond->m_query.u.m_filter(values[n])))
+                    || (dds_entity_kind(cond->m_entity.m_hdl) != DDS_KIND_COND_QUERY)
+                    || ( cond->m_query.m_filter != NULL && cond->m_query.m_filter(values[n])))
                 {
                   rhc->n_vsamples--;
                   if (sample->isread)
@@ -1852,7 +1842,7 @@ static int dds_rhc_take_w_qminv
 
   if (trigger_waitsets)
   {
-    signal_conditions (rhc);
+      dds_entity_status_signal((dds_entity*)(rhc->reader));
   }
 
   return n;
@@ -1999,7 +1989,7 @@ static int dds_rhc_takecdr_w_qminv
 
   if (trigger_waitsets)
   {
-    signal_conditions (rhc);
+      dds_entity_status_signal((dds_entity*)(rhc->reader));
   }
 
   return n;
@@ -2043,14 +2033,16 @@ void dds_rhc_add_readcondition (dds_readcond * cond)
   struct rhc_instance * inst;
 
   cond->m_qminv = qmask_from_dcpsquery (cond->m_sample_states, cond->m_view_states, cond->m_instance_states);
-  cond->m_cond.m_lock = &rhc->conds_lock;
 
   os_mutexLock (&rhc->lock);
   for (inst = ut_hhIterFirst (rhc->instances, &iter); inst; inst = ut_hhIterNext (&iter))
   {
-    if (cond->m_cond.m_kind == DDS_TYPE_COND_READ)
+    if (dds_entity_kind(cond->m_entity.m_hdl) == DDS_KIND_COND_READ)
     {
-      cond->m_cond.m_trigger += rhc_get_cond_trigger (inst, cond);
+      ((dds_entity*)cond)->m_trigger += rhc_get_cond_trigger (inst, cond);
+      if (((dds_entity*)cond)->m_trigger) {
+        dds_entity_status_signal((dds_entity*)cond);
+      }
     }
   }
   os_mutexLock (&rhc->conds_lock);
@@ -2074,7 +2066,6 @@ void dds_rhc_remove_readcondition (dds_readcond * cond)
 
   os_mutexLock (&rhc->lock);
   os_mutexLock (&rhc->conds_lock);
-  assert (cond->m_cond.m_waitsets == NULL);
   iter = rhc->conds;
   while (iter)
   {
@@ -2096,53 +2087,6 @@ void dds_rhc_remove_readcondition (dds_readcond * cond)
   }
   os_mutexUnlock (&rhc->conds_lock);
   os_mutexUnlock (&rhc->lock);
-}
-
-bool dds_rhc_add_waitset (dds_readcond * cond, dds_waitset *waitset, dds_attach_t x)
-{
-  struct rhc *rhc = cond->m_rhc;
-  bool ret;
-  os_mutexLock (&rhc->lock);
-  os_mutexLock (&rhc->conds_lock);
-  ret = dds_waitset_add_condition_locked (waitset, (dds_condition*) cond, x);
-  os_mutexUnlock (&rhc->conds_lock);
-  os_mutexUnlock (&rhc->lock);
-  return ret;
-}
-
-int dds_rhc_remove_waitset (dds_readcond * cond, dds_waitset * waitset)
-{
-  struct rhc *rhc = cond->m_rhc;
-  int ret;
-  os_mutexLock (&rhc->lock);
-  os_mutexLock (&rhc->conds_lock);
-  ret = dds_waitset_remove_condition_locked (waitset, (dds_condition*) cond);
-  os_mutexUnlock (&rhc->conds_lock);
-  os_mutexUnlock (&rhc->lock);
-  return ret;
-}
-
-static void signal_conditions (struct rhc *rhc)
-{
-  /* Locking rhc->conds_lock guarantees rhc->conds doesn't change.
-     FIXME: do I need generation counters to ensure I trigger only
-     once? */
-
-  dds_readcond * iter;
-
-  os_mutexLock (&gv.attach_lock);
-  os_mutexLock (&rhc->conds_lock);
-  iter = rhc->conds;
-  while (iter)
-  {
-    if (iter->m_cond.m_trigger)
-    {
-      dds_cond_signal_waitsets_locked (&iter->m_cond);
-    }
-    iter = iter->m_rhc_next;
-  }
-  os_mutexUnlock (&rhc->conds_lock);
-  os_mutexUnlock (&gv.attach_lock);
 }
 
 static bool update_conditions_locked
@@ -2200,7 +2144,7 @@ static bool update_conditions_locked
     }
     else if (m_pre < m_post)
     {
-      if (sample && !deserialised && (iter->m_cond.m_kind == DDS_TYPE_COND_QUERY))
+      if (sample && !deserialised && (dds_entity_kind(iter->m_entity.m_hdl) == DDS_KIND_COND_QUERY))
       {
         deserialize_into ((char*)rhc->topic->filter_sample, sample);
         deserialised = true;
@@ -2208,16 +2152,12 @@ static bool update_conditions_locked
       if
       (
         (sample == NULL)
-        || (iter->m_cond.m_kind != DDS_TYPE_COND_QUERY)
-        || (iter->m_query.m_cxx_ctx == NULL
-          && iter->m_query.u.m_filter != NULL
-          && iter->m_query.u.m_filter (rhc->topic->filter_sample))
-        || (iter->m_query.m_cxx_ctx != NULL
-          && iter->m_query.u.m_filter_with_ctx (rhc->topic->filter_sample, iter->m_query.m_cxx_ctx))
+        || (dds_entity_kind(iter->m_entity.m_hdl) != DDS_KIND_COND_QUERY)
+        || (iter->m_query.m_filter != NULL && iter->m_query.m_filter (rhc->topic->filter_sample))
       )
       {
         TRACE (("now matches"));
-        if (iter->m_cond.m_trigger++ == 0)
+        if (iter->m_entity.m_trigger++ == 0)
         {
           TRACE ((" (cond now triggers)"));
           trigger = true;
@@ -2227,11 +2167,15 @@ static bool update_conditions_locked
     else
     {
       TRACE (("no longer matches"));
-      if (--iter->m_cond.m_trigger == 0)
+      if (--iter->m_entity.m_trigger == 0)
       {
         TRACE ((" (cond no longer triggers)"));
       }
     }
+    if (iter->m_entity.m_trigger) {
+        dds_entity_status_signal(&(iter->m_entity));
+    }
+
     TRACE (("\n"));
     iter = iter->m_rhc_next;
   }
@@ -2256,10 +2200,9 @@ int dds_rhc_read
 int dds_rhc_read_w_condition
 (
   struct rhc *rhc, bool lock, void ** values, dds_sample_info_t *info_seq, uint32_t max_samples,
-  const dds_condition *gcond, dds_instance_handle_t handle
+  dds_readcond *cond, dds_instance_handle_t handle
 )
 {
-  dds_readcond *cond = (dds_readcond *) gcond;
   return dds_rhc_read_w_qminv (rhc, lock, values, info_seq, max_samples, cond->m_qminv, handle, cond);
 }
 
@@ -2275,9 +2218,8 @@ int dds_rhc_take
 int dds_rhc_take_w_condition
 (
   struct rhc *rhc, bool lock, void ** values, dds_sample_info_t *info_seq, uint32_t max_samples,
-  const dds_condition *gcond, dds_instance_handle_t handle)
+  dds_readcond *cond, dds_instance_handle_t handle)
 {
-  dds_readcond *cond = (dds_readcond *) gcond;
   return dds_rhc_take_w_qminv (rhc, lock, values, info_seq, max_samples, cond->m_qminv, handle, cond);
 }
 
@@ -2365,7 +2307,7 @@ static int rhc_check_counts_locked (struct rhc *rhc, bool check_conds)
         dds_readcond * rciter = rhc->conds;
         for (i = 0; i < (rhc->nconds < CHECK_MAX_CONDS ? rhc->nconds : CHECK_MAX_CONDS); i++)
         {
-          if (rciter->m_cond.m_kind == DDS_TYPE_COND_READ)
+          if (dds_entity_kind(rciter->m_entity.m_hdl) == DDS_KIND_COND_READ)
           {
             cond_match_count[i] += rhc_get_cond_trigger (inst, rciter);
           }
@@ -2390,9 +2332,9 @@ static int rhc_check_counts_locked (struct rhc *rhc, bool check_conds)
     dds_readcond * rciter = rhc->conds;
     for (i = 0; i < (rhc->nconds < CHECK_MAX_CONDS ? rhc->nconds : CHECK_MAX_CONDS); i++)
     {
-      if (rciter->m_cond.m_kind == DDS_TYPE_COND_READ)
+      if (dds_entity_kind(rciter->m_entity.m_hdl) == DDS_KIND_COND_READ)
       {
-        assert (cond_match_count[i] == rciter->m_cond.m_trigger);
+        assert (cond_match_count[i] == rciter->m_entity.m_trigger);
       }
       rciter = rciter->m_rhc_next;
     }
