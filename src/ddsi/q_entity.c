@@ -1880,14 +1880,14 @@ static nn_entityid_t builtin_entityid_match (nn_entityid_t x)
 
 static void writer_qos_mismatch (struct writer * wr, int32_t reason)
 {
-  if (reason == DDS_INVALID_QOS_POLICY_ID)
+  /* When the reason is DDS_INVALID_QOS_POLICY_ID, it means that we compared
+   * readers/writers from different topics: ignore that. */
+  if (reason != DDS_INVALID_QOS_POLICY_ID)
   {
-    /* Handle INCONSISTENT_TOPIC on topic */
-    if (wr->topic->status_cb)
+    if (wr->topic->status_cb) {
+      /* Handle INCONSISTENT_TOPIC on topic */
       (wr->topic->status_cb) (wr->topic->status_cb_entity);
-  }
-  else
-  {
+    }
     if (wr->status_cb)
     {
       status_cb_data_t data;
@@ -1900,14 +1900,15 @@ static void writer_qos_mismatch (struct writer * wr, int32_t reason)
 
 static void reader_qos_mismatch (struct reader * rd, int32_t reason)
 {
-  if (reason == DDS_INVALID_QOS_POLICY_ID)
+  /* When the reason is DDS_INVALID_QOS_POLICY_ID, it means that we compared
+   * readers/writers from different topics: ignore that. */
+  if (reason != DDS_INVALID_QOS_POLICY_ID)
   {
-    /* Handle INCONSISTENT_TOPIC on topic */
     if (rd->topic->status_cb)
+    {
+      /* Handle INCONSISTENT_TOPIC on topic */
       (rd->topic->status_cb) (rd->topic->status_cb_entity);
-  }
-  else
-  {
+    }
     if (rd->status_cb)
     {
       status_cb_data_t data;

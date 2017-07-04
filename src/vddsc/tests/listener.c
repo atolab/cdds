@@ -14,10 +14,9 @@
 
 
 /****************************************************************************
- * TODO: Add DDS_INCONSISTENT_TOPIC_STATUS test
- * TODO: Add DDS_OFFERED_DEADLINE_MISSED_STATUS test
- * TODO: Add DDS_REQUESTED_DEADLINE_MISSED_STATUS test
- * TODO: Add DDS_LIVELINESS_LOST_STATUS test
+ * TODO: (CHAM-279) Add DDS_INCONSISTENT_TOPIC_STATUS test
+ * TODO: (CHAM-277) Add DDS_OFFERED/REQUESTED_DEADLINE_MISSED_STATUS test
+ * TODO: (CHAM-278) Add DDS_LIVELINESS_LOST_STATUS test
  * TODO: Check DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS intermittent fail (total_count != 1)
  ****************************************************************************/
 
