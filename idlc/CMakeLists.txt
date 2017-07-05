@@ -47,7 +47,7 @@ configure_file("pom.xml" "pom.xml")
 add_custom_command(
     OUTPUT  "${IDLC_JAR}"
     COMMAND "${Maven_EXECUTABLE}"
-    ARGS    "package"
+    ARGS    "-q" "package"
     DEPENDS "pom.xml" ${IDLC_G4_SOURCES} ${IDLC_JAVA_SOURCES} ${IDLC_ST_SOURCES})
 
 add_custom_target(idlc ALL DEPENDS "${IDLC_JAR}")
