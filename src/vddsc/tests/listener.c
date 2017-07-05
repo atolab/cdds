@@ -5,7 +5,6 @@
 #include <criterion/logging.h>
 
 
-
 /* We are deliberately testing some bad arguments that SAL will complain about.
  * So, silence SAL regarding these issues. */
 #pragma warning(push)
@@ -272,10 +271,7 @@ subscription_matched_cb(
 }
 
 static void
-subscription_matched_cb_2(
-        dds_entity_t reader,
-        const dds_subscription_matched_status_t status,
-        void* arg)
+callback_dummy(void)
 {
 }
 
@@ -514,42 +510,65 @@ Test(vddsc_listener, merge)
     cr_assert_not_null(listener1);
     cr_assert_not_null(listener2);
 
-    /* Set some listener1 callbacks to non-default values */
-    dds_lset_sample_lost(listener1, sample_lost_cb);
-    dds_lset_offered_deadline_missed(listener1, offered_deadline_missed_cb);
-    dds_lset_requested_deadline_missed(listener1, requested_deadline_missed_cb);
-    dds_lset_subscription_matched(listener1, subscription_matched_cb);
-    ASSERT_CALLBACK_EQUAL(data_available, listener1, NULL);
-    ASSERT_CALLBACK_EQUAL(sample_lost, listener1, sample_lost_cb);
+    /* Set all listener1 callbacks to non-default values */
+    dds_lset_inconsistent_topic         (listener1, inconsistent_topic_cb);
+    dds_lset_liveliness_lost            (listener1, liveliness_lost_cb);
+    dds_lset_offered_deadline_missed    (listener1, offered_deadline_missed_cb);
+    dds_lset_offered_incompatible_qos   (listener1, offered_incompatible_qos_cb);
+    dds_lset_data_on_readers            (listener1, data_on_readers_cb);
+    dds_lset_sample_lost                (listener1, sample_lost_cb);
+    dds_lset_data_available             (listener1, data_available_cb);
+    dds_lset_sample_rejected            (listener1, sample_rejected_cb);
+    dds_lset_liveliness_changed         (listener1, liveliness_changed_cb);
+    dds_lset_requested_deadline_missed  (listener1, requested_deadline_missed_cb);
+    dds_lset_requested_incompatible_qos (listener1, requested_incompatible_qos_cb);
+    dds_lset_publication_matched        (listener1, publication_matched_cb);
+    dds_lset_subscription_matched       (listener1, subscription_matched_cb);
 
-    /* Set listener2 callback to non-default values (will not be overwritten by merge) */
-    dds_lset_data_available(listener2, data_available_cb);
-    dds_lset_offered_incompatible_qos(listener2, offered_incompatible_qos_cb);
-    dds_lset_requested_incompatible_qos(listener2, requested_incompatible_qos_cb);
-    /* This one is also set on listener1; it should not change. */
-    dds_lset_subscription_matched(listener2, subscription_matched_cb_2);
-
-    /* Check if setting the callbacks worked before actually trying the merge. */
-    ASSERT_CALLBACK_EQUAL(sample_lost,                listener1, sample_lost_cb);
-    ASSERT_CALLBACK_EQUAL(offered_deadline_missed,    listener1, offered_deadline_missed_cb);
-    ASSERT_CALLBACK_EQUAL(requested_deadline_missed,  listener1, requested_deadline_missed_cb);
-    ASSERT_CALLBACK_EQUAL(subscription_matched,       listener1, subscription_matched_cb);
-    ASSERT_CALLBACK_EQUAL(data_available,             listener2, data_available_cb);
-    ASSERT_CALLBACK_EQUAL(offered_incompatible_qos,   listener2, offered_incompatible_qos_cb);
-    ASSERT_CALLBACK_EQUAL(requested_incompatible_qos, listener2, requested_incompatible_qos_cb);
-    ASSERT_CALLBACK_EQUAL(subscription_matched,       listener2, subscription_matched_cb_2);
-
-    /* Cb's of listener1 should be merged to listener2 */
+    /* Merging listener1 into empty listener2 should act a bit like a copy. */
     dds_listener_merge(listener2, listener1);
+    ASSERT_CALLBACK_EQUAL(inconsistent_topic,           listener2, inconsistent_topic_cb);
+    ASSERT_CALLBACK_EQUAL(liveliness_lost,              listener2, liveliness_lost_cb);
+    ASSERT_CALLBACK_EQUAL(offered_deadline_missed,      listener2, offered_deadline_missed_cb);
+    ASSERT_CALLBACK_EQUAL(offered_incompatible_qos,     listener2, offered_incompatible_qos_cb);
+    ASSERT_CALLBACK_EQUAL(data_on_readers,              listener2, data_on_readers_cb);
+    ASSERT_CALLBACK_EQUAL(sample_lost,                  listener2, sample_lost_cb);
+    ASSERT_CALLBACK_EQUAL(data_available,               listener2, data_available_cb);
+    ASSERT_CALLBACK_EQUAL(sample_rejected,              listener2, sample_rejected_cb);
+    ASSERT_CALLBACK_EQUAL(liveliness_changed,           listener2, liveliness_changed_cb);
+    ASSERT_CALLBACK_EQUAL(requested_deadline_missed,    listener2, requested_deadline_missed_cb);
+    ASSERT_CALLBACK_EQUAL(requested_incompatible_qos,   listener2, requested_incompatible_qos_cb);
+    ASSERT_CALLBACK_EQUAL(publication_matched,          listener2, publication_matched_cb);
+    ASSERT_CALLBACK_EQUAL(subscription_matched,         listener2, subscription_matched_cb);
 
-    /* Check the merge result. */
-    ASSERT_CALLBACK_EQUAL(sample_lost,                listener2, sample_lost_cb);
-    ASSERT_CALLBACK_EQUAL(offered_deadline_missed,    listener2, offered_deadline_missed_cb);
-    ASSERT_CALLBACK_EQUAL(requested_deadline_missed,  listener2, requested_deadline_missed_cb);
-    ASSERT_CALLBACK_EQUAL(data_available,             listener2, data_available_cb);
-    ASSERT_CALLBACK_EQUAL(offered_incompatible_qos,   listener2, offered_incompatible_qos_cb);
-    ASSERT_CALLBACK_EQUAL(requested_incompatible_qos, listener2, requested_incompatible_qos_cb);
-    ASSERT_CALLBACK_EQUAL(subscription_matched,       listener2, subscription_matched_cb_2);
+    /* Merging listener into a full listener2 should act as a noop. */
+    dds_lset_inconsistent_topic         (listener2, (dds_on_inconsistent_topic_fn)callback_dummy);
+    dds_lset_liveliness_lost            (listener2, (dds_on_liveliness_lost_fn)callback_dummy);
+    dds_lset_offered_deadline_missed    (listener2, (dds_on_offered_deadline_missed_fn)callback_dummy);
+    dds_lset_offered_incompatible_qos   (listener2, (dds_on_offered_incompatible_qos_fn)callback_dummy);
+    dds_lset_data_on_readers            (listener2, (dds_on_data_on_readers_fn)callback_dummy);
+    dds_lset_sample_lost                (listener2, (dds_on_sample_lost_fn)callback_dummy);
+    dds_lset_data_available             (listener2, (dds_on_data_available_fn)callback_dummy);
+    dds_lset_sample_rejected            (listener2, (dds_on_sample_rejected_fn)callback_dummy);
+    dds_lset_liveliness_changed         (listener2, (dds_on_liveliness_changed_fn)callback_dummy);
+    dds_lset_requested_deadline_missed  (listener2, (dds_on_requested_deadline_missed_fn)callback_dummy);
+    dds_lset_requested_incompatible_qos (listener2, (dds_on_requested_incompatible_qos_fn)callback_dummy);
+    dds_lset_publication_matched        (listener2, (dds_on_publication_matched_fn)callback_dummy);
+    dds_lset_subscription_matched       (listener2, (dds_on_subscription_matched_fn)callback_dummy);
+    dds_listener_merge(listener2, listener1);
+    ASSERT_CALLBACK_EQUAL(inconsistent_topic,           listener2, (dds_on_inconsistent_topic_fn)callback_dummy);
+    ASSERT_CALLBACK_EQUAL(liveliness_lost,              listener2, (dds_on_liveliness_lost_fn)callback_dummy);
+    ASSERT_CALLBACK_EQUAL(offered_deadline_missed,      listener2, (dds_on_offered_deadline_missed_fn)callback_dummy);
+    ASSERT_CALLBACK_EQUAL(offered_incompatible_qos,     listener2, (dds_on_offered_incompatible_qos_fn)callback_dummy);
+    ASSERT_CALLBACK_EQUAL(data_on_readers,              listener2, (dds_on_data_on_readers_fn)callback_dummy);
+    ASSERT_CALLBACK_EQUAL(sample_lost,                  listener2, (dds_on_sample_lost_fn)callback_dummy);
+    ASSERT_CALLBACK_EQUAL(data_available,               listener2, (dds_on_data_available_fn)callback_dummy);
+    ASSERT_CALLBACK_EQUAL(sample_rejected,              listener2, (dds_on_sample_rejected_fn)callback_dummy);
+    ASSERT_CALLBACK_EQUAL(liveliness_changed,           listener2, (dds_on_liveliness_changed_fn)callback_dummy);
+    ASSERT_CALLBACK_EQUAL(requested_deadline_missed,    listener2, (dds_on_requested_deadline_missed_fn)callback_dummy);
+    ASSERT_CALLBACK_EQUAL(requested_incompatible_qos,   listener2, (dds_on_requested_incompatible_qos_fn)callback_dummy);
+    ASSERT_CALLBACK_EQUAL(publication_matched,          listener2, (dds_on_publication_matched_fn)callback_dummy);
+    ASSERT_CALLBACK_EQUAL(subscription_matched,         listener2, (dds_on_subscription_matched_fn)callback_dummy);
 
     /* Using NULLs shouldn't crash and be noops. */
     dds_listener_merge(listener2, NULL);
