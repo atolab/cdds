@@ -75,6 +75,7 @@ vddsc_waitset_init(void)
     uint32_t mask = DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
     char name[100];
 
+    os_osInit();
 #if 1
     /* Get semi random topic name. */
     snprintf(name, 100,
@@ -119,6 +120,7 @@ vddsc_waitset_fini(void)
     dds_delete(publisher);
     dds_delete(subscriber);
     vddsc_waitset_basic_fini();
+    os_osExit();
 }
 
 static void

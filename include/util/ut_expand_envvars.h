@@ -13,16 +13,17 @@
 #define UT_EXPAND_ENVVARS_H
 
 #include "os/os.h"
+#include "util/ut_export.h"
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
 
     /* Expands ${X}, ${X:-Y}, ${X:+Y}, ${X:?Y} forms, but not $X */
-    OSAPI_EXPORT char *ut_expand_envvars(const char *string);
+    UTIL_EXPORT char *ut_expand_envvars(const char *string);
 
     /* Expands $X, ${X}, ${X:-Y}, ${X:+Y}, ${X:?Y} forms, $ and \ can be escaped with \ */
-    OSAPI_EXPORT char *ut_expand_envvars_sh(const char *string);
+    UTIL_EXPORT char *ut_expand_envvars_sh(const char *string);
 
 #if defined (__cplusplus)
 }

@@ -13,6 +13,7 @@
 #define UT_THREAD_POOL_H
 
 #include "os/os.h"
+#include "util/ut_export.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -29,7 +30,7 @@ typedef struct ut_thread_pool_s *ut_thread_pool;
   on demand up to max_threads.
 */
 
-OSAPI_EXPORT ut_thread_pool ut_thread_pool_new
+UTIL_EXPORT ut_thread_pool ut_thread_pool_new
 (
   uint32_t threads,     /* Initial number of threads in pool (can be 0) */
   uint32_t max_threads, /* Maximum number of threads in pool (0 == infinite) */
@@ -39,11 +40,11 @@ OSAPI_EXPORT ut_thread_pool ut_thread_pool_new
 
 /* ut_thread_pool_free: Frees pool, destroying threads. */
 
-OSAPI_EXPORT void ut_thread_pool_free (ut_thread_pool pool);
+UTIL_EXPORT void ut_thread_pool_free (ut_thread_pool pool);
 
 /* ut_thread_pool_purge: Purge threads from pool back to initial set. */
 
-OSAPI_EXPORT void ut_thread_pool_purge (ut_thread_pool pool);
+UTIL_EXPORT void ut_thread_pool_purge (ut_thread_pool pool);
 
 /*
   ut_thread_pool_submit: Submit a thread function and associated argument
@@ -53,7 +54,7 @@ OSAPI_EXPORT void ut_thread_pool_purge (ut_thread_pool pool);
   Note that if the pool queue has reached it's maximum os_resultBusy is returned.
 */
 
-OSAPI_EXPORT os_result ut_thread_pool_submit
+UTIL_EXPORT os_result ut_thread_pool_submit
 (
   ut_thread_pool pool,  /* Thread pool instance */
   void (*fn) (void *arg),  /* Function to be invoked by thread from pool */

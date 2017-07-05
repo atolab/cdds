@@ -13,6 +13,7 @@
 #define UT_XMLPARSER_H
 
 #include "os/os.h"
+#include "util/ut_export.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -34,12 +35,12 @@ extern "C" {
 
     struct ut_xmlpState;
 
-    OSAPI_EXPORT struct ut_xmlpState *ut_xmlpNewFile (FILE *fp, void *varg, const struct ut_xmlpCallbacks *cb);
-    OSAPI_EXPORT struct ut_xmlpState *ut_xmlpNewString (const char *string, void *varg, const struct ut_xmlpCallbacks *cb);
-    OSAPI_EXPORT void ut_xmlpFree (struct ut_xmlpState *st);
-    OSAPI_EXPORT int ut_xmlpParse (struct ut_xmlpState *st);
+    UTIL_EXPORT struct ut_xmlpState *ut_xmlpNewFile (FILE *fp, void *varg, const struct ut_xmlpCallbacks *cb);
+    UTIL_EXPORT struct ut_xmlpState *ut_xmlpNewString (const char *string, void *varg, const struct ut_xmlpCallbacks *cb);
+    UTIL_EXPORT void ut_xmlpFree (struct ut_xmlpState *st);
+    UTIL_EXPORT int ut_xmlpParse (struct ut_xmlpState *st);
 
-    OSAPI_EXPORT int ut_xmlUnescapeInsitu (char *buffer, size_t *n);
+    UTIL_EXPORT int ut_xmlUnescapeInsitu (char *buffer, size_t *n);
 
 #if defined (__cplusplus)
 }

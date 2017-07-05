@@ -13,6 +13,7 @@
 #define UT_CRC_H
 
 #include "os/os.h"
+#include "util/ut_export.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -20,7 +21,7 @@ extern "C" {
 
 /* !!!!!!!!NOTE From here no more includes are allowed!!!!!!! */
 
-OSAPI_EXPORT uint32_t ut_crcCalculate (const void *buf, size_t length) __nonnull_all__ __attribute_pure__;
+UTIL_EXPORT uint32_t ut_crcCalculate (const void *buf, size_t length) __nonnull_all__ __attribute_pure__;
 
 #if defined (__cplusplus)
 }

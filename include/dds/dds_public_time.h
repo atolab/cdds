@@ -11,19 +11,10 @@
 #define DDS_TIME_H
 
 #include "os/os_public.h"
+#include "dds/dds_export.h"
 
 #if defined (__cplusplus)
 extern "C" {
-#endif
-
-#ifdef _WIN32_DLL_
-  #if defined VDDS_BUILD
-    #define OS_API OS_API_EXPORT
-  #else
-    #define OS_API OS_API_IMPORT
-  #endif
-#else
-  #define OS_API extern
 #endif
 
 /*
@@ -69,7 +60,7 @@ typedef int64_t dds_duration_t;
  * Arguments :
  *   -# Returns current time
  */
-OS_API dds_time_t dds_time (void);
+DDS_EXPORT dds_time_t dds_time (void);
 
 /**
  * Description : This operation blocks the calling thread until the relative time
@@ -78,7 +69,7 @@ OS_API dds_time_t dds_time (void);
  * Arguments :
  *   -# n Relative Time to block a thread
  */
-OS_API void dds_sleepfor (dds_duration_t n);
+DDS_EXPORT void dds_sleepfor (dds_duration_t n);
 
 /**
  * Description : This operation blocks the calling thread until the absolute time
@@ -87,9 +78,7 @@ OS_API void dds_sleepfor (dds_duration_t n);
  * Arguments :
  *   -# n absolute Time to block a thread
  */
-OS_API void dds_sleepuntil (dds_time_t n);
-
-#undef OS_API
+DDS_EXPORT void dds_sleepuntil (dds_time_t n);
 
 #if defined (__cplusplus)
 }
