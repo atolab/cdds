@@ -248,6 +248,8 @@ Test(vddsc_qos, userdata, .init=qos_init, .fini=qos_fini)
     dds_qget_userdata(g_qos, &p.value, &p.sz);
     cr_assert_eq(p.sz, g_pol_userdata.sz);
     cr_assert_str_eq(p.value, g_pol_userdata.value);
+
+    dds_free(p.value);
 }
 
 Test(vddsc_qos, topicdata, .init=qos_init, .fini=qos_fini)
@@ -264,6 +266,8 @@ Test(vddsc_qos, topicdata, .init=qos_init, .fini=qos_fini)
     dds_qget_topicdata(g_qos, &p.value, &p.sz);
     cr_assert_eq(p.sz, g_pol_topicdata.sz);
     cr_assert_str_eq(p.value, g_pol_topicdata.value);
+
+    dds_free(p.value);
 }
 
 Test(vddsc_qos, groupdata, .init=qos_init, .fini=qos_fini)
@@ -280,6 +284,8 @@ Test(vddsc_qos, groupdata, .init=qos_init, .fini=qos_fini)
     dds_qget_groupdata(g_qos, &p.value, &p.sz);
     cr_assert_eq(p.sz, g_pol_groupdata.sz);
     cr_assert_str_eq(p.value, g_pol_groupdata.value);
+
+    dds_free(p.value);
 }
 
 Test(vddsc_qos, durability, .init=qos_init, .fini=qos_fini)
@@ -469,6 +475,10 @@ Test(vddsc_qos, partition, .init=qos_init, .fini=qos_fini)
     cr_assert_eq(p.n, g_pol_partition.n);
     cr_assert_str_eq(p.ps[0], g_pol_partition.ps[0]);
     cr_assert_str_eq(p.ps[1], g_pol_partition.ps[1]);
+
+    dds_free(p.ps[0]);
+    dds_free(p.ps[1]);
+    dds_free(p.ps);
 }
 
 Test(vddsc_qos, reliability, .init=qos_init, .fini=qos_fini)
