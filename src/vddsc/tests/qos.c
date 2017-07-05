@@ -160,13 +160,13 @@ qos_init(void)
     cr_assert_not_null(g_qos);
 
     g_pol_userdata.value = (void*)c_userdata;
-    g_pol_userdata.sz = strlen((char*)g_pol_userdata.value);
+    g_pol_userdata.sz = strlen((char*)g_pol_userdata.value) + 1;
 
     g_pol_topicdata.value = (void*)c_topicdata;
-    g_pol_topicdata.sz = strlen((char*)g_pol_topicdata.value);
+    g_pol_topicdata.sz = strlen((char*)g_pol_topicdata.value) + 1;
 
     g_pol_groupdata.value = (void*)c_groupdata;
-    g_pol_groupdata.sz = strlen((char*)g_pol_groupdata.value);
+    g_pol_groupdata.sz = strlen((char*)g_pol_groupdata.value) + 1;
 
     g_pol_durability.kind = DDS_DURABILITY_TRANSIENT;
 
