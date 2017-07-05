@@ -82,19 +82,45 @@ dds_listener_merge (_Inout_ dds_listener_t * __restrict dst, _In_ const dds_list
         const c_listener_t *srcl = src;
         c_listener_t *dstl = dst;
 
-        if (dstl->on_data_available == DDS_LUNSET) { dstl->on_data_available = srcl->on_data_available; }
-        if (dstl->on_data_on_readers == DDS_LUNSET) { dstl->on_data_on_readers = srcl->on_data_on_readers; }
-        if (dstl->on_inconsistent_topic == DDS_LUNSET) { dstl->on_inconsistent_topic = srcl->on_inconsistent_topic; }
-        if (dstl->on_liveliness_changed == DDS_LUNSET) { dstl->on_liveliness_changed = srcl->on_liveliness_changed; }
-        if (dstl->on_liveliness_lost == DDS_LUNSET) { dstl->on_liveliness_lost = srcl->on_liveliness_lost; }
-        if (dstl->on_offered_deadline_missed == DDS_LUNSET) { dstl->on_offered_deadline_missed = srcl->on_offered_deadline_missed; }
-        if (dstl->on_offered_incompatible_qos == DDS_LUNSET) { dstl->on_offered_incompatible_qos = srcl->on_offered_incompatible_qos; }
-        if (dstl->on_publication_matched == DDS_LUNSET) { dstl->on_publication_matched = srcl->on_publication_matched; }
-        if (dstl->on_requested_deadline_missed == DDS_LUNSET) { dstl->on_requested_deadline_missed = srcl->on_requested_deadline_missed; }
-        if (dstl->on_requested_incompatible_qos == DDS_LUNSET) { dstl->on_requested_incompatible_qos = srcl->on_requested_incompatible_qos; }
-        if (dstl->on_sample_lost == DDS_LUNSET) { dstl->on_sample_lost = srcl->on_sample_lost; }
-        if (dstl->on_sample_rejected == DDS_LUNSET) { dstl->on_sample_rejected = srcl->on_sample_rejected; }
-        if (dstl->on_subscription_matched == DDS_LUNSET) { dstl->on_subscription_matched = srcl->on_subscription_matched; }
+        if (dstl->on_data_available == DDS_LUNSET) {
+            dstl->on_data_available = srcl->on_data_available;
+        }
+        if (dstl->on_data_on_readers == DDS_LUNSET) {
+            dstl->on_data_on_readers = srcl->on_data_on_readers;
+        }
+        if (dstl->on_inconsistent_topic == DDS_LUNSET) {
+            dstl->on_inconsistent_topic = srcl->on_inconsistent_topic;
+        }
+        if (dstl->on_liveliness_changed == DDS_LUNSET) {
+            dstl->on_liveliness_changed = srcl->on_liveliness_changed;
+        }
+        if (dstl->on_liveliness_lost == DDS_LUNSET) {
+            dstl->on_liveliness_lost = srcl->on_liveliness_lost;
+        }
+        if (dstl->on_offered_deadline_missed == DDS_LUNSET) {
+            dstl->on_offered_deadline_missed = srcl->on_offered_deadline_missed;
+        }
+        if (dstl->on_offered_incompatible_qos == DDS_LUNSET) {
+            dstl->on_offered_incompatible_qos = srcl->on_offered_incompatible_qos;
+        }
+        if (dstl->on_publication_matched == DDS_LUNSET) {
+            dstl->on_publication_matched = srcl->on_publication_matched;
+        }
+        if (dstl->on_requested_deadline_missed == DDS_LUNSET) {
+            dstl->on_requested_deadline_missed = srcl->on_requested_deadline_missed;
+        }
+        if (dstl->on_requested_incompatible_qos == DDS_LUNSET) {
+            dstl->on_requested_incompatible_qos = srcl->on_requested_incompatible_qos;
+        }
+        if (dstl->on_sample_lost == DDS_LUNSET) {
+            dstl->on_sample_lost = srcl->on_sample_lost;
+        }
+        if (dstl->on_sample_rejected == DDS_LUNSET) {
+            dstl->on_sample_rejected = srcl->on_sample_rejected;
+        }
+        if (dstl->on_subscription_matched == DDS_LUNSET) {
+            dstl->on_subscription_matched = srcl->on_subscription_matched;
+        }
     }
 }
 

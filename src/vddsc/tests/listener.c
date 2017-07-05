@@ -36,11 +36,15 @@
 
 #define TEST_GET_SET(listener, fntype, cb) \
     do { \
+        dds_on_##fntype##_fn dummy = NULL; \
         /* Initially expect DDS_LUNSET on a newly created listener */ \
         ASSERT_CALLBACK_EQUAL(fntype, listener, DDS_LUNSET); \
-        /* Using listener NULL, shouldn't crash */ \
+        /* Using listener or callback NULL, shouldn't crash and be noop */ \
         dds_lset_##fntype(NULL, NULL); \
         dds_lget_##fntype(NULL, NULL); \
+        dds_lget_##fntype(listener, NULL); \
+        dds_lget_##fntype(NULL, &dummy);  \
+        cr_expect_eq(dummy, NULL, "lget 'on_" #fntype "' with NULL listener was not a noop"); \
         /* Set to NULL, get to confirm it succeeds */ \
         dds_lset_##fntype(listener, NULL); \
         ASSERT_CALLBACK_EQUAL(fntype, listener, NULL); \
@@ -267,6 +271,14 @@ subscription_matched_cb(
     os_mutexUnlock(&g_mutex);
 }
 
+static void
+subscription_matched_cb_2(
+        dds_entity_t reader,
+        const dds_subscription_matched_status_t status,
+        void* arg)
+{
+}
+
 static uint32_t
 waitfor_cb(uint32_t expected)
 {
@@ -411,7 +423,8 @@ fini_triggering_test(void)
 }
 
 
-
+#if 0
+#else
 /****************************************************************************
  * API tests
  ****************************************************************************/
@@ -455,6 +468,9 @@ Test(vddsc_listener, reset)
     dds_listener_reset(listener);
     ASSERT_CALLBACK_EQUAL(data_available, listener, DDS_LUNSET);
 
+    /* Resetting a NULL listener should not crash */
+    dds_listener_reset(NULL);
+
     dds_listener_delete(listener);
 }
 
@@ -481,6 +497,11 @@ Test(vddsc_listener, copy)
     ASSERT_CALLBACK_EQUAL(sample_lost, listener1, sample_lost_cb);
     ASSERT_CALLBACK_EQUAL(sample_lost, listener2, sample_lost_cb);
 
+    /* Calling copy with NULL should not crash and be noops. */
+    dds_listener_copy(listener2, NULL);
+    dds_listener_copy(NULL, listener1);
+    dds_listener_copy(NULL, NULL);
+
     dds_listener_delete(listener1);
     dds_listener_delete(listener2);
 }
@@ -494,21 +515,43 @@ Test(vddsc_listener, merge)
     cr_assert_not_null(listener2);
 
     /* Set some listener1 callbacks to non-default values */
-    dds_lset_data_available(listener1, NULL);
     dds_lset_sample_lost(listener1, sample_lost_cb);
+    dds_lset_offered_deadline_missed(listener1, offered_deadline_missed_cb);
+    dds_lset_requested_deadline_missed(listener1, requested_deadline_missed_cb);
+    dds_lset_subscription_matched(listener1, subscription_matched_cb);
     ASSERT_CALLBACK_EQUAL(data_available, listener1, NULL);
     ASSERT_CALLBACK_EQUAL(sample_lost, listener1, sample_lost_cb);
 
     /* Set listener2 callback to non-default values (will not be overwritten by merge) */
     dds_lset_data_available(listener2, data_available_cb);
-    ASSERT_CALLBACK_EQUAL(data_available, listener2, data_available_cb);
+    dds_lset_offered_incompatible_qos(listener2, offered_incompatible_qos_cb);
+    dds_lset_requested_incompatible_qos(listener2, requested_incompatible_qos_cb);
+    /* This one is also set on listener1; it should not change. */
+    dds_lset_subscription_matched(listener2, subscription_matched_cb_2);
 
-    /* Cb's should be merged to listener2 */
+    /* Check if setting the callbacks worked before actually trying the merge. */
+    ASSERT_CALLBACK_EQUAL(sample_lost,                listener1, sample_lost_cb);
+    ASSERT_CALLBACK_EQUAL(offered_deadline_missed,    listener1, offered_deadline_missed_cb);
+    ASSERT_CALLBACK_EQUAL(requested_deadline_missed,  listener1, requested_deadline_missed_cb);
+    ASSERT_CALLBACK_EQUAL(subscription_matched,       listener1, subscription_matched_cb);
+    ASSERT_CALLBACK_EQUAL(data_available,             listener2, data_available_cb);
+    ASSERT_CALLBACK_EQUAL(offered_incompatible_qos,   listener2, offered_incompatible_qos_cb);
+    ASSERT_CALLBACK_EQUAL(requested_incompatible_qos, listener2, requested_incompatible_qos_cb);
+    ASSERT_CALLBACK_EQUAL(subscription_matched,       listener2, subscription_matched_cb_2);
+
+    /* Cb's of listener1 should be merged to listener2 */
     dds_listener_merge(listener2, listener1);
-    ASSERT_CALLBACK_EQUAL(data_available, listener2, data_available_cb);
-    ASSERT_CALLBACK_EQUAL(sample_lost, listener2, sample_lost_cb);
 
-    /* This shouldn't crash. */
+    /* Check the merge result. */
+    ASSERT_CALLBACK_EQUAL(sample_lost,                listener2, sample_lost_cb);
+    ASSERT_CALLBACK_EQUAL(offered_deadline_missed,    listener2, offered_deadline_missed_cb);
+    ASSERT_CALLBACK_EQUAL(requested_deadline_missed,  listener2, requested_deadline_missed_cb);
+    ASSERT_CALLBACK_EQUAL(data_available,             listener2, data_available_cb);
+    ASSERT_CALLBACK_EQUAL(offered_incompatible_qos,   listener2, offered_incompatible_qos_cb);
+    ASSERT_CALLBACK_EQUAL(requested_incompatible_qos, listener2, requested_incompatible_qos_cb);
+    ASSERT_CALLBACK_EQUAL(subscription_matched,       listener2, subscription_matched_cb_2);
+
+    /* Using NULLs shouldn't crash and be noops. */
     dds_listener_merge(listener2, NULL);
     dds_listener_merge(NULL, listener1);
     dds_listener_merge(NULL, NULL);
@@ -545,6 +588,67 @@ Test(vddsc_listener, getters_setters)
 /****************************************************************************
  * Triggering tests
  ****************************************************************************/
+Test(vddsc_listener, propagation, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    RoundTripModule_DataType sample = { 0 };
+    dds_listener_t *listener_par = NULL;
+    dds_listener_t *listener_pub = NULL;
+    dds_listener_t *listener_sub = NULL;
+    uint32_t triggered;
+    dds_return_t ret;
+
+    /* Let participant be interested in data. */
+    listener_par = dds_listener_create(NULL);
+    cr_assert_not_null(listener_par, "Failed to create prerequisite listener_par");
+    dds_lset_data_on_readers(listener_par, data_on_readers_cb);
+    ret = dds_set_listener(g_participant, listener_par);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite listener_par");
+    dds_listener_delete(listener_par);
+
+    /* Let publisher be interested in publication matched. */
+    listener_pub = dds_listener_create(NULL);
+    cr_assert_not_null(listener_pub, "Failed to create prerequisite listener_pub");
+    dds_lset_publication_matched(listener_pub, publication_matched_cb);
+    ret = dds_set_listener(g_publisher, listener_pub);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite listener_pub");
+    dds_listener_delete(listener_pub);
+
+    /* Let subscriber be interested in subscription matched. */
+    listener_sub = dds_listener_create(NULL);
+    cr_assert_not_null(listener_pub, "Failed to create prerequisite listener_sub");
+    dds_lset_subscription_matched(listener_sub, subscription_matched_cb);
+    ret = dds_set_listener(g_subscriber, listener_sub);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite listener_sub");
+    dds_listener_delete(listener_sub);
+
+    /* Create reader and writer without listeners. */
+    g_reader = dds_create_reader(g_subscriber, g_topic, g_qos, NULL);
+    cr_assert_gt(g_reader, 0, "Failed to create prerequisite reader");
+    g_writer = dds_create_writer(g_publisher, g_topic, g_qos, NULL);
+    cr_assert_gt(g_writer, 0, "Failed to create prerequisite writer");
+
+    /* Publication and Subscription should be matched. */
+    triggered = waitfor_cb(DDS_PUBLICATION_MATCHED_STATUS | DDS_SUBSCRIPTION_MATCHED_STATUS);
+    cr_assert_eq(triggered & DDS_SUBSCRIPTION_MATCHED_STATUS, DDS_SUBSCRIPTION_MATCHED_STATUS, "DDS_SUBSCRIPTION_MATCHED_STATUS not triggered");
+    cr_assert_eq(triggered & DDS_PUBLICATION_MATCHED_STATUS,  DDS_PUBLICATION_MATCHED_STATUS,  "DDS_PUBLICATION_MATCHED_STATUS not triggered");
+    cr_assert_eq(cb_writer, g_writer);
+    cr_assert_eq(cb_reader, g_reader);
+
+    /* Write sample. */
+    ret = dds_write(g_writer, &sample);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to write prerequisite data");
+
+    /* Data on readers should be triggered with the right status. */
+    triggered = waitfor_cb(DDS_DATA_ON_READERS_STATUS);
+    cr_assert_eq(triggered & DDS_DATA_ON_READERS_STATUS, DDS_DATA_ON_READERS_STATUS, "DDS_DATA_ON_READERS_STATUS not triggered");
+    cr_assert_eq(cb_subscriber, g_subscriber);
+    cr_assert_neq(triggered & DDS_DATA_AVAILABLE_STATUS, DDS_DATA_AVAILABLE_STATUS, "DDS_DATA_AVAILABLE_STATUS triggered");
+
+    dds_delete(g_writer);
+    dds_delete(g_reader);
+}
+
+
 Test(vddsc_listener, matched, .init=init_triggering_base, .fini=fini_triggering_base)
 {
     uint32_t triggered;
@@ -942,6 +1046,7 @@ Test(vddsc_listener, inconsistent_topic, .init=init_triggering_base, .fini=fini_
     dds_listener_delete(g_listener);
     dds_qos_delete(g_qos);
 }
+#endif
 #endif
 
 
