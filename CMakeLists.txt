@@ -34,8 +34,6 @@ if(Doxygen_FOUND)
     VERBATIM)
 endif()
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
 add_subdirectory(idlc)
 add_subdirectory(src)
 #add_subdirectory(vdds-server)

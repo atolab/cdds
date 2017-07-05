@@ -20,6 +20,10 @@ if(WIN32)
   add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS) #Disabled warnings for deprecated Winsock 2 API calls in general
   add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE) #Disabled warnings for deprecated POSIX names
 elseif(UNIX AND NOT APPLE)
+  if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+    # Shared libs will have this by default. Static libs need it too on x86_64.
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  endif()
   find_package(GetTime REQUIRED)
   target_link_libraries(Abstraction INTERFACE GetTime)
 endif()
