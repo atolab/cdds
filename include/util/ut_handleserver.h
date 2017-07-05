@@ -13,6 +13,7 @@
 #define UT_HANDLESERVER_H
 
 #include "os/os.h"
+#include "util/ut_export.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -108,7 +109,7 @@ _Return_type_success_(return != NULL) struct ut_handlelink;
 /*
  * Initialize handleserver singleton.
  */
-_Check_return_ OSAPI_EXPORT ut_handle_retcode_t
+_Check_return_ UTIL_EXPORT ut_handle_retcode_t
 ut_handleserver_init(void);
 
 
@@ -116,7 +117,7 @@ ut_handleserver_init(void);
  * Destroy handleserver singleton.
  * The handleserver is destroyed when fini() is called as often as init().
  */
-OSAPI_EXPORT void
+UTIL_EXPORT void
 ut_handleserver_fini(void);
 
 
@@ -140,7 +141,7 @@ ut_handleserver_fini(void);
  */
 _Pre_satisfies_((kind & UT_HANDLE_KIND_MASK) && !(kind & ~UT_HANDLE_KIND_MASK))
 _Post_satisfies_((return & UT_HANDLE_KIND_MASK) == kind)
-_Must_inspect_result_ OSAPI_EXPORT ut_handle_t
+_Must_inspect_result_ UTIL_EXPORT ut_handle_t
 ut_handle_create(
         _In_ int32_t kind,
         _In_ void *arg);
@@ -152,7 +153,7 @@ ut_handle_create(
  *
  * This is a noop on an already closed handle.
  */
-OSAPI_EXPORT void
+UTIL_EXPORT void
 ut_handle_close(
         _In_        ut_handle_t hdl,
         _Inout_opt_ struct ut_handlelink *link);
@@ -167,7 +168,7 @@ ut_handle_close(
  * It will delete the information when there are no more active claims. It'll
  * block when necessary to wait for all possible claims to be released.
  */
-_Check_return_ OSAPI_EXPORT ut_handle_retcode_t
+_Check_return_ UTIL_EXPORT ut_handle_retcode_t
 ut_handle_delete(
         _In_                        ut_handle_t hdl,
         _Inout_opt_ _Post_invalid_  struct ut_handlelink *link,
@@ -181,7 +182,7 @@ ut_handle_delete(
  * Returns OK when succeeded.
  */
 _Pre_satisfies_((kind & UT_HANDLE_KIND_MASK) && !(kind & ~UT_HANDLE_KIND_MASK))
-_Check_return_ OSAPI_EXPORT ut_handle_retcode_t
+_Check_return_ UTIL_EXPORT ut_handle_retcode_t
 ut_handle_claim(
         _In_        ut_handle_t hdl,
         _Inout_opt_ struct ut_handlelink *link,
@@ -192,7 +193,7 @@ ut_handle_claim(
 /*
  * The active claims count is decreased.
  */
-OSAPI_EXPORT void
+UTIL_EXPORT void
 ut_handle_release(
         _In_        ut_handle_t hdl,
         _Inout_opt_ struct ut_handlelink *link);
@@ -207,7 +208,7 @@ ut_handle_release(
  * break of your process and release the handle, making the deletion
  * possible.
  */
-_Check_return_ OSAPI_EXPORT bool
+_Check_return_ UTIL_EXPORT bool
 ut_handle_is_closed(
         _In_        ut_handle_t hdl,
         _Inout_opt_ struct ut_handlelink *link);
@@ -217,7 +218,7 @@ ut_handle_is_closed(
  * This will get the link of the handle, which can be used for performance
  * increase.
  */
-_Must_inspect_result_ OSAPI_EXPORT struct ut_handlelink*
+_Must_inspect_result_ UTIL_EXPORT struct ut_handlelink*
 ut_handle_get_link(
         _In_ ut_handle_t hdl);
 

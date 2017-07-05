@@ -32,16 +32,15 @@ typedef _Return_type_success_(return >= 0) int32_t dds_entity_t;
 extern "C" {
 #endif
 
-#undef DDS_EXPORT
     /* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc. */
-#ifdef _WIN32_DLL_
-  #if defined VL_BUILD_DDS_DLL
+#if defined (_WIN32)
+  #if defined(vddsc_EXPORTS)
     #define DDS_EXPORT extern __declspec (dllexport)
   #else
     #define DDS_EXPORT extern __declspec (dllimport)
   #endif
 #else
-  #define DDS_EXPORT extern
+  #define DDS_EXPORT
 #endif
 
 /**

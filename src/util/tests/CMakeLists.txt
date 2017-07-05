@@ -1,4 +1,3 @@
-find_package(Vortex REQUIRED)
 find_package(Criterion REQUIRED)
 
 #
@@ -20,7 +19,7 @@ function(add_dds_test NAME SUITE)
         ((${SUITE} STREQUAL cunitrunner)))
         set(TEST_NAME "util_${NAME}")
         add_executable(${NAME} ${ARGN})
-        target_link_libraries(${NAME} Vortex::DDSC ${SUITE})
+        target_link_libraries(${NAME} util ${SUITE})
 
         if(${SUITE} STREQUAL cunitrunner)
           add_test(${TEST_NAME} ${NAME} -a -r ${NAME})

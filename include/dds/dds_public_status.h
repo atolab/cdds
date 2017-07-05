@@ -16,14 +16,15 @@
 extern "C" {
 #endif
 
-#ifdef _WIN32_DLL_
-  #if defined VDDS_BUILD
-    #define OS_API OS_API_EXPORT
+/* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc using CMake generate export header. */
+#if defined (_WIN32)
+  #if defined(vddsc_EXPORTS)
+    #define DDS_EXPORT extern __declspec (dllexport)
   #else
-    #define OS_API OS_API_IMPORT
+    #define DDS_EXPORT extern __declspec (dllimport)
   #endif
 #else
-  #define OS_API extern
+  #define DDS_EXPORT
 #endif
 
 
@@ -185,7 +186,7 @@ dds_inconsistent_topic_status_t;
  *   -# topic The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_InconsistentTopic to get the status
  */
-OS_API dds_return_t dds_get_inconsistent_topic_status (dds_entity_t topic, dds_inconsistent_topic_status_t * status);
+DDS_EXPORT dds_return_t dds_get_inconsistent_topic_status (dds_entity_t topic, dds_inconsistent_topic_status_t * status);
 
 
 /**
@@ -196,7 +197,7 @@ OS_API dds_return_t dds_get_inconsistent_topic_status (dds_entity_t topic, dds_i
  *   -# writer The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_PublicationMatched to get the status
  */
-OS_API dds_return_t dds_get_publication_matched_status (dds_entity_t writer, dds_publication_matched_status_t * status);
+DDS_EXPORT dds_return_t dds_get_publication_matched_status (dds_entity_t writer, dds_publication_matched_status_t * status);
 
 /**
  * Description : Get the status value corresponding to LIVELINESS_LOST and reset the status
@@ -206,7 +207,7 @@ OS_API dds_return_t dds_get_publication_matched_status (dds_entity_t writer, dds
  *   -# writer The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_LivelinessLost to get the status
  */
-OS_API dds_return_t dds_get_liveliness_lost_status (dds_entity_t writer, dds_liveliness_lost_status_t * status);
+DDS_EXPORT dds_return_t dds_get_liveliness_lost_status (dds_entity_t writer, dds_liveliness_lost_status_t * status);
 
 /**
  * Description : Get the status value corresponding to OFFERED_DEADLINE_MISSED and reset the status
@@ -216,7 +217,7 @@ OS_API dds_return_t dds_get_liveliness_lost_status (dds_entity_t writer, dds_liv
  *   -# writer The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_OfferedDeadlineMissed to get the status
  */
-OS_API dds_return_t dds_get_offered_deadline_missed_status (dds_entity_t writer, dds_offered_deadline_missed_status_t * status);
+DDS_EXPORT dds_return_t dds_get_offered_deadline_missed_status (dds_entity_t writer, dds_offered_deadline_missed_status_t * status);
 
 /**
  * Description : Get the status value corresponding to OFFERED_INCOMPATIBLE_QOS and reset the status
@@ -226,7 +227,7 @@ OS_API dds_return_t dds_get_offered_deadline_missed_status (dds_entity_t writer,
  *   -# writer The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_OfferedIncompatibleQoS to get the status
  */
-OS_API dds_return_t dds_get_offered_incompatible_qos_status (dds_entity_t writer, dds_offered_incompatible_qos_status_t * status);
+DDS_EXPORT dds_return_t dds_get_offered_incompatible_qos_status (dds_entity_t writer, dds_offered_incompatible_qos_status_t * status);
 
 /**
  * Description : Get the status value corresponding to SUBSCRIPTION_MATCHED and reset the status
@@ -236,7 +237,7 @@ OS_API dds_return_t dds_get_offered_incompatible_qos_status (dds_entity_t writer
  *   -# reader The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_SubscriptionMatched to get the status
  */
-OS_API dds_return_t dds_get_subscription_matched_status (dds_entity_t reader, dds_subscription_matched_status_t * status);
+DDS_EXPORT dds_return_t dds_get_subscription_matched_status (dds_entity_t reader, dds_subscription_matched_status_t * status);
 
 /**
  * Description : Get the status value corresponding to LIVELINESS_CHANGED and reset the status
@@ -246,7 +247,7 @@ OS_API dds_return_t dds_get_subscription_matched_status (dds_entity_t reader, dd
  *   -# reader The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_LivelinessChanged to get the status
  */
-OS_API dds_return_t dds_get_liveliness_changed_status (dds_entity_t reader, dds_liveliness_changed_status_t * status);
+DDS_EXPORT dds_return_t dds_get_liveliness_changed_status (dds_entity_t reader, dds_liveliness_changed_status_t * status);
 
 /**
  * Description : Get the status value corresponding to SAMPLE_REJECTED and reset the status
@@ -256,7 +257,7 @@ OS_API dds_return_t dds_get_liveliness_changed_status (dds_entity_t reader, dds_
  *   -# reader The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_SampleRejected to get the status
  */
-OS_API dds_return_t dds_get_sample_rejected_status (dds_entity_t reader, dds_sample_rejected_status_t * status);
+DDS_EXPORT dds_return_t dds_get_sample_rejected_status (dds_entity_t reader, dds_sample_rejected_status_t * status);
 
 /**
  * Description : Get the status value corresponding to SAMPLE_LOST and reset the status
@@ -266,7 +267,7 @@ OS_API dds_return_t dds_get_sample_rejected_status (dds_entity_t reader, dds_sam
  *   -# reader The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_SampleLost to get the status
  */
-OS_API dds_return_t dds_get_sample_lost_status (dds_entity_t reader, dds_sample_lost_status_t * status);
+DDS_EXPORT dds_return_t dds_get_sample_lost_status (dds_entity_t reader, dds_sample_lost_status_t * status);
 
 /**
  * Description : Get the status value corresponding to REQUESTED_DEADLINE_MISSED and reset the status
@@ -276,7 +277,7 @@ OS_API dds_return_t dds_get_sample_lost_status (dds_entity_t reader, dds_sample_
  *   -# reader The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_RequestedDeadlineMissed to get the status
  */
-OS_API dds_return_t dds_get_requested_deadline_missed_status (dds_entity_t reader, dds_requested_deadline_missed_status_t * status);
+DDS_EXPORT dds_return_t dds_get_requested_deadline_missed_status (dds_entity_t reader, dds_requested_deadline_missed_status_t * status);
 
 /**
  * Description : Get the status value corresponding to REQUESTED_INCOMPATIBLE_QOS and reset the status
@@ -286,9 +287,9 @@ OS_API dds_return_t dds_get_requested_deadline_missed_status (dds_entity_t reade
  *   -# reader The entity to get the status
  *   -# status The pointer to \ref DCPS_Status_RequestedIncompatibleQoS to get the status
  */
-OS_API dds_return_t dds_get_requested_incompatible_qos_status (dds_entity_t reader, dds_requested_incompatible_qos_status_t * status);
+DDS_EXPORT dds_return_t dds_get_requested_incompatible_qos_status (dds_entity_t reader, dds_requested_incompatible_qos_status_t * status);
 
-#undef OS_API
+#undef DDS_EXPORT
 #if defined (__cplusplus)
 }
 #endif

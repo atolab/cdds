@@ -17,22 +17,23 @@
 extern "C" {
 #endif
 
-#ifdef _WIN32_DLL_
-  #if defined VDDS_BUILD
-    #define OS_API OS_API_EXPORT
+/* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc using CMake generate export header. */
+#if defined (_WIN32)
+  #if defined(vddsc_EXPORTS)
+    #define DDS_EXPORT extern __declspec (dllexport)
   #else
-    #define OS_API OS_API_IMPORT
+    #define DDS_EXPORT extern __declspec (dllimport)
   #endif
 #else
-#define OS_API extern
+  #define DDS_EXPORT
 #endif
 
-OS_API void dds_log_info (const char * fmt, ...);
-OS_API void dds_log_warn (const char * fmt, ...);
-OS_API void dds_log_error (const char * fmt, ...);
-OS_API void dds_log_fatal (const char * fmt, ...);
+DDS_EXPORT void dds_log_info (const char * fmt, ...);
+DDS_EXPORT void dds_log_warn (const char * fmt, ...);
+DDS_EXPORT void dds_log_error (const char * fmt, ...);
+DDS_EXPORT void dds_log_fatal (const char * fmt, ...);
 
-#undef OS_API
+#undef DDS_EXPORT
 #if defined (__cplusplus)
 }
 #endif

@@ -16,14 +16,15 @@
 extern "C" {
 #endif
 
-#ifdef _WIN32_DLL_
-  #if defined VDDS_BUILD
-    #define OS_API OS_API_EXPORT
+/* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc using CMake generate export header. */
+#if defined (_WIN32)
+  #if defined(vddsc_EXPORTS)
+    #define DDS_EXPORT extern __declspec (dllexport)
   #else
-    #define OS_API OS_API_IMPORT
+    #define DDS_EXPORT extern __declspec (dllimport)
   #endif
 #else
-  #define OS_API extern
+  #define DDS_EXPORT
 #endif
 
 /* Error masks for returned status values */
@@ -97,7 +98,7 @@ extern "C" {
  *   -# err Error value to be converted to a string
  *   -# Returns a string corresponding to the error value
  */
-OS_API const char * dds_err_str (int err);
+DDS_EXPORT const char * dds_err_str (int err);
 
 /**
  * Description : This operation takes the error value and returns the module name
@@ -107,7 +108,7 @@ OS_API const char * dds_err_str (int err);
  *   -# err Error value
  *   -# Returns the module name corresponding to the value
  */
-OS_API const char * dds_err_mod_str (int err);
+DDS_EXPORT const char * dds_err_mod_str (int err);
 
 /**
  * Description : This operation takes the error number, error type and filename and line number and formats it to
@@ -119,7 +120,7 @@ OS_API const char * dds_err_mod_str (int err);
  *   -# where file and line number
  */
 
-OS_API bool dds_err_check (int err, unsigned flags, const char * where);
+DDS_EXPORT bool dds_err_check (int err, unsigned flags, const char * where);
 
 /**
  * Macro that defines dds_err_check function
@@ -144,7 +145,7 @@ typedef void (*dds_fail_fn) (const char *, const char *);
  * Arguments :
  *   -# fn The pointer to the failure function
  */
-OS_API void dds_fail_set (dds_fail_fn fn);
+DDS_EXPORT void dds_fail_set (dds_fail_fn fn);
 
 /**
  * Description : Get the failure function
@@ -152,7 +153,7 @@ OS_API void dds_fail_set (dds_fail_fn fn);
  * Arguments :
  *   -# Returns the failure function set
  */
-OS_API dds_fail_fn dds_fail_get (void);
+DDS_EXPORT dds_fail_fn dds_fail_get (void);
 
 /**
  * Description : This operation handles failure through an installed failure handler
@@ -161,10 +162,10 @@ OS_API dds_fail_fn dds_fail_get (void);
  *   -# msg The pointer to the failure message
  *   -# where The pointer to the file and location
  */
-OS_API void dds_fail (const char * msg, const char * where);
+DDS_EXPORT void dds_fail (const char * msg, const char * where);
 
 
-#undef OS_API
+#undef DDS_EXPORT
 
 #if defined (__cplusplus)
 }

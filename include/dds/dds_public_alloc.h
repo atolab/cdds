@@ -17,14 +17,15 @@
 extern "C" {
 #endif
 
-#ifdef _WIN32_DLL_
-  #if defined VDDS_BUILD
-    #define OS_API OS_API_EXPORT
+/* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc using CMake generate export header. */
+#if defined (_WIN32)
+  #if defined(vddsc_EXPORTS)
+    #define DDS_EXPORT extern __declspec (dllexport)
   #else
-    #define OS_API OS_API_IMPORT
+    #define DDS_EXPORT extern __declspec (dllimport)
   #endif
 #else
-#define OS_API extern
+  #define DDS_EXPORT
 #endif
 
 struct dds_topic_descriptor;
@@ -52,7 +53,7 @@ typedef struct dds_allocator
 }
 dds_allocator_t;
 
-OS_API void dds_set_allocator (const dds_allocator_t * __restrict n, dds_allocator_t * __restrict o);
+DDS_EXPORT void dds_set_allocator (const dds_allocator_t * __restrict n, dds_allocator_t * __restrict o);
 
 typedef struct dds_aligned_allocator
 {
@@ -64,23 +65,23 @@ typedef struct dds_aligned_allocator
 }
 dds_aligned_allocator_t;
 
-OS_API void dds_set_aligned_allocator (const dds_aligned_allocator_t * __restrict n, dds_aligned_allocator_t * __restrict o);
+DDS_EXPORT void dds_set_aligned_allocator (const dds_aligned_allocator_t * __restrict n, dds_aligned_allocator_t * __restrict o);
 
-OS_API void * dds_alloc (size_t size);
-OS_API void * dds_realloc (void * ptr, size_t size);
-OS_API void * dds_realloc_zero (void * ptr, size_t size);
-OS_API void dds_free (void * ptr);
+DDS_EXPORT void * dds_alloc (size_t size);
+DDS_EXPORT void * dds_realloc (void * ptr, size_t size);
+DDS_EXPORT void * dds_realloc_zero (void * ptr, size_t size);
+DDS_EXPORT void dds_free (void * ptr);
 
 typedef void * (*dds_alloc_fn_t) (size_t);
 typedef void * (*dds_realloc_fn_t) (void *, size_t);
 typedef void (*dds_free_fn_t) (void *);
 
-OS_API char * dds_string_alloc (size_t size);
-OS_API char * dds_string_dup (const char * str);
-OS_API void dds_string_free (char * str);
-OS_API void dds_sample_free (void * sample, const struct dds_topic_descriptor * desc, dds_free_op_t op);
+DDS_EXPORT char * dds_string_alloc (size_t size);
+DDS_EXPORT char * dds_string_dup (const char * str);
+DDS_EXPORT void dds_string_free (char * str);
+DDS_EXPORT void dds_sample_free (void * sample, const struct dds_topic_descriptor * desc, dds_free_op_t op);
 
-#undef OS_API
+#undef DDS_EXPORT
 
 #if defined (__cplusplus)
 }
