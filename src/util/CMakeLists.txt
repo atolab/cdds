@@ -5,6 +5,7 @@ generate_export_header(util EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/exports/util/u
 target_link_libraries(util PRIVATE OSAPI)
 target_include_directories(util PUBLIC "${CMAKE_SOURCE_DIR}/include/" "${CMAKE_BINARY_DIR}/exports/")
 
-if(BUILD_TESTING)
+# TODO: improve test inclusion.
+if((BUILD_TESTING) AND ((NOT DEFINED MSVC_VERSION) OR (MSVC_VERSION GREATER "1800")))
   add_subdirectory(tests)
 endif()

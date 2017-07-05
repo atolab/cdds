@@ -31,8 +31,9 @@ add_library(Vortex::DDSC ALIAS vddsc)
 
 # Just added for install SPIKE. TODO: remove or improve.
 install(TARGETS vddsc
-        ARCHIVE
-        DESTINATION lib
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
         COMPONENT lib)
 install(FILES ${CMAKE_SOURCE_DIR}/include/dds.h
         DESTINATION include
