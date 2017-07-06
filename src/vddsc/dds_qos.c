@@ -509,7 +509,7 @@ void dds_qget_userdata
     _Out_ size_t * sz
 )
 {
-    if (qos) {
+    if (qos && value && sz) {
         dds_qos_data_copy_out (&qos->user_data, value, sz);
     }
 }
