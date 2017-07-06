@@ -1,0 +1,7 @@
+idlc_generate(Throughput_SRCS Throughput_HDRS Throughput.idl)
+add_executable(ThroughputPublisher publisher.c ${Throughput_SRCS})
+add_executable(ThroughputSubscriber subscriber.c ${Throughput_SRCS})
+target_link_libraries(ThroughputPublisher Vortex::DDSC)
+target_link_libraries(ThroughputSubscriber Vortex::DDSC)
+target_include_directories(ThroughputPublisher PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_include_directories(ThroughputSubscriber PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")

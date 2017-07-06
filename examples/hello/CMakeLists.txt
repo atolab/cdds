@@ -1,0 +1,7 @@
+idlc_generate(HelloWorldData_SRCS HelloWorldData_HDRS "HelloWorldData.idl")
+add_executable(helloworldPublisher publisher.c ${HelloWorldData_SRCS})
+add_executable(helloworldSubscriber subscriber.c ${HelloWorldData_SRCS})
+target_link_libraries(helloworldPublisher Vortex::DDSC)
+target_link_libraries(helloworldSubscriber Vortex::DDSC)
+target_include_directories(helloworldPublisher PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_include_directories(helloworldSubscriber PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")

@@ -194,7 +194,7 @@ int main (int argc, char **argv)
   dds_entity_t reader;
   dds_waitset_t waitSet;
   dds_condition_t rdcond = NULL;
-  dds_readerlistener_t rd_listener;
+  dds_listener_t rd_listener;
 
   unsigned long long prev_samples = 0;
   unsigned long long prev_bytes = 0;

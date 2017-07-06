@@ -1,0 +1,7 @@
+idlc_generate(RoundTrip_SRCS RoundTrip_HDRS RoundTrip.idl)
+add_executable(RoundtripPing ping.c ${RoundTrip_SRCS})
+add_executable(RoundtripPong pong.c ${RoundTrip_SRCS})
+target_link_libraries(RoundtripPing Vortex::DDSC)
+target_link_libraries(RoundtripPong Vortex::DDSC)
+target_include_directories(RoundtripPing PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_include_directories(RoundtripPong PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
