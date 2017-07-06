@@ -16,8 +16,16 @@ PREPEND(srcs_ddsi ddsi ddsi_ser.c ddsi_ssl.c ddsi_tcp.c ddsi_tran.c ddsi_udp.c q
 
 PREPEND(srcs_vddsc vddsc dds_alloc.c dds_coherent.c dds_iid.c dds_participant.c dds_reader.c dds_thread.c dds_writer.c dds_condition.c dds_init.c dds_publisher.c dds_rhc.c dds_time.c q_osplser.c dds_domain.c dds_instance.c dds_qos.c dds_tkmap.c dds_entity.c dds_key.c dds_querycond.c dds_topic.c dds_err.c dds_listener.c dds_read.c dds_stream.c dds_waitset.c dds_guardcond.c dds_log.c dds_readcond.c dds_subscriber.c dds_write.c)
 
-# The vddsc target depends on the OSAPI target
-add_library(vddsc SHARED ${srcs_ddsi} ${srcs_vddsc})
+option(VDDSC_SHARED "Build VDDSC as a shared library" ON)
+if(VDDSC_SHARED AND ((NOT DEFINED BUILD_SHARED_LIBS) OR BUILD_SHARED_LIBS)) # BUILD_SHARED_LIBS is set to off by for example VxWorks DKM environment
+  add_library(vddsc SHARED "") # Not using generator expressions for compatibility with all generators
+else()
+  if(VDDSC_SHARED)
+    message(STATUS "Option VDDSC_SHARED ignored. Only static libraries supported on this platform.")
+  endif()
+  add_library(vddsc "")
+endif()
+target_sources(vddsc PRIVATE ${srcs_ddsi} ${srcs_vddsc})
 target_link_libraries(vddsc PRIVATE OSAPI util)
 target_compile_definitions(vddsc PRIVATE VDDS_BUILD)
 
