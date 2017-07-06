@@ -11,6 +11,7 @@
 #endif
 
 #include "os/os_public.h"
+#include "dds/dds_export.h"
 
 /* TODO: Move to appropriate location */
 typedef _Return_type_success_(return >= 0) int32_t dds_return_t;
@@ -30,17 +31,6 @@ typedef _Return_type_success_(return >= 0) int32_t dds_entity_t;
 
 #if defined (__cplusplus)
 extern "C" {
-#endif
-
-    /* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc. */
-#if defined (_WIN32)
-  #if defined(vddsc_EXPORTS)
-    #define DDS_EXPORT extern __declspec (dllexport)
-  #else
-    #define DDS_EXPORT extern __declspec (dllimport)
-  #endif
-#else
-  #define DDS_EXPORT
 #endif
 
 /**

@@ -10,23 +10,13 @@
 #ifndef _DDS_PUBLIC_LISTENER_H_
 #define _DDS_PUBLIC_LISTENER_H_
 
+#include "dds/dds_export.h"
 #include "dds/dds_public_impl.h"
 #include "dds/dds_public_status.h"
 #include "os/os_public.h"
 
 #if defined (__cplusplus)
 extern "C" {
-#endif
-
-/* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc using CMake generate export header. */
-#if defined (_WIN32)
-  #if defined(vddsc_EXPORTS)
-    #define DDS_EXPORT extern __declspec (dllexport)
-  #else
-    #define DDS_EXPORT extern __declspec (dllimport)
-  #endif
-#else
-  #define DDS_EXPORT
 #endif
 
 /* Listener callbacks */
@@ -317,8 +307,6 @@ DDS_EXPORT void dds_lget_publication_matched (_In_ const dds_listener_t * __rest
  * @param[in,out] listener The pointer to the listener structure, where the callback will be retrieved from
  */
 DDS_EXPORT void dds_lget_subscription_matched (_In_ const dds_listener_t * __restrict listener, _Outptr_result_maybenull_ dds_on_subscription_matched_fn *callback);
-
-#undef DDS_EXPORT
 
 #if defined (__cplusplus)
 }

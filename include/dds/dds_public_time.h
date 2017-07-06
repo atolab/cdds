@@ -11,20 +11,10 @@
 #define DDS_TIME_H
 
 #include "os/os_public.h"
+#include "dds/dds_export.h"
 
 #if defined (__cplusplus)
 extern "C" {
-#endif
-
-/* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc using CMake generate export header. */
-#if defined (_WIN32)
-  #if defined(vddsc_EXPORTS)
-    #define DDS_EXPORT extern __declspec (dllexport)
-  #else
-    #define DDS_EXPORT extern __declspec (dllimport)
-  #endif
-#else
-  #define DDS_EXPORT
 #endif
 
 /*
@@ -89,8 +79,6 @@ DDS_EXPORT void dds_sleepfor (dds_duration_t n);
  *   -# n absolute Time to block a thread
  */
 DDS_EXPORT void dds_sleepuntil (dds_time_t n);
-
-#undef DDS_EXPORT
 
 #if defined (__cplusplus)
 }

@@ -11,22 +11,11 @@
 #define DDS_STATUS_H
 
 #include "os/os_public.h"
+#include "dds/dds_export.h"
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
-
-/* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc using CMake generate export header. */
-#if defined (_WIN32)
-  #if defined(vddsc_EXPORTS)
-    #define DDS_EXPORT extern __declspec (dllexport)
-  #else
-    #define DDS_EXPORT extern __declspec (dllimport)
-  #endif
-#else
-  #define DDS_EXPORT
-#endif
-
 
 /*
   Listeners implemented as structs containing callback functions
@@ -289,7 +278,6 @@ DDS_EXPORT dds_return_t dds_get_requested_deadline_missed_status (dds_entity_t r
  */
 DDS_EXPORT dds_return_t dds_get_requested_incompatible_qos_status (dds_entity_t reader, dds_requested_incompatible_qos_status_t * status);
 
-#undef DDS_EXPORT
 #if defined (__cplusplus)
 }
 #endif

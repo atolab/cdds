@@ -12,21 +12,12 @@
 
 #include "os/os_public.h"
 #include <stdbool.h>
+#include "dds/dds_export.h"
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
 
-/* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc using CMake generate export header. */
-#if defined (_WIN32)
-  #if defined(vddsc_EXPORTS)
-    #define DDS_EXPORT extern __declspec (dllexport)
-  #else
-    #define DDS_EXPORT extern __declspec (dllimport)
-  #endif
-#else
-  #define DDS_EXPORT
-#endif
 struct dds_sequence;
 
 typedef union
@@ -93,8 +84,6 @@ DDS_EXPORT void dds_stream_write_buffer (dds_stream_t * os, uint32_t len, uint8_
 #define dds_stream_write_int16(s,v) (dds_stream_write_uint16 ((s), (uint16_t)(v)))
 #define dds_stream_write_int32(s,v) (dds_stream_write_uint32 ((s), (uint32_t)(v)))
 #define dds_stream_write_int64(s,v) (dds_stream_write_uint64 ((s), (uint64_t)(v)))
-
-#undef DDS_EXPORT
 
 #if defined (__cplusplus)
 }

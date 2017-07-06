@@ -39,7 +39,7 @@ _Pre_satisfies_(((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER    ) || \
                 ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER) || \
                 ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER    ) || \
                 ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER) )
-DDS_EXPORT dds_return_t
+dds_return_t
 dds_end_coherent(
         _In_ dds_entity_t entity)
 {

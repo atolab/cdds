@@ -27,7 +27,11 @@ else()
 endif()
 target_sources(vddsc PRIVATE ${srcs_ddsi} ${srcs_vddsc})
 target_link_libraries(vddsc PRIVATE OSAPI util)
-target_compile_definitions(vddsc PRIVATE VDDS_BUILD)
+
+include (GenerateExportHeader)
+generate_export_header(vddsc
+                        BASE_NAME DDS
+                        EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/exports/dds/dds_export.h")
 
 target_include_directories(vddsc PUBLIC "${CMAKE_SOURCE_DIR}/include/" "${CMAKE_BINARY_DIR}/exports/")
 

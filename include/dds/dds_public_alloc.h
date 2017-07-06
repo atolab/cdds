@@ -12,20 +12,10 @@
 #define DDS_ALLOC_H
 
 #include "os/os_public.h"
+#include "dds/dds_export.h"
 
 #if defined (__cplusplus)
 extern "C" {
-#endif
-
-/* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc using CMake generate export header. */
-#if defined (_WIN32)
-  #if defined(vddsc_EXPORTS)
-    #define DDS_EXPORT extern __declspec (dllexport)
-  #else
-    #define DDS_EXPORT extern __declspec (dllimport)
-  #endif
-#else
-  #define DDS_EXPORT
 #endif
 
 struct dds_topic_descriptor;
@@ -80,8 +70,6 @@ DDS_EXPORT char * dds_string_alloc (size_t size);
 DDS_EXPORT char * dds_string_dup (const char * str);
 DDS_EXPORT void dds_string_free (char * str);
 DDS_EXPORT void dds_sample_free (void * sample, const struct dds_topic_descriptor * desc, dds_free_op_t op);
-
-#undef DDS_EXPORT
 
 #if defined (__cplusplus)
 }

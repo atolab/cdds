@@ -3,9 +3,6 @@
 
 #include <stdint.h>
 
-#define OS_API_EXPORT __declspec(dllexport)
-#define OS_API_IMPORT __declspec(dllimport)
-
 #if defined (__cplusplus)
 extern "C" {
 #endif

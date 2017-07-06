@@ -11,20 +11,10 @@
 #define DDS_ERROR_H
 
 #include "os/os_public.h"
+#include "dds/dds_export.h"
 
 #if defined (__cplusplus)
 extern "C" {
-#endif
-
-/* TODO: Set dllexport/dllimport for other supporting compilers too; e.g. clang, gcc using CMake generate export header. */
-#if defined (_WIN32)
-  #if defined(vddsc_EXPORTS)
-    #define DDS_EXPORT extern __declspec (dllexport)
-  #else
-    #define DDS_EXPORT extern __declspec (dllimport)
-  #endif
-#else
-  #define DDS_EXPORT
 #endif
 
 /* Error masks for returned status values */
@@ -164,8 +154,6 @@ DDS_EXPORT dds_fail_fn dds_fail_get (void);
  */
 DDS_EXPORT void dds_fail (const char * msg, const char * where);
 
-
-#undef DDS_EXPORT
 
 #if defined (__cplusplus)
 }
