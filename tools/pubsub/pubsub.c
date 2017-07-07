@@ -1507,7 +1507,11 @@ static void pub_do_auto (const struct writerspec *spec)
     d.seq_keyval.keyval = k;
     handle[k] = spec->register_instances ? dds_instance_register(spec->wr, &d) : DDS_HANDLE_NIL;
   }
-  sleep (1);
+  os_time sDelay;
+  sDelay.tv_sec = 1;
+  sDelay.tv_nsec = 0;
+  os_nanoSleep(sDelay);
+//  sleep (1);
   d.seq_keyval.keyval = 0;
   tfirst0 = tfirst = tprev = nowll ();
   if (dur != 0.0)
@@ -1518,10 +1522,11 @@ static void pub_do_auto (const struct writerspec *spec)
   {
 	  while (!termflag && tprev < tstop)
     {
-      struct timespec delay;
+      os_time delay;
       delay.tv_sec = 0;
       delay.tv_nsec = 100 * 1000 * 1000;
-      nanosleep (&delay, NULL);
+//      nanosleep (&delay, NULL);
+      os_nanoSleep(delay);
     }
   }
   else if (spec->writerate <= 0)
@@ -1587,10 +1592,11 @@ static void pub_do_auto (const struct writerspec *spec)
         {
           while (((ntot / spec->burstsize) / ((t - tfirst0) / 1e9 + 5e-3)) > spec->writerate && !termflag)
           {
-            struct timespec delay;
+            os_time delay;
             delay.tv_sec = 0;
             delay.tv_nsec = 10 * 1000 * 1000;
-            nanosleep (&delay, NULL);
+//            nanosleep (&delay, NULL);
+            os_nanoSleep(delay);
             t = nowll ();
           }
           bi = 0;
@@ -1698,8 +1704,13 @@ static char *pub_do_nonarb(const struct writerspec *spec, int fdin, uint32_t *se
       case 's':
         if (k < 0)
           printf ("invalid sleep duration: %ds\n", k);
-        else
-          sleep ((unsigned) k);
+        else {
+        	os_time delay;
+        	delay.tv_nsec = 0;
+        	delay.tv_sec = k;
+        	os_nanoSleep(delay);
+//          sleep ((unsigned) k);
+        }
         break;
       case 'Y': case 'B': case 'E': case 'W':
         non_data_operation(command, spec->wr);
@@ -2074,8 +2085,9 @@ static void *subthread (void *vspec)
 
       if (spec->polling)
       {
-        const struct timespec d = { 0, 1000000 }; /* 1ms sleep interval, so a bit less than 1kHz poll freq */
-        nanosleep (&d, NULL);
+        os_time d = { 0, 1000000 }; /* 1ms sleep interval, so a bit less than 1kHz poll freq */
+        os_nanoSleep(d);
+//        nanosleep (&d, NULL);
       }
       else if ((result = dds_waitset_wait(ws, xs, nxs, timeout)) < DDS_RETCODE_OK)
       {
@@ -2219,8 +2231,13 @@ static void *subthread (void *vspec)
             break;
         }
         dds_return_loan(rd, mseq.any, spec->read_maxsamples);
-        if (spec->sleep_us)
-          usleep (spec->sleep_us);
+        if (spec->sleep_us) {
+        	os_time delay;
+        	delay.tv_sec = 0;
+        	delay.tv_nsec = (spec->sleep_us) * 1000;
+        	os_nanoSleep(delay);
+//          usleep (spec->sleep_us);
+        }
       }
       dds_free(glist->_buffer);
     }
@@ -3308,7 +3325,11 @@ int main (int argc, char *argv[])
   common_fini ();
   if (sleep_at_end) {
 	  PRINTD("Sleep at the end of main\n");
-    sleep (sleep_at_end);
+	  os_time delay;
+	  delay.tv_nsec = 0;
+	  delay.tv_sec = sleep_at_end;
+	  os_nanoSleep(delay);
+//    sleep (sleep_at_end);
   }
   PRINTD("End of main\n\n");
   return (int) exitcode;
