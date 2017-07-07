@@ -193,21 +193,30 @@ fail:
     return e;
 }
 
-dds_entity_t
-dds_participant_lookup(
-        dds_domainid_t domain_id)
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+_Check_return_ dds_return_t
+dds_lookup_participant(
+        _In_        dds_domainid_t domain_id,
+        _Out_opt_   dds_entity_t *participants,
+        _In_        size_t size)
 {
-    dds_entity_t hdl = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR, DDS_MOD_PPANT, DDS_ERR_M4);
-    dds_entity *pp = NULL;
-
-    os_mutexLock (&dds_global.m_mutex);
-    pp = dds_pp_head;
-    while (pp && (pp->m_domainid != domain_id)) {
-        pp = pp->m_next;
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_PPANT, DDS_ERR_M4);
+    if (((participants != NULL) && (size>0) && (size < INT32_MAX)) || ((participants == NULL) && (size == 0))){
+        dds_entity* iter;
+        if(participants){
+          participants[0] = 0;
+        }
+        ret = 0;
+        iter = dds_pp_head;
+        while(iter){
+          if(iter->m_domainid == domain_id){
+            if((size_t)ret < size){
+              participants[ret] = iter->m_hdl;
+            }
+            ret ++;
+          }
+          iter = iter->m_next;
+       }
     }
-    if (pp) {
-        hdl = pp->m_hdl;
-    }
-    os_mutexUnlock (&dds_global.m_mutex);
-    return hdl;
+    return ret;
 }

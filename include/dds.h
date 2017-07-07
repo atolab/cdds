@@ -802,18 +802,28 @@ dds_get_domainid(
         _Out_ dds_domainid_t *id);
 
 /**
- * Description : Returns a participant created on a domain. Note that if
- * multiple participants have been created on the same domain then the first
- * found is returned.
+ * @brief Get number of found participants
  *
- * Arguments :
- *   -# domain_id The domain id
- *   -# Returns Pariticant for domain
+ * Description : Returns the number of found participants created on a domain.
+ *
+ * @param[in]  domain_id    The domain id
+ * @param[out] participants The participant for domain
+ * @param[in]  size         Size of the pre-allocated participant's list.
+ *
+ * @returns >=0 - Success (number of found participants).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The participant parameter is NULL, while a size is provided.
  */
-/* TODO: This dds_participant_lookup will be removed in favor of a domain type on which you can do 'dds_get_children'. */
-DDS_EXPORT dds_entity_t
-dds_participant_lookup(
-        dds_domainid_t domain_id);
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT _Check_return_ dds_return_t
+dds_lookup_participant(
+        _In_        dds_domainid_t domain_id,
+        _Out_opt_   dds_entity_t *participants,
+        _In_        size_t size);
 
 /**
  * Description : Creates a new DDS topic. The type name for the topic
