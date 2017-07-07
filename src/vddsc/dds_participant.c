@@ -193,7 +193,6 @@ fail:
     return e;
 }
 
-_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_lookup_participant(
         _In_        dds_domainid_t domain_id,

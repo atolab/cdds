@@ -818,7 +818,6 @@ dds_get_domainid(
  * @retval DDS_RETCODE_BAD_PARAMETER
  *                  The participant parameter is NULL, while a size is provided.
  */
-_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_lookup_participant(
         _In_        dds_domainid_t domain_id,
