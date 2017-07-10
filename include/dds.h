@@ -802,9 +802,17 @@ dds_get_domainid(
         _Out_ dds_domainid_t *id);
 
 /**
- * @brief Get number of found participants
+ * @brief Get participants of a domain.
  *
- * Description : Returns the number of found participants created on a domain.
+ * This operation acquires the participants created on a domain and returns
+ * the number of found participants.
+ *
+ * This function takes a domain id with the size of pre-allocated participant's
+ * list in and will return the number of found participants. It is possible that
+ * the given size of the list is not the same as the number of found participants.
+ * If less participants are found, then the last few entries in an array stay
+ * untouched. If more participants are found and the array is too small, then the
+ * participants returned are undefined.
  *
  * @param[in]  domain_id    The domain id
  * @param[out] participants The participant for domain
