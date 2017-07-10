@@ -35,7 +35,7 @@ dds_create_querycondition(
                 }
                 dds_topic_unlock(t);
             } else {
-                dds_delete(hdl);
+                (void)dds_delete(hdl);
                 hdl = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
             }
         } else {

@@ -2,7 +2,6 @@
 
 #include "dds.h"
 #include "os/os.h"
-#include "util/ut_handleserver.h"
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 #include <criterion/theories.h>
@@ -102,10 +101,10 @@ vddsc_waitset_init(void)
     cr_assert_gt(reader, 0, "Failed to create prerequisite reader");
 
     writer = dds_create_writer(publisher, topic, NULL, NULL);
-    cr_assert_gt(reader, 0, "Failed to create prerequisite writer");
+    cr_assert_gt(writer, 0, "Failed to create prerequisite writer");
 
     readcond = dds_create_readcondition(reader, mask);
-    cr_assert_gt(publisher, 0, "Failed to create prerequisite publisher");
+    cr_assert_gt(readcond, 0, "Failed to create prerequisite publisher");
 }
 
 static void

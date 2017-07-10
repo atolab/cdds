@@ -96,7 +96,7 @@ dds_waitset_wait_impl(
                   to.tv_sec = (os_timeSec) (dt / DDS_NSECS_IN_SEC);
                   to.tv_nsec = (uint32_t) (dt % DDS_NSECS_IN_SEC);
                 }
-                os_condTimedWait(&ws->m_entity.m_cond, &ws->m_entity.m_mutex, &to);
+                (void)os_condTimedWait(&ws->m_entity.m_cond, &ws->m_entity.m_mutex, &to);
                 tnow = dds_time();
             }
         }
@@ -139,7 +139,7 @@ dds_waitset_close_list(
     dds_attachment *next;
     while (idx != NULL) {
         next = idx->next;
-        dds_entity_observer_unregister(idx->entity->m_hdl, waitset);
+        (void)dds_entity_observer_unregister(idx->entity->m_hdl, waitset);
         os_free(idx);
         idx = next;
     }
@@ -274,7 +274,7 @@ dds_waitset_remove(
         dds_entity_t observed)
 {
     if (!dds_waitset_remove_from_list(&(ws->observed), observed)) {
-        dds_waitset_remove_from_list(&(ws->triggered), observed);
+        (void)dds_waitset_remove_from_list(&(ws->triggered), observed);
     }
 }
 
