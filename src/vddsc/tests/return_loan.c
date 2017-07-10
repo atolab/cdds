@@ -6,22 +6,21 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
-dds_entity_t participant = 0, topic = 0, reader = 0;
-dds_condition_t read_condition = NULL;
+dds_entity_t participant = 0, topic = 0, reader = 0, read_condition = 0;
 
 void create_entities(void)
 {
     participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-    if (participant > 0) {
-        topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, "vddsc_reader_return_loan_RoundTrip", NULL, NULL);
-        if (topic > 0) {
-            reader = dds_create_reader(participant, topic, NULL, NULL);
-            //read_condition = dds_readcondition_create(reader, DDS_ANY_STATE);
-        }
-    }
     cr_assert_gt(participant, 0);
+
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, "vddsc_reader_return_loan_RoundTrip", NULL, NULL);
     cr_assert_gt(topic, 0);
+
+    reader = dds_create_reader(participant, topic, NULL, NULL);
     cr_assert_gt(reader, 0);
+
+    //read_condition = dds_readcondition_create(reader, DDS_ANY_STATE);
+    //cr_assert_gt(read_condition);
 }
 
 void delete_entities(void)
@@ -32,9 +31,7 @@ void delete_entities(void)
         DDS_TO_STRING(DDS_RETCODE_OK),
         dds_err_str(result));
 
-    if (read_condition) {
-        dds_condition_delete(read_condition);
-    }
+    dds_delete(read_condition);
 }
 
 static void** create_loan_buf(size_t sz, bool empty)

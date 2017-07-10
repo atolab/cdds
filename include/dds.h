@@ -735,9 +735,10 @@ dds_get_participant (
  * will return the number of found children. It is possible that the given
  * size of the list is not the same as the number of found children. If
  * less children are found, then the last few entries in the list are
- * untouched. When more chilren are found, then only 'size' number of
+ * untouched. When more children are found, then only 'size' number of
  * entries are inserted into the list, but still complete count of the
- * found children is returned.
+ * found children is returned. Which children are returned in the latter
+ * case is undefined.
  *
  * When supplying NULL as list and 0 as size, you can use this to acquire
  * the number of children without having to pre-allocate a list.
@@ -1072,10 +1073,10 @@ _Pre_satisfies_(((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_
 _Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
 DDS_EXPORT dds_entity_t
 dds_create_reader(
-        dds_entity_t participant_or_subscriber,
-        dds_entity_t topic,
-        const dds_qos_t *qos,
-        const dds_listener_t *listener);
+        _In_ dds_entity_t participant_or_subscriber,
+        _In_ dds_entity_t topic,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener);
 
 /**
  * Description : The operation blocks the calling thread until either all "historical" data is
@@ -1094,7 +1095,6 @@ dds_reader_wait_for_historical_data(
         dds_entity_t reader,
         dds_duration_t max_wait);
 
-typedef bool (*dds_querycondition_filter_fn) (const void * sample);
 
 /**
  * Description : Create a QueryCondtiion associated with a reader.
@@ -1107,12 +1107,13 @@ typedef bool (*dds_querycondition_filter_fn) (const void * sample);
  *   -# filter The filter function for the query
  *   -# Returns Status, 0 on success or non-zero value to indicate an error
  */
+typedef bool (*dds_querycondition_filter_fn) (const void * sample);
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
-DDS_EXPORT dds_condition_t
-dds_querycondition_create(
-        dds_entity_t reader,
-        uint32_t mask,
-        dds_querycondition_filter_fn filter);
+DDS_EXPORT dds_entity_t
+dds_create_querycondition(
+        _In_ dds_entity_t reader,
+        _In_ uint32_t mask,
+        _In_ dds_querycondition_filter_fn filter);
 
 /**
  * @brief Creates a new instance of a DDS writer
@@ -1134,6 +1135,7 @@ dds_create_writer(
         _In_     dds_entity_t topic,
         _In_opt_ const dds_qos_t *qos,
         _In_opt_ const dds_listener_t *listener);
+
 
 /*
   Writing data (and variants of it) is straightforward. The first set
@@ -1277,6 +1279,7 @@ dds_write(
         _In_ dds_entity_t writer,
         _In_ const void *data);
 
+
 /**
  * @brief Write a CDR serialized value of a data instance
  *
@@ -1309,18 +1312,6 @@ dds_write_ts(
         _In_ const void *data,
         _In_ dds_time_t timestamp);
 
-/**
- * Description : Flushes all the samples from the write cache.
- *               By default, data sent by write API, is queued in the write cache
- *
- * Arguments :
- *   -# wr The writer entity
- */
-_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT void
-dds_write_flush(
-        dds_entity_t writer);
-
 /*
   Waitsets allow waiting for an event on some of any set of entities
   (all can in principle be waited for via their status conditions;
@@ -1340,19 +1331,6 @@ dds_write_flush(
   The DCPS "query" condition is not currently supported.
 */
 
-
-/**
- * Description : Create a specific condition.
- *               This is mainly used to provide the means to manually wakeup a waitset.
- *
- * Arguments :
- *   -# Returns a pointer to the created condition
- */
-DDS_EXPORT dds_condition_t
-dds_guardcondition_create(
-        void);
-
-
 /**
  * Description : Create a ReadCondition associated to a reader.
  *               Based on the mask value set, the readcondition gets triggered when
@@ -1363,209 +1341,337 @@ dds_guardcondition_create(
  *   -# mask set the sample_state, instance_state and view_state of the sample
  */
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
-DDS_EXPORT dds_condition_t
-dds_readcondition_create(
-        dds_entity_t reader,
-        uint32_t mask);
+DDS_EXPORT _Must_inspect_result_ dds_entity_t
+dds_create_readcondition(
+        _In_ dds_entity_t reader,
+        _In_ uint32_t mask);
+
 
 /**
- * Description : Deletes the condition. The condition is detached from any waitsets
- *               to which it is attached.
+ * @brief Waitset attachment argument.
  *
- * Arguments :
- *   -# cond pointer of a guard condition or readcondition
+ * Every entity that is attached to the waitset can be accompanied by such
+ * an attachment argument. When the waitset wait is unblocked because of an
+ * entity that triggered, then the returning array will be populated with
+ * these attachment arguments that are related to the triggered entity.
  */
-DDS_EXPORT void
-dds_condition_delete(
-        dds_condition_t condition);
-
-/*
-  Guard conditions may be triggered or not. The status of a guard condition
-  can always be retrieved via the dds_condition_triggered function. To trigger
-  or reset a guard condition it must first be associated with a waitset or
-  an error status will be returned.
-*/
-/**
- * Description : Sets the trigger_value associated with a guard condition
- *               The guard condition should be associated with a waitset, before
- *               setting the trigger value.
- *
- * Arguments :
- *   -# guard pointer to the condition to be triggered
- */
-DDS_EXPORT void
-dds_guard_trigger(
-        dds_condition_t guard);
-
-/**
- * Description : Resets the trigger_value associated with a guard condition
- *
- * Arguments :
- *   -# guard pointer to the condition to be reset
- */
-DDS_EXPORT void
-dds_guard_reset(
-        dds_condition_t guard);
-
-/**
- * Description : Check the trigger_value associated with a condition
- *
- * Arguments :
- *   -# pointer to the condition to evaluate
- *   -# Returns true if the condition is already triggered, else returns false.
- */
-DDS_EXPORT bool
-dds_condition_triggered(
-        dds_condition_t guard);
-
-/*
-  Entities can be attached to a waitset or removed from a waitset (in
-  an NxM relationship, but each entity can be in one waitset only
-  once), the "x" value is what is returned by "wait" when the entity
-  represented by handle e triggers.
-*/
-
 typedef void * dds_attach_t;
 
 /**
- * Description : Create a waitset and allocate the resources required
+ * @brief Create a waitset and allocate the resources required
  *
- * Arguments :
- *   -# Returns a pointer to a waitset created
+ * A WaitSet object allows an application to wait until one or more of the
+ * conditions of the attached entities evaluates to TRUE or until the timeout
+ * expires.
+ *
+ * @param[in]  participant  Domain participant which the WaitSet contains.
+ *
+ * @returns >0 - Success (valid waitset).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_waitset_t
-dds_waitset_create(
-        void);
-
-DDS_EXPORT dds_waitset_t
-dds_waitset_create_cont(
-        void (*block) (dds_waitset_t waitset, void *arg, dds_time_t abstimeout),
-        void (*cont) (dds_waitset_t waitset, void *arg, int ret),
-        size_t contsize);
-
-DDS_EXPORT void*
-dds_waitset_get_cont(
-        dds_waitset_t waitset);
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+DDS_EXPORT _Must_inspect_result_ dds_entity_t
+dds_create_waitset(
+        _In_ dds_entity_t participant);
 
 
 /**
- * Description : Get the conditions associated with a waitset. The sequence of
- * returned conditions is only valid as long as the waitset in not modified.
- * The returned sequence buffer is a copy and should be freed.
+ * @brief Acquire previously attached entities.
  *
- * Arguments :
- *   -# ws The waitset
- *   -# seq The sequence of returned conditions
+ * This functions takes a pre-allocated list to put the entities in and
+ * will return the number of found entities. It is possible that the given
+ * size of the list is not the same as the number of found entities. If
+ * less entities are found, then the last few entries in the list are
+ * untouched. When more entities are found, then only 'size' number of
+ * entries are inserted into the list, but still the complete count of the
+ * found entities is returned. Which entities are returned in the latter
+ * case is undefined.
+ *
+ * @param[in]  waitset  Waitset from which to get its attached entities.
+ * @param[out] entities Pre-allocated array to contain the found entities.
+ * @param[in]  size     Size of the pre-allocated entities' list.
+ *
+ * @returns >=0 - Success (number of found children, can be larger than 'size').
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The entities parameter is NULL, while a size is provided.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The waitset has already been deleted.
  */
-DDS_EXPORT void
-dds_waitset_get_conditions(
-        dds_waitset_t waitset,
-        dds_condition_seq *seq);
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
+dds_waitset_get_entities(
+        _In_ dds_entity_t waitset,
+        _Out_writes_to_(size, return < 0 ? 0 : return) dds_entity_t *entities,
+        _In_ size_t size);
+
 
 /**
- * Description : Deletes the waitset, detaching any attached conditions.
+ * @brief This operation attaches an Entity to the WaitSet.
  *
- * Arguments :
- *   -# ws pointer to a waitset
- *   -# Returns 0 on success, else non-zero indicating an error
- */
-DDS_EXPORT int
-dds_waitset_delete(
-        dds_waitset_t waitset);
-
-
-/**
- * Description : Associate a status, guard or read condition with a waitset.
- *               Multiple conditions could be attached to a single waitset.
+ * This operation attaches an Entity to the WaitSet. The dds_waitset_wait()
+ * will block when none of the attached entities are triggered. 'Triggered'
+ * (dds_triggered()) doesn't mean the same for every entity:
+ *  - Reader/Writer/Publisher/Subscriber/Topic/Participant
+ *      - These are triggered when their status changed.
+ *  - WaitSet
+ *      - Triggered when trigger value was set to true by the application.
+ *        It stays triggered until application sets the trigger value to
+ *        false (dds_waitset_set_trigger()). This can be used to wake up an
+ *        waitset for different reasons (f.i. termination) than the 'normal'
+ *        status change (like new data).
+ *  - ReadCondition/QueryCondition
+ *      - Triggered when data is available on the related Reader that matches
+ *        the Condition.
  *
- * Arguments :
- *   -# ws pointer to a waitset
- *   -# e pointer to a condition to wait for the trigger value
- *   -# x attach condition, could be used to know the reason for the waitset to unblock (can be NULL)
- *   -# Returns 0 on success, else non-zero indicating an error
+ * Multiple entities can be attached to a single waitset. A particular entity
+ * can be attached to multiple waitsets. However, a particular entity can not
+ * be attached to a particular waitset multiple times.
+ *
+ * @param[in]  waitset  The waitset to attach the given entity to.
+ * @param[in]  entity   The entity to attach.
+ * @param[in]  x        Blob that will be supplied when the waitset wait is
+ *                      triggerd by the given entity.
+ *
+ * @returns   0 - Success (entity attached).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The given waitset or entity are not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The waitset has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                  The entity was already attached.
  */
-DDS_EXPORT int
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
 dds_waitset_attach(
-        dds_waitset_t waitset,
-        dds_condition_t condition,
-        dds_attach_t x);
+        _In_ dds_entity_t waitset,
+        _In_ dds_entity_t entity,
+        _In_ dds_attach_t x);
 
 
 /**
- * Description : Disassociate the condition attached with a waitset.
- *               Number of call(s) to detach from the conditions should match attach call(s).
+ * @brief This operation detaches an Entity to the WaitSet.
  *
- * Arguments :
- *   -# ws pointer to a waitset
- *   -# e pointer to a condition to wait for the trigger value
- *   -# Returns 0 on success, else non-zero indicating an error
+ * @param[in]  waitset  The waitset to detach the given entity from.
+ * @param[in]  entity   The entity to detach.
+ *
+ * @returns   0 - Success (entity attached).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The given waitset or entity are not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The waitset has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                  The entity is not attached.
  */
-DDS_EXPORT int
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
 dds_waitset_detach(
-        dds_waitset_t waitset,
-        dds_condition_t condition);
-
-/*
-  The "dds_waitset_wait" operation blocks until the some of the
-  attached entities has an enabled and set status condition, or
-  "reltimeout" has elapsed. The "dds_waitset_wait_until" operation
-  is the same as the "dds_wait" except that it takes an absolute timeout.
-
-  Upon successful return, the array "xs" is filled with 0 < M <= nxs
-  values of the "x"s corresponding to the triggering entities, as
-  specified in attach_to_waitset, and M is returned. In case of a
-  time out, the return value is 0.
-
-  Deleting the waitset while the application is blocked results in an
-  error code (i.e. < 0) returned by "wait".
-
-  Multiple threads may block on a single waitset at the same time;
-  the calls are entirely independent.
-
-  An empty waitset never triggers (i.e., dds_waitset_wait on an empty
-  waitset is essentially equivalent to dds_sleepfor).
-*/
+        _In_ dds_entity_t waitset,
+        _In_ dds_entity_t entity);
 
 /**
- * Description : This API is used to block the current executing thread until some of the
- *               attached condition(s) is triggered or 'reltimeout' has elapsed.
- *               On successful return, the array xs is filled with the value corresponding
- *               to triggered entities as specified in the attach, and nxs with count.
+ * @brief Sets the trigger_value associated with a waitset.
  *
+ * When the waitset is attached to itself and the trigger value is
+ * set to 'true', then the waitset will wake up just like with an
+ * other status change of the attached entities.
  *
- * Arguments :
- *   -# ws pointer to a waitset
- *   -# xs pointer to an array of attached_conditions based on the conditions associated with a waitset (can be NULL)
- *   -# nxs number of attached conditions (can be zero)
- *   -# reltimeout timeout value associated with a waitset (can be INFINITY or some value)
- *   -# Returns 0 on timeout, else number of signaled waitset conditions
+ * This can be used to forcefully wake up a waitset, for instance
+ * when the application wants to shut down. So, when the trigger
+ * value is true, the waitset will wake up or not wait at all.
+ *
+ * The trigger value will remain true until the application sets it
+ * false again deliberately.
+ *
+ * @param[in]  waitset  The waitset to set the trigger value on.
+ * @param[in]  trigger  The trigger value to set.
+ *
+ * @returns   0 - Success (entity attached).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The given waitset is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The waitset has already been deleted.
  */
-DDS_EXPORT int
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
+dds_waitset_set_trigger(
+        _In_ dds_entity_t waitset,
+        _In_ bool trigger);
+
+/**
+ * @brief This operation allows an application thread to wait for the a status
+ *        change or other trigger on (one of) the entities that are attached to
+ *        the WaitSet.
+ *
+ * The "dds_waitset_wait" operation blocks until the some of the attached
+ * entities have triggered or "reltimeout" has elapsed.
+ * 'Triggered' (dds_triggered()) doesn't mean the same for every entity:
+ *  - Reader/Writer/Publisher/Subscriber/Topic/Participant
+ *      - These are triggered when their status changed.
+ *  - WaitSet
+ *      - Triggered when trigger value was set to true by the application.
+ *        It stays triggered until application sets the trigger value to
+ *        false (dds_waitset_set_trigger()). This can be used to wake up an
+ *        waitset for different reasons (f.i. termination) than the 'normal'
+ *        status change (like new data).
+ *  - ReadCondition/QueryCondition
+ *      - Triggered when data is available on the related Reader that matches
+ *        the Condition.
+ *
+ * This functions takes a pre-allocated list to put the "xs" blobs in (that
+ * were provided during the attach of the related entities) and will return
+ * the number of triggered entities. It is possible that the given size
+ * of the list is not the same as the number of triggered entities. If less
+ * entities were triggered, then the last few entries in the list are
+ * untouched. When more entities are triggered, then only 'size' number of
+ * entries are inserted into the list, but still the complete count of the
+ * triggered entities is returned. Which "xs" blobs are returned in the
+ * latter case is undefined.
+ *
+ * In case of a time out, the return value is 0.
+ *
+ * Deleting the waitset while the application is blocked results in an
+ * error code (i.e. < 0) returned by "wait".
+ *
+ * Multiple threads may block on a single waitset at the same time;
+ * the calls are entirely independent.
+ *
+ * An empty waitset never triggers (i.e., dds_waitset_wait on an empty
+ * waitset is essentially equivalent to a sleep).
+ *
+ * The "dds_waitset_wait_until" operation is the same as the
+ * "dds_waitset_wait" except that it takes an absolute timeout.
+ *
+ * @param[in]  waitset    The waitset to set the trigger value on.
+ * @param[out] xs         Pre-allocated list to store the 'blobs' that were
+ *                        provided during the attach of the triggered entities.
+ * @param[in]  nxs        The size of the pre-allocated blobs list.
+ * @param[in]  reltimeout Relative timeout
+ *
+ * @returns  >0 - Success (number of entities triggered).
+ * @returns   0 - Time out (no entities were triggered).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The given waitset is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The waitset has already been deleted.
+ */
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
 dds_waitset_wait(
-        dds_waitset_t waitset,
-        dds_attach_t *xs,
-        size_t nxs,
-        dds_duration_t reltimeout);
+        _In_ dds_entity_t waitset,
+        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _In_ size_t nxs,
+        _In_ dds_duration_t reltimeout);
 
 /**
- * Description : This API is used to block the current executing thread until some of the
- *               attached condition(s) is triggered or 'abstimeout' has elapsed.
- *               On successful return, the array xs is filled with the value corresponding
- *               to triggered entities as specified in the attach, and nxs with count.
+ * @brief This operation allows an application thread to wait for the a status
+ *        change or other trigger on (one of) the entities that are attached to
+ *        the WaitSet.
  *
- * Arguments :
- *   -# ws pointer to a waitset
- *   -# xs pointer to an array of attached_conditions based on the conditions associated with a waitset (can be NULL)
- *   -# nxs number of attached conditions (can be NULL)
- *   -# abstimeout absolute timeout value associated with a waitset (can be INFINITY or some value)
- *   -# Returns 0 if unblocked due to timeout, else number of the waitset conditions that resulted to unblock
+ * The "dds_waitset_wait" operation blocks until the some of the attached
+ * entities have triggered or "abstimeout" has been reached.
+ * 'Triggered' (dds_triggered()) doesn't mean the same for every entity:
+ *  - Reader/Writer/Publisher/Subscriber/Topic/Participant
+ *      - These are triggered when their status changed.
+ *  - WaitSet
+ *      - Triggered when trigger value was set to true by the application.
+ *        It stays triggered until application sets the trigger value to
+ *        false (dds_waitset_set_trigger()). This can be used to wake up an
+ *        waitset for different reasons (f.i. termination) than the 'normal'
+ *        status change (like new data).
+ *  - ReadCondition/QueryCondition
+ *      - Triggered when data is available on the related Reader that matches
+ *        the Condition.
+ *
+ * This functions takes a pre-allocated list to put the "xs" blobs in (that
+ * were provided during the attach of the related entities) and will return
+ * the number of triggered entities. It is possible that the given size
+ * of the list is not the same as the number of triggered entities. If less
+ * entities were triggered, then the last few entries in the list are
+ * untouched. When more entities are triggered, then only 'size' number of
+ * entries are inserted into the list, but still the complete count of the
+ * triggered entities is returned. Which "xs" blobs are returned in the
+ * latter case is undefined.
+ *
+ * In case of a time out, the return value is 0.
+ *
+ * Deleting the waitset while the application is blocked results in an
+ * error code (i.e. < 0) returned by "wait".
+ *
+ * Multiple threads may block on a single waitset at the same time;
+ * the calls are entirely independent.
+ *
+ * An empty waitset never triggers (i.e., dds_waitset_wait on an empty
+ * waitset is essentially equivalent to a sleep).
+ *
+ * The "dds_waitset_wait" operation is the same as the
+ * "dds_waitset_wait_until" except that it takes an relative timeout.
+ *
+ * The "dds_waitset_wait" operation is the same as the "dds_wait"
+ * except that it takes an absolute timeout.
+ *
+ * @param[in]  waitset    The waitset to set the trigger value on.
+ * @param[out] xs         Pre-allocated list to store the 'blobs' that were
+ *                        provided during the attach of the triggered entities.
+ * @param[in]  nxs        The size of the pre-allocated blobs list.
+ * @param[in]  abstimeout Absolute timeout
+ *
+ * @returns  >0 - Success (number of entities triggered).
+ * @returns   0 - Time out (no entities were triggered).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The given waitset is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The waitset has already been deleted.
  */
-DDS_EXPORT int
+_Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
+DDS_EXPORT dds_return_t
 dds_waitset_wait_until(
-        dds_waitset_t waitset,
-        dds_attach_t *xs,
-        size_t nxs,
-        dds_time_t abstimeout);
+        _In_ dds_entity_t waitset,
+        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _In_ size_t nxs,
+        _In_ dds_time_t abstimeout);
 
 /*
   There are a number of read and take variations.
@@ -1610,14 +1716,14 @@ dds_waitset_wait_until(
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_read(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs);
 
@@ -1636,14 +1742,14 @@ dds_read(
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_read_wl(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ uint32_t maxs);
 
 /**
@@ -1663,14 +1769,14 @@ dds_read_wl(
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_read_mask(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs,
         _In_ uint32_t mask);
@@ -1692,16 +1798,17 @@ dds_read_mask(
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_read_mask_wl(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ uint32_t maxs,
         _In_ uint32_t mask);
+
 
 /**
  * Description : Implements the same functionality as dds_read, except that only data
@@ -1752,7 +1859,7 @@ dds_read_cond(
         void **buf,
         uint32_t maxs,
         dds_sample_info_t *si,
-        dds_condition_t condition);
+        dds_entity_t condition);
 
 /**
  * @brief  Access the collection of data values (of same type) and sample info from the data reader
@@ -1778,14 +1885,14 @@ dds_read_cond(
  *
  * @returns  A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_take(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs);
 
@@ -1804,14 +1911,14 @@ dds_take(
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_take_wl(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ uint32_t maxs);
 
 /**
@@ -1831,14 +1938,14 @@ dds_take_wl(
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_take_mask(
-_In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+_In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs,
         _In_ uint32_t mask);
@@ -1860,14 +1967,14 @@ _In_ dds_entity_t rd_or_cnd,
  *
  * @returns A dds_return_t indicating success or failure
  */
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_take_mask_wl(
-        _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
-        _Out_ dds_sample_info_t * si,
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si,
         _In_ uint32_t maxs,
         _In_ uint32_t mask);
 
@@ -1903,33 +2010,6 @@ dds_take_instance(
         dds_instance_handle_t handle,
         uint32_t mask);
 
-/**
- * Description : Access the collection of data values (of same type) and sample info from the data reader
- *               based on the read condition set. Data value once read is removed from the Data Reader
- *               cannot to 'read' or 'taken' again.
- *               Read condition must be attached to the data reader before associating with data_take.
- *               Return value provides information about number of samples read, which will
- *               be <= maxs. Based on the count, the buffer will contain data to be read only
- *               when valid_data bit in sample info structure is set.
- *               The buffer required for data values, could be allocated explicitly or can
- *               use the memory from data reader to prevent copy. In the latter case, buffer and
- *               sample_info should be returned back, once it is no longer using the Data.
- *
- * Arguments :
- *   -# rd Reader entity
- *   -# buf an array of pointers to samples into which data is read (pointers can be NULL)
- *   -# maxs maximum number of samples to read
- *   -# si pointer to an array of \ref dds_sample_info_t returned for each data value
- *   -# cond read condition to filter the data samples based on the content
- *   -# Returns the number of samples read, 0 indicates no data to read.
- */
-DDS_EXPORT int
-dds_take_cond(
-        dds_entity_t reader,
-        void **buf,
-        uint32_t maxs,
-        dds_sample_info_t *si,
-        dds_condition_t conditition);
 
 /*
   The read/take next functions return a single sample. The returned sample
@@ -2125,6 +2205,17 @@ DDS_EXPORT dds_return_t
 dds_notify_readers(
         _In_ dds_entity_t subscriber);
 
+
+/**
+ * Description : Checks whether the entity has one of its enabled statuses triggered.
+ *
+ * Arguments :
+ * -# e Entity for which to check for triggered status
+ */
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT dds_return_t
+dds_triggered(
+        _In_ dds_entity_t entity);
 
 #if defined (__cplusplus)
 }

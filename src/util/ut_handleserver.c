@@ -326,22 +326,26 @@ check_handle(
     /* When handle is negative, it contains a retcode. */
     ut_handle_retcode_t ret = UT_HANDLE_OK;
     if (hdl > 0) {
-        int32_t idx = (hdl & UT_HANDLE_IDX_MASK);
-        if (idx < hs->last) {
-            assert(idx < MAX_NR_OF_HANDLES);
-            ut_handlelink *info = hs->hdls[idx];
-            if (info != NULL) {
-                if ((info->hdl & UT_HANDLE_KIND_MASK) == (hdl & UT_HANDLE_KIND_MASK)) {
-                    if ((kind != UT_HANDLE_DONTCARE_KIND) &&
-                        (kind != (hdl & UT_HANDLE_KIND_MASK))) {
-                        /* It's a valid handle, but the caller expected a different kind. */
+        if (hdl & UT_HANDLE_KIND_MASK) {
+            int32_t idx = (hdl & UT_HANDLE_IDX_MASK);
+            if (idx < hs->last) {
+                assert(idx < MAX_NR_OF_HANDLES);
+                ut_handlelink *info = hs->hdls[idx];
+                if (info != NULL) {
+                    if ((info->hdl & UT_HANDLE_KIND_MASK) == (hdl & UT_HANDLE_KIND_MASK)) {
+                        if ((kind != UT_HANDLE_DONTCARE_KIND) &&
+                            (kind != (hdl & UT_HANDLE_KIND_MASK))) {
+                            /* It's a valid handle, but the caller expected a different kind. */
+                            ret = UT_HANDLE_UNEQUAL_KIND;
+                        }
+                    } else {
                         ret = UT_HANDLE_UNEQUAL_KIND;
                     }
                 } else {
-                    ret = UT_HANDLE_UNEQUAL_KIND;
+                    ret = UT_HANDLE_DELETED;
                 }
             } else {
-                ret = UT_HANDLE_DELETED;
+                ret = UT_HANDLE_INVALID;
             }
         } else {
             ret = UT_HANDLE_INVALID;
