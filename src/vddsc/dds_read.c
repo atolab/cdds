@@ -385,12 +385,12 @@ dds_take_next(
   return dds_read_impl (true, reader, buf, 1u, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
-_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 _Must_inspect_result_ dds_return_t
 dds_return_loan(
-        _In_ dds_entity_t rd_or_cnd,
+        _In_ dds_entity_t reader_or_condition,
         _Inout_updates_(bufsz) void **buf,
         _In_ size_t bufsz)
 {
@@ -406,7 +406,7 @@ dds_return_loan(
         return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_READER, DDS_ERR_M1);
     }
 
-    rc = dds_entity_lock(rd_or_cnd, DDS_KIND_DONTCARE, &entity);
+    rc = dds_entity_lock(reader_or_condition, DDS_KIND_DONTCARE, &entity);
     if (rc == DDS_RETCODE_OK) {
         kind = dds_entity_kind(entity->m_hdl);
         if (kind == DDS_KIND_READER) {
