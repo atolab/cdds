@@ -750,6 +750,17 @@ Theory((dds_attach_t *a, size_t size), vddsc_waitset_wait_until, invalid_params,
 }
 /*************************************************************************************************/
 
+/*************************************************************************************************/
+Test(vddsc_waitset_wait_until, past, .init=vddsc_waitset_attached_init, .fini=vddsc_waitset_attached_fini)
+{
+    dds_attach_t triggered;
+    dds_return_t ret;
+
+    ret = dds_waitset_wait_until(waitset, &triggered, 1, dds_time() - 100000);
+    cr_assert_eq(ret, 0, "returned %d != expected 0", ret);
+}
+/*************************************************************************************************/
+
 
 
 /**************************************************************************************************

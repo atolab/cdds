@@ -118,6 +118,8 @@ dds_waitset_wait_impl(
                 dds_waitset_swap(&(ws->observed), &(ws->triggered), NULL, idx);
                 idx = next;
             }
+        } else if (ret == DDS_RETCODE_TIMEOUT) {
+            ret = 0;
         } else {
             ret = DDS_ERRNO(ret, DDS_MOD_WAITSET, DDS_ERR_M1);
         }
