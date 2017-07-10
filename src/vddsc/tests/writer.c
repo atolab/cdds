@@ -79,7 +79,7 @@ Test(vddsc_create_writer, null_topic, .init = setup, .fini = teardown)
     cr_assert_eq(dds_err_nr(writer), DDS_RETCODE_BAD_PARAMETER);
 }
 
-Test(vddsc_writer_create, bad_topic, .init = setup, .fini = teardown)
+Test(vddsc_create_writer, bad_topic, .init = setup, .fini = teardown)
 {
     writer = dds_create_writer(publisher, publisher, NULL, NULL);
     cr_assert_eq(dds_err_nr(writer), DDS_RETCODE_ILLEGAL_OPERATION);
