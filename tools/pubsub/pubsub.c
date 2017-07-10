@@ -21,10 +21,6 @@
 //#include <arpa/inet.h>
 //#include <netdb.h>
 
-#ifndef _WIN
-#define _WIN 1
-#endif
-
 #if USE_EDITLINE
 #include <histedit.h>
 #endif
@@ -63,7 +59,7 @@ enum readermode { MODE_PRINT, MODE_CHECK, MODE_ZEROLOAD, MODE_DUMP, MODE_NONE };
 #define PM_RANKS 512u
 #define PM_STATE 1024u
 
-static int fdservsock = -1;
+static os_socket fdservsock = -1;
 static volatile sig_atomic_t termflag = 0;
 static int pid;
 static dds_condition_t termcond;
@@ -178,11 +174,7 @@ static void *sigthread(void *varg __attribute__ ((unused)))
   {
     char c;
     ssize_t r;
-#ifdef _WIN
-    if((r = _read(sigpipe[0], &c, 1)) < 0)
-#else
     if ((r = read (sigpipe[0], &c, 1)) < 0)
-#endif
     {
       if (os_getErrno() == os_sockEINTR)
         continue;
@@ -198,10 +190,10 @@ static void *sigthread(void *varg __attribute__ ((unused)))
   return NULL;
 }
 
-static int open_tcpserver_sock (int port)
+static os_socket open_tcpserver_sock (int port)
 {
   os_sockaddr_in saddr;
-  int fd;
+  os_socket fd;
 #if __APPLE__
   saddr.sin_len = sizeof (saddr);
 #endif
@@ -1133,42 +1125,42 @@ static void print_K (unsigned long long *tstart, unsigned long long tnow, dds_en
   funlockfile(stdout);
 }
 
-static void print_seq_KS (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, KeyedSeq *mseq, int count)
+static void print_seq_KS (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, KeyedSeq **mseq, int count)
 {
   unsigned i;
   for (i = 0; i < count; i++) return;
-    print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i].keyval, mseq[i].seq, getkeyval_KS);
+    print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_KS);
 }
 
-static void print_seq_K32 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed32 *mseq, int count)
+static void print_seq_K32 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed32 **mseq, int count)
 {
   unsigned i;
   for (i = 0; i < count; i++)
-    print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i].keyval, mseq[i].seq, getkeyval_K32);
+    print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K32);
 }
 
-static void print_seq_K64 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed64 *mseq, int count)
+static void print_seq_K64 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed64 **mseq, int count)
 {
   unsigned i;
   for (i = 0; i < count; i++)
-    print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i].keyval, mseq[i].seq, getkeyval_K64);
+    print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K64);
 }
 
-static void print_seq_K128 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed128 *mseq, int count)
+static void print_seq_K128 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed128 **mseq, int count)
 {
   unsigned i;
   for (i = 0; i < count; i++)
-    print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i].keyval, mseq[i].seq, getkeyval_K128);
+    print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K128);
 }
 
-static void print_seq_K256 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed256 *mseq, int count)
+static void print_seq_K256 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed256 **mseq, int count)
 {
   unsigned i;
   for (i = 0; i < count; i++)
-    print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i].keyval, mseq[i].seq, getkeyval_K256);
+    print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K256);
 }
 
-static void print_seq_OU (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd __attribute__ ((unused)), const char *tag, const dds_sample_info_t *si, const OneULong *mseq, int count)
+static void print_seq_OU (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd __attribute__ ((unused)), const char *tag, const dds_sample_info_t *si, const OneULong **mseq, int count)
 {
   unsigned i;
   for (i = 0; i < count; i++)
@@ -1176,7 +1168,7 @@ static void print_seq_OU (unsigned long long *tstart, unsigned long long tnow, d
 	flockfile(stdout);
     print_sampleinfo(tstart, tnow, si, tag);
     if (si->valid_data) {
-    	printf ("%u\n", mseq[i].seq);
+    	printf ("%u\n", mseq[i]->seq);
     } else {
       printf ("NA\n");
     }
@@ -1184,7 +1176,7 @@ static void print_seq_OU (unsigned long long *tstart, unsigned long long tnow, d
   }
 }
 
-static void print_seq_ARB (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd __attribute__ ((unused)), const char *tag, const dds_sample_info_t *iseq, const void *mseq, const struct tgtopic *tgtp)
+static void print_seq_ARB (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd __attribute__ ((unused)), const char *tag, const dds_sample_info_t *iseq, const void **mseq, const struct tgtopic *tgtp)
 {
 //  unsigned i;
 //  for (i = 0; i < mseq->_length; i++)
@@ -1324,7 +1316,7 @@ static void wr_on_publication_matched (dds_entity_t wr __attribute__((unused)), 
           status.last_subscription_handle);
 }
 
-static int w_accept(int fd)
+static int w_accept(os_socket fd)
 {
   fd_set fds;
   int maxfd;
@@ -2051,16 +2043,19 @@ static void *subthread (void *vspec)
   }
 
   {
-    union {
-      void *any[spec->read_maxsamples];
-      KeyedSeq *ks;
-      Keyed32 *k32;
-      Keyed64 *k64;
-      Keyed128 *k128;
-      Keyed256 *k256;
-      OneULong *ou;
-    } mseq;
-    dds_sample_info_t iseq[spec->read_maxsamples];
+//    union {
+////      void *any[spec->read_maxsamples];
+//      void **any;
+//      KeyedSeq *ks;
+//      Keyed32 *k32;
+//      Keyed64 *k64;
+//      Keyed128 *k128;
+//      Keyed256 *k256;
+//      OneULong *ou;
+//    } mseq;
+    void **mseq = (void **) os_malloc(sizeof(void*) * (spec->read_maxsamples));
+
+    dds_sample_info_t *iseq = (dds_sample_info_t *) os_malloc (sizeof(dds_sample_info_t) * spec->read_maxsamples);
     dds_condition_seq *glist = os_malloc(sizeof(*glist));
     dds_duration_t timeout = (uint64_t)100000000;
     dds_attach_t *xs = NULL;
@@ -2075,7 +2070,7 @@ static void *subthread (void *vspec)
 
     int ii = 0;
     for(ii=0; ii<spec->read_maxsamples; ii++) {
-    	mseq.any[ii] = NULL;
+    	mseq[ii] = NULL;
     }
 
     while (!termflag && !once_mode)
@@ -2143,13 +2138,13 @@ static void *subthread (void *vspec)
 //          error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_strerror (result));
 
         if (spec->mode == MODE_CHECK || (spec->mode == MODE_DUMP && spec->use_take) || spec->polling) {
-        	result = dds_take(rd, mseq.any, iseq, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+        	result = dds_take(rd, mseq, iseq, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
 		} else if (spec->mode == MODE_DUMP) {
-			result = dds_read(rd, mseq.any, iseq, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+			result = dds_read(rd, mseq, iseq, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
 		} else if (spec->use_take || cond == rdcondD) {
-			result = dds_take_cond(rd, mseq.any, spec->read_maxsamples, iseq, cond);
+			result = dds_take_cond(rd, mseq, spec->read_maxsamples, iseq, cond);
 		} else {
-		  result = dds_read_cond(rd, mseq.any, spec->read_maxsamples, iseq, cond);
+		  result = dds_read_cond(rd, mseq, spec->read_maxsamples, iseq, cond);
 		}
 
         if (result < 1)
@@ -2172,13 +2167,13 @@ static void *subthread (void *vspec)
           case MODE_DUMP:
             switch (spec->topicsel) {
               case UNSPEC: assert(0);
-              case KS:   print_seq_KS (&tstart, tnow, rd, tag, iseq, mseq.ks, result); break;
-              case K32:  print_seq_K32 (&tstart, tnow, rd, tag, iseq, mseq.k32, result); break;
-              case K64:  print_seq_K64 (&tstart, tnow, rd, tag, iseq, mseq.k64, result); break;
-              case K128: print_seq_K128 (&tstart, tnow, rd, tag, iseq, mseq.k128, result); break;
-              case K256: print_seq_K256 (&tstart, tnow, rd, tag, iseq, mseq.k256, result); break;
-              case OU:   print_seq_OU (&tstart, tnow, rd, tag, iseq, mseq.ou, result); break;
-              case ARB:  print_seq_ARB (&tstart, tnow, rd, tag, iseq, mseq.any, spec->tgtp); break;
+              case KS:   print_seq_KS (&tstart, tnow, rd, tag, iseq, (KeyedSeq **)mseq, result); break;
+              case K32:  print_seq_K32 (&tstart, tnow, rd, tag, iseq, (Keyed32 **)mseq, result); break;
+              case K64:  print_seq_K64 (&tstart, tnow, rd, tag, iseq, (Keyed64 **)mseq, result); break;
+              case K128: print_seq_K128 (&tstart, tnow, rd, tag, iseq, (Keyed128 **)mseq, result); break;
+              case K256: print_seq_K256 (&tstart, tnow, rd, tag, iseq, (Keyed256 **)mseq, result); break;
+              case OU:   print_seq_OU (&tstart, tnow, rd, tag, iseq, (const OneULong **)mseq, result); break;
+              case ARB:  print_seq_ARB (&tstart, tnow, rd, tag, iseq, (const void **)mseq, spec->tgtp); break;
             }
             break;
 
@@ -2193,12 +2188,12 @@ static void *subthread (void *vspec)
               switch (spec->topicsel)
               {
                 case UNSPEC: assert(0);
-                case KS:   { KeyedSeq *d = &mseq.ks[i];   keyval = d->keyval; seq = d->seq; size = 12 + d->baggage._length; } break;
-                case K32:  { Keyed32 *d  = &mseq.k32[i];  keyval = d->keyval; seq = d->seq; size = 32; } break;
-                case K64:  { Keyed64 *d  = &mseq.k64[i];  keyval = d->keyval; seq = d->seq; size = 64; } break;
-                case K128: { Keyed128 *d = &mseq.k128[i]; keyval = d->keyval; seq = d->seq; size = 128; } break;
-                case K256: { Keyed256 *d = &mseq.k256[i]; keyval = d->keyval; seq = d->seq; size = 256; } break;
-                case OU:   { OneULong *d = &mseq.ou[i];   keyval = 0;         seq = d->seq; size = 4; } break;
+                case KS:   { KeyedSeq *d = (KeyedSeq *) &mseq;   keyval = d->keyval; seq = d->seq; size = 12 + d->baggage._length; } break;
+                case K32:  { Keyed32 *d  = (Keyed32 *) &mseq;  keyval = d->keyval; seq = d->seq; size = 32; } break;
+                case K64:  { Keyed64 *d  = (Keyed64 *) &mseq;  keyval = d->keyval; seq = d->seq; size = 64; } break;
+                case K128: { Keyed128 *d = (Keyed128 *) &mseq; keyval = d->keyval; seq = d->seq; size = 128; } break;
+                case K256: { Keyed256 *d = (Keyed256 *) &mseq; keyval = d->keyval; seq = d->seq; size = 256; } break;
+                case OU:   { OneULong *d = (OneULong *) &mseq;   keyval = 0;         seq = d->seq; size = 4; } break;
                 case ARB:  assert(0); break; /* can't check what we don't know */
               }
               if (!check_eseq (&eseq_admin, seq, (unsigned)keyval, iseq[i].publication_handle))
@@ -2230,7 +2225,7 @@ static void *subthread (void *vspec)
           case MODE_ZEROLOAD:
             break;
         }
-        dds_return_loan(rd, mseq.any, spec->read_maxsamples);
+        dds_return_loan(rd, mseq, spec->read_maxsamples);
         if (spec->sleep_us) {
         	os_time delay;
         	delay.tv_sec = 0;
@@ -2248,7 +2243,7 @@ static void *subthread (void *vspec)
 //      if (need_access && (result = DDS_Subscriber_begin_access (sub)) != DDS_RETCODE_OK)
 //        error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_strerror (result));
 
-      result = dds_take(rd, mseq.any, iseq, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+      result = dds_take(rd, mseq, iseq, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
       if (result == 0)
       {
         if (!once_mode)
@@ -2272,25 +2267,25 @@ static void *subthread (void *vspec)
           switch (spec->topicsel)
           {
             case UNSPEC: assert(0);
-            case KS:   print_seq_KS (&tstart, nowll (), rd, tag, iseq, mseq.ks, result); break;
-            case K32:  print_seq_K32 (&tstart, nowll (), rd, tag, iseq, mseq.k32, result); break;
-            case K64:  print_seq_K64 (&tstart, nowll (), rd, tag, iseq, mseq.k64, result); break;
-            case K128: print_seq_K128 (&tstart, nowll (), rd, tag, iseq, mseq.k128, result); break;
-            case K256: print_seq_K256 (&tstart, nowll (), rd, tag, iseq, mseq.k256, result); break;
-            case OU:   print_seq_OU (&tstart, nowll (), rd, tag, iseq, mseq.ou, result); break;
-            case ARB:  print_seq_ARB (&tstart, nowll (), rd, tag, iseq, mseq.any, spec->tgtp); break;
+            case KS:   print_seq_KS (&tstart, nowll (), rd, tag, iseq, (KeyedSeq **) mseq, result); break;
+            case K32:  print_seq_K32 (&tstart, nowll (), rd, tag, iseq, (Keyed32 **) mseq, result); break;
+            case K64:  print_seq_K64 (&tstart, nowll (), rd, tag, iseq, (Keyed64 **) mseq, result); break;
+            case K128: print_seq_K128 (&tstart, nowll (), rd, tag, iseq, (Keyed128 **) mseq, result); break;
+            case K256: print_seq_K256 (&tstart, nowll (), rd, tag, iseq, (Keyed256 **) mseq, result); break;
+            case OU:   print_seq_OU (&tstart, nowll (), rd, tag, iseq, (const OneULong **) mseq, result); break;
+            case ARB:  print_seq_ARB (&tstart, nowll (), rd, tag, iseq, (const void **) mseq, spec->tgtp); break;
           }
         }
       }
 //      if (need_access && (result = DDS_Subscriber_end_access (sub)) != DDS_RETCODE_OK)
 //        error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_strerror (result));
-      dds_return_loan(rd, mseq.any, spec->read_maxsamples);
+      dds_return_loan(rd, mseq, spec->read_maxsamples);
     }
 
     dds_free(iseq);
     int iter = 0;
     for(iter = 0; iter < spec->read_maxsamples; iter++)
-    	dds_free(mseq.any[iter]);
+    	dds_free(mseq);
     if (spec->mode == MODE_CHECK)
       printf ("received: %lld, out of seq: %lld\n", nreceived, out_of_seq);
     fini_eseq_admin (&eseq_admin);
@@ -2586,11 +2581,16 @@ int main (int argc, char *argv[])
 	uint32_t wrstatusmask = 0;
 
 	struct qos *qos;
-	const char *qtopic[argc];
-	const char *qreader[2+argc];
-	const char *qwriter[2+argc];
-	const char *qpublisher[2+argc];
-	const char *qsubscriber[2+argc];
+//	const char *qtopic[argc];
+	const char **qtopic = (const char **) os_malloc (sizeof(char *) * argc);
+//	const char *qreader[2+argc];
+	const char **qreader = (const char **) os_malloc (sizeof(char *) * (2+argc));
+//	const char *qwriter[2+argc];
+	const char **qwriter = (const char **) os_malloc (sizeof(char *) * (2+argc));
+//	const char *qpublisher[2+argc];
+	const char **qpublisher = (const char **) os_malloc (sizeof(char *) * (2+argc));
+//	const char *qsubscriber[2+argc];
+	const char **qsubscriber = (const char **) os_malloc (sizeof(char *) * (2+argc));
 	int nqtopic = 0, nqreader = 0, nqwriter = 0;
 	int nqpublisher = 0, nqsubscriber = 0;
 	int opt, pos;
