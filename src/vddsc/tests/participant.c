@@ -184,9 +184,8 @@ Test(vddsc_participant_lookup, unknown_id) {
 Test(vddsc_participant_lookup, none) {
 
   dds_entity_t participants[2];
-  dds_return_t status, num_of_found_pp;
+  dds_return_t num_of_found_pp;
   size_t size = 2;
-
 
   num_of_found_pp = dds_lookup_participant( 0, participants, size);
   cr_assert_eq(num_of_found_pp, 0, "dds_lookup_participant(domain_id, participants, size)");
