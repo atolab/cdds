@@ -1329,13 +1329,14 @@ dds_create_readcondition(
         _In_ uint32_t mask);
 
 
-/*
-  Entities can be attached to a waitset or removed from a waitset (in
-  an NxM relationship, but each entity can be in one waitset only
-  once), the "x" value is what is returned by "wait" when the entity
-  represented by handle e triggers.
-*/
-
+/**
+ * @brief Waitset attachment argument.
+ *
+ * Every entity that is attached to the waitset can be accompanied by such
+ * an attachment argument. When the waitset wait is unblocked because of an
+ * entity that triggered, then the returning array will be populated with
+ * these attachment arguments that are related to the triggered entity.
+ */
 typedef void * dds_attach_t;
 
 /**

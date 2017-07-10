@@ -1,7 +1,7 @@
 #include <assert.h>
+#include "kernel/dds_types.h"
 #include "kernel/dds_reader.h"
 #include "kernel/dds_readcond.h"
-#include "kernel/dds_waitset.h"
 #include "kernel/dds_rhc.h"
 #include "kernel/dds_entity.h"
 #include "ddsi/q_ephash.h"

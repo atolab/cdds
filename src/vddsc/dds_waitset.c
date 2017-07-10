@@ -1,15 +1,10 @@
 #include <assert.h>
 #include "os/os.h"
 #include "kernel/dds_types.h"
-#include "kernel/dds_waitset.h"
 #include "kernel/dds_entity.h"
 #include "kernel/dds_querycond.h"
 #include "kernel/dds_readcond.h"
 #include "kernel/dds_rhc.h"
-
-#include "ddsi/q_globals.h"
-#include "ddsi/q_config.h"
-#include "ddsi/q_log.h"
 
 #define dds_waitset_lock(hdl, obj) dds_entity_lock(hdl, DDS_KIND_WAITSET, (dds_entity**)obj)
 #define dds_waitset_unlock(obj)    dds_entity_unlock((dds_entity*)obj);
@@ -338,7 +333,7 @@ dds_waitset_attach(
             if (e->m_trigger > 0) {
                 a->next = ws->triggered;
                 ws->triggered = a;
-            } else if (ret == 0) {
+            } else {
                 a->next = ws->observed;
                 ws->observed = a;
             }
