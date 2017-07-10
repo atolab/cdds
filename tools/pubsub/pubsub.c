@@ -62,7 +62,7 @@ enum readermode { MODE_PRINT, MODE_CHECK, MODE_ZEROLOAD, MODE_DUMP, MODE_NONE };
 static os_socket fdservsock = -1;
 static volatile sig_atomic_t termflag = 0;
 static int pid;
-static dds_condition_t termcond;
+static dds_entity_t termcond;
 static unsigned nkeyvals = 1;
 static int once_mode = 0;
 static int wait_hist_data = 0;
@@ -156,7 +156,7 @@ static void terminate (void)
   const char c = 0;
   termflag = 1;
   os_write(termpipe[1], &c, 1); //Todo: for abstraction layer
-  dds_guard_trigger(termcond);
+  dds_triggered(termcond);
 }
 
 static void sigh (int sig __attribute__ ((unused)))
@@ -1990,9 +1990,9 @@ static void *subthread (void *vspec)
   dds_entity_t rd = spec->rd;
 //  dds_entity_t sub = spec->sub;
 //  const int need_access = subscriber_needs_access (sub);
-  dds_waitset_t ws;
-  dds_condition_t rdcondA = 0, rdcondD = 0;
-  dds_condition_t stcond = 0;
+  dds_entity_t ws;
+  dds_entity_t rdcondA = 0, rdcondD = 0;
+  dds_entity_t stcond = 0;
   int result = DDS_RETCODE_OK;
   int ret = DDS_RETCODE_OK;
   uintptr_t exitcode = 0;
@@ -2006,7 +2006,7 @@ static void *subthread (void *vspec)
       error ("dds_reader_wait_for_historical_data: %d (%s)\n", (int) result, dds_strerror (result));
   }
 
-  ws = dds_waitset_create();
+  ws = dds_create_waitset(dp);
   if ((result = dds_waitset_attach(ws, termcond, NULL)) != DDS_RETCODE_OK)
     error ("dds_waitset_attach (termcomd): %d (%s)\n", (int) result, dds_strerror (result));
   switch (spec->mode)
@@ -2017,12 +2017,14 @@ static void *subthread (void *vspec)
       break;
     case MODE_PRINT:
       /* complicated triggers */
-    	if ((rdcondA = dds_readcondition_create(rd, spec->use_take ? (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
+    	if ((rdcondA = dds_create_readcondition(rd, spec->use_take ? DDS_ANY_SAMPLE_STATE : DDS_ANY_VIEW_STATE)) == NULL)
+    		break;
+    	if ((rdcondA = dds_create_readcondition(rd, spec->use_take ? (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
                                                                    : (DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE))) == NULL)
     		error ("dds_readcondition_create (rdcondA)\n");
     	if ((result = dds_waitset_attach (ws, rdcondA, NULL)) != DDS_RETCODE_OK)
     		error ("dds_waitset_attach (rdcondA): %d (%s)\n", (int) result, dds_strerror (result));
-    	if ((rdcondD = dds_readcondition_create (rd, (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE))) == NULL)
+    	if ((rdcondD = dds_create_readcondition (rd, (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE))) == NULL)
     		error ("dds_readcondition_create (rdcondD)\n");
     	if ((result = dds_waitset_attach (ws, rdcondD, NULL)) != DDS_RETCODE_OK)
     		error ("dds_waitset_attach (rdcondD): %d (%s)\n", (int) result, dds_strerror (result));
@@ -2056,9 +2058,9 @@ static void *subthread (void *vspec)
     void **mseq = (void **) os_malloc(sizeof(void*) * (spec->read_maxsamples));
 
     dds_sample_info_t *iseq = (dds_sample_info_t *) os_malloc (sizeof(dds_sample_info_t) * spec->read_maxsamples);
-    dds_condition_seq *glist = os_malloc(sizeof(*glist));
+//    dds_condition_seq *glist = os_malloc(sizeof(*glist));
     dds_duration_t timeout = (uint64_t)100000000;
-    dds_attach_t *xs = NULL;
+    dds_attach_t *xs = os_malloc(sizeof(*xs));
     size_t nxs = 0;
 //    dds_entity_t wsReader = 0;
 //    uint32_t reader_status;
@@ -2067,7 +2069,6 @@ static void *subthread (void *vspec)
     long long nreceived_bytes = 0, last_nreceived_bytes = 0;
     struct eseq_admin eseq_admin;
     init_eseq_admin(&eseq_admin, nkeyvals);
-
     int ii = 0;
     for(ii=0; ii<spec->read_maxsamples; ii++) {
     	mseq[ii] = NULL;
@@ -2094,12 +2095,12 @@ static void *subthread (void *vspec)
 //      result = dds_status_take (rd, &reader_status, DDS_DATA_AVAILABLE_STATUS);
 //      if (!(reader_status & DDS_DATA_AVAILABLE_STATUS)) continue;
 
-      dds_waitset_get_conditions(ws, glist);
+//      dds_waitset_get_conditions(ws, glist);
 
       tnow = nowll ();
-      for (gi = 0; gi < (spec->polling ? 1 : glist->_length); gi++)
+      for (gi = 0; gi < (spec->polling ? 1 : sizeof(xs)); gi++)
       {
-    	  const dds_condition_t cond = spec->polling ? 0 : glist->_buffer[gi];
+    	  const dds_entity_t cond = spec->polling ? 0 : (dds_entity_t) xs[gi];
     	  unsigned i;
 
         assert (spec->polling || cond == rdcondA || cond == rdcondD || cond == stcond || cond == termcond);
@@ -2142,9 +2143,9 @@ static void *subthread (void *vspec)
 		} else if (spec->mode == MODE_DUMP) {
 			result = dds_read(rd, mseq, iseq, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
 		} else if (spec->use_take || cond == rdcondD) {
-			result = dds_take_cond(rd, mseq, spec->read_maxsamples, iseq, cond);
+			result = dds_take(cond, mseq, iseq, spec->read_maxsamples, DDS_ANY_STATE);
 		} else {
-		  result = dds_read_cond(rd, mseq, spec->read_maxsamples, iseq, cond);
+		  result = dds_read(cond, mseq, iseq, spec->read_maxsamples, DDS_ANY_STATE);
 		}
 
         if (result < 1)
@@ -2234,9 +2235,9 @@ static void *subthread (void *vspec)
 //          usleep (spec->sleep_us);
         }
       }
-      dds_free(glist->_buffer);
+//      dds_free(glist->_buffer);
     }
-    os_free (glist);
+//    os_free (glist);
 
     if (spec->mode == MODE_PRINT || spec->mode == MODE_DUMP || once_mode)
     {
@@ -2298,9 +2299,9 @@ static void *subthread (void *vspec)
       break;
     case MODE_PRINT:
     	ret = dds_waitset_detach(ws, rdcondA);
-    	dds_condition_delete(rdcondA);
+    	dds_delete(rdcondA);
     	ret = dds_waitset_detach(ws, rdcondD);
-		dds_condition_delete(rdcondD);
+		dds_delete(rdcondD);
       break;
     case MODE_CHECK:
     case MODE_DUMP:
@@ -2311,7 +2312,7 @@ static void *subthread (void *vspec)
 
   ret = dds_waitset_detach(ws, termcond);
   PRINTD("Subthread: dds_waitset_detach: ret: %d\n",ret);
-  ret = dds_waitset_delete(ws);
+  ret = dds_delete(ws);
   PRINTD("Subthread: dds_waitset_delete: ret: %d\n",ret);
 
   if (once_mode)
@@ -2327,7 +2328,7 @@ static void *autotermthread(void *varg __attribute__((unused)))
 	unsigned long long tstop, tnow;
   int result;
   int ret = 0;
-  dds_waitset_t ws;
+  dds_entity_t ws;
 
   dds_attach_t wsresults[1];
   size_t wsresultsize = 1u;
@@ -2337,7 +2338,7 @@ static void *autotermthread(void *varg __attribute__((unused)))
   tnow = nowll ();
   tstop = tnow + (unsigned long long) (1e9 * dur);
 
-  ws = dds_waitset_create();
+  ws = dds_create_waitset(dp);
   if ((result = dds_waitset_attach(ws, termcond, NULL)) != DDS_RETCODE_OK)
     error ("dds_waitset_attach (termcomd): %d (%s)\n", (int) result, dds_strerror (result));
 
@@ -2360,7 +2361,7 @@ static void *autotermthread(void *varg __attribute__((unused)))
 
   ret = dds_waitset_detach(ws, termcond);
   PRINTD("Autotermthread: dds_waitset_detach: ret: %d\n", ret);
-  ret = dds_waitset_delete(ws);
+  ret = dds_delete(ws);
   PRINTD("Autotermthread: dds_waitset_delete: ret: %d\n", ret);
 
   return NULL;
@@ -3178,8 +3179,8 @@ int main (int argc, char *argv[])
 //      error("timed out waiting for matching subscriptions\n");
   }
 
-  if((termcond = dds_guardcondition_create()) == NULL)
-	  error("dds_guardcondition_create failed\n");
+//  if((termcond = dds_create_condition()) == NULL)
+//	  error("dds_guardcondition_create failed\n");
 
   if (pipe (termpipe) != 0)
     error("pipe(termpipe): errno %d\n", os_getErrno());
@@ -3321,7 +3322,7 @@ int main (int argc, char *argv[])
   }
   os_free(spec);
 
-  dds_condition_delete(termcond);
+  dds_delete(termcond);
   common_fini ();
   if (sleep_at_end) {
 	  PRINTD("Sleep at the end of main\n");
