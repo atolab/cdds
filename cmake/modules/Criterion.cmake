@@ -11,7 +11,7 @@ function(add_criterion_executable _target)
   set(arg "${s}*(${w}+)${s}*")
   set(test "(^|${b})Test${s}*\\(${arg},${arg}(,[^\\)]+)?\\)") # Test
   set(params "${s}*\\([^\\)]*\\)${s}*")
-  set(theory "(^|${b})Theory${s}*\\(${params},${arg},${arg}\\)") # Theory
+  set(theory "(^|${b})Theory${s}*\\(${params},${arg},${arg}(,[^\\)]+)?\\)") # Theory
 
   glob(_files "c" ${ARGN})
 
