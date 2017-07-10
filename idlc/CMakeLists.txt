@@ -52,35 +52,36 @@ add_custom_command(
 
 add_custom_target(idlc ALL DEPENDS "${IDLC_JAR}")
 
-function(IDLC_GENERATE SRCS HDRS)
-    if(NOT ARGN)
-        message(SEND_ERROR "Error: idlc_generate() called without any idl files")
-        return()
-    endif()
+function(IDLC_GENERATE _target)
+  if(NOT ARGN)
+    message(FATAL_ERROR "idlc_generate called without any idl files")
+  endif()
 
-    set(${SRCS})
-    set(${HDRS})
-    foreach(FIL ${ARGN})
-        get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
-        get_filename_component(FIL_WE ${FIL} NAME_WE)
+  set(_dir "${CMAKE_CURRENT_BINARY_DIR}")
+  set(_sources)
+  set(_headers)
+  foreach(FIL ${ARGN})
+    get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+    get_filename_component(FIL_WE ${FIL} NAME_WE)
 
-        set(SRC "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.c")
-        set(HDR "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.h")
+    set(_source "${_dir}/${FIL_WE}.c")
+    set(_header "${_dir}/${FIL_WE}.h")
+    list(APPEND _sources "${_source}")
+    list(APPEND _headers "${_header}")
 
-        list(APPEND ${SRCS} "${SRC}")
-        list(APPEND ${HDRS} "${HDR}")
+    add_custom_command(
+      OUTPUT   "${_source}" "${_header}"
+      COMMAND  "${IDLC_DIR}/${IDLC}"
+      ARGS     "${ABS_FIL}"
+      DEPENDS  "${ABS_FIL}" idlc
+      COMMENT  "Running idlc on ${FIL}"
+      VERBATIM)
+  endforeach()
 
-        add_custom_command(
-            OUTPUT   "${SRC}" "${HDR}"
-            COMMAND  "${IDLC_DIR}/${IDLC}"
-            ARGS     "${ABS_FIL}"
-            DEPENDS  "${ABS_FIL}" idlc
-            COMMENT  "Running idlc on ${FIL}"
-            VERBATIM)
-    endforeach()
-
-    set_source_files_properties(${${SRCS}} ${${HDRS}} PROPERTIES GENERATED TRUE)
-    set(${SRCS} ${${SRCS}} PARENT_SCOPE)
-    set(${HDRS} ${${HDRS}} PARENT_SCOPE)
+  set_source_files_properties(
+    ${_sources} ${_headers} PROPERTIES GENERATED TRUE)
+  add_library(${_target} INTERFACE)
+  target_sources(${_target} INTERFACE ${_sources})
+  target_include_directories(${_target} INTERFACE "${_dir}")
 endfunction()
 
