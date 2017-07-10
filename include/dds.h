@@ -2031,23 +2031,27 @@ dds_read_next(
         dds_sample_info_t *si);
 
 /**
- * Description : This operation is used to return loaned samples from a data reader
- *               returned from a read/take operation. This function is used where the samples
- *               returned by a read/take operation have been allocated by DDS (an array
- *               of NULL pointers was provided as the buffer for the read/take operation
- *               of size maxs).
+ * @brief Return loaned samples to data-reader or condition associated with a data-reader
  *
- * Arguments :
- * -# rd Reader entity
- * -# buf An array of pointers used by read/take operation
- * -# maxs The maximum number of samples provided to the read/take operation
+ * Used to release sample buffers returned by a read/take operation. When the application
+ * provides an empty buffer, memory is allocated and managed by DDS. By calling dds_return_loan,
+ * the memory is released so that the buffer can be reused during a successive read/take operation.
+ * When a condition is provided, the reader to which the condition belongs is looked up.
+ *
+ * @param[in] rd_or_cnd Reader or condition that belongs to a reader
+ * @param[in] buf An array of (pointers to) samples
+ * @param[in] bufsz The number of (pointers to) samples stored in buf
+ *
+ * @returns A dds_return_t indicating success or failure
  */
-DDS_EXPORT void
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT _Must_inspect_result_ dds_return_t
 dds_return_loan(
-        dds_entity_t reader_or_condition,
-        void **buf,
-        uint32_t maxs);
-
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_updates_(bufsz) void **buf,
+        _In_ size_t bufsz);
 
 /*
   Instance handle <=> key value mapping.
