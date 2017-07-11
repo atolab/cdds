@@ -23,17 +23,11 @@ function(add_dds_test NAME SUITE)
         target_link_libraries(${NAME} Vortex::DDSC ${SUITE})
 
         if(${SUITE} STREQUAL cunitrunner)
-          add_test(${TEST_NAME} ${NAME} -a -r ${NAME})
+          add_test(NAME ${TEST_NAME} COMMAND ${NAME} -a -r ${NAME})
         else()
-          add_test(${TEST_NAME} ${NAME} --xml=${NAME}-Junit.xml)
+          add_test(NAME ${TEST_NAME} COMMAND ${NAME} --xml=${NAME}-Junit.xml)
         endif()
 
-        # In case the Vortex::DDSC library is a DLL, it needs to be in the path
-        if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-          set (TEST_PATH "$ENV{PATH};${CMAKE_BINARY_DIR}/src")
-          STRING(REPLACE ";" "\\;" TEST_PATH "${TEST_PATH}") # Workaround for ; being the list delimiter in set_tests_properties
-          set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "PATH=${TEST_PATH}")
-        endif()
     endif()
 endfunction()
 
