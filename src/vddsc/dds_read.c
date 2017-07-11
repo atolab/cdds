@@ -385,42 +385,72 @@ dds_take_next(
   return dds_read_impl (true, reader, buf, 1u, si, mask, NULL, DDS_HANDLE_NIL);
 }
 
-void
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Must_inspect_result_ dds_return_t
 dds_return_loan(
-        dds_entity_t reader,
-        void **buf,
-        uint32_t maxs)
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_updates_(bufsz) void **buf,
+        _In_ size_t bufsz)
 {
-  uint32_t i;
-  uint32_t ret;
-  const dds_topic_descriptor_t * desc;
-  dds_reader * rd;
+    dds_entity *entity;
+    dds_entity *parent = NULL;
+    dds_entity_kind_t kind;
+    dds_reader *reader;
+    dds_return_t result = DDS_ERRNO(DDS_RETCODE_OK, DDS_MOD_READER, 0);
+    int32_t rc;
+    const dds_topic_descriptor_t *desc;
 
-  assert (buf);
+    if (!buf || (*buf == NULL && bufsz > 0)) {
+        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_READER, DDS_ERR_M1);
+    }
 
-  ret = dds_reader_lock(reader, &rd);
-  if (ret == DDS_RETCODE_OK) {
-      desc = rd->m_topic->m_descriptor;
-
-      /* Only free sample contents if may have been allocated */
-
-      if (desc->m_flagset & DDS_TOPIC_NO_OPTIMIZE)
-      {
-        for (i = 0; i < maxs; i++)
-        {
-          dds_sample_free (buf[i], desc, DDS_FREE_CONTENTS);
+    rc = dds_entity_lock(reader_or_condition, DDS_KIND_DONTCARE, &entity);
+    if (rc == DDS_RETCODE_OK) {
+        kind = dds_entity_kind(entity->m_hdl);
+        if (kind == DDS_KIND_READER) {
+            reader = (dds_reader*)entity;
+        } else if (kind == DDS_KIND_COND_READ || kind == DDS_KIND_COND_QUERY) {
+            kind = dds_entity_kind(entity->m_parent->m_hdl);
+            assert(kind == DDS_KIND_READER);
+            rc = dds_entity_lock(entity->m_parent->m_hdl, kind, &parent);
+            if (rc == DDS_RETCODE_OK) {
+                reader = (dds_reader*)parent;
+            }
+        } else {
+            /* Invalid entity kind */
+            rc = DDS_RETCODE_ILLEGAL_OPERATION;
         }
-      }
 
-      /* If possible return loan buffer to reader */
+        if (rc == DDS_RETCODE_OK) {
+            desc = reader->m_topic->m_descriptor;
 
-      if (buf[0] == rd->m_loan)
-      {
-        rd->m_loan_out = false;
-        memset (rd->m_loan, 0, rd->m_loan_size);
-        buf[0] = NULL;
-      }
-      dds_reader_unlock(rd);
-  }
-  dds_free (buf[0]);
+            /* Only free sample contents if they have been allocated */
+            if (desc->m_flagset & DDS_TOPIC_NO_OPTIMIZE) {
+                size_t i = 0;
+                for (i = 0; i < bufsz; i++) {
+                    dds_sample_free(buf[i], desc, DDS_FREE_CONTENTS);
+                }
+            }
+
+            /* If possible return loan buffer to reader */
+            if (reader->m_loan != 0 && (buf[0] == reader->m_loan)) {
+                reader->m_loan_out = false;
+                memset (reader->m_loan, 0, reader->m_loan_size);
+                buf[0] = NULL;
+            }
+        } else {
+            result = DDS_ERRNO(rc, DDS_MOD_READER, DDS_ERR_M3);
+        }
+
+        if (parent) {
+            dds_entity_unlock(parent);
+        }
+        dds_entity_unlock(entity);
+    } else {
+        result = DDS_ERRNO(rc, DDS_MOD_READER, DDS_ERR_M2);
+    }
+
+    return result;
 }

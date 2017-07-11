@@ -802,18 +802,35 @@ dds_get_domainid(
         _Out_ dds_domainid_t *id);
 
 /**
- * Description : Returns a participant created on a domain. Note that if
- * multiple participants have been created on the same domain then the first
- * found is returned.
+ * @brief Get participants of a domain.
  *
- * Arguments :
- *   -# domain_id The domain id
- *   -# Returns Pariticant for domain
+ * This operation acquires the participants created on a domain and returns
+ * the number of found participants.
+ *
+ * This function takes a domain id with the size of pre-allocated participant's
+ * list in and will return the number of found participants. It is possible that
+ * the given size of the list is not the same as the number of found participants.
+ * If less participants are found, then the last few entries in an array stay
+ * untouched. If more participants are found and the array is too small, then the
+ * participants returned are undefined.
+ *
+ * @param[in]  domain_id    The domain id
+ * @param[out] participants The participant for domain
+ * @param[in]  size         Size of the pre-allocated participant's list.
+ *
+ * @returns >=0 - Success (number of found participants).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The participant parameter is NULL, while a size is provided.
  */
-/* TODO: This dds_participant_lookup will be removed in favor of a domain type on which you can do 'dds_get_children'. */
-DDS_EXPORT dds_entity_t
-dds_participant_lookup(
-        dds_domainid_t domain_id);
+DDS_EXPORT _Check_return_ dds_return_t
+dds_lookup_participant(
+        _In_        dds_domainid_t domain_id,
+        _Out_opt_   dds_entity_t *participants,
+        _In_        size_t size);
 
 /**
  * Description : Creates a new DDS topic. The type name for the topic
@@ -1953,23 +1970,27 @@ dds_read_next(
         dds_sample_info_t *si);
 
 /**
- * Description : This operation is used to return loaned samples from a data reader
- *               returned from a read/take operation. This function is used where the samples
- *               returned by a read/take operation have been allocated by DDS (an array
- *               of NULL pointers was provided as the buffer for the read/take operation
- *               of size maxs).
+ * @brief Return loaned samples to data-reader or condition associated with a data-reader
  *
- * Arguments :
- * -# rd Reader entity
- * -# buf An array of pointers used by read/take operation
- * -# maxs The maximum number of samples provided to the read/take operation
+ * Used to release sample buffers returned by a read/take operation. When the application
+ * provides an empty buffer, memory is allocated and managed by DDS. By calling dds_return_loan,
+ * the memory is released so that the buffer can be reused during a successive read/take operation.
+ * When a condition is provided, the reader to which the condition belongs is looked up.
+ *
+ * @param[in] rd_or_cnd Reader or condition that belongs to a reader
+ * @param[in] buf An array of (pointers to) samples
+ * @param[in] bufsz The number of (pointers to) samples stored in buf
+ *
+ * @returns A dds_return_t indicating success or failure
  */
-DDS_EXPORT void
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT _Must_inspect_result_ dds_return_t
 dds_return_loan(
-        dds_entity_t reader_or_condition,
-        void **buf,
-        uint32_t maxs);
-
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_updates_(bufsz) void **buf,
+        _In_ size_t bufsz);
 
 /*
   Instance handle <=> key value mapping.
