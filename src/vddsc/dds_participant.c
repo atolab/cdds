@@ -14,6 +14,13 @@
 
 static dds_entity * dds_pp_head = NULL;
 
+static dds_return_t dds_participant_status_validate (uint32_t mask)
+{
+    return (mask & ~(DDS_PARTICIPANT_STATUS_MASK)) ?
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_KERNEL, 0) :
+                     DDS_RETCODE_OK;
+}
+
 static dds_return_t dds_participant_delete(dds_entity *e)
 {
     struct thread_state1 * const thr = lookup_thread_state ();
@@ -178,6 +185,7 @@ dds_create_participant(
     pp->m_entity.m_deriver.delete = dds_participant_delete;
     pp->m_entity.m_deriver.set_qos = dds_participant_qos_set;
     pp->m_entity.m_deriver.get_instance_hdl = dds_participant_instance_hdl;
+    pp->m_entity.m_deriver.validate_status = dds_participant_status_validate;
 
     /* Add participant to extent */
     os_mutexLock (&dds_global.m_mutex);

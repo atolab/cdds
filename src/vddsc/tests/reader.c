@@ -334,6 +334,7 @@ Test(vddsc_reader, read_mask_with_loan)
   dds_listener_delete(listener);
   dds_delete(participant);
 }
+
 Test(vddsc_reader, take)
 {
   int sample_received = 0;
@@ -526,6 +527,7 @@ Test(vddsc_reader, take_mask)
   dds_listener_delete(listener);
   dds_delete(participant);
 }
+
 Test(vddsc_reader, take_mask_with_loan)
 {
   int sample_received = 0;

@@ -175,6 +175,19 @@ ut_handle_delete(
 
 
 /*
+ * Returns the status the given handle; valid/deleted/closed/etc.
+ *
+ * Returns OK when valid.
+ */
+_Pre_satisfies_((kind & UT_HANDLE_KIND_MASK) && !(kind & ~UT_HANDLE_KIND_MASK))
+_Check_return_ ut_handle_retcode_t
+ut_handle_status(
+        _In_        ut_handle_t hdl,
+        _Inout_opt_ struct ut_handlelink *link,
+        _In_        int32_t kind);
+
+
+/*
  * If the a valid handle is given, which matches the kind and it is not closed,
  * then the related arg will be provided and the claims count is increased.
  *

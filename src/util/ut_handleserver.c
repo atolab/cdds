@@ -190,6 +190,37 @@ ut_handle_delete(
 
 _Pre_satisfies_((kind & UT_HANDLE_KIND_MASK) && !(kind & ~UT_HANDLE_KIND_MASK))
 _Check_return_ ut_handle_retcode_t
+ut_handle_status(
+        _In_        ut_handle_t hdl,
+        _Inout_opt_ struct ut_handlelink *link,
+        _In_        int32_t kind)
+{
+    struct ut_handlelink *info = link;
+    ut_handle_retcode_t   ret = UT_HANDLE_OK;
+
+    if (hs == NULL) {
+        return (ut_handle_t)UT_HANDLE_INVALID;
+    }
+
+    os_mutexLock(&hs->mutex);
+    if (info == NULL) {
+        ret = lookup_handle(hdl, kind, &info);
+    }
+    if (ret == UT_HANDLE_OK) {
+        assert(info);
+        assert(hdl == info->hdl);
+        if (info->flags & HDL_FLAG_CLOSED) {
+            ret = UT_HANDLE_CLOSED;
+        }
+    }
+    os_mutexUnlock(&hs->mutex);
+
+    return ret;
+}
+
+
+_Pre_satisfies_((kind & UT_HANDLE_KIND_MASK) && !(kind & ~UT_HANDLE_KIND_MASK))
+_Check_return_ ut_handle_retcode_t
 ut_handle_claim(
         _In_        ut_handle_t hdl,
         _Inout_opt_ struct ut_handlelink *link,
@@ -326,22 +357,26 @@ check_handle(
     /* When handle is negative, it contains a retcode. */
     ut_handle_retcode_t ret = UT_HANDLE_OK;
     if (hdl > 0) {
-        int32_t idx = (hdl & UT_HANDLE_IDX_MASK);
-        if (idx < hs->last) {
-            assert(idx < MAX_NR_OF_HANDLES);
-            ut_handlelink *info = hs->hdls[idx];
-            if (info != NULL) {
-                if ((info->hdl & UT_HANDLE_KIND_MASK) == (hdl & UT_HANDLE_KIND_MASK)) {
-                    if ((kind != UT_HANDLE_DONTCARE_KIND) &&
-                        (kind != (hdl & UT_HANDLE_KIND_MASK))) {
-                        /* It's a valid handle, but the caller expected a different kind. */
+        if (hdl & UT_HANDLE_KIND_MASK) {
+            int32_t idx = (hdl & UT_HANDLE_IDX_MASK);
+            if (idx < hs->last) {
+                assert(idx < MAX_NR_OF_HANDLES);
+                ut_handlelink *info = hs->hdls[idx];
+                if (info != NULL) {
+                    if ((info->hdl & UT_HANDLE_KIND_MASK) == (hdl & UT_HANDLE_KIND_MASK)) {
+                        if ((kind != UT_HANDLE_DONTCARE_KIND) &&
+                            (kind != (hdl & UT_HANDLE_KIND_MASK))) {
+                            /* It's a valid handle, but the caller expected a different kind. */
+                            ret = UT_HANDLE_UNEQUAL_KIND;
+                        }
+                    } else {
                         ret = UT_HANDLE_UNEQUAL_KIND;
                     }
                 } else {
-                    ret = UT_HANDLE_UNEQUAL_KIND;
+                    ret = UT_HANDLE_DELETED;
                 }
             } else {
-                ret = UT_HANDLE_DELETED;
+                ret = UT_HANDLE_INVALID;
             }
         } else {
             ret = UT_HANDLE_INVALID;

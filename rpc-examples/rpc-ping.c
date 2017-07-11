@@ -140,7 +140,7 @@ int ping_main (int argc, char *argv[])
   size_t wsresultsize = 1U;
   dds_time_t waitTimeout = DDS_INFINITY;
   unsigned long i;
-  int status, sampleCount;
+  int status;
   bool invalid = false;
   bool warmUp = true;
   dds_condition_t readCond;
@@ -252,7 +252,7 @@ int ping_main (int argc, char *argv[])
   printf ("# Waiting for startup jitter to stabilise\n");
   while (difference < DDS_SECS(5))
   {
-    status = dds_write (writer, &pub_data);
+    status = (int) dds_write (writer, &pub_data);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     status = dds_waitset_wait (waitSet, wsresults, wsresultsize, waitTimeout);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
@@ -281,7 +281,7 @@ int ping_main (int argc, char *argv[])
   {
     /* Write a sample that pong can send back */
     preWriteTime = dds_time ();
-    status = dds_write (writer, &pub_data);
+    status = (int) dds_write (writer, &pub_data);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     postWriteTime = dds_time ();
 
@@ -294,6 +294,7 @@ int ping_main (int argc, char *argv[])
       preTakeTime = dds_time ();
       status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
       postTakeTime = dds_time ();
 
       if (status != 1)

@@ -108,7 +108,7 @@ static dds_return_t dds_reader_status_validate (uint32_t mask)
 void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
 {
     dds_reader *rd;
-    bool call = false;
+    dds_return_t ret;
     void *metrics = NULL;
 
 
@@ -196,41 +196,41 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
         }
         default: assert (0);
     }
-    dds_reader_unlock(rd);
 
-    /* Indicate to the entity hierarchy that we're busy with a callback.
-     * This is done from the top to bottom to prevent possible deadlocks.
-     * We can't really lock the entities because they have to be possibly
-     * accessible from listener callbacks. */
-    if (!dds_entity_cb_propagate_begin(entity)) {
-        /* An entity in the hierarchy is probably being deleted. */
-        return;
-    }
+    /* The reader needs to be unlocked when propagating the (possible) listener
+     * call because the application should be able to call this reader within
+     * the callback function. */
+    dds_reader_unlock(rd);
 
     /* DATA_AVAILABLE is handled differently to normal status changes. */
     if (data->status == DDS_DATA_AVAILABLE_STATUS) {
-        /* First, try to ship it off to its parent subscriber or participant as DDS_DATA_ON_READERS_STATUS. */
-        call = dds_entity_cp_propagate_call(rd->m_entity.m_parent, entity, DDS_DATA_ON_READERS_STATUS, NULL, true);
-
-        if (!call) {
-            /* No parent was interested. What about myself with DDS_DATA_AVAILABLE_STATUS? */
-            call = dds_entity_cp_propagate_call(entity, entity, DDS_DATA_AVAILABLE_STATUS, NULL, false);
+        dds_entity *parent = rd->m_entity.m_parent;
+        /* First, try to ship it off to its parent(s) DDS_DATA_ON_READERS_STATUS.
+         * But that only makes sense when the parent is actually a subscriber (a subscriber
+         * needs to be supplied when calling the data_on_readers listener function). */
+        ret = DDS_RETCODE_NO_DATA;
+        if (dds_entity_kind(parent->m_hdl) == DDS_KIND_SUBSCRIBER) {
+            ret = dds_entity_listener_propagation(parent, parent, DDS_DATA_ON_READERS_STATUS, NULL, true);
         }
 
-        if (!call) {
-            /* Nobody was interested. Set the status to maybe force a trigger on the subscriber. */
-            dds_entity_status_set(rd->m_entity.m_parent, DDS_DATA_ON_READERS_STATUS);
-            dds_entity_status_signal(rd->m_entity.m_parent);
+        if (ret == DDS_RETCODE_NO_DATA) {
+            /* No parent was interested (NO_DATA == NO_CALL).
+             * What about myself with DDS_DATA_AVAILABLE_STATUS? */
+            ret = dds_entity_listener_propagation(entity, entity, DDS_DATA_AVAILABLE_STATUS, NULL, false);
+        }
+
+        if ((ret == DDS_RETCODE_NO_DATA) && (dds_entity_kind(parent->m_hdl) == DDS_KIND_SUBSCRIBER)) {
+            /* Nobody was interested (NO_DATA == NO_CALL). Set the status on the subscriber. */
+            dds_entity_status_set(parent, DDS_DATA_ON_READERS_STATUS);
+            /* Notify possible interested observers of the subscriber. */
+            dds_entity_status_signal(parent);
         }
     } else {
         /* Is anybody interested within the entity hierarchy through listeners? */
-        call = dds_entity_cp_propagate_call(entity, entity, data->status, metrics, true);
+        ret = dds_entity_listener_propagation(entity, entity, data->status, metrics, true);
     }
 
-    /* Let possible waits continue. */
-    dds_entity_cb_propagate_end(entity);
-
-    if (call) {
+    if (ret == DDS_RETCODE_OK) {
         /* Event was eaten by a listener. */
         if (dds_reader_lock(((dds_entity*)entity)->m_hdl, &rd) == DDS_RETCODE_OK) {
             assert(rd == entity);
@@ -273,22 +273,27 @@ void dds_reader_status_cb (void * entity, const status_cb_data_t * data)
         } else {
             /* There's a deletion or closing going on. */
         }
-    } else {
-        /* Nobody was interested through a listener. Set the status to maybe force a trigger. */
+    } else if (ret == DDS_RETCODE_NO_DATA) {
+        /* Nobody was interested through a listener (NO_DATA == NO_CALL): set the status. */
         dds_entity_status_set(entity, data->status);
+        /* Notify possible interested observers. */
         dds_entity_status_signal(entity);
+    } else {
+        /* Something went wrong up the hierarchy.
+         * Likely, a parent is in the process of being deleted. */
     }
 }
+
 
 _Pre_satisfies_(((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER ) ||\
                 ((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
 _Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
 dds_entity_t
 dds_create_reader(
-        dds_entity_t participant_or_subscriber,
-        dds_entity_t topic,
-        const dds_qos_t *qos,
-        const dds_listener_t *listener)
+        _In_ dds_entity_t participant_or_subscriber,
+        _In_ dds_entity_t topic,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener)
 {
     dds_qos_t * rqos;
     int32_t errnr;
@@ -369,14 +374,16 @@ dds_create_reader(
         assert(0);
     }
 
-    dds_entity_unlock(tp);
-    dds_entity_unlock(parent);
+    os_mutexUnlock(&tp->m_mutex);
+    os_mutexUnlock(&parent->m_mutex);
 
     if (asleep) {
         thread_state_awake (thr);
     }
     rd->m_rd = new_reader(&rd->m_entity.m_guid, NULL, &parent->m_participant->m_guid, ((dds_topic*)tp)->m_stopic,
                           rqos, rhc, dds_reader_status_cb, rd);
+    os_mutexLock(&parent->m_mutex);
+    os_mutexLock(&tp->m_mutex);
     assert (rd->m_rd);
     if (asleep) {
         thread_state_asleep (thr);
@@ -386,7 +393,8 @@ dds_create_reader(
     if (dds_global.m_dur_reader && (rd->m_entity.m_qos->durability.kind > NN_TRANSIENT_LOCAL_DURABILITY_QOS)) {
         (dds_global.m_dur_reader) (rd, rhc);
     }
-
+    dds_entity_unlock(tp);
+    dds_entity_unlock(parent);
     return reader;
 }
 
@@ -483,7 +491,7 @@ dds_entity_t
 dds_get_subscriber(
         _In_ dds_entity_t entity)
 {
-    if (entity > 0) {
+    if (entity >= 0) {
         if (dds_entity_kind(entity) == DDS_KIND_READER) {
             return dds_get_parent(entity);
         } else if (dds_entity_kind(entity) == DDS_KIND_COND_READ) {
@@ -491,7 +499,12 @@ dds_get_subscriber(
         } else if (dds_entity_kind(entity) == DDS_KIND_COND_QUERY) {
             return dds_get_subscriber(dds_get_parent(entity));
         } else {
-            return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_READER, DDS_ERR_M1);
+            dds_return_t ret = dds_valid_hdl(entity, DDS_KIND_DONTCARE);
+            if (ret == DDS_RETCODE_OK) {
+                return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_COND, DDS_ERR_M1);
+            } else {
+                return (dds_entity_t)DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+            }
         }
     }
     return entity;
