@@ -399,7 +399,6 @@ dds_return_loan(
         _Inout_updates_(bufsz) void **buf,
         _In_ size_t bufsz)
 {
-    uint32_t i;
     uint32_t ret;
     const dds_topic_descriptor_t * desc;
     dds_reader *rd;

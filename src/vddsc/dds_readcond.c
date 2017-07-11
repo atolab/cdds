@@ -47,11 +47,8 @@ dds_create_readcondition(
     ret = dds_reader_lock(reader, &rd);
     if (ret == DDS_RETCODE_OK) {
         dds_readcond *cond = dds_create_readcond(rd, DDS_KIND_COND_READ, mask);
-        if (cond) {
-            hdl = cond->m_entity.m_hdl;
-        } else {
-            hdl = DDS_ERRNO(DDS_RETCODE_OUT_OF_RESOURCES, DDS_MOD_COND, DDS_ERR_M3);
-        }
+        assert(cond);
+        hdl = cond->m_entity.m_hdl;
         dds_reader_unlock(rd);
     } else {
         hdl = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M2);

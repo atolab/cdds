@@ -19,8 +19,8 @@ void create_entities(void)
     reader = dds_create_reader(participant, topic, NULL, NULL);
     cr_assert_gt(reader, 0);
 
-    //read_condition = dds_readcondition_create(reader, DDS_ANY_STATE);
-    //cr_assert_gt(read_condition);
+    read_condition = dds_create_readcondition(reader, DDS_ANY_STATE);
+    cr_assert_gt(read_condition, 0);
 }
 
 void delete_entities(void)
@@ -134,13 +134,17 @@ Test(vddsc_reader, return_loan_success, .init = create_entities, .fini = delete_
     cr_expect_eq(dds_err_nr(result), DDS_RETCODE_OK, "Return empty loan via reader entity, Expected(%s) Returned(%s)",
         DDS_TO_STRING(DDS_RETCODE_OK),
         dds_err_str(result));
+    delete_loan_buf(buf, 10, true);
 
-#if 0 /* TODO enable once dds_condition_t has been refactored to dds_entity_t */
     buf = create_loan_buf(10, false);
     result = dds_return_loan(read_condition, buf, 10);
     cr_expect_eq(dds_err_nr(result), DDS_RETCODE_OK, "Return loan of size 10 via read-condition entity, Expected(%s) Returned(%s)",
         DDS_TO_STRING(DDS_RETCODE_OK),
         dds_err_str(result));
-#endif
+
+    result = dds_return_loan(read_condition, &buf2, 0);
+    cr_expect_eq(dds_err_nr(result), DDS_RETCODE_OK, "Return empty loan via read-condition entity, Expected(%s) Returned(%s)",
+        DDS_TO_STRING(DDS_RETCODE_OK),
+        dds_err_str(result));
     delete_loan_buf(buf, 10, true);
 }

@@ -180,6 +180,7 @@ readcondition_init(void)
         }
     }
 
+    dds_qos_delete(qos);
 }
 
 static void
@@ -797,6 +798,27 @@ Test(vddsc_readcondition_read, with_mask, .init=readcondition_init, .fini=readco
 }
 /*************************************************************************************************/
 
+/*************************************************************************************************/
+Test(vddsc_readcondition_read, already_deleted, .init=readcondition_init, .fini=readcondition_fini)
+{
+    dds_entity_t condition;
+    dds_return_t ret;
+
+    /* Create condition. */
+    condition = dds_create_readcondition(g_reader, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+    cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
+
+    /* Delete condition. */
+    ret = dds_delete(condition);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to delete prerequisite condition");
+
+    /* Try to read with a deleted condition. */
+    ret = dds_read(condition, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
+    cr_expect_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED);
+}
+/*************************************************************************************************/
+
+
 
 
 
@@ -1324,6 +1346,26 @@ Test(vddsc_readcondition_take, with_mask, .init=readcondition_init, .fini=readco
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_readcondition_take, already_deleted, .init=readcondition_init, .fini=readcondition_fini)
+{
+    dds_entity_t condition;
+    dds_return_t ret;
+
+    /* Create condition. */
+    condition = dds_create_readcondition(g_reader, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+    cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
+
+    /* Delete condition. */
+    ret = dds_delete(condition);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to delete prerequisite condition");
+
+    /* Try to take with a deleted condition. */
+    ret = dds_take(condition, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
+    cr_expect_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED);
 }
 /*************************************************************************************************/
 
