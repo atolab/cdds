@@ -1,4 +1,3 @@
-#include "os/os.h"
 #include "dds.h"
 #include "Throughput.h"
 #include <stdio.h>
@@ -275,7 +274,7 @@ int main (int argc, char **argv)
 
     rd_listener = dds_listener_create(NULL);
     //memset (&rd_listener, 0, sizeof (rd_listener));
-
+    DDS_ERR_CHECK ((rd_listener == NULL) ? -1 : 0, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     //OS_API void dds_lset_data_available (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_data_available_fn callback);
     dds_lset_data_available(rd_listener, data_available_handler);
@@ -283,7 +282,8 @@ int main (int argc, char **argv)
 
     /* A Read Condition is created which is triggered when data is available to read */
 
-    waitSet = dds_waitset_create ();
+    waitSet = dds_create_waitset (participant);
+    DDS_ERR_CHECK (waitSet, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     gCond = dds_guardcondition_create ();
     status = dds_waitset_attach (waitSet, gCond, gCond);

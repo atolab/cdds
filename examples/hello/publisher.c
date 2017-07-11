@@ -21,10 +21,12 @@ int main (int argc, char ** argv)
   /* Create a Participant */
 
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  DDS_ERR_CHECK (participant, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   /* Create a Topic */
 
   topic = dds_create_topic (participant, &HelloWorldData_Msg_desc, "HelloWorldData_Msg", NULL, NULL);
+  DDS_ERR_CHECK (topic, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   /* Create a Publisher */
 

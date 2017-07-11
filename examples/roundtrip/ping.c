@@ -1,10 +1,10 @@
-#include "os/os.h"
 #include "dds.h"
 #include "RoundTrip.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <inttypes.h>
 
 #define TIME_STATS_SIZE_INCREMENT 50000
 #define MAX_SAMPLES 100
@@ -225,7 +225,7 @@ int main (int argc, char *argv[])
   dds_qos_delete (drQos);
 
   terminated = dds_guardcondition_create ();
-  waitSet = dds_waitset_create ();
+  waitSet = dds_create_waitset (participant);
   readCond = dds_readcondition_create (reader, DDS_ANY_STATE);
 
   status = dds_waitset_attach (waitSet, readCond, (dds_attach_t)(intptr_t)reader);

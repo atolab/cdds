@@ -1,4 +1,3 @@
-#include "os/os.h"
 #include "dds.h"
 #include "RoundTrip.h"
 #include <stdio.h>
@@ -107,7 +106,7 @@ int main (int argc, char *argv[])
   dds_qos_delete (qos);
 
   terminated = dds_guardcondition_create ();
-  waitSet = dds_waitset_create ();
+  waitSet = dds_create_waitset (participant);
   readCond = dds_readcondition_create (reader, DDS_ANY_STATE);
   status = dds_waitset_attach (waitSet, readCond, (dds_attach_t)(intptr_t)reader);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
