@@ -66,13 +66,18 @@ dds_entity_t
 dds_get_datareader(
         _In_ dds_entity_t readcond)
 {
-    if (readcond > 0) {
+    if (readcond >= 0) {
         if (dds_entity_kind(readcond) == DDS_KIND_COND_READ) {
             return dds_get_parent(readcond);
         } else if (dds_entity_kind(readcond) == DDS_KIND_COND_QUERY) {
             return dds_get_parent(readcond);
         } else {
-            return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_READER, DDS_ERR_M1);
+            dds_return_t ret = dds_valid_hdl(readcond, DDS_KIND_DONTCARE);
+            if (ret == DDS_RETCODE_OK) {
+                return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_COND, DDS_ERR_M1);
+            } else {
+                return (dds_entity_t)DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+            }
         }
     }
     return readcond;

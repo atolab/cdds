@@ -491,7 +491,7 @@ dds_entity_t
 dds_get_subscriber(
         _In_ dds_entity_t entity)
 {
-    if (entity > 0) {
+    if (entity >= 0) {
         if (dds_entity_kind(entity) == DDS_KIND_READER) {
             return dds_get_parent(entity);
         } else if (dds_entity_kind(entity) == DDS_KIND_COND_READ) {
@@ -499,7 +499,12 @@ dds_get_subscriber(
         } else if (dds_entity_kind(entity) == DDS_KIND_COND_QUERY) {
             return dds_get_subscriber(dds_get_parent(entity));
         } else {
-            return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_READER, DDS_ERR_M1);
+            dds_return_t ret = dds_valid_hdl(entity, DDS_KIND_DONTCARE);
+            if (ret == DDS_RETCODE_OK) {
+                return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_COND, DDS_ERR_M1);
+            } else {
+                return (dds_entity_t)DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+            }
         }
     }
     return entity;

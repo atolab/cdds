@@ -40,6 +40,11 @@ dds_entity_status_signal(
         _In_ dds_entity *e);
 
 _Check_return_ dds_return_t
+dds_valid_hdl(
+        _In_ dds_entity_t hdl,
+        _In_ dds_entity_kind_t kind);
+
+_Check_return_ dds_return_t
 dds_entity_lock(
         _In_ dds_entity_t hdl,
         _In_ dds_entity_kind_t kind,

@@ -410,11 +410,16 @@ dds_entity_t
 dds_get_publisher(
         _In_ dds_entity_t writer)
 {
-    if (writer > 0) {
+    if (writer >= 0) {
         if (dds_entity_kind(writer) == DDS_KIND_WRITER) {
             return dds_get_parent(writer);
         } else {
-            return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_WRITER, DDS_ERR_M1);
+            dds_return_t ret = dds_valid_hdl(writer, DDS_KIND_DONTCARE);
+            if (ret == DDS_RETCODE_OK) {
+                return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_COND, DDS_ERR_M1);
+            } else {
+                return (dds_entity_t)DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+            }
         }
     }
     return writer;

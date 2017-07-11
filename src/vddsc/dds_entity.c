@@ -395,7 +395,7 @@ dds_get_children(
         _In_        size_t size)
 {
     dds_entity *e;
-    dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, DDS_ERR_M2);
     if (((children != NULL) && (size  > 0) && (size < INT32_MAX)) ||
         ((children == NULL) && (size == 0)) ){
         ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
@@ -415,9 +415,11 @@ dds_get_children(
                 iter = iter->m_next;
             }
             dds_entity_unlock(e);
+        } else {
+            ret = DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
         }
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+    return ret;
 }
 
 
@@ -737,7 +739,24 @@ dds_instancehandle_get(
     return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
 }
 
-
+_Check_return_ dds_return_t
+dds_valid_hdl(
+        _In_ dds_entity_t hdl,
+        _In_ dds_entity_kind_t kind)
+{
+    dds_return_t ret = hdl;
+    ut_handle_t utr;
+    if (hdl >= 0) {
+        utr = ut_handle_status(hdl, NULL, kind);
+        ret = ((utr == UT_HANDLE_OK)           ? DDS_RETCODE_OK                :
+               (utr == UT_HANDLE_UNEQUAL_KIND) ? DDS_RETCODE_ILLEGAL_OPERATION :
+               (utr == UT_HANDLE_INVALID)      ? DDS_RETCODE_BAD_PARAMETER     :
+               (utr == UT_HANDLE_DELETED)      ? DDS_RETCODE_ALREADY_DELETED   :
+               (utr == UT_HANDLE_CLOSED)       ? DDS_RETCODE_ALREADY_DELETED   :
+                                                 DDS_RETCODE_ERROR             );
+    }
+    return ret;
+}
 
 _Check_return_ dds_return_t
 dds_entity_lock(

@@ -190,6 +190,37 @@ ut_handle_delete(
 
 _Pre_satisfies_((kind & UT_HANDLE_KIND_MASK) && !(kind & ~UT_HANDLE_KIND_MASK))
 _Check_return_ ut_handle_retcode_t
+ut_handle_status(
+        _In_        ut_handle_t hdl,
+        _Inout_opt_ struct ut_handlelink *link,
+        _In_        int32_t kind)
+{
+    struct ut_handlelink *info = link;
+    ut_handle_retcode_t   ret = UT_HANDLE_OK;
+
+    if (hs == NULL) {
+        return (ut_handle_t)UT_HANDLE_INVALID;
+    }
+
+    os_mutexLock(&hs->mutex);
+    if (info == NULL) {
+        ret = lookup_handle(hdl, kind, &info);
+    }
+    if (ret == UT_HANDLE_OK) {
+        assert(info);
+        assert(hdl == info->hdl);
+        if (info->flags & HDL_FLAG_CLOSED) {
+            ret = UT_HANDLE_CLOSED;
+        }
+    }
+    os_mutexUnlock(&hs->mutex);
+
+    return ret;
+}
+
+
+_Pre_satisfies_((kind & UT_HANDLE_KIND_MASK) && !(kind & ~UT_HANDLE_KIND_MASK))
+_Check_return_ ut_handle_retcode_t
 ut_handle_claim(
         _In_        ut_handle_t hdl,
         _Inout_opt_ struct ut_handlelink *link,
