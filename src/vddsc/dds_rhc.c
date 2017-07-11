@@ -1513,6 +1513,27 @@ static unsigned qmask_from_dcpsquery (unsigned sample_states, unsigned view_stat
   return qminv;
 }
 
+static unsigned qmask_from_mask_n_cond(uint32_t mask, dds_readcond* cond)
+{
+    unsigned qminv;
+    if (mask == DDS_NOT_SET_STATE) {
+        if (cond) {
+            /* No mask set, use the one from the condition. */
+            qminv = cond->m_qminv;
+        } else {
+            /* No mask set and no condition: read all. */
+            qminv = qmask_from_dcpsquery(DDS_ANY_SAMPLE_STATE, DDS_ANY_VIEW_STATE, DDS_ANY_INSTANCE_STATE);
+        }
+    } else {
+        /* Merge given mask with the condition mask when needed. */
+        qminv = qmask_from_dcpsquery(mask & DDS_ANY_SAMPLE_STATE, mask & DDS_ANY_VIEW_STATE, mask & DDS_ANY_INSTANCE_STATE);
+        if (cond != NULL) {
+            qminv &= cond->m_qminv;
+        }
+    }
+    return qminv;
+}
+
 static void set_sample_info (dds_sample_info_t *si, const struct rhc_instance *inst, const struct rhc_sample *sample)
 {
   si->sample_state = sample->isread ? DDS_SST_READ : DDS_SST_NOT_READ;
@@ -1667,7 +1688,9 @@ static int dds_rhc_read_w_qminv
             }
           }
 
-          patch_generations (info_seq + n_first, n - n_first - 1);
+          if (n > n_first) {
+              patch_generations (info_seq + n_first, n - n_first - 1);
+          }
         }
         if (inst->iid == handle)
         {
@@ -1826,7 +1849,9 @@ static int dds_rhc_take_w_qminv
             }
           }
 
-          patch_generations (info_seq + n_first, n - n_first - 1);
+          if (n > n_first) {
+              patch_generations (info_seq + n_first, n - n_first - 1);
+          }
         }
         if (iid == handle)
         {
@@ -1973,7 +1998,9 @@ static int dds_rhc_takecdr_w_qminv
             }
           }
 
-          patch_generations (info_seq + n_first, n - n_first - 1);
+          if (n > n_first) {
+              patch_generations (info_seq + n_first, n - n_first - 1);
+          }
         }
         if (iid == handle)
         {
@@ -2188,39 +2215,34 @@ static bool update_conditions_locked
  ******  READ/TAKE  ******
  *************************/
 
-int dds_rhc_read
-(
-  struct rhc *rhc, bool lock, void ** values, dds_sample_info_t *info_seq, uint32_t max_samples,
-  unsigned sample_states, unsigned view_states, unsigned instance_states, dds_instance_handle_t handle)
+int
+dds_rhc_read(
+        struct rhc *rhc,
+        bool lock,
+        void ** values,
+        dds_sample_info_t *info_seq,
+        uint32_t max_samples,
+        uint32_t mask,
+        dds_instance_handle_t handle,
+        dds_readcond *cond)
 {
-  unsigned qminv = qmask_from_dcpsquery (sample_states, view_states, instance_states);
-  return dds_rhc_read_w_qminv (rhc, lock, values, info_seq, max_samples, qminv, handle, NULL);
+    unsigned qminv = qmask_from_mask_n_cond(mask, cond);
+    return dds_rhc_read_w_qminv(rhc, lock, values, info_seq, max_samples, qminv, handle, cond);
 }
 
-int dds_rhc_read_w_condition
-(
-  struct rhc *rhc, bool lock, void ** values, dds_sample_info_t *info_seq, uint32_t max_samples,
-  dds_readcond *cond, dds_instance_handle_t handle
-)
+int
+dds_rhc_take(
+        struct rhc *rhc,
+        bool lock,
+        void ** values,
+        dds_sample_info_t *info_seq,
+        uint32_t max_samples,
+        uint32_t mask,
+        dds_instance_handle_t handle,
+        dds_readcond *cond)
 {
-  return dds_rhc_read_w_qminv (rhc, lock, values, info_seq, max_samples, cond->m_qminv, handle, cond);
-}
-
-int dds_rhc_take
-(
-  struct rhc *rhc, bool lock, void ** values, dds_sample_info_t *info_seq, uint32_t max_samples,
-  unsigned sample_states, unsigned view_states, unsigned instance_states, dds_instance_handle_t handle)
-{
-  unsigned qminv = qmask_from_dcpsquery (sample_states, view_states, instance_states);
-  return dds_rhc_take_w_qminv (rhc, lock, values, info_seq, max_samples, qminv, handle, NULL);
-}
-
-int dds_rhc_take_w_condition
-(
-  struct rhc *rhc, bool lock, void ** values, dds_sample_info_t *info_seq, uint32_t max_samples,
-  dds_readcond *cond, dds_instance_handle_t handle)
-{
-  return dds_rhc_take_w_qminv (rhc, lock, values, info_seq, max_samples, cond->m_qminv, handle, cond);
+    unsigned qminv = qmask_from_mask_n_cond(mask, cond);
+    return dds_rhc_take_w_qminv(rhc, lock, values, info_seq, max_samples, qminv, handle, cond);
 }
 
 int dds_rhc_takecdr

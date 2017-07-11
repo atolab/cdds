@@ -56,7 +56,15 @@ static void dds_instance_remove (const dds_topic * topic,  const void * data, dd
   }
   if (inst)
   {
+    struct thread_state1 * const thr = lookup_thread_state();
+    const bool asleep = thr ? !vtime_awake_p(thr->vtime) : false;
+    if (asleep) {
+      thread_state_awake(thr);
+    }
     dds_tkmap_instance_unref (inst);
+    if (asleep) {
+      thread_state_asleep(thr);
+    }
   }
 }
 
