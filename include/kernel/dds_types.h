@@ -159,7 +159,6 @@ typedef struct dds_entity
   nn_guid_t m_guid;
   uint32_t m_status_enable;
   uint32_t m_flags;
-  uint32_t m_cb_waiting;
   uint32_t m_cb_count;
   os_mutex m_mutex;
   os_cond m_cond;
