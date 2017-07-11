@@ -373,11 +373,8 @@ dds_get_participant (
     dds_entity_t hdl = entity;
     int32_t errnr = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
     if (errnr == DDS_RETCODE_OK) {
-        if (e->m_participant) {
-            hdl = e->m_participant->m_hdl;
-        } else {
-            hdl = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_ENTITY, 0);
-        }
+        assert(e->m_participant);
+        hdl = e->m_participant->m_hdl;
         dds_entity_unlock(e);
     } else {
         hdl = DDS_ERRNO(errnr, DDS_MOD_ENTITY, 0);

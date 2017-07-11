@@ -315,6 +315,16 @@ Test(vddsc_entity_get_children, null, .init=hierarchy_init, .fini=hierarchy_fini
 /*************************************************************************************************/
 
 /*************************************************************************************************/
+Test(vddsc_entity_get_children, invalid_size, .init=hierarchy_init, .fini=hierarchy_fini)
+{
+    dds_return_t ret;
+    dds_entity_t child;
+    ret = dds_get_children(g_participant, &child, INT32_MAX);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
 Test(vddsc_entity_get_children, too_small, .init=hierarchy_init, .fini=hierarchy_fini)
 {
     dds_return_t ret;
