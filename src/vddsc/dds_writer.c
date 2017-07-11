@@ -395,8 +395,6 @@ dds_create_writer(
     dds_entity_unlock(tp);
     dds_entity_unlock(pp_or_pub);
     return writer;
-
-    return writer;
 err_bad_qos:
     dds_entity_unlock(tp);
 err_tp_lock:
