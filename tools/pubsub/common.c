@@ -190,8 +190,8 @@ static void xsnprintf (char *buf, size_t bufsz, size_t *p, const char *fmt, ...)
 void hist_print (struct hist *h, uint64_t dt, int reset)
 {
 //  char l[h->nbins + 200];
-  char l[30 + 200];
-  char hist[30+1];
+  char *l = (char *) os_malloc(sizeof(char) * (h->nbins + 200));  //variable size array malloc
+  char *hist = (char *) os_malloc(sizeof(char) * (h->nbins + 1)); //variable size array malloc
 //  char hist[h->nbins+1];
   double dt_s = dt / 1e9, avg;
   uint64_t peak = 0, cnt = h->under + h->over;
@@ -273,6 +273,8 @@ void hist_print (struct hist *h, uint64_t dt, int reset)
 
   (void) p;
   puts (l);
+  os_free(l);
+  os_free(hist);
   if (reset)
     hist_reset (h);
 }

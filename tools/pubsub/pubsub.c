@@ -1460,7 +1460,7 @@ static void pub_do_auto (const struct writerspec *spec)
 	PRINTD("starting of pub_do_auto\n");
 	int result;
 //	dds_instance_handle_t handle[nkeyvals];
-	dds_instance_handle_t *handle = (dds_instance_handle_t*) os_malloc(sizeof(dds_instance_handle_t)*nkeyvals);
+	dds_instance_handle_t *handle = (dds_instance_handle_t*) os_malloc(sizeof(dds_instance_handle_t)*nkeyvals); //variable size array malloc
   uint64_t ntot = 0, tfirst, tlast, tprev, tfirst0, tstop;
   struct hist *hist = hist_new (30, 1000, 0);
   int k = 0;
@@ -1601,8 +1601,10 @@ static void pub_do_auto (const struct writerspec *spec)
   hist_print(hist, tlast - tfirst, 0);
   hist_free (hist);
   printf ("total writes: %" PRIu64 " (%e/s)\n", ntot, ntot * 1e9 / (tlast - tfirst0));
-  if (spec->topicsel == KS)
+  if (spec->topicsel == KS) {
 	  dds_free(d.ks.baggage._buffer);
+  }
+  os_free(handle);
 }
 
 static char *pub_do_nonarb(const struct writerspec *spec, int fdin, uint32_t *seq)
@@ -1997,6 +1999,7 @@ static void *subthread (void *vspec)
   int ret = DDS_RETCODE_OK;
   uintptr_t exitcode = 0;
   char tag[256];
+  size_t nxs = 0;
 
   snprintf(tag, sizeof(tag), "[%u:%s]", spec->idx, spec->tpname);
 
@@ -2009,6 +2012,7 @@ static void *subthread (void *vspec)
   ws = dds_create_waitset(dp);
   if ((result = dds_waitset_attach(ws, termcond, NULL)) != DDS_RETCODE_OK)
     error ("dds_waitset_attach (termcomd): %d (%s)\n", (int) result, dds_strerror (result));
+  nxs++; //increased because of the waitset_attach
   switch (spec->mode)
   {
     case MODE_NONE:
@@ -2017,17 +2021,17 @@ static void *subthread (void *vspec)
       break;
     case MODE_PRINT:
       /* complicated triggers */
-    	if ((rdcondA = dds_create_readcondition(rd, spec->use_take ? DDS_ANY_SAMPLE_STATE : DDS_ANY_VIEW_STATE)) == NULL)
-    		break;
     	if ((rdcondA = dds_create_readcondition(rd, spec->use_take ? (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
                                                                    : (DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE))) == NULL)
     		error ("dds_readcondition_create (rdcondA)\n");
     	if ((result = dds_waitset_attach (ws, rdcondA, NULL)) != DDS_RETCODE_OK)
     		error ("dds_waitset_attach (rdcondA): %d (%s)\n", (int) result, dds_strerror (result));
+    	nxs++; //increased because of the waitset_attach
     	if ((rdcondD = dds_create_readcondition (rd, (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE))) == NULL)
     		error ("dds_readcondition_create (rdcondD)\n");
     	if ((result = dds_waitset_attach (ws, rdcondD, NULL)) != DDS_RETCODE_OK)
     		error ("dds_waitset_attach (rdcondD): %d (%s)\n", (int) result, dds_strerror (result));
+    	nxs++; //increased because of the waitset_attach
     	break;
     case MODE_CHECK:
     case MODE_DUMP:
@@ -2040,6 +2044,7 @@ static void *subthread (void *vspec)
 //		  error ("dds_statuscondition_get\n");
 		if ((result = dds_waitset_attach (ws, stcond, NULL)) != DDS_RETCODE_OK)
 		  error ("dds_waitset_attach (stcond): %d (%s)\n", (int) result, dds_strerror (result));
+		nxs++; //increased because of the waitset_attach
       }
       break;
   }
@@ -2055,13 +2060,12 @@ static void *subthread (void *vspec)
 //      Keyed256 *k256;
 //      OneULong *ou;
 //    } mseq;
-    void **mseq = (void **) os_malloc(sizeof(void*) * (spec->read_maxsamples));
+    void **mseq = (void **) os_malloc(sizeof(void*) * (spec->read_maxsamples)); //variable size array malloc
 
-    dds_sample_info_t *iseq = (dds_sample_info_t *) os_malloc (sizeof(dds_sample_info_t) * spec->read_maxsamples);
+    dds_sample_info_t *iseq = (dds_sample_info_t *) os_malloc (sizeof(dds_sample_info_t) * spec->read_maxsamples); //variable size array malloc
 //    dds_condition_seq *glist = os_malloc(sizeof(*glist));
     dds_duration_t timeout = (uint64_t)100000000;
-    dds_attach_t *xs = os_malloc(sizeof(*xs));
-    size_t nxs = 0;
+    dds_attach_t *xs = os_malloc(sizeof(dds_attach_t) * nxs); //variable size array malloc
 //    dds_entity_t wsReader = 0;
 //    uint32_t reader_status;
     unsigned long long tstart = 0, tfirst = 0, tprint = 0;
@@ -2098,9 +2102,9 @@ static void *subthread (void *vspec)
 //      dds_waitset_get_conditions(ws, glist);
 
       tnow = nowll ();
-      for (gi = 0; gi < (spec->polling ? 1 : sizeof(xs)); gi++)
+      for (gi = 0; gi < (spec->polling ? 1 : sizeof(*xs)); gi++)
       {
-    	  const dds_entity_t cond = spec->polling ? 0 : (dds_entity_t) xs[gi];
+    	  dds_entity_t cond = spec->polling ? 0 : xs[gi];
     	  unsigned i;
 
         assert (spec->polling || cond == rdcondA || cond == rdcondD || cond == stcond || cond == termcond);
@@ -2226,7 +2230,7 @@ static void *subthread (void *vspec)
           case MODE_ZEROLOAD:
             break;
         }
-        dds_return_loan(rd, mseq, spec->read_maxsamples);
+        int returnVal = dds_return_loan(rd, mseq, spec->read_maxsamples);
         if (spec->sleep_us) {
         	os_time delay;
         	delay.tv_sec = 0;
@@ -2237,6 +2241,7 @@ static void *subthread (void *vspec)
       }
 //      dds_free(glist->_buffer);
     }
+    os_free(xs);
 //    os_free (glist);
 
     if (spec->mode == MODE_PRINT || spec->mode == MODE_DUMP || once_mode)
@@ -2280,13 +2285,11 @@ static void *subthread (void *vspec)
       }
 //      if (need_access && (result = DDS_Subscriber_end_access (sub)) != DDS_RETCODE_OK)
 //        error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_strerror (result));
-      dds_return_loan(rd, mseq, spec->read_maxsamples);
+      int returnVal = dds_return_loan(rd, mseq, spec->read_maxsamples);
     }
-
-    dds_free(iseq);
+    os_free(iseq);
     int iter = 0;
-    for(iter = 0; iter < spec->read_maxsamples; iter++)
-    	dds_free(mseq);
+    os_free(mseq);
     if (spec->mode == MODE_CHECK)
       printf ("received: %lld, out of seq: %lld\n", nreceived, out_of_seq);
     fini_eseq_admin (&eseq_admin);
@@ -2583,15 +2586,15 @@ int main (int argc, char *argv[])
 
 	struct qos *qos;
 //	const char *qtopic[argc];
-	const char **qtopic = (const char **) os_malloc (sizeof(char *) * argc);
+	const char **qtopic = (const char **) os_malloc (sizeof(char *) * argc); //variable size array malloc
 //	const char *qreader[2+argc];
-	const char **qreader = (const char **) os_malloc (sizeof(char *) * (2+argc));
+	const char **qreader = (const char **) os_malloc (sizeof(char *) * (2+argc)); //variable size array malloc
 //	const char *qwriter[2+argc];
-	const char **qwriter = (const char **) os_malloc (sizeof(char *) * (2+argc));
+	const char **qwriter = (const char **) os_malloc (sizeof(char *) * (2+argc)); //variable size array malloc
 //	const char *qpublisher[2+argc];
-	const char **qpublisher = (const char **) os_malloc (sizeof(char *) * (2+argc));
+	const char **qpublisher = (const char **) os_malloc (sizeof(char *) * (2+argc)); //variable size array malloc
 //	const char *qsubscriber[2+argc];
-	const char **qsubscriber = (const char **) os_malloc (sizeof(char *) * (2+argc));
+	const char **qsubscriber = (const char **) os_malloc (sizeof(char *) * (2+argc)); //variable size array malloc
 	int nqtopic = 0, nqreader = 0, nqwriter = 0;
 	int nqpublisher = 0, nqsubscriber = 0;
 	int opt, pos;
@@ -3012,7 +3015,7 @@ int main (int argc, char *argv[])
   set_systemid_env ();
 
   {
-    char *ps[argc - optind];
+    char **ps = (char **) os_malloc (sizeof(char *) * (argc - optind)); //variable size array malloc
     for (i = 0; i < (unsigned) (argc - optind); i++)
       ps[i] = expand_envvars (argv[(unsigned) optind + i]);
     if (want_reader)
@@ -3033,6 +3036,7 @@ int main (int argc, char *argv[])
     }
     for (i = 0; i < (unsigned) (argc - optind); i++)
     	os_free (ps[i]);
+    os_free(ps);
   }
 
   for (i = 0; i <= specidx; i++)
@@ -3302,6 +3306,12 @@ int main (int argc, char *argv[])
       os_free(m);
     }
   }
+
+  os_free(qtopic);
+  os_free(qpublisher);
+  os_free(qsubscriber);
+  os_free(qreader);
+  os_free(qwriter);
 
   for (i = 0; i <= specidx; i++)
   {
