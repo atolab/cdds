@@ -389,7 +389,6 @@ Test(vddsc_entity_get_children, subscriber, .init=hierarchy_init, .fini=hierarch
 Test(vddsc_entity_get_children, writer, .init=hierarchy_init, .fini=hierarchy_fini)
 {
     dds_return_t ret;
-    dds_entity_t child;
     ret = dds_get_children(g_writer, NULL, 0);
     cr_assert_eq(ret, 0);
 }
