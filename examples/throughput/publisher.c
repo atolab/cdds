@@ -253,7 +253,8 @@ int main (int argc, char **argv)
   }
 
   dds_free (sample.payload._buffer);
-  dds_delete (participant);
+  status = dds_delete (participant);
+  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   return result;
 }
