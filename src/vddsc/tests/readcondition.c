@@ -272,6 +272,101 @@ Theory((dds_entity_t *rdr), vddsc_readcondition_create, non_readers, .init=readc
 
 
 
+
+/**************************************************************************************************
+ *
+ * These will check the readcondition mask acquiring in various ways.
+ *
+ *************************************************************************************************/
+/*************************************************************************************************/
+Test(vddsc_readcondition_get_mask, deleted, .init=readcondition_init, .fini=readcondition_fini)
+{
+    uint32_t mask = DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+    dds_entity_t condition;
+    dds_return_t ret;
+    condition = dds_create_readcondition(g_reader, mask);
+    cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
+    dds_delete(condition);
+    mask = 0;
+    ret = dds_get_mask(condition, &mask);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_readcondition_get_mask, null, .init=readcondition_init, .fini=readcondition_fini)
+{
+    uint32_t mask = DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+    dds_entity_t condition;
+    dds_return_t ret;
+    condition = dds_create_readcondition(g_reader, mask);
+    cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
+    ret = dds_get_mask(condition, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+    dds_delete(condition);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_readcondition_get_mask, invalid_conditions) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t cond), vddsc_readcondition_get_mask, invalid_conditions, .init=readcondition_init, .fini=readcondition_fini)
+{
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+    dds_return_t ret;
+    uint32_t mask;
+
+    if (cond < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = cond;
+    }
+
+    ret = dds_get_mask(cond, &mask);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_readcondition_get_mask, non_conditions) = {
+        DataPoints(dds_entity_t*, &g_reader, &g_topic, &g_participant),
+};
+Theory((dds_entity_t *cond), vddsc_readcondition_get_mask, non_conditions, .init=readcondition_init, .fini=readcondition_fini)
+{
+    dds_return_t ret;
+    uint32_t mask;
+    ret = dds_get_mask(*cond, &mask);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_readcondition_get_mask, various_masks) = {
+        DataPoints(uint32_t, DDS_ANY_SAMPLE_STATE,  DDS_READ_SAMPLE_STATE,     DDS_NOT_READ_SAMPLE_STATE),
+        DataPoints(uint32_t, DDS_ANY_VIEW_STATE,     DDS_NEW_VIEW_STATE,       DDS_NOT_NEW_VIEW_STATE),
+        DataPoints(uint32_t, DDS_ANY_INSTANCE_STATE, DDS_ALIVE_INSTANCE_STATE, DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE, DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE),
+};
+Theory((uint32_t ss, uint32_t vs, uint32_t is), vddsc_readcondition_get_mask, various_masks, .init=readcondition_init, .fini=readcondition_fini)
+{
+    uint32_t maskIn  = ss | vs | is;
+    uint32_t maskOut = 0xFFFFFFFF;
+    dds_entity_t condition;
+    dds_return_t ret;
+
+    condition = dds_create_readcondition(g_reader, maskIn);
+    cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
+
+    ret = dds_get_mask(condition, &maskOut);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+    cr_assert_eq(maskIn, maskOut);
+
+    dds_delete(condition);
+}
+/*************************************************************************************************/
+
+
+
+
 /**************************************************************************************************
  *
  * These will check the readcondition reading in various ways.
@@ -323,6 +418,8 @@ Test(vddsc_readcondition_read, any, .init=readcondition_init, .fini=readconditio
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -372,6 +469,8 @@ Test(vddsc_readcondition_read, not_read_sample_state, .init=readcondition_init, 
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -421,6 +520,8 @@ Test(vddsc_readcondition_read, read_sample_state, .init=readcondition_init, .fin
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -470,6 +571,8 @@ Test(vddsc_readcondition_read, new_view_state, .init=readcondition_init, .fini=r
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -519,6 +622,8 @@ Test(vddsc_readcondition_read, not_new_view_state, .init=readcondition_init, .fi
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -568,6 +673,8 @@ Test(vddsc_readcondition_read, alive_instance_state, .init=readcondition_init, .
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -617,6 +724,8 @@ Test(vddsc_readcondition_read, disposed_instance_state, .init=readcondition_init
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -666,6 +775,8 @@ Test(vddsc_readcondition_read, no_writers_instance_state, .init=readcondition_in
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -715,6 +826,8 @@ Test(vddsc_readcondition_read, combination_of_states, .init=readcondition_init, 
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -743,6 +856,8 @@ Test(vddsc_readcondition_read, none, .init=readcondition_init, .fini=readconditi
      * |    5   |    2   |    1   | not_read | new | no_writers |
      * |    6   |    3   |    2   | not_read | new | alive      |
      */
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -755,8 +870,6 @@ Test(vddsc_readcondition_read, with_mask, .init=readcondition_init, .fini=readco
     /* Create condition. */
     condition = dds_create_readcondition(g_reader, DDS_NOT_READ_SAMPLE_STATE | DDS_NEW_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE);
     cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
-
-    //DDS_NOT_READ_SAMPLE_STATE | DDS_NOT_NEW_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE
 
     /* Read all samples that match the or'd masks. */
     ret = dds_read_mask(condition, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES,
@@ -795,6 +908,8 @@ Test(vddsc_readcondition_read, with_mask, .init=readcondition_init, .fini=readco
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -876,6 +991,8 @@ Test(vddsc_readcondition_take, any, .init=readcondition_init, .fini=readconditio
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -925,6 +1042,8 @@ Test(vddsc_readcondition_take, not_read_sample_state, .init=readcondition_init, 
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -974,6 +1093,8 @@ Test(vddsc_readcondition_take, read_sample_state, .init=readcondition_init, .fin
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1023,6 +1144,8 @@ Test(vddsc_readcondition_take, new_view_state, .init=readcondition_init, .fini=r
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1072,6 +1195,8 @@ Test(vddsc_readcondition_take, not_new_view_state, .init=readcondition_init, .fi
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1121,6 +1246,8 @@ Test(vddsc_readcondition_take, alive_instance_state, .init=readcondition_init, .
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1170,6 +1297,8 @@ Test(vddsc_readcondition_take, disposed_instance_state, .init=readcondition_init
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1219,6 +1348,8 @@ Test(vddsc_readcondition_take, no_writers_instance_state, .init=readcondition_in
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1268,6 +1399,8 @@ Test(vddsc_readcondition_take, combination_of_states, .init=readcondition_init, 
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1296,6 +1429,8 @@ Test(vddsc_readcondition_take, none, .init=readcondition_init, .fini=readconditi
      * |    5   |    2   |    1   | not_read | new | no_writers |
      * |    6   |    3   |    2   | not_read | new | alive      |
      */
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1346,6 +1481,8 @@ Test(vddsc_readcondition_take, with_mask, .init=readcondition_init, .fini=readco
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 

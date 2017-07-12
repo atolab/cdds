@@ -89,7 +89,7 @@ dds_sample_state_t;
  * \brief defines the view state of an instance relative to the samples
  * -# DDS_VST_NEW - DataReader is accessing the sample for the first time when the
  *                  instance is alive
- * -# DDS_VST_OLD - DataReader has accesssed the sample before
+ * -# DDS_VST_OLD - DataReader has accessed the sample before
  */
 typedef enum dds_view_state
 {
@@ -241,7 +241,7 @@ dds_enable(
  * This operation will delete the given entity. It will also automatically
  * delete all its children, childrens' children, etc entities.
  *
- * TODO: Link to generic dds entity relations.
+ * TODO: Link to generic dds entity relations documentation.
  *
  * @param[in]  entity  Entity from which to get its parent.
  *
@@ -270,7 +270,7 @@ dds_delete(
  * For instance, it will return the Publisher that was used when
  * creating a DataWriter (when that DataWriter was provided here).
  *
- * TODO: Link to generic dds entity relations.
+ * TODO: Link to generic dds entity relations documentation.
  *
  * @param[in]  entity  Entity from which to get its publisher.
  *
@@ -297,7 +297,7 @@ dds_get_publisher(
  * For instance, it will return the Subscriber that was used when
  * creating a DataReader (when that DataReader was provided here).
  *
- * TODO: Link to generic dds entity relations.
+ * TODO: Link to generic dds entity relations documentation.
  *
  * @param[in]  entity  Entity from which to get its subscriber.
  *
@@ -326,7 +326,7 @@ dds_get_subscriber(
  * For instance, it will return the DataReader that was used when
  * creating a ReadCondition (when that ReadCondition was provided here).
  *
- * TODO: Link to generic dds entity relations.
+ * TODO: Link to generic dds entity relations documentation.
  *
  * @param[in]  entity  Entity from which to get its datareader.
  *
@@ -340,11 +340,40 @@ dds_get_subscriber(
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-_Pre_satisfies_(((readcond & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((readcond & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
+_Pre_satisfies_(((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
 DDS_EXPORT dds_entity_t
 dds_get_datareader(
-        _In_ dds_entity_t readcond);
+        _In_ dds_entity_t condition);
+
+
+
+/**
+ * @brief Get the mask of a condition.
+ *
+ * This operation returns the mask that was used to create the given
+ * condition.
+ *
+ * @param[in]  condition  Read or Query condition that has a mask.
+ *
+ * @returns  0 - Success (given mask is set).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  The mask arg is NULL.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ */
+_Pre_satisfies_(((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
+dds_return_t
+dds_get_mask(
+        _In_ dds_entity_t condition,
+        _Out_ uint32_t   *mask);
 
 /* TODO: document. */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
@@ -452,7 +481,7 @@ dds_set_enabled_status(
  * This operation allows access to the existing set of QoS policies
  * for the entity.
  *
- * TODO: Link to generic QoS information.
+ * TODO: Link to generic QoS information documentation.
  *
  * @param[in]  e    Entity on which to get qos
  * @param[out] qos  Pointer to the qos structure that returns the set policies
@@ -493,7 +522,7 @@ dds_get_qos(
  *
  * Not all policies are changeable when the entity is enabled.
  *
- * TODO: Link to generic QoS information.
+ * TODO: Link to generic QoS information documentation.
  *
  * @note Currently only Latency Budget and Ownership Strength are changeable QoS
  *       that can be set.
@@ -675,7 +704,7 @@ dds_create_participant(
  * For instance, it will return the Participant that was used when
  * creating a Publisher (when that Publisher was provided here).
  *
- * TODO: Link to generic dds entity relations.
+ * TODO: Link to generic dds entity relations documentation.
  *
  * @param[in]  entity  Entity from which to get its parent.
  *
@@ -703,7 +732,7 @@ dds_get_parent(
  * creating a Publisher that was used to create a DataWriter (when that
  * DataWriter was provided here).
  *
- * TODO: Link to generic dds entity relations.
+ * TODO: Link to generic dds entity relations documentation.
  *
  * @param[in]  entity  Entity from which to get its participant.
  *
@@ -743,7 +772,7 @@ dds_get_participant (
  * When supplying NULL as list and 0 as size, you can use this to acquire
  * the number of children without having to pre-allocate a list.
  *
- * TODO: Link to generic dds entity relations.
+ * TODO: Link to generic dds entity relations documentation.
  *
  * @param[in]  entity   Entity from which to get its children.
  * @param[out] children Pre-allocated array to contain the found children.
@@ -1095,26 +1124,6 @@ dds_reader_wait_for_historical_data(
         dds_entity_t reader,
         dds_duration_t max_wait);
 
-
-/**
- * Description : Create a QueryCondtiion associated with a reader.
- *      Based on the mask value set, and the return value of the filter the readcondition gets triggered when
- *      data is available on the reader.
- *
- * Arguments :
- *   -# reader Reader entity on which the condition is created
- *   -# mask The sample_state, instance_state and view_state of the sample
- *   -# filter The filter function for the query
- *   -# Returns Status, 0 on success or non-zero value to indicate an error
- */
-typedef bool (*dds_querycondition_filter_fn) (const void * sample);
-_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
-DDS_EXPORT dds_entity_t
-dds_create_querycondition(
-        _In_ dds_entity_t reader,
-        _In_ uint32_t mask,
-        _In_ dds_querycondition_filter_fn filter);
-
 /**
  * @brief Creates a new instance of a DDS writer
  *
@@ -1312,39 +1321,98 @@ dds_write_ts(
         _In_ const void *data,
         _In_ dds_time_t timestamp);
 
-/*
-  Waitsets allow waiting for an event on some of any set of entities
-  (all can in principle be waited for via their status conditions;
-  the "enabled" statuses are the only ones considered). Then there
-  are the "guard" and "read" conditions, both following the DCPS
-  spec.
-
-  The "guard" is a simple application-controlled entity with a state
-  consisting of a single status condition, TRIGGERED.
-
-  The "read" condition allows specifying which samples are of
-  interest in a data reader's history. The application visible state
-  of a read (or query) condition consists of a single status condition,
-  TRIGGERED. This status changes based on the contents of the history
-  cache of the associated data reader.
-
-  The DCPS "query" condition is not currently supported.
-*/
-
 /**
- * Description : Create a ReadCondition associated to a reader.
- *               Based on the mask value set, the readcondition gets triggered when
- *               data is available on the reader.
+ * @brief Creates a readcondition associated to the given reader.
  *
- * Arguments :
- *   -# rd Reader entity on which the condition is created
- *   -# mask set the sample_state, instance_state and view_state of the sample
+ * The readcondition allows specifying which samples are of interest in
+ * a data reader's history, by means of a mask. The mask is or'd with
+ * the flags that are dds_sample_state_t, dds_view_state_t and
+ * dds_instance_state_t.
+ *
+ * Based on the mask value set, the readcondition gets triggered when
+ * data is available on the reader.
+ *
+ * Waitsets allow waiting for an event on some of any set of entities.
+ * This means that the readcondition can be used to wake up a waitset when
+ * data is in the reader history with states that matches the given mask.
+ *
+ * @note The parent reader and every of its associated conditions (whether
+ *       they are readconditions or queryconditions) share the same resources.
+ *       This means that one of these entities reads or takes data, the states
+ *       of the data will change for other entities automatically. For instance,
+ *       if one reads a sample, then the sample state will become 'read' for all
+ *       associated reader/conditions. Or if one takes a sample, then it's not
+ *       available to any other associated reader/condition.
+ *
+ * @param[in]  reader  Reader to associate the condition to.
+ * @param[in]  mask    Interest (dds_sample_state_t|dds_view_state_t|dds_instance_state_t).
+ *
+ * @returns >0 - Success (valid condition).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT _Must_inspect_result_ dds_entity_t
 dds_create_readcondition(
         _In_ dds_entity_t reader,
         _In_ uint32_t mask);
+
+/**
+ * @brief Creates a queryondition associated to the given reader.
+ *
+ * The queryondition allows specifying which samples are of interest in
+ * a data reader's history, by means of a mask and a filter. The mask is
+ * or'd with the flags that are dds_sample_state_t, dds_view_state_t and
+ * dds_instance_state_t.
+ *
+ * TODO: Explain the filter (aka expression & parameters) of the (to be
+ *       implemented) new querycondition implementation.
+ *
+ * Based on the mask value set and data that matches the filter, the
+ * querycondition gets triggered when data is available on the reader.
+ *
+ * Waitsets allow waiting for an event on some of any set of entities.
+ * This means that the querycondition can be used to wake up a waitset when
+ * data is in the reader history with states that matches the given mask
+ * and filter.
+ *
+ * @note The parent reader and every of its associated conditions (whether
+ *       they are readconditions or queryconditions) share the same resources.
+ *       This means that one of these entities reads or takes data, the states
+ *       of the data will change for other entities automatically. For instance,
+ *       if one reads a sample, then the sample state will become 'read' for all
+ *       associated reader/conditions. Or if one takes a sample, then it's not
+ *       available to any other associated reader/condition.
+ *
+ * TODO: Update parameters when new querycondition is introduced.
+ *
+ * @param[in]  reader  Reader to associate the condition to.
+ * @param[in]  mask    Interest (dds_sample_state_t|dds_view_state_t|dds_instance_state_t).
+ * @param[in]  filter  Callback that the application can use to filter specific samples.
+ *
+ * @returns >0 - Success (valid condition).
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ */
+typedef bool (*dds_querycondition_filter_fn) (const void * sample);
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+DDS_EXPORT dds_entity_t
+dds_create_querycondition(
+        _In_ dds_entity_t reader,
+        _In_ uint32_t mask,
+        _In_ dds_querycondition_filter_fn filter);
 
 
 /**
@@ -1690,10 +1758,11 @@ dds_waitset_wait_until(
   Y             => CY
   (empty)          uint32_t mask
   _cond            cond_t cond -- refers to a read condition (or query if implemented)
-*/
+ */
 
 /**
- * @brief Access and read the collection of data values (of same type) and sample info from the data reader
+ * @brief Access and read the collection of data values (of same type) and sample info from the
+ *        data reader, readcondition or querycondition.
  *
  * Return value provides information about number of samples read, which will
  * be <= maxs. Based on the count, the buffer will contain data to be read only
@@ -1704,17 +1773,23 @@ dds_waitset_wait_until(
  * Data values once read will remain in the buffer with the sample_state set to READ
  * and view_state set to NOT_NEW.
  *
- * @param[in]  rd_or_cnd Reader or condition entity
- *
- * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
- *
- * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
- *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
  * @param[in]  bufsz The size of buffer provided
+ * @param[in]  maxs Maximum number of samples to read
  *
- * @param[in]  maxs maximum number of samples to read
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
  *
- * @returns A dds_return_t indicating success or failure
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -1728,19 +1803,26 @@ dds_read(
         _In_ uint32_t maxs);
 
 /**
- * @brief Access and read loaned samples of data reader
+ * @brief Access and read loaned samples of data reader, readcondition or querycondition.
  *
- * After dds_read_wl function is being called and the data has been handled, dds_return_loan function must be called to possibly free memory
+ * After dds_read_wl function is being called and the data has been handled, dds_return_loan function must be called to possibly free memory.
  *
- * @param[in]  rd_or_cnd Reader or condition entity
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  maxs Maximum number of samples to read
  *
- * @param[in]  buf an array of pointers to samples into w@hich data is read (pointers can be NULL)
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
  *
- * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
- *
- * @param[in]  maxs maximum number of samples to read
- *
- * @returns A dds_return_t indicating success or failure
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -1753,21 +1835,30 @@ dds_read_wl(
         _In_ uint32_t maxs);
 
 /**
- * @brief Read the collection of data values and sample info from the data reader based on mask
+ * @brief Read the collection of data values and sample info from the data reader, readcondition
+ *        or querycondition based on mask.
  *
- * @param[in]  rd_or_cnd Reader or condition entity
+ * When using a readcondition or querycondition, their masks are or'd with the given mask.
  *
- * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
  *
- * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  bufsz The size of buffer provided
+ * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
  *
- * @param[in]  bufsz size of buffer provided
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
  *
- * @param[in]  maxs maximum number of samples to read
- *
- * @param[in]  mask filter the data value based on the set sample, view and instance state
- *
- * @returns A dds_return_t indicating success or failure
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -1782,21 +1873,30 @@ dds_read_mask(
         _In_ uint32_t mask);
 
 /**
- * @brief  Access and read loaned samples of data reader based on mask
+ * @brief Access and read loaned samples of data reader, readcondition
+ *        or querycondition based on mask
+ *
+ * When using a readcondition or querycondition, their masks are or'd with the given mask.
  *
  * After dds_read_mask_wl function is being called and the data has been handled, dds_return_loan function must be called to possibly free memory
  *
- * @param[in]  rd_or_cnd Reader or condition entity
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
  *
- * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
  *
- * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
- *
- * @param[in]  maxs maximum number of samples to read
- *
- * @param[in]  mask filter the data value based on the set sample, view and instance state
- *
- * @returns A dds_return_t indicating success or failure
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -1833,36 +1933,8 @@ dds_read_instance(
         uint32_t mask);
 
 /**
- * Description : Access the collection of data values (of same type) and sample info from the data reader
- *               based on the criteria specified in the read condition.
- *               Read condition must be attached to the data reader before associating with data read.
- *               Return value provides information about number of samples read, which will
- *               be <= maxs. Based on the count, the buffer will contain data to be read only
- *               when valid_data bit in sample info structure is set.
- *               The buffer required for data values, could be allocated explicitly or can
- *               use the memory from data reader to prevent copy. In the latter case, buffer and
- *               sample_info should be returned back, once it is no longer using the Data.
- *               Data values once read will remain in the buffer with the sample_state set to READ
- *               and view_state set to NOT_NEW.
- *
- * Arguments :
- *   -# rd Reader entity
- *   -# buf an array of pointers to samples into which data is read (pointers can be NULL)
- *   -# maxs maximum number of samples to read
- *   -# si pointer to an array of \ref dds_sample_info_t returned for each data value
- *   -# cond read condition to filter the data samples based on the content
- *   -# Returns the number of samples read, 0 indicates no data to read.
- */
-DDS_EXPORT int
-dds_read_cond(
-        dds_entity_t reader,
-        void **buf,
-        uint32_t maxs,
-        dds_sample_info_t *si,
-        dds_entity_t condition);
-
-/**
- * @brief  Access the collection of data values (of same type) and sample info from the data reader
+ * @brief Access the collection of data values (of same type) and sample info from the
+ *        data reader, readcondition or querycondition.
  *
  * Data value once read is removed from the Data Reader cannot to
  * 'read' or 'taken' again.
@@ -1873,17 +1945,23 @@ dds_read_cond(
  * use the memory from data reader to prevent copy. In the latter case, buffer and
  * sample_info should be returned back, once it is no longer using the Data.
  *
- * @param[in]  rd_or_cnd Reader or condition entity
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  bufsz The size of buffer provided
+ * @param[in]  maxs Maximum number of samples to read
  *
- * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
  *
- * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
- *
- * @param[in]  bufsz size of buffer provided
- *
- * @param[in]  maxs maximum number of samples to read
- *
- * @returns  A dds_return_t indicating success or failure
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -1897,19 +1975,26 @@ dds_take(
         _In_ uint32_t maxs);
 
 /**
- * @brief Access loaned samples of data reader
+ * @brief Access loaned samples of data reader, readcondition or querycondition.
  *
  * After dds_take_wl function is being called and the data has been handled, dds_return_loan function must be called to possibly free memory
  *
- * @param[in]  rd_or_cnd Reader or condition entity
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  maxs Maximum number of samples to read
  *
- * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
  *
- * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
- *
- * @param[in]  maxs maximum number of samples to read
- *
- * @returns A dds_return_t indicating success or failure
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -1922,21 +2007,29 @@ dds_take_wl(
         _In_ uint32_t maxs);
 
 /**
- * @brief  Take the collection of data values (of same type) and sample info from the data reader based on mask
+ * @brief Take the collection of data values (of same type) and sample info from the
+ *        data reader, readcondition or querycondition based on mask
  *
- * @param[in]  rd_or_cnd Reader or condition entity
+ * When using a readcondition or querycondition, their masks are or'd with the given mask.
  *
- * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
- *
- * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
- *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
  * @param[in]  bufsz The size of buffer provided
+ * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
  *
- * @param[in]  maxs maximum number of samples to read
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
  *
- * @param[in]  mask filter the data value based on the set sample, view and instance state
- *
- * @returns A dds_return_t indicating success or failure
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -1951,21 +2044,29 @@ _In_ dds_entity_t reader_or_condition,
         _In_ uint32_t mask);
 
 /**
- * @brief  Access loaned samples of data reader based on mask
+ * @brief  Access loaned samples of data reader, readcondition or querycondition based on mask.
+ *
+ * When using a readcondition or querycondition, their masks are or'd with the given mask.
  *
  * After dds_take_mask_wl function is being called and the data has been handled, dds_return_loan function must be called to possibly free memory
  *
- * @param[in]  rd_or_cnd Reader or condition entity
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
  *
- * @param[in]  buf an array of pointers to samples into which data is read (pointers can be NULL)
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
  *
- * @param[in]  si pointer to an array of \ref dds_sample_info_t returned for each data value
- *
- * @param[in]  maxs maximum number of samples to read
- *
- * @param[in]  mask filter the data value based on the set sample, view and instance state
- *
- * @returns A dds_return_t indicating success or failure
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \

@@ -279,6 +279,98 @@ Theory((dds_entity_t *rdr), vddsc_querycondition_create, non_readers, .init=quer
 
 
 
+/**************************************************************************************************
+ *
+ * These will check the querycondition mask acquiring in various ways.
+ *
+ *************************************************************************************************/
+/*************************************************************************************************/
+Test(vddsc_querycondition_get_mask, deleted, .init=querycondition_init, .fini=querycondition_fini)
+{
+    uint32_t mask = DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+    dds_entity_t condition;
+    dds_return_t ret;
+    condition = dds_create_querycondition(g_reader, mask, filter_mod2);
+    cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
+    dds_delete(condition);
+    mask = 0;
+    ret = dds_get_mask(condition, &mask);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_querycondition_get_mask, null, .init=querycondition_init, .fini=querycondition_fini)
+{
+    uint32_t mask = DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+    dds_entity_t condition;
+    dds_return_t ret;
+    condition = dds_create_querycondition(g_reader, mask, filter_mod2);
+    cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
+    ret = dds_get_mask(condition, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+    dds_delete(condition);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_querycondition_get_mask, invalid_conditions) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t cond), vddsc_querycondition_get_mask, invalid_conditions, .init=querycondition_init, .fini=querycondition_fini)
+{
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+    dds_return_t ret;
+    uint32_t mask;
+
+    if (cond < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = cond;
+    }
+
+    ret = dds_get_mask(cond, &mask);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_querycondition_get_mask, non_conditions) = {
+        DataPoints(dds_entity_t*, &g_reader, &g_topic, &g_participant),
+};
+Theory((dds_entity_t *cond), vddsc_querycondition_get_mask, non_conditions, .init=querycondition_init, .fini=querycondition_fini)
+{
+    dds_return_t ret;
+    uint32_t mask;
+    ret = dds_get_mask(*cond, &mask);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_querycondition_get_mask, various_masks) = {
+        DataPoints(uint32_t, DDS_ANY_SAMPLE_STATE,  DDS_READ_SAMPLE_STATE,     DDS_NOT_READ_SAMPLE_STATE),
+        DataPoints(uint32_t, DDS_ANY_VIEW_STATE,     DDS_NEW_VIEW_STATE,       DDS_NOT_NEW_VIEW_STATE),
+        DataPoints(uint32_t, DDS_ANY_INSTANCE_STATE, DDS_ALIVE_INSTANCE_STATE, DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE, DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE),
+};
+Theory((uint32_t ss, uint32_t vs, uint32_t is), vddsc_querycondition_get_mask, various_masks, .init=querycondition_init, .fini=querycondition_fini)
+{
+    uint32_t maskIn  = ss | vs | is;
+    uint32_t maskOut = 0xFFFFFFFF;
+    dds_entity_t condition;
+    dds_return_t ret;
+
+    condition = dds_create_querycondition(g_reader, maskIn, filter_mod2);
+    cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
+
+    ret = dds_get_mask(condition, &maskOut);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+    cr_assert_eq(maskIn, maskOut);
+
+    dds_delete(condition);
+}
+/*************************************************************************************************/
+
+
 
 
 /**************************************************************************************************
@@ -332,6 +424,8 @@ Test(vddsc_querycondition_read, any, .init=querycondition_init, .fini=querycondi
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -381,6 +475,8 @@ Test(vddsc_querycondition_read, not_read_sample_state, .init=querycondition_init
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -430,6 +526,8 @@ Test(vddsc_querycondition_read, read_sample_state, .init=querycondition_init, .f
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -479,6 +577,8 @@ Test(vddsc_querycondition_read, new_view_state, .init=querycondition_init, .fini
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -528,6 +628,8 @@ Test(vddsc_querycondition_read, not_new_view_state, .init=querycondition_init, .
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -577,6 +679,8 @@ Test(vddsc_querycondition_read, alive_instance_state, .init=querycondition_init,
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -626,6 +730,8 @@ Test(vddsc_querycondition_read, disposed_instance_state, .init=querycondition_in
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -675,6 +781,8 @@ Test(vddsc_querycondition_read, no_writers_instance_state, .init=querycondition_
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -724,6 +832,8 @@ Test(vddsc_querycondition_read, combination_of_states, .init=querycondition_init
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -752,6 +862,8 @@ Test(vddsc_querycondition_read, none, .init=querycondition_init, .fini=querycond
      * |    5   |    2   |    1   | not_read | new | no_writers |
      * |    6   |    3   |    2   | not_read | new | alive      |
      */
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -802,6 +914,8 @@ Test(vddsc_querycondition_read, with_mask, .init=querycondition_init, .fini=quer
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -824,6 +938,7 @@ Test(vddsc_querycondition_read, already_deleted, .init=querycondition_init, .fin
     cr_expect_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED);
 }
 /*************************************************************************************************/
+
 
 
 
@@ -882,6 +997,8 @@ Test(vddsc_querycondition_take, any, .init=querycondition_init, .fini=querycondi
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -931,6 +1048,8 @@ Test(vddsc_querycondition_take, not_read_sample_state, .init=querycondition_init
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -980,6 +1099,8 @@ Test(vddsc_querycondition_take, read_sample_state, .init=querycondition_init, .f
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1029,6 +1150,8 @@ Test(vddsc_querycondition_take, new_view_state, .init=querycondition_init, .fini
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1078,6 +1201,8 @@ Test(vddsc_querycondition_take, not_new_view_state, .init=querycondition_init, .
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1127,6 +1252,8 @@ Test(vddsc_querycondition_take, alive_instance_state, .init=querycondition_init,
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1176,6 +1303,8 @@ Test(vddsc_querycondition_take, disposed_instance_state, .init=querycondition_in
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1225,6 +1354,8 @@ Test(vddsc_querycondition_take, no_writers_instance_state, .init=querycondition_
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1274,6 +1405,8 @@ Test(vddsc_querycondition_take, combination_of_states, .init=querycondition_init
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1302,6 +1435,8 @@ Test(vddsc_querycondition_take, none, .init=querycondition_init, .fini=querycond
      * |    5   |    2   |    1   | not_read | new | no_writers |
      * |    6   |    3   |    2   | not_read | new | alive      |
      */
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
@@ -1352,6 +1487,8 @@ Test(vddsc_querycondition_take, with_mask, .init=querycondition_init, .fini=quer
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
     }
+
+    dds_delete(condition);
 }
 /*************************************************************************************************/
 
