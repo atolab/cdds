@@ -610,13 +610,13 @@ Test(vddsc_reader, take_mask_with_loan)
 }
 
 static dds_entity_t g_participant = 0;
-static void reader_env_init()
+static void reader_env_init(void)
 {
     /* We need a participant for initialization. */
     g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(g_participant, 0, "Failed to create prerequisite participant");
 }
-static void reader_env_fini()
+static void reader_env_fini(void)
 {
     dds_delete(g_participant);
 }
