@@ -50,8 +50,8 @@ static double deltaTime = 0;
 static ThroughputModule_DataType data [MAX_SAMPLES];
 static void * samples[MAX_SAMPLES];
 
-static dds_condition_t terminated;
-static dds_condition_t gCond;
+static dds_entity_t waitSet;
+static dds_entity_t pollingWaitset;
 
 static bool done = false;
 static bool first_batch = true;
@@ -61,7 +61,7 @@ static bool first_batch = true;
 #ifdef _WIN32
 static int CtrlHandler (DWORD fdwCtrlType)
 {
-  dds_guard_trigger (terminated);
+  dds_waitset_set_trigger (waitSet, true);
   done = true;
   return true; /* Don't let other handlers handle this key */
 }
@@ -69,7 +69,7 @@ static int CtrlHandler (DWORD fdwCtrlType)
 struct sigaction oldAction;
 static void CtrlHandler (int fdwCtrlType)
 {
-  dds_guard_trigger (terminated);
+  dds_waitset_set_trigger (waitSet, true);
   done = true;
 }
 #endif
@@ -171,7 +171,7 @@ static void data_available_handler (dds_entity_t reader, void *arg)
   time_now = dds_time ();
   if ((pollingDelay == 0) && (time_now > (prev_time + DDS_SECS (1))))
   {
-     dds_guard_trigger (gCond);
+     dds_waitset_set_trigger (pollingWaitset, true);
   }
 }
 
@@ -187,7 +187,6 @@ int main (int argc, char **argv)
   dds_entity_t topic;
   dds_entity_t subscriber;
   dds_entity_t reader;
-  dds_waitset_t waitSet;
   dds_listener_t *rd_listener;
 
   unsigned long long prev_samples = 0;
@@ -285,12 +284,10 @@ int main (int argc, char **argv)
     waitSet = dds_create_waitset (participant);
     DDS_ERR_CHECK (waitSet, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    gCond = dds_guardcondition_create ();
-    status = dds_waitset_attach (waitSet, gCond, gCond);
+    status = dds_waitset_attach (waitSet, pollingWaitset, (dds_attach_t)(intptr_t)pollingWaitset);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    terminated = dds_guardcondition_create ();
-    status = dds_waitset_attach (waitSet, terminated, terminated);
+    status = dds_waitset_attach (waitSet, waitSet, (dds_attach_t)(intptr_t)waitSet);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     /* Read samples until the maxCycles has been reached (0 = infinite) */
@@ -320,9 +317,9 @@ int main (int argc, char **argv)
         status = dds_waitset_wait (waitSet, wsresults, wsresultsize, infinite);
         DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-        if ((status > 0 ) && (dds_condition_triggered (gCond)))
+        if ((status > 0 ) && (dds_triggered (pollingWaitset)))
         {
-          dds_guard_reset (gCond);
+          dds_waitset_set_trigger (pollingWaitset, false);
         }
       }
 
@@ -383,13 +380,12 @@ int main (int argc, char **argv)
     ThroughputModule_DataType_free (&data[i], DDS_FREE_CONTENTS);
   }
   
-  status = dds_waitset_detach (waitSet, terminated);
+  status = dds_waitset_detach (waitSet, waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  status = dds_waitset_detach (waitSet, gCond);
+  status = dds_waitset_detach (waitSet, pollingWaitset);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  dds_condition_delete (terminated);
-  dds_condition_delete (gCond);
-  status = dds_waitset_delete (waitSet);
+  dds_delete (pollingWaitset);
+  status = dds_delete (waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_delete (participant);
 

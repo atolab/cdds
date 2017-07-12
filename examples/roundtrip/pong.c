@@ -5,19 +5,19 @@
 #include <string.h>
 #include <signal.h>
 
-static dds_condition_t terminated;
+static dds_entity_t waitSet;
 #define MAX_SAMPLES 10
 
 #ifdef _WIN32
 static bool CtrlHandler (DWORD fdwCtrlType)
 {
-  dds_guard_trigger (terminated);
+  dds_waitset_set_trigger (waitSet, true);
   return true; //Don't let other handlers handle this key
 }
 #else
 static void CtrlHandler (int fdwCtrlType)
 {
-  dds_guard_trigger (terminated);
+  dds_waitset_set_trigger (waitSet, true);
 }
 #endif
 
@@ -34,7 +34,6 @@ int main (int argc, char *argv[])
   dds_entity_t topic;
   dds_entity_t publisher;
   dds_entity_t subscriber;
-  dds_waitset_t waitSet;
 
   RoundTripModule_DataType data[MAX_SAMPLES];
   void * samples[MAX_SAMPLES];
@@ -42,7 +41,7 @@ int main (int argc, char *argv[])
   const char *pubPartitions[] = { "pong" };
   const char *subPartitions[] = { "ping" };
   dds_qos_t *qos;
-  dds_condition_t readCond;
+  dds_entity_t readCond;
 
   /* Register handler for Ctrl-C */
 
@@ -105,18 +104,17 @@ int main (int argc, char *argv[])
   DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (qos);
 
-  terminated = dds_guardcondition_create ();
   waitSet = dds_create_waitset (participant);
-  readCond = dds_readcondition_create (reader, DDS_ANY_STATE);
+  readCond = dds_create_readcondition (reader, DDS_ANY_STATE);
   status = dds_waitset_attach (waitSet, readCond, (dds_attach_t)(intptr_t)reader);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  status = dds_waitset_attach (waitSet, terminated, terminated);
+  status = dds_waitset_attach (waitSet, waitSet, (dds_attach_t)(intptr_t)waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   printf ("Waiting for samples from ping to send back...\n");
   fflush (stdout);
 
-  while (!dds_condition_triggered (terminated))
+  while (!dds_triggered (waitSet))
   {
     /* Wait for a sample from ping */
 
@@ -126,14 +124,14 @@ int main (int argc, char *argv[])
     /* Take samples */
     samplecount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
     DDS_ERR_CHECK (samplecount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-    for (j = 0; !dds_condition_triggered (terminated) && j < samplecount; j++)
+    for (j = 0; !dds_triggered (waitSet) && j < samplecount; j++)
     {
       /* If writer has been disposed terminate pong */
 
       if (info[j].instance_state == DDS_IST_NOT_ALIVE_DISPOSED)
       {
         printf ("Received termination request. Terminating.\n");
-        dds_guard_trigger (terminated);
+        dds_waitset_set_trigger (waitSet, true);
         break;
       }
       else if (info[j].valid_data)
@@ -157,11 +155,10 @@ int main (int argc, char *argv[])
 
   status = dds_waitset_detach (waitSet, readCond);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  status = dds_waitset_detach (waitSet, terminated);
+  status = dds_waitset_detach (waitSet, waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  dds_condition_delete (readCond);
-  dds_condition_delete (terminated);
-  status = dds_waitset_delete (waitSet);
+  dds_delete (readCond);
+  status = dds_delete (waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_delete (participant);
 

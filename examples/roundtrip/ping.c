@@ -96,18 +96,18 @@ static double exampleGetMedianFromTimeStats (ExampleTimeStats *stats)
   return median;
 }
 
-static dds_condition_t terminated;
+static dds_entity_t waitSet;
 
 #ifdef _WIN32
 static bool CtrlHandler (DWORD fdwCtrlType)
 {
-  dds_guard_trigger (terminated);
+  dds_waitset_set_trigger (waitSet, true);
   return true; //Don't let other handlers handle this key
 }
 #else
 static void CtrlHandler (int fdwCtrlType)
 {
-  dds_guard_trigger (terminated);
+  dds_waitset_set_trigger (waitSet, true);
 }
 #endif
 
@@ -119,7 +119,6 @@ int main (int argc, char *argv[])
   dds_entity_t topic;
   dds_entity_t publisher;
   dds_entity_t subscriber;
-  dds_waitset_t waitSet;
   
   const char *pubPartitions[] = { "ping" };
   const char *subPartitions[] = { "pong" };
@@ -159,7 +158,7 @@ int main (int argc, char *argv[])
   int status;
   bool invalid = false;
   bool warmUp = true;
-  dds_condition_t readCond;
+  dds_entity_t readCond;
 
   /* Register handler for Ctrl-C */
 #ifdef _WIN32
@@ -224,13 +223,12 @@ int main (int argc, char *argv[])
   DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_qos_delete (drQos);
 
-  terminated = dds_guardcondition_create ();
   waitSet = dds_create_waitset (participant);
-  readCond = dds_readcondition_create (reader, DDS_ANY_STATE);
+  readCond = dds_create_readcondition (reader, DDS_ANY_STATE);
 
   status = dds_waitset_attach (waitSet, readCond, (dds_attach_t)(intptr_t)reader);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  status = dds_waitset_attach (waitSet, terminated, terminated);
+  status = dds_waitset_attach (waitSet, waitSet, (dds_attach_t)(intptr_t)waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   setvbuf(stdout, NULL, _IONBF, 0);
@@ -294,7 +292,7 @@ int main (int argc, char *argv[])
 
   startTime = dds_time ();
   printf ("# Waiting for startup jitter to stabilise\n");
-  while (!dds_condition_triggered (terminated) && difference < DDS_SECS(5))
+  while (!dds_triggered (waitSet) && difference < DDS_SECS(5))
   {
     status = dds_write (writer, &pub_data);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
@@ -309,7 +307,7 @@ int main (int argc, char *argv[])
     time = dds_time ();
     difference = time - startTime;
   }
-  if (!dds_condition_triggered (terminated))
+  if (!dds_triggered (waitSet))
   {
     warmUp = false;
     printf("# Warm up complete.\n\n");
@@ -321,7 +319,7 @@ int main (int argc, char *argv[])
   }
 
   startTime = dds_time ();
-  for (i = 0; !dds_condition_triggered (terminated) && (!numSamples || i < numSamples); i++)
+  for (i = 0; !dds_triggered (waitSet) && (!numSamples || i < numSamples); i++)
   {
     /* Write a sample that pong can send back */
     preWriteTime = dds_time ();
@@ -340,7 +338,7 @@ int main (int argc, char *argv[])
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
       postTakeTime = dds_time ();
 
-      if (!dds_condition_triggered (terminated))
+      if (!dds_triggered (waitSet))
       {
         if (status != 1)
         {
@@ -401,7 +399,7 @@ int main (int argc, char *argv[])
     }
     if (timeOut && elapsed == timeOut)
     {
-      dds_guard_trigger (terminated);
+      dds_waitset_set_trigger (waitSet, true);
     }
   }
 
@@ -446,11 +444,10 @@ done:
  
   status = dds_waitset_detach (waitSet, readCond);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  status = dds_waitset_detach (waitSet, terminated);
+  status = dds_waitset_detach (waitSet, waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  dds_condition_delete (readCond);
-  dds_condition_delete (terminated);
-  status = dds_waitset_delete (waitSet);
+  dds_delete (readCond);
+  status = dds_delete (waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   dds_delete (participant);
 

@@ -1279,6 +1279,11 @@ dds_write(
         _In_ dds_entity_t writer,
         _In_ const void *data);
 
+/*TODO: What is it for and is it really needed? */
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT void
+dds_write_flush(
+        dds_entity_t writer);
 
 /**
  * @brief Write a CDR serialized value of a data instance
