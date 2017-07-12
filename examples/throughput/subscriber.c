@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <assert.h>
 /*
  * The Throughput example measures data throughput in bytes per second. The publisher
  * allows you to specify a payload size in bytes as well as allowing you to specify
@@ -81,6 +82,7 @@ static void CtrlHandler (int fdwCtrlType)
 static HandleMap * HandleMap__alloc (void)
 {
   HandleMap * map = malloc (sizeof (*map));
+  assert(map);
   memset (map, 0, sizeof (*map));
   return map;
 }
@@ -101,6 +103,7 @@ static void HandleMap__free (HandleMap *map)
 static HandleEntry * store_handle (HandleMap *map, dds_instance_handle_t key)
 {
   HandleEntry * entry = malloc (sizeof (*entry));
+  assert(entry);
   memset (entry, 0, sizeof (*entry));
 
   entry->handle = key;
@@ -296,9 +299,9 @@ int main (int argc, char **argv)
     imap = HandleMap__alloc ();
 
     memset (data, 0, sizeof (data));
-    for (int i = 0; i < MAX_SAMPLES; i++)
+    for (int j = 0; j < MAX_SAMPLES; j++)
     {
-      samples[i] = &data[i];
+      samples[j] = &data[j];
     }
 
     reader = dds_create_reader (subscriber, topic, drQos, rd_listener);

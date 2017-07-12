@@ -56,7 +56,7 @@ static ExampleTimeStats *exampleAddTimingToTimeStats
     stats->values = temp;
     stats->valuesMax += TIME_STATS_SIZE_INCREMENT;
   }
-  if (stats->valuesSize < stats->valuesMax)
+  if (stats->values != NULL && stats->valuesSize < stats->valuesMax)
   {
     stats->values[stats->valuesSize++] = timing;
   }
@@ -196,7 +196,12 @@ int main (int argc, char *argv[])
 
   /* A DDS_Publisher is created on the domain participant. */
   pubQos = dds_qos_create ();
+
+  /* Somehow, the compiler thinks the char arrays might not be zero-terminated... */
+#pragma warning(push)
+#pragma warning(disable: 6054)
   dds_qset_partition (pubQos, 1, pubPartitions);
+#pragma warning(pop)
 
   publisher = dds_create_publisher (participant, pubQos, NULL);
   DDS_ERR_CHECK (publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
@@ -212,7 +217,12 @@ int main (int argc, char *argv[])
 
   /* A DDS_Subscriber is created on the domain participant. */
   subQos = dds_qos_create ();
+
+  /* Somehow, the compiler thinks the char arrays might not be zero-terminated... */
+#pragma warning(push)
+#pragma warning(disable: 6054)
   dds_qset_partition (subQos, 1, subPartitions);
+#pragma warning(pop)
 
   subscriber = dds_create_subscriber (participant, subQos, NULL);
   DDS_ERR_CHECK (subscriber, DDS_CHECK_REPORT | DDS_CHECK_EXIT);

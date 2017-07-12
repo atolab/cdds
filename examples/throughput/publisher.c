@@ -105,7 +105,7 @@ int main (int argc, char **argv)
     partitionName = argv[5]; /* The name of the partition */
   }
 
-  printf ("payloadSize: %i bytes burstInterval: %u ms burstSize: %d timeOut: %u seconds partitionName: %s\n",
+  printf ("payloadSize: %u bytes burstInterval: %u ms burstSize: %d timeOut: %u seconds partitionName: %s\n",
     payloadSize, burstInterval, burstSize, timeOut, partitionName);
 
   /* A domain participant is created for the default domain. */
@@ -230,11 +230,11 @@ int main (int argc, char **argv)
 
     if (done)
     {
-      printf ("Terminated, %llu samples written.\n", (long long) sample.count);
+      printf ("Terminated, %llu samples written.\n", (unsigned long long) sample.count);
     }
     else
     {
-      printf ("Timed out, %llu samples written.\n", (long long) sample.count);
+      printf ("Timed out, %llu samples written.\n", (unsigned long long) sample.count);
     }
   }
 
