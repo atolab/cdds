@@ -9,6 +9,7 @@ static dds_entity_t waitSet;
 #define MAX_SAMPLES 10
 
 #ifdef _WIN32
+#include <Windows.h>
 static bool CtrlHandler (DWORD fdwCtrlType)
 {
   dds_waitset_set_trigger (waitSet, true);

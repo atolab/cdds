@@ -99,6 +99,7 @@ static double exampleGetMedianFromTimeStats (ExampleTimeStats *stats)
 static dds_entity_t waitSet;
 
 #ifdef _WIN32
+#include <Windows.h>
 static bool CtrlHandler (DWORD fdwCtrlType)
 {
   dds_waitset_set_trigger (waitSet, true);

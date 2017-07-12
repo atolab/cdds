@@ -59,6 +59,7 @@ static bool first_batch = true;
 /* Functions to handle Ctrl-C presses. */
 
 #ifdef _WIN32
+#include <Windows.h>
 static int CtrlHandler (DWORD fdwCtrlType)
 {
   dds_waitset_set_trigger (waitSet, true);

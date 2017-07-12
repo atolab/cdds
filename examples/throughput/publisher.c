@@ -21,6 +21,7 @@ static bool done = false;
 /* Functions to handle Ctrl-C presses. */
 
 #ifdef _WIN32
+#include <Windows.h>
 static int CtrlHandler (DWORD fdwCtrlType)
 {
   done = true;
