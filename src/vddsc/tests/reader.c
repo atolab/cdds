@@ -609,20 +609,27 @@ Test(vddsc_reader, take_mask_with_loan)
   dds_delete(participant);
 }
 
+static dds_entity_t g_participant = 0;
+static void reader_env_init()
+{
+    /* We need a participant for initialization. */
+    g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(g_participant, 0, "Failed to create prerequisite participant");
+}
+static void reader_env_fini()
+{
+    dds_delete(g_participant);
+}
+
 TheoryDataPoints(vddsc_reader, read_invalid_params) = {
         DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
 };
-Theory((dds_entity_t rdr), vddsc_reader, read_invalid_params)
+Theory((dds_entity_t rdr), vddsc_reader, read_invalid_params, .init=reader_env_init, .fini=reader_env_fini)
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_sample_info_t info[MAX_SAMPLES];
     void *samples[MAX_SAMPLES];
-    dds_entity_t participant = 0;
     dds_return_t ret;
-
-    /* We need a participant for initialization. */
-    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_gt(participant, 0, "Failed to create prerequisite participant");
 
     if (rdr < 0) {
         /* Entering the API with an error should return the same error. */
@@ -631,6 +638,4 @@ Theory((dds_entity_t rdr), vddsc_reader, read_invalid_params)
 
     ret = dds_read (rdr, samples, info, MAX_SAMPLES, MAX_SAMPLES);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
-
-    dds_delete(participant);
 }
