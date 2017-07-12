@@ -14,6 +14,7 @@
 #include "dds/dds_public_alloc.h"
 #include "dds/dds_public_stream.h"
 #include "os/os_public.h"
+#include "dds/dds_export.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -170,7 +171,7 @@ typedef int32_t dds_domainid_t;
  * Arguments :
  *   -# enable Enables or disables write batching for all writers.
  */
-OSAPI_EXPORT void dds_write_set_batch (bool enable);
+DDS_EXPORT void dds_write_set_batch (bool enable);
 
 /**
  * Description : Install tcp/ssl and encryption support. Depends on openssl.
@@ -178,7 +179,7 @@ OSAPI_EXPORT void dds_write_set_batch (bool enable);
  * Arguments :
  *   -# None
  */
-OSAPI_EXPORT void dds_ssl_plugin (void);
+DDS_EXPORT void dds_ssl_plugin (void);
 
 /**
  * Description : Install client durability support. Depends on OSPL server.
@@ -186,7 +187,7 @@ OSAPI_EXPORT void dds_ssl_plugin (void);
  * Arguments :
  *   -# None
  */
-OSAPI_EXPORT void dds_durability_plugin (void);
+DDS_EXPORT void dds_durability_plugin (void);
 
 #if defined (__cplusplus)
 }
