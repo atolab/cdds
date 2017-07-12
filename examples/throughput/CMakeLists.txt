@@ -1,0 +1,5 @@
+idlc_generate(Throughput_lib Throughput.idl)
+add_executable(ThroughputPublisher publisher.c)
+add_executable(ThroughputSubscriber subscriber.c)
+target_link_libraries(ThroughputPublisher Throughput_lib Vortex::DDSC)
+target_link_libraries(ThroughputSubscriber Throughput_lib Vortex::DDSC)

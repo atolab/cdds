@@ -1,0 +1,5 @@
+idlc_generate(RoundTrip_lib RoundTrip.idl)
+add_executable(RoundtripPing ping.c)
+add_executable(RoundtripPong pong.c)
+target_link_libraries(RoundtripPing RoundTrip_lib Vortex::DDSC)
+target_link_libraries(RoundtripPong RoundTrip_lib Vortex::DDSC)
