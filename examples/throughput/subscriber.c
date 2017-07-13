@@ -288,6 +288,9 @@ int main (int argc, char **argv)
     waitSet = dds_create_waitset (participant);
     DDS_ERR_CHECK (waitSet, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
+    pollingWaitset = dds_create_waitset (participant);
+    DDS_ERR_CHECK (pollingWaitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
     status = dds_waitset_attach (waitSet, pollingWaitset, (dds_attach_t)(intptr_t)pollingWaitset);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
