@@ -47,11 +47,8 @@ dds_create_readcondition(
     ret = dds_reader_lock(reader, &rd);
     if (ret == DDS_RETCODE_OK) {
         dds_readcond *cond = dds_create_readcond(rd, DDS_KIND_COND_READ, mask);
-        if (cond) {
-            hdl = cond->m_entity.m_hdl;
-        } else {
-            hdl = DDS_ERRNO(DDS_RETCODE_OUT_OF_RESOURCES, DDS_MOD_COND, DDS_ERR_M3);
-        }
+        assert(cond);
+        hdl = cond->m_entity.m_hdl;
         dds_reader_unlock(rd);
     } else {
         hdl = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M2);
@@ -60,19 +57,19 @@ dds_create_readcondition(
     return hdl;
 }
 
-_Pre_satisfies_(((readcond & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((readcond & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
+_Pre_satisfies_(((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
 dds_entity_t
 dds_get_datareader(
-        _In_ dds_entity_t readcond)
+        _In_ dds_entity_t condition)
 {
-    if (readcond >= 0) {
-        if (dds_entity_kind(readcond) == DDS_KIND_COND_READ) {
-            return dds_get_parent(readcond);
-        } else if (dds_entity_kind(readcond) == DDS_KIND_COND_QUERY) {
-            return dds_get_parent(readcond);
+    if (condition >= 0) {
+        if (dds_entity_kind(condition) == DDS_KIND_COND_READ) {
+            return dds_get_parent(condition);
+        } else if (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) {
+            return dds_get_parent(condition);
         } else {
-            dds_return_t ret = dds_valid_hdl(readcond, DDS_KIND_DONTCARE);
+            dds_return_t ret = dds_valid_hdl(condition, DDS_KIND_DONTCARE);
             if (ret == DDS_RETCODE_OK) {
                 return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_COND, DDS_ERR_M1);
             } else {
@@ -80,5 +77,41 @@ dds_get_datareader(
             }
         }
     }
-    return readcond;
+    return condition;
+}
+
+
+_Pre_satisfies_(((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
+dds_return_t
+dds_get_mask(
+        _In_ dds_entity_t condition,
+        _Out_ uint32_t   *mask)
+{
+    dds_return_t ret = condition;
+    dds_readcond *cond;
+    if (condition >= 0) {
+        if (mask != NULL) {
+            if ((dds_entity_kind(condition) == DDS_KIND_COND_READ ) ||
+                (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) ){
+                ret = dds_entity_lock(condition, DDS_KIND_DONTCARE, (dds_entity**)&cond);
+                if (ret == DDS_RETCODE_OK) {
+                    *mask = (cond->m_sample_states | cond->m_view_states | cond->m_instance_states);
+                    dds_entity_unlock((dds_entity*)cond);
+                } else {
+                    ret = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+                }
+            } else {
+                ret = dds_valid_hdl(condition, DDS_KIND_DONTCARE);
+                if (ret == DDS_RETCODE_OK) {
+                    ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_COND, DDS_ERR_M1);
+                } else {
+                    ret = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+                }
+            }
+        } else {
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_COND, DDS_ERR_M1);
+        }
+    }
+    return ret;
 }

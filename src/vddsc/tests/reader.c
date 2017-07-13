@@ -1,7 +1,11 @@
+#include <assert.h>
+
 #include "dds.h"
+#include "os/os.h"
 #include "RoundTrip.h"
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
+#include <criterion/theories.h>
 #define MAX_SAMPLES 10
 
 Test(vddsc_reader, create)
@@ -130,8 +134,8 @@ Test(vddsc_reader, read_with_loan)
   dds_qos_t *qos;
   dds_entity_t publisher;
   dds_entity_t writer;
+  dds_return_t ret;
   int status, samplecount;
-  RoundTripModule_DataType data[MAX_SAMPLES];
 
   /* Create a reader */
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
@@ -146,16 +150,15 @@ Test(vddsc_reader, read_with_loan)
   publisher = dds_create_publisher (participant, qos, NULL);
   writer = dds_create_writer (publisher, topic, NULL, NULL);
 
-  memset (data, 0, sizeof (data));
   for (int i = 0; i < MAX_SAMPLES; i++)
   {
-    samples[i] = &data[i];
+    samples[i] = NULL;
   }
 
   for (int j = 0;  j < MAX_SAMPLES; j++)
   {
-    RoundTripModule_DataType * valid_sample = &data[j];
-    status = dds_write(writer, valid_sample);
+    RoundTripModule_DataType valid_sample = { 0 };
+    status = dds_write(writer, &valid_sample);
     cr_assert_eq(status, DDS_RETCODE_OK);
   }
   samplecount = dds_read_wl (reader, samples, info, MAX_SAMPLES);
@@ -167,6 +170,8 @@ Test(vddsc_reader, read_with_loan)
     cr_assert_eq(info[i].sample_state, DDS_SST_NOT_READ);
     cr_assert_eq(info[i].view_state, DDS_VST_NEW);
   }
+  ret = dds_return_loan(reader, samples, MAX_SAMPLES);
+  cr_assert_eq (ret, DDS_RETCODE_OK);
   samplecount = dds_read_wl (reader, samples, info, MAX_SAMPLES);
   cr_assert_eq (samplecount, MAX_SAMPLES);
   for(int i = 0; i< samplecount; i++)
@@ -176,6 +181,8 @@ Test(vddsc_reader, read_with_loan)
     cr_assert_eq(info[i].sample_state, DDS_SST_READ);
     cr_assert_eq(info[i].view_state, DDS_VST_OLD);
   }
+  ret = dds_return_loan(reader, samples, MAX_SAMPLES);
+  cr_assert_eq (ret, DDS_RETCODE_OK);
 
   dds_delete(writer);
   dds_delete(publisher);
@@ -272,8 +279,8 @@ Test(vddsc_reader, read_mask_with_loan)
   dds_qos_t *qos;
   dds_entity_t publisher;
   dds_entity_t writer;
+  dds_return_t ret;
   int status, samplecount;
-  RoundTripModule_DataType data[MAX_SAMPLES];
   uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_NEW_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE;
 
   /* Create a reader */
@@ -291,16 +298,15 @@ Test(vddsc_reader, read_mask_with_loan)
   writer = dds_create_writer (publisher, topic, NULL, NULL);
   cr_assert_gt(writer, 0, "writer greater than 0");
 
-  memset (data, 0, sizeof (data));
   for (int i = 0; i < MAX_SAMPLES; i++)
   {
-    samples[i] = &data[i];
+    samples[i] = NULL;
   }
 
   for (int j = 0;  j < MAX_SAMPLES; j++)
   {
-    RoundTripModule_DataType * valid_sample = &data[j];
-    status = dds_write(writer, valid_sample);
+    RoundTripModule_DataType valid_sample = { 0 };
+    status = dds_write(writer, &valid_sample);
     cr_assert_eq(status, DDS_RETCODE_OK);
   }
   samplecount = dds_read_mask_wl (reader, samples, info, MAX_SAMPLES, mask);
@@ -312,6 +318,8 @@ Test(vddsc_reader, read_mask_with_loan)
     cr_assert_eq(info[i].sample_state, DDS_SST_NOT_READ);
     cr_assert_eq(info[i].view_state, DDS_VST_NEW);
   }
+  ret = dds_return_loan(reader, samples, MAX_SAMPLES);
+  cr_assert_eq (ret, DDS_RETCODE_OK);
 
   samplecount = dds_read_mask_wl (reader, samples, info, MAX_SAMPLES, mask);
   cr_assert_eq (samplecount, 0);
@@ -325,6 +333,8 @@ Test(vddsc_reader, read_mask_with_loan)
     cr_assert_eq(info[i].sample_state, DDS_SST_READ);
     cr_assert_eq(info[i].view_state, DDS_VST_OLD);
   }
+  ret = dds_return_loan(reader, samples, MAX_SAMPLES);
+  cr_assert_eq (ret, DDS_RETCODE_OK);
 
   dds_delete(writer);
   dds_delete(publisher);
@@ -411,8 +421,8 @@ Test(vddsc_reader, take_with_loan)
   dds_qos_t *qos;
   dds_entity_t publisher;
   dds_entity_t writer;
+  dds_return_t ret;
   int status, samplesCount;
-  RoundTripModule_DataType data[MAX_SAMPLES];
 
   /* Create a reader */
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
@@ -429,16 +439,15 @@ Test(vddsc_reader, take_with_loan)
   writer = dds_create_writer (publisher, topic, NULL, NULL);
   cr_assert_gt(writer, 0, "writer greater than 0");
 
-  memset (data, 0, sizeof (data));
   for (int i = 0; i < MAX_SAMPLES; i++)
   {
-    samples[i] = &data[i];
+    samples[i] = NULL;
   }
 
   for (int j = 0;  j < MAX_SAMPLES; j++)
   {
-    RoundTripModule_DataType * valid_sample = &data[j];
-    status = dds_write(writer, valid_sample);
+    RoundTripModule_DataType valid_sample = { 0 };
+    status = dds_write(writer, &valid_sample);
     cr_assert_eq(status, DDS_RETCODE_OK);
   }
   samplesCount = dds_take_wl (reader, samples, info, MAX_SAMPLES);
@@ -450,9 +459,13 @@ Test(vddsc_reader, take_with_loan)
     cr_assert_eq(info[i].sample_state, DDS_SST_NOT_READ);
     cr_assert_eq(info[i].view_state, DDS_VST_NEW);
   }
+  ret = dds_return_loan(reader, samples, MAX_SAMPLES);
+  cr_assert_eq (ret, DDS_RETCODE_OK);
 
   samplesCount = dds_take_wl (reader, samples, info, MAX_SAMPLES);
   cr_assert_eq (samplesCount, 0);
+  ret = dds_return_loan(reader, samples, MAX_SAMPLES);
+  cr_assert_eq (ret, DDS_RETCODE_OK);
 
   dds_delete(writer);
   dds_delete(publisher);
@@ -541,7 +554,7 @@ Test(vddsc_reader, take_mask_with_loan)
   dds_entity_t publisher;
   dds_entity_t writer;
   int status, samplesCount;
-  RoundTripModule_DataType data[MAX_SAMPLES];
+  dds_return_t ret;
   uint32_t mask = DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
 
   /* Create a reader */
@@ -559,16 +572,15 @@ Test(vddsc_reader, take_mask_with_loan)
   writer = dds_create_writer (publisher, topic, NULL, NULL);
   cr_assert_gt(writer, 0, "writer greater than 0");
 
-  memset (data, 0, sizeof (data));
   for (int i = 0; i < MAX_SAMPLES; i++)
   {
-    samples[i] = &data[i];
+    samples[i] = NULL;
   }
 
   for (int j = 0;  j < MAX_SAMPLES; j++)
   {
-    RoundTripModule_DataType * valid_sample = &data[j];
-    status = dds_write(writer, valid_sample);
+    RoundTripModule_DataType valid_sample = { 0 };
+    status = dds_write(writer, &valid_sample);
     cr_assert_eq(status, DDS_RETCODE_OK);
   }
   samplesCount = dds_take_mask_wl (reader, samples, info, MAX_SAMPLES, mask);
@@ -580,9 +592,13 @@ Test(vddsc_reader, take_mask_with_loan)
     cr_assert_eq(info[i].sample_state, DDS_SST_NOT_READ);
     cr_assert_eq(info[i].view_state, DDS_VST_NEW);
   }
+  ret = dds_return_loan(reader, samples, MAX_SAMPLES);
+  cr_assert_eq (ret, DDS_RETCODE_OK);
 
   samplesCount = dds_take_mask_wl (reader, samples, info, MAX_SAMPLES, mask);
   cr_assert_eq (samplesCount, 0);
+  ret = dds_return_loan(reader, samples, MAX_SAMPLES);
+  cr_assert_eq (ret, DDS_RETCODE_OK);
 
   dds_delete(writer);
   dds_delete(publisher);
@@ -591,4 +607,35 @@ Test(vddsc_reader, take_mask_with_loan)
   dds_delete(topic);
   dds_listener_delete(listener);
   dds_delete(participant);
+}
+
+static dds_entity_t g_participant = 0;
+static void reader_env_init(void)
+{
+    /* We need a participant for initialization. */
+    g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(g_participant, 0, "Failed to create prerequisite participant");
+}
+static void reader_env_fini(void)
+{
+    dds_delete(g_participant);
+}
+
+TheoryDataPoints(vddsc_reader, read_invalid_params) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t rdr), vddsc_reader, read_invalid_params, .init=reader_env_init, .fini=reader_env_fini)
+{
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+    dds_sample_info_t info[MAX_SAMPLES];
+    void *samples[MAX_SAMPLES];
+    dds_return_t ret;
+
+    if (rdr < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = rdr;
+    }
+
+    ret = dds_read (rdr, samples, info, MAX_SAMPLES, MAX_SAMPLES);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }

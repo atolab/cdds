@@ -23,23 +23,20 @@ dds_create_querycondition(
     ret = dds_reader_lock(reader, &r);
     if (ret == DDS_RETCODE_OK) {
         dds_readcond *cond = dds_create_readcond(r, DDS_KIND_COND_QUERY, mask);
-        if (cond) {
-            hdl = cond->m_entity.m_hdl;
-            cond->m_query.m_filter = filter;
-            topic = r->m_topic->m_entity.m_hdl;
-            dds_reader_unlock(r);
-            ret = dds_topic_lock(topic, &t);
-            if (ret == DDS_RETCODE_OK) {
-                if (t->m_stopic->filter_sample == NULL) {
-                    t->m_stopic->filter_sample = dds_alloc(t->m_descriptor->m_size);
-                }
-                dds_topic_unlock(t);
-            } else {
-                (void)dds_delete(hdl);
-                hdl = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+        assert(cond);
+        hdl = cond->m_entity.m_hdl;
+        cond->m_query.m_filter = filter;
+        topic = r->m_topic->m_entity.m_hdl;
+        dds_reader_unlock(r);
+        ret = dds_topic_lock(topic, &t);
+        if (ret == DDS_RETCODE_OK) {
+            if (t->m_stopic->filter_sample == NULL) {
+                t->m_stopic->filter_sample = dds_alloc(t->m_descriptor->m_size);
             }
+            dds_topic_unlock(t);
         } else {
-            hdl = DDS_ERRNO(DDS_RETCODE_OUT_OF_RESOURCES, DDS_MOD_COND, DDS_ERR_M3);
+            (void)dds_delete(hdl);
+            hdl = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
         }
     } else {
         hdl = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M2);

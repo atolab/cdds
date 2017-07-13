@@ -4,6 +4,10 @@
 #include "os/os_defs.h"
 #include "kernel/dds_types.h"
 
+
+#define NO_STATE_MASK_SET   (DDS_ANY_STATE + 1)
+
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
@@ -31,30 +35,26 @@ DDS_EXPORT bool dds_rhc_store
 void dds_rhc_unregister_wr (struct rhc * __restrict rhc, const struct proxy_writer_info * __restrict pwr_info);
 void dds_rhc_relinquish_ownership (struct rhc * __restrict rhc, const uint64_t wr_iid);
 
-int dds_rhc_read
-(
-  struct rhc *rhc, bool lock, void ** values, dds_sample_info_t *info_seq,
-  uint32_t max_samples, unsigned sample_states,
-  unsigned view_states, unsigned instance_states,
-  dds_instance_handle_t handle
-);
-int dds_rhc_read_w_condition
-(
-  struct rhc *rhc, bool lock, void ** values, dds_sample_info_t *info_seq,
-  uint32_t max_samples, dds_readcond *cond, dds_instance_handle_t handle
-);
-int dds_rhc_take
-(
-  struct rhc *rhc, bool lock, void ** values, dds_sample_info_t *info_seq,
-  uint32_t max_samples, unsigned sample_states,
-  unsigned view_states, unsigned instance_states,
-  dds_instance_handle_t handle
-);
-int dds_rhc_take_w_condition
-(
-  struct rhc *rhc, bool lock, void ** values, dds_sample_info_t *info_seq,
-  uint32_t max_samples, dds_readcond *cond, dds_instance_handle_t handle
-);
+int
+dds_rhc_read(
+        struct rhc *rhc,
+        bool lock,
+        void ** values,
+        dds_sample_info_t *info_seq,
+        uint32_t max_samples,
+        uint32_t mask,
+        dds_instance_handle_t handle,
+        dds_readcond *cond);
+int
+dds_rhc_take(
+        struct rhc *rhc,
+        bool lock,
+        void ** values,
+        dds_sample_info_t *info_seq,
+        uint32_t max_samples,
+        uint32_t mask,
+        dds_instance_handle_t handle,
+        dds_readcond *cond);
 
 void dds_rhc_set_qos (struct rhc * rhc, const struct nn_xqos * qos);
 
