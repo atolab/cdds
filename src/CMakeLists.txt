@@ -31,18 +31,22 @@ target_link_libraries(vddsc PRIVATE util)
 include (GenerateExportHeader)
 generate_export_header(vddsc
                         BASE_NAME DDS
-                        EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/exports/dds/dds_export.h")
+                        EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/exports/dds/dds_export.h")
+# To create relocatable packages DO NOT use absolute paths references when creating dependencies.
+# Generator expressions are used to refer to different paths in case of building and installing. 
+target_include_directories(vddsc PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/>" "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports/>"
+                                        "$<INSTALL_INTERFACE:${INSTALL_PREFIX}/include/>" "$<INSTALL_INTERFACE:${INSTALL_PREFIX}/exports/>")
 
-target_include_directories(vddsc PUBLIC "${CMAKE_SOURCE_DIR}/include/" "${CMAKE_BINARY_DIR}/exports/")
-
-# Create a psuedo-target that other targets (i.e. examples, tests) can depend on and can also be
+# Create a pseudo-target that other targets (i.e. examples, tests) can depend on and can also be
 # provided as import-target by a package-file when building those targets outside the regular
 # Vortex build-tree (i.e. the installed tree)
 add_library(Vortex::DDSC ALIAS vddsc)
 
 
 # Just added for install SPIKE. TODO: remove or improve.
+# Create a relocatable package that contains the vdds
 install(TARGETS vddsc
+        EXPORT DDSC
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
@@ -53,6 +57,8 @@ install(FILES ${CMAKE_SOURCE_DIR}/include/dds.h
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/dds
         DESTINATION include
         COMPONENT dev)
+install(EXPORT DDSC DESTINATION lib)
+
 
 # TODO: improve test inclusion.
 if((BUILD_TESTING) AND ((NOT DEFINED MSVC_VERSION) OR (MSVC_VERSION GREATER "1800")))

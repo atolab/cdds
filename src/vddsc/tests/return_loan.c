@@ -1,6 +1,6 @@
 #include "dds.h"
 #include "RoundTrip.h"
-#include "os/os_heap.h"
+#include "os/os.h"
 
 #include <stdio.h>
 #include <criterion/criterion.h>

@@ -47,3 +47,23 @@ add_subdirectory(examples)
 
 include(Packaging) # Pulls in CPack
 
+# set installation dirs
+set(INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for header files")
+set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for library files")
+set(INSTALL_CONFIG_DIR etc CACHE PATH "Installation directory for config files")
+
+# Include helpers functions for creating config files that can be
+# included by other projects to find and use a package.
+include(CMakePackageConfigHelpers)
+configure_package_config_file(VortexDDSConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/VortexDDSConfig.cmake
+  INSTALL_DESTINATION ${LIB_INSTALL_DIR}/VortexDDS/cmake
+  PATH_VARS INSTALL_INCLUDE_DIR INSTALL_LIB_DIR INSTALL_CONFIG_DIR)
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/VortexDDSVersion.cmake
+  VERSION 1.2.3
+  COMPATIBILITY SameMajorVersion)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/VortexDDSConfig.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/VortexDDSVersion.cmake
+        DESTINATION ${LIB_INSTALL_DIR}/Foo/cmake )
+

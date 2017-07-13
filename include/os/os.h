@@ -1,6 +1,7 @@
 #ifndef OS_H
 #define OS_H
 
+#include "os/osapi_export.h"
 #include "os_public.h"
 
 #if __linux__ == 1
@@ -41,6 +42,7 @@
 #include "os_init.h"
 #include "os_process.h"
 #include "os_errno.h"
+
 
 #define OSPL_VERSION_STR "aap"
 #define OSPL_HOST_STR "noot"
