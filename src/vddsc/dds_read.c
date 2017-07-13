@@ -231,7 +231,7 @@ dds_read(
         _In_ size_t bufsz,
         _In_ uint32_t maxs)
 {
-  return dds_read_impl (false, rd_or_cnd, buf, maxs, si, DDS_NOT_SET_STATE, DDS_HANDLE_NIL);
+  return dds_read_impl (false, rd_or_cnd, buf, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -244,7 +244,7 @@ dds_read_wl(
         _Out_ dds_sample_info_t * si,
         _In_ uint32_t maxs)
 {
-  return dds_read_impl (false, rd_or_cnd, buf, maxs, si, DDS_NOT_SET_STATE, DDS_HANDLE_NIL);
+  return dds_read_impl (false, rd_or_cnd, buf, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -311,7 +311,7 @@ dds_take(
         _In_ size_t bufsz,
         _In_ uint32_t maxs)
 {
-  return dds_read_impl (true, rd_or_cnd, buf, maxs, si, DDS_NOT_SET_STATE, DDS_HANDLE_NIL);
+  return dds_read_impl (true, rd_or_cnd, buf, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -324,7 +324,7 @@ dds_take_wl(
         _Out_ dds_sample_info_t * si,
         _In_ uint32_t maxs)
 {
-  return dds_read_impl (true, rd_or_cnd, buf, maxs, si, DDS_NOT_SET_STATE, DDS_HANDLE_NIL);
+  return dds_read_impl (true, rd_or_cnd, buf, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\

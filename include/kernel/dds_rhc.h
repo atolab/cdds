@@ -5,7 +5,7 @@
 #include "kernel/dds_types.h"
 
 
-#define DDS_NOT_SET_STATE   (DDS_ANY_STATE + 1)
+#define NO_STATE_MASK_SET   (DDS_ANY_STATE + 1)
 
 
 #if defined (__cplusplus)

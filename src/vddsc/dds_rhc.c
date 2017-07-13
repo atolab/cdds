@@ -1516,7 +1516,7 @@ static unsigned qmask_from_dcpsquery (unsigned sample_states, unsigned view_stat
 static unsigned qmask_from_mask_n_cond(uint32_t mask, dds_readcond* cond)
 {
     unsigned qminv;
-    if (mask == DDS_NOT_SET_STATE) {
+    if (mask == NO_STATE_MASK_SET) {
         if (cond) {
             /* No mask set, use the one from the condition. */
             qminv = cond->m_qminv;
