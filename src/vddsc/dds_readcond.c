@@ -83,7 +83,7 @@ dds_get_datareader(
 
 _Pre_satisfies_(((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
                 ((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
-dds_return_t
+_Check_return_ dds_return_t
 dds_get_mask(
         _In_ dds_entity_t condition,
         _Out_ uint32_t   *mask)
