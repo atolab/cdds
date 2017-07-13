@@ -18,7 +18,6 @@ int main (int argc, char ** argv)
   int ret = 0;
   dds_qos_t * rqos;
   const char * partitions[1];
-  uint32_t states = DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
 
   /* Initialize sample */
 
@@ -33,7 +32,7 @@ int main (int argc, char ** argv)
 
   topic = dds_create_topic (participant, &HelloWorldData_Msg_desc, "HelloWorldData_Msg", NULL, NULL);
   DDS_ERR_CHECK (topic, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
- 
+
   /* Create a Subscriber */
 
   subscriber = dds_create_subscriber (participant, NULL, NULL);
@@ -58,7 +57,7 @@ int main (int argc, char ** argv)
   samples[0] = &sample;
   while (true)
   {
-    ret = dds_read (reader, samples, info, MAX_SAMPLES, states);
+    ret = dds_read (reader, samples, info, MAX_SAMPLES, MAX_SAMPLES);
     DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     /* Print Message */

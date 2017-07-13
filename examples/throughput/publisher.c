@@ -169,9 +169,10 @@ int main (int argc, char **argv)
       }
     }
   }
-  while (pms.total_count == 0 && !timedOut);
+  while ((pms.total_count == 0) && (!timedOut) && (!done));
 
   /* Register the sample instance and write samples repeatedly or until time out */
+  if (!done)
   {
     dds_time_t burstStart;
     int burstCount = 0;
