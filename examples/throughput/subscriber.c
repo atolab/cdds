@@ -141,7 +141,7 @@ static void data_available_handler (dds_entity_t reader, void *arg)
 
   /* Take samples and iterate through them */
 
-  samples_received = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+  samples_received = dds_take (reader, samples, info, MAX_SAMPLES, MAX_SAMPLES);
   DDS_ERR_CHECK (samples_received, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   for (i = 0; !done && i < samples_received; i++)
@@ -386,7 +386,7 @@ int main (int argc, char **argv)
   {
     ThroughputModule_DataType_free (&data[i], DDS_FREE_CONTENTS);
   }
-  
+
   status = dds_waitset_detach (waitSet, waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   status = dds_waitset_detach (waitSet, pollingWaitset);

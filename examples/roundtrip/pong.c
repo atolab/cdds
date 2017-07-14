@@ -125,7 +125,7 @@ int main (int argc, char *argv[])
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     /* Take samples */
-    samplecount = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+    samplecount = dds_take (reader, samples, info, MAX_SAMPLES, MAX_SAMPLES);
     DDS_ERR_CHECK (samplecount, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     for (j = 0; !dds_triggered (waitSet) && j < samplecount; j++)
     {

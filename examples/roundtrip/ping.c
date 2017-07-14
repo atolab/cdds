@@ -306,7 +306,7 @@ int main (int argc, char *argv[])
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     if (status > 0) /* data */
     {
-      status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+      status = dds_take (reader, samples, info, MAX_SAMPLES, MAX_SAMPLES);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     }
 
@@ -340,7 +340,7 @@ int main (int argc, char *argv[])
     {
       /* Take sample and check that it is valid */
       preTakeTime = dds_time ();
-      status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
+      status = dds_take (reader, samples, info, MAX_SAMPLES, MAX_SAMPLES);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
       postTakeTime = dds_time ();
 
