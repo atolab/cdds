@@ -12,7 +12,7 @@ set(CPACK_PACKAGE_VERSION
 set(__resource_dir "${CMAKE_SOURCE_DIR}/cmake/modules/Packaging")
 mark_as_advanced(__resource_dir)
 
-set(CPACK_PACKAGE_NAME "Vortex DDS")
+set(CPACK_PACKAGE_NAME "VortexDDS")
 set(CPACK_PACKAGE_VENDOR "PrismTech")
 set(CPACK_PACKAGE_CONTACT "info@prismtech.com")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Leading OMG DDS implementation")
