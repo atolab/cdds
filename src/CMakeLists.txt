@@ -30,8 +30,8 @@ target_link_libraries(vddsc PRIVATE util)
 
 include (GenerateExportHeader)
 generate_export_header(vddsc
-                        BASE_NAME DDS
-                        EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/exports/dds/dds_export.h")
+                       BASE_NAME DDS
+                       EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/exports/dds/dds_export.h")
 # To create relocatable packages DO NOT use absolute paths references when creating dependencies.
 # Generator expressions are used to refer to different paths in case of building and installing. 
 target_include_directories(vddsc PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/>" "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports/>"
