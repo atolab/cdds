@@ -2,7 +2,7 @@
 #include "HelloWorldData.h"
 #include <stdio.h>
 
-/* 
+/*
   HelloWorldData Example creates a msg with an UserId and
   publishes it. The subscriber picks up the msg
 */
@@ -51,7 +51,7 @@ int main (int argc, char ** argv)
 
   msg.userID = 1;
   msg.message = "Hello World";
-  
+
   printf ("\n=== [Publisher] Writing : ");
   printf ("Message (%d, %s)\n", msg.userID, msg.message);
 

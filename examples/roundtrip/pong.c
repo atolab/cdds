@@ -75,12 +75,7 @@ int main (int argc, char *argv[])
   /* A DDS Publisher is created on the domain participant. */
 
   qos = dds_qos_create ();
-
-  /* Somehow, the compiler thinks the char arrays might not be zero-terminated... */
-#pragma warning(push)
-#pragma warning(disable: 6054)
   dds_qset_partition (qos, 1, pubPartitions);
-#pragma warning(pop)
 
   publisher = dds_create_publisher (participant, qos, NULL);
   DDS_ERR_CHECK (publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
@@ -98,12 +93,7 @@ int main (int argc, char *argv[])
   /* A DDS Subscriber is created on the domain participant. */
 
   qos = dds_qos_create ();
-
-  /* Somehow, the compiler thinks the char arrays might not be zero-terminated... */
-#pragma warning(push)
-#pragma warning(disable: 6054)
   dds_qset_partition (qos, 1, subPartitions);
-#pragma warning(pop)
 
   subscriber = dds_create_subscriber (participant, qos, NULL);
   DDS_ERR_CHECK (subscriber, DDS_CHECK_REPORT | DDS_CHECK_EXIT);

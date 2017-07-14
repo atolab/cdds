@@ -120,7 +120,7 @@ int main (int argc, char *argv[])
   dds_entity_t topic;
   dds_entity_t publisher;
   dds_entity_t subscriber;
-  
+
   const char *pubPartitions[] = { "ping" };
   const char *subPartitions[] = { "pong" };
   dds_qos_t *pubQos;
@@ -196,12 +196,7 @@ int main (int argc, char *argv[])
 
   /* A DDS_Publisher is created on the domain participant. */
   pubQos = dds_qos_create ();
-
-  /* Somehow, the compiler thinks the char arrays might not be zero-terminated... */
-#pragma warning(push)
-#pragma warning(disable: 6054)
   dds_qset_partition (pubQos, 1, pubPartitions);
-#pragma warning(pop)
 
   publisher = dds_create_publisher (participant, pubQos, NULL);
   DDS_ERR_CHECK (publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
@@ -314,7 +309,7 @@ int main (int argc, char *argv[])
       status = dds_take (reader, samples, info, MAX_SAMPLES, 0);
       DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     }
-    
+
     time = dds_time ();
     difference = time - startTime;
   }
@@ -382,7 +377,7 @@ int main (int argc, char *argv[])
       difference = (postTakeTime - startTime)/DDS_NSECS_IN_USEC;
       if (difference > US_IN_ONE_SEC || (i && i == numSamples))
       {
-        printf 
+        printf
         (
           "%9" PRIi64 " %9lu %8.0f %8" PRIi64 " %10lu %8.0f %8" PRIi64 " %10lu %8.0f %8" PRIi64 "\n",
           elapsed + 1,
@@ -452,7 +447,7 @@ done:
   exampleDeleteTimeStats (&roundTripOverall);
   exampleDeleteTimeStats (&writeAccessOverall);
   exampleDeleteTimeStats (&readAccessOverall);
- 
+
   status = dds_waitset_detach (waitSet, readCond);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   status = dds_waitset_detach (waitSet, waitSet);

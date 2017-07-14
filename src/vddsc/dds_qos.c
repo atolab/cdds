@@ -386,7 +386,7 @@ void dds_qset_partition
 (
     _Inout_ dds_qos_t * __restrict qos,
     _In_ uint32_t n,
-    _In_z_count_(n) const char ** __restrict ps
+    _In_count_(n) _Deref_pre_z_ const char ** __restrict ps
 )
 {
     if (qos && n && ps) {
