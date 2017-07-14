@@ -13,5 +13,5 @@ Test(vddsc_basic, test)
   /* TODO: CHAM-108: Add some simple read/write test(s). */
 
   status = dds_delete(participant);
-  cr_assert_eq(status, DDS_RETCODE_OK);
+  cr_assert_neq(status, DDS_RETCODE_OK, "Deliberate test failure to check Jenkins.");
 }
