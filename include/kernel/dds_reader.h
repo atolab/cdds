@@ -12,11 +12,17 @@ struct status_cb_data;
 void dds_reader_status_cb (void * entity, const struct status_cb_data * data);
 
 /*
-  dds_reader_lock_samples: Returns number of samples in read cache.
-  Locks cache iif > 0. Subsequent read/take required to unlock cache.
+  dds_reader_lock_samples: Returns number of samples in read cache and locks the
+  reader cache to make sure that the samples content doesn't change.
+  Because the cache is locked, you should be able to read/take without having to
+  lock first. This is done by passing the DDS_READ_WITHOUT_LOCK value to the
+  read/take call as maxs. Then the read/take will not lock but still unlock.
+
+  See also CHAM-287, CHAM-306 and LITE-1183.
+
   Used to support LENGTH_UNLIMITED in C++.
 */
-
+#define DDS_READ_WITHOUT_LOCK (0xFFFFFFED)
 DDS_EXPORT uint32_t dds_reader_lock_samples (dds_entity_t entity);
 
 struct nn_rsample_info;
