@@ -678,6 +678,40 @@ extern "C" {
         _In_ size_t count);
 
     /**
+	 * \brief the os_flockfile() function waits for *filehandle to be
+	 * no longer locked by a different thread, then makes the current
+	 * thread owner of *filehandle, and increments the lockcount.
+	 *
+	 * Precondition:
+	 *   none
+	 *
+	 * Possible results:
+	 * - No error information is returned.
+	 * The thread will block until the lock is acquired.
+	 * An explicit call to os_funlockfile has to be used to release the lock.
+	 *
+	 */
+	OSAPI_EXPORT void os_flockfile(
+		FILE *file);
+
+	/**
+	 * \brief the os_funlockfile function decrements the lock count and releases
+	 *  the internal locking object of the *filehandle. The *filehandle must
+	 *  have been locked before by a call to os_flockfile.
+	 *
+	 * Precondition:
+	 *   none
+	 *
+	 * Possible results:
+	 * -  No error information is returned.
+	 * The behaviour is undefined if a thread other than the current owner calls
+	 * the os_funlockfile() function.
+	 *
+	 */
+	OSAPI_EXPORT void os_funlockfile(
+		FILE *file);
+
+    /**
      * \brief binary search algorithm on an already sorted list.
      *
      *

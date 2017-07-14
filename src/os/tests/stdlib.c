@@ -12,6 +12,9 @@
 #endif
 
 #define ENABLE_TRACING 0
+char FLOCKFILE_THREAD1_TEXT_001[] = "Thread1__001";
+char FLOCKFILE_THREAD1_TEXT_002[] = "Thread1__002";
+char FLOCKFILE_THREAD2_TEXT_001[] = "Thread2__001";
 
 static int
 vsnprintfTest(
@@ -27,6 +30,52 @@ vsnprintfTest(
     result = os_vsnprintf(description, sizeof(description)-1, format, varargs);
     va_end(varargs);
     return result;
+}
+
+static uint32_t
+thread_flockfile_001a (FILE *fp)
+{
+	fputs(FLOCKFILE_THREAD1_TEXT_001, fp);
+
+	os_time delay = { 1, 0 };
+	os_nanoSleep(delay);
+
+	fputs(FLOCKFILE_THREAD1_TEXT_002, fp);
+
+    return 0;
+}
+
+static uint32_t
+thread_flockfile_002a (FILE *fp)
+{
+	fputs(FLOCKFILE_THREAD2_TEXT_001, fp);
+
+    return 0;
+}
+
+static uint32_t
+thread_flockfile_001b (FILE *fp)
+{
+	os_flockfile(fp);
+
+	fputs(FLOCKFILE_THREAD1_TEXT_001, fp);
+
+	os_time delay = { 1, 0 };
+	os_nanoSleep(delay);
+
+	fputs(FLOCKFILE_THREAD1_TEXT_002, fp);
+
+	os_funlockfile(fp);
+
+    return 0;
+}
+
+static uint32_t
+thread_flockfile_002b (FILE *fp)
+{
+	fputs(FLOCKFILE_THREAD2_TEXT_001, fp);
+
+    return 0;
 }
 
 CUnit_Suite_Initialize(os_stdlib)
@@ -550,4 +599,104 @@ CUnit_Test(os_stdlib, index)
     CU_ASSERT (res == NULL);
 
     printf ("Ending os_stdlib_index\n");
+}
+
+CUnit_Test(os_stdlib, flockfile)
+{
+#define FLOCKFILE_MSG_MAX sizeof(FLOCKFILE_THREAD1_TEXT_001)
+	char buffer[FLOCKFILE_MSG_MAX];
+	int result;
+
+	/* Check writing in a FILE from multiple threads without using os_flockfile. */
+	printf ("Starting os_stdlib_flockfile_001\n");
+
+	os_threadId   thread_os_threadId_001a;
+	os_threadAttr thread_os_threadAttr_001a;
+	os_threadId   thread_os_threadId_002a;
+	os_threadAttr thread_os_threadAttr_002a;
+
+	FILE *fp_001 = tmpfile();
+
+	os_threadAttrInit (&thread_os_threadAttr_001a);
+	result = os_threadCreate (&thread_os_threadId_001a, "TestThread1", &thread_os_threadAttr_001a, (os_threadRoutine)&thread_flockfile_001a, fp_001);
+	CU_ASSERT (result == os_resultSuccess);
+
+	os_time delay = { 0, 500000000 };
+	os_nanoSleep(delay);
+
+	os_threadAttrInit (&thread_os_threadAttr_002a);
+	result = os_threadCreate (&thread_os_threadId_002a, "TestThread2", &thread_os_threadAttr_002a, (os_threadRoutine)&thread_flockfile_002a, fp_001);
+	CU_ASSERT (result == os_resultSuccess);
+
+	result = os_threadWaitExit (thread_os_threadId_001a, NULL);
+	CU_ASSERT (result == os_resultSuccess);
+	result = os_threadWaitExit (thread_os_threadId_002a, NULL);
+	CU_ASSERT (result == os_resultSuccess);
+
+	rewind(fp_001);
+
+	if(fgets(buffer, FLOCKFILE_MSG_MAX, fp_001) != NULL) {
+		result = strcmp(buffer, FLOCKFILE_THREAD1_TEXT_001);
+		CU_ASSERT (result == 0);
+	}
+
+	if(fgets(buffer, FLOCKFILE_MSG_MAX, fp_001) != NULL) {
+		result = strcmp(buffer, FLOCKFILE_THREAD2_TEXT_001);
+		CU_ASSERT (result == 0);
+	}
+
+	if(fgets(buffer, FLOCKFILE_MSG_MAX, fp_001) != NULL) {
+		result = strcmp(buffer, FLOCKFILE_THREAD1_TEXT_002);
+		CU_ASSERT (result == 0);
+	}
+
+	fclose(fp_001);
+
+	/* Check writing in a FILE from multiple threads using os_flockfile in the first thread. */
+	printf ("Starting os_stdlib_flockfile_002\n");
+
+	os_threadId   thread_os_threadId_001b;
+	os_threadAttr thread_os_threadAttr_001b;
+	os_threadId   thread_os_threadId_002b;
+	os_threadAttr thread_os_threadAttr_002b;
+
+	FILE *fp_002 = tmpfile();
+
+	os_threadAttrInit (&thread_os_threadAttr_001b);
+	result = os_threadCreate (&thread_os_threadId_001b, "TestThreadWithFlockFile1",
+			&thread_os_threadAttr_001b, (os_threadRoutine)&thread_flockfile_001b, fp_002);
+	CU_ASSERT (result == os_resultSuccess);
+
+	os_nanoSleep(delay);
+
+	os_threadAttrInit (&thread_os_threadAttr_002b);
+	result = os_threadCreate (&thread_os_threadId_002b, "TestThreadWithFlockFile2",
+			&thread_os_threadAttr_002b, (os_threadRoutine)&thread_flockfile_002b, fp_002);
+	CU_ASSERT (result == os_resultSuccess);
+
+	result = os_threadWaitExit (thread_os_threadId_001b, NULL);
+	CU_ASSERT (result == os_resultSuccess);
+	result = os_threadWaitExit (thread_os_threadId_002b, NULL);
+	CU_ASSERT (result == os_resultSuccess);
+
+	rewind(fp_002);
+
+	if(fgets(buffer, FLOCKFILE_MSG_MAX, fp_002) != NULL) {
+		result = strcmp(buffer, FLOCKFILE_THREAD1_TEXT_001);
+		CU_ASSERT (result == 0);
+	}
+
+	if(fgets(buffer, FLOCKFILE_MSG_MAX, fp_002) != NULL) {
+		result = strcmp(buffer, FLOCKFILE_THREAD1_TEXT_002);
+		CU_ASSERT (result == 0);
+	}
+
+	if(fgets(buffer, FLOCKFILE_MSG_MAX, fp_002) != NULL) {
+		result = strcmp(buffer, FLOCKFILE_THREAD2_TEXT_001);
+		CU_ASSERT (result == 0);
+	}
+
+	fclose(fp_002);
+
+	printf ("Ending os_stdlib_flockfile\n");
 }

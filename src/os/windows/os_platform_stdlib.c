@@ -497,3 +497,13 @@ ssize_t os_write(
 {
         return _write(fd, buf, (unsigned int)count); /* Type casting is done for the warning of conversion from 'size_t' to 'unsigned int', which may cause possible loss of data */
 }
+
+void os_flockfile(FILE *file)
+{
+	_lock_file (file);
+}
+
+void os_funlockfile(FILE *file)
+{
+	_unlock_file (file);
+}
