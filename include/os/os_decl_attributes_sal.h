@@ -108,6 +108,9 @@
 #ifndef _Deref_out_range_
 #define _Deref_out_range_(l,h)
 #endif
+#ifndef _Deref_pre_z_
+#define _Deref_pre_z_
+#endif
 #ifndef _Enum_is_bitflag_
 #define _Enum_is_bitflag_
 #endif
@@ -170,6 +173,9 @@
 #endif
 #ifndef _In_
 #define _In_
+#endif
+#ifndef _In_count_
+#define _In_count_(c)
 #endif
 #ifndef _In_defensive_
 #define _In_defensive_(a)
