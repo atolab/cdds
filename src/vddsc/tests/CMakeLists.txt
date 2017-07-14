@@ -52,4 +52,5 @@ add_dds_test(writer                   Criterion      writer.c ${RoundTrip_SRCS})
 target_include_directories(writer PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 add_dds_test(write                    Criterion      write.c ${RoundTrip_SRCS})
 target_include_directories(write PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
-
+add_dds_test(entity_status            Criterion      entity_status.c ${RoundTrip_SRCS})
+target_include_directories(entity_status PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
