@@ -360,17 +360,22 @@ dds_instancehandle_get(
   of the statuses. Enabled status analogously to DCPS spec.
 */
 
-
 /**
- * Description : Read the status(es) set for the entity based on the enabled
- * status and mask set. This operation does not clear the read status(es).
+ * @brief Read the status set for the entity
  *
- * Arguments :
- *   -# e Entity on which the status has to be read
- *   -# status Returns the status set on the entity, based on the enabled status
- *   -# mask Filter the status condition to be read (can be NULL)
- *   -# Returns 0 on success, or a non-zero error value if the mask does not
- *      correspond to the entity
+ * This operation reads the status(es) set for the entity based on
+ * the enabled status and mask set. It does not clear the read status(es).
+ *
+ * @param[in]  entity  Entity on which the status has to be read
+ * @param[out] status  Returns the status set on the entity, based on the enabled status
+ * @param[in]  mask    Filter the status condition to be read (can be NULL)
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *            The operation was successful
+ *        DDS_RETCODE_BAD_PARAMETER
+ *            The entity parameter is not a valid parameter.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -380,15 +385,21 @@ dds_read_status(
         _In_  uint32_t mask);
 
 /**
- * Description : Read the status(es) set for the entity based on the enabled
- * status and mask set. This operation clears the status set after reading.
+ * @brief Read the status set for the entity
  *
- * Arguments :
- *   -# e Entity on which the status has to be read
- *   -# status Returns the status set on the entity, based on the enabled status
- *   -# mask Filter the status condition to be read (can be NULL)
- *   -# Returns 0 on success, or a non-zero error value if the mask does not
- *      correspond to the entity
+ * This operation reads the status(es) set for the entity based on the enabled
+ * status and mask set. It clears the status set after reading.
+ *
+ * @param[in]  entity  Entity on which the status has to be read
+ * @param[out] status  Returns the status set on the entity, based on the enabled status
+ * @param[in]  mask    Filter the status condition to be read (can be NULL)
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *            The operation was successful
+ *        DDS_RETCODE_BAD_PARAMETER
+ *            The entity parameter is not a valid parameter.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -404,6 +415,21 @@ dds_take_status(
  *   -# e Entity on which the statuses are read
  *   -# Returns the curent set of triggered statuses.
  */
+/**
+ * @brief Get changed status(es)
+ *
+ * This operation returns the status changes since they were last read.
+ *
+ * @param[in]  entity  Entity on which the statuses are read
+ * @param[out] status  Returns the curent set of triggered statuses.
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *            The operation was successful
+ *        DDS_RETCODE_BAD_PARAMETER
+ *            The entity parameter is not a valid parameter.
+ */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_get_status_changes(
@@ -411,11 +437,19 @@ dds_get_status_changes(
         _Out_ uint32_t *status);
 
 /**
- * Description : This operation returns the status enabled on the entity
+ * @brief Get enabled status on entity
  *
- * Arguments :
- *   -# e Entity to get the status
- *   -# Returns the status that are enabled for the entity
+ * This operation returns the status enabled on the entity
+ *
+ * @param[in]  entity  Entity to get the status
+ * @param[out] status  Status set on the entity
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *            The operation was successful
+ *        DDS_RETCODE_BAD_PARAMETER
+ *            The entity parameter is not a valid parameter.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -423,15 +457,20 @@ dds_get_enabled_status(
         _In_  dds_entity_t entity,
         _Out_ uint32_t *status);
 
-
 /**
- * Description : This operation enables the status(es) based on the mask set
+ * @brief Set status enabled on entity
  *
- * Arguments :
- *   -# e Entity to enable the status
- *   -# mask Status value that indicates the status to be enabled
- *   -# Returns 0 on success, or a non-zero error value indicating failure if the mask
- *      does not correspond to the entity.
+ * This operation enables the status(es) based on the mask set
+ *
+ * @param[in]  entity  Entity to enable the status
+ * @param[in]  mask    Status value that indicates the status to be enabled
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *            The operation was successful
+ *        DDS_RETCODE_BAD_PARAMETER
+ *            The entity parameter is not a valid parameter.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT dds_return_t
@@ -2011,12 +2050,17 @@ DDS_EXPORT dds_return_t
 dds_notify_readers(
         _In_ dds_entity_t subscriber);
 
-
 /**
- * Description : Checks whether the entity has one of its enabled statuses triggered.
+ * @brief Checks whether the entity has one of its enabled statuses triggered.
  *
- * Arguments :
- * -# e Entity for which to check for triggered status
+ * @param[in]  entity  Entity for which to check for triggered status
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *            The operation was successful
+ *        DDS_RETCODE_BAD_PARAMETER
+ *            The entity parameter is not a valid parameter.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT dds_return_t

@@ -2,7 +2,7 @@
 #include "RoundTrip.h"
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
-#include <stdio.h>
+
 #define cr_assert_status_eq(s1, s2, ...) cr_assert_eq(dds_err_nr(s1), s2, __VA_ARGS__)
 
 Test(vddsc_entity, matched_status)
@@ -1004,3 +1004,82 @@ Test(vddsc_entity, all_data_available)
   dds_listener_delete(listener);
   dds_delete(participant);
 }
+
+Test(vddsc_entity, get_enabled_status_invalid_params)
+{
+  dds_return_t status;
+  uint32_t s = 0;
+
+  status = dds_get_enabled_status(-1, &s);
+  cr_assert_eq(status, -1);
+  status = dds_get_enabled_status(0, &s);
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_enabled_status(0, NULL)");
+  status = dds_get_enabled_status(1, &s);
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER);
+}
+
+Test(vddsc_entity, set_enabled_status_invalid_params)
+{
+  dds_return_t status;
+
+  status = dds_set_enabled_status(-1, DDS_DATA_AVAILABLE_STATUS);
+  cr_assert_eq(status, -1);
+  status = dds_set_enabled_status(0, DDS_DATA_AVAILABLE_STATUS);
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_enabled_status(0, DDS_DATA_AVAILABLE_STATUS)");
+  status = dds_set_enabled_status(1, DDS_DATA_AVAILABLE_STATUS);
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER);
+}
+
+Test(vddsc_entity, read_status_invalid_params)
+{
+  dds_return_t status;
+  uint32_t s = 0;
+
+  status = dds_read_status (-1, &s, 0);
+  cr_assert_eq(status, -1);
+  status = dds_read_status (0, &s, 0);
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_read_status(0, &s, 0)");
+  status = dds_read_status (1, &s, 0);
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER);
+}
+
+Test(vddsc_entity, take_status_invalid_params)
+{
+  dds_return_t status;
+  uint32_t s = 0;
+
+  status = dds_take_status (-1, &s, 0);
+  cr_assert_eq(status, -1);
+  status = dds_take_status (0, &s, 0);
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_read_status(0, &s, 0)");
+  status = dds_take_status (1, &s, 0);
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER);
+
+}
+
+Test(vddsc_entity, get_status_changes_invalid_params)
+{
+  dds_return_t status;
+  uint32_t s = 0;
+
+  status = dds_get_status_changes (-1, &s);
+  cr_assert_eq(status, -1);
+  status = dds_get_status_changes (0, &s);
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_status_changes(0, 0)");
+  status = dds_get_status_changes (1, &s);
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER);
+}
+
+Test(vddsc_entity, triggered_invalid_params)
+{
+  dds_return_t status;
+
+  status = dds_triggered (-1);
+  cr_assert_eq(status, -1);
+  status = dds_triggered (0);
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_triggered(0)");
+  //cr_assert_eq(ret, 0, "dds_triggered: Invalid return code %d", dds_err_nr(ret));
+  status = dds_triggered (1);
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER);
+}
+
