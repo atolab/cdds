@@ -27,6 +27,7 @@ else()
 endif()
 target_sources(vddsc PRIVATE ${srcs_ddsi} ${srcs_vddsc})
 target_link_libraries(vddsc PRIVATE util)
+set_target_file_ids(vddsc)
 
 include (GenerateExportHeader)
 generate_export_header(vddsc

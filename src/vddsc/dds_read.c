@@ -49,7 +49,7 @@ dds_read_lock(
             }
         }
     }
-    return DDS_ERRNO(ret, DDS_MOD_READER, 0);
+    return DDS_ERRNO(ret);
 }
 
 static void
@@ -405,7 +405,7 @@ dds_return_loan(
     dds_readcond *cond;
 
     if (!buf || (*buf == NULL && bufsz > 0)) {
-        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_READER, DDS_ERR_M1);
+        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     }
 
     ret = dds_read_lock(reader_or_condition, &rd, &cond);

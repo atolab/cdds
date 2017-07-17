@@ -24,13 +24,12 @@ dds_write(
         _In_ dds_entity_t writer,
         _In_ const void *data)
 {
-    dds_return_t ret = DDS_ERRNO(
-        DDS_RETCODE_BAD_PARAMETER, DDS_MOD_INST, DDS_ERR_M1);
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     dds_writer *wr;
 
     if (data != NULL) {
         ret = dds_writer_lock(writer, &wr);
-        ret = DDS_ERRNO(ret, DDS_MOD_INST, DDS_ERR_M2);
+        ret = DDS_ERRNO(ret);
         if (ret == DDS_RETCODE_OK) {
             ret = dds_write_impl(wr, data, dds_time(), 0);
             dds_writer_unlock(wr);
@@ -56,7 +55,7 @@ dds_writecdr(
             dds_writer_unlock(wr);
         }
     }
-    return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
+    return DDS_ERRNO (ret);
 }
 
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
@@ -66,13 +65,12 @@ dds_write_ts(
         _In_ const void *data,
         _In_ dds_time_t timestamp)
 {
-    dds_return_t ret = DDS_ERRNO(
-        DDS_RETCODE_BAD_PARAMETER, DDS_MOD_INST, DDS_ERR_M1);
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     dds_writer *wr;
 
     if (data != NULL && timestamp >= 0) {
         ret = dds_writer_lock(writer, &wr);
-        ret = DDS_ERRNO(ret, DDS_MOD_INST, DDS_ERR_M2);
+        ret = DDS_ERRNO(ret);
         if (ret == DDS_RETCODE_OK) {
             ret = dds_write_impl(wr, data, timestamp, 0);
             dds_writer_unlock(wr);
@@ -223,11 +221,11 @@ int dds_write_impl
   }
   else if (ret == ERR_TIMEOUT)
   {
-    ret = DDS_ERRNO (DDS_RETCODE_TIMEOUT, DDS_MOD_WRITER, DDS_ERR_M1);
+    ret = DDS_ERRNO (DDS_RETCODE_TIMEOUT);
   }
   else
   {
-    ret = DDS_ERRNO (DDS_RETCODE_ERROR, DDS_MOD_WRITER, DDS_ERR_M2);
+    ret = DDS_ERRNO (DDS_RETCODE_ERROR);
   }
   os_mutexUnlock (&writer->m_call_lock);
 
@@ -319,11 +317,11 @@ int dds_writecdr_impl
   }
   else if (ret == ERR_TIMEOUT)
   {
-    ret = DDS_ERRNO (DDS_RETCODE_TIMEOUT, DDS_MOD_WRITER, DDS_ERR_M1);
+    ret = DDS_ERRNO (DDS_RETCODE_TIMEOUT);
   }
   else
   {
-    ret = DDS_ERRNO (DDS_RETCODE_ERROR, DDS_MOD_WRITER, DDS_ERR_M2);
+    ret = DDS_ERRNO (DDS_RETCODE_ERROR);
   }
   os_mutexUnlock (&wr->m_call_lock);
 

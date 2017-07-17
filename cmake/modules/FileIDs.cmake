@@ -7,10 +7,10 @@
 # versions/branches. Of course one could choose to specify the module manually
 # with every return, but that is tedious and error prone.
 
-if(SOURCE_FILE_IDS_INCLUDED)
+if(FILE_IDS_INCLUDED)
   return()
 endif()
-set(SOURCE_FILE_IDS_INCLUDED true)
+set(FILE_IDS_INCLUDED true)
 
 
 # Verify syntax for all .fileids files and ensure no source file id is used
@@ -40,13 +40,12 @@ if(dup__)
   message(FATAL_ERROR "Duplicate ids")
 endif()
 
-
 function(JOIN lst glue var)
   string(REPLACE ";" "${glue}" tmp "${${lst}}")
   set(${var} "${tmp}" PARENT_SCOPE)
 endfunction()
 
-function(SOURCE_FILE_ID src var) # private
+function(FILE_ID src var) # private
   # .fileids files may reside in subdirectories to keep them together with the
   # files they assign an identifier to, much like .gitignore files
   set(dir "${CMAKE_SOURCE_DIR}")
@@ -55,7 +54,7 @@ function(SOURCE_FILE_ID src var) # private
   while(parts)
     set(map "${dir}/.fileids")
     join(parts "/" fil)
-    list(APPEND maps "${map}:${fil}")
+    list(APPEND maps "${map}^${fil}")
     list(GET parts 0 part)
     list(REMOVE_AT parts 0)
     set(dir "${dir}/${part}")
@@ -63,7 +62,7 @@ function(SOURCE_FILE_ID src var) # private
 
   set(id)
   foreach(entry ${maps})
-    string(REPLACE ":" ";" entry "${entry}")
+    string(REPLACE "^" ";" entry "${entry}")
     list(GET entry 0 map)
     list(GET entry 1 fil)
     if(EXISTS "${map}")
@@ -89,7 +88,7 @@ endfunction()
 # Source file properties are visible only to targets added in the same
 # directory (CMakeLists.txt).
 # https://cmake.org/cmake/help/latest/command/set_source_files_properties.html
-function(SET_TARGET_SOURCE_FILE_IDS tgt)
+function(SET_TARGET_FILE_IDS tgt)
   get_target_property(external ${tgt} IMPORTED)
   get_target_property(alias ${tgt} ALIASED_TARGET)
   string(LENGTH "${CMAKE_SOURCE_DIR}" len)
@@ -108,10 +107,10 @@ function(SET_TARGET_SOURCE_FILE_IDS tgt)
 
       get_filename_component(fil "${fil}" ABSOLUTE)
 
-      string(FIND "${src}" "${CMAKE_SOURCE_DIR}" pos)
+      string(FIND "${fil}" "${CMAKE_SOURCE_DIR}" pos)
       if(${pos} EQUAL 0)
         string(SUBSTRING "${fil}" ${len} -1 rel)
-        source_file_id("${rel}" id)
+        file_id("${rel}" id)
       endif()
 
       if(id)
@@ -119,7 +118,7 @@ function(SET_TARGET_SOURCE_FILE_IDS tgt)
            ("${source_file_id_${id}}" STREQUAL "${src}"))
           set("source_file_id_${id}" "${rel}" CACHE INTERNAL "")
           set_source_files_properties(
-            "${src}" PROPERTIES COMPILE_DEFINITIONS SOURCE_FILE_ID=${id})
+            "${src}" PROPERTIES COMPILE_DEFINITIONS __FILE_ID__=${id})
         else()
           message(FATAL_ERROR "Same id for ${rel} and ${source_file_id_${id}}")
         endif()

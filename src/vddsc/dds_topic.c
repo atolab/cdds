@@ -27,7 +27,7 @@ const ut_avlTreedef_t dds_topictree_def = UT_AVL_TREEDEF_INITIALIZER_INDKEY
 static dds_return_t dds_topic_status_validate (uint32_t mask)
 {
     return (mask & ~(DDS_TOPIC_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_TOPIC, 0) :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER) :
                      DDS_RETCODE_OK;
 }
 
@@ -158,7 +158,7 @@ dds_find_topic(
         dds_entity_unlock(p);
     }
     if (ret != DDS_RETCODE_OK) {
-        tp = DDS_ERRNO(ret, DDS_MOD_TOPIC, DDS_ERR_M1);
+        tp = DDS_ERRNO(ret);
     }
     return tp;
 }
@@ -171,7 +171,7 @@ static dds_return_t dds_topic_delete(dds_entity *e)
 
 static dds_return_t dds_topic_qos_validate (const dds_qos_t *qos, bool enabled)
 {
-    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_TOPIC, 0);
+    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY);
     bool consistent = true;
     assert(qos);
     /* Check consistency. */
@@ -185,7 +185,7 @@ static dds_return_t dds_topic_qos_validate (const dds_qos_t *qos, bool enabled)
         if (enabled) {
             /* TODO: Improve/check immutable check. */
             if (qos->present != QP_LATENCY_BUDGET) {
-                ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, DDS_MOD_TOPIC, DDS_ERR_M1);
+                ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
             }
         }
     }
@@ -199,7 +199,7 @@ static dds_return_t dds_topic_qos_set (dds_entity *e, const dds_qos_t *qos, bool
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_TOPIC, DDS_ERR_M1));
+            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED));
         }
     }
     return ret;
@@ -235,7 +235,7 @@ dds_create_topic(
 
     ret = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
     if (ret != DDS_RETCODE_OK) {
-        return DDS_ERRNO(ret, DDS_MOD_TOPIC, DDS_ERR_M2);
+        return DDS_ERRNO(ret);
     }
 
     /* Validate qos */
@@ -250,7 +250,7 @@ dds_create_topic(
     /* Check if topic already exists with same name */
     if (dds_topic_lookup (par->m_domain, name)) {
         dds_entity_unlock(par);
-        return DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, DDS_MOD_TOPIC, DDS_ERR_M1);
+        return DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
     }
 
     typename = desc->m_typename;
@@ -430,7 +430,7 @@ dds_get_name(
             dds_topic_unlock(t);
         }
     }
-    return DDS_ERRNO(ret, DDS_MOD_TOPIC, 0);
+    return DDS_ERRNO(ret);
 }
 
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
@@ -450,7 +450,7 @@ dds_get_type_name(
             dds_topic_unlock(t);
         }
     }
-    return DDS_ERRNO(ret, DDS_MOD_TOPIC, 0);
+    return DDS_ERRNO(ret);
 }
 
 dds_return_t dds_get_inconsistent_topic_status (dds_entity_t entity, dds_inconsistent_topic_status_t * status)
@@ -470,5 +470,5 @@ dds_return_t dds_get_inconsistent_topic_status (dds_entity_t entity, dds_inconsi
         }
         dds_topic_unlock(t);
     }
-    return DDS_ERRNO(errnr, DDS_MOD_READER, 0);
+    return DDS_ERRNO(errnr);
 }

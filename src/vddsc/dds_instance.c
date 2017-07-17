@@ -112,7 +112,7 @@ dds_instance_register(
 
   ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
   if (ret != DDS_RETCODE_OK) {
-      return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
+      return DDS_ERRNO (ret);
   }
   inst = dds_instance_find (((dds_writer*) wr)->m_topic, data, true);
   dds_entity_unlock(wr);
@@ -148,7 +148,7 @@ dds_instance_unregister_ts(
 
   ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
   if (ret != DDS_RETCODE_OK) {
-      return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
+      return DDS_ERRNO (ret);
   }
 
   /* If have handle but not sample, get sample from handle */
@@ -160,7 +160,7 @@ dds_instance_unregister_ts(
     sample = dds_alloc (topic->m_descriptor->m_size);
     if (! dds_tkmap_get_key (map, handle, sample))
     {
-      ret = DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER, DDS_MOD_INST, DDS_ERR_M2);
+      ret = DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER);
     }
   }
 
@@ -198,7 +198,7 @@ dds_instance_writedispose_ts(
   dds_entity *wr;
   ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
   if (ret != DDS_RETCODE_OK) {
-      return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
+      return DDS_ERRNO (ret);
   }
   ret = dds_write_impl ((dds_writer*)wr, data, timestamp, DDS_WR_ACTION_WRITE_DISPOSE);
   dds_instance_remove (((dds_writer*)wr)->m_topic, data, DDS_HANDLE_NIL);
@@ -217,7 +217,7 @@ dds_instance_dispose_ts(
   dds_entity *wr;
   ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
   if (ret != DDS_RETCODE_OK) {
-      return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
+      return DDS_ERRNO (ret);
   }
   ret = dds_write_impl ((dds_writer*)wr, data, timestamp, DDS_WR_ACTION_DISPOSE);
   dds_instance_remove (((dds_writer*)wr)->m_topic, data, DDS_HANDLE_NIL);
@@ -260,5 +260,5 @@ dds_instance_get_key(
   topic = dds_instance_info_by_hdl (entity);
   memset (data, 0, topic->m_descriptor->m_size);
   return (dds_tkmap_get_key (map, inst, data)) ?
-    DDS_RETCODE_OK : DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER, DDS_MOD_INST, DDS_ERR_M1);
+    DDS_RETCODE_OK : DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER);
 }
