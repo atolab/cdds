@@ -172,7 +172,6 @@ void os_rwlockInit(_Out_ os_rwlock *rwlock)
 void os_rwlockDestroy(_Inout_ _Post_invalid_ os_rwlock *rwlock)
 {
         assert(rwlock);
-        assert(rwlock->state == 0);
 #ifdef OSPL_STRICT_MEM
         assert(rwlock->signature != OS_RWLOCK_MAGIC_SIG);
         rwlock->signature = 0;

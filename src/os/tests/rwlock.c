@@ -552,3 +552,16 @@ CUnit_Test(os_rwlock, destroy, false)
 
     printf ("Ending tc_rwlockDestroy\n");
 }
+
+CUnit_Test(os_rwlock, destroy_shared)
+{
+    os_rwlock mylock;
+
+    os_rwlockInit(&mylock);
+    os_rwlockRead(&mylock);
+    os_rwlockUnlock(&mylock);
+    /* This test used to assert on a debug-build on Windows. Failure can't be forced, but if
+     * someone adds the naively sensible assert again, this test won't run on a debug-build. */
+    os_rwlockDestroy(&mylock);
+    CU_PASS("os_rwlockDestroy succeeds after releasing a shared lock");
+}

@@ -232,13 +232,11 @@ extern void dds_fini (void)
     ut_handleserver_fini();
     if (ddsi_plugin.init_fn)
     {
-#ifndef _WIN32
       rtps_term ();
       nn_servicelease_free (gv.servicelease);
       downgrade_main_thread ();
       thread_states_fini ();
       config_fini ();
-#endif
       os_mutexDestroy (&gv.static_logbuf_lock);
       os_mutexDestroy (&dds_global.m_mutex);
     }
