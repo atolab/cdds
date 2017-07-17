@@ -1791,7 +1791,7 @@ _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER
 DDS_EXPORT dds_return_t
 dds_read(
         _In_ dds_entity_t reader_or_condition,
-        _Out_ void **buf,
+        _Inout_ void **buf,
         _Out_ dds_sample_info_t *si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs);
@@ -1824,7 +1824,7 @@ _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER
 DDS_EXPORT dds_return_t
 dds_read_wl(
         _In_ dds_entity_t reader_or_condition,
-        _Out_ void **buf,
+        _Inout_ void **buf,
         _Out_ dds_sample_info_t *si,
         _In_ uint32_t maxs);
 
@@ -1860,7 +1860,7 @@ _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER
 DDS_EXPORT dds_return_t
 dds_read_mask(
         _In_ dds_entity_t reader_or_condition,
-        _Out_ void **buf,
+        _Inout_ void **buf,
         _Out_ dds_sample_info_t *si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs,
@@ -1898,7 +1898,7 @@ _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER
 DDS_EXPORT dds_return_t
 dds_read_mask_wl(
         _In_ dds_entity_t reader_or_condition,
-        _Out_ void **buf,
+        _Inout_ void **buf,
         _Out_ dds_sample_info_t *si,
         _In_ uint32_t maxs,
         _In_ uint32_t mask);
@@ -1963,7 +1963,7 @@ _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER
 DDS_EXPORT dds_return_t
 dds_take(
         _In_ dds_entity_t reader_or_condition,
-        _Out_ void **buf,
+        _Inout_ void **buf,
         _Out_ dds_sample_info_t *si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs);
@@ -1996,7 +1996,7 @@ _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER
 DDS_EXPORT dds_return_t
 dds_take_wl(
         _In_ dds_entity_t reader_or_condition,
-        _Out_ void **buf,
+        _Inout_ void **buf,
         _Out_ dds_sample_info_t *si,
         _In_ uint32_t maxs);
 
@@ -2030,8 +2030,8 @@ _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 DDS_EXPORT dds_return_t
 dds_take_mask(
-_In_ dds_entity_t reader_or_condition,
-        _Out_ void **buf,
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
         _Out_ dds_sample_info_t *si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs,
@@ -2068,7 +2068,7 @@ _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER
 DDS_EXPORT dds_return_t
 dds_take_mask_wl(
         _In_ dds_entity_t reader_or_condition,
-        _Out_ void **buf,
+        _Inout_ void **buf,
         _Out_ dds_sample_info_t *si,
         _In_ uint32_t maxs,
         _In_ uint32_t mask);

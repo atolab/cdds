@@ -25,7 +25,6 @@ void dds_rhc_free (struct rhc * rhc);
 void dds_rhc_fini (struct rhc * rhc);
 
 uint32_t dds_rhc_lock_samples (struct rhc * rhc);
-uint32_t dds_rhc_samples (struct rhc * rhc);
 
 DDS_EXPORT bool dds_rhc_store
 (

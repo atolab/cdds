@@ -502,11 +502,6 @@ uint32_t dds_rhc_lock_samples (struct rhc *rhc)
   return no;
 }
 
-uint32_t dds_rhc_samples (struct rhc *rhc)
-{
-  return rhc->n_vsamples + rhc->n_invsamples;
-}
-
 void dds_rhc_free (struct rhc *rhc)
 {
   assert (rhc_check_counts_locked (rhc, true));
