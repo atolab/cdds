@@ -115,12 +115,12 @@ function(SET_TARGET_FILE_IDS tgt)
 
       if(id)
         if(("${source_file_id_${id}}" STREQUAL "") OR
-           ("${source_file_id_${id}}" STREQUAL "${src}"))
+           ("${source_file_id_${id}}" STREQUAL "${rel}"))
           set("source_file_id_${id}" "${rel}" CACHE INTERNAL "")
           set_source_files_properties(
             "${src}" PROPERTIES COMPILE_DEFINITIONS __FILE_ID__=${id})
         else()
-          message(FATAL_ERROR "Same id for ${rel} and ${source_file_id_${id}}")
+          message(FATAL_ERROR "Same file id for ${rel} and ${source_file_id_${id}}")
         endif()
       else()
         message(FATAL_ERROR "No source file id for ${rel}")

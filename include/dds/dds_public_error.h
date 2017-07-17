@@ -79,7 +79,7 @@ extern "C" {
 #define dds_err_line(e) (((-e) & DDS_ERR_LINE_MASK) >> 8)
 
 /** Macro to extract file identifier */
-#define dds_err_file_id(e) (((-e) & DDS_ERR_FILE_ID_MASK >> 22))
+#define dds_err_file_id(e) (((-e) & DDS_ERR_FILE_ID_MASK) >> 22)
 
 /**
  * Description : This operation takes the error value and outputs a string
