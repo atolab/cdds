@@ -1143,59 +1143,148 @@ dds_create_writer(
   only touch the key fields; the remained may be undefined.
 */
 /**
- * Description : Registers an instance with a key value to the data writer
+ * @brief Registers an instance
  *
- * Arguments :
- *   -# wr The writer to which instance has be associated
- *   -# data Instance with the key value
- *   -# Returns an instance handle that could be used for successive write & dispose operations or
- *      NULL, if handle is not allocated
+ * This operation registers an instance with a key value to the data writer and
+ * returns an instance handle that could be used for successive write & dispose
+ * operations or NULL, if handle is not allocated.
+ *
+ * @param[in]  writer  The writer to which instance has be associated
+ * @param[out] handle  The instance handle
+ * @param[in]  data    The instance with the key value
+ *
+ * @returns >0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                One of the given arguments is not valid.
+ * @retval DDS_RETCODE_TIMEOUT
+ *                Timeout expired before all acknowledgements from reliable reader entities were received.
+ * @retval DDS_RETCODE_UNSUPPORTED
+ *                Operation is not supported.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT dds_instance_handle_t
-dds_instance_register(
-        dds_entity_t writer,
-        const void *data);
+DDS_EXPORT dds_return_t
+dds_register_instance(
+        _In_ dds_entity_t writer,
+        _Out_ dds_instance_handle_t *handle,
+        _In_ const void *data);
 
 /**
- * Description : Unregisters an instance with a key value from the data writer. Instance can be identified
- *               either from data sample or from instance handle (at least one must be provided).
+ * @brief Unregisters an instance
  *
- * Arguments :
- *   -# wr The writer to which instance is associated
- *   -# data Instance with the key value (can be NULL if handle set)
- *   -# handle Instance handle (can be DDS_HANDLE_NIL if data set)
- *   -# Returns 0 on success, or non-zero value to indicate an error
+ * This operation reverses the action of register instance, removes all information regarding
+ * the instance and unregisters an instance with a key value from the data writer.
  *
- * Note : If an unregistered key ID is passed as instance data, an error is logged and not flagged as return value
+ * @param[in]  writer  The writer to which instance is associated
+ * @param[in]  data    The instance with the key value
+ *
+ * @returns >0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                One of the given arguments is not valid.
+ * @retval DDS_RETCODE_TIMEOUT
+ *                Timeout expired before all acknowledgements from reliable reader entities were received.
+ * @retval DDS_RETCODE_UNSUPPORTED
+ *                Operation is not supported.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT int
-dds_instance_unregister(
-        dds_entity_t writer,
-        const void *data,
-        dds_instance_handle_t handle);
+DDS_EXPORT dds_return_t
+dds_unregister_instance(
+        _In_ dds_entity_t writer,
+        _In_opt_ const void *data);
 
-  /**
- * Description : Unregisters an instance with a key value from the data writer. Instance can be identified
- *               either from data sample or from instance handle (at least one must be provided).
+/**
+ * @brief Unregisters an instance
  *
- * Arguments :
- *   -# wr The writer to which instance is associated
- *   -# data Instance with the key value (can be NULL if handle set)
- *   -# handle Instance handle (can be DDS_HANDLE_NIL if data set)
- *   -# timestamp used at registration.
- *   -# Returns 0 on success, or non-zero value to indicate an error
+ *This operation unregisters the instance which is identified by the key fields of the given
+ *typed instance handle.
  *
- * Note : If an unregistered key ID is passed as instance data, an error is logged and not flagged as return value
+ * @param[in]  writer  The writer to which instance is associated
+ * @param[in]  handle  The instance handle
+ *
+ * @returns >0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                One of the given arguments is not valid.
+ * @retval DDS_RETCODE_TIMEOUT
+ *                Timeout expired before all acknowledgements from reliable reader entities were received.
+ * @retval DDS_RETCODE_UNSUPPORTED
+ *                Operation is not supported.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT int
-dds_instance_unregister_ts(
-        dds_entity_t writer,
-        const void *data,
-        dds_instance_handle_t handle,
-        dds_time_t timestamp);
+DDS_EXPORT dds_return_t
+dds_unregister_instance_ih(
+       _In_ dds_entity_t writer,
+       _In_opt_ dds_instance_handle_t handle);
+
+/**
+ * @brief Unregisters an instance
+ *
+ * This operation reverses the action of register instance, removes all information regarding
+ * the instance and unregisters an instance with a key value from the data writer. It also
+ * provides a value for the timestamp explicitly.
+ *
+ * @param[in]  writer    The writer to which instance is associated
+ * @param[in]  data      The instance with the key value
+ * @param[in]  timestamp The timestamp used at registration.
+ *
+ * @returns >0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                One of the given arguments is not valid.
+ * @retval DDS_RETCODE_TIMEOUT
+ *                Timeout expired before all acknowledgements from reliable reader entities were received.
+ * @retval DDS_RETCODE_UNSUPPORTED
+ *                Operation is not supported.
+ */
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_unregister_instance_ts(
+       _In_ dds_entity_t writer,
+       _In_opt_ const void *data,
+       _In_ dds_time_t timestamp);
+
+/**
+ * @brief Unregisters an instance
+ *
+ * This operation unregisters an instance with a key value from the handle. Instance can be identified
+ * from instance handle. If an unregistered key ID is passed as an instance data, an error is logged and
+ * not flagged as return value.
+ *
+ * @param[in]  writer    The writer to which instance is associated
+ * @param[in]  handle    The instance handle
+ * @param[in]  timestamp The timestamp used at registration.
+ *
+ * @returns >0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                One of the given arguments is not valid.
+ * @retval DDS_RETCODE_TIMEOUT
+ *                Timeout expired before all acknowledgements from reliable reader entities were received.
+ * @retval DDS_RETCODE_UNSUPPORTED
+ *                Operation is not supported.
+ */
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_unregister_instance_ih_ts(
+       _In_ dds_entity_t writer,
+       _In_opt_ dds_instance_handle_t handle,
+       _In_ dds_time_t timestamp);
 
 /**
  * Description : Write the keyed data passed, and delete the data instance
