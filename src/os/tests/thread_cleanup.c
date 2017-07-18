@@ -233,7 +233,6 @@ CUnit_Test(os_thread_cleanup, no_interference)
     struct thread_argument *targ1 = make_thread_argument(flags, 0, 1, 2);
     struct thread_argument *targ2 = make_thread_argument(flags, 2, 1, 2);
     os_mutex mutex1, mutex2;
-    os_threadId thr1, thr2;
 
     os_mutexInit(&mutex1);
     os_mutexInit(&mutex2);

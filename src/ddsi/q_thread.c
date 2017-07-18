@@ -104,6 +104,7 @@ fprintf(stderr, "running %s for thread %"PRIdMAX"\n", OS_FUNCTION, os_threadIdTo
     os_reportExit(); /* FIXME: should not be here */
 }
 
+_Success_(return != NULL) _Ret_maybenull_
 struct thread_state1 *lookup_thread_state (void)
 {
     struct thread_state1 *ts1 = NULL;
@@ -137,15 +138,17 @@ struct thread_state1 *lookup_thread_state (void)
     return ts1;
 }
 
+_Success_(return != NULL) _Ret_maybenull_
 struct thread_state1 *lookup_thread_state_real (void)
 {
-  if (thread_states.ts)
-  {
+  if (thread_states.ts) {
     os_threadId tid = os_threadIdSelf ();
     unsigned i;
-    for (i = 0; i < thread_states.nthreads; i++)
-      if (os_threadEqual (thread_states.ts[i].tid, tid))
+    for (i = 0; i < thread_states.nthreads; i++) {
+      if (os_threadEqual (thread_states.ts[i].tid, tid)) {
         return &thread_states.ts[i];
+      }
+    }
   }
   return NULL;
 }

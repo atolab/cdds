@@ -116,7 +116,6 @@ int vtime_awake_p (_In_ vtime_t vtime);
 int vtime_asleep_p (_In_ vtime_t vtime);
 int vtime_gt (_In_ vtime_t vtime1, _In_ vtime_t vtime0);
 
-struct thread_state1 *lookup_thread_state (void);
 void thread_state_asleep (_Inout_ struct thread_state1 *ts1);
 void thread_state_awake (_Inout_ struct thread_state1 *ts1);
 void thread_state_blocked (_Inout_ struct thread_state1 *ts1);
