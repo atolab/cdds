@@ -27,7 +27,7 @@ static dds_return_t dds_writer_instance_hdl(dds_entity *e, dds_instance_handle_t
 static dds_return_t dds_writer_status_validate (uint32_t mask)
 {
     return (mask & ~(DDS_WRITER_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_WRITER, 0) :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER) :
                      DDS_RETCODE_OK;
 }
 
@@ -226,11 +226,11 @@ static dds_return_t dds_writer_qos_validate (const dds_qos_t *qos, bool enabled)
      || ((qos->present & QP_LIFESPAN) && validate_duration(&qos->lifespan.duration) != 0)
      || ((qos->present & QP_HISTORY) && (qos->present & QP_RESOURCE_LIMITS) && validate_history_and_resource_limits(&qos->history, &qos->resource_limits) != 0))
     {
-        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_WRITER, DDS_ERR_M1);
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY);
     } else if (enabled) {
         /* TODO: Improve/check immutable check. */
         if (!(qos->present & (QP_LATENCY_BUDGET | QP_OWNERSHIP_STRENGTH))) {
-            ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, DDS_MOD_WRITER, DDS_ERR_M2);
+            ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
         }
     }
 
@@ -276,11 +276,11 @@ static dds_return_t dds_writer_qos_set (dds_entity *e, const dds_qos_t *qos, boo
             }
             else
             {
-                ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_ERROR, DDS_MOD_WRITER, 0));
+                ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_ERROR));
             }
         } else {
             if (enabled) {
-                ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_WRITER, DDS_ERR_M1));
+                ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED));
             }
         }
     }
@@ -302,7 +302,7 @@ dds_create_writer(
     dds_qos_t * wqos;
     dds_publisher * pub = NULL;
     dds_writer * wr;
-    dds_entity_t writer = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR, DDS_MOD_PPANT, DDS_ERR_M1);
+    dds_entity_t writer = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
     dds_entity * pp_or_pub = NULL;
     dds_entity * tp;
     struct thread_state1 * const thr = lookup_thread_state();
@@ -316,19 +316,19 @@ dds_create_writer(
         if (errnr == DDS_RETCODE_ILLEGAL_OPERATION) {
             errnr = dds_entity_lock(participant_or_publisher, DDS_KIND_PUBLISHER, &pp_or_pub);
             if (errnr != DDS_RETCODE_OK) {
-                writer = (dds_entity_t)DDS_ERRNO(errnr, DDS_MOD_WRITER, DDS_ERR_M2);
+                writer = (dds_entity_t)DDS_ERRNO(errnr);
                 goto err_pp_or_pub_lock;
             }
             pub = (dds_publisher*)pp_or_pub;
         } else {
-            writer = (dds_entity_t)DDS_ERRNO(errnr, DDS_MOD_WRITER, DDS_ERR_M3);
+            writer = (dds_entity_t)DDS_ERRNO(errnr);
             goto err_pp_or_pub_lock;
         }
     }
 
     errnr = dds_entity_lock(topic, DDS_KIND_TOPIC, &tp);
     if (errnr != DDS_RETCODE_OK) {
-        writer = (dds_entity_t)DDS_ERRNO(errnr, DDS_MOD_WRITER, DDS_ERR_M4);
+        writer = (dds_entity_t)DDS_ERRNO(errnr);
         goto err_tp_lock;
     }
     assert(((dds_topic*)tp)->m_stopic);
@@ -416,9 +416,9 @@ dds_get_publisher(
         } else {
             dds_return_t ret = dds_valid_hdl(writer, DDS_KIND_DONTCARE);
             if (ret == DDS_RETCODE_OK) {
-                return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_COND, DDS_ERR_M1);
+                return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
             } else {
-                return (dds_entity_t)DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+                return (dds_entity_t)DDS_ERRNO(ret);
             }
         }
     }
@@ -443,7 +443,7 @@ dds_return_t dds_get_publication_matched_status (dds_entity_t entity, dds_public
         }
         dds_writer_unlock(wr);
     }
-    return DDS_ERRNO(errnr, DDS_MOD_WRITER, 0);
+    return DDS_ERRNO(errnr);
 }
 
 dds_return_t dds_get_liveliness_lost_status (dds_entity_t entity, dds_liveliness_lost_status_t * status)
@@ -463,7 +463,7 @@ dds_return_t dds_get_liveliness_lost_status (dds_entity_t entity, dds_liveliness
         }
         dds_writer_unlock(wr);
     }
-    return DDS_ERRNO(errnr, DDS_MOD_WRITER, 0);
+    return DDS_ERRNO(errnr);
 }
 
 dds_return_t dds_get_offered_deadline_missed_status (dds_entity_t entity, dds_offered_deadline_missed_status_t * status)
@@ -483,7 +483,7 @@ dds_return_t dds_get_offered_deadline_missed_status (dds_entity_t entity, dds_of
         }
         dds_writer_unlock(wr);
     }
-    return DDS_ERRNO(errnr, DDS_MOD_WRITER, 0);
+    return DDS_ERRNO(errnr);
 }
 
 dds_return_t dds_get_offered_incompatible_qos_status (dds_entity_t entity, dds_offered_incompatible_qos_status_t * status)
@@ -503,5 +503,5 @@ dds_return_t dds_get_offered_incompatible_qos_status (dds_entity_t entity, dds_o
         }
         dds_writer_unlock(wr);
     }
-    return DDS_ERRNO(errnr, DDS_MOD_WRITER, 0);
+    return DDS_ERRNO(errnr);
 }

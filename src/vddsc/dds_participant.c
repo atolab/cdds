@@ -17,7 +17,7 @@ static dds_entity * dds_pp_head = NULL;
 static dds_return_t dds_participant_status_validate (uint32_t mask)
 {
     return (mask & ~(DDS_PARTICIPANT_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_KERNEL, 0) :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER) :
                      DDS_RETCODE_OK;
 }
 
@@ -78,7 +78,7 @@ static dds_return_t dds_participant_instance_hdl(dds_entity *e, dds_instance_han
 
 static dds_return_t dds_participant_qos_validate (const dds_qos_t *qos, bool enabled)
 {
-    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_PPANT, 0);
+    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY);
     bool consistent = true;
     assert(qos);
 
@@ -89,7 +89,7 @@ static dds_return_t dds_participant_qos_validate (const dds_qos_t *qos, bool ena
     if (consistent) {
         if (enabled) {
             /* TODO: Improve/check immutable check. */
-            ret = DDS_ERRNO (DDS_RETCODE_IMMUTABLE_POLICY, DDS_MOD_PPANT, 0);
+            ret = DDS_ERRNO (DDS_RETCODE_IMMUTABLE_POLICY);
         } else {
             ret = DDS_RETCODE_OK;
         }
@@ -104,7 +104,7 @@ static dds_return_t dds_participant_qos_set (dds_entity *e, const dds_qos_t *qos
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_KERNEL, DDS_ERR_M1));
+            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED));
         }
     }
     return ret;
@@ -117,7 +117,7 @@ dds_create_participant(
         _In_opt_ const dds_listener_t *listener)
 {
     int ret;
-    dds_entity_t e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR, DDS_MOD_PPANT, DDS_ERR_M1);
+    dds_entity_t e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
     nn_guid_t guid;
     dds_participant * pp;
     nn_plist_t plist;
@@ -135,7 +135,7 @@ dds_create_participant(
     /* Check domain id */
     ret = dds_init_impl (domain);
     if (ret != DDS_RETCODE_OK) {
-        e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR, DDS_MOD_PPANT, DDS_ERR_M2);
+        e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
         goto fail;
     }
 
@@ -143,7 +143,7 @@ dds_create_participant(
     if (qos) {
         ret = (int)dds_participant_qos_validate (qos, false);
         if (ret != DDS_RETCODE_OK) {
-            e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR, DDS_MOD_PPANT, DDS_ERR_M3);
+            e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
             goto fail;
         }
         new_qos = dds_qos_create ();
@@ -168,7 +168,7 @@ dds_create_participant(
 
     if (ret != 0) {
         dds_qos_delete(new_qos);
-        e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR, DDS_MOD_PPANT, DDS_ERR_M4);
+        e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
         goto fail;
     }
 
@@ -207,7 +207,7 @@ dds_lookup_participant(
         _Out_opt_   dds_entity_t *participants,
         _In_        size_t size)
 {
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_PPANT, DDS_ERR_M4);
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     if (((participants != NULL) && (size>0) && (size < INT32_MAX)) || ((participants == NULL) && (size == 0))){
         dds_entity* iter;
         if(participants){

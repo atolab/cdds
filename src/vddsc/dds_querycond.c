@@ -36,10 +36,10 @@ dds_create_querycondition(
             dds_topic_unlock(t);
         } else {
             (void)dds_delete(hdl);
-            hdl = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+            hdl = DDS_ERRNO(ret);
         }
     } else {
-        hdl = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M2);
+        hdl = DDS_ERRNO(ret);
     }
 
     return hdl;
