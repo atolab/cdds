@@ -570,3 +570,94 @@ os_threadMemGet(
 
     return data;
 }
+
+
+static os_threadLocal os_iter cleanup_funcs;
+
+/* executed before dllmain within the context of the thread itself */
+void NTAPI
+os_threadCleanupFini(
+    PVOID handle,
+    DWORD reason,
+    PVOID reserved)
+{
+    os_threadCleanup *obj;
+
+    switch(reason) {
+        case DLL_PROCESS_DETACH: /* specified when main thread exits */
+        case DLL_THREAD_DETACH: /* specified when thread exits */
+            if (cleanup_funcs != NULL) {
+                for (obj = (os_threadCleanup *)os_iterTakeLast(cleanup_funcs);
+                     obj != NULL;
+                     obj = (os_threadCleanup *)os_iterTakeLast(cleanup_funcs))
+                {
+                    assert(obj->func != NULL);
+                    obj->func(obj->data);
+                    os_free(obj);
+                }
+                os_iterFree(cleanup_funcs);
+            }
+            cleanup_funcs = NULL;
+            break;
+        case DLL_PROCESS_ATTACH:
+        case DLL_THREAD_ATTACH:
+        default:
+            /* do nothing */
+            break;
+    }
+
+    (void)handle;
+    (void)reserved;
+}
+
+#ifdef _WIN64
+    #pragma comment (linker, "/INCLUDE:_tls_used")
+    #pragma comment (linker, "/INCLUDE:tls_callback_func")
+    #pragma const_seg(".CRT$XLZ")
+    EXTERN_C const PIMAGE_TLS_CALLBACK tls_callback_func = os_threadCleanupFini;
+    #pragma const_seg()
+#else
+    #pragma comment (linker, "/INCLUDE:__tls_used")
+    #pragma comment (linker, "/INCLUDE:_tls_callback_func")
+    #pragma data_seg(".CRT$XLZ")
+    EXTERN_C PIMAGE_TLS_CALLBACK tls_callback_func = os_threadCleanupFini;
+    #pragma data_seg()
+#endif
+
+void
+os_threadCleanupPush(
+    void (*func)(void *),
+    void *data)
+{
+    os_threadCleanup *obj;
+
+    assert(func != NULL);
+
+    if (cleanup_funcs == NULL) {
+        cleanup_funcs = os_iterNew(NULL);
+        assert(cleanup_funcs != NULL);
+    }
+
+    obj = os_malloc(sizeof(*obj));
+    assert(obj != NULL);
+    obj->func = func;
+    obj->data = data;
+    (void)os_iterAppend(cleanup_funcs, obj);
+}
+
+void
+os_threadCleanupPop(
+    int execute)
+{
+    os_threadCleanup *obj;
+
+    if (cleanup_funcs != NULL) {
+        obj = os_iterTakeLast(cleanup_funcs);
+        if (obj != NULL) {
+            if (execute) {
+                obj->func(obj->data);
+            }
+            os_free(obj);
+        }
+    }
+}

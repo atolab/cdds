@@ -73,7 +73,7 @@ extern "C" {
      */
     typedef struct os_threadAttr {
         /** Specifies the scheduling class */
-        os_schedClass       schedClass;
+        os_schedClass      schedClass;
         /** Specifies the thread priority */
         int32_t            schedPriority;
         /** Specifies the thread stack size */
@@ -99,6 +99,12 @@ extern "C" {
         os_threadCallback stopCb;
         void              *stopArg; /* User argument passed in the callback */
     } os_threadHook;
+
+    // consider private!
+    typedef struct {
+        void (*func)(void *);
+        void *data;
+    } os_threadCleanup;
 
     /** \brief Set thread hook.
      *
@@ -286,6 +292,22 @@ extern "C" {
     os_threadMemGet(
             int32_t index);
 
+    /** \brief Pop cleanup function from function stack
+     *
+     * COMMENT
+     */
+    OSAPI_EXPORT void
+    os_threadCleanupPop(
+        int32_t execute);
+
+    /** \brief Push cleanup function to function stack
+     *
+     * COMMENT
+     */
+    OSAPI_EXPORT void
+    os_threadCleanupPush(
+        void (*routine)(void*),
+        void *arg);
 
 #if defined (__cplusplus)
 }

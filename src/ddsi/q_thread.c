@@ -26,9 +26,8 @@
 static char main_thread_name[] = "main";
 
 struct thread_states thread_states;
-#if OS_HAS_TSD_USING_THREAD_KEYWORD
-__thread struct thread_state1 *tsd_thread_state;
-#endif
+os_threadLocal struct thread_state1 *tsd_thread_state;
+
 
 _Ret_bytecap_(size)
 void * os_malloc_aligned_cacheline (_In_ size_t size)
@@ -95,14 +94,57 @@ void thread_states_fini (void)
   thread_states.ts = NULL;
 }
 
+static void cleanup_thread_state (void *data)
+{
+    struct thread_state1 *ts = get_thread_state(os_threadIdSelf());
+fprintf(stderr, "running %s for thread %"PRIdMAX"\n", OS_FUNCTION, os_threadIdToInteger(os_threadIdSelf()));
+    assert(ts->state == THREAD_STATE_ALIVE);
+    assert(vtime_asleep_p(ts->vtime));
+    reset_thread_state(ts);
+    os_reportExit(); /* FIXME: should not be here */
+}
+
+struct thread_state1 *lookup_thread_state (void)
+{
+    struct thread_state1 *ts1 = NULL;
+    char tname[128];
+    os_threadId tid;
+
+    if ((ts1 = tsd_thread_state) == NULL) {
+        if ((ts1 = lookup_thread_state_real()) == NULL) {
+            /* this situation only arises for threads that were not created
+               using create_thread, aka application threads. since registering
+               thread state should be fully automatic the name will simply be
+               the identifier */
+            tid = os_threadIdSelf();
+            (void)snprintf(
+                tname, sizeof(tname), "0x%"PRIxMAX, os_threadIdToInteger(tid));
+            os_mutexLock(&thread_states.lock);
+            ts1 = tsd_thread_state = init_thread_state(tname);
+            if (ts1 != NULL) {
+                ts1->lb = 0;
+                ts1->extTid = tid;
+                ts1->tid = tid;
+                nn_log (LC_INFO, "started application thread %s\n", tname);
+                os_threadCleanupPush(&cleanup_thread_state, NULL);
+            }
+            os_mutexUnlock(&thread_states.lock);
+        }
+
+        tsd_thread_state = ts1;
+    }
+
+    return ts1;
+}
+
 struct thread_state1 *lookup_thread_state_real (void)
 {
   if (thread_states.ts)
   {
-    os_threadId self = os_threadIdSelf ();
+    os_threadId tid = os_threadIdSelf ();
     unsigned i;
     for (i = 0; i < thread_states.nthreads; i++)
-      if (os_threadEqual (thread_states.ts[i].tid, self))
+      if (os_threadEqual (thread_states.ts[i].tid, tid))
         return &thread_states.ts[i];
   }
   return NULL;
@@ -140,26 +182,6 @@ static int find_free_slot (_In_z_ const char *name)
   return cand;
 }
 
-int thread_exists (_In_z_ const char *name)
-{
-  unsigned i;
-  int present = 0;
-
-  for (i = 0; i < thread_states.nthreads; i++)
-  {
-    if (thread_states.ts[i].name != NULL)
-    {
-      if (strcmp (thread_states.ts[i].name, name) == 0)
-      {
-        present = 1;
-        break;
-      }
-    }
-  }
-
-  return present;
-}
-
 void upgrade_main_thread (void)
 {
   int cand;
@@ -175,6 +197,7 @@ void upgrade_main_thread (void)
   ts1->lb = logbuf_new ();
   ts1->name = main_thread_name;
   os_mutexUnlock (&thread_states.lock);
+  tsd_thread_state = ts1;
 }
 
 const struct config_thread_properties_listelem *lookup_thread_properties (_In_z_ const char *name)
@@ -293,9 +316,7 @@ void downgrade_main_thread (void)
   logbuf_free (ts1->lb);
   /* no need to sync with service lease: already stopped */
   reap_thread_state (ts1, 0);
-#if OS_HAS_TSD_USING_THREAD_KEYWORD
   tsd_thread_state = NULL;
-#endif
 }
 
 struct thread_state1 *get_thread_state (_In_ os_threadId id)

@@ -58,11 +58,7 @@ _Check_return_ _Ret_maybenull_ void *nn_freelist_pop (_Inout_ struct nn_freelist
 
 #elif FREELIST_TYPE == FREELIST_DOUBLE
 
-#if OS_HAS_TSD_USING_THREAD_KEYWORD
-static __thread int freelist_inner_idx = -1;
-#elif defined _WIN32
-static __declspec(thread) int freelist_inner_idx = -1;
-#endif
+static os_threadLocal int freelist_inner_idx = -1;
 
 void nn_freelist_init (_Out_ struct nn_freelist *fl, uint32_t max, off_t linkoff)
 {

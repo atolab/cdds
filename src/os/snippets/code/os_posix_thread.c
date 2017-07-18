@@ -494,7 +494,7 @@ os_threadIdSelf (void)
  *
  * \b os_threadFigureIdentity determines the numeric identity
  * of a thread. POSIX does not identify threads by name,
- * therefor only the numeric identification is returned,
+ * therefore only the numeric identification is returned,
  */
 int32_t
 os_threadFigureIdentity (
@@ -692,3 +692,82 @@ os_threadMemGet (
     return threadMemLoc;
 }
 
+
+static pthread_key_t cleanup_key;
+static pthread_once_t cleanup_once = PTHREAD_ONCE_INIT;
+
+static void
+os_threadCleanupFini(
+    void *data)
+{
+    os_iter itr;
+    os_threadCleanup *obj;
+
+    if (data != NULL) {
+        itr = (os_iter)data;
+        for (obj = (os_threadCleanup *)os_iterTakeLast(itr);
+             obj != NULL;
+             obj = (os_threadCleanup *)os_iterTakeLast(itr))
+        {
+            assert(obj->func != NULL);
+            obj->func(obj->data);
+            os_free(obj);
+        }
+        os_iterFree(itr);
+    }
+}
+
+static void
+os_threadCleanupInit(
+    void)
+{
+    (void)pthread_key_create(&cleanup_key, &os_threadCleanupFini);
+}
+
+/* os_threadCleanupPush and os_threadCleanupPop are mapped onto a destructor
+   registered with pthread_key_create in stead of being mapped directly onto
+   pthread_cleanup_push/pthread_cleanup_pop because the cleanup routines could
+   otherwise be popped of the stack by the user */
+void
+os_threadCleanupPush(
+    void (*func)(void*),
+    void *data)
+{
+    os_iter itr;
+    os_threadCleanup *obj;
+
+    assert(func != NULL);
+
+    (void)pthread_once(&cleanup_once, &os_threadCleanupInit);
+    itr = (os_iter)pthread_getspecific(cleanup_key);
+    if (itr == NULL) {
+        itr = os_iterNew(NULL);
+        assert(itr != NULL);
+        pthread_setspecific(cleanup_key, itr);
+    }
+
+    obj = os_malloc(sizeof(*obj));
+    assert(obj != NULL);
+    obj->func = func;
+    obj->data = data;
+    os_iterAppend(itr, obj);
+}
+
+void
+os_threadCleanupPop(
+    int execute)
+{
+    os_iter itr;
+    os_threadCleanup *obj;
+
+    (void)pthread_once(&cleanup_once, &os_threadCleanupInit);
+    if ((itr = (os_iter)pthread_getspecific(cleanup_key)) != NULL) {
+        obj = (os_threadCleanup *)os_iterTakeLast(itr);
+        if (obj != NULL) {
+            if (execute) {
+                obj->func(obj->data);
+            }
+            os_free(obj);
+        }
+    }
+}

@@ -2021,27 +2021,6 @@ dds_instance_get_key(
         void *data);
 
 /**
- * Description : This operation stores the thread state for the thread created.
- *
- * Arguments :
- * -# name Thread name
- * -# Returns 0 on successful thread creation, else a non-zero value to indicate an error,
- *    which could be a lack of resources or a thread with the same name already exists.
- */
-DDS_EXPORT int
-dds_thread_init(
-        const char * name);
-
-/**
- * Description : This operation frees the thread state stored
- *
- * Note: This function should be called from the same thread context before exiting
- */
-DDS_EXPORT void
-dds_thread_fini(
-        void);
-
-/**
  * @brief Begin coherent publishing or begin accessing a coherent set in a subscriber
  *
  * Invoking on a Writer or Reader behaves as if dds_begin_coherent was invoked on its parent

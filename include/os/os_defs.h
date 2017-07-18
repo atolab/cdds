@@ -10,9 +10,6 @@
 #ifndef OS_HAS_UCONTEXT_T
 #error "OS_HAS_UCONTEXT_T not set"
 #endif
-#ifndef OS_HAS_TSD_USING_THREAD_KEYWORD
-#error "OS_HAS_TSD_USING_THREAD_KEYWORD not set"
-#endif
 #ifndef OS_SOCKET_USE_FCNTL
 #error "OS_SOCKET_USE_FCNTL must be defined for this platform."
 #endif
@@ -256,6 +253,20 @@ __pragma (warning(pop))
 
 #endif /* not defined OS_HAVE_INLINE */
 
+#if defined(_MSC_VER)
+    /* Thread-local storage using __declspec(thread) on Windows versions before
+       Vista and Server 2008 works in DLLs if they are bound to the executable,
+       it does not work if the library is loaded using LoadLibrary. */
+#define os_threadLocal __declspec(thread)
+#elif defined(__GNUC__) || (defined(__clang__) && __clang_major__ >= 2)
+    /* GCC supports Thread-local storage for x86 since version 3.3. Clang
+       supports Thread-local storage since version 2.0. */
+    /* VxWorks 7 supports __thread for both GCC and DIAB, older versions may
+       support it as well, but that is not verified. */
+#define os_threadLocal __thread
+#else
+#error "os_threadLocal is not supported"
+#endif
 
 #if defined (__cplusplus)
 }

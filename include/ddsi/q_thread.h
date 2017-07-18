@@ -84,9 +84,7 @@ struct thread_states {
 };
 
 extern struct thread_states thread_states;
-#if OS_HAS_TSD_USING_THREAD_KEYWORD
-extern __thread struct thread_state1 *tsd_thread_state;
-#endif
+extern os_threadLocal struct thread_state1 *tsd_thread_state;
 
 void thread_states_init (_In_ unsigned maxthreads);
 void thread_states_fini (void);
@@ -95,7 +93,8 @@ void upgrade_main_thread (void);
 void downgrade_main_thread (void);
 const struct config_thread_properties_listelem *lookup_thread_properties (_In_z_ const char *name);
 _Success_(return != NULL) _Ret_maybenull_ struct thread_state1 *create_thread (_In_z_ const char *name, _In_ uint32_t (*f) (void *arg), _In_opt_ void *arg);
-struct thread_state1 *lookup_thread_state_real (void);
+_Success_(return != NULL) _Ret_maybenull_ struct thread_state1 *lookup_thread_state (void);
+_Success_(return != NULL) _Ret_maybenull_ struct thread_state1 *lookup_thread_state_real (void);
 _Success_(return == 0) int join_thread (_Inout_ struct thread_state1 *ts1);
 void log_stack_traces (void);
 struct thread_state1 *get_thread_state (_In_ os_threadId id);
