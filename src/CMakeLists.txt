@@ -41,10 +41,6 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/dds
         DESTINATION include
         COMPONENT dev)
 
-if((BUILD_TESTING))
-  add_subdirectory(vddsc/cunit_tests)
-endif()
-
 # TODO: improve test inclusion.
 if((BUILD_TESTING) AND ((NOT DEFINED MSVC_VERSION) OR (MSVC_VERSION GREATER "1800")))
   add_subdirectory(vddsc/tests)
