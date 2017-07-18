@@ -26,38 +26,6 @@ typedef struct {
 } os_threadContext;
 
 static DWORD tlsIndex;
-static os_threadHook os_threadCBs;
-
-static int
-os_threadStartCallback(
-    os_threadId id,
-    void *arg)
-{
-    return 0;
-}
-
-static int
-os_threadStopCallback(
-    os_threadId id,
-    void *arg)
-{
-    return 0;
-}
-
-static void
-os_threadHookInit(void)
-{
-    os_threadCBs.startCb = os_threadStartCallback;
-    os_threadCBs.startArg = NULL;
-    os_threadCBs.stopCb = os_threadStopCallback;
-    os_threadCBs.stopArg = NULL;
-}
-
-static void
-os_threadHookExit(void)
-{
-    return;
-}
 
 static os_result
 os_threadMemInit(void)
@@ -113,7 +81,7 @@ os_threadModuleInit(void)
         //OS_INIT_FAIL("os_threadModuleInit: could not allocate thread-local memory (System Error Code: %i)", os_getErrno());
         goto err_tlsAllocFail;
     }
-    os_threadHookInit();
+
     return os_resultSuccess;
 
 err_tlsAllocFail:
@@ -135,42 +103,6 @@ os_threadModuleExit(void)
     }
 
     TlsFree(tlsIndex);
-    os_threadHookExit();
-}
-
-os_result
-os_threadModuleSetHook(
-    os_threadHook *hook,
-    os_threadHook *oldHook)
-{
-    os_result result;
-    os_threadHook oh;
-
-    result = os_resultFail;
-    oh = os_threadCBs;
-
-    if (hook) {
-        if (hook->startCb) {
-            os_threadCBs.startCb = hook->startCb;
-            os_threadCBs.startArg = hook->startArg;
-        } else {
-            os_threadCBs.startCb = os_threadStartCallback;
-            os_threadCBs.startArg = NULL;
-        }
-        if (hook->stopCb) {
-            os_threadCBs.stopCb = hook->stopCb;
-            os_threadCBs.stopArg = hook->stopArg;
-        } else {
-            os_threadCBs.stopCb = os_threadStopCallback;
-            os_threadCBs.stopArg = NULL;
-        }
-
-        if (oldHook) {
-            *oldHook = oh;
-        }
-    }
-
-    return result;
 }
 
 const DWORD MS_VC_EXCEPTION=0x406D1388;
@@ -252,13 +184,9 @@ os_startRoutineWrapper(
 
     id.threadId = GetCurrentThreadId();
     id.handle = GetCurrentThread();
-    /* Call the start callback */
-    if (os_threadCBs.startCb(id, os_threadCBs.startArg) == 0) {
-        /* Call the user routine */
-        resultValue = context->startRoutine(context->arguments);
-    }
 
-    os_threadCBs.stopCb(id, os_threadCBs.stopArg);
+    /* Call the user routine */
+    resultValue = context->startRoutine(context->arguments);
 
     os_report_stack_free();
     os_reportClearApiInfo();

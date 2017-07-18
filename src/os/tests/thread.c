@@ -67,17 +67,6 @@ static uint32_t threadMain(_In_opt_ void *args)
     return 0;
 }
 
-static int threadStartCallback(os_threadId id, void *arg)
-{
-    int *count = &startCallbackCount;
-    OS_UNUSED_ARG(id);
-    if (arg != NULL) {
-        count = (int *)arg;
-    }
-    (*count)++;
-    return 0;
-}
-
 uint32_t threadMemory_thread (_In_opt_ void *args)
 {
     OS_UNUSED_ARG(args);
@@ -115,28 +104,6 @@ uint32_t threadMemory_thread (_In_opt_ void *args)
     CU_ASSERT (returnval == NULL);
 
     return 0;
-}
-
-static int threadStopCallback(os_threadId id, void *arg)
-{
-    int *count = &stopCallbackCount;
-    OS_UNUSED_ARG(id);
-    if (arg != NULL) {
-        count = (int *)arg;
-    }
-    (*count)++;
-    return 0;
-}
-
-static int threadStartCallbackFAIL(os_threadId id, void *arg)
-{
-    int *count = &startCallbackCount;
-    OS_UNUSED_ARG(id);
-    if (arg != NULL) {
-        count = (int *)arg;
-    }
-    (*count)++;
-    return 1;
 }
 
 CUnit_Suite_Initialize(os_thread)
@@ -847,154 +814,19 @@ CUnit_Test(os_thread, memfree)
 
 CUnit_Test(os_thread, module)
 {
-    os_threadId   thread_os_threadId;
-    os_threadAttr thread_os_threadAttr;
-    os_threadHook hook;
-    int           mainCount;
-    int result;
+    os_threadId tid;
+    os_threadAttr tattr;
+    os_result res;
 
-    os_threadAttrInit (&thread_os_threadAttr);
+    os_threadAttrInit (&tattr);
     /* Run the following tests for child thread */
-    result = os_threadCreate (&thread_os_threadId, "ThreadMemory", &thread_os_threadAttr, &threadMemory_thread, NULL);
-    if (result == os_resultSuccess)
-    {
+    res = os_threadCreate (&tid, "ThreadMemory", &tattr, &threadMemory_thread, NULL);
+    CU_ASSERT_EQUAL(res, os_resultSuccess);
+    if (res == os_resultSuccess) {
 #ifdef _WRS_KERNEL
         sleepSeconds(1);
 #endif
-        result = os_threadWaitExit (thread_os_threadId, NULL);
-        CU_ASSERT (result == os_resultSuccess);
+        res = os_threadWaitExit (tid, NULL);
+        CU_ASSERT_EQUAL(res, os_resultSuccess);
     }
-    else
-    {
-       printf ("Child thread could not be started");
-    }
-
-    /* Check only startCb is called on created thread */
-    printf ("Starting os_thread_module_001\n");
-    startCallbackCount = 0;
-    stopCallbackCount = 0;
-    threadCalled = 0;
-    hook.startCb = threadStartCallback;
-    hook.startArg = NULL;
-    hook.stopCb = NULL;
-    hook.stopArg = NULL;
-    os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
-    CU_ASSERT (result == os_resultSuccess);
-    os_threadWaitExit(thread_os_threadId, NULL);
-    CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 0 && threadCalled == 1);
-
-    /* Check startCb and stopCb are called on created thread */
-    printf ("Starting os_thread_module_002\n");
-    startCallbackCount = 0;
-    stopCallbackCount = 0;
-    threadCalled = 0;
-    hook.startCb = threadStartCallback;
-    hook.startArg = NULL;
-    hook.stopCb = threadStopCallback;
-    hook.stopArg = NULL;
-    os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
-    CU_ASSERT (result == os_resultSuccess);
-    os_threadWaitExit(thread_os_threadId, NULL);
-    CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 1 && threadCalled == 1);
-
-    /* Check startCb and stopCb are called and startArg is passed */
-    printf ("Starting os_thread_module_003\n");
-    startCallbackCount = 0;
-    stopCallbackCount = 0;
-    threadCalled = 0;
-    mainCount = 0;
-    hook.startCb = threadStartCallback;
-    hook.startArg = &mainCount;
-    hook.stopCb = threadStopCallback;
-    hook.stopArg = NULL;
-    os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
-    CU_ASSERT (result == os_resultSuccess);
-    os_threadWaitExit(thread_os_threadId, NULL);
-    CU_ASSERT (startCallbackCount == 0 && stopCallbackCount == 1 && mainCount == 1 && threadCalled == 1);
-
-    /* Check startCb and stopCb are called and stopArg is passed */
-    printf ("Starting os_thread_module_004\n");
-    startCallbackCount = 0;
-    stopCallbackCount = 0;
-    threadCalled = 0;
-    mainCount = 0;
-    hook.startCb = threadStartCallback;
-    hook.startArg = NULL;
-    hook.stopCb = threadStopCallback;
-    hook.stopArg = &mainCount;
-    os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
-    CU_ASSERT (result == os_resultSuccess);
-    os_threadWaitExit(thread_os_threadId, NULL);
-    CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 0 && mainCount == 1 && threadCalled == 1);
-
-    /* Check startCb and stopCb are called and startArg and stopArg are passed */
-    printf ("Starting os_thread_module_005\n");
-    startCallbackCount = 0;
-    stopCallbackCount = 0;
-    threadCalled = 0;
-    mainCount = 0;
-    hook.startCb = threadStartCallback;
-    hook.startArg = &mainCount;
-    hook.stopCb = threadStopCallback;
-    hook.stopArg = &mainCount;
-    os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
-    CU_ASSERT (result == os_resultSuccess);
-    os_threadWaitExit(thread_os_threadId, NULL);
-    CU_ASSERT (startCallbackCount == 0 && stopCallbackCount == 0 && mainCount == 2 && threadCalled == 1);
-
-    /* Check stopCb is called on created thread */
-    printf ("Starting os_thread_module_006\n");
-    startCallbackCount = 0;
-    stopCallbackCount = 0;
-    threadCalled = 0;
-    mainCount = 0;
-    hook.startCb = NULL;
-    hook.startArg = NULL;
-    hook.stopCb = threadStopCallback;
-    hook.stopArg = &mainCount;
-    os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
-    CU_ASSERT (result == os_resultSuccess);
-    os_threadWaitExit(thread_os_threadId, NULL);
-    CU_ASSERT (startCallbackCount == 0 && stopCallbackCount == 0 && mainCount == 1);
-
-    /* Check startCb is called on created thread */
-    printf ("Starting os_thread_module_007\n");
-    startCallbackCount = 0;
-    stopCallbackCount = 0;
-    threadCalled = 0;
-    mainCount = 0;
-    hook.startCb = threadStartCallback;
-    hook.startArg = NULL;
-    hook.stopCb = NULL;
-    hook.stopArg = &mainCount;
-    os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
-    CU_ASSERT (result == os_resultSuccess);
-    os_threadWaitExit(thread_os_threadId, NULL);
-    CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 0 && mainCount == 0 && threadCalled == 1);
-
-    /* Check startCb is called, but thread main is not called */
-    printf ("Starting os_thread_module_008\n");
-    startCallbackCount = 0;
-    stopCallbackCount = 0;
-    threadCalled = 0;
-    mainCount = 0;
-    hook.startCb = threadStartCallbackFAIL;
-    hook.startArg = NULL;
-    hook.stopCb = NULL;
-    hook.stopArg = NULL;
-    os_threadModuleSetHook(&hook, NULL);
-    result = os_threadCreate(&thread_os_threadId, "threadHook", &thread_os_threadAttr, &threadMain, NULL);
-    CU_ASSERT (result == os_resultSuccess);
-    os_threadWaitExit(thread_os_threadId, NULL);
-    CU_ASSERT (startCallbackCount == 1 && stopCallbackCount == 0 && mainCount == 0 && threadCalled == 0);
-
-    printf ("Ending tc_thread_module\n");
 }
-

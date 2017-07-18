@@ -80,51 +80,11 @@ extern "C" {
         uint32_t           stackSize;
     } os_threadAttr;
 
-    /** \brief Definition for hook callbacks */
-    typedef int (*os_threadCallback)(os_threadId, void *);
-
-    /** \brief Definition for thread hook */
-    typedef struct os_threadHook {
-        /**
-         * This callback is called before the thread main
-         * function is called. When a non-zero value is returned
-         * the 'stopCb' is called and the thread terminates.
-         */
-        os_threadCallback startCb;
-        void              *startArg; /* User argument passed in the callback */
-        /**
-         * This callback is called after the thread main returns. The result value
-         * is ignored.
-         */
-        os_threadCallback stopCb;
-        void              *stopArg; /* User argument passed in the callback */
-    } os_threadHook;
-
-    // consider private!
+    /** \brief Internal structure used to store cleanup handlers (private) */
     typedef struct {
         void (*func)(void *);
         void *data;
     } os_threadCleanup;
-
-    /** \brief Set thread hook.
-     *
-     *  A thread hook is a collection of callback routines that
-     *  are called during creation and termination of a thread.
-     *
-     *  The previous setting of the thread hook is returned.
-     *
-     *  NOTE: this function is not re-entrant!
-     *
-     *  Possible Results:
-     *  - returns os_resultSuccess if
-     *      the hooks are succesfully set
-     *  - returns os_ResultFail if
-     *      the hooks are not set
-     */
-    OSAPI_EXPORT os_result
-    os_threadModuleSetHook(
-            os_threadHook *hook,
-            os_threadHook *oldHook);
 
     /** \brief Create a new thread
      *
@@ -292,17 +252,20 @@ extern "C" {
     os_threadMemGet(
             int32_t index);
 
-    /** \brief Pop cleanup function from function stack
+    /** \brief Pop cleanup handler from the top of thread's cleanup stack
      *
-     * COMMENT
+     * Remove routine at the top of the calling thread's cleanup stack and
+     * optionally invoke it (if execute is non-zero).
      */
     OSAPI_EXPORT void
     os_threadCleanupPop(
         int32_t execute);
 
-    /** \brief Push cleanup function to function stack
+    /** \brief Push cleanup handler onto thread's cleanup stack
      *
-     * COMMENT
+     * Push a cleanup handler onto the top of the calling thread's cleanup
+     * stack. The cleanup handler will be popped of the thread's cleanup stack
+     * and invoked with the specified argument when the thread exits.
      */
     OSAPI_EXPORT void
     os_threadCleanupPush(
