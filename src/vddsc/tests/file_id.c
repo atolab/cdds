@@ -19,4 +19,6 @@ Test(vddsc_err, unique_file_id)
   cr_log_info("file_id for dds_create_writer: %d", dds_err_file_id(writer));
 
   cr_assert_neq(dds_err_file_id(reader), dds_err_file_id(writer));
+
+  dds_delete(participant);
 }
