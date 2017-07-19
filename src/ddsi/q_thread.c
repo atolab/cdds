@@ -104,7 +104,7 @@ fprintf(stderr, "running %s for thread %"PRIdMAX"\n", OS_FUNCTION, os_threadIdTo
     os_reportExit(); /* FIXME: should not be here */
 }
 
-_Success_(return != NULL) _Ret_valid_
+_Ret_valid_
 struct thread_state1 *lookup_thread_state (void)
 {
     struct thread_state1 *ts1 = NULL;
@@ -121,7 +121,7 @@ struct thread_state1 *lookup_thread_state (void)
             (void)snprintf(
                 tname, sizeof(tname), "0x%"PRIxMAX, os_threadIdToInteger(tid));
             os_mutexLock(&thread_states.lock);
-            ts1 = tsd_thread_state = init_thread_state(tname);
+            ts1 = init_thread_state(tname);
             if (ts1 != NULL) {
                 ts1->lb = 0;
                 ts1->extTid = tid;
