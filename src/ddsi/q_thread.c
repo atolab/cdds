@@ -135,6 +135,8 @@ struct thread_state1 *lookup_thread_state (void)
         tsd_thread_state = ts1;
     }
 
+    assert(ts1 != NULL);
+
     return ts1;
 }
 
