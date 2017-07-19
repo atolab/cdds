@@ -97,7 +97,7 @@ void thread_states_fini (void)
 static void cleanup_thread_state (void *data)
 {
     struct thread_state1 *ts = get_thread_state(os_threadIdSelf());
-fprintf(stderr, "running %s for thread %"PRIdMAX"\n", OS_FUNCTION, os_threadIdToInteger(os_threadIdSelf()));
+
     assert(ts->state == THREAD_STATE_ALIVE);
     assert(vtime_asleep_p(ts->vtime));
     reset_thread_state(ts);
