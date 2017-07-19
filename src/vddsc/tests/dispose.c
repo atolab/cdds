@@ -168,7 +168,6 @@ Theory((dds_entity_t writer), vddsc_writedispose, invalid_writers, .init=disposi
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-    uint32_t mask;
 
     if (writer < 0) {
         /* Entering the API with an error should return the same error. */
@@ -320,7 +319,6 @@ Test(vddsc_writedispose_ts, timeout, .init=disposing_init, .fini=disposing_fini)
 {
     Space_Type1 newInstance1 = { INITIAL_SAMPLES  , 22, 22 };
     Space_Type1 newInstance2 = { INITIAL_SAMPLES+1, 42, 42 };
-    dds_attach_t triggered;
     dds_return_t ret;
 
     ret = dds_writedispose_ts(g_writer, &newInstance1, g_present);
@@ -338,7 +336,6 @@ Theory((dds_entity_t writer), vddsc_writedispose_ts, invalid_writers, .init=disp
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-    uint32_t mask;
 
     if (writer < 0) {
         /* Entering the API with an error should return the same error. */
@@ -537,7 +534,6 @@ Theory((dds_entity_t writer), vddsc_dispose, invalid_writers, .init=disposing_in
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-    uint32_t mask;
 
     if (writer < 0) {
         /* Entering the API with an error should return the same error. */
@@ -690,7 +686,6 @@ Theory((dds_entity_t writer), vddsc_dispose_ts, invalid_writers, .init=disposing
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-    uint32_t mask;
 
     if (writer < 0) {
         /* Entering the API with an error should return the same error. */
@@ -876,7 +871,6 @@ Theory((dds_entity_t writer), vddsc_dispose_ih, invalid_writers, .init=disposing
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-    uint32_t mask;
 
     if (writer < 0) {
         /* Entering the API with an error should return the same error. */
@@ -980,7 +974,6 @@ Theory((dds_entity_t writer), vddsc_dispose_ih_ts, invalid_writers, .init=dispos
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-    uint32_t mask;
 
     if (writer < 0) {
         /* Entering the API with an error should return the same error. */

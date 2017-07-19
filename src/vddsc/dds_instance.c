@@ -52,9 +52,9 @@ dds_instance_find(
 
 static void
 dds_instance_remove(
-        _In_ const dds_topic *topic,
-        _In_ const void *data,
-        _In_ dds_instance_handle_t handle)
+        _In_     const dds_topic *topic,
+        _In_opt_ const void *data,
+        _In_     dds_instance_handle_t handle)
 {
     struct tkmap_instance * inst;
 
@@ -276,6 +276,7 @@ dds_dispose_ih_ts(
         } else {
             ret = DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER, DDS_MOD_INST, DDS_ERR_M2);
         }
+        dds_free(sample);
         dds_writer_unlock(wr);
     } else {
         ret = DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);

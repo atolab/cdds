@@ -87,10 +87,10 @@ dds_write_ts(
 
 static void
 init_sampleinfo(
-        _Inout_ struct nn_rsample_info *sampleinfo,
-        _In_    struct writer *wr,
-        _In_    int64_t seq,
-        _In_    serdata_t payload)
+        _Out_ struct nn_rsample_info *sampleinfo,
+        _In_  struct writer *wr,
+        _In_  int64_t seq,
+        _In_  serdata_t payload)
 {
     memset(sampleinfo, 0, sizeof(*sampleinfo));
     sampleinfo->bswap = 0;
