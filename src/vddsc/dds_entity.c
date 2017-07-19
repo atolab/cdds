@@ -650,6 +650,7 @@ dds_read_status(
         if (rc == DDS_RETCODE_OK) {
             if (e->m_deriver.validate_status) {
                 ret = e->m_deriver.validate_status(mask);
+                assert(ret <= DDS_RETCODE_OK);
                 if (ret == DDS_RETCODE_OK) {
                     *status = e->m_trigger & mask;
                 }
@@ -681,6 +682,7 @@ dds_take_status(
         if (rc == DDS_RETCODE_OK) {
             if (e->m_deriver.validate_status) {
                 ret = e->m_deriver.validate_status(mask);
+                assert(ret <= DDS_RETCODE_OK);
                 if (ret == DDS_RETCODE_OK) {
                     *status = e->m_trigger & mask;
                     if (e->m_deriver.propagate_status) {
