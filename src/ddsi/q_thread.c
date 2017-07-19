@@ -104,7 +104,7 @@ fprintf(stderr, "running %s for thread %"PRIdMAX"\n", OS_FUNCTION, os_threadIdTo
     os_reportExit(); /* FIXME: should not be here */
 }
 
-_Success_(return != NULL) _Ret_maybenull_
+_Success_(return != NULL) _Ret_valid_
 struct thread_state1 *lookup_thread_state (void)
 {
     struct thread_state1 *ts1 = NULL;
