@@ -1,23 +1,59 @@
-cmake_minimum_required(VERSION 3.5)
+if(PACKAGING_INCLUDED)
+  return()
+endif()
+set(PACKAGING_INCLUDED true)
+
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
 
 # FIXME: Top-level CMakeLists.txt should eventually define version numbers.
 #        Something like git describe could be used for this purpose. For now
 #        version number are statically defined here.
-set(CPACK_PACKAGE_VERSION_MAJOR "1")
-set(CPACK_PACKAGE_VERSION_MINOR "0")
-set(CPACK_PACKAGE_VERSION_PATCH "0")
-set(CPACK_PACKAGE_VERSION
-  "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+set(VERSION_MAJOR__ "1")
+set(VERSION_MINOR__ "2")
+set(VERSION_PATCH__ "3")
+set(VERSION__ "${VERSION_MAJOR__}.${VERSION_MINOR__}.${VERSION_PATCH__}")
 
-set(__resource_dir "${CMAKE_SOURCE_DIR}/cmake/modules/Packaging")
-mark_as_advanced(__resource_dir)
+set(PACKAGING_MODULE_DIR "${CMAKE_SOURCE_DIR}/cmake/modules/Packaging")
+set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}")
+
+# Generates <Package>Config.cmake.
+configure_package_config_file(
+  "${PACKAGING_MODULE_DIR}/PackageConfig.cmake.in"
+  "${CMAKE_PROJECT_NAME}Config.cmake"
+  INSTALL_DESTINATION "${CMAKE_INSTALL_CMAKEDIR}")
+
+# Generates <Package>Version.cmake.
+write_basic_package_version_file(
+  "${CMAKE_PROJECT_NAME}Version.cmake"
+  VERSION "${VERSION__}"
+  COMPATIBILITY SameMajorVersion)
+
+install(
+  FILES "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake"
+        "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}Version.cmake"
+  DESTINATION "${CMAKE_INSTALL_CMAKEDIR}")
+
+# Generates <Package>Targets.cmake file included by <Package>Config.cmake.
+# The files are placed in CMakeFiles/Export in the build tree.
+install(
+  EXPORT "${CMAKE_PROJECT_NAME}"
+  FILE "${CMAKE_PROJECT_NAME}Targets.cmake"
+  NAMESPACE "${CMAKE_PROJECT_NAME}::"
+  DESTINATION "${CMAKE_INSTALL_CMAKEDIR}")
+
+
+set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR__}")
+set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR__}")
+set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH__}")
+set(CPACK_PACKAGE_VERSION "${VERSION__}")
 
 set(CPACK_PACKAGE_NAME "VortexDDS")
 set(CPACK_PACKAGE_VENDOR "PrismTech")
 set(CPACK_PACKAGE_CONTACT "info@prismtech.com")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Leading OMG DDS implementation")
-set(CPACK_PACKAGE_ICON "${__resource_dir}/vortex.ico")
-set(CPACK_RESOURCE_FILE_LICENSE "${__resource_dir}/license.txt")
+set(CPACK_PACKAGE_ICON "${PACKAGING_MODULE_DIR}/vortex.ico")
+set(CPACK_RESOURCE_FILE_LICENSE "${PACKAGING_MODULE_DIR}/license.txt")
 
 # Packages could be generated on alien systems. e.g. Debian packages could be
 # created on Red Hat Enterprise Linux, but since packages also need to be

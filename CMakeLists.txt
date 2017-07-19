@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-# Set module path before defining project for platform files to work
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 project(VortexDDS)
 
 set(CMAKE_C_STANDARD 99)
@@ -9,11 +8,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "VxWorks")
   add_definitions(-std=c99)
 endif()
 
-# Build all executables and libraries into the top-level /bin /lib etc.
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-
+# Sets installation directories following GNU coding standards and export them
+# in CMAKE_INSTALL_* variables.
+include(GNUInstallDirs)
 include(AnalyzeBuild)
 # Include Coverage before CTest so that COVERAGE_COMMAND can be modified
 # in the Coverage module should that ever be necessary.
@@ -27,7 +24,13 @@ set(MEMORYCHECK_SUPPRESSIONS_FILE "${CMAKE_SOURCE_DIR}/valgrind.supp" CACHE FILE
 option(BUILD_TESTING "Build the testing tree." OFF)
 include(CTest)
 
-# todo sphinx+breathe to replace doxygen
+# Build all executables and libraries into the top-level /bin and /lib folders.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+
+# FIXME: Use sphinx+breathe to replace doxygen.
+# FIXME: Move this to Documentation module.
 find_package(Doxygen)
 if(Doxygen_FOUND)
   configure_file(${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in
@@ -41,27 +44,8 @@ endif()
 
 add_subdirectory(idlc)
 add_subdirectory(src)
-#add_subdirectory(vdds-server)
 add_subdirectory(examples)
-#add_subdirectory(rpc-examples)
 
-include(Packaging) # Pulls in CPack
-
-# set installation direction following GNU coding standards
-include(GNUInstallDirs)
-
-# Include helpers functions for creating config files that can be
-# included by other projects to find and use a package.
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-    VortexDDSConfig.cmake.in
-    VortexDDSConfig.cmake
-    INSTALL_DESTINATION lib)
-write_basic_package_version_file(
-  ${CMAKE_CURRENT_BINARY_DIR}/VortexDDSVersion.cmake
-  VERSION 1.2.3
-  COMPATIBILITY SameMajorVersion)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/VortexDDSConfig.cmake
-              ${CMAKE_CURRENT_BINARY_DIR}/VortexDDSVersion.cmake
-        DESTINATION lib)
+# Pull-in CPack and support for generating <Package>Config.cmake and packages.
+include(Packaging)
 

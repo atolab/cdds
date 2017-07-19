@@ -1,5 +1,5 @@
 idlc_generate(HelloWorldData_lib "HelloWorldData.idl")
 add_executable(helloworldPublisher publisher.c)
 add_executable(helloworldSubscriber subscriber.c)
-target_link_libraries(helloworldPublisher HelloWorldData_lib Vortex::DDSC)
-target_link_libraries(helloworldSubscriber HelloWorldData_lib Vortex::DDSC)
+target_link_libraries(helloworldPublisher HelloWorldData_lib VortexDDS::vddsc)
+target_link_libraries(helloworldSubscriber HelloWorldData_lib VortexDDS::vddsc)
