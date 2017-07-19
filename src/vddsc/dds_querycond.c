@@ -16,30 +16,30 @@ dds_create_querycondition(
 {
     dds_entity_t topic;
     dds_entity_t hdl;
+    dds_retcode_t rc;
     dds_reader *r;
     dds_topic  *t;
-    int32_t ret;
 
-    ret = dds_reader_lock(reader, &r);
-    if (ret == DDS_RETCODE_OK) {
+    rc = dds_reader_lock(reader, &r);
+    if (rc == DDS_RETCODE_OK) {
         dds_readcond *cond = dds_create_readcond(r, DDS_KIND_COND_QUERY, mask);
         assert(cond);
         hdl = cond->m_entity.m_hdl;
         cond->m_query.m_filter = filter;
         topic = r->m_topic->m_entity.m_hdl;
         dds_reader_unlock(r);
-        ret = dds_topic_lock(topic, &t);
-        if (ret == DDS_RETCODE_OK) {
+        rc = dds_topic_lock(topic, &t);
+        if (rc == DDS_RETCODE_OK) {
             if (t->m_stopic->filter_sample == NULL) {
                 t->m_stopic->filter_sample = dds_alloc(t->m_descriptor->m_size);
             }
             dds_topic_unlock(t);
         } else {
             (void)dds_delete(hdl);
-            hdl = DDS_ERRNO(ret);
+            hdl = DDS_ERRNO(rc);
         }
     } else {
-        hdl = DDS_ERRNO(ret);
+        hdl = DDS_ERRNO(rc);
     }
 
     return hdl;

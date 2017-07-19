@@ -9,13 +9,13 @@
 
 
 
-static _Check_return_ dds_return_t
+static _Check_return_ dds_retcode_t
 dds_read_lock(
         _In_ dds_entity_t hdl,
         _Out_ dds_reader   **reader,
         _Out_ dds_readcond **condition)
 {
-    dds_return_t ret = hdl;
+    dds_retcode_t rc = hdl;
     assert(reader);
     assert(condition);
     *reader = NULL;
@@ -23,33 +23,33 @@ dds_read_lock(
     if (hdl >= 0) {
         switch (dds_entity_kind(hdl) ) {
             case DDS_KIND_READER: {
-                ret = dds_entity_lock(hdl, DDS_KIND_READER, (dds_entity**)reader);
+                rc = dds_entity_lock(hdl, DDS_KIND_READER, (dds_entity**)reader);
                 break;
             }
             case DDS_KIND_COND_READ:
                 /* FALLTHROUGH */
             case DDS_KIND_COND_QUERY: {
-                ret = dds_entity_lock(hdl, DDS_KIND_DONTCARE, (dds_entity**)condition);
-                if (ret == DDS_RETCODE_OK) {
+                rc = dds_entity_lock(hdl, DDS_KIND_DONTCARE, (dds_entity**)condition);
+                if (rc == DDS_RETCODE_OK) {
                     dds_entity *parent = ((dds_entity*)*condition)->m_parent;
                     assert(parent);
-                    ret = dds_entity_lock(parent->m_hdl, DDS_KIND_READER, (dds_entity**)reader);
-                    if (ret != DDS_RETCODE_OK) {
+                    rc = dds_entity_lock(parent->m_hdl, DDS_KIND_READER, (dds_entity**)reader);
+                    if (rc != DDS_RETCODE_OK) {
                         dds_entity_unlock((dds_entity*)*condition);
                     }
                 }
                 break;
             }
             default: {
-                ret = dds_valid_hdl(hdl, DDS_KIND_DONTCARE);
-                if (ret == DDS_RETCODE_OK) {
-                    ret = DDS_RETCODE_ILLEGAL_OPERATION;
+                rc = dds_valid_hdl(hdl, DDS_KIND_DONTCARE);
+                if (rc == DDS_RETCODE_OK) {
+                    rc = DDS_RETCODE_ILLEGAL_OPERATION;
                 }
                 break;
             }
         }
     }
-    return DDS_ERRNO(ret);
+    return rc;
 }
 
 static void
@@ -83,6 +83,7 @@ dds_read_impl(
 {
   uint32_t i;
   dds_return_t ret = DDS_RETCODE_OK;
+  dds_retcode_t rc;
   struct dds_reader * rd;
   struct dds_readcond * cond;
   struct thread_state1 * const thr = lookup_thread_state ();
@@ -95,8 +96,8 @@ dds_read_impl(
   {
     thread_state_awake (thr);
   }
-  ret = dds_read_lock(reader_or_condition, &rd, &cond);
-  if (ret >= DDS_RETCODE_OK) {
+  rc = dds_read_lock(reader_or_condition, &rd, &cond);
+  if (rc == DDS_RETCODE_OK) {
 
       /* Allocate samples if not provided (assuming all or none provided) */
 
@@ -138,9 +139,9 @@ dds_read_impl(
       }
 
       if (take) {
-        ret = dds_rhc_take(rd->m_rd->rhc, lock, buf, si, maxs, mask, hand, cond);
+        ret = (dds_return_t)dds_rhc_take(rd->m_rd->rhc, lock, buf, si, maxs, mask, hand, cond);
       } else {
-        ret = dds_rhc_read(rd->m_rd->rhc, lock, buf, si, maxs, mask, hand, cond);
+        ret = (dds_return_t)dds_rhc_read(rd->m_rd->rhc, lock, buf, si, maxs, mask, hand, cond);
       }
 
       /* read/take resets data available status */
@@ -153,6 +154,8 @@ dds_read_impl(
         dds_entity_status_reset(((dds_entity*)rd)->m_parent, DDS_DATA_ON_READERS_STATUS);
       }
       dds_read_unlock(rd, cond);
+  } else {
+      ret = DDS_ERRNO(rc);
   }
 
   if (asleep)
@@ -175,6 +178,7 @@ dds_readcdr_impl(
         _In_  bool lock)
 {
   dds_return_t ret = DDS_RETCODE_OK;
+  dds_retcode_t rc;
   struct dds_reader * rd;
   struct dds_readcond * cond;
   struct thread_state1 * const thr = lookup_thread_state ();
@@ -190,8 +194,8 @@ dds_readcdr_impl(
   {
     thread_state_awake (thr);
   }
-  ret = dds_read_lock(reader_or_condition, &rd, &cond);
-  if (ret >= DDS_RETCODE_OK) {
+  rc = dds_read_lock(reader_or_condition, &rd, &cond);
+  if (rc >= DDS_RETCODE_OK) {
       ret = dds_rhc_takecdr
         (
          rd->m_rd->rhc, lock, buf, si, maxs,
@@ -211,6 +215,8 @@ dds_readcdr_impl(
         dds_entity_status_reset(((dds_entity*)rd)->m_parent, DDS_DATA_ON_READERS_STATUS);
       }
       dds_read_unlock(rd, cond);
+  } else {
+      ret = DDS_ERRNO(rc);
   }
 
   if (asleep)
@@ -477,7 +483,7 @@ dds_return_loan(
         _Inout_updates_(bufsz) void **buf,
         _In_ size_t bufsz)
 {
-    uint32_t ret;
+    dds_retcode_t rc;
     const dds_topic_descriptor_t * desc;
     dds_reader *rd;
     dds_readcond *cond;
@@ -486,8 +492,8 @@ dds_return_loan(
         return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     }
 
-    ret = dds_read_lock(reader_or_condition, &rd, &cond);
-    if (ret == DDS_RETCODE_OK) {
+    rc = dds_read_lock(reader_or_condition, &rd, &cond);
+    if (rc == DDS_RETCODE_OK) {
         desc = rd->m_topic->m_descriptor;
 
         /* Only free sample contents if they have been allocated */
@@ -508,5 +514,5 @@ dds_return_loan(
         dds_read_unlock(rd, cond);
     }
 
-    return ret;
+    return DDS_ERRNO(rc);
 }

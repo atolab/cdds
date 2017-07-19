@@ -10,6 +10,8 @@
 #include "ddsi/q_thread.h"
 #include "kernel/q_osplser.h"
 
+/* TODO: dds_retcode_t */
+
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 int
 dds_instance_writedispose(
