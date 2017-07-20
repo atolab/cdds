@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include <ctype.h>
 #include "kernel/dds_topic.h"
 #include "kernel/dds_listener.h"
 #include "kernel/dds_qos.h"
@@ -23,6 +24,34 @@ const ut_avlTreedef_t dds_topictree_def = UT_AVL_TREEDEF_INITIALIZER_INDKEY
   (int (*) (const void *, const void *)) strcmp,
   0
 );
+
+
+static bool
+is_valid_name(
+        _In_ const char *name)
+{
+    bool valid = false;
+    /* DDS Spec:
+     *  |  TOPICNAME - A topic name is an identifier for a topic, and is defined as any series of characters
+     *  |     ‘a’, ..., ‘z’,
+     *  |     ‘A’, ..., ‘Z’,
+     *  |     ‘0’, ..., ‘9’,
+     *  |     ‘-’ but may not start with a digit.
+     * It is considered that ‘-’ is an error in the spec and should say ‘_’. So, that's what we'll check for.
+     */
+    assert(name);
+    if ((name[0] != '\0') && (!isdigit((unsigned char)name[0]))) {
+        while (isalnum((unsigned char)*name) || (*name == '_')) {
+            name++;
+        }
+        if (*name == '\0') {
+            valid = true;
+        }
+    }
+
+   return valid;
+}
+
 
 static dds_return_t dds_topic_status_validate (uint32_t mask)
 {
@@ -230,12 +259,19 @@ dds_create_topic(
     const bool asleep = !vtime_awake_p (thr->vtime);
     uint32_t index;
 
-    assert (desc);
-    assert (name);
-
     ret = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
     if (ret != DDS_RETCODE_OK) {
         return DDS_ERRNO(ret);
+    }
+
+    if ((desc == NULL) || (name == NULL)) {
+        dds_entity_unlock(par);
+        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    }
+
+    if (!is_valid_name(name)) {
+        dds_entity_unlock(par);
+        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     }
 
     /* Validate qos */

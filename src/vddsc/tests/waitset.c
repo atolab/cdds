@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdlib.h>
 
 #include "dds.h"
 #include "os/os.h"
@@ -49,6 +50,16 @@ static dds_entity_t subscriber  = 0;
 static dds_entity_t readcond    = 0;
 
 
+static char*
+create_topic_name(const char *prefix, char *name, size_t size)
+{
+    /* Get semi random g_topic name. */
+    os_procId pid = os_procIdSelf();
+    int tid = abs(os_threadIdToInteger(os_threadIdSelf()));
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%d", prefix, pid, tid);
+    return name;
+}
+
 
 static void
 vddsc_waitset_basic_init(void)
@@ -76,16 +87,6 @@ vddsc_waitset_init(void)
     char name[100];
 
     os_osInit();
-#if 1
-    /* Get semi random topic name. */
-    snprintf(name, 100,
-            "vddsc_waitset_test_pid%"PRIprocId"_tid%d",
-            os_procIdSelf(),
-            (int)os_threadIdToInteger(os_threadIdSelf()));
-#else
-    /* Single topic name causes interference when tests are executed in parallel. */
-    snprintf(name, 100, "%s", "vddsc_waitset_test");
-#endif
 
     vddsc_waitset_basic_init();
 
@@ -95,7 +96,7 @@ vddsc_waitset_init(void)
     subscriber = dds_create_subscriber(participant, NULL, NULL);
     cr_assert_gt(subscriber, 0, "Failed to create prerequisite subscriber");
 
-    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, name, NULL, NULL);
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_waitset_test", name, 100), NULL, NULL);
     cr_assert_gt(topic, 0, "Failed to create prerequisite topic");
 
     reader = dds_create_reader(subscriber, topic, NULL, NULL);

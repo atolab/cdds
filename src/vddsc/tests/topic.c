@@ -56,6 +56,18 @@ Test(vddsc_topic, create)
   topic2 = dds_create_topic (participant, &RoundTripModule_Address_desc, "RoundTrip", NULL, NULL);
   cr_assert_eq(dds_err_nr(topic2), DDS_RETCODE_PRECONDITION_NOT_MET, "dds_create_topic(RoundTrip) other");
 
+  /* Creating the topic without description should fail.  */
+  topic2 = dds_create_topic (participant, NULL, "RoundTrip", NULL, NULL);
+  cr_assert_eq(dds_err_nr(topic2), DDS_RETCODE_BAD_PARAMETER, "dds_create_topic(RoundTrip)");
+
+  /* Creating the topic with an invalid name should fail.  */
+  topic2 = dds_create_topic (participant, NULL, "Round-Trip", NULL, NULL);
+  cr_assert_eq(dds_err_nr(topic2), DDS_RETCODE_BAD_PARAMETER, "dds_create_topic(RoundTrip)");
+
+  /* Creating the topic without name should fail.  */
+  topic2 = dds_create_topic (participant, &RoundTripModule_Address_desc, NULL, NULL, NULL);
+  cr_assert_eq(dds_err_nr(topic2), DDS_RETCODE_BAD_PARAMETER, "dds_create_topic(NULL)");
+
   dds_delete (topic);
   dds_listener_delete(listener);
   dds_delete (participant);

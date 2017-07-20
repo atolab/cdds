@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdlib.h>
 
 #include "dds.h"
 #include "os/os.h"
@@ -60,7 +61,15 @@ static void*             g_samples[MAX_SAMPLES];
 static Space_Type1       g_data[MAX_SAMPLES];
 static dds_sample_info_t g_info[MAX_SAMPLES];
 
-
+static char*
+create_topic_name(const char *prefix, char *name, size_t size)
+{
+    /* Get semi random g_topic name. */
+    os_procId pid = os_procIdSelf();
+    int tid = abs(os_threadIdToInteger(os_threadIdSelf()));
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%d", prefix, pid, tid);
+    return name;
+}
 
 static void
 readcondition_init(void)
@@ -71,19 +80,13 @@ readcondition_init(void)
     dds_return_t ret;
     char name[100];
 
-    /* Get semi random g_topic name. */
-    snprintf(name, 100,
-            "vddsc_readcondition_test_pid%"PRIprocId"_tid%d",
-            os_procIdSelf(),
-            (int)os_threadIdToInteger(os_threadIdSelf()));
-
     g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(g_participant, 0, "Failed to create prerequisite g_participant");
 
     g_waitset = dds_create_waitset(g_participant);
     cr_assert_gt(g_waitset, 0, "Failed to create g_waitset");
 
-    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, name, NULL, NULL);
+    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_readcondition_test", name, 100), NULL, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     /* Create a reader that keeps last sample of all instances. */

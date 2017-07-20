@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "dds.h"
 #include "os/os.h"
 #include "RoundTrip.h"
@@ -293,18 +294,22 @@ waitfor_cb(uint32_t expected)
 /****************************************************************************
  * Test initializations and teardowns.
  ****************************************************************************/
+static char*
+create_topic_name(const char *prefix, char *name, size_t size)
+{
+    /* Get semi random g_topic name. */
+    os_procId pid = os_procIdSelf();
+    int tid = abs(os_threadIdToInteger(os_threadIdSelf()));
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%d", prefix, pid, tid);
+    return name;
+}
+
 static void
 init_triggering_base(void)
 {
     char name[100];
 
     os_osInit();
-
-    /* Get semi random g_topic name. */
-    snprintf(name, 100,
-            "vddsc_listener_test_pid%"PRIprocId"_tid%d",
-            os_procIdSelf(),
-            (int)os_threadIdToInteger(os_threadIdSelf()));
 
     os_mutexInit(&g_mutex);
     os_condInit(&g_cond, &g_mutex);
@@ -318,7 +323,7 @@ init_triggering_base(void)
     g_publisher = dds_create_publisher(g_participant, NULL, NULL);
     cr_assert_gt(g_publisher, 0, "Failed to create prerequisite g_publisher");
 
-    g_topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, name, NULL, NULL);
+    g_topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_listener_test", name, 100), NULL, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     g_listener = dds_listener_create(NULL);
