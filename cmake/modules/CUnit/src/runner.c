@@ -116,6 +116,7 @@ cu_runner_init(
             default:
                 e = (CU_ErrorCode)256;
                 CU_set_error(e); /* Will print as "Undefined Errpr" */
+                usage(argv[0]);
                 break;
         }
     }

@@ -63,7 +63,6 @@ dds_read_unlock(
         dds_entity_unlock((dds_entity*)condition);
     }
 }
-
 /*
   dds_read_impl: Core read/take function. Usually maxs is size of buf and si
   into which samples/status are written, when set to zero is special case
@@ -71,11 +70,11 @@ dds_read_unlock(
   has been locked. This is used to support C++ API reading length unlimited
   which is interpreted as "all relevant samples in cache".
 */
-static int
+static dds_return_t
 dds_read_impl(
         _In_  bool take,
         _In_  dds_entity_t reader_or_condition,
-        _Out_ void **buf,
+        _Inout_ void **buf,
         _In_  uint32_t maxs,
         _Out_ dds_sample_info_t *si,
         _In_  uint32_t mask,
@@ -83,7 +82,7 @@ dds_read_impl(
         _In_  bool lock)
 {
   uint32_t i;
-  int32_t ret = DDS_RETCODE_OK;
+  dds_return_t ret = DDS_RETCODE_OK;
   struct dds_reader * rd;
   struct dds_readcond * cond;
   struct thread_state1 * const thr = lookup_thread_state ();
@@ -97,11 +96,7 @@ dds_read_impl(
     thread_state_awake (thr);
   }
   ret = dds_read_lock(reader_or_condition, &rd, &cond);
-  if (ret == DDS_RETCODE_OK) {
-      if (maxs == 0)
-      {
-        maxs = dds_rhc_samples (rd->m_rd->rhc);
-      }
+  if (ret >= DDS_RETCODE_OK) {
 
       /* Allocate samples if not provided (assuming all or none provided) */
 
@@ -168,7 +163,7 @@ dds_read_impl(
   return ret;
 }
 
-static int
+static dds_return_t
 dds_readcdr_impl(
         _In_  bool take,
         _In_  dds_entity_t reader_or_condition,
@@ -179,7 +174,7 @@ dds_readcdr_impl(
         _In_  dds_instance_handle_t hand,
         _In_  bool lock)
 {
-  int32_t ret = DDS_RETCODE_OK;
+  dds_return_t ret = DDS_RETCODE_OK;
   struct dds_reader * rd;
   struct dds_readcond * cond;
   struct thread_state1 * const thr = lookup_thread_state ();
@@ -196,7 +191,7 @@ dds_readcdr_impl(
     thread_state_awake (thr);
   }
   ret = dds_read_lock(reader_or_condition, &rd, &cond);
-  if (ret == DDS_RETCODE_OK) {
+  if (ret >= DDS_RETCODE_OK) {
       ret = dds_rhc_takecdr
         (
          rd->m_rd->rhc, lock, buf, si, maxs,
@@ -232,7 +227,7 @@ _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
 dds_return_t
 dds_read(
         _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
+        _Inout_ void ** buf,
         _Out_ dds_sample_info_t * si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs)
@@ -253,7 +248,7 @@ _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
 dds_return_t
 dds_read_wl(
         _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
+        _Inout_ void ** buf,
         _Out_ dds_sample_info_t * si,
         _In_ uint32_t maxs)
 {
@@ -273,7 +268,7 @@ _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
 dds_return_t
 dds_read_mask(
         _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
+        _Inout_ void ** buf,
         _Out_ dds_sample_info_t * si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs,
@@ -295,7 +290,7 @@ _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
 dds_return_t
 dds_read_mask_wl(
         _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
+        _Inout_ void ** buf,
         _Out_ dds_sample_info_t * si,
         _In_ uint32_t maxs,
         _In_ uint32_t mask)
@@ -347,7 +342,7 @@ _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
 dds_return_t
 dds_take(
         _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
+        _Inout_ void ** buf,
         _Out_ dds_sample_info_t * si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs)
@@ -368,7 +363,7 @@ _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
 dds_return_t
 dds_take_wl(
         _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
+        _Inout_ void ** buf,
         _Out_ dds_sample_info_t * si,
         _In_ uint32_t maxs)
 {
@@ -387,8 +382,8 @@ _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
 dds_return_t
 dds_take_mask(
-_In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
+        _In_ dds_entity_t rd_or_cnd,
+        _Inout_ void ** buf,
         _Out_ dds_sample_info_t * si,
         _In_ size_t bufsz,
         _In_ uint32_t maxs,
@@ -410,7 +405,7 @@ _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
 dds_return_t
 dds_take_mask_wl(
         _In_ dds_entity_t rd_or_cnd,
-        _Out_ void ** buf,
+        _Inout_ void ** buf,
         _Out_ dds_sample_info_t * si,
         _In_ uint32_t maxs,
         _In_ uint32_t mask)
