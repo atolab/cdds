@@ -30,6 +30,5 @@
 #endif
 
 #include "os/os_decl_attributes.h"
-#include "os/osapi_export.h"
 
 #endif

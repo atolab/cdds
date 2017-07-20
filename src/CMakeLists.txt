@@ -1,5 +1,7 @@
 find_package(Abstraction REQUIRED)
 
+include (GenerateExportHeader)
+
 FUNCTION(PREPEND var prefix)
    SET(listVar "")
    FOREACH(f ${ARGN})
@@ -17,45 +19,60 @@ PREPEND(srcs_ddsi ddsi ddsi_ser.c ddsi_ssl.c ddsi_tcp.c ddsi_tran.c ddsi_udp.c q
 PREPEND(srcs_vddsc vddsc dds_alloc.c dds_coherent.c dds_iid.c dds_participant.c dds_reader.c dds_thread.c dds_writer.c dds_init.c dds_publisher.c dds_rhc.c dds_time.c q_osplser.c dds_domain.c dds_instance.c dds_qos.c dds_tkmap.c dds_entity.c dds_key.c dds_querycond.c dds_topic.c dds_err.c dds_listener.c dds_read.c dds_stream.c dds_waitset.c dds_log.c dds_readcond.c dds_subscriber.c dds_write.c)
 
 option(VDDSC_SHARED "Build VDDSC as a shared library" ON)
-if(VDDSC_SHARED AND ((NOT DEFINED BUILD_SHARED_LIBS) OR BUILD_SHARED_LIBS)) # BUILD_SHARED_LIBS is set to off by for example VxWorks DKM environment
-  add_library(vddsc SHARED "") # Not using generator expressions for compatibility with all generators
-else()
-  if(VDDSC_SHARED)
-    message(STATUS "Option VDDSC_SHARED ignored. Only static libraries supported on this platform.")
-  endif()
-  add_library(vddsc "")
+
+if(VDDSC_SHARED AND ((NOT DEFINED BUILD_SHARED_LIBS) OR BUILD_SHARED_LIBS))
+  # BUILD_SHARED_LIBS is set to off by for example VxWorks DKM environment
+  set(VDDSC_SHARED__ "SHARED")
+elseif(VDDSC_SHARED)
+  message(STATUS "Option VDDSC_SHARED ignored. Only static libraries supported on this platform.")
 endif()
-target_sources(vddsc PRIVATE ${srcs_ddsi} ${srcs_vddsc})
+
+add_library(vddsc ${VDDSC_SHARED__} ${srcs_ddsi} ${srcs_vddsc})
 target_link_libraries(vddsc PRIVATE util)
 set_target_file_ids(vddsc)
 
-include (GenerateExportHeader)
-generate_export_header(vddsc
-                        BASE_NAME DDS
-                        EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/exports/dds/dds_export.h")
+generate_export_header(
+  vddsc
+  BASE_NAME DDS
+  EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/exports/dds/dds_export.h")
 
-target_include_directories(vddsc PUBLIC "${CMAKE_SOURCE_DIR}/include/" "${CMAKE_BINARY_DIR}/exports/")
+# Generator expressions are used here to refer to different paths during build
+# and install phases. It is a requirement for creating relocatable packages.
+target_include_directories(vddsc PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/>"
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports/>"
+  "$<INSTALL_INTERFACE:include>")
 
-# Create a psuedo-target that other targets (i.e. examples, tests) can depend on and can also be
-# provided as import-target by a package-file when building those targets outside the regular
-# Vortex build-tree (i.e. the installed tree)
-add_library(Vortex::DDSC ALIAS vddsc)
+# Create a pseudo-target that other targets (i.e. examples, tests) can depend
+# on and can also be provided as import-target by a package-file when building
+# those targets outside the regular Vortex build-tree (i.e. the installed tree)
+add_library(${CMAKE_PROJECT_NAME}::vddsc ALIAS vddsc)
 
+install(
+  TARGETS vddsc
+  EXPORT "${CMAKE_PROJECT_NAME}"
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  COMPONENT lib)
 
-# Just added for install SPIKE. TODO: remove or improve.
-install(TARGETS vddsc
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        COMPONENT lib)
-install(FILES ${CMAKE_SOURCE_DIR}/include/dds.h
-        DESTINATION include
-        COMPONENT dev)
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/dds
-        DESTINATION include
-        COMPONENT dev)
+install(
+  FILES "${CMAKE_SOURCE_DIR}/include/dds.h"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  COMPONENT dev)
 
-# TODO: improve test inclusion.
+# FIXME: Not sure if this is actually required.
+install(
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/exports/dds/dds_export.h"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  COMPONENT dev)
+
+install(
+  DIRECTORY "${CMAKE_SOURCE_DIR}/include/dds"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  COMPONENT dev)
+
+# FIXME: Improve test inclusion.
 if((BUILD_TESTING) AND ((NOT DEFINED MSVC_VERSION) OR (MSVC_VERSION GREATER "1800")))
   add_subdirectory(vddsc/tests)
 endif()

@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
-
-# Set module path before defining project for platform files to work
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
+# Set module path before defining project so platform files will work.
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 project(VortexDDS)
 
 set(CMAKE_C_STANDARD 99)
@@ -9,12 +8,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "VxWorks")
   add_definitions(-std=c99)
 endif()
 
-# Build all executables and libraries into the top-level /bin /lib etc.
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-
 include(FileIDs)
+include(GNUInstallDirs)
 include(AnalyzeBuild)
 # Include Coverage before CTest so that COVERAGE_COMMAND can be modified
 # in the Coverage module should that ever be necessary.
@@ -28,7 +23,13 @@ set(MEMORYCHECK_SUPPRESSIONS_FILE "${CMAKE_SOURCE_DIR}/valgrind.supp" CACHE FILE
 option(BUILD_TESTING "Build the testing tree." OFF)
 include(CTest)
 
-# todo sphinx+breathe to replace doxygen
+# Build all executables and libraries into the top-level /bin and /lib folders.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+
+# FIXME: Use sphinx+breathe to replace doxygen.
+# FIXME: Move this to Documentation module.
 find_package(Doxygen)
 if(Doxygen_FOUND)
   configure_file(${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in
@@ -42,9 +43,8 @@ endif()
 
 add_subdirectory(idlc)
 add_subdirectory(src)
-#add_subdirectory(vdds-server)
 add_subdirectory(examples)
-#add_subdirectory(rpc-examples)
 
-include(Packaging) # Pulls in CPack
+# Pull-in CPack and support for generating <Package>Config.cmake and packages.
+include(Packaging)
 
