@@ -6,14 +6,6 @@ set(PACKAGING_INCLUDED true)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-# FIXME: Top-level CMakeLists.txt should eventually define version numbers.
-#        Something like git describe could be used for this purpose. For now
-#        version number are statically defined here.
-set(VERSION_MAJOR__ "1")
-set(VERSION_MINOR__ "2")
-set(VERSION_PATCH__ "3")
-set(VERSION__ "${VERSION_MAJOR__}.${VERSION_MINOR__}.${VERSION_PATCH__}")
-
 set(PACKAGING_MODULE_DIR "${CMAKE_SOURCE_DIR}/cmake/modules/Packaging")
 set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}")
 
@@ -26,7 +18,7 @@ configure_package_config_file(
 # Generates <Package>Version.cmake.
 write_basic_package_version_file(
   "${CMAKE_PROJECT_NAME}Version.cmake"
-  VERSION "${VERSION__}"
+  VERSION ${PROJECT_VERSION}
   COMPATIBILITY SameMajorVersion)
 
 install(
@@ -43,12 +35,13 @@ install(
   DESTINATION "${CMAKE_INSTALL_CMAKEDIR}")
 
 
-set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR__}")
-set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR__}")
-set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH__}")
-set(CPACK_PACKAGE_VERSION "${VERSION__}")
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION_TWEAK ${PROJECT_VERSION_TWEAK})
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 
-set(CPACK_PACKAGE_NAME "VortexDDS")
+set(CPACK_PACKAGE_NAME ${CMAKE_PROJECT_NAME})
 set(CPACK_PACKAGE_VENDOR "PrismTech")
 set(CPACK_PACKAGE_CONTACT "info@prismtech.com")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Leading OMG DDS implementation")
