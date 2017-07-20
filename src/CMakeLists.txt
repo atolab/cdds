@@ -22,12 +22,15 @@ option(VDDSC_SHARED "Build VDDSC as a shared library" ON)
 
 if(VDDSC_SHARED AND ((NOT DEFINED BUILD_SHARED_LIBS) OR BUILD_SHARED_LIBS))
   # BUILD_SHARED_LIBS is set to off by for example VxWorks DKM environment
-  set(VDDSC_SHARED__ "SHARED")
-elseif(VDDSC_SHARED)
-  message(STATUS "Option VDDSC_SHARED ignored. Only static libraries supported on this platform.")
+  add_library(vddsc SHARED "")
+else()
+  if(VDDSC_SHARED)
+    message(STATUS "Option VDDSC_SHARED ignored. Only static libraries supported on this platform.")
+  endif()
+  add_library(vddsc "")
 endif()
 
-add_library(vddsc ${VDDSC_SHARED__} ${srcs_ddsi} ${srcs_vddsc})
+target_sources(vddsc PRIVATE ${srcs_ddsi} ${srcs_vddsc})
 target_link_libraries(vddsc PRIVATE util)
 set_target_file_ids(vddsc)
 # SOVERSION should increase on incompatible ABI change
