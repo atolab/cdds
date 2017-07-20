@@ -443,9 +443,7 @@ Test(vddsc_entity, sample_lost, .init=init_triggering_base, .fini=fini_triggerin
 
 Test(vddsc_entity, data_available, .init=init_triggering_base, .fini=fini_triggering_base)
 {
-    dds_time_t time1;
     RoundTripModule_DataType sample = { 0 };
-
 
     status = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
