@@ -10,7 +10,7 @@
 /* Add --verbose command line argument to get the cr_log_info traces (if there are any). */
 
 #if 0
-#define PRINT_SAMPLE(info, sample) printf("%s (%d, %d, %d)\n", info, sample.long_1, sample.long_2, sample.long_3);
+#define PRINT_SAMPLE(info, sample) cr_log_info("%s (%d, %d, %d)\n", info, sample.long_1, sample.long_2, sample.long_3);
 #else
 #define PRINT_SAMPLE(info, sample)
 #endif

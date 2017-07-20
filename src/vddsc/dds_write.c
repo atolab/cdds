@@ -111,6 +111,7 @@ deliver_locally(
         _In_ serdata_t payload,
         _In_ struct tkmap_instance *tk)
 {
+    dds_return_t ret = DDS_RETCODE_OK;
     os_mutexLock (&wr->rdary.rdary_lock);
     if (wr->rdary.fastpath_ok) {
         struct reader ** const rdary = wr->rdary.rdary;
@@ -119,17 +120,23 @@ deliver_locally(
             unsigned i;
             init_sampleinfo(&sampleinfo, wr, seq, payload);
             for (i = 0; rdary[i]; i++) {
+                bool stored;
                 TRACE (("reader %x:%x:%x:%x\n", PGUID (rdary[i]->e.guid)));
                 dds_duration_t max_block_ms = nn_from_ddsi_duration(wr->xqos->reliability.max_blocking_time) / DDS_NSECS_IN_MSEC;
-                while (!(ddsi_plugin.rhc_store_fn) (rdary[i]->rhc, &sampleinfo, payload, tk)) {
-                    /* A reliable sample has been rejected. */
-                    if (max_block_ms <= 0) {
-                        os_mutexUnlock (&wr->rdary.rdary_lock);
-                        return DDS_ERRNO(DDS_RETCODE_TIMEOUT);
+                do {
+                    stored = (ddsi_plugin.rhc_store_fn) (rdary[i]->rhc, &sampleinfo, payload, tk);
+                    if (!stored) {
+                        if (max_block_ms <= 0) {
+                            ret = DDS_ERRNO(DDS_RETCODE_TIMEOUT);
+                        } else {
+                            dds_sleepfor(DDS_MSECS(DDS_HEADBANG_TIMEOUT_MS));
+                        }
+                        /* Decreasing the block time after the sleep, let's us possibly
+                         * wait a bit too long. But that's preferable compared to waiting
+                         * a bit too short. */
+                        max_block_ms -= DDS_HEADBANG_TIMEOUT_MS;
                     }
-                    dds_sleepfor (DDS_MSECS (10));
-                    max_block_ms -= 10;
-                }
+                } while ((!stored) && (ret == DDS_RETCODE_OK));
             }
         }
         os_mutexUnlock (&wr->rdary.rdary_lock);
@@ -158,7 +165,7 @@ deliver_locally(
         }
         os_mutexUnlock (&wr->e.lock);
     }
-    return DDS_RETCODE_OK;
+    return ret;
 }
 
 int
