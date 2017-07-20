@@ -374,8 +374,12 @@ dds_instancehandle_get(
  *
  * @retval DDS_RETCODE_OK
  *            The operation was successful
- *        DDS_RETCODE_BAD_PARAMETER
+ *         DDS_RETCODE_BAD_PARAMETER
  *            The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -398,8 +402,12 @@ dds_read_status(
  *
  * @retval DDS_RETCODE_OK
  *            The operation was successful
- *        DDS_RETCODE_BAD_PARAMETER
+ *         DDS_RETCODE_BAD_PARAMETER
  *            The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -427,8 +435,12 @@ dds_take_status(
  *
  * @retval DDS_RETCODE_OK
  *            The operation was successful
- *        DDS_RETCODE_BAD_PARAMETER
+ *         DDS_RETCODE_BAD_PARAMETER
  *            The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -448,8 +460,12 @@ dds_get_status_changes(
  *
  * @retval DDS_RETCODE_OK
  *            The operation was successful
- *        DDS_RETCODE_BAD_PARAMETER
+ *         DDS_RETCODE_BAD_PARAMETER
  *            The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -469,8 +485,12 @@ dds_get_enabled_status(
  *
  * @retval DDS_RETCODE_OK
  *            The operation was successful
- *        DDS_RETCODE_BAD_PARAMETER
+ *         DDS_RETCODE_BAD_PARAMETER
  *            The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT dds_return_t
@@ -2059,8 +2079,12 @@ dds_notify_readers(
  *
  * @retval DDS_RETCODE_OK
  *            The operation was successful
- *        DDS_RETCODE_BAD_PARAMETER
+ *         DDS_RETCODE_BAD_PARAMETER
  *            The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT dds_return_t

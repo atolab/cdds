@@ -1,1085 +1,880 @@
 #include "dds.h"
+#include "os/os.h"
 #include "RoundTrip.h"
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
+#include <criterion/theories.h>
 
 #define cr_assert_status_eq(s1, s2, ...) cr_assert_eq(dds_err_nr(s1), s2, __VA_ARGS__)
 
-Test(vddsc_entity, matched_status)
+/****************************************************************************
+ * Test globals.
+ ****************************************************************************/
+static dds_entity_t    participant;
+static dds_entity_t    subscriber;
+static dds_entity_t    publisher;
+static dds_entity_t    topic;
+static dds_entity_t    writer;
+static dds_entity_t    reader;
+static dds_entity_t    waitSetwr;
+static dds_entity_t    waitSetrd;
+static dds_return_t    status, status2 = 0;
+
+static dds_qos_t      *qos;
+static dds_attach_t wsresults[1];
+static dds_attach_t wsresults2[2];
+static size_t wsresultsize = 1U;
+static size_t wsresultsize2 = 2U;
+static dds_time_t waitTimeout = DDS_SECS (2);
+static dds_publication_matched_status_t publication_matched;
+static dds_subscription_matched_status_t subscription_matched;
+static dds_resource_limits_qospolicy_t resource_limits = {1,1,1};
+
+
+/****************************************************************************
+ * Test initializations and teardowns.
+ ****************************************************************************/
+static void
+init_triggering_base(void)
 {
-  dds_entity_t participant;
-  dds_listener_t *listener;
-  dds_entity_t topic;
-  dds_qos_t *qos;
-  dds_entity_t reader;
-  dds_entity_t writer;
-  dds_entity_t publisher;
-  dds_return_t ret;
-  dds_entity_t waitSetwr, waitSetrd;
-  dds_attach_t wsresults[1];
-  size_t wsresultsize = 1U;
-  dds_time_t waitTimeout = DDS_SECS (2);
-  dds_publication_matched_status_t publication_matched;
-  dds_subscription_matched_status_t subscription_matched;
+    char topicName[100];
 
-  participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant, 0);
-  listener = dds_listener_create(NULL);
-  cr_assert_neq(listener, NULL);
-  topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
-  cr_assert_gt(topic, 0);
-  qos = dds_qos_create();
+    /* Get semi random topic name. */
+    snprintf(topicName, 100,
+            "vddsc_listener_test_pid%"PRIprocId"_tid%d",
+            os_procIdSelf(),
+            (int)os_threadIdToInteger(os_threadIdSelf()));
 
-  /* Create reader and writer with default QoS */
-  reader = dds_create_reader(participant, topic, NULL, NULL);
-  cr_assert_gt(reader, 0);
-  publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_gt(publisher, 0);
-  writer = dds_create_writer(publisher, topic, NULL, NULL);
-  cr_assert_gt(writer, 0);
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0, "Failed to create prerequisite participant");
 
-  /*Set reader and writer status enabled*/
-  ret = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, topicName, NULL, NULL);
+    cr_assert_gt(topic, 0, "Failed to create prerequisite topic");
 
-  /* Attach waitset and status conditions */
-  waitSetwr = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetwr, writer, (dds_attach_t)(intptr_t)writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  waitSetrd = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetrd, reader, (dds_attach_t)(intptr_t)reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
+    qos = dds_qos_create();
+    cr_assert_not_null(qos, "Failed to create prerequisite qos");
+    dds_qset_resource_limits (qos, resource_limits.max_samples, resource_limits.max_instances, resource_limits.max_samples_per_instance);
+    dds_qset_reliability (qos, DDS_RELIABILITY_RELIABLE, DDS_MSECS (10));
+    dds_qset_history (qos, DDS_HISTORY_KEEP_ALL, 0);
+    dds_qset_destination_order (qos, DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP);
 
-  /* Wait for publication  matched status */
-  ret = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-  if(ret > 0){
-    ret = dds_get_publication_matched_status(writer, &publication_matched);
-    cr_assert_status_eq(ret, DDS_RETCODE_OK);
-    cr_assert_eq(publication_matched.current_count,1);
-  }
-  /* Wait for subscription  matched status */
-  ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-  if(ret > 0){
-    ret = dds_get_subscription_matched_status(reader, &subscription_matched);
-    cr_assert_status_eq(ret, DDS_RETCODE_OK);
-    cr_assert_eq(subscription_matched.current_count, 1);
-  }
-  /* Clean up */
-  ret = dds_waitset_detach(waitSetwr, writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_waitset_detach(waitSetrd, reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
+    subscriber = dds_create_subscriber(participant, qos, NULL);
+    cr_assert_gt(subscriber, 0);
+    reader = dds_create_reader(subscriber, topic, qos, NULL);
+    cr_assert_gt(reader, 0);
+    publisher = dds_create_publisher(participant, qos, NULL);
+    cr_assert_gt(publisher, 0);
+    writer = dds_create_writer(publisher, topic, qos, NULL);
+    cr_assert_gt(writer, 0);
 
-  dds_delete(waitSetrd);
-  dds_delete(waitSetwr);
-  dds_delete(writer);
-  dds_delete(publisher);
-  dds_delete(reader);
-  dds_qos_delete(qos);
-  dds_delete(topic);
-  dds_listener_delete(listener);
-  dds_delete(participant);
+    waitSetwr = dds_create_waitset(participant);
+    status = dds_waitset_attach (waitSetwr, writer, (dds_attach_t)(intptr_t)writer);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+
+    waitSetrd = dds_create_waitset(participant);
+    status = dds_waitset_attach (waitSetrd, reader, (dds_attach_t)(intptr_t)reader);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+
+
 }
-
-Test(vddsc_entity, pub_unmatched_status)
+static void
+fini_triggering_base(void)
 {
-  dds_entity_t participant;
-  dds_listener_t *listener;
-  dds_entity_t topic;
-  dds_qos_t *qos;
-  dds_entity_t reader;
-  dds_entity_t writer;
-  dds_entity_t publisher;
-  dds_return_t ret, status =0;
-  dds_entity_t waitSetwr, waitSetrd;
-  dds_attach_t wsresults[1];
-  size_t wsresultsize = 1U;
-  dds_time_t waitTimeout = DDS_SECS (2);
-  dds_publication_matched_status_t publication_matched;
-  dds_subscription_matched_status_t subscription_matched;
 
-  participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant, 0);
-  listener = dds_listener_create(NULL);
-  cr_assert_neq(listener, NULL);
-  topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
-  cr_assert_gt(topic, 0);
-  qos = dds_qos_create();
+    dds_waitset_detach(waitSetrd, reader);
+    dds_waitset_detach(waitSetwr, writer);
 
-  /* Create reader and writer with default QoS */
-  reader = dds_create_reader(participant, topic, NULL, NULL);
-  cr_assert_gt(reader, 0);
-  publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_gt(publisher, 0);
-  writer = dds_create_writer(publisher, topic, NULL, NULL);
-  cr_assert_gt(writer, 0);
-
-  /*Set reader and writer status enabled*/
-  ret = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  /* Create and attach waitset and status conditions */
-  waitSetwr = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetwr, writer, (dds_attach_t)(intptr_t)writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  waitSetrd = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetrd, reader, (dds_attach_t)(intptr_t)reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  /* Wait for subscription  matched status */
-  ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-  if(ret > 0){
-    ret = dds_get_subscription_matched_status(reader, &subscription_matched);
-    cr_assert_status_eq(ret, DDS_RETCODE_OK);
-    cr_assert_eq(subscription_matched.current_count, 1);
-  }
-
-  /* Wait for publication  matched status */
-  ret = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-  if(ret > 0){
-    /* Reset the status */
-    ret = dds_take_status (writer, &status, DDS_PUBLICATION_MATCHED_STATUS);
-    cr_assert_status_eq(ret, DDS_RETCODE_OK);
-    cr_assert_eq(status, DDS_PUBLICATION_MATCHED_STATUS);
-
-    /* Wait for the publication (un)matched status */
-    ret = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-    if(ret > 0){
-      ret = dds_get_publication_matched_status(writer, &publication_matched);
-      cr_assert_status_eq(ret, DDS_RETCODE_OK);
-      cr_assert_eq(publication_matched.total_count_change,1);
-      cr_assert_eq(publication_matched.current_count_change, 0);
-    }
-  }
-
-  ret = dds_waitset_detach(waitSetrd, reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  dds_delete(reader);
-
-  /* Clean up */
-  ret = dds_waitset_detach(waitSetwr, writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  dds_delete(waitSetrd);
-  dds_delete(waitSetwr);
-  dds_delete(writer);
-  dds_delete(publisher);
-  dds_qos_delete(qos);
-  dds_delete(topic);
-  dds_listener_delete(listener);
-  dds_delete(participant);
-}
-
-Test(vddsc_entity, sub_unmatch_status)
-{
-  dds_entity_t participant;
-  dds_listener_t *listener;
-  dds_entity_t topic;
-  dds_qos_t *qos;
-  dds_entity_t reader;
-  dds_entity_t writer;
-  dds_entity_t publisher;
-  dds_return_t ret, status =0;
-  dds_entity_t waitSetwr, waitSetrd;
-  dds_attach_t wsresults[1];
-  size_t wsresultsize = 1U;
-  dds_time_t waitTimeout = DDS_SECS (2);
-  dds_publication_matched_status_t publication_matched;
-  dds_subscription_matched_status_t subscription_matched;
-
-  participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant, 0);
-  listener = dds_listener_create(NULL);
-  cr_assert_neq(listener, NULL);
-  topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
-  cr_assert_gt(topic, 0);
-  qos = dds_qos_create();
-
-  /* Create reader and writer with default QoS */
-  reader = dds_create_reader(participant, topic, NULL, NULL);
-  cr_assert_gt(reader, 0);
-  publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_gt(publisher, 0);
-  writer = dds_create_writer(publisher, topic, NULL, NULL);
-  cr_assert_gt(writer, 0);
-
-  /*Set reader and writer status enabled*/
-  ret = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  /* Create and attach waitset and status conditions */
-  waitSetwr = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetwr, writer, (dds_attach_t)(intptr_t)writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  waitSetrd = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetrd, reader, (dds_attach_t)(intptr_t)reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  /* Wait for publication  matched status */
-  ret = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-  if(ret > 0){
-    ret = dds_get_publication_matched_status(writer, &publication_matched);
-    cr_assert_status_eq(ret, DDS_RETCODE_OK);
-    cr_assert_eq(publication_matched.current_count, 1);
-  }
-  /* Wait for subscription  matched status */
-  ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-  if(ret > 0){
-    /* Reset the status */
-    ret = dds_take_status (reader, &status, DDS_SUBSCRIPTION_MATCHED_STATUS);
-    cr_assert_status_eq(ret, DDS_RETCODE_OK);
-    cr_assert_eq(status, DDS_SUBSCRIPTION_MATCHED_STATUS);
-
-    /* Reset process */
-    ret = dds_waitset_detach(waitSetwr, writer);
-    cr_assert_status_eq(ret, DDS_RETCODE_OK);
+    dds_delete(waitSetrd);
+    dds_delete(waitSetwr);
     dds_delete(writer);
+    dds_delete(publisher);
+    dds_delete(reader);
+    dds_qos_delete(qos);
+    dds_delete(topic);
+    dds_delete(subscriber);
+    dds_delete(participant);
+}
+/****************************************************************************
+ * Triggering tests
+ ****************************************************************************/
+Test(vddsc_entity, matched_status, .init=init_triggering_base, .fini=fini_triggering_base)
+{
 
-    /*Wait for the subscription (un)matched status */
-    ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-    if(ret > 0){
-      ret = dds_get_subscription_matched_status(reader, &subscription_matched);
-      cr_assert_status_eq(ret, DDS_RETCODE_OK);
-      cr_assert_eq(subscription_matched.total_count_change, 1);
-      cr_assert_eq(subscription_matched.current_count_change, 0);
+    /*Set reader and writer status enabled*/
+    status = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    status = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+
+    /* Wait for publication  matched status */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    if(status > 0){
+      status = dds_get_publication_matched_status(writer, &publication_matched);
+      cr_assert_status_eq(status, DDS_RETCODE_OK);
+      cr_assert_eq(publication_matched.current_count,1);
     }
-  }
-  /* Clean up */
-  ret = dds_waitset_detach(waitSetrd, reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  dds_delete(waitSetrd);
-  dds_delete(waitSetwr);
-  dds_delete(publisher);
-  dds_delete(reader);
-  dds_qos_delete(qos);
-  dds_delete(topic);
-  dds_listener_delete(listener);
-  dds_delete(participant);
+    /* Wait for subscription  matched status */
+    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+    if(status > 0){
+      status = dds_get_subscription_matched_status(reader, &subscription_matched);
+      cr_assert_status_eq(status, DDS_RETCODE_OK);
+      cr_assert_eq(subscription_matched.current_count, 1);
+    }
 }
 
-Test(vddsc_entity, incompatible_qos)
+Test(vddsc_entity, pub_unmatched_status, .init=init_triggering_base, .fini=fini_triggering_base)
 {
-  dds_entity_t participant;
-  dds_listener_t *listener;
-  dds_entity_t topic;
-  dds_qos_t *qos;
-  dds_entity_t reader;
-  dds_entity_t writer;
-  dds_entity_t publisher;
-  dds_return_t ret;
-  dds_entity_t waitSetwr, waitSetrd;
-  dds_attach_t wsresults[1];
-  size_t wsresultsize = 1U;
-  dds_time_t waitTimeout = DDS_SECS (2);
 
-  dds_requested_incompatible_qos_status_t req_incompatible_qos = {0};
-  dds_offered_incompatible_qos_status_t off_incompatible_qos = {0};
+    /*Set reader and writer status enabled*/
+    status = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    status = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-  participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant, 0);
-  listener = dds_listener_create(NULL);
-  cr_assert_neq(listener, NULL);
-  topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
-  cr_assert_gt(topic, 0);
-  qos = dds_qos_create();
-  dds_qset_durability (qos, DDS_DURABILITY_PERSISTENT);
+    /* Wait for subscription  matched status */
+    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+    if(status > 0){
+      status = dds_get_subscription_matched_status(reader, &subscription_matched);
+      cr_assert_status_eq(status, DDS_RETCODE_OK);
+      cr_assert_eq(subscription_matched.current_count, 1);
+    }
 
-  /* Create a reader with persistent durability */
-  reader = dds_create_reader(participant, topic, qos, NULL);
-  cr_assert_gt(reader, 0);
+    /* Wait for publication  matched status */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    if(status > 0){
+      /* Reset the status */
+      status = dds_take_status (writer, &status2, DDS_PUBLICATION_MATCHED_STATUS);
+      cr_assert_status_eq(status, DDS_RETCODE_OK);
+      cr_assert_eq(status2, DDS_PUBLICATION_MATCHED_STATUS);
 
-  publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_gt(publisher, 0);
-
-  /* Create writer with default QoS */
-  writer = dds_create_writer(publisher, topic, NULL, NULL);
-  cr_assert_gt(writer, 0);
-
-  /* Get reader and writer status conditions and attach to waitset */
-  ret = dds_set_enabled_status(reader, DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_set_enabled_status(writer, DDS_OFFERED_INCOMPATIBLE_QOS_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  waitSetrd = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetrd, reader, (dds_attach_t)(intptr_t)reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  waitSetwr = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetwr, writer, (dds_attach_t)(intptr_t)writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  /* Wait subscription requested incompatible status */
-  ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-  if(ret > 0){
-    ret = dds_get_requested_incompatible_qos_status (reader, &req_incompatible_qos);
-    cr_assert_status_eq(ret, DDS_RETCODE_OK);
-    cr_assert_neq(req_incompatible_qos.total_count, 0);
-  }
-  /* Wait for offered incompatible QoS status */
-  ret = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-  if(ret > 0){
-    ret = dds_get_offered_incompatible_qos_status (writer, &off_incompatible_qos);
-    cr_assert_status_eq(ret, DDS_RETCODE_OK);
-    cr_assert_neq(off_incompatible_qos.total_count, 0);
-  }
-
-  /* Clean up */
-  ret = dds_waitset_detach(waitSetwr, writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_waitset_detach(waitSetrd, reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  dds_delete(waitSetrd);
-  dds_delete(waitSetwr);
-  dds_delete(writer);
-  dds_delete(publisher);
-  dds_delete(reader);
-  dds_qos_delete(qos);
-  dds_delete(topic);
-  dds_listener_delete(listener);
-  dds_delete(participant);
+      /* Wait for the publication (un)matched status */
+      status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+      if(status > 0){
+        status = dds_get_publication_matched_status(writer, &publication_matched);
+        cr_assert_status_eq(status, DDS_RETCODE_OK);
+        cr_assert_eq(publication_matched.total_count_change,1);
+        cr_assert_eq(publication_matched.current_count_change, 0);
+      }
+    }
 }
 
-Test(vddsc_entity, liveliness_changed)
+Test(vddsc_entity, sub_unmatch_status, .init=init_triggering_base, .fini=fini_triggering_base)
 {
-  dds_entity_t participant;
-  dds_listener_t *listener;
-  dds_entity_t topic;
-  dds_qos_t *qos;
-  dds_entity_t reader;
-  dds_entity_t writer;
-  dds_entity_t publisher;
-  dds_return_t ret, status;
-  uint32_t set_status = 0;
-  dds_entity_t waitSetwr, waitSetrd;
-  dds_attach_t wsresults[1];
-  size_t wsresultsize = 1U;
-  dds_time_t waitTimeout = DDS_SECS (2);
-  dds_publication_matched_status_t publication_matched;
-  dds_liveliness_changed_status_t liveliness_changed;
 
-  participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant, 0);
-  listener = dds_listener_create(NULL);
-  cr_assert_neq(listener, NULL);
-  topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
-  cr_assert_gt(topic, 0);
-  qos = dds_qos_create();
+    /*Set reader and writer status enabled*/
+    status = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    status = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-  /* Create reader and writer with default QoS */
-  reader = dds_create_reader(participant, topic, NULL, NULL);
-  cr_assert_gt(reader, 0);
-  publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_gt(publisher, 0);
-  writer = dds_create_writer(publisher, topic, NULL, NULL);
-  cr_assert_gt(writer, 0);
+    /* Wait for publication  matched status */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    if(status > 0){
+      status = dds_get_publication_matched_status(writer, &publication_matched);
+      cr_assert_status_eq(status, DDS_RETCODE_OK);
+      cr_assert_eq(publication_matched.current_count, 1);
+    }
+    /* Wait for subscription  matched status */
+    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+    if(status > 0){
+      /* Reset the status */
+      status = dds_take_status (reader, &status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
+      cr_assert_status_eq(status, DDS_RETCODE_OK);
+      cr_assert_eq(status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
 
-  /*Set reader and writer status enabled*/
-  ret = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_LIVELINESS_CHANGED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
+      /* Reset process */
+      status = dds_waitset_detach(waitSetwr, writer);
+      cr_assert_status_eq(status, DDS_RETCODE_OK);
+      dds_delete(writer);
 
-  /* Get the status set */
-  ret = dds_get_enabled_status (reader, &set_status);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  cr_assert_eq(set_status, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_LIVELINESS_CHANGED_STATUS);
+      /*Wait for the subscription (un)matched status */
+      status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+      if(status > 0){
+        status = dds_get_subscription_matched_status(reader, &subscription_matched);
+        cr_assert_status_eq(status, DDS_RETCODE_OK);
+        cr_assert_eq(subscription_matched.total_count_change, 1);
+        cr_assert_eq(subscription_matched.current_count_change, 0);
+      }
+    }
+}
 
-  /* Attach waitset and status conditions */
-  waitSetwr = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetwr, writer, (dds_attach_t)(intptr_t)writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  waitSetrd = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetrd, reader, (dds_attach_t)(intptr_t)reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
+Test(vddsc_entity, incompatible_qos, .init=init_triggering_base, .fini=fini_triggering_base)
+{
 
-  /* Wait for publication  and subscription matched status */
-  ret = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-  cr_assert_gt(ret, 0);
-  ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-  cr_assert_gt(ret, 0);
+    dds_entity_t reader2;
+    dds_requested_incompatible_qos_status_t req_incompatible_qos = {0};
+    dds_offered_incompatible_qos_status_t off_incompatible_qos = {0};
+    dds_qset_durability (qos, DDS_DURABILITY_PERSISTENT);
 
-  status = dds_get_publication_matched_status(writer, &publication_matched);
-  cr_assert_status_eq(status, DDS_RETCODE_OK);
-  cr_assert_eq(publication_matched.current_count, 1);
+    /* Create a reader with persistent durability */
+    reader2 = dds_create_reader(participant, topic, qos, NULL);
+    cr_assert_gt(reader2, 0);
+    status = dds_waitset_attach (waitSetrd, reader2, (dds_attach_t)(intptr_t)reader2);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-  /* Check status */
-  ret = dds_take_status(reader, &status, DDS_SUBSCRIPTION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  cr_assert_eq(status, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    /* Get reader and writer status conditions and attach to waitset */
+    status = dds_set_enabled_status(reader2, DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    status = dds_set_enabled_status(writer, DDS_OFFERED_INCOMPATIBLE_QOS_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-  if(status & DDS_SUBSCRIPTION_MATCHED_STATUS){
-    /* wait for LIVELINESS_CHANGED status */
-    ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-    if(ret > 0){
-      ret = dds_get_liveliness_changed_status (reader, &liveliness_changed);
-      cr_assert_status_eq(ret, DDS_RETCODE_OK);
-      if(liveliness_changed.alive_count == 1){
-        /* Reset writer */
-        ret = dds_waitset_detach(waitSetwr, writer);
-        cr_assert_status_eq(ret, DDS_RETCODE_OK);
-        dds_delete(writer);
+    /* Wait subscription requested incompatible status */
+    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+    if(status > 0){
+      status = dds_get_requested_incompatible_qos_status (reader2, &req_incompatible_qos);
+      cr_assert_status_eq(status, DDS_RETCODE_OK);
+      cr_assert_neq(req_incompatible_qos.total_count, 0);
+    }
+    /* Wait for offered incompatible QoS status */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    if(status > 0){
+      status = dds_get_offered_incompatible_qos_status (writer, &off_incompatible_qos);
+      cr_assert_status_eq(status, DDS_RETCODE_OK);
+      cr_assert_neq(off_incompatible_qos.total_count, 0);
+    }
 
-        /* wait for LIVELINESS_CHANGED when a writer is deleted */
-        ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-        if(ret > 0){
-          ret = dds_get_liveliness_changed_status (reader, &liveliness_changed);
-          cr_assert_status_eq(ret, DDS_RETCODE_OK);
-          cr_assert_eq(liveliness_changed.not_alive_count, 1);
+    status = dds_waitset_detach(waitSetrd, reader2);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    dds_delete(reader2);
+
+}
+
+Test(vddsc_entity, liveliness_changed, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    uint32_t set_status = 0;
+    dds_liveliness_changed_status_t liveliness_changed;
+
+    /*Set reader and writer status enabled*/
+    status = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    status = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_LIVELINESS_CHANGED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+
+    /* Get the status set */
+    status = dds_get_enabled_status (reader, &set_status);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(set_status, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_LIVELINESS_CHANGED_STATUS);
+
+    /* Wait for publication  and subscription matched status */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    cr_assert_gt(status, 0);
+    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+    cr_assert_gt(status, 0);
+
+    status2 = dds_get_publication_matched_status(writer, &publication_matched);
+    cr_assert_status_eq(status2, DDS_RETCODE_OK);
+    cr_assert_eq(publication_matched.current_count, 1);
+
+    /* Check status */
+    status = dds_take_status(reader, &status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
+
+    if(status2 & DDS_SUBSCRIPTION_MATCHED_STATUS){
+      /* wait for LIVELINESS_CHANGED status */
+      status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+      if(status > 0){
+        status = dds_get_liveliness_changed_status (reader, &liveliness_changed);
+        cr_assert_status_eq(status, DDS_RETCODE_OK);
+        if(liveliness_changed.alive_count == 1){
+          /* Reset writer */
+          status = dds_waitset_detach(waitSetwr, writer);
+          cr_assert_status_eq(status, DDS_RETCODE_OK);
+          dds_delete(writer);
+
+          /* wait for LIVELINESS_CHANGED when a writer is deleted */
+          status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+          if(status > 0){
+            status = dds_get_liveliness_changed_status (reader, &liveliness_changed);
+            cr_assert_status_eq(status, DDS_RETCODE_OK);
+            cr_assert_eq(liveliness_changed.not_alive_count, 1);
+          }
         }
       }
     }
-  }
-
-  /* Clean up */
-  ret = dds_waitset_detach(waitSetrd, reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  dds_delete(waitSetrd);
-  dds_delete(waitSetwr);
-  dds_delete(publisher);
-  dds_delete(reader);
-  dds_qos_delete(qos);
-  dds_delete(topic);
-  dds_listener_delete(listener);
-  dds_delete(participant);
 }
 
-Test(vddsc_entity, sample_rejected)
+Test(vddsc_entity, sample_rejected, .init=init_triggering_base, .fini=fini_triggering_base)
 {
-  dds_entity_t participant;
-  dds_listener_t *listener;
-  dds_entity_t topic;
-  dds_qos_t *qos;
-  dds_entity_t reader;
-  dds_entity_t writer;
-  dds_entity_t publisher;
-  dds_return_t ret, status;
-  dds_entity_t waitSetwr, waitSetrd;
-  dds_attach_t wsresults[1];
-  size_t wsresultsize = 1U;
-  dds_time_t waitTimeout = DDS_SECS (2);
-  dds_sample_rejected_status_t sample_rejected = {0};
-  dds_resource_limits_qospolicy_t resource_limits = {1,1,1};
+    dds_sample_rejected_status_t sample_rejected = {0};
 
-  /* Topic instance */
-  RoundTripModule_DataType sample = { 0 };
+    /* Topic instance */
+    RoundTripModule_DataType sample = { 0 };
 
-  /* Create QoS with limited resources */
-  qos = dds_qos_create();
-  dds_qset_resource_limits (qos, resource_limits.max_samples, resource_limits.max_instances, resource_limits.max_samples_per_instance);
-  dds_qset_reliability (qos, DDS_RELIABILITY_RELIABLE, DDS_MSECS (10));
-  dds_qset_history (qos, DDS_HISTORY_KEEP_ALL, 0);
+    status = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    status = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_SAMPLE_REJECTED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-  participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-  listener = dds_listener_create(NULL);
-  cr_assert_gt(participant, 0);
-  cr_assert_neq(listener, NULL);
-  topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
-  cr_assert_gt(topic, 0);
-
-  /* Create writer with default QoS and reader with QoS */
-  reader = dds_create_reader(participant, topic, qos, NULL);
-  cr_assert_gt(reader, 0);
-  publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_gt(publisher, 0);
-  writer = dds_create_writer(publisher, topic, NULL, NULL);
-  cr_assert_gt(writer, 0);
-
-  ret = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_SAMPLE_REJECTED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  waitSetwr = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetwr, writer, (dds_attach_t)(intptr_t)writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  waitSetrd = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetrd, reader, (dds_attach_t)(intptr_t)reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  /* Wait for subscription matched and publication matched */
-  ret = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-  cr_assert_gt(ret, 0);
-  ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-  cr_assert_gt(ret, 0);
-  /* Reset the publication matched status */
-  ret = dds_get_publication_matched_status(writer, NULL);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  /* write data - write more than resource limits set by a data reader */
-  for (int i = 0; i < 5; i++)
-  {
-    ret = dds_write (writer, &sample);
-    cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  }
-
-  /* Read status and reset */
-  ret = dds_take_status(reader, &status, DDS_SUBSCRIPTION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  cr_assert_eq(status, DDS_SUBSCRIPTION_MATCHED_STATUS);
-  if(status & DDS_SUBSCRIPTION_MATCHED_STATUS){
-    /* wait for sample rejected status */
-    ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-    if(ret > 0)
+    /* Wait for subscription matched and publication matched */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    cr_assert_gt(status, 0);
+    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+    cr_assert_gt(status, 0);
+    /* Reset the publication matched status */
+    status = dds_get_publication_matched_status(writer, NULL);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    /* write data - write more than resource limits set by a data reader */
+    for (int i = 0; i < 5; i++)
     {
-      ret = dds_get_sample_rejected_status (reader, &sample_rejected);
-      cr_assert_status_eq(ret, DDS_RETCODE_OK);
-      cr_assert_eq(sample_rejected.last_reason, DDS_REJECTED_BY_SAMPLES_LIMIT);
+      status = dds_write (writer, &sample);
+      cr_assert_status_eq(status, DDS_RETCODE_OK);
     }
-  }
-  /* Delete reader */
-  ret = dds_waitset_detach(waitSetrd, reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  dds_delete(reader);
 
-  /* Wait for reader to be deleted */
-  ret = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-  cr_assert_neq(ret, 0);
+    /* Read status and reset */
+    status = dds_take_status(reader, &status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    if(status2 & DDS_SUBSCRIPTION_MATCHED_STATUS){
+      /* wait for sample rejected status */
+      status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+      if(status > 0)
+      {
+        status = dds_get_sample_rejected_status (reader, &sample_rejected);
+        cr_assert_status_eq(status, DDS_RETCODE_OK);
+        cr_assert_eq(sample_rejected.last_reason, DDS_REJECTED_BY_SAMPLES_LIMIT);
+      }
+    }
+    /* Delete reader */
+    status = dds_waitset_detach(waitSetrd, reader);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    dds_delete(reader);
 
-  /* Clean Up */
-
-  ret = dds_waitset_detach(waitSetwr, writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  dds_delete(writer);
-
-  dds_delete(waitSetrd);
-  dds_delete(waitSetwr);
-  dds_delete(publisher);
-  dds_qos_delete(qos);
-  dds_delete(topic);
-  dds_listener_delete(listener);
-  dds_delete(participant);
+    /* Wait for reader to be deleted */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    cr_assert_neq(status, 0);
 }
 
-Test(vddsc_entity, sample_lost)
-{
-  dds_entity_t participant;
-  dds_listener_t *listener;
-  dds_entity_t topic;
-  dds_qos_t *qos;
-  dds_entity_t reader;
-  dds_entity_t writer;
-  dds_entity_t publisher;
-  dds_return_t ret, status;
-  dds_entity_t waitSetwr, waitSetrd;
-  dds_attach_t wsresults[1];
-  size_t wsresultsize = 1U;
-  dds_time_t time1;
-  dds_sample_lost_status_t sample_lost = {0};
-  dds_time_t waitTimeout = DDS_SECS (2);
-
-  /* Topic instance */
-  RoundTripModule_DataType sample = { 0 };
-
-  /* Create QoS with limited resources */
-  qos = dds_qos_create();
-  dds_qset_destination_order (qos, DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP);
-
-  participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant, 0);
-  listener = dds_listener_create(NULL);
-  cr_assert_neq(listener, NULL);
-  topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
-  cr_assert_gt(topic, 0);
-
-  /* Create writer with default QoS and reader with QoS */
-  reader = dds_create_reader(participant, topic, qos, NULL);
-  cr_assert_gt(reader, 0);
-  publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_gt(publisher, 0);
-  writer = dds_create_writer(publisher, topic, qos, NULL);
-  cr_assert_gt(writer, 0);
-
-  ret = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_SAMPLE_LOST_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  waitSetwr = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetwr, writer, (dds_attach_t)(intptr_t)writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  waitSetrd = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetrd, reader, (dds_attach_t)(intptr_t)reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  /* Wait for subscription matched and publication matched */
-  ret = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-  cr_assert_gt(ret, 0);
-  ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-  cr_assert_gt(ret, 0);
-
-  /* Reset the publication matched status */
-  ret = dds_get_publication_matched_status(writer, NULL);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  /* Read status and reset */
-  ret = dds_take_status(reader, &status, DDS_SUBSCRIPTION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  cr_assert_eq(status, DDS_SUBSCRIPTION_MATCHED_STATUS);
-
-  /* get current time - subtraction ensures that this is truly historic on all platforms. */
-  time1 = dds_time () - 1000000;
-
-  /* write a sample with current timestamp */
-  ret = dds_write_ts (writer, &sample, dds_time ());
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  /* second sample with older timestamp */
-  ret = dds_write_ts (writer, &sample, time1);
-
-  if(status & DDS_SUBSCRIPTION_MATCHED_STATUS){
-    /* wait for sample lost status */
-    ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-    if(ret > 0)
-    {
-      ret = dds_get_sample_lost_status (reader, &sample_lost);
-      cr_assert_status_eq(ret, DDS_RETCODE_OK);
-      cr_assert_gt(sample_lost.total_count, 0);
-    }
-  }
-
-  /* Delete reader */
-  ret = dds_waitset_detach(waitSetrd, reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  dds_delete(reader);
-
-  /* Wait for reader to be deleted */
-  ret = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-  cr_assert_neq(ret, 0);
-
-  /* Clean Up */
-
-  ret = dds_waitset_detach(waitSetwr, writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  dds_delete(writer);
-
-  dds_delete(waitSetrd);
-  dds_delete(waitSetwr);
-  dds_delete(publisher);
-  dds_qos_delete(qos);
-  dds_delete(topic);
-  dds_listener_delete(listener);
-  dds_delete(participant);
-}
 #if 0
 /* This is basically the same as the Lite test, but inconsistent topic is not triggered.
  * That is actually what I would expect, because the code doesn't seem to be the way
  * to go to test for inconsistent topic. */
 Test(vddsc_entity, inconsistent_topic)
 {
-  dds_entity_t participant;
-  dds_listener_t *listener;
-  dds_entity_t topic_wr, topic_rd;
-  dds_qos_t *qos;
-  dds_entity_t reader;
-  dds_entity_t writer;
-  dds_entity_t publisher;
-  dds_return_t ret;
-  dds_entity_t waitSetwr, waitSetrd;
-  dds_attach_t wsresults[1];
-  size_t wsresultsize = 1U;
-  dds_time_t waitTimeout = DDS_SECS (2);
-  dds_inconsistent_topic_status_t topic_status = {0};
+    dds_entity_t topic2;
+    dds_inconsistent_topic_status_t topic_status = {0};
 
-  /*Create topics */
-  participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant, 0);
-  listener = dds_listener_create(NULL);
-  cr_assert_neq(listener, NULL);
-  topic_wr = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
-  cr_assert_gt(topic_wr, 0);
-  topic_rd = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip2", NULL, listener);
-  cr_assert_gt(topic_rd, 0, "fails %d", dds_err_nr(topic_rd));
-  qos = dds_qos_create();
+    topic2 = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip1", NULL, NULL);
+    cr_assert_gt(topic2, 0, "fails %d", dds_err_nr(topic2));
 
-  /* Create writer and reader with default QoS */
-  reader = dds_create_reader(participant, topic_rd, NULL, NULL);
-  cr_assert_gt(reader, 0);
-  publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_gt(publisher, 0);
-  writer = dds_create_writer(publisher, topic_wr, NULL, NULL);
-  cr_assert_gt(writer, 0);
-
-  /*Set reader topic and writer topic statuses enabled*/
-  ret = dds_set_enabled_status(topic_wr, DDS_INCONSISTENT_TOPIC_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_set_enabled_status(topic_rd, DDS_INCONSISTENT_TOPIC_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  waitSetwr = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetwr, writer, (dds_attach_t)(intptr_t)writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  waitSetrd = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetrd, reader, (dds_attach_t)(intptr_t)reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  /* Wait for pub inconsistent topic status callback */
-  ret = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-  if(ret > 0){
-    ret = dds_get_inconsistent_topic_status (topic_wr, &topic_status);
+    /*Set reader topic and writer topic statuses enabled*/
+    ret = dds_set_enabled_status(topic, DDS_INCONSISTENT_TOPIC_STATUS);
     cr_assert_status_eq(ret, DDS_RETCODE_OK);
-    cr_assert_gt(topic_status.total_count, 0);
-  }
-
-  /* Wait for sub inconsistent topic status callback */
-  ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-  if(ret > 0){
-    ret = dds_get_inconsistent_topic_status (topic_rd, &topic_status);
+    ret = dds_set_enabled_status(topic2, DDS_INCONSISTENT_TOPIC_STATUS);
     cr_assert_status_eq(ret, DDS_RETCODE_OK);
-    cr_assert_gt(topic_status.total_count, 0);
-  }
 
-  /* Clean up */
-  ret = dds_waitset_detach(waitSetrd, reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  dds_delete(reader);
-  ret = dds_waitset_detach(waitSetwr, writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  dds_delete(writer);
+    /* Wait for pub inconsistent topic status callback */
+    ret = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    if(ret > 0){
+      ret = dds_get_inconsistent_topic_status (topic, &topic_status);
+      cr_assert_status_eq(ret, DDS_RETCODE_OK);
+      cr_assert_gt(topic_status.total_count, 0);
+    }
 
-  dds_delete(waitSetrd);
-  dds_delete(waitSetwr);
-  dds_delete(publisher);
-  dds_qos_delete(qos);
-  dds_delete(topic_rd);
-  dds_delete(topic_wr);
-  dds_listener_delete(listener);
-  dds_delete(participant);
+    /* Wait for sub inconsistent topic status callback */
+    ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+    if(ret > 0){
+      ret = dds_get_inconsistent_topic_status (topic2, &topic_status);
+      cr_assert_status_eq(ret, DDS_RETCODE_OK);
+      cr_assert_gt(topic_status.total_count, 0);
+    }
+    dds_delete(topic2);
 }
 #endif
 
-Test(vddsc_entity, data_available)
+Test(vddsc_entity, sample_lost, .init=init_triggering_base, .fini=fini_triggering_base)
 {
-  dds_entity_t participant;
-  dds_listener_t *listener;
-  dds_entity_t topic;
-  dds_qos_t *qos;
-  dds_entity_t reader;
-  dds_entity_t writer;
-  dds_entity_t publisher;
-  dds_return_t ret, status;
-  dds_entity_t waitSetwr, waitSetrd;
-  dds_attach_t p_wsresults[1];
-  size_t p_wsresultsize = 1U;
-  dds_attach_t s_wsresults[2];
-  size_t s_wsresultsize = 2U;
-  dds_time_t time1;
-  dds_time_t waitTimeout = DDS_SECS (2);
 
-  RoundTripModule_DataType sample = { 0 };
+    dds_sample_lost_status_t sample_lost = {0};
+    dds_time_t time1;
+    /* Topic instance */
+    RoundTripModule_DataType sample = { 0 };
 
-  participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant, 0);
-  listener = dds_listener_create(NULL);
-  cr_assert_neq(listener, NULL);
-  topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
-  cr_assert_gt(topic, 0);
-  qos = dds_qos_create();
+    status = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    status = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_SAMPLE_LOST_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-  /* Create writer and reader with default QoS*/
-  reader = dds_create_reader(participant, topic, NULL, NULL);
-  cr_assert_gt(reader, 0);
-  publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_gt(publisher, 0);
-  writer = dds_create_writer(publisher, topic, NULL, NULL);
-  cr_assert_gt(writer, 0);
+    /* Wait for subscription matched and publication matched */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    cr_assert_gt(status, 0);
+    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+    cr_assert_gt(status, 0);
 
-  ret = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_DATA_AVAILABLE_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
+    /* Reset the publication matched status */
+    status = dds_get_publication_matched_status(writer, NULL);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-  waitSetwr = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetwr, writer, (dds_attach_t)(intptr_t)writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  waitSetrd = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetrd, reader, (dds_attach_t)(intptr_t)reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
+    /* Read status and reset */
+    status = dds_take_status(reader, &status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
 
-  /* Wait for subscription and publication matched status */
-  ret = dds_waitset_wait(waitSetwr, p_wsresults, p_wsresultsize, waitTimeout);
-  cr_assert_gt(ret, 0);
-  ret = dds_waitset_wait(waitSetrd, s_wsresults, s_wsresultsize, waitTimeout);
-  cr_assert_gt(ret, 0);
+    /* get current time - subtraction ensures that this is truly historic on all platforms. */
+    time1 = dds_time () - 1000000;
 
-  /* Write the sample */
-  ret = dds_write (writer, &sample);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
+    /* write a sample with current timestamp */
+    status = dds_write_ts (writer, &sample, dds_time ());
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-  /* wait for data available */
-  ret = dds_take_status(reader, &status, DDS_SUBSCRIPTION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  cr_assert_eq(status, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    /* second sample with older timestamp */
+    status = dds_write_ts (writer, &sample, time1);
 
-  ret = dds_waitset_wait(waitSetrd, s_wsresults, s_wsresultsize, waitTimeout);
-  cr_assert_gt(ret, 0);
+    if(status2 & DDS_SUBSCRIPTION_MATCHED_STATUS){
+      /* wait for sample lost status */
+      status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+      if(status > 0)
+      {
+        status = dds_get_sample_lost_status (reader, &sample_lost);
+        cr_assert_status_eq(status, DDS_RETCODE_OK);
+        cr_assert_gt(sample_lost.total_count, 0);
+      }
+    }
 
-  ret = dds_get_status_changes (reader, &status);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
+    /* Delete reader */
+    status = dds_waitset_detach(waitSetrd, reader);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    dds_delete(reader);
 
-  ret = dds_waitset_detach(waitSetrd, reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  dds_delete(reader);
-
-  /* Wait for reader to be deleted */
-  ret = dds_waitset_wait(waitSetwr, p_wsresults, p_wsresultsize, waitTimeout);
-  cr_assert_neq(ret, 0);
-
-  /* Clean Up */
-
-  ret = dds_waitset_detach(waitSetwr, writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  dds_delete(writer);
-
-  dds_delete(waitSetrd);
-  dds_delete(waitSetwr);
-  dds_delete(publisher);
-  dds_qos_delete(qos);
-  dds_delete(topic);
-  dds_listener_delete(listener);
-  dds_delete(participant);
+    /* Wait for reader to be deleted */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    cr_assert_neq(status, 0);
 }
 
-Test(vddsc_entity, all_data_available)
+Test(vddsc_entity, data_available, .init=init_triggering_base, .fini=fini_triggering_base)
 {
-  dds_entity_t participant;
-  dds_listener_t *listener;
-  dds_entity_t topic;
-  dds_qos_t *qos;
-  dds_entity_t reader, reader2;
-  dds_entity_t writer;
-  dds_entity_t subscriber;
-  dds_entity_t publisher;
-  dds_return_t ret, status;
-  dds_entity_t waitSetwr, waitSetrd, waitSetrd2;
-  dds_attach_t p_wsresults[1];
-  size_t p_wsresultsize = 1U;
-  dds_attach_t s_wsresults[2];
-  size_t s_wsresultsize = 2U;
-  dds_time_t waitTimeout = DDS_SECS (2);
-  dds_sample_info_t info;
+    dds_time_t time1;
+    RoundTripModule_DataType sample = { 0 };
 
-  /* Topic instance */
-  RoundTripModule_DataType p_sample = { 0 };
-  void * s_samples[1];
-  RoundTripModule_DataType s_sample;
 
-  memset (&s_sample, 0, sizeof (s_sample));
-  s_samples[0] = &s_sample;
+    status = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    status = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_DATA_AVAILABLE_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-  participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant, 0);
-  listener = dds_listener_create(NULL);
-  cr_assert_neq(listener, NULL);
-  topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
-  cr_assert_gt(topic, 0);
-  qos = dds_qos_create();
+    /* Wait for subscription and publication matched status */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    cr_assert_gt(status, 0);
+    status = dds_waitset_wait(waitSetrd, wsresults2, wsresultsize2, waitTimeout);
+    cr_assert_gt(status, 0);
 
-  /* Create writer, subscriber and 2 readers with default QoS */
-  subscriber = dds_create_subscriber(participant, qos, NULL);
-  cr_assert_gt(subscriber, 0);
-  reader = dds_create_reader(subscriber, topic, NULL, NULL);
-  cr_assert_gt(reader, 0);
-  reader2 = dds_create_reader(subscriber, topic, NULL, NULL);
-  cr_assert_gt(reader2, 0);
-  publisher = dds_create_publisher(participant, qos, NULL);
-  cr_assert_gt(publisher, 0);
-  writer = dds_create_writer(publisher, topic, NULL, NULL);
-  cr_assert_gt(writer, 0);
+    /* Write the sample */
+    status = dds_write (writer, &sample);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-  ret = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_DATA_AVAILABLE_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_set_enabled_status(reader2, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_DATA_AVAILABLE_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
+    /* wait for data available */
+    status = dds_take_status(reader, &status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
 
-  waitSetwr = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetwr, writer, (dds_attach_t)(intptr_t)writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  waitSetrd = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetrd, reader, (dds_attach_t)(intptr_t)reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  waitSetrd2 = dds_create_waitset(participant);
-  ret = dds_waitset_attach (waitSetrd2, reader2, (dds_attach_t)(intptr_t)reader2);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
+    status = dds_waitset_wait(waitSetrd, wsresults2, wsresultsize2, waitTimeout);
+    cr_assert_gt(status, 0);
 
-  /* Wait for publication matched status */
-  ret = dds_waitset_wait(waitSetwr, p_wsresults, p_wsresultsize, waitTimeout);
-  cr_assert_gt(ret, 0);
+    status = dds_get_status_changes (reader, &status2);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-  /* Wait for subscription matched status on both readers */
-  ret = dds_waitset_wait(waitSetrd, s_wsresults, s_wsresultsize, waitTimeout);
-  cr_assert_gt(ret, 0);
-  ret = dds_waitset_wait(waitSetrd2, s_wsresults, s_wsresultsize, waitTimeout);
-  cr_assert_gt(ret, 0);
+    status = dds_waitset_detach(waitSetrd, reader);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-  ret = dds_write (writer, &p_sample);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
+    dds_delete(reader);
 
-  /* Reset the publication and subscription matched status */
-  ret = dds_get_publication_matched_status(writer, NULL);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_take_status (reader, &status, DDS_SUBSCRIPTION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  cr_assert_eq(status, DDS_SUBSCRIPTION_MATCHED_STATUS);
-  ret = dds_take_status (reader2, &status, DDS_SUBSCRIPTION_MATCHED_STATUS);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  cr_assert_eq(status, DDS_SUBSCRIPTION_MATCHED_STATUS);
-
-  /* wait for data */
-  ret = dds_waitset_wait(waitSetrd, s_wsresults, s_wsresultsize, waitTimeout);
-  cr_assert_neq(ret, 0);
-
-  ret = dds_waitset_wait(waitSetrd2, s_wsresults, s_wsresultsize, waitTimeout);
-  cr_assert_neq(ret, 0);
-
-  ret = dds_waitset_detach(waitSetrd, reader);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_waitset_detach(waitSetrd2, reader2);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  ret = dds_delete(waitSetrd2);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-
-  /* Get DATA_ON_READERS status*/
-  ret = dds_get_status_changes (subscriber, &status);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  cr_assert_eq(status, DDS_DATA_ON_READERS_STATUS);
-
-  /* Get DATA_AVAILABLE status */
-  ret = dds_get_status_changes (reader, &status);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  cr_assert_eq(status, DDS_DATA_AVAILABLE_STATUS);
-
-  /* Get DATA_AVAILABLE status */
-  ret = dds_get_status_changes (reader2, &status);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  cr_assert_eq(status, DDS_DATA_AVAILABLE_STATUS);
-
-  /* Read 1 data sample from reader1 */
-  ret = dds_take (reader, s_samples, &info, 1, 1);
-  cr_assert_eq(ret, 1);
-
-  /* status after taking the data should be reset */
-  ret = dds_get_status_changes (reader, &status);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  cr_assert_neq(status, ~DDS_DATA_AVAILABLE_STATUS);
-
-  /* status from reader2 */
-  ret = dds_get_status_changes (reader2, &status);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  cr_assert_neq(status, ~DDS_DATA_AVAILABLE_STATUS);
-
-  /* status from subscriber */
-  ret = dds_get_status_changes (subscriber, &status);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  cr_assert_eq(status, 0);
-
-  RoundTripModule_DataType_free (&s_sample, DDS_FREE_CONTENTS);
-
-  dds_delete(reader);
-  dds_delete(reader2);
-  dds_delete(subscriber);
-
-  /* Wait for reader to be deleted */
-  ret = dds_waitset_wait(waitSetwr, p_wsresults, p_wsresultsize, waitTimeout);
-  cr_assert_neq(ret, 0);
-
-  ret = dds_waitset_detach(waitSetwr, writer);
-  cr_assert_status_eq(ret, DDS_RETCODE_OK);
-  dds_delete(writer);
-
-  dds_delete(waitSetrd);
-  dds_delete(waitSetwr);
-  dds_delete(publisher);
-  dds_qos_delete(qos);
-  dds_delete(topic);
-  dds_listener_delete(listener);
-  dds_delete(participant);
+    /* Wait for reader to be deleted */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    cr_assert_neq(status, 0);
 }
 
-Test(vddsc_entity, get_enabled_status_invalid_params)
+Test(vddsc_entity, all_data_available, .init=init_triggering_base, .fini=fini_triggering_base)
 {
-  dds_return_t status;
-  uint32_t s = 0;
+    dds_entity_t reader2;
+    dds_entity_t waitSetrd2;
+    dds_sample_info_t info;
 
-  status = dds_get_enabled_status(-1, &s);
-  cr_assert_eq(status, -1);
-  status = dds_get_enabled_status(0, &s);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_enabled_status(0, NULL)");
-  status = dds_get_enabled_status(1, &s);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER);
+    /* Topic instance */
+    RoundTripModule_DataType p_sample = { 0 };
+    void * s_samples[1];
+    RoundTripModule_DataType s_sample;
+
+    memset (&s_sample, 0, sizeof (s_sample));
+    s_samples[0] = &s_sample;
+
+    reader2 = dds_create_reader(subscriber, topic, NULL, NULL);
+    cr_assert_gt(reader2, 0);
+
+    status = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    status = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_DATA_AVAILABLE_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    status = dds_set_enabled_status(reader2, DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_DATA_AVAILABLE_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+
+    waitSetrd2 = dds_create_waitset(participant);
+    status = dds_waitset_attach (waitSetrd2, reader2, (dds_attach_t)(intptr_t)reader2);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+
+    /* Wait for publication matched status */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    cr_assert_gt(status, 0);
+
+    /* Wait for subscription matched status on both readers */
+    status = dds_waitset_wait(waitSetrd, wsresults2, wsresultsize2, waitTimeout);
+    cr_assert_gt(status, 0);
+    status = dds_waitset_wait(waitSetrd2, wsresults2, wsresultsize2, waitTimeout);
+    cr_assert_gt(status, 0);
+
+    status = dds_write (writer, &p_sample);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+
+    /* Reset the publication and subscription matched status */
+    status = dds_get_publication_matched_status(writer, NULL);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    status = dds_take_status (reader, &status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    status = dds_take_status (reader2, &status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
+
+    /* wait for data */
+    status = dds_waitset_wait(waitSetrd, wsresults2, wsresultsize2, waitTimeout);
+    cr_assert_neq(status, 0);
+
+    status = dds_waitset_wait(waitSetrd2, wsresults2, wsresultsize2, waitTimeout);
+    cr_assert_neq(status, 0);
+
+    status = dds_waitset_detach(waitSetrd, reader);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    status = dds_waitset_detach(waitSetrd2, reader2);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    status = dds_delete(waitSetrd2);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+
+    /* Get DATA_ON_READERS status*/
+    status = dds_get_status_changes (subscriber, &status2);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(status2, DDS_DATA_ON_READERS_STATUS);
+
+    /* Get DATA_AVAILABLE status */
+    status = dds_get_status_changes (reader, &status2);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(status2, DDS_DATA_AVAILABLE_STATUS);
+
+    /* Get DATA_AVAILABLE status */
+    status = dds_get_status_changes (reader2, &status2);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(status2, DDS_DATA_AVAILABLE_STATUS);
+
+    /* Read 1 data sample from reader1 */
+    status = dds_take (reader, s_samples, &info, 1, 1);
+    cr_assert_eq(status, 1);
+
+    /* status after taking the data should be reset */
+    status = dds_get_status_changes (reader, &status2);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_neq(status2, ~DDS_DATA_AVAILABLE_STATUS);
+
+    /* status from reader2 */
+    status = dds_get_status_changes (reader2, &status2);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_neq(status2, ~DDS_DATA_AVAILABLE_STATUS);
+
+    /* status from subscriber */
+    status = dds_get_status_changes (subscriber, &status2);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(status2, 0);
+
+    RoundTripModule_DataType_free (&s_sample, DDS_FREE_CONTENTS);
+
+    dds_delete(reader2);
+
+    /* Wait for reader to be deleted */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    cr_assert_neq(status, 0);
 }
 
-Test(vddsc_entity, set_enabled_status_invalid_params)
-{
-  dds_return_t status;
+/*************************************************************************************************/
 
-  status = dds_set_enabled_status(-1, DDS_DATA_AVAILABLE_STATUS);
-  cr_assert_eq(status, -1);
-  status = dds_set_enabled_status(0, DDS_DATA_AVAILABLE_STATUS);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_enabled_status(0, DDS_DATA_AVAILABLE_STATUS)");
-  status = dds_set_enabled_status(1, DDS_DATA_AVAILABLE_STATUS);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER);
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_enabled_status, bad_param) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t e), vddsc_get_enabled_status, bad_param)
+{
+    uint32_t s = 0;
+    dds_return_t ret;
+    dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (e < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = e;
+    }
+
+    ret = dds_get_enabled_status(e, &s);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 
-Test(vddsc_entity, read_status_invalid_params)
+Test(vddsc_get_enabled_status, deleted_reader, .init=init_triggering_base, .fini=fini_triggering_base)
 {
-  dds_return_t status;
-  uint32_t s = 0;
-
-  status = dds_read_status (-1, &s, 0);
-  cr_assert_eq(status, -1);
-  status = dds_read_status (0, &s, 0);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_read_status(0, &s, 0)");
-  status = dds_read_status (1, &s, 0);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret;
+    uint32_t s = 0;
+    dds_delete(reader);
+    ret = dds_get_enabled_status(reader, &s);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "dds_get_enabled_status(): returned %d", dds_err_nr(ret));
 }
 
-Test(vddsc_entity, take_status_invalid_params)
+Test(vddsc_get_enabled_status, illegal, .init=init_triggering_base, .fini=fini_triggering_base)
 {
-  dds_return_t status;
-  uint32_t s = 0;
-
-  status = dds_take_status (-1, &s, 0);
-  cr_assert_eq(status, -1);
-  status = dds_take_status (0, &s, 0);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_read_status(0, &s, 0)");
-  status = dds_take_status (1, &s, 0);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER);
-
+    dds_return_t ret;
+    uint32_t s = 0;
+    ret = dds_get_enabled_status(waitSetrd, &s);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 
-Test(vddsc_entity, get_status_changes_invalid_params)
+TheoryDataPoints(vddsc_get_enabled_status, status_ok) = {
+        DataPoints(dds_entity_t *,&reader, &writer, &participant, &topic, &publisher, &subscriber),
+};
+Theory((dds_entity_t *e), vddsc_get_enabled_status, status_ok, .init=init_triggering_base, .fini=fini_triggering_base)
 {
-  dds_return_t status;
-  uint32_t s = 0;
+    dds_return_t status;
+    uint32_t s = 0;
+    status = dds_get_enabled_status (*e, &s);
+    cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_enabled_status(entity, status)");
+}
+/*************************************************************************************************/
 
-  status = dds_get_status_changes (-1, &s);
-  cr_assert_eq(status, -1);
-  status = dds_get_status_changes (0, &s);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_status_changes(0, 0)");
-  status = dds_get_status_changes (1, &s);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER);
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_set_enabled_status, bad_param) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t e), vddsc_set_enabled_status, bad_param)
+{
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (e < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = e;
+    }
+
+    ret = dds_set_enabled_status(e, 0 /*mask*/);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 
-Test(vddsc_entity, triggered_invalid_params)
+Test(vddsc_set_enabled_status, deleted_reader, .init=init_triggering_base, .fini=fini_triggering_base)
 {
-  dds_return_t status;
-
-  status = dds_triggered (-1);
-  cr_assert_eq(status, -1);
-  status = dds_triggered (0);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_triggered(0)");
-  //cr_assert_eq(ret, 0, "dds_triggered: Invalid return code %d", dds_err_nr(ret));
-  status = dds_triggered (1);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret;
+    dds_delete(reader);
+    ret = dds_set_enabled_status(reader, 0 /*mask*/);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "dds_set_enabled_status(): returned %d", dds_err_nr(ret));
 }
 
+Test(vddsc_set_enabled_status, illegal, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    dds_entity_t ret;
+    ret = dds_set_enabled_status(waitSetrd, 0);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "dds_set_enabled_status(): returned %d", dds_err_nr(ret));
+}
+
+TheoryDataPoints(vddsc_set_enabled_status, status_ok) = {
+        DataPoints(dds_entity_t *,&reader, &writer, &participant, &topic, &publisher, &subscriber),
+};
+Theory((dds_entity_t *entity), vddsc_set_enabled_status, status_ok, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    dds_return_t status;
+    status = dds_set_enabled_status (*entity, 0);
+    cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_set_enabled_status(entity, mask)");
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_read_status, bad_param) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t e), vddsc_read_status, bad_param)
+{
+    uint32_t status = 0;
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (e < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = e;
+    }
+
+    ret = dds_read_status(e, &status, 0 /*mask*/);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+
+Test(vddsc_read_status, deleted_reader, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    dds_return_t ret;
+    uint32_t status = 0;
+    dds_delete(reader);
+    ret = dds_read_status(reader, &status, 0 /*mask*/);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "dds_read_status(): returned %d", dds_err_nr(ret));
+}
+
+Test (vddsc_read_status, illegal, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    uint32_t status = 0;
+    dds_return_t ret;
+    ret = dds_read_status(waitSetrd, &status, 0);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "dds_read_status(): returned %d", dds_err_nr(ret));
+}
+TheoryDataPoints(vddsc_read_status, status_ok) = {
+        DataPoints(dds_entity_t *,&reader, &writer, &participant, &topic, &publisher, &subscriber),
+};
+Theory((dds_entity_t *e), vddsc_read_status, status_ok, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    dds_return_t status;
+    status = dds_read_status (*e, &status, 0);
+    cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_read_status(entity, status, mask)");
+}
+
+Test (vddsc_read_status, invalid_status_on_reader, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    uint32_t status = 0;
+    dds_return_t ret;
+    ret = dds_read_status(reader, &status, DDS_PUBLICATION_MATCHED_STATUS);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "dds_read_status(): returned %d", dds_err_nr(ret));
+}
+
+Test (vddsc_read_status, invalid_status_on_writer, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    uint32_t status = 0;
+    dds_return_t ret;
+    ret = dds_read_status(writer, &status, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "dds_read_status(): returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_take_status, bad_param) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t e), vddsc_take_status, bad_param)
+{
+    uint32_t status = 0;
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (e < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = e;
+    }
+
+    ret = dds_take_status(e, &status, 0 /*mask*/);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+
+Test(vddsc_take_status, deleted_reader, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    dds_return_t ret;
+    uint32_t status = 0;
+    dds_delete(reader);
+    ret = dds_take_status(reader, &status, 0 /*mask*/);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "dds_take_status(): returned %d", dds_err_nr(ret));
+}
+Test(vddsc_take_status, illegal, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    uint32_t status = 0;
+    dds_return_t ret;
+    ret = dds_take_status(waitSetrd, &status, 0);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "dds_take_status(): returned %d", dds_err_nr(ret));
+}
+
+TheoryDataPoints(vddsc_take_status, status_ok) = {
+        DataPoints(dds_entity_t *,&reader, &writer, &participant, &topic, &publisher, &subscriber),
+};
+Theory((dds_entity_t *e), vddsc_take_status, status_ok, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    dds_return_t ret;
+    uint32_t status = 0;
+    ret = dds_take_status (*e, &status, 0 /*mask*/);
+    cr_assert_status_eq(ret, DDS_RETCODE_OK, "dds_take_status(entity, status, mask)");
+}
+
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_status_changes, bad_param) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t e), vddsc_get_status_changes, bad_param)
+{
+    uint32_t s = 0;
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (e < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = e;
+    }
+
+    ret = dds_get_status_changes(e, &s);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+
+Test(vddsc_get_status_changes, deleted_reader, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    dds_return_t ret;
+    uint32_t s = 0;
+    dds_delete(reader);
+    ret = dds_get_status_changes(reader, &s);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "dds_get_status_changes(): returned %d", dds_err_nr(ret));
+}
+
+Test(vddsc_get_status_changes, illegal, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    dds_return_t ret;
+    uint32_t s = 0;
+    ret = dds_get_status_changes(waitSetrd, &s);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "dds_get_status_changes(): returned %d", dds_err_nr(ret));
+}
+
+TheoryDataPoints(vddsc_get_status_changes, status_ok) = {
+        DataPoints(dds_entity_t *,&reader, &writer, &participant, &topic, &publisher, &subscriber),
+};
+Theory((dds_entity_t *e), vddsc_get_status_changes, status_ok, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    dds_return_t status;
+    uint32_t s = 0;
+    status = dds_get_status_changes (*e, &s);
+    cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_status_changes(entity, status)");
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_triggered, bad_param) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t e), vddsc_triggered, bad_param)
+{
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (e < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = e;
+    }
+
+    ret = dds_triggered(e);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "dds_triggered(): returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+
+Test(vddsc_triggered, deleted_reader, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    dds_return_t ret;
+    dds_delete(reader);
+    ret = dds_triggered(reader);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "dds_triggered(): returned %d", dds_err_nr(ret));
+}
+
+TheoryDataPoints(vddsc_triggered, status_ok) = {
+        DataPoints(dds_entity_t *,&reader, &writer, &participant, &topic, &publisher, &subscriber, &waitSetrd),
+};
+Theory((dds_entity_t *e), vddsc_triggered, status_ok, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    dds_return_t status;
+    status = dds_triggered (*e);
+    cr_assert_geq(status, 0, "dds_triggered(entity)");
+}
