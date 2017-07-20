@@ -26,13 +26,15 @@ install(
         "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}Version.cmake"
   DESTINATION "${CMAKE_INSTALL_CMAKEDIR}")
 
-# Generates <Package>Targets.cmake file included by <Package>Config.cmake.
-# The files are placed in CMakeFiles/Export in the build tree.
-install(
-  EXPORT "${CMAKE_PROJECT_NAME}"
-  FILE "${CMAKE_PROJECT_NAME}Targets.cmake"
-  NAMESPACE "${CMAKE_PROJECT_NAME}::"
-  DESTINATION "${CMAKE_INSTALL_CMAKEDIR}")
+if(VDDSC_SHARED AND ((NOT DEFINED BUILD_SHARED_LIBS) OR BUILD_SHARED_LIBS))
+  # Generates <Package>Targets.cmake file included by <Package>Config.cmake.
+  # The files are placed in CMakeFiles/Export in the build tree.
+  install(
+    EXPORT "${CMAKE_PROJECT_NAME}"
+    FILE "${CMAKE_PROJECT_NAME}Targets.cmake"
+    NAMESPACE "${CMAKE_PROJECT_NAME}::"
+    DESTINATION "${CMAKE_INSTALL_CMAKEDIR}")
+endif()
 
 
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
