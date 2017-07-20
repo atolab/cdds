@@ -251,7 +251,7 @@ dds_delete(
 
     ret = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
     if (ret != DDS_RETCODE_OK) {
-        return DDS_ERRNO(ret, DDS_MOD_ENTITY, 0);
+        return DDS_ERRNO(ret);
     }
 
     if (--e->m_refc != 0) {
@@ -336,7 +336,7 @@ dds_delete(
         dds_free (e);
     }
 
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, 0);
+    return DDS_ERRNO(ret);
 }
 
 
@@ -353,11 +353,11 @@ dds_get_parent(
         if (e->m_parent) {
             hdl = e->m_parent->m_hdl;
         } else {
-            hdl = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_ENTITY, 0);
+            hdl = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
         }
         dds_entity_unlock(e);
     } else {
-        hdl = DDS_ERRNO(errnr, DDS_MOD_ENTITY, 0);
+        hdl = DDS_ERRNO(errnr);
     }
     return hdl;
 }
@@ -377,7 +377,7 @@ dds_get_participant (
         hdl = e->m_participant->m_hdl;
         dds_entity_unlock(e);
     } else {
-        hdl = DDS_ERRNO(errnr, DDS_MOD_ENTITY, 0);
+        hdl = DDS_ERRNO(errnr);
     }
     return hdl;
 }
@@ -392,7 +392,7 @@ dds_get_children(
         _In_        size_t size)
 {
     dds_entity *e;
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_ENTITY, DDS_ERR_M2);
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     if (((children != NULL) && (size  > 0) && (size < INT32_MAX)) ||
         ((children == NULL) && (size == 0)) ){
         ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
@@ -413,7 +413,7 @@ dds_get_children(
             }
             dds_entity_unlock(e);
         } else {
-            ret = DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+            ret = DDS_ERRNO(ret);
         }
     }
     return ret;
@@ -440,7 +440,7 @@ dds_get_qos(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+    return DDS_ERRNO(ret);
 }
 
 
@@ -471,7 +471,7 @@ dds_set_qos(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+    return DDS_ERRNO(ret);
 }
 
 
@@ -492,7 +492,7 @@ dds_get_listener(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+    return DDS_ERRNO(ret);
 }
 
 
@@ -515,7 +515,7 @@ dds_set_listener(
         }
         dds_entity_unlock(e);
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+    return DDS_ERRNO(ret);
 }
 
 
@@ -536,7 +536,7 @@ dds_enable(
         }
         dds_entity_unlock(e);
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+    return DDS_ERRNO(ret);
 }
 
 
@@ -560,7 +560,7 @@ dds_get_status_changes(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+    return DDS_ERRNO(ret);
 }
 
 
@@ -584,7 +584,7 @@ dds_get_enabled_status(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+    return DDS_ERRNO(ret);
 }
 
 
@@ -615,7 +615,7 @@ dds_set_enabled_status(
         }
         dds_entity_unlock(e);
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+    return DDS_ERRNO(ret);
 }
 
 
@@ -643,7 +643,7 @@ dds_read_status(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+    return DDS_ERRNO(ret);
 }
 
 
@@ -675,7 +675,7 @@ dds_take_status(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+    return DDS_ERRNO(ret);
 }
 
 
@@ -709,7 +709,7 @@ dds_get_domainid(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+    return DDS_ERRNO(ret);
 }
 
 
@@ -733,7 +733,7 @@ dds_instancehandle_get(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M2);
+    return DDS_ERRNO(ret);
 }
 
 _Check_return_ dds_return_t
@@ -809,7 +809,7 @@ dds_triggered(
         ret = (e->m_trigger != 0);
         dds_entity_unlock(e);
     } else {
-        ret = DDS_ERRNO(ret, DDS_MOD_ENTITY, DDS_ERR_M1);
+        ret = DDS_ERRNO(ret);
     }
     return ret;
 }

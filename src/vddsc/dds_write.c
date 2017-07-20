@@ -24,13 +24,12 @@ dds_write(
         _In_ dds_entity_t writer,
         _In_ const void *data)
 {
-    dds_return_t ret = DDS_ERRNO(
-        DDS_RETCODE_BAD_PARAMETER, DDS_MOD_INST, DDS_ERR_M1);
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     dds_writer *wr;
 
     if (data != NULL) {
         ret = dds_writer_lock(writer, &wr);
-        ret = DDS_ERRNO(ret, DDS_MOD_INST, DDS_ERR_M2);
+        ret = DDS_ERRNO(ret);
         if (ret == DDS_RETCODE_OK) {
             ret = dds_write_impl(wr, data, dds_time(), 0);
             dds_writer_unlock(wr);
@@ -56,7 +55,7 @@ dds_writecdr(
             dds_writer_unlock(wr);
         }
     }
-    return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
+    return DDS_ERRNO (ret);
 }
 
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
@@ -66,13 +65,12 @@ dds_write_ts(
         _In_ const void *data,
         _In_ dds_time_t timestamp)
 {
-    dds_return_t ret = DDS_ERRNO(
-        DDS_RETCODE_BAD_PARAMETER, DDS_MOD_INST, DDS_ERR_M1);
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     dds_writer *wr;
 
     if (data != NULL && timestamp >= 0) {
         ret = dds_writer_lock(writer, &wr);
-        ret = DDS_ERRNO(ret, DDS_MOD_INST, DDS_ERR_M2);
+        ret = DDS_ERRNO(ret);
         if (ret == DDS_RETCODE_OK) {
             ret = dds_write_impl(wr, data, timestamp, 0);
             dds_writer_unlock(wr);
@@ -85,259 +83,240 @@ dds_write_ts(
 #include "ddsi/q_radmin.h"
 #include <string.h>
 
-static void init_sampleinfo (struct nn_rsample_info *sampleinfo, struct writer *wr, int64_t seq, serdata_t payload)
+static void
+init_sampleinfo(
+        _Out_ struct nn_rsample_info *sampleinfo,
+        _In_  struct writer *wr,
+        _In_  int64_t seq,
+        _In_  serdata_t payload)
 {
-  memset(sampleinfo, 0, sizeof(*sampleinfo));
-  sampleinfo->bswap = 0;
-  sampleinfo->complex_qos = 0;
-  sampleinfo->hashash = 0;
-  sampleinfo->seq = seq;
-  sampleinfo->reception_timestamp = payload->v.msginfo.timestamp;
-  sampleinfo->statusinfo = payload->v.msginfo.statusinfo;
-  sampleinfo->pwr_info.iid = 1;
-  sampleinfo->pwr_info.auto_dispose = 0;
-  sampleinfo->pwr_info.guid = wr->e.guid;
-  sampleinfo->pwr_info.ownership_strength = 0;
+    memset(sampleinfo, 0, sizeof(*sampleinfo));
+    sampleinfo->bswap = 0;
+    sampleinfo->complex_qos = 0;
+    sampleinfo->hashash = 0;
+    sampleinfo->seq = seq;
+    sampleinfo->reception_timestamp = payload->v.msginfo.timestamp;
+    sampleinfo->statusinfo = payload->v.msginfo.statusinfo;
+    sampleinfo->pwr_info.iid = 1;
+    sampleinfo->pwr_info.auto_dispose = 0;
+    sampleinfo->pwr_info.guid = wr->e.guid;
+    sampleinfo->pwr_info.ownership_strength = 0;
 }
 
-static void deliver_locally (struct writer *wr, int64_t seq, serdata_t payload, struct tkmap_instance * tk)
+
+static int
+deliver_locally(
+        _In_ struct writer *wr,
+        _In_ int64_t seq,
+        _In_ serdata_t payload,
+        _In_ struct tkmap_instance *tk)
 {
-  os_mutexLock (&wr->rdary.rdary_lock);
-  if (wr->rdary.fastpath_ok)
-  {
-    struct reader ** const rdary = wr->rdary.rdary;
-    if (rdary[0])
-    {
-      struct nn_rsample_info sampleinfo;
-      unsigned i;
-      init_sampleinfo(&sampleinfo, wr, seq, payload);
-      for (i = 0; rdary[i]; i++)
-      {
-        TRACE (("reader %x:%x:%x:%x\n", PGUID (rdary[i]->e.guid)));
-        if (! (ddsi_plugin.rhc_store_fn) (rdary[i]->rhc, &sampleinfo, payload, tk)) {
-            /* TODO: Implement possible retry loop. At least print a warning. */
+    os_mutexLock (&wr->rdary.rdary_lock);
+    if (wr->rdary.fastpath_ok) {
+        struct reader ** const rdary = wr->rdary.rdary;
+        if (rdary[0]) {
+            struct nn_rsample_info sampleinfo;
+            unsigned i;
+            init_sampleinfo(&sampleinfo, wr, seq, payload);
+            for (i = 0; rdary[i]; i++) {
+                TRACE (("reader %x:%x:%x:%x\n", PGUID (rdary[i]->e.guid)));
+                dds_duration_t max_block_ms = nn_from_ddsi_duration(wr->xqos->reliability.max_blocking_time) / DDS_NSECS_IN_MSEC;
+                while (!(ddsi_plugin.rhc_store_fn) (rdary[i]->rhc, &sampleinfo, payload, tk)) {
+                    /* A reliable sample has been rejected. */
+                    if (max_block_ms <= 0) {
+                        os_mutexUnlock (&wr->rdary.rdary_lock);
+                        return DDS_ERRNO(DDS_RETCODE_TIMEOUT);
+                    }
+                    dds_sleepfor (DDS_MSECS (10));
+                    max_block_ms -= 10;
+                }
+            }
         }
-      }
-    }
-    os_mutexUnlock (&wr->rdary.rdary_lock);
-  }
-  else
-  {
-    /* When deleting, pwr is no longer accessible via the hash
-     tables, and consequently, a reader may be deleted without
-     it being possible to remove it from rdary. The primary
-     reason rdary exists is to avoid locking the proxy writer
-     but this is less of an issue when we are deleting it, so
-     we fall back to using the GUIDs so that we can deliver all
-     samples we received from it. As writer being deleted any
-     reliable samples that are rejected are simply discarded. */
-    ut_avlIter_t it;
-    struct pwr_rd_match *m;
-    struct nn_rsample_info sampleinfo;
-    os_mutexUnlock (&wr->rdary.rdary_lock);
-    init_sampleinfo(&sampleinfo, wr, seq, payload);
-    os_mutexLock (&wr->e.lock);
-    for (m = ut_avlIterFirst (&wr_local_readers_treedef, &wr->local_readers, &it); m != NULL; m = ut_avlIterNext (&it))
-    {
-      struct reader *rd;
-      if ((rd = ephash_lookup_reader_guid (&m->rd_guid)) != NULL)
-      {
-        TRACE (("reader-via-guid %x:%x:%x:%x\n", PGUID (rd->e.guid)));
-        if (! (ddsi_plugin.rhc_store_fn) (rd->rhc, &sampleinfo, payload, tk)) {
-            /* TODO: Implement possible retry loop. At least print a warning. */
+        os_mutexUnlock (&wr->rdary.rdary_lock);
+    } else {
+        /* When deleting, pwr is no longer accessible via the hash
+           tables, and consequently, a reader may be deleted without
+           it being possible to remove it from rdary. The primary
+           reason rdary exists is to avoid locking the proxy writer
+           but this is less of an issue when we are deleting it, so
+           we fall back to using the GUIDs so that we can deliver all
+           samples we received from it. As writer being deleted any
+           reliable samples that are rejected are simply discarded. */
+        ut_avlIter_t it;
+        struct pwr_rd_match *m;
+        struct nn_rsample_info sampleinfo;
+        os_mutexUnlock (&wr->rdary.rdary_lock);
+        init_sampleinfo(&sampleinfo, wr, seq, payload);
+        os_mutexLock (&wr->e.lock);
+        for (m = ut_avlIterFirst (&wr_local_readers_treedef, &wr->local_readers, &it); m != NULL; m = ut_avlIterNext (&it)) {
+            struct reader *rd;
+            if ((rd = ephash_lookup_reader_guid (&m->rd_guid)) != NULL) {
+                TRACE (("reader-via-guid %x:%x:%x:%x\n", PGUID (rd->e.guid)));
+                /* Copied the return value ignore from DDSI deliver_user_data() function. */
+                (void)(ddsi_plugin.rhc_store_fn) (rd->rhc, &sampleinfo, payload, tk);
+            }
         }
-      }
+        os_mutexUnlock (&wr->e.lock);
     }
-    os_mutexUnlock (&wr->e.lock);
-  }
+    return DDS_RETCODE_OK;
 }
 
-int dds_write_impl
-(
-  dds_writer *wr, const void * data,
-  dds_time_t tstamp, dds_write_action action
-)
+int
+dds_write_impl(
+        _In_ dds_writer *wr,
+        _In_ const void * data,
+        _In_ dds_time_t tstamp,
+        _In_ dds_write_action action)
 {
-  static fake_seq_t fake_seq;
-  int ret = DDS_RETCODE_OK;
+    static fake_seq_t fake_seq;
+    int ret = DDS_RETCODE_OK;
 
-  assert (wr);
-  assert (dds_entity_kind(((dds_entity*)wr)->m_hdl) == DDS_KIND_WRITER);
-  assert (data);
+    assert (wr);
+    assert (dds_entity_kind(((dds_entity*)wr)->m_hdl) == DDS_KIND_WRITER);
 
-  struct thread_state1 * const thr = lookup_thread_state ();
-  const bool asleep = !vtime_awake_p (thr->vtime);
-  const bool writekey = action & DDS_WR_KEY_BIT;
-  dds_writer * writer = (dds_writer*) wr;
-  struct writer * ddsi_wr = writer->m_wr;
-  struct tkmap_instance * tk;
-  serdata_t d;
+    struct thread_state1 * const thr = lookup_thread_state ();
+    const bool asleep = !vtime_awake_p (thr->vtime);
+    const bool writekey = action & DDS_WR_KEY_BIT;
+    dds_writer * writer = (dds_writer*) wr;
+    struct writer * ddsi_wr = writer->m_wr;
+    struct tkmap_instance * tk;
+    serdata_t d;
 
-  /* Check for topic filter */
-
-  if (ddsi_wr->topic->filter_fn && ! writekey)
-  {
-    if (! (ddsi_wr->topic->filter_fn) (data, ddsi_wr->topic->filter_ctx))
-    {
-      goto filtered;
-    }
-  }
-
-  if (asleep)
-  {
-    thread_state_awake (thr);
-  }
-
-  /* Serialize and write data or key */
-
-  if (writekey)
-  {
-    d = serialize_key (gv.serpool, ddsi_wr->topic, data);
-  }
-  else
-  {
-    d = serialize (gv.serpool, ddsi_wr->topic, data);
-  }
-
-  /* Set if disposing or unregistering */
-
-  d->v.msginfo.statusinfo =
-    ((action & DDS_WR_DISPOSE_BIT) ? NN_STATUSINFO_DISPOSE : 0) |
-    ((action & DDS_WR_UNREGISTER_BIT) ? NN_STATUSINFO_UNREGISTER : 0);
-  d->v.msginfo.timestamp.v = tstamp;
-  os_mutexLock (&writer->m_call_lock);
-  ddsi_serdata_ref(d);
-  tk = (ddsi_plugin.rhc_lookup_fn) (d);
-  ret = write_sample_gc (writer->m_xp, ddsi_wr, d, tk);
-
-  if (ret >= 0)
-  {
-    /* Flush out write unless configured to batch */
-
-    if (! config.whc_batch)
-    {
-      nn_xpack_send (writer->m_xp, false);
+    if (data == NULL) {
+        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     }
 
-    ret = DDS_RETCODE_OK;
-  }
-  else if (ret == ERR_TIMEOUT)
-  {
-    ret = DDS_ERRNO (DDS_RETCODE_TIMEOUT, DDS_MOD_WRITER, DDS_ERR_M1);
-  }
-  else
-  {
-    ret = DDS_ERRNO (DDS_RETCODE_ERROR, DDS_MOD_WRITER, DDS_ERR_M2);
-  }
-  os_mutexUnlock (&writer->m_call_lock);
+    /* Check for topic filter */
+    if (ddsi_wr->topic->filter_fn && ! writekey) {
+        if (!(ddsi_wr->topic->filter_fn) (data, ddsi_wr->topic->filter_ctx)) {
+            goto filtered;
+        }
+    }
 
-  if (ret == DDS_RETCODE_OK)
-    deliver_locally (ddsi_wr, fake_seq_next(&fake_seq), d, tk);
-  ddsi_serdata_unref(d);
-  (ddsi_plugin.rhc_unref_fn) (tk);
+    if (asleep) {
+        thread_state_awake (thr);
+    }
 
-  if (asleep)
-  {
-    thread_state_asleep (thr);
-  }
+    /* Serialize and write data or key */
+    if (writekey) {
+        d = serialize_key (gv.serpool, ddsi_wr->topic, data);
+    } else {
+        d = serialize (gv.serpool, ddsi_wr->topic, data);
+    }
+
+    /* Set if disposing or unregistering */
+    d->v.msginfo.statusinfo = ((action & DDS_WR_DISPOSE_BIT   ) ? NN_STATUSINFO_DISPOSE    : 0) |
+                              ((action & DDS_WR_UNREGISTER_BIT) ? NN_STATUSINFO_UNREGISTER : 0) ;
+    d->v.msginfo.timestamp.v = tstamp;
+    os_mutexLock (&writer->m_call_lock);
+    ddsi_serdata_ref(d);
+    tk = (ddsi_plugin.rhc_lookup_fn) (d);
+    ret = write_sample_gc (writer->m_xp, ddsi_wr, d, tk);
+
+    if (ret >= 0) {
+        /* Flush out write unless configured to batch */
+        if (! config.whc_batch){
+            nn_xpack_send (writer->m_xp, false);
+        }
+        ret = DDS_RETCODE_OK;
+    } else if (ret == ERR_TIMEOUT) {
+        ret = DDS_ERRNO(DDS_RETCODE_TIMEOUT);
+    } else {
+        ret = DDS_ERRNO(DDS_RETCODE_ERROR);
+    }
+    os_mutexUnlock (&writer->m_call_lock);
+
+    if (ret == DDS_RETCODE_OK) {
+        ret = deliver_locally (ddsi_wr, fake_seq_next(&fake_seq), d, tk);
+    }
+    ddsi_serdata_unref(d);
+    (ddsi_plugin.rhc_unref_fn) (tk);
+
+    if (asleep) {
+        thread_state_asleep (thr);
+    }
 
 filtered:
-
-  return ret;
+    return ret;
 }
 
-int dds_writecdr_impl
-(
- dds_writer *wr, const void * cdr, size_t sz,
- dds_time_t tstamp, dds_write_action action
- )
+int
+dds_writecdr_impl(
+        _In_ dds_writer *wr,
+        _In_ const void *cdr,
+        _In_ size_t sz,
+        _In_ dds_time_t tstamp,
+        _In_ dds_write_action action)
 {
-  static fake_seq_t fake_seq;
-  int ret = DDS_RETCODE_OK;
+    static fake_seq_t fake_seq;
+    int ret = DDS_RETCODE_OK;
 
-  assert (wr);
-  assert (cdr);
+    assert (wr);
+    assert (cdr);
 
-  struct thread_state1 * const thr = lookup_thread_state ();
-  const bool asleep = !vtime_awake_p (thr->vtime);
-  const bool writekey = action & DDS_WR_KEY_BIT;
-  struct writer * ddsi_wr = wr->m_wr;
-  struct tkmap_instance * tk;
-  serdata_t d;
+    struct thread_state1 * const thr = lookup_thread_state ();
+    const bool asleep = !vtime_awake_p (thr->vtime);
+    const bool writekey = action & DDS_WR_KEY_BIT;
+    struct writer * ddsi_wr = wr->m_wr;
+    struct tkmap_instance * tk;
+    serdata_t d;
 
-  /* Check for topic filter */
-
-  if (ddsi_wr->topic->filter_fn && ! writekey)
-  {
-    abort();
-  }
-
-  if (asleep)
-  {
-    thread_state_awake (thr);
-  }
-
-  /* Serialize and write data or key */
-
-  if (writekey)
-  {
-    abort();
-    //d = serialize_key (gv.serpool, ddsi_wr->topic, data);
-  }
-  else
-  {
-    serstate_t st = ddsi_serstate_new (gv.serpool, ddsi_wr->topic);
-    if (ddsi_wr->topic->nkeys)
-    {
-      abort();
-      //dds_key_gen ((const dds_topic_descriptor_t*) tp->type, &st->data->v.keyhash, (char*) sample);
+    /* Check for topic filter */
+    if (ddsi_wr->topic->filter_fn && ! writekey) {
+        abort();
     }
-    ddsi_serstate_append_blob(st, 1, sz, cdr);
-    d = ddsi_serstate_fix(st);
-  }
 
-  /* Set if disposing or unregistering */
-
-  d->v.msginfo.statusinfo =
-  ((action & DDS_WR_DISPOSE_BIT) ? NN_STATUSINFO_DISPOSE : 0) |
-  ((action & DDS_WR_UNREGISTER_BIT) ? NN_STATUSINFO_UNREGISTER : 0);
-  d->v.msginfo.timestamp.v = tstamp;
-  os_mutexLock (&wr->m_call_lock);
-  ddsi_serdata_ref(d);
-  tk = (ddsi_plugin.rhc_lookup_fn) (d);
-  ret = write_sample_gc (wr->m_xp, ddsi_wr, d, tk);
-
-  if (ret >= 0)
-  {
-    /* Flush out write unless configured to batch */
-
-    if (! config.whc_batch)
-    {
-      nn_xpack_send (wr->m_xp, false);
+    if (asleep) {
+        thread_state_awake (thr);
     }
-    ret = DDS_RETCODE_OK;
-  }
-  else if (ret == ERR_TIMEOUT)
-  {
-    ret = DDS_ERRNO (DDS_RETCODE_TIMEOUT, DDS_MOD_WRITER, DDS_ERR_M1);
-  }
-  else
-  {
-    ret = DDS_ERRNO (DDS_RETCODE_ERROR, DDS_MOD_WRITER, DDS_ERR_M2);
-  }
-  os_mutexUnlock (&wr->m_call_lock);
 
-  if (ret == DDS_RETCODE_OK)
-    deliver_locally (ddsi_wr, fake_seq_next(&fake_seq), d, tk);
-  ddsi_serdata_unref(d);
-  (ddsi_plugin.rhc_unref_fn) (tk);
+    /* Serialize and write data or key */
+    if (writekey) {
+        abort();
+        //d = serialize_key (gv.serpool, ddsi_wr->topic, data);
+    } else {
+        serstate_t st = ddsi_serstate_new (gv.serpool, ddsi_wr->topic);
+        if (ddsi_wr->topic->nkeys) {
+            abort();
+            //dds_key_gen ((const dds_topic_descriptor_t*) tp->type, &st->data->v.keyhash, (char*) sample);
+        }
+        ddsi_serstate_append_blob(st, 1, sz, cdr);
+        d = ddsi_serstate_fix(st);
+    }
 
-  if (asleep)
-  {
-    thread_state_asleep (thr);
-  }
+    /* Set if disposing or unregistering */
+    d->v.msginfo.statusinfo = ((action & DDS_WR_DISPOSE_BIT   ) ? NN_STATUSINFO_DISPOSE    : 0) |
+                              ((action & DDS_WR_UNREGISTER_BIT) ? NN_STATUSINFO_UNREGISTER : 0) ;
+    d->v.msginfo.timestamp.v = tstamp;
+    os_mutexLock (&wr->m_call_lock);
+    ddsi_serdata_ref(d);
+    tk = (ddsi_plugin.rhc_lookup_fn) (d);
+    ret = write_sample_gc (wr->m_xp, ddsi_wr, d, tk);
 
-  return ret;
+    if (ret >= 0) {
+        /* Flush out write unless configured to batch */
+        if (! config.whc_batch) {
+            nn_xpack_send (wr->m_xp, false);
+        }
+        ret = DDS_RETCODE_OK;
+    } else if (ret == ERR_TIMEOUT) {
+        ret = DDS_ERRNO(DDS_RETCODE_TIMEOUT);
+    } else {
+        ret = DDS_ERRNO(DDS_RETCODE_ERROR);
+    }
+    os_mutexUnlock (&wr->m_call_lock);
+
+    if (ret == DDS_RETCODE_OK) {
+        ret = deliver_locally (ddsi_wr, fake_seq_next(&fake_seq), d, tk);
+    }
+    ddsi_serdata_unref(d);
+    (ddsi_plugin.rhc_unref_fn) (tk);
+
+    if (asleep) {
+        thread_state_asleep (thr);
+    }
+
+    return ret;
 }
 
 void dds_write_set_batch (bool enable)

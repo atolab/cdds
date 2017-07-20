@@ -27,6 +27,7 @@ else()
 endif()
 target_sources(vddsc PRIVATE ${srcs_ddsi} ${srcs_vddsc})
 target_link_libraries(vddsc PRIVATE util)
+set_target_file_ids(vddsc)
 
 include (GenerateExportHeader)
 generate_export_header(vddsc
@@ -34,6 +35,9 @@ generate_export_header(vddsc
                         EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/exports/dds/dds_export.h")
 
 target_include_directories(vddsc PUBLIC "${CMAKE_SOURCE_DIR}/include/" "${CMAKE_BINARY_DIR}/exports/")
+target_include_directories(vddsc PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/include/")
+set_target_properties(vddsc PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR}) # SOVERSION should increase on incompatible ABI change
+configure_file("${CMAKE_SOURCE_DIR}/include/vddsc/vddsc_version.h.in" "include/vddsc/vddsc_version.h")
 
 # Create a psuedo-target that other targets (i.e. examples, tests) can depend on and can also be
 # provided as import-target by a package-file when building those targets outside the regular

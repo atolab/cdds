@@ -83,8 +83,6 @@ Test(vddsc_reader, return_loan_bad_params, .init = create_entities, .fini = dele
     cr_expect_eq(dds_err_nr(result), DDS_RETCODE_BAD_PARAMETER, "Invalid buffer(null), Expected(%s) Returned(%s)",
         DDS_TO_STRING(DDS_RETCODE_BAD_PARAMETER),
         dds_err_str(result));
-    cr_expect_eq(dds_err_minor(result), 1, "Invalid buffer(null), Expected minor(1) Returned minor(%d)",
-        dds_err_minor(result));
 
 #pragma warning(push)
 #pragma warning(disable: 6387)
@@ -93,8 +91,6 @@ Test(vddsc_reader, return_loan_bad_params, .init = create_entities, .fini = dele
     cr_expect_eq(dds_err_nr(result), DDS_RETCODE_BAD_PARAMETER, "Invalid buffer size, Expected(%s) Returned(%s)",
         DDS_TO_STRING(DDS_RETCODE_BAD_PARAMETER),
         dds_err_str(result));
-    cr_expect_eq(dds_err_minor(result), 1, "Invalid buffer size, Expected minor(1) Returned minor(%d)",
-        dds_err_minor(result));
 
     buf = create_loan_buf(10, false);
 #pragma warning(push)
@@ -104,15 +100,11 @@ Test(vddsc_reader, return_loan_bad_params, .init = create_entities, .fini = dele
     cr_expect_eq(dds_err_nr(result), DDS_RETCODE_BAD_PARAMETER, "Invalid entity, Expected(%s) Returned(%s)",
         DDS_TO_STRING(DDS_RETCODE_BAD_PARAMETER),
         dds_err_str(result));
-    cr_expect_eq(dds_err_minor(result), 0, "Invalid entity, Expected minor(2) Returned minor(%d)",
-        dds_err_minor(result));
 
     result = dds_return_loan(participant, buf, 0);
     cr_expect_eq(dds_err_nr(result), DDS_RETCODE_ILLEGAL_OPERATION, "Invalid entity-kind, Expected(%s) Returned(%s)",
         DDS_TO_STRING(DDS_RETCODE_ILLEGAL_OPERATION),
         dds_err_str(result));
-    cr_expect_eq(dds_err_minor(result), 0, "Invalid entity-kind, Expected minor(3) Returned minor(%d)",
-        dds_err_minor(result));
 
     delete_loan_buf(buf, 10, false);
 }

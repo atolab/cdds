@@ -14,7 +14,7 @@ int dds_thread_init (const char* tname)
 
   if (thread_exists (tname))
   {
-    ret = DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER, DDS_MOD_THREAD, DDS_ERR_M1);
+    ret = DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER);
   }
   else
   {
@@ -22,7 +22,7 @@ int dds_thread_init (const char* tname)
     ts = init_thread_state (tname);
     if (ts == NULL)
     {
-      ret = DDS_ERRNO (DDS_RETCODE_OUT_OF_RESOURCES, DDS_MOD_THREAD, DDS_ERR_M1);
+      ret = DDS_ERRNO (DDS_RETCODE_OUT_OF_RESOURCES);
     }
     else
     {

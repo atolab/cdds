@@ -51,7 +51,7 @@ dds_create_readcondition(
         hdl = cond->m_entity.m_hdl;
         dds_reader_unlock(rd);
     } else {
-        hdl = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M2);
+        hdl = DDS_ERRNO(ret);
     }
 
     return hdl;
@@ -71,9 +71,9 @@ dds_get_datareader(
         } else {
             dds_return_t ret = dds_valid_hdl(condition, DDS_KIND_DONTCARE);
             if (ret == DDS_RETCODE_OK) {
-                return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_COND, DDS_ERR_M1);
+                return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
             } else {
-                return (dds_entity_t)DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+                return (dds_entity_t)DDS_ERRNO(ret);
             }
         }
     }
@@ -99,18 +99,18 @@ dds_get_mask(
                     *mask = (cond->m_sample_states | cond->m_view_states | cond->m_instance_states);
                     dds_entity_unlock((dds_entity*)cond);
                 } else {
-                    ret = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+                    ret = DDS_ERRNO(ret);
                 }
             } else {
                 ret = dds_valid_hdl(condition, DDS_KIND_DONTCARE);
                 if (ret == DDS_RETCODE_OK) {
-                    ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_COND, DDS_ERR_M1);
+                    ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
                 } else {
-                    ret = DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+                    ret = DDS_ERRNO(ret);
                 }
             }
         } else {
-            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_COND, DDS_ERR_M1);
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
         }
     }
     return ret;

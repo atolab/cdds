@@ -29,7 +29,7 @@ dds_begin_coherent(
             ret = dds_subscriber_begin_coherent(entity);
             break;
         default:
-            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_KERNEL, 0);
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
             break;
     }
     return ret;
@@ -59,7 +59,7 @@ dds_end_coherent(
             ret = dds_subscriber_end_coherent(entity);
             break;
         default:
-            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_KERNEL, 0);
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
             break;
     }
     return ret;

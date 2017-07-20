@@ -11,12 +11,12 @@ static dds_return_t dds_publisher_instance_hdl(dds_entity *e, dds_instance_handl
     assert(e);
     assert(i);
     /* TODO: Get/generate proper handle. */
-    return DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_KERNEL, 0);
+    return DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
 }
 
 static dds_return_t dds_publisher_qos_validate (_In_ const dds_qos_t *qos, _In_ bool enabled)
 {
-    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_KERNEL, 0);
+    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY);
     bool consistent = true;
     assert(qos);
     /* Check consistency. */
@@ -28,7 +28,7 @@ static dds_return_t dds_publisher_qos_validate (_In_ const dds_qos_t *qos, _In_ 
     if (consistent) {
         if (enabled) {
             /* TODO: Improve/check immutable check. */
-            ret = DDS_ERRNO (DDS_RETCODE_IMMUTABLE_POLICY, DDS_MOD_KERNEL, 0);
+            ret = DDS_ERRNO (DDS_RETCODE_IMMUTABLE_POLICY);
         } else {
             ret = DDS_RETCODE_OK;
         }
@@ -42,7 +42,7 @@ static dds_return_t dds_publisher_qos_set (dds_entity *e, const dds_qos_t *qos, 
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_KERNEL, DDS_ERR_M1));
+            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED));
         }
     }
     return ret;
@@ -51,7 +51,7 @@ static dds_return_t dds_publisher_qos_set (dds_entity *e, const dds_qos_t *qos, 
 static dds_return_t dds_publisher_status_validate (uint32_t mask)
 {
     return (mask & ~(DDS_PUBLISHER_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_KERNEL, 0) :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER) :
                      DDS_RETCODE_OK;
 }
 
@@ -71,7 +71,7 @@ dds_create_publisher(
 
   errnr = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
   if (errnr != DDS_RETCODE_OK) {
-      return DDS_ERRNO(errnr, DDS_MOD_KERNEL, DDS_ERR_M2);
+      return DDS_ERRNO(errnr);
   }
 
   /* Validate qos */
@@ -109,7 +109,7 @@ dds_suspend(
   /* TODO: Currently unsupported. */
   OS_UNUSED_ARG(publisher);
 
-  ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_WRITER, 0);
+  ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
   return ret;
 }
 
@@ -124,7 +124,7 @@ dds_resume(
   /* TODO: Currently unsupported. */
   OS_UNUSED_ARG(publisher);
 
-  ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_WRITER, 0);
+  ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
   return ret;
 }
 
@@ -142,7 +142,7 @@ dds_wait_for_acks(
   OS_UNUSED_ARG(publisher_or_writer);
   OS_UNUSED_ARG(timeout);
 
-  ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED, DDS_MOD_WRITER, 0);
+  ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
   return ret;
 }
 

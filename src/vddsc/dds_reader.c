@@ -63,7 +63,7 @@ static dds_return_t dds_reader_delete(dds_entity *e)
 
 static dds_return_t dds_reader_qos_validate (const dds_qos_t *qos, bool enabled)
 {
-    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY, DDS_MOD_READER, 0);
+    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY);
     bool consistent = true;
     assert(qos);
     /* Check consistency. */
@@ -79,7 +79,7 @@ static dds_return_t dds_reader_qos_validate (const dds_qos_t *qos, bool enabled)
         if (enabled) {
             /* TODO: Improve/check immutable check. */
             if (qos->present != QP_LATENCY_BUDGET) {
-                ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, DDS_MOD_READER, DDS_ERR_M1);
+                ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
             }
         }
     }
@@ -92,7 +92,7 @@ static dds_return_t dds_reader_qos_set (dds_entity *e, const dds_qos_t *qos, boo
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDS_MOD_READER, DDS_ERR_M1));
+            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED));
         }
     }
     return ret;
@@ -101,7 +101,7 @@ static dds_return_t dds_reader_qos_set (dds_entity *e, const dds_qos_t *qos, boo
 static dds_return_t dds_reader_status_validate (uint32_t mask)
 {
     return (mask & ~(DDS_READER_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, DDS_MOD_READER, 0) :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER) :
                      DDS_RETCODE_OK;
 }
 
@@ -313,18 +313,18 @@ dds_create_reader(
         if (errnr == DDS_RETCODE_ILLEGAL_OPERATION) {
             errnr = dds_entity_lock(participant_or_subscriber, DDS_KIND_SUBSCRIBER, &parent);
             if (errnr != DDS_RETCODE_OK) {
-                return (int)DDS_ERRNO(errnr, DDS_MOD_READER, DDS_ERR_M1);
+                return (int)DDS_ERRNO(errnr);
             }
             sub = (dds_subscriber*)parent;
         } else {
-            return (int)DDS_ERRNO(errnr, DDS_MOD_READER, DDS_ERR_M2);
+            return (int)DDS_ERRNO(errnr);
         }
     }
 
     errnr = dds_entity_lock(topic, DDS_KIND_TOPIC, &tp);
     if (errnr != DDS_RETCODE_OK) {
         dds_entity_unlock(parent);
-        return (int)DDS_ERRNO(errnr, DDS_MOD_READER, DDS_ERR_M3);
+        return (int)DDS_ERRNO(errnr);
     }
     assert (((dds_topic*)tp)->m_stopic);
     assert (parent->m_domain == tp->m_domain);
@@ -474,11 +474,11 @@ dds_reader_wait_for_historical_data(
         if (((dds_entity*)rd)->m_qos->durability.kind > NN_TRANSIENT_LOCAL_DURABILITY_QOS) {
             ret = (dds_global.m_dur_wait) (rd, max_wait);
         } else {
-            ret = DDS_ERRNO(DDS_RETCODE_ERROR, DDS_MOD_READER, DDS_ERR_M2);
+            ret = DDS_ERRNO(DDS_RETCODE_ERROR);
         }
         dds_reader_unlock(rd);
     } else {
-        ret = DDS_ERRNO(ret, DDS_MOD_READER, DDS_ERR_M2);
+        ret = DDS_ERRNO(ret);
     }
 
     return ret;
@@ -501,9 +501,9 @@ dds_get_subscriber(
         } else {
             dds_return_t ret = dds_valid_hdl(entity, DDS_KIND_DONTCARE);
             if (ret == DDS_RETCODE_OK) {
-                return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, DDS_MOD_COND, DDS_ERR_M1);
+                return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
             } else {
-                return (dds_entity_t)DDS_ERRNO(ret, DDS_MOD_COND, DDS_ERR_M1);
+                return (dds_entity_t)DDS_ERRNO(ret);
             }
         }
     }
@@ -528,7 +528,7 @@ dds_return_t dds_get_subscription_matched_status (dds_entity_t reader, dds_subsc
         }
         dds_reader_unlock(rd);
     }
-    return DDS_ERRNO(errnr, DDS_MOD_READER, 0);
+    return DDS_ERRNO(errnr);
 }
 
 dds_return_t dds_get_liveliness_changed_status (dds_entity_t reader, dds_liveliness_changed_status_t * status)
@@ -549,7 +549,7 @@ dds_return_t dds_get_liveliness_changed_status (dds_entity_t reader, dds_livelin
         }
         dds_reader_unlock(rd);
     }
-    return DDS_ERRNO(errnr, DDS_MOD_READER, 0);
+    return DDS_ERRNO(errnr);
 }
 
 dds_return_t dds_get_sample_rejected_status (dds_entity_t reader, dds_sample_rejected_status_t * status)
@@ -570,7 +570,7 @@ dds_return_t dds_get_sample_rejected_status (dds_entity_t reader, dds_sample_rej
         }
         dds_reader_unlock(rd);
     }
-    return DDS_ERRNO(errnr, DDS_MOD_READER, 0);
+    return DDS_ERRNO(errnr);
 }
 
 dds_return_t dds_get_sample_lost_status (dds_entity_t reader, dds_sample_lost_status_t * status)
@@ -590,7 +590,7 @@ dds_return_t dds_get_sample_lost_status (dds_entity_t reader, dds_sample_lost_st
         }
         dds_reader_unlock(rd);
     }
-    return DDS_ERRNO(errnr, DDS_MOD_READER, 0);
+    return DDS_ERRNO(errnr);
 }
 
 dds_return_t dds_get_requested_deadline_missed_status (dds_entity_t reader, dds_requested_deadline_missed_status_t * status)
@@ -610,7 +610,7 @@ dds_return_t dds_get_requested_deadline_missed_status (dds_entity_t reader, dds_
         }
         dds_reader_unlock(rd);
     }
-    return DDS_ERRNO(errnr, DDS_MOD_READER, 0);
+    return DDS_ERRNO(errnr);
 }
 
 dds_return_t dds_get_requested_incompatible_qos_status (dds_entity_t reader, dds_requested_incompatible_qos_status_t * status)
@@ -630,5 +630,5 @@ dds_return_t dds_get_requested_incompatible_qos_status (dds_entity_t reader, dds
         }
         dds_reader_unlock(rd);
     }
-    return DDS_ERRNO(errnr, DDS_MOD_READER, 0);
+    return DDS_ERRNO(errnr);
 }

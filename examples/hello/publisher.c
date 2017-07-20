@@ -64,7 +64,7 @@ int main (int argc, char ** argv)
 
   /* Clean up */
 
-  status = dds_instance_dispose (writer, &msg);
+  status = dds_dispose (writer, &msg);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   status = dds_delete (participant);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);

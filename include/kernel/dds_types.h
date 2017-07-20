@@ -36,54 +36,19 @@ struct rhc;
 #define DDS_DELETING_STATUS          (0x02000000)
 
 
-/* Module identifiers for error codes */
-
-#define DDS_MOD_QOS 0x0100
-#define DDS_MOD_KERNEL 0x0200
-#define DDS_MOD_DDSI 0x0300
-#define DDS_MOD_STREAM 0x0400
-#define DDS_MOD_ALLOC 0x0500
-#define DDS_MOD_WAITSET 0x0600
-#define DDS_MOD_READER 0x0700
-#define DDS_MOD_WRITER 0x0800
-#define DDS_MOD_COND 0x0900
-#define DDS_MOD_RHC 0x0a00
-#define DDS_MOD_STATUS 0x0b00
-#define DDS_MOD_THREAD 0x0c00
-#define DDS_MOD_INST 0x0d00
-#define DDS_MOD_PPANT 0x0e00
-#define DDS_MOD_ENTITY 0x0f00
-#define DDS_MOD_TOPIC 0x1000
-
-/* Minor numbers for error codes */
-
-#define DDS_ERR_M1 0x010000
-#define DDS_ERR_M2 0x020000
-#define DDS_ERR_M3 0x030000
-#define DDS_ERR_M4 0x040000
-#define DDS_ERR_M5 0x050000
-#define DDS_ERR_M6 0x060000
-#define DDS_ERR_M7 0x070000
-#define DDS_ERR_M8 0x080000
-#define DDS_ERR_M9 0x090000
-#define DDS_ERR_M10 0x0A0000
-#define DDS_ERR_M11 0x0B0000
-#define DDS_ERR_M12 0x0C0000
-#define DDS_ERR_M13 0x0D0000
-#define DDS_ERR_M14 0x0E0000
-#define DDS_ERR_M15 0x0F0000
-#define DDS_ERR_M16 0x100000
-#define DDS_ERR_M17 0x110000
-#define DDS_ERR_M18 0x120000
-#define DDS_ERR_M19 0x130000
-#define DDS_ERR_M20 0x140000
-
 /* To construct return status
  * Use '+' instead of '|'. Otherwise, the SAL checking doesn't
  * understand when a return value is negative or positive and
  * complains a lot about "A successful path through the function
  * does not set the named _Out_ parameter." */
-#define DDS_ERRNO(e,m,n) ((e <= 0) ? e : -((n) + (m) + (e)))
+#if !defined(__FILE_ID__)
+#define __FILE_ID__ (0)
+#endif
+
+#define DDS__FILE_ID__ (((__FILE_ID__ & 0x1ff)) << 22)
+#define DDS__LINE__ ((__LINE__ & 0x3fff) << 8)
+
+#define DDS_ERRNO(e) ((e <= 0) ? e : -(DDS__FILE_ID__ + DDS__LINE__ + (e)))
 
 
 typedef bool (*dds_querycondition_filter_with_ctx_fn) (const void * sample, const void *ctx);
