@@ -50,6 +50,11 @@ struct rhc;
 
 #define DDS_ERRNO(e) ((e <= 0) ? e : -(DDS__FILE_ID__ + DDS__LINE__ + (e)))
 
+/* This can be used when polling for various states.
+ * Obviously, it is encouraged to use condition variables and such. But
+ * sometimes it wouldn't make that much of a difference and taking the
+ * easy route is somewhat pragmatic. */
+#define DDS_HEADBANG_TIMEOUT_MS (10)
 
 typedef bool (*dds_querycondition_filter_with_ctx_fn) (const void * sample, const void *ctx);
 

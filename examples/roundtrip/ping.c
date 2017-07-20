@@ -249,7 +249,7 @@ int main (int argc, char *argv[])
     pub_data.payload._buffer = NULL;
     pub_data.payload._release = true;
     pub_data.payload._maximum = 0;
-    status = dds_instance_writedispose (writer, &pub_data);
+    status = dds_writedispose (writer, &pub_data);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     dds_sleepfor (DDS_SECS (1));
     goto done;

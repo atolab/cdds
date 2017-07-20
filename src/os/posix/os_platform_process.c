@@ -14,26 +14,26 @@ os_procName(
     size_t procNameSize)
 {
 #ifdef __APPLE__
-    char* exec;
-
-    if (processName == NULL) {
-        uint32_t usize = _OS_PROCESS_DEFAULT_NAME_LEN_;
-        processName = os_malloc(usize);
-        *processName = 0;
-        if (_NSGetExecutablePath(processName, &usize) != 0) {
-            /* processName is longer than allocated */
-            processName = os_realloc(processName, usize + 1);
-            if (_NSGetExecutablePath(processName, &usize) == 0) {
-                /* path set successful */
-            }
-        }
-        exec = strrchr(processName,'/');
-        if (exec) {
-            /* move everything following the last slash forward */
-            memmove (processName, exec+1, strlen (exec+1) + 1);
+    char* exec, *processName = NULL;
+    int ret;
+    uint32_t usize = _OS_PROCESS_DEFAULT_NAME_LEN_;
+    processName = os_malloc(usize);
+    *processName = 0;
+    if (_NSGetExecutablePath(processName, &usize) != 0) {
+        /* processName is longer than allocated */
+        processName = os_realloc(processName, usize + 1);
+        if (_NSGetExecutablePath(processName, &usize) == 0) {
+            /* path set successful */
         }
     }
-    return snprintf(procName, procNameSize, "%s", processName);
+    exec = strrchr(processName,'/');
+    if (exec) {
+        /* move everything following the last slash forward */
+        memmove (processName, exec+1, strlen (exec+1) + 1);
+    }
+    ret = snprintf(procName, procNameSize, "%s", processName);
+    os_free (processName);
+    return ret;
 #else
     return snprintf(procName, procNameSize, "bla%lu", (unsigned long)getpid());
 #endif

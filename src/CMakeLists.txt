@@ -30,18 +30,24 @@ endif()
 add_library(vddsc ${VDDSC_SHARED__} ${srcs_ddsi} ${srcs_vddsc})
 target_link_libraries(vddsc PRIVATE util)
 set_target_file_ids(vddsc)
+# SOVERSION should increase on incompatible ABI change
+set_target_properties(vddsc PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 
 generate_export_header(
   vddsc
   BASE_NAME DDS
-  EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/exports/dds/dds_export.h")
+  EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/exports/dds/dds_export.h")
 
 # Generator expressions are used here to refer to different paths during build
 # and install phases. It is a requirement for creating relocatable packages.
 target_include_directories(vddsc PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/>"
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports/>"
+  "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/exports/>"
   "$<INSTALL_INTERFACE:include>")
+target_include_directories(vddsc PRIVATE
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/>")
+
+configure_file("${CMAKE_SOURCE_DIR}/include/vddsc/vddsc_version.h.in" "include/vddsc/vddsc_version.h")
 
 # Create a pseudo-target that other targets (i.e. examples, tests) can depend
 # on and can also be provided as import-target by a package-file when building
@@ -72,7 +78,7 @@ install(
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   COMPONENT dev)
 
-# FIXME: Improve test inclusion.
+# TODO: improve test inclusion.
 if((BUILD_TESTING) AND ((NOT DEFINED MSVC_VERSION) OR (MSVC_VERSION GREATER "1800")))
   add_subdirectory(vddsc/tests)
 endif()
