@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.prismtech.vortex</groupId>
     <artifactId>idlc</artifactId>
-    <version>VLITE-01</version>
+    <version>@PROJECT_VERSION@</version>
     <packaging>jar</packaging>
     <name>IDL Compiler</name>
 
@@ -97,7 +97,7 @@
                             <goal>copy</goal>
                         </goals>
                         <configuration>
-                            <sourceFile>${basedir}/com/prismtech/vortex/Version.java.tmpl</sourceFile>
+                            <sourceFile>${CMAKE_CURRENT_BINARY_DIR}/com/prismtech/vortex/Version.java</sourceFile>
                             <destinationFile>target/generated-sources/idlc/com/prismtech/vortex/Version.java</destinationFile>
                         </configuration>
                     </execution>
