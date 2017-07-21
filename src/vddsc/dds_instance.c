@@ -121,14 +121,16 @@ dds_register_instance(
   struct tkmap_instance * inst;
   dds_entity *wr;
   int ret = DDS_RETCODE_BAD_PARAMETER;
+  ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
 
-  if(data != NULL && handle != NULL){
-    ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
-    if (ret == DDS_RETCODE_OK) {
+  if (ret == DDS_RETCODE_OK) {
+    if(data != NULL && handle != NULL){
       inst = dds_instance_find (((dds_writer*) wr)->m_topic, data, true);
       *handle = inst->m_iid;
-      dds_entity_unlock(wr);
+    }else{
+      ret = DDS_RETCODE_BAD_PARAMETER;
     }
+    dds_entity_unlock(wr);
   }
   return DDS_ERRNO (ret);
 }
@@ -162,14 +164,14 @@ dds_unregister_instance_ts(
   bool autodispose = true;
   dds_write_action action = DDS_WR_ACTION_UNREGISTER;
   void * sample = (void*) data;
-  const dds_topic * topic = NULL;
   dds_entity *wr;
-
-  assert (data != NULL);
 
   ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
   if (ret != DDS_RETCODE_OK) {
       return DDS_ERRNO (ret);
+  }
+  if (data == NULL){
+    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
   }
 
   if (ret == DDS_RETCODE_OK)
@@ -187,10 +189,6 @@ dds_unregister_instance_ts(
     ret = dds_write_impl ((dds_writer*)wr, sample, timestamp, action);
   }
 
-  if (topic)
-  {
-    dds_sample_free (sample, topic->m_descriptor, DDS_FREE_ALL);
-  }
   dds_entity_unlock(wr);
   return ret;
 }
@@ -205,34 +203,33 @@ dds_unregister_instance_ih_ts(
   int ret = DDS_RETCODE_OK;
   bool autodispose = true;
   dds_write_action action = DDS_WR_ACTION_UNREGISTER;
-  void * sample = (void*) handle;
-  const dds_topic * topic = NULL;
   dds_entity *wr;
 
   ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
   if (ret != DDS_RETCODE_OK) {
-      return DDS_ERRNO (ret, DDS_MOD_INST, DDS_ERR_M1);
+      return DDS_ERRNO (ret);
   }
 
-  if (ret == DDS_RETCODE_OK)
+  if (wr->m_qos)
   {
-    if (wr->m_qos)
-    {
-      dds_qget_writer_data_lifecycle (wr->m_qos, &autodispose);
-    }
-    if (autodispose)
-    {
-      dds_instance_remove (((dds_writer*) wr)->m_topic, NULL, handle);
-      action |= DDS_WR_DISPOSE_BIT;
-    }
-
+    dds_qget_writer_data_lifecycle (wr->m_qos, &autodispose);
+  }
+  if (autodispose)
+  {
+    dds_instance_remove (((dds_writer*) wr)->m_topic, NULL, handle);
+    action |= DDS_WR_DISPOSE_BIT;
+  }
+  struct tkmap *map = gv.m_tkmap;
+  const dds_topic *topic = dds_instance_info((dds_entity*)wr);
+  void *sample = dds_alloc (topic->m_descriptor->m_size);
+  if (dds_tkmap_get_key (map, handle, sample)) {
     ret = dds_write_impl ((dds_writer*)wr, sample, timestamp, action);
   }
-
-  if (topic)
-  {
-    dds_sample_free (sample, topic->m_descriptor, DDS_FREE_ALL);
+  else{
+    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
   }
+  dds_sample_free (sample, topic->m_descriptor, DDS_FREE_ALL);
+
   dds_entity_unlock(wr);
   return ret;
 }
