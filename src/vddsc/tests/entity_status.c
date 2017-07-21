@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "dds.h"
 #include "os/os.h"
 #include "RoundTrip.h"
@@ -26,29 +27,38 @@ static dds_attach_t wsresults2[2];
 static size_t wsresultsize = 1U;
 static size_t wsresultsize2 = 2U;
 static dds_time_t waitTimeout = DDS_SECS (2);
+static dds_time_t shortTimeout = DDS_MSECS (10);
 static dds_publication_matched_status_t publication_matched;
 static dds_subscription_matched_status_t subscription_matched;
 static dds_resource_limits_qospolicy_t resource_limits = {1,1,1};
+
+static dds_instance_handle_t reader_i_hdl = 0;
+static dds_instance_handle_t writer_i_hdl = 0;
 
 
 /****************************************************************************
  * Test initializations and teardowns.
  ****************************************************************************/
+static char*
+create_topic_name(const char *prefix, char *name, size_t size)
+{
+    /* Get semi random g_topic name. */
+    os_procId pid = os_procIdSelf();
+    int tid = abs((int)os_threadIdToInteger(os_threadIdSelf()));
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%d", prefix, pid, tid);
+    return name;
+}
+
 static void
 init_triggering_base(void)
 {
+    dds_return_t ret;
     char topicName[100];
-
-    /* Get semi random topic name. */
-    snprintf(topicName, 100,
-            "vddsc_listener_test_pid%"PRIprocId"_tid%d",
-            os_procIdSelf(),
-            (int)os_threadIdToInteger(os_threadIdSelf()));
 
     participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(participant, 0, "Failed to create prerequisite participant");
 
-    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, topicName, NULL, NULL);
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_disposing_test", topicName, 100), NULL, NULL);
     cr_assert_gt(topic, 0, "Failed to create prerequisite topic");
 
     qos = dds_qos_create();
@@ -75,8 +85,13 @@ init_triggering_base(void)
     status = dds_waitset_attach (waitSetrd, reader, (dds_attach_t)(intptr_t)reader);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-
+    /* Get reader/writer handles because they can be tested against. */
+    ret = dds_instancehandle_get(reader, &reader_i_hdl);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to get prerequisite reader_i_hdl");
+    ret = dds_instancehandle_get(writer, &writer_i_hdl);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to get prerequisite writer_i_hdl");
 }
+
 static void
 fini_triggering_base(void)
 {
@@ -97,29 +112,78 @@ fini_triggering_base(void)
 /****************************************************************************
  * Triggering tests
  ****************************************************************************/
-Test(vddsc_entity, matched_status, .init=init_triggering_base, .fini=fini_triggering_base)
+Test(vddsc_entity_status, publication_matched, .init=init_triggering_base, .fini=fini_triggering_base)
 {
-
-    /*Set reader and writer status enabled*/
+    /* We're interested in publication matched status. */
     status = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
+
+    /* Wait for publication matched status */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    cr_assert_eq(status, wsresultsize);
+    status = dds_get_publication_matched_status(writer, &publication_matched);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(publication_matched.current_count,        1);
+    cr_assert_eq(publication_matched.current_count_change, 1);
+    cr_assert_eq(publication_matched.total_count,          1);
+    cr_assert_eq(publication_matched.total_count_change,   1);
+    cr_assert_eq(publication_matched.last_subscription_handle, reader_i_hdl);
+
+    /* Getting the status should have reset the trigger,
+     * meaning that the wait should timeout. */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, shortTimeout);
+    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_TIMEOUT, "returned %d", dds_err_nr(status));
+
+    /* Un-match the publication by deleting the reader. */
+    dds_delete(reader);
+
+    /* Wait for publication matched status */
+    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    cr_assert_eq(status, wsresultsize);
+    status = dds_get_publication_matched_status(writer, &publication_matched);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(publication_matched.current_count,         0);
+    cr_assert_eq(publication_matched.current_count_change, -1);
+    cr_assert_eq(publication_matched.total_count,           1);
+    cr_assert_eq(publication_matched.total_count_change,    0);
+    cr_assert_eq(publication_matched.last_subscription_handle, reader_i_hdl);
+}
+
+Test(vddsc_entity_status, subscription_matched, .init=init_triggering_base, .fini=fini_triggering_base)
+{
+    /* We're interested in subscription matched status. */
     status = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-    /* Wait for publication  matched status */
-    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-    if(status > 0){
-      status = dds_get_publication_matched_status(writer, &publication_matched);
-      cr_assert_status_eq(status, DDS_RETCODE_OK);
-      cr_assert_eq(publication_matched.current_count,1);
-    }
     /* Wait for subscription  matched status */
     status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-    if(status > 0){
-      status = dds_get_subscription_matched_status(reader, &subscription_matched);
-      cr_assert_status_eq(status, DDS_RETCODE_OK);
-      cr_assert_eq(subscription_matched.current_count, 1);
-    }
+    cr_assert_eq(status, wsresultsize);
+    status = dds_get_subscription_matched_status(reader, &subscription_matched);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(subscription_matched.current_count, 1);
+    cr_assert_eq(subscription_matched.current_count_change, 1);
+    cr_assert_eq(subscription_matched.total_count, 1);
+    cr_assert_eq(subscription_matched.total_count_change, 1);
+    cr_assert_eq(subscription_matched.last_publication_handle, writer_i_hdl);
+
+    /* Getting the status should have reset the trigger,
+     * meaning that the wait should timeout. */
+    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, shortTimeout);
+    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_TIMEOUT, "returned %d", dds_err_nr(status));
+
+    /* Un-match the subscription by deleting the writer. */
+    dds_delete(writer);
+
+    /* Wait for subscription  matched status */
+    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+    cr_assert_eq(status, wsresultsize);
+    status = dds_get_subscription_matched_status(reader, &subscription_matched);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
+    cr_assert_eq(subscription_matched.current_count,         0);
+    cr_assert_eq(subscription_matched.current_count_change, -1);
+    cr_assert_eq(subscription_matched.total_count,           1);
+    cr_assert_eq(subscription_matched.total_count_change,    0);
+    cr_assert_eq(subscription_matched.last_publication_handle, writer_i_hdl);
 }
 
 Test(vddsc_entity, pub_unmatched_status, .init=init_triggering_base, .fini=fini_triggering_base)
@@ -133,6 +197,7 @@ Test(vddsc_entity, pub_unmatched_status, .init=init_triggering_base, .fini=fini_
 
     /* Wait for subscription  matched status */
     status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+    cr_assert_eq(status, wsresultsize);
     if(status > 0){
       status = dds_get_subscription_matched_status(reader, &subscription_matched);
       cr_assert_status_eq(status, DDS_RETCODE_OK);
@@ -141,59 +206,23 @@ Test(vddsc_entity, pub_unmatched_status, .init=init_triggering_base, .fini=fini_
 
     /* Wait for publication  matched status */
     status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+    cr_assert_eq(status, wsresultsize);
     if(status > 0){
       /* Reset the status */
       status = dds_take_status (writer, &status2, DDS_PUBLICATION_MATCHED_STATUS);
       cr_assert_status_eq(status, DDS_RETCODE_OK);
       cr_assert_eq(status2, DDS_PUBLICATION_MATCHED_STATUS);
 
+      //dds_delete(reader);
+
       /* Wait for the publication (un)matched status */
       status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
+      cr_assert_eq(status, wsresultsize);
       if(status > 0){
         status = dds_get_publication_matched_status(writer, &publication_matched);
         cr_assert_status_eq(status, DDS_RETCODE_OK);
         cr_assert_eq(publication_matched.total_count_change,1);
         cr_assert_eq(publication_matched.current_count_change, 0);
-      }
-    }
-}
-
-Test(vddsc_entity, sub_unmatch_status, .init=init_triggering_base, .fini=fini_triggering_base)
-{
-
-    /*Set reader and writer status enabled*/
-    status = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
-    cr_assert_status_eq(status, DDS_RETCODE_OK);
-    status = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
-    cr_assert_status_eq(status, DDS_RETCODE_OK);
-
-    /* Wait for publication  matched status */
-    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-    if(status > 0){
-      status = dds_get_publication_matched_status(writer, &publication_matched);
-      cr_assert_status_eq(status, DDS_RETCODE_OK);
-      cr_assert_eq(publication_matched.current_count, 1);
-    }
-    /* Wait for subscription  matched status */
-    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-    if(status > 0){
-      /* Reset the status */
-      status = dds_take_status (reader, &status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
-      cr_assert_status_eq(status, DDS_RETCODE_OK);
-      cr_assert_eq(status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
-
-      /* Reset process */
-      status = dds_waitset_detach(waitSetwr, writer);
-      cr_assert_status_eq(status, DDS_RETCODE_OK);
-      dds_delete(writer);
-
-      /*Wait for the subscription (un)matched status */
-      status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-      if(status > 0){
-        status = dds_get_subscription_matched_status(reader, &subscription_matched);
-        cr_assert_status_eq(status, DDS_RETCODE_OK);
-        cr_assert_eq(subscription_matched.total_count_change, 1);
-        cr_assert_eq(subscription_matched.current_count_change, 0);
       }
     }
 }

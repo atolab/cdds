@@ -373,9 +373,9 @@ dds_instancehandle_get(
  * @returns - A dds_return_t indicating success or failure
  *
  * @retval DDS_RETCODE_OK
- *            The operation was successful
+ *                  The operation was successful
  *         DDS_RETCODE_BAD_PARAMETER
- *            The entity parameter is not a valid parameter.
+ *                  The entity parameter is not a valid parameter.
  *         DDS_RETCODE_ILLEGAL_OPERATION
  *                  The operation is invoked on an inappropriate object.
  *         DDS_RETCODE_ALREADY_DELETED
@@ -401,9 +401,9 @@ dds_read_status(
  * @returns - A dds_return_t indicating success or failure
  *
  * @retval DDS_RETCODE_OK
- *            The operation was successful
+ *                  The operation was successful
  *         DDS_RETCODE_BAD_PARAMETER
- *            The entity parameter is not a valid parameter.
+ *                  The entity parameter is not a valid parameter.
  *         DDS_RETCODE_ILLEGAL_OPERATION
  *                  The operation is invoked on an inappropriate object.
  *         DDS_RETCODE_ALREADY_DELETED
@@ -417,26 +417,19 @@ dds_take_status(
         _In_  uint32_t mask);
 
 /**
- * Description : Returns the status changes since they were last read.
- *
- * Arguments :
- *   -# e Entity on which the statuses are read
- *   -# Returns the curent set of triggered statuses.
- */
-/**
  * @brief Get changed status(es)
  *
  * This operation returns the status changes since they were last read.
  *
  * @param[in]  entity  Entity on which the statuses are read
- * @param[out] status  Returns the curent set of triggered statuses.
+ * @param[out] status  Returns the current set of triggered statuses.
  *
  * @returns - A dds_return_t indicating success or failure
  *
  * @retval DDS_RETCODE_OK
- *            The operation was successful
+ *                  The operation was successful
  *         DDS_RETCODE_BAD_PARAMETER
- *            The entity parameter is not a valid parameter.
+ *                  The entity parameter is not a valid parameter.
  *         DDS_RETCODE_ILLEGAL_OPERATION
  *                  The operation is invoked on an inappropriate object.
  *         DDS_RETCODE_ALREADY_DELETED
@@ -459,9 +452,9 @@ dds_get_status_changes(
  * @returns - A dds_return_t indicating success or failure
  *
  * @retval DDS_RETCODE_OK
- *            The operation was successful
+ *                  The operation was successful
  *         DDS_RETCODE_BAD_PARAMETER
- *            The entity parameter is not a valid parameter.
+ *                  The entity parameter is not a valid parameter.
  *         DDS_RETCODE_ILLEGAL_OPERATION
  *                  The operation is invoked on an inappropriate object.
  *         DDS_RETCODE_ALREADY_DELETED
@@ -484,9 +477,9 @@ dds_get_enabled_status(
  * @returns - A dds_return_t indicating success or failure
  *
  * @retval DDS_RETCODE_OK
- *            The operation was successful
+ *                  The operation was successful
  *         DDS_RETCODE_BAD_PARAMETER
- *            The entity parameter is not a valid parameter.
+ *                  The entity parameter is not a valid parameter.
  *         DDS_RETCODE_ILLEGAL_OPERATION
  *                  The operation is invoked on an inappropriate object.
  *         DDS_RETCODE_ALREADY_DELETED
