@@ -242,6 +242,7 @@ Test(vddsc_reader_create, invalid_qos, .init=reader_init, .fini=reader_fini)
     dds_qset_reader_data_lifecycle(qos, DDS_SECS(-1), DDS_SECS(-1));
     rdr = dds_create_reader(g_participant, g_topic, qos, NULL);
     cr_assert_eq(dds_err_nr(rdr), DDS_RETCODE_INCONSISTENT_POLICY, "returned %d", dds_err_nr(rdr));
+    dds_qos_delete(qos);
 }
 /*************************************************************************************************/
 
@@ -343,7 +344,7 @@ Test(vddsc_read, valid, .init=reader_init, .fini=reader_fini)
     dds_return_t ret;
 
     ret = dds_read(g_reader, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
-    //cr_assert_eq(ret, MAX_SAMPLES, "# read %d, expected %d", ret, MAX_SAMPLES);
+    cr_assert_eq(ret, MAX_SAMPLES, "# read %d, expected %d", ret, MAX_SAMPLES);
     for(int i = 0; i < ret; i++) {
         Space_Type1 *sample = (Space_Type1*)g_samples[i];
 
@@ -359,7 +360,7 @@ Test(vddsc_read, valid, .init=reader_init, .fini=reader_fini)
          * |    6   |    3   |    2   | not_read | new | alive      | <---
          */
         PRINT_SAMPLE("vddsc_read::valid: Read", (*sample));
-#if 0
+
         /* Expected states. */
         int                  expected_long_1 = i;
         dds_sample_state_t   expected_sst    = SAMPLE_SST(expected_long_1);
@@ -376,7 +377,6 @@ Test(vddsc_read, valid, .init=reader_init, .fini=reader_fini)
         cr_assert_eq(g_info[i].sample_state,   expected_sst);
         cr_assert_eq(g_info[i].view_state,     expected_vst);
         cr_assert_eq(g_info[i].instance_state, expected_ist);
-#endif
     }
 
     /* All samples should still be available. */
@@ -384,6 +384,7 @@ Test(vddsc_read, valid, .init=reader_init, .fini=reader_fini)
     cr_assert_eq(ret, MAX_SAMPLES, "# samples %d, expected %d", ret, MAX_SAMPLES);
 }
 /*************************************************************************************************/
+
 
 
 
@@ -400,7 +401,7 @@ TheoryDataPoints(vddsc_read_wl, invalid_buffers) = {
         DataPoints(dds_sample_info_t*, g_info,  (dds_sample_info_t*)0   ),
         DataPoints(uint32_t,           0,        3,  MAX_SAMPLES   ),
 };
-Theory((void **buf, dds_sample_info_t *si, size_t bufsz, uint32_t maxs), vddsc_read_wl, invalid_buffers, .init=reader_init, .fini=reader_fini)
+Theory((void **buf, dds_sample_info_t *si, uint32_t maxs), vddsc_read_wl, invalid_buffers, .init=reader_init, .fini=reader_fini)
 {
     dds_return_t ret;
     /* The only valid permutation is when non of the buffer values are
@@ -1806,7 +1807,7 @@ TheoryDataPoints(vddsc_take_wl, invalid_buffers) = {
         DataPoints(dds_sample_info_t*, g_info,  (dds_sample_info_t*)0   ),
         DataPoints(uint32_t,           0,        3,  MAX_SAMPLES   ),
 };
-Theory((void **buf, dds_sample_info_t *si, size_t bufsz, uint32_t maxs), vddsc_take_wl, invalid_buffers, .init=reader_init, .fini=reader_fini)
+Theory((void **buf, dds_sample_info_t *si, uint32_t maxs), vddsc_take_wl, invalid_buffers, .init=reader_init, .fini=reader_fini)
 {
     dds_return_t ret;
     /* The only valid permutation is when non of the buffer values are
