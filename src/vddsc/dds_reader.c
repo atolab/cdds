@@ -369,6 +369,7 @@ dds_create_reader(
 
     ret = (int)dds_reader_qos_validate (rqos, false);
     if (ret != 0) {
+        dds_qos_delete(rqos);
         dds_entity_unlock(tp);
         dds_entity_unlock(parent);
         return ret;

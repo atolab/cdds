@@ -375,6 +375,7 @@ dds_create_writer(
 
     ret = (int)dds_writer_qos_validate(wqos, false);
     if (ret != 0) {
+        dds_qos_delete(wqos);
         writer = (dds_entity_t)ret;
         goto err_bad_qos;
     }
