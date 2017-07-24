@@ -11,7 +11,7 @@
 
 //#define VERBOSE_INIT
 #ifdef VERBOSE_INIT
-#define PRINT_SAMPLE(info, sample) printf("%s (%d, %d, %d)\n", info, sample.long_1, sample.long_2, sample.long_3);
+#define PRINT_SAMPLE(info, sample) cr_log_info("%s (%d, %d, %d)\n", info, sample.long_1, sample.long_2, sample.long_3);
 #else
 #define PRINT_SAMPLE(info, sample)
 #endif
@@ -382,7 +382,7 @@ Test(vddsc_readcondition_read, any, .init=readcondition_init, .fini=readconditio
     condition = dds_create_readcondition(g_reader, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
     cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
 
-    /* Read all non-read samples (should be last part). */
+    /* Read all samples. */
     ret = dds_read(condition, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
     cr_assert_eq(ret, MAX_SAMPLES, "# read %d, expected %d", ret, MAX_SAMPLES);
     for(int i = 0; i < ret; i++) {

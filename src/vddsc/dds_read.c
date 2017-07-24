@@ -75,6 +75,7 @@ dds_read_impl(
         _In_  bool take,
         _In_  dds_entity_t reader_or_condition,
         _Inout_ void **buf,
+        _In_ size_t bufsz,
         _In_  uint32_t maxs,
         _Out_ dds_sample_info_t *si,
         _In_  uint32_t mask,
@@ -89,16 +90,20 @@ dds_read_impl(
   struct thread_state1 * const thr = lookup_thread_state ();
   const bool asleep = !vtime_awake_p (thr->vtime);
 
-  assert (buf);
-  assert (si);
-
   if (asleep)
   {
     thread_state_awake (thr);
   }
+
   rc = dds_read_lock(reader_or_condition, &rd, &cond);
   if (rc == DDS_RETCODE_OK) {
+      if ((buf == NULL) || (si == NULL) || (maxs == 0) || (bufsz == 0) || (bufsz < maxs)) {
+          rc = DDS_RETCODE_BAD_PARAMETER;
+          dds_read_unlock(rd, cond);
+      }
+  }
 
+  if (rc == DDS_RETCODE_OK) {
       /* Allocate samples if not provided (assuming all or none provided) */
 
       if (buf[0] == NULL)
@@ -245,7 +250,7 @@ dds_read(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = (uint32_t)bufsz;
     }
-    return dds_read_impl (false, rd_or_cnd, buf, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (false, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -265,7 +270,7 @@ dds_read_wl(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = 100;
     }
-    return dds_read_impl (false, rd_or_cnd, buf, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (false, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -287,7 +292,7 @@ dds_read_mask(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = (uint32_t)bufsz;
     }
-    return dds_read_impl (false, rd_or_cnd, buf, maxs, si, mask, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (false, rd_or_cnd, buf, bufsz, maxs, si, mask, DDS_HANDLE_NIL, lock);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -308,7 +313,7 @@ dds_read_mask_wl(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = 100;
     }
-    return dds_read_impl (false, rd_or_cnd, buf, maxs, si, mask, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (false, rd_or_cnd, buf, maxs, maxs, si, mask, DDS_HANDLE_NIL, lock);
 }
 
 int
@@ -328,7 +333,7 @@ dds_read_instance(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = 100;
     }
-    return dds_read_impl (false, reader, buf, maxs, si, mask, handle, lock);
+    return dds_read_impl (false, reader, buf, maxs, maxs, si, mask, handle, lock);
 }
 
 
@@ -339,7 +344,7 @@ dds_read_next(
         dds_sample_info_t *si)
 {
   uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
-  return dds_read_impl (false, reader, buf, 1u, si, mask, DDS_HANDLE_NIL, true);
+  return dds_read_impl (false, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -360,7 +365,7 @@ dds_take(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = (uint32_t)bufsz;
     }
-    return dds_read_impl (true, rd_or_cnd, buf, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (true, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -380,7 +385,7 @@ dds_take_wl(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = 100;
     }
-    return dds_read_impl (true, rd_or_cnd, buf, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (true, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -402,7 +407,7 @@ dds_take_mask(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = (uint32_t)bufsz;
     }
-    return dds_read_impl (true, rd_or_cnd, buf, maxs, si, mask, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (true, rd_or_cnd, buf, bufsz, maxs, si, mask, DDS_HANDLE_NIL, lock);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -423,7 +428,7 @@ dds_take_mask_wl(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = 100;
     }
-    return dds_read_impl (true, rd_or_cnd, buf, maxs, si, mask, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (true, rd_or_cnd, buf, maxs, maxs, si, mask, DDS_HANDLE_NIL, lock);
 }
 
 int
@@ -461,7 +466,7 @@ dds_take_instance(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = 100;
     }
-    return dds_read_impl (true, reader, buf, maxs, si, mask, handle, lock);
+    return dds_read_impl (true, reader, buf, maxs, maxs, si, mask, handle, lock);
 }
 
 int
@@ -471,7 +476,7 @@ dds_take_next(
         dds_sample_info_t *si)
 {
   uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
-  return dds_read_impl (true, reader, buf, 1u, si, mask, DDS_HANDLE_NIL, true);
+  return dds_read_impl (true, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
 }
 
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\

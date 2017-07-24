@@ -11,7 +11,7 @@
 
 //#define VERBOSE_INIT
 #ifdef VERBOSE_INIT
-#define PRINT_SAMPLE(info, sample) printf("%s (%d, %d, %d)\n", info, sample.long_1, sample.long_2, sample.long_3);
+#define PRINT_SAMPLE(info, sample) cr_log_info("%s (%d, %d, %d)\n", info, sample.long_1, sample.long_2, sample.long_3);
 #else
 #define PRINT_SAMPLE(info, sample)
 #endif
