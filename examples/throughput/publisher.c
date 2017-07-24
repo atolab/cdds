@@ -247,7 +247,7 @@ int main (int argc, char **argv)
 
   /* Cleanup */
 
-  status = dds_instance_dispose (writer, &sample);
+  status = dds_dispose (writer, &sample);
   if (dds_err_nr (status) != DDS_RETCODE_TIMEOUT)
   {
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);

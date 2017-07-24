@@ -1,4 +1,3 @@
-#include "dds.h"
 #include "CUnit/Runner.h"
 #include "os/os.h"
 
@@ -262,7 +261,7 @@ CUnit_Suite_Initialize(os_rwlock)
 
 CUnit_Suite_Cleanup(os_rwlock)
 {
-    int result = DDS_RETCODE_OK;
+    int result = 0;
 
     printf("Run os_rwlock_Cleanup\n");
     os_osExit();

@@ -1,4 +1,3 @@
-#include "dds.h"
 #include "CUnit/Runner.h"
 #include "os/os.h"
 #include "assert.h"
@@ -150,7 +149,7 @@ CUnit_Suite_Initialize(os_thread)
 
 CUnit_Suite_Cleanup(os_thread)
 {
-    int result = DDS_RETCODE_OK;
+    int result = 0;
 
     printf("Run os_thread_Cleanup\n");
     os_osExit();
@@ -181,8 +180,8 @@ CUnit_Test(os_thread, create)
 
         if (result == os_resultSuccess) {
             result = strcmp (arg_result, "os_threadCreate");
-            CU_ASSERT (result == DDS_RETCODE_OK);
-            if (result == DDS_RETCODE_OK)
+            CU_ASSERT (result == 0);
+            if (result == 0)
                 printf("Thread created and argument correctly passed.\n");
             else
                 printf("Thread created but argument incorrectly passed.\n");
@@ -208,9 +207,9 @@ CUnit_Test(os_thread, create)
         struct sched_param sched_param;
 
         result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
-        CU_ASSERT (result_int == DDS_RETCODE_OK);
+        CU_ASSERT (result_int == 0);
 
-        if (result_int != DDS_RETCODE_OK) {
+        if (result_int != 0) {
             printf ("pthread_getschedparam failed");
         } else {
             CU_ASSERT (policy == SCHED_OTHER);
@@ -236,9 +235,9 @@ CUnit_Test(os_thread, create)
         struct sched_param sched_param;
 
         result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
-        CU_ASSERT (result_int == DDS_RETCODE_OK);
+        CU_ASSERT (result_int == 0);
 
-        if (result_int != DDS_RETCODE_OK) {
+        if (result_int != 0) {
             printf ("pthread_getschedparam failed");
         } else {
             CU_ASSERT (policy == SCHED_OTHER);
@@ -271,9 +270,9 @@ CUnit_Test(os_thread, create)
             struct sched_param sched_param;
 
             result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
-            CU_ASSERT (result_int == DDS_RETCODE_OK);
+            CU_ASSERT (result_int == 0);
 
-            if (result_int == DDS_RETCODE_OK) {
+            if (result_int == 0) {
                 CU_ASSERT (policy == SCHED_FIFO);
             } else {
                 printf ("pthread_getschedparam failed\n");
@@ -311,9 +310,9 @@ CUnit_Test(os_thread, create)
         struct sched_param sched_param;
 
         result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
-        CU_ASSERT (result_int == DDS_RETCODE_OK);
+        CU_ASSERT (result_int == 0);
 
-        if (result_int == DDS_RETCODE_OK) {
+        if (result_int == 0) {
             CU_ASSERT (sched_param.sched_priority == sched_get_priority_min (SCHED_OTHER));
         } else {
             printf ("pthread_getschedparam failed\n");
@@ -352,9 +351,9 @@ CUnit_Test(os_thread, create)
         struct sched_param sched_param;
 
         result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
-        CU_ASSERT (result_int == DDS_RETCODE_OK);
+        CU_ASSERT (result_int == 0);
 
-        if (result_int == DDS_RETCODE_OK) {
+        if (result_int == 0) {
             CU_ASSERT (sched_param.sched_priority == sched_get_priority_max (SCHED_OTHER));
         } else {
             printf ("pthread_getschedparam failed\n");
@@ -405,7 +404,7 @@ CUnit_Test(os_thread, create)
             struct sched_param sched_param;
 
             result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
-            CU_ASSERT (result_int == DDS_RETCODE_OK);
+            CU_ASSERT (result_int == 0);
 
             if (result_int == 0) {
                 CU_ASSERT (sched_param.sched_priority == sched_get_priority_min (SCHED_FIFO));
@@ -455,7 +454,7 @@ CUnit_Test(os_thread, create)
             struct sched_param sched_param;
 
             result_int = pthread_getschedparam (thread_os_threadId.v, &policy, &sched_param);
-            CU_ASSERT (result_int == DDS_RETCODE_OK);
+            CU_ASSERT (result_int == 0);
 
             if (result_int == 0) {
                 CU_ASSERT (sched_param.sched_priority == sched_get_priority_max (SCHED_FIFO));

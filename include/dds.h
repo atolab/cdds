@@ -1198,67 +1198,273 @@ dds_instance_unregister_ts(
         dds_time_t timestamp);
 
 /**
- * Description : Write the keyed data passed, and delete the data instance
+ * @brief This operation modifies and disposes a data instance.
  *
- * Arguments :
- *   -# wr The writer to which instance is associated
- *   -# data Instance with the key value
- *   -# Returns 0 on success, or non-zero value to indicate an error
+ * This operation requests the Data Distribution Service to modify the instance and
+ * mark it for deletion. Copies of the instance and its corresponding samples, which are
+ * stored in every connected reader and, dependent on the QoS policy settings (also in
+ * the Transient and Persistent stores) will be modified and marked for deletion by
+ * setting their dds_instance_state_t to DDS_IST_NOT_ALIVE_DISPOSED.
+ *
+ * <b><i>Blocking</i></b><br>
+ * If the history QoS policy is set to DDS_HISTORY_KEEP_ALL, the
+ * dds_writedispose operation on the writer may block if the modification
+ * would cause data to be lost because one of the limits, specified in the
+ * resource_limits QoS policy, to be exceeded. In case the synchronous
+ * attribute value of the reliability Qos policy is set to true for
+ * communicating writers and readers then the writer will wait until
+ * all synchronous readers have acknowledged the data. Under these
+ * circumstances, the max_blocking_time attribute of the reliability
+ * QoS policy configures the maximum time the dds_writedispose operation
+ * may block.
+ * If max_blocking_time elapses before the writer is able to store the
+ * modification without exceeding the limits and all expected acknowledgements
+ * are received, the dds_writedispose operation will fail and returns
+ * DDS_RETCODE_TIMEOUT.
+ *
+ * @param[in]  writer The writer to dispose the data instance from.
+ * @param[in]  data   The data to be written and disposed.
+ *
+ * @returns  0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The sample is written and the instance is marked for deletion.
+ * @retval DDS_RETCODE_ERROR
+ *                An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                At least one of the arguments is invalid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                The entity has already been deleted.
+ * @retval DDS_RETCODE_TIMEOUT
+ *                Either the current action overflowed the available resources
+ *                as specified by the combination of the reliability QoS policy,
+ *                history QoS policy and resource_limits QoS policy, or the
+ *                current action was waiting for data delivery acknowledgement
+ *                by synchronous readers. This caused blocking of this operation,
+ *                which could not be resolved before max_blocking_time of the
+ *                reliability QoS policy elapsed.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT int
-dds_instance_writedispose(
-        dds_entity_t writer,
-        const void *data);
+DDS_EXPORT dds_return_t
+dds_writedispose(
+       _In_ dds_entity_t writer,
+       _In_ const void *data);
 
 /**
- * Description : Write the keyed data passed with the source timestamp, and delete the data instance
+ * Description : This operation modifies and disposes a data instance with
+ *               a specific timestamp.
  *
- * Arguments :
- *   -# wr The writer to which instance is associated
- *   -# data Instance with the key value
- *   -# timestamp Source timestamp
- *   -# Returns 0 on success, or non-zero value to indicate an error
+ * This operation performs the same functions as dds_writedispose except that
+ * the application provides the value for the source_timestamp that is made
+ * available to connected reader objects. This timestamp is important for the
+ * interpretation of the destination_order QoS policy.
+ *
+ * @param[in]  writer    The writer to dispose the data instance from.
+ * @param[in]  data      The data to be written and disposed.
+ * @param[in]  timestamp The timestamp used as source timestamp.
+ *
+ * @returns  0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The sample is written and the instance is marked for deletion.
+ * @retval DDS_RETCODE_ERROR
+ *                An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                At least one of the arguments is invalid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                The entity has already been deleted.
+ * @retval DDS_RETCODE_TIMEOUT
+ *                Either the current action overflowed the available resources
+ *                as specified by the combination of the reliability QoS policy,
+ *                history QoS policy and resource_limits QoS policy, or the
+ *                current action was waiting for data delivery acknowledgement
+ *                by synchronous readers. This caused blocking of this operation,
+ *                which could not be resolved before max_blocking_time of the
+ *                reliability QoS policy elapsed.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT int
-dds_instance_writedispose_ts(
-        dds_entity_t writer,
-        const void *data,
-        dds_time_t timestamp);
+DDS_EXPORT dds_return_t
+dds_writedispose_ts(
+       _In_ dds_entity_t writer,
+       _In_ const void *data,
+       _In_ dds_time_t timestamp);
 
 /**
- * Description : Delete an instance, identified by the data passed.
+ * @brief This operation disposes an instance, identified by the data sample.
  *
- * Arguments :
- *   -# wr The writer to which instance is associated
- *   -# data Instance with the key value, used to get identify the instance
- *   -# Returns 0 on success, or non-zero value to indicate an error
+ * This operation requests the Data Distribution Service to modify the instance and
+ * mark it for deletion. Copies of the instance and its corresponding samples, which are
+ * stored in every connected reader and, dependent on the QoS policy settings (also in
+ * the Transient and Persistent stores) will be modified and marked for deletion by
+ * setting their dds_instance_state_t to DDS_IST_NOT_ALIVE_DISPOSED.
  *
- * Note : If an invalid key ID is passed as instance data, an error is logged and not flagged as return value
+ * <b><i>Blocking</i></b><br>
+ * If the history QoS policy is set to DDS_HISTORY_KEEP_ALL, the
+ * dds_writedispose operation on the writer may block if the modification
+ * would cause data to be lost because one of the limits, specified in the
+ * resource_limits QoS policy, to be exceeded. In case the synchronous
+ * attribute value of the reliability Qos policy is set to true for
+ * communicating writers and readers then the writer will wait until
+ * all synchronous readers have acknowledged the data. Under these
+ * circumstances, the max_blocking_time attribute of the reliability
+ * QoS policy configures the maximum time the dds_writedispose operation
+ * may block.
+ * If max_blocking_time elapses before the writer is able to store the
+ * modification without exceeding the limits and all expected acknowledgements
+ * are received, the dds_writedispose operation will fail and returns
+ * DDS_RETCODE_TIMEOUT.
+ *
+ * @param[in]  writer The writer to dispose the data instance from.
+ * @param[in]  data   The data sample that identifies the instance
+ *                    to be disposed.
+ *
+ * @returns  0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The sample is written and the instance is marked for deletion.
+ * @retval DDS_RETCODE_ERROR
+ *                An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                At least one of the arguments is invalid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                The entity has already been deleted.
+ * @retval DDS_RETCODE_TIMEOUT
+ *                Either the current action overflowed the available resources
+ *                as specified by the combination of the reliability QoS policy,
+ *                history QoS policy and resource_limits QoS policy, or the
+ *                current action was waiting for data delivery acknowledgement
+ *                by synchronous readers. This caused blocking of this operation,
+ *                which could not be resolved before max_blocking_time of the
+ *                reliability QoS policy elapsed.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT int
-dds_instance_dispose(
-        dds_entity_t writer,
-        const void *data);
+DDS_EXPORT dds_return_t
+dds_dispose(
+       _In_ dds_entity_t writer,
+       _In_ const void *data);
 
 /**
- * Description : Delete an instance, identified by the and source timestamp
- *               passed to reader as part of SampleInfo.
+ * Description : This operation disposes an instance with a specific timestamp,
+ *               identified by the data sample.
  *
- * Arguments :
- *   -# wr The writer to which instance is associated
- *   -# data Instance with the key value, used to get identify the instance
- *   -# timestamp Source Timestamp
- *   -# Returns 0 on success, or non-zero value to indicate an error
+ * This operation performs the same functions as dds_dispose except that
+ * the application provides the value for the source_timestamp that is made
+ * available to connected reader objects. This timestamp is important for the
+ * interpretation of the destination_order QoS policy.
+ *
+ * @param[in]  writer    The writer to dispose the data instance from.
+ * @param[in]  data      The data sample that identifies the instance
+ *                       to be disposed.
+ * @param[in]  timestamp The timestamp used as source timestamp.
+ *
+ * @returns  0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The sample is written and the instance is marked for deletion.
+ * @retval DDS_RETCODE_ERROR
+ *                An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                At least one of the arguments is invalid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                The entity has already been deleted.
+ * @retval DDS_RETCODE_TIMEOUT
+ *                Either the current action overflowed the available resources
+ *                as specified by the combination of the reliability QoS policy,
+ *                history QoS policy and resource_limits QoS policy, or the
+ *                current action was waiting for data delivery acknowledgement
+ *                by synchronous readers. This caused blocking of this operation,
+ *                which could not be resolved before max_blocking_time of the
+ *                reliability QoS policy elapsed.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT int
-dds_instance_dispose_ts(
-        dds_entity_t writer,
-        const void *data,
-        dds_time_t timestamp);
+DDS_EXPORT dds_return_t
+dds_dispose_ts(
+       _In_ dds_entity_t writer,
+       _In_ const void *data,
+       _In_ dds_time_t timestamp);
+
+/**
+ * @brief This operation disposes an instance, identified by the instance handle.
+ *
+ * This operation requests the Data Distribution Service to modify the instance and
+ * mark it for deletion. Copies of the instance and its corresponding samples, which are
+ * stored in every connected reader and, dependent on the QoS policy settings (also in
+ * the Transient and Persistent stores) will be modified and marked for deletion by
+ * setting their dds_instance_state_t to DDS_IST_NOT_ALIVE_DISPOSED.
+ *
+ * <b><i>Instance Handle</i></b><br>
+ * The given instance handle must correspond to the value that was returned by either
+ * the dds_register_instance operation, dds_register_instance_ts or dds_instance_lookup.
+ * If there is no correspondence, then the result of the operation is unspecified.
+ *
+ * @param[in]  writer The writer to dispose the data instance from.
+ * @param[in]  handle The handle to identify an instance.
+ *
+ * @returns  0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The sample is written and the instance is marked for deletion.
+ * @retval DDS_RETCODE_ERROR
+ *                An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                At least one of the arguments is invalid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                The entity has already been deleted.
+ */
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_dispose_ih(
+       _In_ dds_entity_t writer,
+       _In_ dds_instance_handle_t handle);
+
+/**
+ * Description : This operation disposes an instance with a specific timestamp,
+ *               identified by the instance handle.
+ *
+ * This operation performs the same functions as dds_dispose_ih except that
+ * the application provides the value for the source_timestamp that is made
+ * available to connected reader objects. This timestamp is important for the
+ * interpretation of the destination_order QoS policy.
+ *
+ * @param[in]  writer    The writer to dispose the data instance from.
+ * @param[in]  handle    The handle to identify an instance.
+ * @param[in]  timestamp The timestamp used as source timestamp.
+ *
+ * @returns  0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The sample is written and the instance is marked for deletion.
+ * @retval DDS_RETCODE_ERROR
+ *                An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                At least one of the arguments is invalid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                The entity has already been deleted.
+ */
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_dispose_ih_ts(
+       _In_ dds_entity_t writer,
+       _In_ dds_instance_handle_t handle,
+       _In_ dds_time_t timestamp);
 
 /**
  * @brief Write the value of a data instance

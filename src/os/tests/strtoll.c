@@ -1,4 +1,3 @@
-#include "dds.h"
 #include "CUnit/Runner.h"
 #include "os/os.h"
 
@@ -23,7 +22,7 @@ unsigned long long ullmax = OS_MAX_INTEGER(unsigned long long);
 
 CUnit_Suite_Initialize(os_str_convert)
 {
-    int result = DDS_RETCODE_OK;
+    int result = 0;
     os_osInit();
     printf("Run os_str_convert_Initialize\n");
 
@@ -40,7 +39,7 @@ CUnit_Suite_Initialize(os_str_convert)
 
 CUnit_Suite_Cleanup(os_str_convert)
 {
-    int result = DDS_RETCODE_OK;
+    int result = 0;
 
     printf("Run os_str_convert_Cleanup\n");
     os_osExit();

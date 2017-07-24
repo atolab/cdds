@@ -1,11 +1,10 @@
-#include "dds.h"
 #include "CUnit/Runner.h"
 #include "os/os.h"
 
 
 CUnit_Suite_Initialize(os_errno)
 {
-    int result = DDS_RETCODE_OK;
+    int result = 0;
     os_osInit();
     printf("Run os_errno_Initialize\n");
 
@@ -14,7 +13,7 @@ CUnit_Suite_Initialize(os_errno)
 
 CUnit_Suite_Cleanup(os_errno)
 {
-    int result = DDS_RETCODE_OK;
+    int result = 0;
     os_osExit();
     printf("Run os_errno_Cleanup\n");
 

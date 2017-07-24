@@ -147,7 +147,7 @@ reader_init(void)
 
         if (ist == DDS_IST_NOT_ALIVE_DISPOSED) {
             PRINT_SAMPLE("INIT: Dispose   ", sample);
-            ret = dds_instance_dispose(g_writer, &sample);
+            ret = dds_dispose(g_writer, &sample);
             cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite dispose");
         }
         if (ist == DDS_IST_NOT_ALIVE_NO_WRITERS) {
@@ -178,7 +178,7 @@ reader_init(void)
 
         if ((ist == DDS_IST_NOT_ALIVE_DISPOSED) && (i != 4)) {
             PRINT_SAMPLE("INIT: Dispose   ", sample);
-            ret = dds_instance_dispose(g_writer, &sample);
+            ret = dds_dispose(g_writer, &sample);
             cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite dispose");
         }
         if (ist == DDS_IST_NOT_ALIVE_NO_WRITERS) {

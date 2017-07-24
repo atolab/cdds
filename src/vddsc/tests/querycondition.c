@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdlib.h>
 
 #include "dds.h"
 #include "os/os.h"
@@ -67,6 +68,15 @@ filter_mod2(const void * sample)
     return (s->long_1 % 2 == 0);
 }
 
+static char*
+create_topic_name(const char *prefix, char *name, size_t size)
+{
+    /* Get semi random g_topic name. */
+    os_procId pid = os_procIdSelf();
+    int tid = abs((int)os_threadIdToInteger(os_threadIdSelf()));
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%d", prefix, pid, tid);
+    return name;
+}
 
 static void
 querycondition_init(void)
@@ -77,19 +87,13 @@ querycondition_init(void)
     dds_return_t ret;
     char name[100];
 
-    /* Get semi random g_topic name. */
-    snprintf(name, 100,
-            "vddsc_querycondition_test_pid%"PRIprocId"_tid%d",
-            os_procIdSelf(),
-            (int)os_threadIdToInteger(os_threadIdSelf()));
-
     g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(g_participant, 0, "Failed to create prerequisite g_participant");
 
     g_waitset = dds_create_waitset(g_participant);
     cr_assert_gt(g_waitset, 0, "Failed to create g_waitset");
 
-    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, name, NULL, NULL);
+    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_querycondition_test", name, 100), NULL, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     /* Create a reader that keeps last sample of all instances. */
@@ -143,7 +147,7 @@ querycondition_init(void)
 
         if (ist == DDS_IST_NOT_ALIVE_DISPOSED) {
             PRINT_SAMPLE("INIT: Dispose   ", sample);
-            ret = dds_instance_dispose(g_writer, &sample);
+            ret = dds_dispose(g_writer, &sample);
             cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite dispose");
         }
         if (ist == DDS_IST_NOT_ALIVE_NO_WRITERS) {
@@ -176,7 +180,7 @@ querycondition_init(void)
 
         if ((ist == DDS_IST_NOT_ALIVE_DISPOSED) && (i != 4)) {
             PRINT_SAMPLE("INIT: Dispose   ", sample);
-            ret = dds_instance_dispose(g_writer, &sample);
+            ret = dds_dispose(g_writer, &sample);
             cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite dispose");
         }
         if (ist == DDS_IST_NOT_ALIVE_NO_WRITERS) {

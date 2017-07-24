@@ -24,7 +24,6 @@
 #ifndef OS_HEAP_H
 #define OS_HEAP_H
 
-
 #if defined (__cplusplus)
 extern "C" {
 #endif

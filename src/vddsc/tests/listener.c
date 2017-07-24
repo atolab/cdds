@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "dds.h"
 #include "os/os.h"
 #include "RoundTrip.h"
@@ -293,18 +294,22 @@ waitfor_cb(uint32_t expected)
 /****************************************************************************
  * Test initializations and teardowns.
  ****************************************************************************/
+static char*
+create_topic_name(const char *prefix, char *name, size_t size)
+{
+    /* Get semi random g_topic name. */
+    os_procId pid = os_procIdSelf();
+    int tid = abs((int)os_threadIdToInteger(os_threadIdSelf()));
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%d", prefix, pid, tid);
+    return name;
+}
+
 static void
 init_triggering_base(void)
 {
     char name[100];
 
     os_osInit();
-
-    /* Get semi random g_topic name. */
-    snprintf(name, 100,
-            "vddsc_listener_test_pid%"PRIprocId"_tid%d",
-            os_procIdSelf(),
-            (int)os_threadIdToInteger(os_threadIdSelf()));
 
     os_mutexInit(&g_mutex);
     os_condInit(&g_cond, &g_mutex);
@@ -318,7 +323,7 @@ init_triggering_base(void)
     g_publisher = dds_create_publisher(g_participant, NULL, NULL);
     cr_assert_gt(g_publisher, 0, "Failed to create prerequisite g_publisher");
 
-    g_topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, name, NULL, NULL);
+    g_topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_listener_test", name, 100), NULL, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     g_listener = dds_listener_create(NULL);
@@ -331,13 +336,22 @@ init_triggering_base(void)
 }
 
 static void
-init_triggering_test_communication(void)
+init_triggering_test(void)
 {
     uint32_t triggered;
+
+    /* Initialize base. */
+    init_triggering_base();
+
+    /* Set QoS Policies that'll help us test various status callbacks. */
+    dds_qset_destination_order(g_qos, DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP);
+    dds_qset_reliability(g_qos, DDS_RELIABILITY_BEST_EFFORT, DDS_MSECS(100));
+    dds_qset_resource_limits(g_qos, 1, 1, 1);
 
     /* Use these to be sure reader and writer know each other. */
     dds_lset_publication_matched(g_listener, publication_matched_cb);
     dds_lset_subscription_matched(g_listener, subscription_matched_cb);
+    dds_lset_liveliness_changed(g_listener, liveliness_changed_cb);
 
     /* Create reader and writer with proper listeners. */
     g_writer = dds_create_writer(g_publisher, g_topic, g_qos, g_listener);
@@ -346,57 +360,10 @@ init_triggering_test_communication(void)
     cr_assert_gt(g_reader, 0, "Failed to create prerequisite reader");
 
     /* Sync. */
-    triggered = waitfor_cb(DDS_PUBLICATION_MATCHED_STATUS | DDS_SUBSCRIPTION_MATCHED_STATUS);
+    triggered = waitfor_cb(DDS_PUBLICATION_MATCHED_STATUS | DDS_SUBSCRIPTION_MATCHED_STATUS | DDS_LIVELINESS_CHANGED_STATUS);
+    cr_assert_eq(triggered & DDS_LIVELINESS_CHANGED_STATUS,    DDS_LIVELINESS_CHANGED_STATUS);
     cr_assert_eq(triggered & DDS_PUBLICATION_MATCHED_STATUS,   DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_eq(triggered & DDS_SUBSCRIPTION_MATCHED_STATUS,  DDS_SUBSCRIPTION_MATCHED_STATUS);
-}
-
-static void
-init_triggering_test_bysource(void)
-{
-    /* Initialize base. */
-    init_triggering_base();
-
-    /* We need a destination order by source. */
-    dds_qset_destination_order(g_qos, DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP);
-
-    /* Continue the initialization. */
-    init_triggering_test_communication();
-}
-
-static void
-init_triggering_test_bylimits(void)
-{
-    /* Initialize base. */
-    init_triggering_base();
-
-    /* We need some resource limits. */
-    dds_qset_resource_limits(g_qos, 1, 1, 1);
-
-    /* Continue the initialization. */
-    init_triggering_test_communication();
-}
-
-static void
-init_triggering_test_byliveliness(void)
-{
-    /* Initialize base. */
-    init_triggering_base();
-
-    /* We need to be subscribed to liveliness before creating reader/writer. */
-    dds_lset_liveliness_changed(g_listener, liveliness_changed_cb);
-
-    /* Continue the initialization. */
-    init_triggering_test_communication();
-}
-
-static void
-init_triggering_test(void)
-{
-    /* Initialize base. */
-    init_triggering_base();
-    /* Continue the initialization. */
-    init_triggering_test_communication();
 }
 
 static void
@@ -894,7 +861,7 @@ Test(vddsc_listener, data_on_readers, .init=init_triggering_test, .fini=fini_tri
 }
 
 
-Test(vddsc_listener, sample_lost, .init=init_triggering_test_bysource, .fini=fini_triggering_test)
+Test(vddsc_listener, sample_lost, .init=init_triggering_test, .fini=fini_triggering_test)
 {
     dds_return_t ret;
     uint32_t triggered;
@@ -931,7 +898,7 @@ Test(vddsc_listener, sample_lost, .init=init_triggering_test_bysource, .fini=fin
     cr_assert_eq(status, 0);
 }
 
-Test(vddsc_listener, sample_rejected, .init=init_triggering_test_bylimits, .fini=fini_triggering_test)
+Test(vddsc_listener, sample_rejected, .init=init_triggering_test, .fini=fini_triggering_test)
 {
     dds_return_t ret;
     uint32_t triggered;
@@ -964,7 +931,7 @@ Test(vddsc_listener, sample_rejected, .init=init_triggering_test_bylimits, .fini
     cr_assert_eq(status, 0);
 }
 
-Test(vddsc_listener, liveliness_changed, .init=init_triggering_test_byliveliness, .fini=fini_triggering_base)
+Test(vddsc_listener, liveliness_changed, .init=init_triggering_test, .fini=fini_triggering_base)
 {
     dds_instance_handle_t writer_hdl;
     dds_return_t ret;
