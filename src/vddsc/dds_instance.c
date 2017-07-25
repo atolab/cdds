@@ -276,7 +276,7 @@ dds_dispose_ih_ts(
         if (dds_tkmap_get_key (map, handle, sample)) {
             ret = dds_dispose_impl(wr, sample, handle, timestamp);
         } else {
-            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+            ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
         }
         dds_free(sample);
         dds_writer_unlock(wr);

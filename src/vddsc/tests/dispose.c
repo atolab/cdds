@@ -863,7 +863,7 @@ Theory((dds_instance_handle_t handle), vddsc_dispose_ih, invalid_handles, .init=
 {
     dds_return_t ret;
     ret = dds_dispose_ih(g_writer, handle);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
 
@@ -966,7 +966,7 @@ Theory((dds_instance_handle_t handle), vddsc_dispose_ih_ts, invalid_handles, .in
 {
     dds_return_t ret;
     ret = dds_dispose_ih_ts(g_writer, handle, g_present);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
 
