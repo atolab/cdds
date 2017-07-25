@@ -70,8 +70,8 @@ create_topic_name(const char *prefix, char *name, size_t size)
 {
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
-    int tid = abs((int)os_threadIdToInteger(os_threadIdSelf()));
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%d", prefix, pid, tid);
+    uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -163,7 +163,7 @@ take_instance_init(void)
      *  |    0   |    0   |    0   | not_read | new | alive      |
      */
 
-    /* Take sample that will become {sst(read), vst(old), ist(alive)}. */
+    /* Read sample that will become {sst(read), vst(old), ist(alive)}. */
     ret = dds_read(g_reader, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
     cr_assert_eq(ret, 1, "Failed prerequisite read");
     for(int i = 0; i < ret; i++) {
