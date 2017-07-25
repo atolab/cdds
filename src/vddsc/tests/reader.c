@@ -65,8 +65,8 @@ create_topic_name(const char *prefix, char *name, size_t size)
 {
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
-    int tid = abs((int)os_threadIdToInteger(os_threadIdSelf()));
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%d", prefix, pid, tid);
+    uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -2489,6 +2489,130 @@ Test(vddsc_take_mask, combination_of_states, .init=reader_init, .fini=reader_fin
     /* Only samples that weren't taken should be available. */
     ret = samples_cnt();
     cr_assert_eq(ret, MAX_SAMPLES - expected_cnt, "# samples %d, expected %d", ret,  MAX_SAMPLES - expected_cnt);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_take_mask, take_instance_last_sample)
+{
+#define WOULD_CRASH
+#ifdef WOULD_CRASH
+    uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE;
+    dds_sample_state_t expected_sst = DDS_SST_NOT_READ;
+    int expected_long_3 = 3;
+#else
+    uint32_t mask = DDS_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE;
+    dds_sample_state_t expected_sst = DDS_SST_READ;
+    int expected_long_3 = 2;
+#endif
+    dds_return_t expected_cnt = 1;
+    Space_Type1 sample = { 0 };
+    dds_attach_t triggered;
+    dds_return_t ret;
+    char name[100];
+
+    /* We need other readers/writers/data to force the crash. */
+    g_qos = dds_qos_create();
+    dds_qset_history(g_qos, DDS_HISTORY_KEEP_ALL, DDS_LENGTH_UNLIMITED);
+    g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(g_participant, 0, "Failed to create prerequisite g_participant");
+    g_waitset = dds_create_waitset(g_participant);
+    cr_assert_gt(g_waitset, 0, "Failed to create g_waitset");
+    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_reader_test", name, 100), NULL, NULL);
+    cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
+    g_reader = dds_create_reader(g_participant, g_topic, g_qos, NULL);
+    cr_assert_gt(g_reader, 0, "Failed to create prerequisite g_reader");
+    g_writer = dds_create_writer(g_participant, g_topic, NULL, NULL);
+    cr_assert_gt(g_writer, 0, "Failed to create prerequisite g_writer");
+
+    /* Sync g_reader to g_writer. */
+    ret = dds_set_enabled_status(g_reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_reader status");
+    ret = dds_waitset_attach(g_waitset, g_reader, (dds_attach_t)(intptr_t)g_reader);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_reader");
+    ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
+    cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_reader r");
+    cr_assert_eq(g_reader, (dds_entity_t)(intptr_t)triggered, "Failed prerequisite dds_waitset_wait g_reader a");
+    ret = dds_waitset_detach(g_waitset, g_reader);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to detach prerequisite g_reader");
+
+    /* Sync g_writer to g_reader. */
+    ret = dds_set_enabled_status(g_writer, DDS_PUBLICATION_MATCHED_STATUS);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_writer status");
+    ret = dds_waitset_attach(g_waitset, g_writer, (dds_attach_t)(intptr_t)g_writer);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_writer");
+    ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
+    cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_writer r");
+    cr_assert_eq(g_writer, (dds_entity_t)(intptr_t)triggered, "Failed prerequisite dds_waitset_wait g_writer a");
+    ret = dds_waitset_detach(g_waitset, g_writer);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to detach prerequisite g_writer");
+
+    /* Initialize reading buffers. */
+    memset (g_data, 0, sizeof (g_data));
+    for (int i = 0; i < MAX_SAMPLES; i++) {
+        g_samples[i] = &g_data[i];
+    }
+
+    /* Generate following data:
+     *  | long_1 | long_2 | long_3 |    sst   | vst |    ist     |
+     *  ----------------------------------------------------------
+     *  |    0   |    1   |    2   |     read | old | alive      |
+     *  |    0   |    1   |    3   | not_read | old | alive      |
+     */
+    sample.long_1 = 0;
+    sample.long_2 = 1;
+    sample.long_3 = 2;
+    ret = dds_write(g_writer, &sample);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite write");
+    ret = dds_read(g_reader, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
+    cr_assert_eq(ret, 1, "Failed prerequisite read");
+    sample.long_3 = 3;
+    ret = dds_write(g_writer, &sample);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite write");
+
+    /* Take just one sample of the instance (the last one). */
+    ret = dds_take_mask(g_reader, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES, mask);
+    cr_assert_eq(ret, expected_cnt, "# read %d, expected %d", ret, expected_cnt);
+    for(int i = 0; i < ret; i++) {
+        Space_Type1 *sample = (Space_Type1*)g_samples[i];
+
+        /*
+         *  | long_1 | long_2 | long_3 |    sst   | vst |    ist     |
+         *  ----------------------------------------------------------
+         *  |    0   |    1   |    2   |     read | old | alive      | <--- no worries
+         *  |    0   |    1   |    3   | not_read | old | alive      | <--- crashed
+         */
+        PRINT_SAMPLE("vddsc_take_mask::crash: Take", (*sample));
+
+        /* Check data. */
+        cr_assert_eq(sample->long_1, 0);
+        cr_assert_eq(sample->long_2, 1);
+        cr_assert_eq(sample->long_3, expected_long_3);
+
+        /* Check states. */
+        cr_assert_eq(g_info[i].valid_data,     true);
+        cr_assert_eq(g_info[i].sample_state,   expected_sst);
+        cr_assert_eq(g_info[i].view_state,     DDS_VST_OLD);
+        cr_assert_eq(g_info[i].instance_state, DDS_IST_ALIVE);
+    }
+
+    /* Only samples that weren't taken should be available. */
+    ret = samples_cnt();
+    cr_assert_eq(ret, 1, "# samples %d, expected %d", ret,  1);
+
+    /*
+     * So far so good.
+     * But now the problem appeared:
+     * The reader crashed when deleting....
+     */
+    dds_delete(g_reader);
+
+    /* Before the crash was fixed, we didn't come here. */
+    dds_delete(g_writer);
+    dds_delete(g_waitset);
+    dds_delete(g_topic);
+    dds_delete(g_participant);
+    dds_qos_delete(g_qos);
 }
 /*************************************************************************************************/
 

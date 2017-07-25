@@ -1782,16 +1782,20 @@ static int dds_rhc_take_w_qminv
                     inst->nvread--;
                     rhc->n_vread--;
                   }
-                  free_sample (inst, sample);
 
                   if (--inst->nvsamples > 0)
                   {
+                    if (inst->latest == sample) {
+                      inst->latest = sample1;
+                    }
                     psample->next = sample1;
                   }
                   else
                   {
                     inst->latest = NULL;
                   }
+
+                  free_sample (inst, sample);
 
                   if (++n == max_samples)
                   {
