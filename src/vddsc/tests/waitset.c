@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <stdlib.h>
 
 #include "dds.h"
 #include "os/os.h"
@@ -55,8 +54,8 @@ create_topic_name(const char *prefix, char *name, size_t size)
 {
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
-    int tid = abs((int)os_threadIdToInteger(os_threadIdSelf()));
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%d", prefix, pid, tid);
+    uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
