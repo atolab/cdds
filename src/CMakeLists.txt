@@ -39,13 +39,13 @@ set_target_properties(vddsc PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PR
 generate_export_header(
   vddsc
   BASE_NAME DDS
-  EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/exports/dds/dds_export.h")
+  EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/exports/dds/dds_export.h")
 
 # Generator expressions are used here to refer to different paths during build
 # and install phases. It is a requirement for creating relocatable packages.
 target_include_directories(vddsc PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/>"
-  "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/exports/>"
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports/>"
   "$<INSTALL_INTERFACE:include>")
 target_include_directories(vddsc PRIVATE
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/>")
