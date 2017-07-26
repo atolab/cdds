@@ -45,7 +45,7 @@ set(COVERAGE_CLEANED "${COVERAGE_INFO}.cleaned")
 # Execute lcov and genhtml commands to get HTML results
 execute_process(COMMAND ${LCOV_PATH} ${COVERAGE_QUIET_FLAG} --directory . --capture --output-file ${COVERAGE_INFO}
                 WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
-execute_process(COMMAND ${LCOV_PATH} ${COVERAGE_QUIET_FLAG} --remove ${COVERAGE_INFO} "${COVERAGE_EXCLUDE_TESTS}/*" "${COVERAGE_EXCLUDE_EXAMPLES}/*" "/usr/*" --output-file ${COVERAGE_CLEANED}
+execute_process(COMMAND ${LCOV_PATH} ${COVERAGE_QUIET_FLAG} --remove ${COVERAGE_INFO} "${COVERAGE_EXCLUDE_TESTS}/*" "${COVERAGE_EXCLUDE_EXAMPLES}/*" "${COVERAGE_EXCLUDE_BUILD_SUPPORT}/*" "/usr/*" --output-file ${COVERAGE_CLEANED}
                 WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
 execute_process(COMMAND ${GENHTML_PATH}  ${COVERAGE_QUIET_FLAG} -o ${COVERAGE_HTML_OUTPUT} ${COVERAGE_CLEANED}
                 WORKING_DIRECTORY ${COVERAGE_RUN_DIR})

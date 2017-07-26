@@ -32,7 +32,7 @@ endif()
 # Create location to put the result file.
 file(MAKE_DIRECTORY ${COVERAGE_OUTPUT_DIR})
 
-execute_process(COMMAND ${GCOVR_PATH} -x -r ${COVERAGE_SOURCE_DIR} -e ".*/${COVERAGE_EXCLUDE_TESTS}/.*" -e ".*/${COVERAGE_EXCLUDE_EXAMPLES}/.*" -o ${COVERAGE_OUTPUT_DIR}/cobertura.xml
+execute_process(COMMAND ${GCOVR_PATH} -x -r ${COVERAGE_SOURCE_DIR} -e ".*/${COVERAGE_EXCLUDE_TESTS}/.*" -e ".*/${COVERAGE_EXCLUDE_EXAMPLES}/.*" -e ".*/${COVERAGE_EXCLUDE_BUILD_SUPPORT}/.*" -o ${COVERAGE_OUTPUT_DIR}/cobertura.xml
                 WORKING_DIRECTORY ${COVERAGE_RUN_DIR})
 
 
