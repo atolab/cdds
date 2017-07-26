@@ -1786,7 +1786,7 @@ static int dds_rhc_take_w_qminv
                   if (--inst->nvsamples > 0)
                   {
                     if (inst->latest == sample) {
-                      inst->latest = sample1;
+                      inst->latest = psample;
                     }
                     psample->next = sample1;
                   }
