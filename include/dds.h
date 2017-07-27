@@ -2115,8 +2115,11 @@ dds_read_mask_wl(
 
 
 /**
- * @brief Implements the same functionality as dds_read, except that only data
- *        scoped to the provided instance handle is read.
+ * @brief Access and read the collection of data values (of same type) and sample info from the
+ *        data reader, readcondition or querycondition, coped by the provided instance handle.
+ *
+ * This operation implements the same functionality as dds_read, except that only data scoped to
+ * the provided instance handle is read.
  *
  * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
  * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
@@ -2152,8 +2155,11 @@ dds_read_instance(
         _In_ dds_instance_handle_t handle);
 
 /**
- * @brief Implements the same functionality as dds_read_wl, except that only data
- *        scoped to the provided instance handle is read.
+ * @brief Access and read loaned samples of data reader, readcondition or querycondition,
+ *        scoped by the provided instance handle.
+ *
+ * This operation implements the same functionality as dds_read_wl, except that only data
+ * scoped to the provided instance handle is read.
  *
  * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
  * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
@@ -2187,8 +2193,11 @@ dds_read_instance_wl(
         _In_ dds_instance_handle_t handle);
 
 /**
- * @brief Implements the same functionality as dds_read_mask, except that only data
- *        scoped to the provided instance handle is read.
+ * @brief Read the collection of data values and sample info from the data reader, readcondition
+ *        or querycondition based on mask and scoped by the provided instance handle.
+ *
+ * This operation implements the same functionality as dds_read_mask, except that only data
+ * scoped to the provided instance handle is read.
  *
  * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
  * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
@@ -2226,8 +2235,11 @@ dds_read_instance_mask(
         _In_ uint32_t mask);
 
 /**
- * @brief Implements the same functionality as dds_read_mask_wl, except that only data
- *        scoped to the provided instance handle is read.
+ * @brief Access and read loaned samples of data reader, readcondition or
+ *        querycondition based on mask, scoped by the provided instance handle.
+ *
+ * This operation implements the same functionality as dds_read_mask_wl, except that
+ * only data scoped to the provided instance handle is read.
  *
  * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
  * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
@@ -2422,8 +2434,12 @@ dds_takecdr(
 
 
 /**
- * @brief Implements the same functionality as dds_take, except that only data
- *        scoped to the provided instance handle is taken.
+ * @brief Access the collection of data values (of same type) and sample info from the
+ *        data reader, readcondition or querycondition but scoped by the given
+ *        instance handle.
+ *
+ * This operation mplements the same functionality as dds_take, except that only data
+ * scoped to the provided instance handle is taken.
  *
  * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
  * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
@@ -2459,8 +2475,11 @@ dds_take_instance(
         _In_ dds_instance_handle_t handle);
 
 /**
- * @brief Implements the same functionality as dds_read_wl, except that only data
- *        scoped to the provided instance handle is read.
+ * @brief Access loaned samples of data reader, readcondition or querycondition,
+ *        scoped by the given instance handle.
+ *
+ * This operation implements the same functionality as dds_take_wl, except that
+ * only data scoped to the provided instance handle is read.
  *
  * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
  * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
@@ -2494,8 +2513,12 @@ dds_take_instance_wl(
         _In_ dds_instance_handle_t handle);
 
 /**
- * @brief Implements the same functionality as dds_read_mask, except that only data
- *        scoped to the provided instance handle is read.
+ * @brief Take the collection of data values (of same type) and sample info from the
+ *        data reader, readcondition or querycondition based on mask and scoped
+ *        by the given instance handle.
+ *
+ * This operation implements the same functionality as dds_take_mask, except that only
+ * data scoped to the provided instance handle is read.
  *
  * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
  * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
@@ -2533,8 +2556,11 @@ dds_take_instance_mask(
         _In_ uint32_t mask);
 
 /**
- * @brief Implements the same functionality as dds_read_mask_wl, except that only data
- *        scoped to the provided instance handle is read.
+ * @brief  Access loaned samples of data reader, readcondition or querycondition based
+ *         on mask and scoped by the given intance handle.
+ *
+ * This operation implements the same functionality as dds_take_mask_wl, except that
+ * only data scoped to the provided instance handle is read.
  *
  * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
  * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
