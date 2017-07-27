@@ -1425,6 +1425,8 @@ dds_dispose_ts(
  *                The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                The instance handle has not been registered with this writer.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1458,6 +1460,8 @@ dds_dispose_ih(
  *                The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
  *                The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                The instance handle has not been registered with this writer.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -2111,26 +2115,165 @@ dds_read_mask_wl(
 
 
 /**
- * Description : Implements the same functionality as dds_read, except that only data
- *               scoped to the provided instance handle is read.
+ * @brief Access and read the collection of data values (of same type) and sample info from the
+ *        data reader, readcondition or querycondition, coped by the provided instance handle.
  *
- * Arguments :
- *   -# rd Reader entity
- *   -# buf an array of pointers to samples into which data is read (pointers can be NULL)
- *   -# maxs maximum number of samples to read
- *   -# si pointer to an array of \ref dds_sample_info_t returned for each data value
- *   -# handle the instance handle identifying the instance from which to read
- *   -# mask filter the data value based on the set sample, view and instance state
- *   -# Returns the number of samples read, 0 indicates no data to read.
+ * This operation implements the same functionality as dds_read, except that only data scoped to
+ * the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  bufsz The size of buffer provided
+ * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  handle Instance handle related to the samples to read
+ *
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                  The instance handle has not been registered with this reader.
  */
-DDS_EXPORT int
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
 dds_read_instance(
-        dds_entity_t reader_or_condition,
-        void **buf,
-        uint32_t maxs,
-        dds_sample_info_t *si,
-        dds_instance_handle_t handle,
-        uint32_t mask);
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle);
+
+/**
+ * @brief Access and read loaned samples of data reader, readcondition or querycondition,
+ *        scoped by the provided instance handle.
+ *
+ * This operation implements the same functionality as dds_read_wl, except that only data
+ * scoped to the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  handle Instance handle related to the samples to read
+ *
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                  The instance handle has not been registered with this reader.
+ */
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_read_instance_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle);
+
+/**
+ * @brief Read the collection of data values and sample info from the data reader, readcondition
+ *        or querycondition based on mask and scoped by the provided instance handle.
+ *
+ * This operation implements the same functionality as dds_read_mask, except that only data
+ * scoped to the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  bufsz The size of buffer provided
+ * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  handle Instance handle related to the samples to read
+ * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
+ *
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                  The instance handle has not been registered with this reader.
+ */
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_read_instance_mask(
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask);
+
+/**
+ * @brief Access and read loaned samples of data reader, readcondition or
+ *        querycondition based on mask, scoped by the provided instance handle.
+ *
+ * This operation implements the same functionality as dds_read_mask_wl, except that
+ * only data scoped to the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  handle Instance handle related to the samples to read
+ * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
+ *
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                  The instance handle has not been registered with this reader.
+ */
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_read_instance_mask_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask);
+
 
 /**
  * @brief Access the collection of data values (of same type) and sample info from the
@@ -2289,27 +2432,168 @@ dds_takecdr(
         dds_sample_info_t *si,
         uint32_t mask);
 
+
 /**
- * Description : Implements the same functionality as dds_take, except that only data
- *               scoped to the provided instance handle is taken.
+ * @brief Access the collection of data values (of same type) and sample info from the
+ *        data reader, readcondition or querycondition but scoped by the given
+ *        instance handle.
  *
- * Arguments :
- *   -# rd Reader entity
- *   -# buf an array of pointers to samples into which data is read (pointers can be NULL)
- *   -# maxs maximum number of samples to read
- *   -# si pointer to an array of \ref dds_sample_info_t returned for each data value
- *   -# mask filter the data value based on the set sample, view and instance state
- *   -# handle the instance handle identifying the instance from which to take
- *   -# Returns the number of samples read, 0 indicates no data to read.
+ * This operation mplements the same functionality as dds_take, except that only data
+ * scoped to the provided instance handle is taken.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  bufsz The size of buffer provided
+ * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  handle Instance handle related to the samples to read
+ *
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                  The instance handle has not been registered with this reader.
  */
-DDS_EXPORT int
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
 dds_take_instance(
-        dds_entity_t reader_or_condition,
-        void **buf,
-        uint32_t maxs,
-        dds_sample_info_t *si,
-        dds_instance_handle_t handle,
-        uint32_t mask);
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle);
+
+/**
+ * @brief Access loaned samples of data reader, readcondition or querycondition,
+ *        scoped by the given instance handle.
+ *
+ * This operation implements the same functionality as dds_take_wl, except that
+ * only data scoped to the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  handle Instance handle related to the samples to read
+ *
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                  The instance handle has not been registered with this reader.
+ */
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_take_instance_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle);
+
+/**
+ * @brief Take the collection of data values (of same type) and sample info from the
+ *        data reader, readcondition or querycondition based on mask and scoped
+ *        by the given instance handle.
+ *
+ * This operation implements the same functionality as dds_take_mask, except that only
+ * data scoped to the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  bufsz The size of buffer provided
+ * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  handle Instance handle related to the samples to read
+ * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
+ *
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                  The instance handle has not been registered with this reader.
+ */
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_take_instance_mask(
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask);
+
+/**
+ * @brief  Access loaned samples of data reader, readcondition or querycondition based
+ *         on mask and scoped by the given intance handle.
+ *
+ * This operation implements the same functionality as dds_take_mask_wl, except that
+ * only data scoped to the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
+ * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  handle Instance handle related to the samples to read
+ * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
+ *
+ * @returns >=0 - Success (number of samples read).
+ * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *                  The instance handle has not been registered with this reader.
+ */
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_take_instance_mask_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask);
 
 
 /*

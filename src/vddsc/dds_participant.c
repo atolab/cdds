@@ -14,14 +14,18 @@
 
 static dds_entity * dds_pp_head = NULL;
 
-static dds_return_t dds_participant_status_validate (uint32_t mask)
+static dds_return_t
+dds_participant_status_validate(
+        uint32_t mask)
 {
     return (mask & ~(DDS_PARTICIPANT_STATUS_MASK)) ?
                      DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER) :
                      DDS_RETCODE_OK;
 }
 
-static dds_return_t dds_participant_delete(dds_entity *e)
+static dds_return_t
+dds_participant_delete(
+        dds_entity *e)
 {
     struct thread_state1 * const thr = lookup_thread_state ();
     const bool asleep = !vtime_awake_p (thr->vtime);
@@ -68,7 +72,10 @@ static dds_return_t dds_participant_delete(dds_entity *e)
     return DDS_RETCODE_OK;
 }
 
-static dds_return_t dds_participant_instance_hdl(dds_entity *e, dds_instance_handle_t *i)
+static dds_return_t
+dds_participant_instance_hdl(
+        dds_entity *e,
+        dds_instance_handle_t *i)
 {
     assert(e);
     assert(i);
@@ -76,7 +83,10 @@ static dds_return_t dds_participant_instance_hdl(dds_entity *e, dds_instance_han
     return DDS_RETCODE_OK;
 }
 
-static dds_return_t dds_participant_qos_validate (const dds_qos_t *qos, bool enabled)
+static dds_return_t
+dds_participant_qos_validate(
+        const dds_qos_t *qos,
+        bool enabled)
 {
     dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY);
     bool consistent = true;
@@ -98,7 +108,11 @@ static dds_return_t dds_participant_qos_validate (const dds_qos_t *qos, bool ena
 }
 
 
-static dds_return_t dds_participant_qos_set (dds_entity *e, const dds_qos_t *qos, bool enabled)
+static dds_return_t
+dds_participant_qos_set(
+        dds_entity *e,
+        const dds_qos_t *qos,
+        bool enabled)
 {
     dds_return_t ret = dds_participant_qos_validate(qos, enabled);
     if (ret == DDS_RETCODE_OK) {
@@ -116,7 +130,8 @@ dds_create_participant(
         _In_opt_ const dds_qos_t *qos,
         _In_opt_ const dds_listener_t *listener)
 {
-    int ret;
+    int q_rc;
+    dds_return_t ret;
     dds_entity_t e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
     nn_guid_t guid;
     dds_participant * pp;
@@ -127,7 +142,10 @@ dds_create_participant(
 
     /* Initialize the dds layer when this is the first participant. */
     if (dds_pp_head == NULL) {
-        dds_init();
+        ret = dds_init();
+        if (ret != DDS_RETCODE_OK) {
+            return (dds_entity_t)ret;
+        }
     }
 
     nn_plist_init_empty (&plist);
@@ -135,15 +153,15 @@ dds_create_participant(
     /* Check domain id */
     ret = dds_init_impl (domain);
     if (ret != DDS_RETCODE_OK) {
-        e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
+        e = (dds_entity_t)ret;
         goto fail;
     }
 
     /* Validate qos */
     if (qos) {
-        ret = (int)dds_participant_qos_validate (qos, false);
+        ret = dds_participant_qos_validate (qos, false);
         if (ret != DDS_RETCODE_OK) {
-            e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
+            e = (dds_entity_t)ret;
             goto fail;
         }
         new_qos = dds_qos_create ();
@@ -161,12 +179,12 @@ dds_create_participant(
     if (asleep) {
         thread_state_awake (thr);
     }
-    ret = new_participant (&guid, 0, &plist);
+    q_rc = new_participant (&guid, 0, &plist);
     if (asleep) {
         thread_state_asleep (thr);
     }
 
-    if (ret != 0) {
+    if (q_rc != 0) {
         dds_qos_delete(new_qos);
         e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
         goto fail;

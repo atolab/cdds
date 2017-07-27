@@ -34,7 +34,7 @@ dds_entity_add_ref_nolock(_In_ dds_entity *e)
     e->m_refc++;
 }
 
-_Check_return_ dds_return_t
+_Check_return_ dds_retcode_t
 dds_entity_listener_propagation(
         _In_ dds_entity *e,
         _In_ dds_entity *src,
@@ -42,12 +42,12 @@ dds_entity_listener_propagation(
         _In_opt_ void *metrics,
         _In_ bool propagate)
 {
-    dds_return_t ret = DDS_RETCODE_NO_DATA; /* Mis-use NO_DATA as NO_CALL. */
+    dds_retcode_t rc = DDS_RETCODE_NO_DATA; /* Mis-use NO_DATA as NO_CALL. */
     dds_entity *dummy;
     /* e will be NULL when reaching the top of the entity hierarchy. */
     if (e) {
-        ret = dds_entity_lock(e->m_hdl, DDS_KIND_DONTCARE, &dummy);
-        if (ret == DDS_RETCODE_OK) {
+        rc = dds_entity_lock(e->m_hdl, DDS_KIND_DONTCARE, &dummy);
+        if (rc == DDS_RETCODE_OK) {
             dds_listener_t *l = (dds_listener_t *)(&e->m_listener);
 
             assert(e == dummy);
@@ -60,102 +60,102 @@ dds_entity_listener_propagation(
             dds_entity_unlock(e);
 
             /* Now, perform the callback when available. */
-            ret = DDS_RETCODE_NO_DATA;
+            rc = DDS_RETCODE_NO_DATA;
             switch (status) {
                 case DDS_INCONSISTENT_TOPIC_STATUS:
                     if (l->on_inconsistent_topic != DDS_LUNSET) {
                         assert(metrics);
                         l->on_inconsistent_topic(src->m_hdl, *((dds_inconsistent_topic_status_t*)metrics), l->arg);
-                        ret = DDS_RETCODE_OK;
+                        rc = DDS_RETCODE_OK;
                     }
                     break;
                 case DDS_OFFERED_DEADLINE_MISSED_STATUS:
                     if (l->on_offered_deadline_missed != DDS_LUNSET) {
                         assert(metrics);
                         l->on_offered_deadline_missed(src->m_hdl, *((dds_offered_deadline_missed_status_t*)metrics), l->arg);
-                        ret = DDS_RETCODE_OK;
+                        rc = DDS_RETCODE_OK;
                     }
                     break;
                 case DDS_REQUESTED_DEADLINE_MISSED_STATUS:
                     if (l->on_requested_deadline_missed != DDS_LUNSET) {
                         assert(metrics);
                         l->on_requested_deadline_missed(src->m_hdl, *((dds_requested_deadline_missed_status_t*)metrics), l->arg);
-                        ret = DDS_RETCODE_OK;
+                        rc = DDS_RETCODE_OK;
                     }
                     break;
                 case DDS_OFFERED_INCOMPATIBLE_QOS_STATUS:
                     if (l->on_offered_incompatible_qos != DDS_LUNSET) {
                         assert(metrics);
                         l->on_offered_incompatible_qos(src->m_hdl, *((dds_offered_incompatible_qos_status_t*)metrics), l->arg);
-                        ret = DDS_RETCODE_OK;
+                        rc = DDS_RETCODE_OK;
                     }
                     break;
                 case DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS:
                     if (l->on_requested_incompatible_qos != DDS_LUNSET) {
                         assert(metrics);
                         l->on_requested_incompatible_qos(src->m_hdl, *((dds_requested_incompatible_qos_status_t*)metrics), l->arg);
-                        ret = DDS_RETCODE_OK;
+                        rc = DDS_RETCODE_OK;
                     }
                     break;
                 case DDS_SAMPLE_LOST_STATUS:
                     if (l->on_sample_lost != DDS_LUNSET) {
                         assert(metrics);
                         l->on_sample_lost(src->m_hdl, *((dds_sample_lost_status_t*)metrics), l->arg);
-                        ret = DDS_RETCODE_OK;
+                        rc = DDS_RETCODE_OK;
                     }
                     break;
                 case DDS_SAMPLE_REJECTED_STATUS:
                     if (l->on_sample_rejected != DDS_LUNSET) {
                         assert(metrics);
                         l->on_sample_rejected(src->m_hdl, *((dds_sample_rejected_status_t*)metrics), l->arg);
-                        ret = DDS_RETCODE_OK;
+                        rc = DDS_RETCODE_OK;
                     }
                     break;
                 case DDS_DATA_ON_READERS_STATUS:
                     if (l->on_data_on_readers != DDS_LUNSET) {
                         l->on_data_on_readers(src->m_hdl, l->arg);
-                        ret = DDS_RETCODE_OK;
+                        rc = DDS_RETCODE_OK;
                     }
                     break;
                 case DDS_DATA_AVAILABLE_STATUS:
                     if (l->on_data_available != DDS_LUNSET) {
                         l->on_data_available(src->m_hdl, l->arg);
-                        ret = DDS_RETCODE_OK;
+                        rc = DDS_RETCODE_OK;
                     }
                     break;
                 case DDS_LIVELINESS_LOST_STATUS:
                     if (l->on_liveliness_lost != DDS_LUNSET) {
                         assert(metrics);
                         l->on_liveliness_lost(src->m_hdl, *((dds_liveliness_lost_status_t*)metrics), l->arg);
-                        ret = DDS_RETCODE_OK;
+                        rc = DDS_RETCODE_OK;
                     }
                     break;
                 case DDS_LIVELINESS_CHANGED_STATUS:
                     if (l->on_liveliness_changed != DDS_LUNSET) {
                         assert(metrics);
                         l->on_liveliness_changed(src->m_hdl, *((dds_liveliness_changed_status_t*)metrics), l->arg);
-                        ret = DDS_RETCODE_OK;
+                        rc = DDS_RETCODE_OK;
                     }
                     break;
                 case DDS_PUBLICATION_MATCHED_STATUS:
                     if (l->on_publication_matched != DDS_LUNSET) {
                         assert(metrics);
                         l->on_publication_matched(src->m_hdl, *((dds_publication_matched_status_t*)metrics), l->arg);
-                        ret = DDS_RETCODE_OK;
+                        rc = DDS_RETCODE_OK;
                     }
                     break;
                 case DDS_SUBSCRIPTION_MATCHED_STATUS:
                     if (l->on_subscription_matched != DDS_LUNSET) {
                         assert(metrics);
                         l->on_subscription_matched(src->m_hdl, *((dds_subscription_matched_status_t*)metrics), l->arg);
-                        ret = DDS_RETCODE_OK;
+                        rc = DDS_RETCODE_OK;
                     }
                     break;
                 default: assert (0);
             }
-            if ((ret == DDS_RETCODE_NO_DATA) && propagate) {
+            if ((rc == DDS_RETCODE_NO_DATA) && propagate) {
                 /* See if the parent is interested. */
-                ret = dds_entity_listener_propagation(e->m_parent, src, status, metrics, propagate);
+                rc = dds_entity_listener_propagation(e->m_parent, src, status, metrics, propagate);
             }
 
             os_mutexLock(&(e->m_mutex));
@@ -166,7 +166,7 @@ dds_entity_listener_propagation(
             os_mutexUnlock(&(e->m_mutex));
         }
     }
-    return ret;
+    return rc;
 }
 
 
@@ -247,11 +247,12 @@ dds_delete(
     dds_entity *child;
     dds_entity *prev = NULL;
     dds_entity *next = NULL;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
+    dds_retcode_t rc;
 
-    ret = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
-    if (ret != DDS_RETCODE_OK) {
-        return DDS_ERRNO(ret);
+    rc = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
+    if (rc != DDS_RETCODE_OK) {
+        return DDS_ERRNO(rc);
     }
 
     if (--e->m_refc != 0) {
@@ -295,7 +296,7 @@ dds_delete(
          * is released. It is possible that this last release will be done by a thread
          * that was kicked during the close(). */
         if (ut_handle_delete(e->m_hdl, e->m_hdllink, timeout) != UT_HANDLE_OK) {
-            ret = DDS_RETCODE_TIMEOUT;
+            ret = DDS_ERRNO(DDS_RETCODE_TIMEOUT);
         }
     }
 
@@ -336,7 +337,7 @@ dds_delete(
         dds_free (e);
     }
 
-    return DDS_ERRNO(ret);
+    return ret;
 }
 
 
@@ -347,17 +348,20 @@ dds_get_parent(
         _In_ dds_entity_t entity)
 {
     dds_entity *e;
+    dds_retcode_t rc;
     dds_entity_t hdl = entity;
-    int32_t errnr = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-    if (errnr == DDS_RETCODE_OK) {
-        if (e->m_parent) {
-            hdl = e->m_parent->m_hdl;
+    if (entity >= 0) {
+        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+        if (rc == DDS_RETCODE_OK) {
+            if (e->m_parent) {
+                hdl = e->m_parent->m_hdl;
+            } else {
+                hdl = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+            }
+            dds_entity_unlock(e);
         } else {
-            hdl = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+            hdl = DDS_ERRNO(rc);
         }
-        dds_entity_unlock(e);
-    } else {
-        hdl = DDS_ERRNO(errnr);
     }
     return hdl;
 }
@@ -370,14 +374,17 @@ dds_get_participant (
         _In_ dds_entity_t entity)
 {
     dds_entity *e;
+    dds_retcode_t rc;
     dds_entity_t hdl = entity;
-    int32_t errnr = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-    if (errnr == DDS_RETCODE_OK) {
-        assert(e->m_participant);
-        hdl = e->m_participant->m_hdl;
-        dds_entity_unlock(e);
-    } else {
-        hdl = DDS_ERRNO(errnr);
+    if (entity >= 0) {
+        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+        if (rc == DDS_RETCODE_OK) {
+            assert(e->m_participant);
+            hdl = e->m_participant->m_hdl;
+            dds_entity_unlock(e);
+        } else {
+            hdl = DDS_ERRNO(rc);
+        }
     }
     return hdl;
 }
@@ -392,11 +399,13 @@ dds_get_children(
         _In_        size_t size)
 {
     dds_entity *e;
+    dds_retcode_t rc;
     dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     if (((children != NULL) && (size  > 0) && (size < INT32_MAX)) ||
-        ((children == NULL) && (size == 0)) ){
-        ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-        if (ret == DDS_RETCODE_OK) {
+        ((children == NULL) && (size == 0)) )
+    {
+        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+        if (rc == DDS_RETCODE_OK) {
             dds_entity* iter;
             /* Initialize first child to satisfy SAL. */
             if (children) {
@@ -413,7 +422,7 @@ dds_get_children(
             }
             dds_entity_unlock(e);
         } else {
-            ret = DDS_ERRNO(ret);
+            ret = DDS_ERRNO(rc);
         }
     }
     return ret;
@@ -427,20 +436,20 @@ dds_get_qos(
         _In_  dds_entity_t entity,
         _Out_ dds_qos_t *qos)
 {
-    dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_entity *e;
+    dds_retcode_t rc = DDS_RETCODE_BAD_PARAMETER;
     if ((entity > 0) && (qos != NULL)) {
-        dds_entity *e;
-        ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-        if (ret == DDS_RETCODE_OK) {
+        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+        if (rc == DDS_RETCODE_OK) {
             if (e->m_deriver.set_qos) {
-                ret = dds_qos_copy (qos, e->m_qos);
+                rc = dds_qos_copy(qos, e->m_qos);
             } else {
-                ret = DDS_RETCODE_ILLEGAL_OPERATION;
+                rc = DDS_RETCODE_ILLEGAL_OPERATION;
             }
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret);
+    return DDS_ERRNO(rc);
 }
 
 
@@ -449,29 +458,33 @@ _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 _Check_return_ dds_return_t
 dds_set_qos(
         _In_ dds_entity_t entity,
-        _In_ const dds_qos_t * qos)
+        _In_ const dds_qos_t *qos)
 {
-    dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_entity *e;
+    dds_retcode_t rc;
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     if (qos != NULL) {
-        dds_entity *e;
-        ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-        if (ret == DDS_RETCODE_OK) {
+        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+        if (rc == DDS_RETCODE_OK) {
             if (e->m_deriver.set_qos) {
                 ret = e->m_deriver.set_qos(e, qos, e->m_flags & DDS_ENTITY_ENABLED);
             } else {
-                ret = DDS_RETCODE_ILLEGAL_OPERATION;
+                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
             }
             if (ret == DDS_RETCODE_OK) {
                 /* Remember this QoS. */
                 if (e->m_qos == NULL) {
                     e->m_qos = dds_qos_create();
                 }
-                ret = dds_qos_copy (e->m_qos, qos);
+                rc = dds_qos_copy(e->m_qos, qos);
+                ret = DDS_ERRNO(rc);
             }
             dds_entity_unlock(e);
+        } else {
+            ret = DDS_ERRNO(rc);
         }
     }
-    return DDS_ERRNO(ret);
+    return ret;
 }
 
 
@@ -482,17 +495,17 @@ dds_get_listener(
         _In_  dds_entity_t   entity,
         _Out_ dds_listener_t *listener)
 {
-    dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_entity *e;
+    dds_retcode_t rc = DDS_RETCODE_BAD_PARAMETER;
     if (listener != NULL) {
-        dds_entity *e;
-        ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-        if (ret == DDS_RETCODE_OK) {
+        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+        if (rc == DDS_RETCODE_OK) {
             dds_entity_cb_wait(e);
             dds_listener_copy (listener, &e->m_listener);
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret);
+    return DDS_ERRNO(rc);
 }
 
 
@@ -503,10 +516,9 @@ dds_set_listener(
         _In_     dds_entity_t entity,
         _In_opt_ const dds_listener_t * listener)
 {
-    dds_return_t ret;
     dds_entity *e;
-    ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-    if (ret == DDS_RETCODE_OK) {
+    dds_retcode_t rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+    if (rc == DDS_RETCODE_OK) {
         dds_entity_cb_wait(e);
         if (listener) {
             dds_listener_copy(&e->m_listener, listener);
@@ -515,7 +527,7 @@ dds_set_listener(
         }
         dds_entity_unlock(e);
     }
-    return DDS_ERRNO(ret);
+    return DDS_ERRNO(rc);
 }
 
 
@@ -525,18 +537,18 @@ _Check_return_ dds_return_t
 dds_enable(
         _In_ dds_entity_t entity)
 {
-    dds_return_t ret;
     dds_entity *e;
-    ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-    if (ret == DDS_RETCODE_OK) {
+    dds_retcode_t rc;
+    rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+    if (rc == DDS_RETCODE_OK) {
         if ((e->m_flags & DDS_ENTITY_ENABLED) == 0) {
             /* TODO: CHAM-96: Really enable. */
             e->m_flags |= DDS_ENTITY_ENABLED;
-            ret = DDS_RETCODE_UNSUPPORTED;
+            rc = DDS_RETCODE_UNSUPPORTED;
         }
         dds_entity_unlock(e);
     }
-    return DDS_ERRNO(ret);
+    return DDS_ERRNO(rc);
 }
 
 
@@ -547,20 +559,20 @@ dds_get_status_changes(
         _In_    dds_entity_t entity,
         _Out_   uint32_t *status)
 {
-    dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_entity *e;
+    dds_retcode_t rc = DDS_RETCODE_BAD_PARAMETER;
     if (status != NULL) {
-        dds_entity *e;
-        ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-        if (ret == DDS_RETCODE_OK) {
+        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+        if (rc == DDS_RETCODE_OK) {
             if (e->m_deriver.validate_status) {
                 *status = e->m_trigger;
             } else {
-                ret = DDS_RETCODE_ILLEGAL_OPERATION;
+                rc = DDS_RETCODE_ILLEGAL_OPERATION;
             }
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret);
+    return DDS_ERRNO(rc);
 }
 
 
@@ -571,20 +583,20 @@ dds_get_enabled_status(
         _In_    dds_entity_t entity,
         _Out_   uint32_t *status)
 {
-    dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_entity *e;
+    dds_retcode_t rc = DDS_RETCODE_BAD_PARAMETER;
     if (status != NULL) {
-        dds_entity *e;
-        ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-        if (ret == DDS_RETCODE_OK) {
+        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+        if (rc == DDS_RETCODE_OK) {
             if (e->m_deriver.validate_status) {
                 *status = (e->m_status_enable & ~DDS_INTERNAL_STATUS_MASK);
             } else {
-                ret = DDS_RETCODE_ILLEGAL_OPERATION;
+                rc = DDS_RETCODE_ILLEGAL_OPERATION;
             }
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret);
+    return DDS_ERRNO(rc);
 }
 
 
@@ -595,10 +607,11 @@ dds_set_enabled_status(
         _In_ dds_entity_t entity,
         _In_ uint32_t mask)
 {
-    dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
     dds_entity *e;
-    ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-    if (ret == DDS_RETCODE_OK) {
+    dds_retcode_t rc;
+    dds_return_t ret;
+    rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+    if (rc == DDS_RETCODE_OK) {
         if (e->m_deriver.validate_status) {
             ret = e->m_deriver.validate_status(mask);
             if (ret == DDS_RETCODE_OK) {
@@ -611,11 +624,13 @@ dds_set_enabled_status(
                 }
             }
         } else {
-            ret = DDS_RETCODE_ILLEGAL_OPERATION;
+            ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
         }
         dds_entity_unlock(e);
+    } else {
+        ret = DDS_ERRNO(rc);
     }
-    return DDS_ERRNO(ret);
+    return ret;
 }
 
 
@@ -627,23 +642,27 @@ dds_read_status(
         _Out_   uint32_t *status,
         _In_    uint32_t mask)
 {
-    dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_entity *e;
+    dds_retcode_t rc;
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     if (status != NULL) {
-        dds_entity *e;
-        ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-        if (ret == DDS_RETCODE_OK) {
+        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+        if (rc == DDS_RETCODE_OK) {
             if (e->m_deriver.validate_status) {
                 ret = e->m_deriver.validate_status(mask);
+                assert(ret <= DDS_RETCODE_OK);
                 if (ret == DDS_RETCODE_OK) {
                     *status = e->m_trigger & mask;
                 }
             } else {
-                ret = DDS_RETCODE_ILLEGAL_OPERATION;
+                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
             }
             dds_entity_unlock(e);
+        } else {
+            ret = DDS_ERRNO(rc);
         }
     }
-    return DDS_ERRNO(ret);
+    return ret;
 }
 
 
@@ -655,13 +674,15 @@ dds_take_status(
         _Out_   uint32_t *status,
         _In_    uint32_t mask)
 {
-    dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_entity *e;
+    dds_retcode_t rc;
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     if (status != NULL) {
-        dds_entity *e;
-        ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-        if (ret == DDS_RETCODE_OK) {
+        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+        if (rc == DDS_RETCODE_OK) {
             if (e->m_deriver.validate_status) {
                 ret = e->m_deriver.validate_status(mask);
+                assert(ret <= DDS_RETCODE_OK);
                 if (ret == DDS_RETCODE_OK) {
                     *status = e->m_trigger & mask;
                     if (e->m_deriver.propagate_status) {
@@ -670,12 +691,14 @@ dds_take_status(
                     e->m_trigger &= ~mask;
                 }
             } else {
-                ret = DDS_RETCODE_ILLEGAL_OPERATION;
+                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
             }
             dds_entity_unlock(e);
+        } else {
+            ret = DDS_ERRNO(rc);
         }
     }
-    return DDS_ERRNO(ret);
+    return ret;
 }
 
 
@@ -700,16 +723,16 @@ dds_get_domainid(
         _In_    dds_entity_t entity,
         _Out_   dds_domainid_t *id)
 {
-    dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_entity *e;
+    dds_retcode_t rc = DDS_RETCODE_BAD_PARAMETER;
     if (id != NULL) {
-        dds_entity *e;
-        ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-        if (ret == DDS_RETCODE_OK) {
+        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+        if (rc == DDS_RETCODE_OK) {
             *id = e->m_domainid;
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(ret);
+    return DDS_ERRNO(rc);
 }
 
 
@@ -720,48 +743,51 @@ dds_instancehandle_get(
         _In_    dds_entity_t entity,
         _Out_   dds_instance_handle_t *ihdl)
 {
-    dds_return_t ret = DDS_RETCODE_BAD_PARAMETER;
+    dds_entity *e;
+    dds_retcode_t rc;
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     if (ihdl != NULL) {
-        dds_entity *e;
-        ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-        if (ret == DDS_RETCODE_OK) {
+        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+        if (rc == DDS_RETCODE_OK) {
             if (e->m_deriver.get_instance_hdl) {
                 ret = e->m_deriver.get_instance_hdl(e, ihdl);
             } else {
-                ret = DDS_RETCODE_ILLEGAL_OPERATION;
+                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
             }
             dds_entity_unlock(e);
+        } else {
+            ret = DDS_ERRNO(rc);
         }
     }
-    return DDS_ERRNO(ret);
+    return ret;
 }
 
-_Check_return_ dds_return_t
+_Check_return_ dds_retcode_t
 dds_valid_hdl(
         _In_ dds_entity_t hdl,
         _In_ dds_entity_kind_t kind)
 {
-    dds_return_t ret = hdl;
+    dds_retcode_t rc = hdl;
     ut_handle_t utr;
     if (hdl >= 0) {
         utr = ut_handle_status(hdl, NULL, kind);
-        ret = ((utr == UT_HANDLE_OK)           ? DDS_RETCODE_OK                :
+        rc =  ((utr == UT_HANDLE_OK)           ? DDS_RETCODE_OK                :
                (utr == UT_HANDLE_UNEQUAL_KIND) ? DDS_RETCODE_ILLEGAL_OPERATION :
                (utr == UT_HANDLE_INVALID)      ? DDS_RETCODE_BAD_PARAMETER     :
                (utr == UT_HANDLE_DELETED)      ? DDS_RETCODE_ALREADY_DELETED   :
                (utr == UT_HANDLE_CLOSED)       ? DDS_RETCODE_ALREADY_DELETED   :
                                                  DDS_RETCODE_ERROR             );
     }
-    return ret;
+    return rc;
 }
 
-_Check_return_ dds_return_t
+_Check_return_ dds_retcode_t
 dds_entity_lock(
         _In_ dds_entity_t hdl,
         _In_ dds_entity_kind_t kind,
         _Out_ dds_entity **e)
 {
-    dds_return_t ret = hdl;
+    dds_retcode_t rc = hdl;
     ut_handle_t utr;
     assert(e);
     if (hdl >= 0) {
@@ -774,14 +800,14 @@ dds_entity_lock(
                 utr = UT_HANDLE_CLOSED;
             }
         }
-        ret = ((utr == UT_HANDLE_OK)           ? DDS_RETCODE_OK                :
+        rc =  ((utr == UT_HANDLE_OK)           ? DDS_RETCODE_OK                :
                (utr == UT_HANDLE_UNEQUAL_KIND) ? DDS_RETCODE_ILLEGAL_OPERATION :
                (utr == UT_HANDLE_INVALID)      ? DDS_RETCODE_BAD_PARAMETER     :
                (utr == UT_HANDLE_DELETED)      ? DDS_RETCODE_ALREADY_DELETED   :
                (utr == UT_HANDLE_CLOSED)       ? DDS_RETCODE_ALREADY_DELETED   :
                                                  DDS_RETCODE_ERROR             );
     }
-    return ret;
+    return rc;
 }
 
 
@@ -802,27 +828,28 @@ dds_return_t
 dds_triggered(
         _In_ dds_entity_t entity)
 {
-    dds_return_t ret;
     dds_entity *e;
-    ret = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-    if (ret == DDS_RETCODE_OK) {
+    dds_return_t ret;
+    dds_retcode_t rc;
+    rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+    if (rc == DDS_RETCODE_OK) {
         ret = (e->m_trigger != 0);
         dds_entity_unlock(e);
     } else {
-        ret = DDS_ERRNO(ret);
+        ret = DDS_ERRNO(rc);
     }
     return ret;
 }
 
 
 
-_Check_return_ dds_return_t
+_Check_return_ dds_retcode_t
 dds_entity_observer_register_nl(
         _In_ dds_entity*  observed,
         _In_ dds_entity_t observer,
         _In_ dds_entity_callback cb)
 {
-    dds_return_t ret = DDS_RETCODE_OK;
+    dds_retcode_t rc = DDS_RETCODE_OK;
     dds_entity_observer *o = os_malloc(sizeof(dds_entity_observer));
     assert(observed);
     o->m_cb = cb;
@@ -837,7 +864,7 @@ dds_entity_observer_register_nl(
             if (idx->m_observer == observer) {
                 os_free(o);
                 o = NULL;
-                ret = DDS_RETCODE_PRECONDITION_NOT_MET;
+                rc = DDS_RETCODE_PRECONDITION_NOT_MET;
             }
             last = idx;
             idx = idx->m_next;
@@ -847,36 +874,36 @@ dds_entity_observer_register_nl(
         }
     }
 
-    return ret;
+    return rc;
 }
 
 
 
-_Check_return_ dds_return_t
+_Check_return_ dds_retcode_t
 dds_entity_observer_register(
         _In_ dds_entity_t observed,
         _In_ dds_entity_t observer,
         _In_ dds_entity_callback cb)
 {
-    dds_return_t ret;
+    dds_retcode_t rc;
     dds_entity *e;
     assert(cb);
-    ret = dds_entity_lock(observed, DDS_KIND_DONTCARE, &e);
-    if (ret == DDS_RETCODE_OK) {
-        ret = dds_entity_observer_register_nl(e, observer, cb);
+    rc = dds_entity_lock(observed, DDS_KIND_DONTCARE, &e);
+    if (rc == DDS_RETCODE_OK) {
+        rc = dds_entity_observer_register_nl(e, observer, cb);
         dds_entity_unlock(e);
     }
-    return ret;
+    return rc;
 }
 
 
 
-dds_return_t
+dds_retcode_t
 dds_entity_observer_unregister_nl(
         _In_ dds_entity*  observed,
         _In_ dds_entity_t observer)
 {
-    dds_return_t ret = DDS_RETCODE_PRECONDITION_NOT_MET;
+    dds_retcode_t rc = DDS_RETCODE_PRECONDITION_NOT_MET;
     dds_entity_observer *prev = NULL;
     dds_entity_observer *idx  = observed->m_observers;
     while (idx != NULL) {
@@ -888,30 +915,30 @@ dds_entity_observer_unregister_nl(
             }
             os_free(idx);
             idx = NULL;
-            ret = DDS_RETCODE_OK;
+            rc = DDS_RETCODE_OK;
         } else {
             prev = idx;
             idx = idx->m_next;
         }
     }
-    return ret;
+    return rc;
 }
 
 
 
-dds_return_t
+dds_retcode_t
 dds_entity_observer_unregister(
         _In_ dds_entity_t observed,
         _In_ dds_entity_t observer)
 {
-    dds_return_t ret;
+    dds_retcode_t rc;
     dds_entity *e;
-    ret = dds_entity_lock(observed, DDS_KIND_DONTCARE, &e);
-    if (ret == DDS_RETCODE_OK) {
-        ret = dds_entity_observer_unregister_nl(e, observer);
+    rc = dds_entity_lock(observed, DDS_KIND_DONTCARE, &e);
+    if (rc == DDS_RETCODE_OK) {
+        rc = dds_entity_observer_unregister_nl(e, observer);
         dds_entity_unlock(e);
     }
-    return ret;
+    return rc;
 }
 
 

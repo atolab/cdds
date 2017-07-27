@@ -2,6 +2,7 @@
 #include <string.h>
 #include "kernel/dds_entity.h"
 #include "kernel/dds_reader.h"
+#include "kernel/dds_tkmap.h"
 #include "kernel/dds_rhc.h"
 #include "ddsi/q_thread.h"
 #include "ddsi/q_ephash.h"
@@ -9,13 +10,13 @@
 
 
 
-static _Check_return_ dds_return_t
+static _Check_return_ dds_retcode_t
 dds_read_lock(
         _In_ dds_entity_t hdl,
         _Out_ dds_reader   **reader,
         _Out_ dds_readcond **condition)
 {
-    dds_return_t ret = hdl;
+    dds_retcode_t rc = hdl;
     assert(reader);
     assert(condition);
     *reader = NULL;
@@ -23,33 +24,33 @@ dds_read_lock(
     if (hdl >= 0) {
         switch (dds_entity_kind(hdl) ) {
             case DDS_KIND_READER: {
-                ret = dds_entity_lock(hdl, DDS_KIND_READER, (dds_entity**)reader);
+                rc = dds_entity_lock(hdl, DDS_KIND_READER, (dds_entity**)reader);
                 break;
             }
             case DDS_KIND_COND_READ:
                 /* FALLTHROUGH */
             case DDS_KIND_COND_QUERY: {
-                ret = dds_entity_lock(hdl, DDS_KIND_DONTCARE, (dds_entity**)condition);
-                if (ret == DDS_RETCODE_OK) {
+                rc = dds_entity_lock(hdl, DDS_KIND_DONTCARE, (dds_entity**)condition);
+                if (rc == DDS_RETCODE_OK) {
                     dds_entity *parent = ((dds_entity*)*condition)->m_parent;
                     assert(parent);
-                    ret = dds_entity_lock(parent->m_hdl, DDS_KIND_READER, (dds_entity**)reader);
-                    if (ret != DDS_RETCODE_OK) {
+                    rc = dds_entity_lock(parent->m_hdl, DDS_KIND_READER, (dds_entity**)reader);
+                    if (rc != DDS_RETCODE_OK) {
                         dds_entity_unlock((dds_entity*)*condition);
                     }
                 }
                 break;
             }
             default: {
-                ret = dds_valid_hdl(hdl, DDS_KIND_DONTCARE);
-                if (ret == DDS_RETCODE_OK) {
-                    ret = DDS_RETCODE_ILLEGAL_OPERATION;
+                rc = dds_valid_hdl(hdl, DDS_KIND_DONTCARE);
+                if (rc == DDS_RETCODE_OK) {
+                    rc = DDS_RETCODE_ILLEGAL_OPERATION;
                 }
                 break;
             }
         }
     }
-    return DDS_ERRNO(ret);
+    return rc;
 }
 
 static void
@@ -75,6 +76,7 @@ dds_read_impl(
         _In_  bool take,
         _In_  dds_entity_t reader_or_condition,
         _Inout_ void **buf,
+        _In_ size_t bufsz,
         _In_  uint32_t maxs,
         _Out_ dds_sample_info_t *si,
         _In_  uint32_t mask,
@@ -83,21 +85,31 @@ dds_read_impl(
 {
   uint32_t i;
   dds_return_t ret = DDS_RETCODE_OK;
+  dds_retcode_t rc;
   struct dds_reader * rd;
   struct dds_readcond * cond;
   struct thread_state1 * const thr = lookup_thread_state ();
   const bool asleep = !vtime_awake_p (thr->vtime);
 
-  assert (buf);
-  assert (si);
-
   if (asleep)
   {
     thread_state_awake (thr);
   }
-  ret = dds_read_lock(reader_or_condition, &rd, &cond);
-  if (ret >= DDS_RETCODE_OK) {
 
+  rc = dds_read_lock(reader_or_condition, &rd, &cond);
+  if (rc == DDS_RETCODE_OK) {
+      if ((buf == NULL) || (si == NULL) || (maxs == 0) || (bufsz == 0) || (bufsz < maxs)) {
+          rc = DDS_RETCODE_BAD_PARAMETER;
+          dds_read_unlock(rd, cond);
+      } else if (hand != DDS_HANDLE_NIL) {
+          if (dds_tkmap_find_by_id(gv.m_tkmap, hand) == NULL) {
+              rc = DDS_RETCODE_PRECONDITION_NOT_MET;
+              dds_read_unlock(rd, cond);
+          }
+      }
+  }
+
+  if (rc == DDS_RETCODE_OK) {
       /* Allocate samples if not provided (assuming all or none provided) */
 
       if (buf[0] == NULL)
@@ -138,9 +150,9 @@ dds_read_impl(
       }
 
       if (take) {
-        ret = dds_rhc_take(rd->m_rd->rhc, lock, buf, si, maxs, mask, hand, cond);
+        ret = (dds_return_t)dds_rhc_take(rd->m_rd->rhc, lock, buf, si, maxs, mask, hand, cond);
       } else {
-        ret = dds_rhc_read(rd->m_rd->rhc, lock, buf, si, maxs, mask, hand, cond);
+        ret = (dds_return_t)dds_rhc_read(rd->m_rd->rhc, lock, buf, si, maxs, mask, hand, cond);
       }
 
       /* read/take resets data available status */
@@ -153,6 +165,8 @@ dds_read_impl(
         dds_entity_status_reset(((dds_entity*)rd)->m_parent, DDS_DATA_ON_READERS_STATUS);
       }
       dds_read_unlock(rd, cond);
+  } else {
+      ret = DDS_ERRNO(rc);
   }
 
   if (asleep)
@@ -175,6 +189,7 @@ dds_readcdr_impl(
         _In_  bool lock)
 {
   dds_return_t ret = DDS_RETCODE_OK;
+  dds_retcode_t rc;
   struct dds_reader * rd;
   struct dds_readcond * cond;
   struct thread_state1 * const thr = lookup_thread_state ();
@@ -190,8 +205,8 @@ dds_readcdr_impl(
   {
     thread_state_awake (thr);
   }
-  ret = dds_read_lock(reader_or_condition, &rd, &cond);
-  if (ret >= DDS_RETCODE_OK) {
+  rc = dds_read_lock(reader_or_condition, &rd, &cond);
+  if (rc >= DDS_RETCODE_OK) {
       ret = dds_rhc_takecdr
         (
          rd->m_rd->rhc, lock, buf, si, maxs,
@@ -211,6 +226,8 @@ dds_readcdr_impl(
         dds_entity_status_reset(((dds_entity*)rd)->m_parent, DDS_DATA_ON_READERS_STATUS);
       }
       dds_read_unlock(rd, cond);
+  } else {
+      ret = DDS_ERRNO(rc);
   }
 
   if (asleep)
@@ -239,7 +256,7 @@ dds_read(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = (uint32_t)bufsz;
     }
-    return dds_read_impl (false, rd_or_cnd, buf, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (false, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -259,7 +276,7 @@ dds_read_wl(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = 100;
     }
-    return dds_read_impl (false, rd_or_cnd, buf, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (false, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -281,7 +298,7 @@ dds_read_mask(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = (uint32_t)bufsz;
     }
-    return dds_read_impl (false, rd_or_cnd, buf, maxs, si, mask, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (false, rd_or_cnd, buf, bufsz, maxs, si, mask, DDS_HANDLE_NIL, lock);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -302,27 +319,113 @@ dds_read_mask_wl(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = 100;
     }
-    return dds_read_impl (false, rd_or_cnd, buf, maxs, si, mask, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (false, rd_or_cnd, buf, maxs, maxs, si, mask, DDS_HANDLE_NIL, lock);
 }
 
-int
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t
 dds_read_instance(
-        dds_entity_t reader,
-        void **buf,
-        uint32_t maxs,
-        dds_sample_info_t *si,
-        dds_instance_handle_t handle,
-        uint32_t mask)
+        _In_ dds_entity_t rd_or_cnd,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle)
 {
-    assert (handle != DDS_HANDLE_NIL);
-    bool lock = true;
-    if (maxs == DDS_READ_WITHOUT_LOCK) {
-        lock = false;
-        /* Use a more sensible maxs. Just an arbitrarily number.
-         * CHAM-306 will remove this ugly piece of code. */
-        maxs = 100;
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    if (handle != DDS_HANDLE_NIL) {
+        bool lock = true;
+        if (maxs == DDS_READ_WITHOUT_LOCK) {
+            lock = false;
+            /* Use a more sensible maxs. Just an arbitrarily number.
+             * CHAM-306 will remove this ugly piece of code. */
+            maxs = 100;
+        }
+        ret = dds_read_impl(false, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, handle, lock);
     }
-    return dds_read_impl (false, reader, buf, maxs, si, mask, handle, lock);
+    return ret;
+}
+
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t
+dds_read_instance_wl(
+        _In_ dds_entity_t rd_or_cnd,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle)
+{
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    if (handle != DDS_HANDLE_NIL) {
+        bool lock = true;
+        if (maxs == DDS_READ_WITHOUT_LOCK) {
+            lock = false;
+            /* Use a more sensible maxs. Just an arbitrarily number.
+             * CHAM-306 will remove this ugly piece of code. */
+            maxs = 100;
+        }
+        ret = dds_read_impl(false, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, handle, lock);
+    }
+    return ret;
+}
+
+
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t
+dds_read_instance_mask(
+        _In_ dds_entity_t rd_or_cnd,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask)
+{
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    if (handle != DDS_HANDLE_NIL) {
+        bool lock = true;
+        if (maxs == DDS_READ_WITHOUT_LOCK) {
+            lock = false;
+            /* Use a more sensible maxs. Just an arbitrarily number.
+             * CHAM-306 will remove this ugly piece of code. */
+            maxs = 100;
+        }
+        ret = dds_read_impl(false, rd_or_cnd, buf, bufsz, maxs, si, mask, handle, lock);
+    }
+    return ret;
+}
+
+
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t
+dds_read_instance_mask_wl(
+        _In_ dds_entity_t rd_or_cnd,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask)
+{
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    if (handle != DDS_HANDLE_NIL) {
+        bool lock = true;
+        if (maxs == DDS_READ_WITHOUT_LOCK) {
+            lock = false;
+            /* Use a more sensible maxs. Just an arbitrarily number.
+             * CHAM-306 will remove this ugly piece of code. */
+            maxs = 100;
+        }
+        ret = dds_read_impl(false, rd_or_cnd, buf, maxs, maxs, si, mask, handle, lock);
+    }
+    return ret;
 }
 
 
@@ -333,7 +436,7 @@ dds_read_next(
         dds_sample_info_t *si)
 {
   uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
-  return dds_read_impl (false, reader, buf, 1u, si, mask, DDS_HANDLE_NIL, true);
+  return dds_read_impl (false, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -354,7 +457,7 @@ dds_take(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = (uint32_t)bufsz;
     }
-    return dds_read_impl (true, rd_or_cnd, buf, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (true, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -374,7 +477,7 @@ dds_take_wl(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = 100;
     }
-    return dds_read_impl (true, rd_or_cnd, buf, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (true, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, lock);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -396,7 +499,7 @@ dds_take_mask(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = (uint32_t)bufsz;
     }
-    return dds_read_impl (true, rd_or_cnd, buf, maxs, si, mask, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (true, rd_or_cnd, buf, bufsz, maxs, si, mask, DDS_HANDLE_NIL, lock);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -417,7 +520,7 @@ dds_take_mask_wl(
          * CHAM-306 will remove this ugly piece of code. */
         maxs = 100;
     }
-    return dds_read_impl (true, rd_or_cnd, buf, maxs, si, mask, DDS_HANDLE_NIL, lock);
+    return dds_read_impl (true, rd_or_cnd, buf, maxs, maxs, si, mask, DDS_HANDLE_NIL, lock);
 }
 
 int
@@ -438,24 +541,111 @@ dds_takecdr(
     return dds_readcdr_impl (true, rd_or_cnd, buf, maxs, si, mask, DDS_HANDLE_NIL, lock);
 }
 
-int
+
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t
 dds_take_instance(
-        dds_entity_t reader,
-        void **buf,
-        uint32_t maxs,
-        dds_sample_info_t *si,
-        dds_instance_handle_t handle,
-        uint32_t mask)
+        _In_ dds_entity_t rd_or_cnd,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle)
 {
-    assert (handle != DDS_HANDLE_NIL);
-    bool lock = true;
-    if (maxs == DDS_READ_WITHOUT_LOCK) {
-        lock = false;
-        /* Use a more sensible maxs. Just an arbitrarily number.
-         * CHAM-306 will remove this ugly piece of code. */
-        maxs = 100;
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    if (handle != DDS_HANDLE_NIL) {
+        bool lock = true;
+        if (maxs == DDS_READ_WITHOUT_LOCK) {
+            lock = false;
+            /* Use a more sensible maxs. Just an arbitrarily number.
+             * CHAM-306 will remove this ugly piece of code. */
+            maxs = 100;
+        }
+        ret = dds_read_impl(true, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, handle, lock);
     }
-    return dds_read_impl (true, reader, buf, maxs, si, mask, handle, lock);
+    return ret;
+}
+
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t
+dds_take_instance_wl(
+        _In_ dds_entity_t rd_or_cnd,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle)
+{
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    if (handle != DDS_HANDLE_NIL) {
+        bool lock = true;
+        if (maxs == DDS_READ_WITHOUT_LOCK) {
+            lock = false;
+            /* Use a more sensible maxs. Just an arbitrarily number.
+             * CHAM-306 will remove this ugly piece of code. */
+            maxs = 100;
+        }
+        ret = dds_read_impl(true, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, handle, lock);
+    }
+    return ret;
+}
+
+
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t
+dds_take_instance_mask(
+        _In_ dds_entity_t rd_or_cnd,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask)
+{
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    if (handle != DDS_HANDLE_NIL) {
+        bool lock = true;
+        if (maxs == DDS_READ_WITHOUT_LOCK) {
+            lock = false;
+            /* Use a more sensible maxs. Just an arbitrarily number.
+             * CHAM-306 will remove this ugly piece of code. */
+            maxs = 100;
+        }
+        ret = dds_read_impl(true, rd_or_cnd, buf, bufsz, maxs, si, mask, handle, lock);
+    }
+    return ret;
+}
+
+
+_Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t
+dds_take_instance_mask_wl(
+        _In_ dds_entity_t rd_or_cnd,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask)
+{
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    if (handle != DDS_HANDLE_NIL) {
+        bool lock = true;
+        if (maxs == DDS_READ_WITHOUT_LOCK) {
+            lock = false;
+            /* Use a more sensible maxs. Just an arbitrarily number.
+             * CHAM-306 will remove this ugly piece of code. */
+            maxs = 100;
+        }
+        ret = dds_read_impl(true, rd_or_cnd, buf, maxs, maxs, si, mask, handle, lock);
+    }
+    return ret;
 }
 
 int
@@ -465,7 +655,7 @@ dds_take_next(
         dds_sample_info_t *si)
 {
   uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
-  return dds_read_impl (true, reader, buf, 1u, si, mask, DDS_HANDLE_NIL, true);
+  return dds_read_impl (true, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
 }
 
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -477,7 +667,7 @@ dds_return_loan(
         _Inout_updates_(bufsz) void **buf,
         _In_ size_t bufsz)
 {
-    uint32_t ret;
+    dds_retcode_t rc;
     const dds_topic_descriptor_t * desc;
     dds_reader *rd;
     dds_readcond *cond;
@@ -486,8 +676,8 @@ dds_return_loan(
         return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     }
 
-    ret = dds_read_lock(reader_or_condition, &rd, &cond);
-    if (ret == DDS_RETCODE_OK) {
+    rc = dds_read_lock(reader_or_condition, &rd, &cond);
+    if (rc == DDS_RETCODE_OK) {
         desc = rd->m_topic->m_descriptor;
 
         /* Only free sample contents if they have been allocated */
@@ -508,5 +698,5 @@ dds_return_loan(
         dds_read_unlock(rd, cond);
     }
 
-    return ret;
+    return DDS_ERRNO(rc);
 }

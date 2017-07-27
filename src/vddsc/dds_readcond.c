@@ -42,16 +42,16 @@ dds_create_readcondition(
 {
     dds_entity_t hdl;
     dds_reader * rd;
-    int32_t ret;
+    dds_retcode_t rc;
 
-    ret = dds_reader_lock(reader, &rd);
-    if (ret == DDS_RETCODE_OK) {
+    rc = dds_reader_lock(reader, &rd);
+    if (rc == DDS_RETCODE_OK) {
         dds_readcond *cond = dds_create_readcond(rd, DDS_KIND_COND_READ, mask);
         assert(cond);
         hdl = cond->m_entity.m_hdl;
         dds_reader_unlock(rd);
     } else {
-        hdl = DDS_ERRNO(ret);
+        hdl = DDS_ERRNO(rc);
     }
 
     return hdl;
@@ -69,11 +69,11 @@ dds_get_datareader(
         } else if (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) {
             return dds_get_parent(condition);
         } else {
-            dds_return_t ret = dds_valid_hdl(condition, DDS_KIND_DONTCARE);
-            if (ret == DDS_RETCODE_OK) {
+            dds_retcode_t rc = dds_valid_hdl(condition, DDS_KIND_DONTCARE);
+            if (rc == DDS_RETCODE_OK) {
                 return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
             } else {
-                return (dds_entity_t)DDS_ERRNO(ret);
+                return (dds_entity_t)DDS_ERRNO(rc);
             }
         }
     }
@@ -90,23 +90,23 @@ dds_get_mask(
 {
     dds_return_t ret = condition;
     dds_readcond *cond;
+    dds_retcode_t rc;
     if (condition >= 0) {
         if (mask != NULL) {
             if ((dds_entity_kind(condition) == DDS_KIND_COND_READ ) ||
                 (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) ){
-                ret = dds_entity_lock(condition, DDS_KIND_DONTCARE, (dds_entity**)&cond);
-                if (ret == DDS_RETCODE_OK) {
+                rc = dds_entity_lock(condition, DDS_KIND_DONTCARE, (dds_entity**)&cond);
+                if (rc == DDS_RETCODE_OK) {
                     *mask = (cond->m_sample_states | cond->m_view_states | cond->m_instance_states);
                     dds_entity_unlock((dds_entity*)cond);
-                } else {
-                    ret = DDS_ERRNO(ret);
                 }
+                ret = DDS_ERRNO(rc);
             } else {
-                ret = dds_valid_hdl(condition, DDS_KIND_DONTCARE);
-                if (ret == DDS_RETCODE_OK) {
+                rc = dds_valid_hdl(condition, DDS_KIND_DONTCARE);
+                if (rc == DDS_RETCODE_OK) {
                     ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
                 } else {
-                    ret = DDS_ERRNO(ret);
+                    ret = DDS_ERRNO(rc);
                 }
             }
         } else {

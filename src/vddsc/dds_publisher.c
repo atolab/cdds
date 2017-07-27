@@ -6,7 +6,10 @@
 
 #define DDS_PUBLISHER_STATUS_MASK   0
 
-static dds_return_t dds_publisher_instance_hdl(dds_entity *e, dds_instance_handle_t *i)
+static dds_return_t
+dds_publisher_instance_hdl(
+        dds_entity *e,
+        dds_instance_handle_t *i)
 {
     assert(e);
     assert(i);
@@ -14,7 +17,10 @@ static dds_return_t dds_publisher_instance_hdl(dds_entity *e, dds_instance_handl
     return DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
 }
 
-static dds_return_t dds_publisher_qos_validate (_In_ const dds_qos_t *qos, _In_ bool enabled)
+static dds_return_t
+dds_publisher_qos_validate(
+        _In_ const dds_qos_t *qos,
+        _In_ bool enabled)
 {
     dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY);
     bool consistent = true;
@@ -36,7 +42,11 @@ static dds_return_t dds_publisher_qos_validate (_In_ const dds_qos_t *qos, _In_ 
     return ret;
 }
 
-static dds_return_t dds_publisher_qos_set (dds_entity *e, const dds_qos_t *qos, bool enabled)
+static dds_return_t
+dds_publisher_qos_set(
+        dds_entity *e,
+        const dds_qos_t *qos,
+        bool enabled)
 {
     dds_return_t ret = dds_publisher_qos_validate(qos, enabled);
     if (ret == DDS_RETCODE_OK) {
@@ -62,40 +72,40 @@ dds_create_publisher(
         _In_opt_ const dds_qos_t *qos,
         _In_opt_ const dds_listener_t *listener)
 {
-  dds_entity * par;
-  dds_publisher * pub;
-  dds_entity_t hdl;
-  dds_qos_t * new_qos = NULL;
-  dds_return_t ret;
-  int32_t errnr;
+    dds_entity * par;
+    dds_publisher * pub;
+    dds_entity_t hdl;
+    dds_qos_t * new_qos = NULL;
+    dds_return_t ret;
+    dds_retcode_t rc;
 
-  errnr = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
-  if (errnr != DDS_RETCODE_OK) {
-      return DDS_ERRNO(errnr);
-  }
-
-  /* Validate qos */
-  if (qos) {
-    ret = dds_publisher_qos_validate(qos, false);
-    if (ret != DDS_RETCODE_OK) {
-      dds_entity_unlock(par);
-      return ret;
+    rc = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
+    if (rc != DDS_RETCODE_OK) {
+        return DDS_ERRNO(rc);
     }
-    new_qos = dds_qos_create ();
-    /* Only returns failure when one of the qos args is NULL, which
-     * is not the case here. */
-    (void)dds_qos_copy(new_qos, qos);
-  }
 
-  /* Create publisher */
-  pub = dds_alloc (sizeof (*pub));
-  hdl = dds_entity_init (&pub->m_entity, par, DDS_KIND_PUBLISHER, new_qos, listener, DDS_PUBLISHER_STATUS_MASK);
-  pub->m_entity.m_deriver.set_qos = dds_publisher_qos_set;
-  pub->m_entity.m_deriver.get_instance_hdl = dds_publisher_instance_hdl;
-  pub->m_entity.m_deriver.validate_status = dds_publisher_status_validate;
-  dds_entity_unlock(par);
+    /* Validate qos */
+    if (qos) {
+        ret = dds_publisher_qos_validate(qos, false);
+        if (ret != DDS_RETCODE_OK) {
+            dds_entity_unlock(par);
+            return ret;
+        }
+        new_qos = dds_qos_create ();
+        /* Only returns failure when one of the qos args is NULL, which
+         * is not the case here. */
+        (void)dds_qos_copy(new_qos, qos);
+    }
 
-  return hdl;
+    /* Create publisher */
+    pub = dds_alloc (sizeof (*pub));
+    hdl = dds_entity_init (&pub->m_entity, par, DDS_KIND_PUBLISHER, new_qos, listener, DDS_PUBLISHER_STATUS_MASK);
+    pub->m_entity.m_deriver.set_qos = dds_publisher_qos_set;
+    pub->m_entity.m_deriver.get_instance_hdl = dds_publisher_instance_hdl;
+    pub->m_entity.m_deriver.validate_status = dds_publisher_status_validate;
+    dds_entity_unlock(par);
+
+    return hdl;
 }
 
 
@@ -104,13 +114,9 @@ DDS_EXPORT dds_return_t
 dds_suspend(
         _In_ dds_entity_t publisher)
 {
-  dds_return_t ret;
-
-  /* TODO: Currently unsupported. */
-  OS_UNUSED_ARG(publisher);
-
-  ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
-  return ret;
+    /* TODO: CHAM-123 Currently unsupported. */
+    OS_UNUSED_ARG(publisher);
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
 }
 
 
@@ -119,13 +125,9 @@ dds_return_t
 dds_resume(
         _In_ dds_entity_t publisher)
 {
-  dds_return_t ret;
-
-  /* TODO: Currently unsupported. */
-  OS_UNUSED_ARG(publisher);
-
-  ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
-  return ret;
+    /* TODO: CHAM-123 Currently unsupported. */
+    OS_UNUSED_ARG(publisher);
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
 }
 
 
@@ -136,31 +138,25 @@ dds_wait_for_acks(
         _In_ dds_entity_t publisher_or_writer,
         _In_ dds_duration_t timeout)
 {
-  dds_return_t ret;
-
-  /* TODO: Currently unsupported. */
+  /* TODO: CHAM-125 Currently unsupported. */
   OS_UNUSED_ARG(publisher_or_writer);
   OS_UNUSED_ARG(timeout);
-
-  ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
-  return ret;
+  return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
 }
 
 dds_return_t
-dds_publisher_begin_coherent
-(
-    _In_ dds_entity_t e
-)
+dds_publisher_begin_coherent(
+        _In_ dds_entity_t e)
 {
-    return DDS_RETCODE_UNSUPPORTED;
+    /* TODO: CHAM-124 Currently unsupported. */
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
 }
 
 dds_return_t
-dds_publisher_end_coherent
-(
-    _In_ dds_entity_t e
-)
+dds_publisher_end_coherent(
+        _In_ dds_entity_t e)
 {
-    return DDS_RETCODE_UNSUPPORTED;
+    /* TODO: CHAM-124 Currently unsupported. */
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
 }
 

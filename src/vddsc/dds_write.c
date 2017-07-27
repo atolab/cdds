@@ -25,14 +25,16 @@ dds_write(
         _In_ const void *data)
 {
     dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    dds_retcode_t rc;
     dds_writer *wr;
 
     if (data != NULL) {
-        ret = dds_writer_lock(writer, &wr);
-        ret = DDS_ERRNO(ret);
-        if (ret == DDS_RETCODE_OK) {
+        rc = dds_writer_lock(writer, &wr);
+        if (rc == DDS_RETCODE_OK) {
             ret = dds_write_impl(wr, data, dds_time(), 0);
             dds_writer_unlock(wr);
+        } else {
+            ret = DDS_ERRNO(rc);
         }
     }
 
@@ -46,16 +48,19 @@ dds_writecdr(
         const void *cdr,
         size_t size)
 {
-    int ret = DDS_RETCODE_BAD_PARAMETER;
+    int ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    dds_retcode_t rc;
     dds_writer *wr;
     if (cdr != NULL) {
-        ret = dds_writer_lock(writer, &wr);
-        if (ret == DDS_RETCODE_OK) {
+        rc = dds_writer_lock(writer, &wr);
+        if (rc == DDS_RETCODE_OK) {
             ret = dds_writecdr_impl (wr, cdr, size, dds_time (), 0);
             dds_writer_unlock(wr);
+        } else {
+            ret = DDS_ERRNO(rc);
         }
     }
-    return DDS_ERRNO (ret);
+    return ret;
 }
 
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
@@ -66,14 +71,16 @@ dds_write_ts(
         _In_ dds_time_t timestamp)
 {
     dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    dds_retcode_t rc;
     dds_writer *wr;
 
-    if (data != NULL && timestamp >= 0) {
-        ret = dds_writer_lock(writer, &wr);
-        ret = DDS_ERRNO(ret);
-        if (ret == DDS_RETCODE_OK) {
+    if ((data != NULL) && (timestamp >= 0)) {
+        rc = dds_writer_lock(writer, &wr);
+        if (rc == DDS_RETCODE_OK) {
             ret = dds_write_impl(wr, data, timestamp, 0);
             dds_writer_unlock(wr);
+        } else {
+            ret = DDS_ERRNO(rc);
         }
     }
 
@@ -102,7 +109,6 @@ init_sampleinfo(
     sampleinfo->pwr_info.guid = wr->e.guid;
     sampleinfo->pwr_info.ownership_strength = 0;
 }
-
 
 static int
 deliver_locally(
@@ -176,7 +182,8 @@ dds_write_impl(
         _In_ dds_write_action action)
 {
     static fake_seq_t fake_seq;
-    int ret = DDS_RETCODE_OK;
+    dds_return_t ret = DDS_RETCODE_OK;
+    int w_rc;
 
     assert (wr);
     assert (dds_entity_kind(((dds_entity*)wr)->m_hdl) == DDS_KIND_WRITER);
@@ -218,15 +225,15 @@ dds_write_impl(
     os_mutexLock (&writer->m_call_lock);
     ddsi_serdata_ref(d);
     tk = (ddsi_plugin.rhc_lookup_fn) (d);
-    ret = write_sample_gc (writer->m_xp, ddsi_wr, d, tk);
+    w_rc = write_sample_gc (writer->m_xp, ddsi_wr, d, tk);
 
-    if (ret >= 0) {
+    if (w_rc >= 0) {
         /* Flush out write unless configured to batch */
         if (! config.whc_batch){
             nn_xpack_send (writer->m_xp, false);
         }
         ret = DDS_RETCODE_OK;
-    } else if (ret == ERR_TIMEOUT) {
+    } else if (w_rc == ERR_TIMEOUT) {
         ret = DDS_ERRNO(DDS_RETCODE_TIMEOUT);
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_ERROR);
@@ -257,6 +264,7 @@ dds_writecdr_impl(
 {
     static fake_seq_t fake_seq;
     int ret = DDS_RETCODE_OK;
+    int w_rc;
 
     assert (wr);
     assert (cdr);
@@ -298,15 +306,15 @@ dds_writecdr_impl(
     os_mutexLock (&wr->m_call_lock);
     ddsi_serdata_ref(d);
     tk = (ddsi_plugin.rhc_lookup_fn) (d);
-    ret = write_sample_gc (wr->m_xp, ddsi_wr, d, tk);
+    w_rc = write_sample_gc (wr->m_xp, ddsi_wr, d, tk);
 
-    if (ret >= 0) {
+    if (w_rc >= 0) {
         /* Flush out write unless configured to batch */
         if (! config.whc_batch) {
             nn_xpack_send (wr->m_xp, false);
         }
         ret = DDS_RETCODE_OK;
-    } else if (ret == ERR_TIMEOUT) {
+    } else if (w_rc == ERR_TIMEOUT) {
         ret = DDS_ERRNO(DDS_RETCODE_TIMEOUT);
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_ERROR);
@@ -326,7 +334,9 @@ dds_writecdr_impl(
     return ret;
 }
 
-void dds_write_set_batch (bool enable)
+void
+dds_write_set_batch(
+        bool enable)
 {
     config.whc_batch = enable ? 1 : 0;
 }

@@ -90,7 +90,8 @@ static void dds_set_report_level (void)
   }
 }
 
-extern int dds_init ()
+dds_return_t
+dds_init(void)
 {
   const char * uri;
   char tmp[50];
@@ -145,7 +146,9 @@ dds_domainid_t dds_domain_default (void)
 
 /* Actual initialization called when participant created */
 
-extern int dds_init_impl (dds_domainid_t domain)
+dds_return_t
+dds_init_impl(
+        _In_ dds_domainid_t domain)
 {
   char buff[64];
   uint32_t len;
