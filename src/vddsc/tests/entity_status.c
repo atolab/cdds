@@ -57,7 +57,7 @@ init_entity_status(void)
     participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(participant, 0, "Failed to create prerequisite participant");
 
-    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_disposing_test", topicName, 100), NULL, NULL);
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_status_test", topicName, 100), NULL, NULL);
     cr_assert_gt(topic, 0, "Failed to create prerequisite topic");
 
     qos = dds_qos_create();
@@ -199,15 +199,20 @@ Test(vddsc_entity, incompatible_qos, .init=init_entity_status, .fini=fini_entity
     cr_assert_status_eq(status, DDS_RETCODE_OK);
 
     /* Get reader and writer status conditions and attach to waitset */
+    status = dds_set_enabled_status(reader, DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
+    cr_assert_status_eq(status, DDS_RETCODE_OK);
     status = dds_set_enabled_status(reader2, DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
     status = dds_set_enabled_status(writer, DDS_OFFERED_INCOMPATIBLE_QOS_STATUS);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-    /* Wait for subscription requested incompatible status */
+    /* Wait for subscription requested incompatible status, which should only be
+     * triggered on reader2. */
     status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-    //cr_assert_eq(status, wsresultsize);
-    cr_assert_eq(status, wsresultsize, "dds_waitset_wait(): returned %d");
+    cr_assert_eq(status, 1);
+    cr_assert_eq(reader2,  (dds_entity_t)(intptr_t)wsresults[0]);
+
+    /* Get and check the status. */
     status = dds_get_requested_incompatible_qos_status (reader2, &req_incompatible_qos);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
     cr_assert_eq(req_incompatible_qos.total_count,           1);

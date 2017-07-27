@@ -70,6 +70,21 @@ dds_waitset_wait_impl(
      * unlocked. Even when the related mutex is unlocked by a conditioned wait. */
     ret = dds_waitset_lock(waitset, &ws);
     if (ret == DDS_RETCODE_OK) {
+        /* Check if any of any previous triggered entities has changed there status
+         * and thus it trigger value could be false now. */
+        idx = ws->triggered;
+        prev = NULL;
+        while (idx != NULL) {
+            next = idx->next;
+            if (idx->entity->m_trigger == 0) {
+                /* Move observed entity to triggered list. */
+                dds_waitset_swap(&(ws->observed), &(ws->triggered), prev, idx);
+            } else {
+                prev = idx;
+            }
+            idx = next;
+        }
+
         /* Check if any of the entities have been triggered. */
         idx = ws->observed;
         prev = NULL;
