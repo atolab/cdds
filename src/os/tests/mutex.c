@@ -1,4 +1,3 @@
-#include "dds.h"
 #include "CUnit/Runner.h"
 #include "os/os.h"
 #include "os/os_process.h"
@@ -164,7 +163,7 @@ CUnit_Suite_Initialize(os_mutex)
 
 CUnit_Suite_Cleanup(os_mutex)
 {
-    int result = DDS_RETCODE_OK;
+    int result = 0;
 
     printf("Run os_mutex_Cleanup\n");
     os_free (sd);

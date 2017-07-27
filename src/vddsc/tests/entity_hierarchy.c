@@ -1,5 +1,3 @@
-#include <assert.h>
-
 #include "dds.h"
 #include "os/os.h"
 #include <criterion/criterion.h>
@@ -34,6 +32,15 @@ accept_all(const void * sample)
     return true;
 }
 
+static char*
+create_topic_name(const char *prefix, char *name, size_t size)
+{
+    /* Get semi random g_topic name. */
+    os_procId pid = os_procIdSelf();
+    uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    return name;
+}
 
 static void
 hierarchy_init(void)
@@ -41,16 +48,10 @@ hierarchy_init(void)
     uint32_t mask = DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
     char name[100];
 
-    /* Get semi random g_topic name. */
-    snprintf(name, 100,
-            "vddsc_condition_test_pid%"PRIprocId"_tid%d",
-            os_procIdSelf(),
-            (int)os_threadIdToInteger(os_threadIdSelf()));
-
     g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(g_participant, 0, "Failed to create prerequisite g_participant");
 
-    g_topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, name, NULL, NULL);
+    g_topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_hierarchy_test", name, 100), NULL, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     g_publisher = dds_create_publisher(g_participant, NULL, NULL);

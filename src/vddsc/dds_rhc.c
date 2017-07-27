@@ -1058,10 +1058,19 @@ static rhc_store_result_t rhc_store_new_instance
   }
 
   inst = alloc_new_instance (rhc, sampleinfo, sample, tk);
-  if (!add_sample (rhc, inst, sampleinfo, sample, cb_data))
+  if (has_data)
   {
-    free_instance (inst, rhc);
-    return RHC_REJECTED;
+    if (!add_sample (rhc, inst, sampleinfo, sample, cb_data))
+    {
+      free_instance (inst, rhc);
+      return RHC_REJECTED;
+    }
+  }
+  else
+  {
+    if (inst->isdisposed) {
+      inst_set_invsample(rhc, inst);
+    }
   }
 
   account_for_empty_to_nonempty_transition (rhc, inst);
@@ -1773,16 +1782,20 @@ static int dds_rhc_take_w_qminv
                     inst->nvread--;
                     rhc->n_vread--;
                   }
-                  free_sample (inst, sample);
 
                   if (--inst->nvsamples > 0)
                   {
+                    if (inst->latest == sample) {
+                      inst->latest = psample;
+                    }
                     psample->next = sample1;
                   }
                   else
                   {
                     inst->latest = NULL;
                   }
+
+                  free_sample (inst, sample);
 
                   if (++n == max_samples)
                   {

@@ -92,12 +92,15 @@ struct ephash *ephash_new (void)
 void ephash_free (struct ephash *ephash)
 {
   ut_chhFree (ephash->hash);
+  ephash->hash = NULL;
   os_free (ephash);
 }
 
 static void ephash_guid_insert (struct entity_common *e)
 {
   int x;
+  assert(gv.guid_hash);
+  assert(gv.guid_hash->hash);
   x = ut_chhAdd (gv.guid_hash->hash, e);
   (void)x;
   assert (x);
@@ -106,6 +109,8 @@ static void ephash_guid_insert (struct entity_common *e)
 static void ephash_guid_remove (struct entity_common *e)
 {
   int x;
+  assert(gv.guid_hash);
+  assert(gv.guid_hash->hash);
   x = ut_chhRemove (gv.guid_hash->hash, e);
   (void)x;
   assert (x);

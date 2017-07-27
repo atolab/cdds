@@ -19,9 +19,10 @@ extern "C" {
 
 /* Error masks for returned status values */
 
-#define DDS_ERR_NR_MASK    0x000000ff
-#define DDS_ERR_MOD_MASK   0x0000ff00
-#define DDS_ERR_MINOR_MASK 0x00ff0000
+#define DDS_ERR_NR_MASK       0x000000ff
+#define DDS_ERR_LINE_MASK     0x003fff00
+#define DDS_ERR_FILE_ID_MASK  0x7fc00000
+
 
 /*
   State is unchanged following a function call returning an error
@@ -30,11 +31,8 @@ extern "C" {
   Error handling functions. Three components to returned int status value.
 
   1 - The DDS_ERR_xxx error number
-  2 - A module identifier
-  3 - A minor number
-
-  The minor number allows every place in the implementation code to
-  use a uniue minor code so errors can be traced exactly.
+  2 - The file identifier
+  3 - The line number
 
   All functions return >= 0 on success, < 0 on error
 */
@@ -54,6 +52,9 @@ extern "C" {
 #define DDS_RETCODE_NO_DATA              11 /*< When expected data is not provided */
 #define DDS_RETCODE_ILLEGAL_OPERATION    12 /*< When a function is called when it should not be */
 /** @}*/
+
+/* To differentiate between dds_return_t and internal retcodes. */
+typedef _Return_type_success_(return == DDS_RETCODE_OK) int32_t dds_retcode_t;
 
 /* For backwards compatability */
 
@@ -77,8 +78,11 @@ extern "C" {
 /** Macro to extract error number */
 #define dds_err_nr(e) ((-e) & DDS_ERR_NR_MASK)
 
-/** Macro to extract the error minor number */
-#define dds_err_minor(e) (((-e) & DDS_ERR_MINOR_MASK) >> 16)
+/** Macro to extract line number */
+#define dds_err_line(e) (((-e) & DDS_ERR_LINE_MASK) >> 8)
+
+/** Macro to extract file identifier */
+#define dds_err_file_id(e) (((-e) & DDS_ERR_FILE_ID_MASK) >> 22)
 
 /**
  * Description : This operation takes the error value and outputs a string
@@ -88,17 +92,7 @@ extern "C" {
  *   -# err Error value to be converted to a string
  *   -# Returns a string corresponding to the error value
  */
-DDS_EXPORT const char * dds_err_str (int err);
-
-/**
- * Description : This operation takes the error value and returns the module name
- * corresponding to it.
- *
- * Arguments :
- *   -# err Error value
- *   -# Returns the module name corresponding to the value
- */
-DDS_EXPORT const char * dds_err_mod_str (int err);
+DDS_EXPORT const char * dds_err_str (dds_return_t err);
 
 /**
  * Description : This operation takes the error number, error type and filename and line number and formats it to
@@ -110,7 +104,7 @@ DDS_EXPORT const char * dds_err_mod_str (int err);
  *   -# where file and line number
  */
 
-DDS_EXPORT bool dds_err_check (int err, unsigned flags, const char * where);
+DDS_EXPORT bool dds_err_check (dds_return_t err, unsigned flags, const char * where);
 
 /**
  * Macro that defines dds_err_check function

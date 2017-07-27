@@ -20,17 +20,20 @@ typedef enum
 }
 dds_write_action;
 
-int dds_write_impl
-(
-  dds_writer *wr, const void * data,
-  dds_time_t tstamp, dds_write_action action
-);
+int
+dds_write_impl(
+        _In_ dds_writer *wr,
+        _In_ const void *data,
+        _In_ dds_time_t tstamp,
+        _In_ dds_write_action action);
 
-int dds_writecdr_impl
-(
-  dds_writer *wr, const void * cdr, size_t sz,
-  dds_time_t tstamp, dds_write_action action
-);
+int
+dds_writecdr_impl(
+        _In_ dds_writer *wr,
+        _In_ const void *cdr,
+        _In_ size_t sz,
+        _In_ dds_time_t tstamp,
+        _In_ dds_write_action action);
 
 
 #if defined (__cplusplus)

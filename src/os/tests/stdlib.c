@@ -1,4 +1,3 @@
-#include "dds.h"
 #include "CUnit/Runner.h"
 #include "os/os.h"
 
@@ -80,7 +79,7 @@ thread_flockfile_002b (FILE *fp)
 
 CUnit_Suite_Initialize(os_stdlib)
 {
-    int result = DDS_RETCODE_OK;
+    int result = 0;
     os_osInit();
     return result;
 }

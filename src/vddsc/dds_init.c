@@ -90,7 +90,8 @@ static void dds_set_report_level (void)
   }
 }
 
-extern int dds_init ()
+dds_return_t
+dds_init(void)
 {
   const char * uri;
   char tmp[50];
@@ -115,20 +116,20 @@ extern int dds_init ()
   if (ut_handleserver_init() != UT_HANDLE_OK)
   {
     fprintf (stderr, "Initializing handle server failed\n");
-    return DDS_ERRNO (DDS_RETCODE_ERROR, DDS_MOD_KERNEL, DDS_ERR_M3);
+    return DDS_ERRNO (DDS_RETCODE_ERROR);
   }
 
   dds_cfgst = config_init (uri);
   if (dds_cfgst == NULL)
   {
     fprintf (stderr, "Configuration XML file failed to parse\n");
-    return DDS_ERRNO (DDS_RETCODE_ERROR, DDS_MOD_KERNEL, DDS_ERR_M1);
+    return DDS_ERRNO (DDS_RETCODE_ERROR);
   }
 
   if (! rtps_config_open ())
   {
     fprintf (stderr, "Failed to open log file\n");
-    return DDS_ERRNO (DDS_RETCODE_ERROR, DDS_MOD_KERNEL, DDS_ERR_M2);
+    return DDS_ERRNO (DDS_RETCODE_ERROR);
   }
   dds_set_report_level ();
 
@@ -145,7 +146,9 @@ dds_domainid_t dds_domain_default (void)
 
 /* Actual initialization called when participant created */
 
-extern int dds_init_impl (dds_domainid_t domain)
+dds_return_t
+dds_init_impl(
+        _In_ dds_domainid_t domain)
 {
   char buff[64];
   uint32_t len;
@@ -222,7 +225,7 @@ extern int dds_init_impl (dds_domainid_t domain)
 
 fail:
 
-  return DDS_ERRNO (DDS_RETCODE_ERROR, DDS_MOD_KERNEL, DDS_ERR_M3);
+  return DDS_ERRNO (DDS_RETCODE_ERROR);
 }
 
 extern void dds_fini (void)

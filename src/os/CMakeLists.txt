@@ -11,9 +11,10 @@ PREPEND(srcs_platform ${platform} os_platform_errno.c os_platform_heap.c os_plat
 include (GenerateExportHeader)
 PREPEND(srcs_os "${CMAKE_SOURCE_DIR}/src/os" os_atomics.c os_init.c os_report.c os_socket.c os_thread.c os_time.c os_errno.c ${srcs_platform})
 add_library(OSAPI ${srcs_os})
-generate_export_header(OSAPI EXPORT_FILE_NAME "${CMAKE_BINARY_DIR}/exports/os/osapi_export.h")
+generate_export_header(OSAPI EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/exports/os/osapi_export.h")
 target_link_libraries(OSAPI INTERFACE Abstraction)
-target_include_directories(OSAPI PUBLIC "${CMAKE_SOURCE_DIR}/include/" "${CMAKE_BINARY_DIR}/exports/")
+target_include_directories(OSAPI PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/>" "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports/>"
+                                        "$<INSTALL_INTERFACE:${INSTALL_PREFIX}/include/>" "$<INSTALL_INTERFACE:${INSTALL_PREFIX}/exports/>")
 
 if(BUILD_TESTING)
   add_subdirectory(tests)

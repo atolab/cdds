@@ -11,8 +11,9 @@ set(COVERAGE_OUTPUT_DIR "@CMAKE_BINARY_DIR@/coverage")
 #       generators handle multiple exclusion directories.
 #
 # Do not include the various test directories.
-set(COVERAGE_EXCLUDE_DIR1 "tests")
-set(COVERAGE_EXCLUDE_DIR2 "examples")
+set(COVERAGE_EXCLUDE_TESTS "tests")
+set(COVERAGE_EXCLUDE_EXAMPLES "examples")
+set(COVERAGE_EXCLUDE_BUILD_SUPPORT "cmake")
 
 # Add this flag when you want to suppress LCOV and ctest outputs during coverage collecting.
 #set(COVERAGE_QUIET_FLAG "--quiet")

@@ -1,5 +1,3 @@
-#include <assert.h>
-
 #include "dds.h"
 #include "os/os.h"
 #include <criterion/criterion.h>
@@ -11,7 +9,7 @@
 
 //#define VERBOSE_INIT
 #ifdef VERBOSE_INIT
-#define PRINT_SAMPLE(info, sample) printf("%s (%d, %d, %d)\n", info, sample.long_1, sample.long_2, sample.long_3);
+#define PRINT_SAMPLE(info, sample) cr_log_info("%s (%d, %d, %d)\n", info, sample.long_1, sample.long_2, sample.long_3);
 #else
 #define PRINT_SAMPLE(info, sample)
 #endif
@@ -60,7 +58,15 @@ static void*             g_samples[MAX_SAMPLES];
 static Space_Type1       g_data[MAX_SAMPLES];
 static dds_sample_info_t g_info[MAX_SAMPLES];
 
-
+static char*
+create_topic_name(const char *prefix, char *name, size_t size)
+{
+    /* Get semi random g_topic name. */
+    os_procId pid = os_procIdSelf();
+    uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    return name;
+}
 
 static void
 readcondition_init(void)
@@ -71,19 +77,13 @@ readcondition_init(void)
     dds_return_t ret;
     char name[100];
 
-    /* Get semi random g_topic name. */
-    snprintf(name, 100,
-            "vddsc_readcondition_test_pid%"PRIprocId"_tid%d",
-            os_procIdSelf(),
-            (int)os_threadIdToInteger(os_threadIdSelf()));
-
     g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(g_participant, 0, "Failed to create prerequisite g_participant");
 
     g_waitset = dds_create_waitset(g_participant);
     cr_assert_gt(g_waitset, 0, "Failed to create g_waitset");
 
-    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, name, NULL, NULL);
+    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_readcondition_test", name, 100), NULL, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     /* Create a reader that keeps last sample of all instances. */
@@ -137,7 +137,7 @@ readcondition_init(void)
 
         if (ist == DDS_IST_NOT_ALIVE_DISPOSED) {
             PRINT_SAMPLE("INIT: Dispose   ", sample);
-            ret = dds_instance_dispose(g_writer, &sample);
+            ret = dds_dispose(g_writer, &sample);
             cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite dispose");
         }
         if (ist == DDS_IST_NOT_ALIVE_NO_WRITERS) {
@@ -170,7 +170,7 @@ readcondition_init(void)
 
         if ((ist == DDS_IST_NOT_ALIVE_DISPOSED) && (i != 4)) {
             PRINT_SAMPLE("INIT: Dispose   ", sample);
-            ret = dds_instance_dispose(g_writer, &sample);
+            ret = dds_dispose(g_writer, &sample);
             cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite dispose");
         }
         if (ist == DDS_IST_NOT_ALIVE_NO_WRITERS) {
@@ -382,7 +382,7 @@ Test(vddsc_readcondition_read, any, .init=readcondition_init, .fini=readconditio
     condition = dds_create_readcondition(g_reader, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
     cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
 
-    /* Read all non-read samples (should be last part). */
+    /* Read all samples. */
     ret = dds_read(condition, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
     cr_assert_eq(ret, MAX_SAMPLES, "# read %d, expected %d", ret, MAX_SAMPLES);
     for(int i = 0; i < ret; i++) {

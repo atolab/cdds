@@ -26,7 +26,8 @@
 #include <stdio.h>
 #ifndef INTEGRITY
 #include <signal.h>
-#ifndef __VXWORKS__
+/* TODO: should introduce a HAVE_PRCTL define rather than blacklisting some platforms */
+#if !defined __VXWORKS__ && !defined __APPLE__
 #include <sys/prctl.h>
 #endif
 #endif
@@ -242,7 +243,7 @@ os_startRoutineWrapper (
 
 #if defined(INTEGRITY)
     SetTaskName(CurrentTask(), context->threadName, strlen(context->threadName));
-#elif !defined(__VXWORKS__)
+#elif !defined(__VXWORKS__) && !defined(__APPLE__)
     prctl(PR_SET_NAME, context->threadName);
 #endif
 
