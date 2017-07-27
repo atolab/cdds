@@ -23,7 +23,7 @@ static const char * dds_err_code_array[DDS_ERR_CODE_NUM] =
   "Illegal Operation"
 };
 
-const char * dds_err_str (int err)
+const char * dds_err_str (dds_return_t err)
 {
   unsigned index = DDS_ERR_NR_INDEX (err);
   if (err >= 0)
@@ -37,7 +37,7 @@ const char * dds_err_str (int err)
   return dds_err_code_array[index];
 }
 
-bool dds_err_check (int err, unsigned flags, const char * where)
+bool dds_err_check (dds_return_t err, unsigned flags, const char * where)
 {
   if (err < 0)
   {

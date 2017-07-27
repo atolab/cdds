@@ -89,7 +89,7 @@ extern "C" {
  *   -# err Error value to be converted to a string
  *   -# Returns a string corresponding to the error value
  */
-DDS_EXPORT const char * dds_err_str (int err);
+DDS_EXPORT const char * dds_err_str (dds_return_t err);
 
 /**
  * Description : This operation takes the error number, error type and filename and line number and formats it to
@@ -101,7 +101,7 @@ DDS_EXPORT const char * dds_err_str (int err);
  *   -# where file and line number
  */
 
-DDS_EXPORT bool dds_err_check (int err, unsigned flags, const char * where);
+DDS_EXPORT bool dds_err_check (dds_return_t err, unsigned flags, const char * where);
 
 /**
  * Macro that defines dds_err_check function
