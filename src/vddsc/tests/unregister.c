@@ -638,20 +638,10 @@ Test(vddsc_unregister_instance, dispose_unregistered_sample, .init=unregistering
     cr_assert_eq(ret, 3, "# read %d, expected %d", ret, 3);
     for(int i = 0; i < ret; i++) {
         Space_Type1 *sample = (Space_Type1*)g_samples[i];
-        if (sample->long_1 == 0) {
+        if (sample->long_1 <= 1) {
             /* Check data. */
-            cr_assert_eq(sample->long_2, 0);
-            cr_assert_eq(sample->long_3, 0);
-
-            /* Check states. */
-            cr_assert_eq(g_info[i].valid_data,     true);
-            cr_assert_eq(g_info[i].sample_state,   DDS_SST_NOT_READ);
-            cr_assert_eq(g_info[i].view_state,     DDS_VST_NEW);
-            cr_assert_eq(g_info[i].instance_state, DDS_ALIVE_INSTANCE_STATE);
-        } else if (sample->long_1 == 1) {
-            /* Check data. */
-            cr_assert_eq(sample->long_2, 2);
-            cr_assert_eq(sample->long_3, 3);
+            cr_assert_eq(sample->long_2, sample->long_1 * 2);
+            cr_assert_eq(sample->long_3, sample->long_1 * 3);
 
             /* Check states. */
             cr_assert_eq(g_info[i].valid_data,     true);
@@ -697,20 +687,10 @@ Test(vddsc_unregister_instance_ts, dispose_unregistered_sample, .init=unregister
     cr_assert_eq(ret, 3, "# read %d, expected %d", ret, 3);
     for(int i = 0; i < ret; i++) {
         Space_Type1 *sample = (Space_Type1*)g_samples[i];
-        if (sample->long_1 == 0) {
+        if (sample->long_1 <= 1) {
             /* Check data. */
-            cr_assert_eq(sample->long_2, 0);
-            cr_assert_eq(sample->long_3, 0);
-
-            /* Check states. */
-            cr_assert_eq(g_info[i].valid_data,     true);
-            cr_assert_eq(g_info[i].sample_state,   DDS_SST_NOT_READ);
-            cr_assert_eq(g_info[i].view_state,     DDS_VST_NEW);
-            cr_assert_eq(g_info[i].instance_state, DDS_ALIVE_INSTANCE_STATE);
-        } else if (sample->long_1 == 1) {
-            /* Check data. */
-            cr_assert_eq(sample->long_2, 2);
-            cr_assert_eq(sample->long_3, 3);
+            cr_assert_eq(sample->long_2, sample->long_1 * 2);
+            cr_assert_eq(sample->long_3, sample->long_1 * 3);
 
             /* Check states. */
             cr_assert_eq(g_info[i].valid_data,     true);

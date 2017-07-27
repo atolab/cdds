@@ -126,11 +126,13 @@ dds_register_instance(
   if (ret == DDS_RETCODE_OK) {
     if(data != NULL && handle != NULL){
       inst = dds_instance_find (((dds_writer*) wr)->m_topic, data, true);
-      *handle = inst->m_iid;
-      if(inst == NULL){
+      if(inst != NULL){
+        *handle = inst->m_iid;
+      } else{
         ret = DDS_RETCODE_ERROR;
       }
-    }else{
+    }
+    else{
       ret = DDS_RETCODE_BAD_PARAMETER;
     }
     dds_entity_unlock(wr);
