@@ -227,7 +227,7 @@ take_instance_init(void)
     sample.long_2 = 4;
     sample.long_3 = 8;
     PRINT_SAMPLE("INIT: Unregister", sample);
-    ret = dds_instance_unregister(g_writer, &sample, DDS_HANDLE_NIL);
+    ret = dds_unregister_instance(g_writer, &sample);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite unregister");
     /*  | long_1 | long_2 | long_3 |    sst   | vst |    ist     |
      *  ----------------------------------------------------------
