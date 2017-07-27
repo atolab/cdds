@@ -1145,6 +1145,7 @@ err_unicast_sockets:
   os_mutexDestroy (&gv.lock);
   os_mutexDestroy (&gv.privileged_pp_lock);
   ephash_free (gv.guid_hash);
+  gv.guid_hash = NULL;
   deleted_participants_admin_fini ();
   lease_management_term ();
   os_condDestroy (&gv.participant_set_cond);
@@ -1424,6 +1425,7 @@ void rtps_term (void)
   dds_tkmap_free (gv.m_tkmap);
 
   ephash_free (gv.guid_hash);
+  gv.guid_hash = NULL;
   deleted_participants_admin_fini ();
   lease_management_term ();
   os_mutexDestroy (&gv.participant_set_lock);
