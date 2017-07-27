@@ -12,6 +12,233 @@
 
 #define ENABLE_TRACING 0
 
+#define FLOCKFILE_THREAD1_INPUT1 "thread1_flockfile_proc: *** input 1 ***"
+#define FLOCKFILE_THREAD1_INPUT3 "thread1_flockfile_proc: *** input 3 ***"
+#define FLOCKFILE_THREAD2_INPUT2 "thread2_flockfile_proc: *** input 2 ***"
+
+#define defSignal(signal) \
+	static os_cond signal;\
+	static bool signal##_set = false;
+
+#define initSignal(signal, mutex) \
+		os_condInit(&signal, &mutex);\
+		signal##_set = false;
+
+#define sendSignal(signal, mutex) \
+		os_mutexLock(&mutex);\
+		/* signaling */ \
+		signal##_set = true; \
+		os_condSignal(&signal);\
+		os_mutexUnlock(&mutex);
+
+#define waitForSignal(signal, mutex) \
+		os_mutexLock(&mutex);\
+		if(!signal##_set) { \
+			/* waiting for signal */ \
+			os_condWait(&signal, &mutex);\
+			/* received */ \
+		} /* else already signal received */ \
+		os_mutexUnlock(&mutex);
+
+#define timedWaitSignal(signal, mutex, time) \
+		os_mutexLock(&mutex);\
+		if(!signal##_set) { \
+			/* waiting for signal */ \
+			os_condTimedWait(&signal, &mutex, &time); \
+			/* signal received or timeout */ \
+		} /* else already signal received */ \
+		os_mutexUnlock(&mutex);
+
+static os_mutex mutex;
+static bool do_locking;
+
+/* signals set by threads */
+defSignal(thread1_started);
+defSignal(thread2_started);
+defSignal(action1_done);
+defSignal(action2_done);
+
+/* signals set by the test orchestrator (doFlockfileTest) */
+defSignal(do_action1);
+defSignal(do_action2);
+defSignal(do_action3);
+
+static const os_time wait_time_out = { 1, 0 };
+static FILE *file;
+
+static uint32_t thread1_flockfile_proc(void* args) {
+	int result = 0;
+
+	/* thread1: start */
+	sendSignal(thread1_started, mutex);
+
+	waitForSignal(do_action1, mutex);
+	if(do_locking) os_flockfile(file);
+	/* Thread1: writing input 1 to the file */
+	result = fputs(FLOCKFILE_THREAD1_INPUT1, file);
+	CU_ASSERT(result >= 0);
+
+	sendSignal(action1_done, mutex);
+
+	waitForSignal(do_action3, mutex);
+	/* Thread1: writing input 3 to the file */
+	result = fputs(FLOCKFILE_THREAD1_INPUT3, file);
+	CU_ASSERT(result >= 0);
+	if(do_locking) os_funlockfile(file);
+	/* thread1: end */
+
+	return 0;
+}
+
+static uint32_t thread2_flockfile_proc(void* args) {
+	int result = 0;
+
+	/* thread2: start */
+	sendSignal(thread2_started, mutex);
+
+	waitForSignal(do_action2, mutex);
+	/* Thread2: writing input 2 to the file */
+	result = fputs(FLOCKFILE_THREAD2_INPUT2, file);
+	CU_ASSERT(result >= 0);
+
+	sendSignal(action2_done, mutex);
+	/* thread2: end */
+
+	return 0;
+}
+
+bool doFlockfileTest(bool lock) {
+	bool testPassed = true;
+	bool strcmpResult = true;
+	os_result result;
+	os_threadAttr threadAttr;
+	os_threadId thread1;
+	os_threadId thread2;
+	int FLOCKFILE_INPUT_MAX = sizeof(FLOCKFILE_THREAD1_INPUT1);
+
+	do_locking = lock;
+
+	char *buffer = os_malloc(sizeof(char) * FLOCKFILE_INPUT_MAX);
+
+	file = tmpfile();
+
+	os_mutexInit(&mutex);
+
+	/* initialize all signal conditions */
+	os_mutexLock(&mutex);
+	initSignal(thread1_started, mutex);
+	initSignal(thread2_started, mutex);
+	initSignal(action1_done, mutex);
+	initSignal(action2_done, mutex);
+
+	initSignal(do_action1, mutex);
+	initSignal(do_action2, mutex);
+	initSignal(do_action3, mutex);
+	os_mutexUnlock(&mutex);
+
+	/* create threads... */
+	os_threadAttrInit(&threadAttr);
+
+	result = os_threadCreate(
+	            &thread1,
+	            "thread 1",
+				&threadAttr,
+				thread1_flockfile_proc,
+	            NULL);
+	CU_ASSERT(result == os_resultSuccess);
+
+	result = os_threadCreate(
+	            &thread2,
+	            "thread 2",
+				&threadAttr,
+				thread2_flockfile_proc,
+	            NULL);
+	CU_ASSERT(result == os_resultSuccess);
+
+	/* wait for threads to start */
+	waitForSignal(thread1_started, mutex);
+	waitForSignal(thread2_started, mutex);
+
+	/* get thread one to do its first thing */
+	sendSignal(do_action1, mutex);
+
+	/* wait for thread 1 to acknowledge */
+	timedWaitSignal(action1_done, mutex, wait_time_out);
+
+	/* kick thead 2 */
+	sendSignal(do_action2, mutex);
+
+	/* wait for thread 2 to acknowledge */
+	timedWaitSignal(action2_done, mutex, wait_time_out);
+
+	/* kick thread 1, again */
+	sendSignal(do_action3, mutex);
+
+	/* wait for threads to shutdown */
+	result = os_threadWaitExit(thread1,NULL);
+	CU_ASSERT(result == os_resultSuccess);
+
+	result = os_threadWaitExit(thread2,NULL);
+	CU_ASSERT(result == os_resultSuccess);
+
+	/* if lock then Expected action order: 1 3 2
+	* else Expected action order: 1 2 3  */
+
+	rewind(file);
+
+	if(lock) {
+		if(fgets(buffer, FLOCKFILE_INPUT_MAX, file) > 0) {
+			strcmpResult = (strcmp(buffer, FLOCKFILE_THREAD1_INPUT1) == 0);
+			CU_ASSERT(strcmpResult);
+			testPassed = testPassed && strcmpResult; /* update flag indicating overall test state */
+		}
+		if(fgets(buffer, FLOCKFILE_INPUT_MAX, file) > 0) {
+			strcmpResult = (strcmp(buffer, FLOCKFILE_THREAD1_INPUT3) == 0);
+			CU_ASSERT(strcmpResult);
+			testPassed = testPassed && strcmpResult; /* update flag indicating overall test state */
+		}
+		if(fgets(buffer, FLOCKFILE_INPUT_MAX, file) > 0) {
+			strcmpResult = (strcmp(buffer, FLOCKFILE_THREAD2_INPUT2) == 0);
+			CU_ASSERT(strcmpResult);
+			testPassed = testPassed && strcmpResult; /* update flag indicating overall test state */
+		}
+	} else {
+		if(fgets(buffer, FLOCKFILE_INPUT_MAX, file) > 0) {
+			strcmpResult = (strcmp(buffer, FLOCKFILE_THREAD1_INPUT1) == 0);
+			CU_ASSERT(strcmpResult);
+			testPassed = testPassed && strcmpResult; /* update flag indicating overall test state */
+		}
+		if(fgets(buffer, FLOCKFILE_INPUT_MAX, file) > 0) {
+			strcmpResult = (strcmp(buffer, FLOCKFILE_THREAD2_INPUT2) == 0);
+			CU_ASSERT(strcmpResult);
+			testPassed = testPassed && strcmpResult; /* update flag indicating overall test state */
+		}
+		if(fgets(buffer, FLOCKFILE_INPUT_MAX, file) > 0) {
+			strcmpResult = (strcmp(buffer, FLOCKFILE_THREAD1_INPUT3) == 0);
+			CU_ASSERT(strcmpResult);
+			testPassed = testPassed && strcmpResult; /* update flag indicating overall test state */
+		}
+	}
+
+	/* cleanup */
+	os_free(buffer);
+	fclose(file);
+
+	os_mutexLock(&mutex);
+	os_condDestroy(&do_action1);
+	os_condDestroy(&do_action2);
+	os_condDestroy(&do_action3);
+
+	os_condDestroy(&thread1_started);
+	os_condDestroy(&thread2_started);
+	os_condDestroy(&action1_done);
+	os_condDestroy(&action2_done);
+	os_mutexUnlock(&mutex);
+	os_mutexDestroy(&mutex);
+	/* doFlockfileTest */
+	return testPassed;
+}
+
 static int
 vsnprintfTest(
               const char *format,
@@ -549,4 +776,21 @@ CUnit_Test(os_stdlib, index)
     CU_ASSERT (res == NULL);
 
     printf ("Ending os_stdlib_index\n");
+}
+
+CUnit_Test(os_stdlib, flockfile)
+{
+	bool result = false;
+
+	/* Check writing in a FILE from multiple threads without using os_flockfile. */
+	printf ("Starting os_stdlib_flockfile_001\n");
+	result = doFlockfileTest(false);
+	CU_ASSERT (result);
+
+	/* Check writing in a FILE from multiple threads using os_flockfile in the first thread. */
+	printf ("Starting os_stdlib_flockfile_002\n");
+	result = doFlockfileTest(true);
+	CU_ASSERT (result);
+
+	printf ("Ending os_stdlib_flockfile\n");
 }
