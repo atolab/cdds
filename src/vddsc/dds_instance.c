@@ -127,6 +127,9 @@ dds_register_instance(
     if(data != NULL && handle != NULL){
       inst = dds_instance_find (((dds_writer*) wr)->m_topic, data, true);
       *handle = inst->m_iid;
+      if(inst == NULL){
+        ret = DDS_RETCODE_ERROR;
+      }
     }else{
       ret = DDS_RETCODE_BAD_PARAMETER;
     }

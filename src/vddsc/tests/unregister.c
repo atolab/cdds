@@ -25,11 +25,19 @@ static dds_entity_t g_waitset     = 0;
 static dds_time_t   g_past        = 0;
 static dds_time_t   g_present     = 0;
 
-
 static void*             g_samples[MAX_SAMPLES];
 static Space_Type1       g_data[MAX_SAMPLES];
 static dds_sample_info_t g_info[MAX_SAMPLES];
 
+static char*
+create_topic_name(const char *prefix, char *name, size_t size)
+{
+    /* Get semi random g_topic name. */
+    os_procId pid = os_procIdSelf();
+    uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    return name;
+}
 
 static void
 unregistering_init(void)
@@ -43,19 +51,13 @@ unregistering_init(void)
     /* Use by source timestamp to be able to check the time related funtions. */
     dds_qset_destination_order(qos, DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP);
 
-    /* Get semi random g_topic name. */
-    snprintf(name, 100,
-            "vddsc_unregistering_test_pid%"PRIprocId"_tid%d",
-            os_procIdSelf(),
-            (int)os_threadIdToInteger(os_threadIdSelf()));
-
     g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(g_participant, 0, "Failed to create prerequisite g_participant");
 
     g_waitset = dds_create_waitset(g_participant);
     cr_assert_gt(g_waitset, 0, "Failed to create g_waitset");
 
-    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, name, qos, NULL);
+    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_unregistering_test", name, 100), qos, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     /* Create a reader that keeps one sample on three instances. */
@@ -64,7 +66,7 @@ unregistering_init(void)
     g_reader = dds_create_reader(g_participant, g_topic, qos, NULL);
     cr_assert_gt(g_reader, 0, "Failed to create prerequisite g_reader");
 
-    /* Create a writer that will not automatically unregister unregistered samples. */
+    /* Create a writer that will not automatically dispose unregistered samples. */
     dds_qset_writer_data_lifecycle(qos, false);
     g_writer = dds_create_writer(g_participant, g_topic, qos, NULL);
     cr_assert_gt(g_writer, 0, "Failed to create prerequisite g_writer");
@@ -615,5 +617,120 @@ Test(vddsc_unregister_instance_ih_ts, unregistering_past_sample, .init=unregiste
 }
 /*************************************************************************************************/
 
+/*************************************************************************************************/
+Test(vddsc_unregister_instance, dispose_unregistered_sample, .init=unregistering_init, .fini=unregistering_fini)
+{
+    dds_entity_t writer;
+    writer = dds_create_writer(g_participant, g_topic, NULL, NULL);
+    cr_assert_gt(g_writer, 0, "Failed to create writer");
+
+    Space_Type1 newInstance = { INITIAL_SAMPLES, 0, 0 };
+    dds_return_t ret;
+
+    ret = dds_write(writer, &newInstance);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed write");
+
+    ret = dds_unregister_instance(writer, &newInstance);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Disposing unregistered sample returned %d", dds_err_nr(ret));
+
+    /* Read all available samples. */
+    ret = dds_read(g_reader, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
+    cr_assert_eq(ret, 3, "# read %d, expected %d", ret, 3);
+    for(int i = 0; i < ret; i++) {
+        Space_Type1 *sample = (Space_Type1*)g_samples[i];
+        if (sample->long_1 == 0) {
+            /* Check data. */
+            cr_assert_eq(sample->long_2, 0);
+            cr_assert_eq(sample->long_3, 0);
+
+            /* Check states. */
+            cr_assert_eq(g_info[i].valid_data,     true);
+            cr_assert_eq(g_info[i].sample_state,   DDS_SST_NOT_READ);
+            cr_assert_eq(g_info[i].view_state,     DDS_VST_NEW);
+            cr_assert_eq(g_info[i].instance_state, DDS_ALIVE_INSTANCE_STATE);
+        } else if (sample->long_1 == 1) {
+            /* Check data. */
+            cr_assert_eq(sample->long_2, 2);
+            cr_assert_eq(sample->long_3, 3);
+
+            /* Check states. */
+            cr_assert_eq(g_info[i].valid_data,     true);
+            cr_assert_eq(g_info[i].sample_state,   DDS_SST_NOT_READ);
+            cr_assert_eq(g_info[i].view_state,     DDS_VST_NEW);
+            cr_assert_eq(g_info[i].instance_state, DDS_ALIVE_INSTANCE_STATE);
+        } else if (sample->long_1 == 2) {
+            /* Check data. */
+            cr_assert_eq(sample->long_2, 0);
+            cr_assert_eq(sample->long_3, 0);
+
+            /* Check states. */
+            cr_assert_eq(g_info[i].valid_data,     true);
+            cr_assert_eq(g_info[i].sample_state,   DDS_SST_NOT_READ);
+            cr_assert_eq(g_info[i].view_state,     DDS_VST_NEW);
+            cr_assert_eq(g_info[i].instance_state, DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE);
+        } else {
+            cr_assert(false, "Unknown sample read");
+        }
+    }
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_unregister_instance_ts, dispose_unregistered_sample, .init=unregistering_init, .fini=unregistering_fini)
+{
+    dds_entity_t writer;
+    writer = dds_create_writer(g_participant, g_topic, NULL, NULL);
+    cr_assert_gt(g_writer, 0, "Failed to create writer");
+
+    Space_Type1 newInstance = { INITIAL_SAMPLES, 0, 0 };
+    dds_return_t ret;
+
+    ret = dds_write(writer, &newInstance);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed write");
+
+    ret = dds_unregister_instance(writer, &newInstance);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Disposing unregistered sample returned %d", dds_err_nr(ret));
+
+    /* Read all available samples. */
+    ret = dds_read(g_reader, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
+    cr_assert_eq(ret, 3, "# read %d, expected %d", ret, 3);
+    for(int i = 0; i < ret; i++) {
+        Space_Type1 *sample = (Space_Type1*)g_samples[i];
+        if (sample->long_1 == 0) {
+            /* Check data. */
+            cr_assert_eq(sample->long_2, 0);
+            cr_assert_eq(sample->long_3, 0);
+
+            /* Check states. */
+            cr_assert_eq(g_info[i].valid_data,     true);
+            cr_assert_eq(g_info[i].sample_state,   DDS_SST_NOT_READ);
+            cr_assert_eq(g_info[i].view_state,     DDS_VST_NEW);
+            cr_assert_eq(g_info[i].instance_state, DDS_ALIVE_INSTANCE_STATE);
+        } else if (sample->long_1 == 1) {
+            /* Check data. */
+            cr_assert_eq(sample->long_2, 2);
+            cr_assert_eq(sample->long_3, 3);
+
+            /* Check states. */
+            cr_assert_eq(g_info[i].valid_data,     true);
+            cr_assert_eq(g_info[i].sample_state,   DDS_SST_NOT_READ);
+            cr_assert_eq(g_info[i].view_state,     DDS_VST_NEW);
+            cr_assert_eq(g_info[i].instance_state, DDS_ALIVE_INSTANCE_STATE);
+        } else if (sample->long_1 == 2) {
+            /* Check data. */
+            cr_assert_eq(sample->long_2, 0);
+            cr_assert_eq(sample->long_3, 0);
+
+            /* Check states. */
+            cr_assert_eq(g_info[i].valid_data,     true);
+            cr_assert_eq(g_info[i].sample_state,   DDS_SST_NOT_READ);
+            cr_assert_eq(g_info[i].view_state,     DDS_VST_NEW);
+            cr_assert_eq(g_info[i].instance_state, DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE);
+        } else {
+            cr_assert(false, "Unknown sample read");
+        }
+    }
+}
+/*************************************************************************************************/
 
 #endif

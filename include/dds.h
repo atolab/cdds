@@ -1147,23 +1147,22 @@ dds_create_writer(
  *
  * This operation registers an instance with a key value to the data writer and
  * returns an instance handle that could be used for successive write & dispose
- * operations or NULL, if handle is not allocated.
+ * operations. When the handle is not allocated, the function will return and
+ * error and the handle will be un-touched.
  *
  * @param[in]  writer  The writer to which instance has be associated
  * @param[out] handle  The instance handle
  * @param[in]  data    The instance with the key value
  *
- * @returns >0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns >=0 - Success.
+ * @returns <0  - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_OK
  *                The operation was successful.
  * @retval DDS_RETCODE_BAD_PARAMETER
  *                One of the given arguments is not valid.
- * @retval DDS_RETCODE_TIMEOUT
- *                Timeout expired before all acknowledgements from reliable reader entities were received.
- * @retval DDS_RETCODE_UNSUPPORTED
- *                Operation is not supported.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1181,17 +1180,15 @@ dds_register_instance(
  * @param[in]  writer  The writer to which instance is associated
  * @param[in]  data    The instance with the key value
  *
- * @returns >0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns >=0 - Success.
+ * @returns <0  - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_OK
  *                The operation was successful.
  * @retval DDS_RETCODE_BAD_PARAMETER
  *                One of the given arguments is not valid.
- * @retval DDS_RETCODE_TIMEOUT
- *                Timeout expired before all acknowledgements from reliable reader entities were received.
- * @retval DDS_RETCODE_UNSUPPORTED
- *                Operation is not supported.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1208,17 +1205,15 @@ dds_unregister_instance(
  * @param[in]  writer  The writer to which instance is associated
  * @param[in]  handle  The instance handle
  *
- * @returns >0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns >=0 - Success.
+ * @returns <0  - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_OK
  *                The operation was successful.
  * @retval DDS_RETCODE_BAD_PARAMETER
  *                One of the given arguments is not valid.
- * @retval DDS_RETCODE_TIMEOUT
- *                Timeout expired before all acknowledgements from reliable reader entities were received.
- * @retval DDS_RETCODE_UNSUPPORTED
- *                Operation is not supported.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1237,17 +1232,15 @@ dds_unregister_instance_ih(
  * @param[in]  data      The instance with the key value
  * @param[in]  timestamp The timestamp used at registration.
  *
- * @returns >0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns >=0 - Success.
+ * @returns <0  - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_OK
  *                The operation was successful.
  * @retval DDS_RETCODE_BAD_PARAMETER
  *                One of the given arguments is not valid.
- * @retval DDS_RETCODE_TIMEOUT
- *                Timeout expired before all acknowledgements from reliable reader entities were received.
- * @retval DDS_RETCODE_UNSUPPORTED
- *                Operation is not supported.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1267,17 +1260,15 @@ dds_unregister_instance_ts(
  * @param[in]  handle    The instance handle
  * @param[in]  timestamp The timestamp used at registration.
  *
- * @returns >0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns >=0 - Success.
+ * @returns <0  - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_OK
  *                The operation was successful.
  * @retval DDS_RETCODE_BAD_PARAMETER
  *                One of the given arguments is not valid.
- * @retval DDS_RETCODE_TIMEOUT
- *                Timeout expired before all acknowledgements from reliable reader entities were received.
- * @retval DDS_RETCODE_UNSUPPORTED
- *                Operation is not supported.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t

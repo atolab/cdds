@@ -25,11 +25,19 @@ static dds_entity_t g_waitset     = 0;
 static dds_time_t   g_past        = 0;
 static dds_time_t   g_present     = 0;
 
-
 static void*             g_samples[MAX_SAMPLES];
 static Space_Type1       g_data[MAX_SAMPLES];
 static dds_sample_info_t g_info[MAX_SAMPLES];
 
+static char*
+create_topic_name(const char *prefix, char *name, size_t size)
+{
+    /* Get semi random g_topic name. */
+    os_procId pid = os_procIdSelf();
+    uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    return name;
+}
 
 static void
 registering_init(void)
@@ -43,19 +51,13 @@ registering_init(void)
     /* Use by source timestamp to be able to check the time related funtions. */
     dds_qset_destination_order(qos, DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP);
 
-    /* Get semi random g_topic name. */
-    snprintf(name, 100,
-            "vddsc_unregistering_test_pid%"PRIprocId"_tid%d",
-            os_procIdSelf(),
-            (int)os_threadIdToInteger(os_threadIdSelf()));
-
     g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(g_participant, 0, "Failed to create prerequisite g_participant");
 
     g_waitset = dds_create_waitset(g_participant);
     cr_assert_gt(g_waitset, 0, "Failed to create g_waitset");
 
-    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, name, qos, NULL);
+    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_registering_test", name, 100), qos, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     /* Create a reader that keeps one sample on three instances. */
@@ -64,7 +66,7 @@ registering_init(void)
     g_reader = dds_create_reader(g_participant, g_topic, qos, NULL);
     cr_assert_gt(g_reader, 0, "Failed to create prerequisite g_reader");
 
-    /* Create a writer that will not automatically unregister unregistered samples. */
+    /* Create a writer that will not automatically dispose unregistered samples. */
     dds_qset_writer_data_lifecycle(qos, false);
     g_writer = dds_create_writer(g_participant, g_topic, qos, NULL);
     cr_assert_gt(g_writer, 0, "Failed to create prerequisite g_writer");
@@ -136,16 +138,28 @@ Test(vddsc_register_instance, deleted_entity, .init=registering_init, .fini=regi
 {
     dds_return_t ret;
     dds_delete(g_writer);
-    ret = dds_register_instance(g_writer, DDS_HANDLE_NIL, NULL);
+    ret = dds_register_instance(g_writer, NULL, NULL);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
 
 }
 
-Test(vddsc_register_instance, null, .init=registering_init, .fini=registering_fini)
+
+static dds_instance_handle_t hndle = 0;
+static Space_Type1           data;
+TheoryDataPoints(vddsc_register_instance, invalid_params) = {
+        DataPoints(dds_instance_handle_t *, &hndle, NULL),
+        DataPoints(void*, &data, NULL)
+};
+Theory((dds_instance_handle_t *hndl2, void *data), vddsc_register_instance, invalid_params/*, .init=registering_init, .fini=registering_fini*/)
 {
+    dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-    ret = dds_register_instance(g_writer, DDS_HANDLE_NIL, NULL);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+
+    /* Only test when the combination of parameters is actually invalid.*/
+    cr_assume((hndl2 == NULL) || (data == NULL));
+
+    ret = dds_register_instance(g_writer, hndl2, data);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d != expected %d", dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER);
 }
 
 TheoryDataPoints(vddsc_register_instance, invalid_writers) = {
@@ -161,7 +175,7 @@ Theory((dds_entity_t writer), vddsc_register_instance, invalid_writers, .init=re
         exp = writer;
     }
 
-    ret = dds_register_instance(writer, DDS_HANDLE_NIL, NULL);
+    ret = dds_register_instance(writer, NULL, NULL);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 
@@ -171,7 +185,7 @@ TheoryDataPoints(vddsc_register_instance, non_writers) = {
 Theory((dds_entity_t *writer), vddsc_register_instance, non_writers, .init=registering_init, .fini=registering_fini)
 {
     dds_return_t ret;
-    ret = dds_register_instance(*writer, DDS_HANDLE_NIL, NULL);
+    ret = dds_register_instance(*writer, NULL, NULL);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 
@@ -186,6 +200,18 @@ Test(vddsc_register_instance, registering_new_instance, .init=registering_init, 
     cr_assert_eq(ret, DDS_RETCODE_OK);
     instHndl = dds_instance_lookup(g_writer, &newInstance);
     cr_assert_eq(instHndl, instHndl2);
+}
+
+Test(vddsc_register_instance, data_already_available, .init=registering_init, .fini=registering_fini)
+{
+    dds_instance_handle_t instHndl, instHndl2;
+    dds_return_t ret;
+    instHndl = dds_instance_lookup(g_writer, &g_data);
+    cr_assert_neq(instHndl, DDS_HANDLE_NIL);
+    ret = dds_register_instance(g_writer, &instHndl2, &g_data);
+    cr_assert_eq(ret, DDS_RETCODE_OK);
+    cr_assert_eq(instHndl2, instHndl);
+
 }
 
 #endif
