@@ -459,26 +459,35 @@ uint32_t dds_reader_lock_samples (dds_entity_t reader)
 }
 
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
-int
-dds_reader_wait_for_historical_data(
-        dds_entity_t reader,
-        dds_duration_t max_wait)
+dds_return_t
+dds_wait_for_historical_data(
+        _In_ dds_entity_t reader,
+        _In_range_(0, DDS_INFINITY) dds_duration_t max_wait)
 {
-    int ret;
     dds_reader *rd;
+    uint32_t errnr;
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
 
-    assert (reader);
+    errnr = dds_reader_lock(reader, &rd);
 
-    ret = dds_reader_lock(reader, &rd);
-    if (ret == DDS_RETCODE_OK) {
-        if (((dds_entity*)rd)->m_qos->durability.kind > NN_TRANSIENT_LOCAL_DURABILITY_QOS) {
-            ret = (dds_global.m_dur_wait) (rd, max_wait);
+    if (errnr == DDS_RETCODE_OK) {
+        /* TODO Wait_for_historical data is currently only supported for transient-local readers
+         * For transient-local readers ddsi will deliver the data.
+         * For volatile, transient and persistent readers the behaviour of wait_for_historical_data
+         * requires a durability service or somehting equivalent. Until a durability service is
+         * not available UNSUPPORTED will be returned.
+         */ 
+        if (max_wait < 0) {
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+        } else if (((dds_entity*)rd)->m_qos->durability.kind == NN_TRANSIENT_LOCAL_DURABILITY_QOS) {
+            /* Transient local is handled by ddsi */
+            ret = DDS_ERRNO(DDS_RETCODE_OK);
         } else {
-            ret = DDS_ERRNO(DDS_RETCODE_ERROR);
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
         }
         dds_reader_unlock(rd);
     } else {
-        ret = DDS_ERRNO(ret);
+        ret = DDS_ERRNO(errnr);
     }
 
     return ret;

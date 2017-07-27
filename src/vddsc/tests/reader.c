@@ -609,6 +609,73 @@ Test(vddsc_reader, take_mask_with_loan)
   dds_delete(participant);
 }
 
+
+Test(vddsc_reader, wait_for_historical_data)
+{
+  dds_entity_t participant;
+  dds_entity_t topic;
+  dds_entity_t reader;
+  dds_qos_t *qos;
+  dds_return_t ret;
+  dds_duration_t zeroSec = ((dds_duration_t)DDS_SECS(0));
+  dds_duration_t oneSec = ((dds_duration_t)DDS_SECS(1));
+  dds_duration_t minusOneSec = ((dds_duration_t)DDS_SECS(-1));
+  dds_duration_t infinite = DDS_INFINITY;
+
+  participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  qos = dds_qos_create ();
+  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", qos, NULL);
+  cr_assert_gt(topic, 0, "dds_create_topic(Roundtrip)");
+
+  /* Call wait_for_historical_data with various reader arguments */
+  ret = dds_wait_for_historical_data(0, oneSec);
+  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_historial_data(NULL, oneSec)");
+  ret = dds_wait_for_historical_data(participant, oneSec);
+  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "dds_wait_for_historial_data(NULL, oneSec)");
+
+  /* Call wait_for_historical_data with a transient-localreader and various max_wait arguments */
+  dds_qset_durability(qos, DDS_DURABILITY_TRANSIENT_LOCAL);
+  reader = dds_create_reader (participant, topic, qos, NULL);
+  cr_assert_gt(reader, 0, "transient-local reader created");
+  ret = dds_wait_for_historical_data(reader, minusOneSec);
+  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_historial_data(reader, minusOneSec)");
+  ret = dds_wait_for_historical_data(reader, zeroSec);
+  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "dds_wait_for_historial_data(reader, zeroSec)");
+  ret = dds_wait_for_historical_data(reader, oneSec);
+  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "dds_wait_for_historial_data(reader, oneSec)");
+  ret = dds_wait_for_historical_data(reader, infinite);
+  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "dds_wait_for_historial_data(reader, infinite)");
+  dds_delete(reader);
+
+  /* Call wait_for_historical_data fon volatile, transient and persistent readers */
+  dds_qset_durability(qos, DDS_DURABILITY_VOLATILE);
+  reader = dds_create_reader (participant, topic, qos, NULL);
+  cr_assert_gt(reader, 0, "volatile reader created");
+  ret = dds_wait_for_historical_data(reader, oneSec);
+  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_UNSUPPORTED, "dds_wait_for_historial_data(volatile_reader, oneSec)");
+  dds_delete(reader);
+
+  dds_qset_durability(qos, DDS_DURABILITY_TRANSIENT);
+  reader = dds_create_reader (participant, topic, qos, NULL);
+  cr_assert_gt(reader, 0, "transient reader created");
+  ret = dds_wait_for_historical_data(reader, oneSec);
+  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_UNSUPPORTED, "dds_wait_for_historial_data(transient_reader, oneSec)");
+  dds_delete(reader);
+
+  dds_qset_durability(qos, DDS_DURABILITY_PERSISTENT);
+  reader = dds_create_reader (participant, topic, qos, NULL);
+  cr_assert_gt(reader, 0, "persistent reader created");
+  ret = dds_wait_for_historical_data(reader, oneSec);
+  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_UNSUPPORTED, "dds_wait_for_historial_data(persistent_reader, oneSec)");
+  dds_delete(reader);
+
+  dds_qos_delete (qos);
+  dds_delete(topic);
+  dds_delete(reader);
+  dds_delete(participant);
+}
+
+
 static dds_entity_t g_participant = 0;
 static void reader_env_init(void)
 {
