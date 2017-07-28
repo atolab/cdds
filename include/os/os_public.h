@@ -4,27 +4,27 @@
 #include <stddef.h>
 
 #if __linux__ == 1
-#include "posix/os_platform_public.h"
+#include "os/posix/os_platform_public.h"
 #elif defined(__VXWORKS__)
-#include "posix/os_platform_public.h"
+#include "os/posix/os_platform_public.h"
 #elif __sun == 1
-#include "solaris/os_platform_public.h"
+#include "os/solaris/os_platform_public.h"
 #elif defined(__INTEGRITY)
-#include "integrity/os_platform_public.h"
+#include "os/integrity/os_platform_public.h"
 #elif  __PikeOS__ == 1
-#include "pikeos3/os_platform_public.h"
+#include "os/pikeos3/os_platform_public.h"
 #elif defined(__QNX__)
-#include "qnx/os_platform_public.h"
+#include "os/qnx/os_platform_public.h"
 #elif defined(_MSC_VER)
 #ifdef _WIN32_WCE
-#include "wince/os_platform_public.h"
+#include "os/wince/os_platform_public.h"
 #else
-#include "windows/os_platform_public.h"
+#include "os/windows/os_platform_public.h"
 #endif
 #elif defined __APPLE__
-#include "posix/os_platform_public.h"
+#include "os/posix/os_platform_public.h"
 #elif defined __CYGWIN__
-#include "cygwin/os_platform_public.h"
+#include "os/cygwin/os_platform_public.h"
 #else
 #error "Platform missing from os_public.h list"
 #endif
