@@ -254,10 +254,6 @@ Test(vddsc_entity, liveliness_changed, .init=init_entity_status, .fini=fini_enti
     cr_assert_status_eq(status, DDS_RETCODE_OK);
     cr_assert_eq(set_status, DDS_LIVELINESS_CHANGED_STATUS);
 
-    /*Getting the status should have reset the trigger, waitset should timeout */
-    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, shortTimeout);
-    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_TIMEOUT, "returned %d", dds_err_nr(status));
-
     /* wait for LIVELINESS_CHANGED status */
     status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
     cr_assert_eq(status, wsresultsize);
@@ -309,13 +305,9 @@ Test(vddsc_entity, sample_rejected, .init=init_entity_status, .fini=fini_entity_
     cr_assert_eq(status, wsresultsize);
     status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
     cr_assert_eq(status, wsresultsize);
-    /* Reset the publication matched status */
-    status = dds_get_publication_matched_status(writer, NULL);
-    cr_assert_status_eq(status, DDS_RETCODE_OK);
 
-    /*Getting the status should have reset the trigger, waitset should timeout */
-    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, shortTimeout);
-    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_TIMEOUT, "returned %d", dds_err_nr(status));
+    status = dds_set_enabled_status(reader, DDS_SAMPLE_REJECTED_STATUS);
+    cr_assert_eq(status, DDS_RETCODE_OK);
 
     /* write data - write more than resource limits set by a data reader */
     for (int i = 0; i < 5; i++)
@@ -324,32 +316,18 @@ Test(vddsc_entity, sample_rejected, .init=init_entity_status, .fini=fini_entity_
       cr_assert_status_eq(status, DDS_RETCODE_OK);
     }
 
-    /* Read status and reset */
-    status = dds_take_status(reader, &status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    /* wait for sample rejected status */
+    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+    cr_assert_eq(status, wsresultsize);
+    status = dds_get_sample_rejected_status (reader, &sample_rejected);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
-    cr_assert_eq(status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
-    if(status2 & DDS_SUBSCRIPTION_MATCHED_STATUS){
-      /* wait for sample rejected status */
-      status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-      cr_assert_eq(status, wsresultsize);
-      status = dds_get_sample_rejected_status (reader, &sample_rejected);
-      cr_assert_status_eq(status, DDS_RETCODE_OK);
-      cr_assert_eq(sample_rejected.total_count,        2);
-      cr_assert_eq(sample_rejected.total_count_change, 1);
-      cr_assert_eq(sample_rejected.last_reason, DDS_REJECTED_BY_SAMPLES_LIMIT);
+    cr_assert_eq(sample_rejected.total_count,        4);
+    cr_assert_eq(sample_rejected.total_count_change, 4);
+    cr_assert_eq(sample_rejected.last_reason, DDS_REJECTED_BY_SAMPLES_LIMIT);
 
-      /*Getting the status should have reset the trigger, waitset should timeout */
-      status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, shortTimeout);
-      cr_assert_eq(dds_err_nr(status), DDS_RETCODE_TIMEOUT, "returned %d", dds_err_nr(status));
-    }
-    /* Delete reader */
-    status = dds_waitset_detach(waitSetrd, reader);
-    cr_assert_status_eq(status, DDS_RETCODE_OK);
-    dds_delete(reader);
-
-    /* Wait for reader to be deleted */
-    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-    cr_assert_neq(status, 0);
+    /*Getting the status should have reset the trigger, waitset should timeout */
+    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, shortTimeout);
+    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_TIMEOUT, "returned %d", dds_err_nr(status));
 }
 
 #if 0
@@ -415,18 +393,8 @@ Test(vddsc_entity, sample_lost, .init=init_entity_status, .fini=fini_entity_stat
     status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
     cr_assert_eq(status, wsresultsize);
 
-    /* Reset the publication matched status */
-    status = dds_get_publication_matched_status(writer, NULL);
+    status = dds_set_enabled_status(reader, DDS_SAMPLE_LOST_STATUS);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
-
-    /*Getting the status should have reset the trigger, waitset should timeout */
-    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, shortTimeout);
-    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_TIMEOUT, "returned %d", dds_err_nr(status));
-
-    /* Read status and reset */
-    status = dds_take_status(reader, &status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
-    cr_assert_status_eq(status, DDS_RETCODE_OK);
-    cr_assert_eq(status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
 
     /* get current time - subtraction ensures that this is truly historic on all platforms. */
     time1 = dds_time () - 1000000;
@@ -438,28 +406,18 @@ Test(vddsc_entity, sample_lost, .init=init_entity_status, .fini=fini_entity_stat
     /* second sample with older timestamp */
     status = dds_write_ts (writer, &sample, time1);
 
-    if(status2 & DDS_SUBSCRIPTION_MATCHED_STATUS){
-      /* wait for sample lost status */
-      status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
-      cr_assert_eq(status, wsresultsize);
-      status = dds_get_sample_lost_status (reader, &sample_lost);
-      cr_assert_status_eq(status, DDS_RETCODE_OK);
-      cr_assert_eq(sample_lost.total_count,          1);
-      cr_assert_eq(sample_lost.total_count_change, 1);
-
-      /*Getting the status should have reset the trigger, waitset should timeout */
-      status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, shortTimeout);
-      cr_assert_eq(dds_err_nr(status), DDS_RETCODE_TIMEOUT, "returned %d", dds_err_nr(status));
-    }
-
-    /* Delete reader */
-    status = dds_waitset_detach(waitSetrd, reader);
+    /* wait for sample lost status */
+    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
+    cr_assert_eq(status, wsresultsize);
+    status = dds_get_sample_lost_status (reader, &sample_lost);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
-    dds_delete(reader);
+    cr_assert_eq(sample_lost.total_count,          1);
+    cr_assert_eq(sample_lost.total_count_change, 1);
 
-    /* Wait for reader to be deleted */
-    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, waitTimeout);
-    cr_assert_neq(status, 0);
+    /*Getting the status should have reset the trigger, waitset should timeout */
+    status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, shortTimeout);
+    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_TIMEOUT, "returned %d", dds_err_nr(status));
+
 }
 
 Test(vddsc_entity, data_available, .init=init_entity_status, .fini=fini_entity_status)
@@ -552,10 +510,6 @@ Test(vddsc_entity, all_data_available, .init=init_entity_status, .fini=fini_enti
     status = dds_take_status (reader2, &status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
     cr_assert_eq(status2, DDS_SUBSCRIPTION_MATCHED_STATUS);
-
-    /*Getting the status should have reset the trigger, waitset should timeout */
-    status = dds_waitset_wait(waitSetwr, wsresults, wsresultsize, shortTimeout);
-    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_TIMEOUT, "returned %d", dds_err_nr(status));
 
     /* wait for data */
     status = dds_waitset_wait(waitSetrd, wsresults2, wsresultsize2, waitTimeout);
