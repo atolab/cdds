@@ -42,14 +42,14 @@ endif()
 # profiles etc.
 set(basedir "${CMAKE_CURRENT_SOURCE_DIR}")
 mark_as_advanced(basedir)
-configure_file("pom.xml" "pom.xml")
+configure_file("pom.xml.in" "pom.xml")
 configure_file("com/prismtech/vortex/Version.java.in" "com/prismtech/vortex/Version.java")
 
 add_custom_command(
     OUTPUT  "${IDLC_JAR}"
     COMMAND "${Maven_EXECUTABLE}"
     ARGS    "-q" "package"
-    DEPENDS "pom.xml" ${IDLC_G4_SOURCES} ${IDLC_JAVA_SOURCES} ${IDLC_ST_SOURCES})
+    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/pom.xml" ${IDLC_G4_SOURCES} ${IDLC_JAVA_SOURCES} ${IDLC_ST_SOURCES})
 
 add_custom_target(idlc ALL DEPENDS "${IDLC_JAR}")
 
