@@ -448,7 +448,7 @@ static int handle_SPDP_dead (const struct receiver_state *rst, const nn_plist_t 
 
 static void allowmulticast_aware_add_to_addrset (struct addrset *as, const nn_locator_t *loc)
 {
-#if DDSI_INCLUDE_SSM
+#ifdef DDSI_INCLUDE_SSM
   if (is_ssm_mcaddr (loc))
   {
     if (!(config.allowMulticast & AMC_SSM))

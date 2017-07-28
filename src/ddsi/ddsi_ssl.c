@@ -9,11 +9,13 @@
  *   for full copyright notice and license terms.
  *
  */
+#include "os/os.h"
 #include "ddsi/ddsi_ssl.h"
 #include "ddsi/q_config.h"
 #include "ddsi/q_log.h"
-#include "os/os_heap.h"
 #include "ddsi/ddsi_tcp.h"
+
+#include <assert.h>
 
 #ifdef DDSI_INCLUDE_SSL
 
@@ -68,7 +70,7 @@ static int ddsi_ssl_verify (int ok, X509_STORE_CTX * store)
   return ok;
 }
 
-static os_ssize_t ddsi_ssl_read (SSL * ssl, void * buf, os_size_t len, int * err)
+static ssize_t ddsi_ssl_read (SSL * ssl, void * buf, size_t len, int * err)
 {
   int ret;
 
@@ -111,7 +113,7 @@ static os_ssize_t ddsi_ssl_read (SSL * ssl, void * buf, os_size_t len, int * err
   return ret;
 }
 
-static os_ssize_t ddsi_ssl_write (SSL * ssl, const void * buf, os_size_t len, int * err)
+static ssize_t ddsi_ssl_write (SSL * ssl, const void * buf, size_t len, int * err)
 {
   int ret;
 
@@ -155,11 +157,6 @@ static os_ssize_t ddsi_ssl_write (SSL * ssl, const void * buf, os_size_t len, in
 }
 
 /* Standard OpenSSL init and thread support routines. See O'Reilly. */
-
-static unsigned long ddsi_ssl_id (void)
-{
-  return os_threadIdToInteger (os_threadIdSelf ());
-}
 
 typedef struct CRYPTO_dynlock_value
 {
@@ -328,7 +325,9 @@ static SSL * ddsi_ssl_connect (os_socket sock)
   /* Connect SSL over connected socket */
 
   ssl = ddsi_ssl_new ();
+  OS_WARNING_MSVC_OFF(4244); // TODO: Can a socket always be used as a fd?
   SSL_set_fd (ssl, sock);
+  OS_WARNING_MSVC_ON(4244);
   err = SSL_connect (ssl);
   if (err != 1)
   {
@@ -342,7 +341,9 @@ static SSL * ddsi_ssl_connect (os_socket sock)
 static BIO * ddsi_ssl_listen (os_socket sock)
 {
   BIO * bio = BIO_new (BIO_s_accept ());
+  OS_WARNING_MSVC_OFF(4244); // TODO: Can a socket always be used as a fd?
   BIO_set_fd (bio, sock, BIO_NOCLOSE);
+  OS_WARNING_MSVC_ON(4244);
   return bio;
 }
 
@@ -369,7 +370,7 @@ static SSL * ddsi_ssl_accept (BIO * bio, os_socket * sock)
   return ssl;
 }
 
-static c_bool ddsi_ssl_init (void)
+static bool ddsi_ssl_init (void)
 {
   unsigned locks = (unsigned) CRYPTO_num_locks ();
   unsigned i;
@@ -383,7 +384,7 @@ static c_bool ddsi_ssl_init (void)
   SSL_load_error_strings ();
   SSL_library_init ();
   OpenSSL_add_all_algorithms ();
-  CRYPTO_set_id_callback (ddsi_ssl_id);
+  /* CRYPTO_set_id_callback (ddsi_ssl_id); // The default thread-ID abstraction by OpenSSL itself is satisfactory. */
   CRYPTO_set_locking_callback (ddsi_ssl_lock);
   CRYPTO_set_dynlock_create_callback (ddsi_ssl_dynlock_create);
   CRYPTO_set_dynlock_lock_callback (ddsi_ssl_dynlock_lock);
@@ -399,7 +400,6 @@ static void ddsi_ssl_fini (void)
   unsigned i;
 
   SSL_CTX_free (ddsi_ssl_ctx);
-  CRYPTO_set_id_callback (NULL);
   CRYPTO_set_locking_callback (NULL);
   CRYPTO_set_dynlock_create_callback (NULL);
   CRYPTO_set_dynlock_lock_callback (NULL);

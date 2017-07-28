@@ -1076,7 +1076,7 @@ static int rebuild_select(int nlocs, const nn_locator_t *locs, const int *locs_n
     {
       if (locs_nrds[i] == 1 && !is_mcaddr(&locs[i]))
         j = i; /* prefer unicast for single nodes */
-#if DDSI_INCLUDE_SSM
+#ifdef DDSI_INCLUDE_SSM
       else if (is_ssm_mcaddr(&locs[i]))
         j = i; /* "reader favours SSM": all else being equal, use SSM */
 #endif

@@ -25,7 +25,6 @@ my $stkdc = 0; # discard count
 #
 # - 1: indicates a feature exclusive to DDSI2-E.
 my %isenh = ('LITE' => 0,
-             #'DDSI_INCLUDE_ENCRYPTION' => 1,
              #'DDSI_INCLUDE_NETWORK_CHANNELS' => 1,
              #'DDSI_INCLUDE_BANDWIDTH_LIMITING' => 1,
              #'DDSI_INCLUDE_NETWORK_PARTITIONS' => 1,

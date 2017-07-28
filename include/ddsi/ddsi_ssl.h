@@ -12,6 +12,8 @@
 #ifndef _DDSI_SSL_H_
 #define _DDSI_SSL_H_
 
+#include "ddsi/q_feature_check.h"
+
 #ifdef DDSI_INCLUDE_SSL
 
 #ifdef _WIN32

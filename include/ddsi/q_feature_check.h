@@ -30,12 +30,7 @@
    - NETWORK_CHANNELS: support for multiple network channels
 
 */
-
-#ifdef DDSI_INCLUDE_ENCRYPTION
-  #ifndef DDSI_INCLUDE_NETWORK_PARTITIONS
-    #error "ENCRYPTION requires NETWORK_PARTITIONS"
-  #endif
-#endif
+#include "ddsi/q_feature.h"
 
 #ifdef DDSI_INCLUDE_SSM
   #ifndef DDSI_INCLUDE_NETWORK_PARTITIONS

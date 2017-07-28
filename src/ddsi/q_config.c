@@ -44,10 +44,6 @@ typedef int (*update_fun_t) (struct cfgst *cfgst, void *parent, struct cfgelem c
 typedef void (*free_fun_t) (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem);
 typedef void (*print_fun_t) (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, int is_default);
 
-#ifdef DDSI_INCLUDE_SECURITY
-struct q_security_plugins q_security_plugin = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
-#endif
-
 struct unit {
   const char *name;
   int64_t multiplier;
@@ -148,9 +144,6 @@ DUPF (sched_prio_class);
 DUPF (sched_class);
 DUPF (maybe_memsize);
 DUPF (maybe_int32);
-#ifdef DDSI_INCLUDE_ENCRYPTION
-DUPF (cipher);
-#endif
 #ifdef DDSI_INCLUDE_BANDWIDTH_LIMITING
 DUPF (bandwidth);
 #endif
@@ -169,9 +162,6 @@ DF (ff_networkAddresses);
 #ifdef DDSI_INCLUDE_NETWORK_CHANNELS
 DI (if_channel);
 #endif /* DDSI_INCLUDE_NETWORK_CHANNELS */
-#ifdef DDSI_INCLUDE_ENCRYPTION
-DI (if_security_profile);
-#endif
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
 DI (if_network_partition);
 DI (if_ignored_partition);
@@ -250,33 +240,6 @@ static const struct cfgelem general_cfgelems[] = {
   END_MARKER
 };
 
-#ifdef DDSI_INCLUDE_ENCRYPTION
-static const struct cfgelem securityprofile_cfgattrs[] = {
-  { ATTR ("Name"), 1, NULL, RELOFF (config_securityprofile_listelem, name), 0, uf_string, ff_free, pf_string,
-    "<p>This attribute specifies the name of this DDSI2E security profile. Two security profiles cannot have the same name.</p>" },
-  { ATTR ("Cipher"), 1, "null", RELOFF (config_securityprofile_listelem, cipher), 0, uf_cipher, 0, pf_cipher,
-    "<p>This attribute specifies the cipher to be used for encrypting traffic over network partitions secured by this security profile. The possible ciphers are:</p>\n\
-<ul><li><i>aes128</i>: AES with a 128-bit key;</li>\n\
-<li><i>aes192</i>: AES with a 192-bit key;</li>\n\
-<li><i>aes256</i>: AES with a 256-bit key;</li>\n\
-<li><i>blowfish</i>: the Blowfish cipher with a 128 bit key;</li>\n\
-<li><i>null</i>: no encryption;</li></ul>\n\
-<p>SHA1 is used on conjunction with all ciphers except \"null\" to ensure data integrity.</p>" },
-  { ATTR ("CipherKey"), 1, "", RELOFF (config_securityprofile_listelem, key), 0, uf_string, ff_free, pf_key,
-    "<p>The CipherKey attribute is used to define the secret key required by the cipher selected using the Cipher attribute. The value can be a URI referencing an external file containing the secret key, or the secret key can be defined in-place as a string value.</p>\n\
-<p>The key must be specified as a hexadecimal string with each character representing 4 bits of the key. E.g., 1ABC represents the 16-bit key 0001 1010 1011 1100. The key should not follow a well-known pattern and must exactly match the key length of the selected cipher.</p>\n\
-<p>A malformed key will cause the security profile to be marked as invalid, and disable all network partitions secured by the (invalid) security profile to prevent information leaks.</p>\n\
-<p>As all DDS applications require read access to the XML configuration file, for security reasons it is recommended to store the secret key in an external file in the file system, referenced by its URI. The file should be protected against read and write access from other users on the host.</p>" },
-  END_MARKER
-};
-
-static const struct cfgelem security_cfgelems[] = {
-  { LEAF_W_ATTRS ("SecurityProfile", securityprofile_cfgattrs), 0, 0, ABSOFF (securityProfiles), if_security_profile, 0, 0, 0,
-    "<p>This element defines a DDSI2E security profile.</p>" },
-  END_MARKER
-};
-#endif /* DDSI_INCLUDE_ENCRYPTION */
-
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
 static const struct cfgelem networkpartition_cfgattrs[] = {
   { ATTR ("Name"), 1, NULL, RELOFF (config_networkpartition_listelem, name), 0, uf_string, ff_free, pf_string,
@@ -285,10 +248,6 @@ static const struct cfgelem networkpartition_cfgattrs[] = {
     "<p>This attribute specifies the multicast addresses associated with the network partition as a comma-separated list. Readers matching this network partition (cf. Partitioning/PartitionMappings) will listen for multicasts on all of these addresses and advertise them in the discovery protocol. The writers will select the most suitable address from the addresses advertised by the readers.</p>" },
   { ATTR ("Connected"), 1, "true", RELOFF (config_networkpartition_listelem, connected), 0, uf_boolean, 0, pf_boolean,
     "<p>This attribute is a placeholder.</p>" },
-#ifdef DDSI_INCLUDE_ENCRYPTION
-  { ATTR ("SecurityProfile"), 1, "null", RELOFF (config_networkpartition_listelem, profileName), 0, uf_string, ff_free, pf_string,
-    "<p>This attribute selects the DDSI2E security profile for encrypting the traffic mapped to this DDSI2E network partition. The default \"null\" means the network partition is unsecured; any other name refers to a security profile defined using the Security/SecurityProfile elements.</p>" },
-#endif /* DDSI_INCLUDE_ENCRYPTION */
   END_MARKER
 };
 
@@ -778,10 +737,6 @@ static const struct cfgelem watchdog_cfgelems[] = {
 static const struct cfgelem ddsi2_cfgelems[] = {
   { GROUP ("General", general_cfgelems),
     "<p>The General element specifies overall DDSI2E service settings.</p>" },
-#ifdef DDSI_INCLUDE_ENCRYPTION
-  { GROUP ("Security", security_cfgelems),
-    "<p>The Security element specifies DDSI2E security profiles that can be used to encrypt traffic mapped to DDSI2E network partitions.</p>" },
-#endif
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
   { GROUP ("Partitioning", partitioning_cfgelems),
     "<p>The Partitioning element specifies DDSI2E network partitions and how DCPS partition/topic combinations are mapped onto the network partitions.</p>" },
@@ -1209,15 +1164,6 @@ static int if_channel (struct cfgst *cfgst, void *parent, struct cfgelem const *
 }
 #endif /* DDSI_INCLUDE_NETWORK_CHANNELS */
 
-#ifdef DDSI_INCLUDE_ENCRYPTION
-static int if_security_profile (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem)
-{
-  if (if_common (cfgst, parent, cfgelem, sizeof (struct config_securityprofile_listelem)) == NULL)
-    return -1;
-  return 0;
-}
-#endif /* DDSI_INCLUDE_ENCRYPTION */
-
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
 static int if_network_partition (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem)
 {
@@ -1225,10 +1171,6 @@ static int if_network_partition (struct cfgst *cfgst, void *parent, struct cfgel
   if (new == NULL)
     return -1;
   new->address_string = NULL;
-#ifdef DDSI_INCLUDE_ENCRYPTION
-  new->profileName = NULL;
-  new->securityProfile = NULL;
-#endif /* DDSI_INCLUDE_ENCRYPTION */
   return 0;
 }
 
@@ -1500,26 +1442,6 @@ static int uf_memsize (struct cfgst *cfgst, void *parent, struct cfgelem const *
     return 1;
   }
 }
-
-#ifdef DDSI_INCLUDE_ENCRYPTION
-static int uf_cipher (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, UNUSED_ARG (int first), const char *value)
-{
-  if (q_security_plugin.cipher_type_from_string)
-  {
-    q_cipherType *elem = cfg_address (cfgst, parent, cfgelem);
-    if ((q_security_plugin.cipher_type_from_string) (value, elem))
-    {
-      return 1;
-    }
-    else
-    {
-      return cfg_error (cfgst, "%s: undefined value", value);
-    }
-  }
-  return 1;
-}
-#endif /* DDSI_INCLUDE_ENCRYPTION */
-
 
 static int uf_tracingOutputFileName (struct cfgst *cfgst, UNUSED_ARG (void *parent), UNUSED_ARG (struct cfgelem const * const cfgelem), UNUSED_ARG (int first), const char *value)
 {
@@ -2039,22 +1961,6 @@ static void pf_int64_unit (struct cfgst *cfgst, int64_t value, int is_default, c
     cfg_log (cfgst, "%lld %s%s", value / m, unit, is_default ? " [def]" : "");
   }
 }
-
-#ifdef DDSI_INCLUDE_ENCRYPTION
-static void pf_key (struct cfgst *cfgst, UNUSED_ARG (void *parent), UNUSED_ARG (struct cfgelem const * const cfgelem), UNUSED_ARG (int is_default))
-{
-  cfg_log (cfgst, "<hidden, see configfile>");
-}
-
-static void pf_cipher (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, int is_default)
-{
-  q_cipherType *p = cfg_address (cfgst, parent, cfgelem);
-  if (q_security_plugin.cipher_type)
-  {
-    cfg_log (cfgst, "%s%s", (q_security_plugin.cipher_type) (*p), is_default ? " [def]" : "");
-  }
-}
-#endif /* DDSI_INCLUDE_ENCRYPTION */
 
 static void pf_networkAddress (struct cfgst *cfgst, void *parent, struct cfgelem const * const cfgelem, int is_default)
 {
@@ -2750,65 +2656,13 @@ struct cfgst * config_init
   }
 #endif
 
-#ifdef DDSI_INCLUDE_ENCRYPTION
-  /* Check security profiles */
-  {
-    struct config_securityprofile_listelem *s = config.securityProfiles;
-    while (s)
-    {
-      switch (s->cipher)
-      {
-        case Q_CIPHER_UNDEFINED:
-        case Q_CIPHER_NULL:
-          /* nop */
-          if (s->key && strlen (s->key) > 0) {
-            NN_ERROR1 ("config: DDSI2Service/Security/SecurityProfile[@cipherkey]: %s: cipher key not required\n",s->key);
-          }
-          break;
-
-        default:
-          /* read the cipherkey if present */
-          if (!s->key || strlen (s->key) == 0) {
-            NN_ERROR0 ("config: DDSI2Service/Security/SecurityProfile[@cipherkey]: cipher key missing\n");
-            ok = 0;
-          } else if (q_security_plugin.valid_uri && ! (q_security_plugin.valid_uri) (s->cipher,s->key)) {
-            NN_ERROR1 ("config: DDSI2Service/Security/SecurityProfile[@cipherkey]: %s : incorrect key\n", s->key);
-            ok = 0;
-          }
-      }
-      s = s->next;
-    }
-  }
-#endif /* DDSI_INCLUDE_ENCRYPTION */
-
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
   /* Assign network partition ids */
-#ifdef DDSI_INCLUDE_ENCRYPTION
-  /* also create links from the network partitions to the
-     securityProfiles and signal errors if profiles do not exist */
-#endif /* DDSI_INCLUDE_ENCRYPTION */
   {
     struct config_networkpartition_listelem *p = config.networkPartitions;
     config.nof_networkPartitions = 0;
     while (p)
     {
-#ifdef DDSI_INCLUDE_ENCRYPTION
-      if (os_strcasecmp (p->profileName, "null") == 0)
-        p->securityProfile = NULL;
-      else
-      {
-        struct config_securityprofile_listelem *s = config.securityProfiles;
-        while (s && os_strcasecmp (p->profileName, s->name) != 0)
-          s = s->next;
-        if (s)
-          p->securityProfile = s;
-        else
-        {
-          NN_ERROR1 ("config: DDSI2Service/Partitioning/NetworkPartitions/NetworkPartition[@securityprofile]: %s: unknown securityprofile\n", p->profileName);
-          ok = 0;
-        }
-      }
-#endif /* DDSI_INCLUDE_ENCRYPTION */
       config.nof_networkPartitions++;
       /* also use crc32 just like native nw and ordinary ddsi2e, only
          for interoperability because it is asking for trouble &
@@ -2889,7 +2743,7 @@ void config_fini (void)
 static char *get_partition_search_pattern (const char *partition, const char *topic)
 {
   char *pt = os_malloc (strlen (partition) + strlen (topic) + 2);
-  os_sprintf (pt, "%s.%s", partition, topic);
+  sprintf (pt, "%s.%s", partition, topic);
   return pt;
 }
 
