@@ -378,17 +378,26 @@ dds_instancehandle_get(
   of the statuses. Enabled status analogously to DCPS spec.
 */
 
-
 /**
- * Description : Read the status(es) set for the entity based on the enabled
- * status and mask set. This operation does not clear the read status(es).
+ * @brief Read the status set for the entity
  *
- * Arguments :
- *   -# e Entity on which the status has to be read
- *   -# status Returns the status set on the entity, based on the enabled status
- *   -# mask Filter the status condition to be read (can be NULL)
- *   -# Returns 0 on success, or a non-zero error value if the mask does not
- *      correspond to the entity
+ * This operation reads the status(es) set for the entity based on
+ * the enabled status and mask set. It does not clear the read status(es).
+ *
+ * @param[in]  entity  Entity on which the status has to be read
+ * @param[out] status  Returns the status set on the entity, based on the enabled status
+ * @param[in]  mask    Filter the status condition to be read (can be NULL)
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The operation was successful
+ *         DDS_RETCODE_BAD_PARAMETER
+ *                  The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -398,15 +407,25 @@ dds_read_status(
         _In_  uint32_t mask);
 
 /**
- * Description : Read the status(es) set for the entity based on the enabled
- * status and mask set. This operation clears the status set after reading.
+ * @brief Read the status set for the entity
  *
- * Arguments :
- *   -# e Entity on which the status has to be read
- *   -# status Returns the status set on the entity, based on the enabled status
- *   -# mask Filter the status condition to be read (can be NULL)
- *   -# Returns 0 on success, or a non-zero error value if the mask does not
- *      correspond to the entity
+ * This operation reads the status(es) set for the entity based on the enabled
+ * status and mask set. It clears the status set after reading.
+ *
+ * @param[in]  entity  Entity on which the status has to be read
+ * @param[out] status  Returns the status set on the entity, based on the enabled status
+ * @param[in]  mask    Filter the status condition to be read (can be NULL)
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The operation was successful
+ *         DDS_RETCODE_BAD_PARAMETER
+ *                  The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -416,11 +435,23 @@ dds_take_status(
         _In_  uint32_t mask);
 
 /**
- * Description : Returns the status changes since they were last read.
+ * @brief Get changed status(es)
  *
- * Arguments :
- *   -# e Entity on which the statuses are read
- *   -# Returns the curent set of triggered statuses.
+ * This operation returns the status changes since they were last read.
+ *
+ * @param[in]  entity  Entity on which the statuses are read
+ * @param[out] status  Returns the current set of triggered statuses.
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The operation was successful
+ *         DDS_RETCODE_BAD_PARAMETER
+ *                  The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -429,11 +460,23 @@ dds_get_status_changes(
         _Out_ uint32_t *status);
 
 /**
- * Description : This operation returns the status enabled on the entity
+ * @brief Get enabled status on entity
  *
- * Arguments :
- *   -# e Entity to get the status
- *   -# Returns the status that are enabled for the entity
+ * This operation returns the status enabled on the entity
+ *
+ * @param[in]  entity  Entity to get the status
+ * @param[out] status  Status set on the entity
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The operation was successful
+ *         DDS_RETCODE_BAD_PARAMETER
+ *                  The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -441,15 +484,24 @@ dds_get_enabled_status(
         _In_  dds_entity_t entity,
         _Out_ uint32_t *status);
 
-
 /**
- * Description : This operation enables the status(es) based on the mask set
+ * @brief Set status enabled on entity
  *
- * Arguments :
- *   -# e Entity to enable the status
- *   -# mask Status value that indicates the status to be enabled
- *   -# Returns 0 on success, or a non-zero error value indicating failure if the mask
- *      does not correspond to the entity.
+ * This operation enables the status(es) based on the mask set
+ *
+ * @param[in]  entity  Entity to enable the status
+ * @param[in]  mask    Status value that indicates the status to be enabled
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The operation was successful
+ *         DDS_RETCODE_BAD_PARAMETER
+ *                  The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT dds_return_t
@@ -1143,59 +1195,139 @@ dds_create_writer(
   only touch the key fields; the remained may be undefined.
 */
 /**
- * Description : Registers an instance with a key value to the data writer
+ * @brief Registers an instance
  *
- * Arguments :
- *   -# wr The writer to which instance has be associated
- *   -# data Instance with the key value
- *   -# Returns an instance handle that could be used for successive write & dispose operations or
- *      NULL, if handle is not allocated
+ * This operation registers an instance with a key value to the data writer and
+ * returns an instance handle that could be used for successive write & dispose
+ * operations. When the handle is not allocated, the function will return and
+ * error and the handle will be un-touched.
+ *
+ * @param[in]  writer  The writer to which instance has be associated
+ * @param[out] handle  The instance handle
+ * @param[in]  data    The instance with the key value
+ *
+ * @returns >=0 - Success.
+ * @returns <0  - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT dds_instance_handle_t
-dds_instance_register(
-        dds_entity_t writer,
-        const void *data);
+DDS_EXPORT dds_return_t
+dds_register_instance(
+        _In_ dds_entity_t writer,
+        _Out_ dds_instance_handle_t *handle,
+        _In_ const void *data);
 
 /**
- * Description : Unregisters an instance with a key value from the data writer. Instance can be identified
- *               either from data sample or from instance handle (at least one must be provided).
+ * @brief Unregisters an instance
  *
- * Arguments :
- *   -# wr The writer to which instance is associated
- *   -# data Instance with the key value (can be NULL if handle set)
- *   -# handle Instance handle (can be DDS_HANDLE_NIL if data set)
- *   -# Returns 0 on success, or non-zero value to indicate an error
+ * This operation reverses the action of register instance, removes all information regarding
+ * the instance and unregisters an instance with a key value from the data writer.
  *
- * Note : If an unregistered key ID is passed as instance data, an error is logged and not flagged as return value
+ * @param[in]  writer  The writer to which instance is associated
+ * @param[in]  data    The instance with the key value
+ *
+ * @returns >=0 - Success.
+ * @returns <0  - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT int
-dds_instance_unregister(
-        dds_entity_t writer,
-        const void *data,
-        dds_instance_handle_t handle);
+DDS_EXPORT dds_return_t
+dds_unregister_instance(
+        _In_ dds_entity_t writer,
+        _In_opt_ const void *data);
 
-  /**
- * Description : Unregisters an instance with a key value from the data writer. Instance can be identified
- *               either from data sample or from instance handle (at least one must be provided).
+/**
+ * @brief Unregisters an instance
  *
- * Arguments :
- *   -# wr The writer to which instance is associated
- *   -# data Instance with the key value (can be NULL if handle set)
- *   -# handle Instance handle (can be DDS_HANDLE_NIL if data set)
- *   -# timestamp used at registration.
- *   -# Returns 0 on success, or non-zero value to indicate an error
+ *This operation unregisters the instance which is identified by the key fields of the given
+ *typed instance handle.
  *
- * Note : If an unregistered key ID is passed as instance data, an error is logged and not flagged as return value
+ * @param[in]  writer  The writer to which instance is associated
+ * @param[in]  handle  The instance handle
+ *
+ * @returns >=0 - Success.
+ * @returns <0  - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT int
-dds_instance_unregister_ts(
-        dds_entity_t writer,
-        const void *data,
-        dds_instance_handle_t handle,
-        dds_time_t timestamp);
+DDS_EXPORT dds_return_t
+dds_unregister_instance_ih(
+       _In_ dds_entity_t writer,
+       _In_opt_ dds_instance_handle_t handle);
+
+/**
+ * @brief Unregisters an instance
+ *
+ * This operation reverses the action of register instance, removes all information regarding
+ * the instance and unregisters an instance with a key value from the data writer. It also
+ * provides a value for the timestamp explicitly.
+ *
+ * @param[in]  writer    The writer to which instance is associated
+ * @param[in]  data      The instance with the key value
+ * @param[in]  timestamp The timestamp used at registration.
+ *
+ * @returns >=0 - Success.
+ * @returns <0  - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
+ */
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_unregister_instance_ts(
+       _In_ dds_entity_t writer,
+       _In_opt_ const void *data,
+       _In_ dds_time_t timestamp);
+
+/**
+ * @brief Unregisters an instance
+ *
+ * This operation unregisters an instance with a key value from the handle. Instance can be identified
+ * from instance handle. If an unregistered key ID is passed as an instance data, an error is logged and
+ * not flagged as return value.
+ *
+ * @param[in]  writer    The writer to which instance is associated
+ * @param[in]  handle    The instance handle
+ * @param[in]  timestamp The timestamp used at registration.
+ *
+ * @returns >=0 - Success.
+ * @returns <0  - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The operation is invoked on an inappropriate object.
+ */
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_unregister_instance_ih_ts(
+       _In_ dds_entity_t writer,
+       _In_opt_ dds_instance_handle_t handle,
+       _In_ dds_time_t timestamp);
 
 /**
  * @brief This operation modifies and disposes a data instance.
@@ -2792,10 +2924,20 @@ dds_notify_readers(
 
 
 /**
- * Description : Checks whether the entity has one of its enabled statuses triggered.
+ * @brief Checks whether the entity has one of its enabled statuses triggered.
  *
- * Arguments :
- * -# e Entity for which to check for triggered status
+ * @param[in]  entity  Entity for which to check for triggered status
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *            The operation was successful
+ *         DDS_RETCODE_BAD_PARAMETER
+ *            The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT dds_return_t
