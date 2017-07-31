@@ -53,6 +53,12 @@ add_custom_command(
 
 add_custom_target(idlc ALL DEPENDS "${IDLC_JAR}")
 
+install(
+  FILES "${IDLC_DIR}/${IDLC}"
+  DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_WRITE GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+  COMPONENT dev)
+
 function(IDLC_GENERATE _target)
   if(NOT ARGN)
     message(FATAL_ERROR "idlc_generate called without any idl files")

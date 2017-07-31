@@ -36,3 +36,13 @@ clean:
 
 distclean: clean
 
+
+
+# Make sure that the location where the idl compiler is installed is
+# known to the makefile. If idlc is not installed in a system default
+# spot, then PATH can be changed to introduce its location.
+PATH += $PATH:../../bin
+
+datatype:
+	dds_idlc HelloWorldData.idl
+
