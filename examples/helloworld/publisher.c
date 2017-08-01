@@ -35,6 +35,8 @@ int main (int argc, char ** argv)
 
     /* Sleep to allow discovery of reader by writer and vice versa. */
     dds_sleepfor (DDS_SECS (1));
+    /* Sleeping isn't really recommended but is just added for simplicity.
+     * See the documentation or other examples for alternatives. */
 
     /* Create a message to write. */
     msg.userID = 1;
@@ -45,9 +47,6 @@ int main (int argc, char ** argv)
 
     ret = dds_write (writer, &msg);
     DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-    /* Sleep to allow delivery. */
-    dds_sleepfor (DDS_SECS (1));
 
     /* Deleting the participant will delete all its children recursively as well. */
     ret = dds_delete (participant);

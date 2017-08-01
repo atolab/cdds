@@ -1,9 +1,9 @@
 publisher_NAME := HelloworldPublisher
-publisher_SRCS := publisher.c HelloWorldData.c
+publisher_SRCS := publisher.c generated/HelloWorldData.c
 publisher_OBJS := ${publisher_SRCS:.c=.o}
 
 subscriber_NAME := HelloworldSubscriber
-subscriber_SRCS := subscriber.c HelloWorldData.c
+subscriber_SRCS := subscriber.c generated/HelloWorldData.c
 subscriber_OBJS := ${subscriber_SRCS:.c=.o}
 
 # Make sure that the location where dds.h is installed is known to the
@@ -16,6 +16,7 @@ CFLAGS += -I../../include
 # location, then it can be introduced by adding it to the LDFLAGS.
 LDFLAGS += -L../../lib
 
+CFLAGS += -Igenerated
 LDFLAGS += -lvddsc
 
 .PHONY: all clean distclean
@@ -44,5 +45,5 @@ distclean: clean
 PATH += $PATH:../../bin
 
 datatype:
-	dds_idlc HelloWorldData.idl
+	dds_idlc -d generated HelloWorldData.idl
 

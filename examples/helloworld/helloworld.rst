@@ -40,6 +40,7 @@ To be able to run these two executables, the vddsc library needs
 to be available and can be found by the executables.
 This can mean that the library search path has to be changed if
 the library is not installed on a system default location.
+For instance, by executing the command:
 :Windows: set PATH=../../../lib;%PATH%
 :Linux: export LD_LIBRARY_PATH=../../../lib:$LD_LIBRARY_PATH
 
@@ -57,7 +58,8 @@ The HelloworldPublisher will display the following::
 While the HelloworldSubscriber will print this::
 	=== [Reader] waiting for a message ...
 	=== [Subscriber] Received : Message (1, Hello World)
-
+This shows that the message was send from the publisher to the
+waiting subscriber.
 
 
 ******************
@@ -69,20 +71,19 @@ examples/helloworld directory. It consists out of the
 following files, which will be explained in more detail
 later on.
 
-+--------------------+--------------------------------------------+
-| File name          | Description                                |
-+====================+============================================+
-| publisher.c        | Publishes the Helloworld message.          |
-+--------------------+--------------------------------------------+
-| subscriber.c       | Waits and receives the Helloworld message. |
-+--------------------+--------------------------------------------+
-| HelloWorldData.c   | Generated datatype file.                   |
-+--------------------+--------------------------------------------+
-| HelloWorldData.h   | Generated datatype file.                   |
-+--------------------+--------------------------------------------+
-| HelloWorldData.idl | Datatype description file.                 |
-+--------------------+--------------------------------------------+
-
++----------------------------+--------------------------------------------+
+| File name                  | Description                                |
++============================+============================================+
+| publisher.c                | Publishes the Helloworld message.          |
++----------------------------+--------------------------------------------+
+| subscriber.c               | Waits and receives the Helloworld message. |
++----------------------------+--------------------------------------------+
+| HelloWorldData.idl         | Datatype description file.                 |
++----------------------------+--------------------------------------------+
+| generated/HelloWorldData.c | Generated datatype file.                   |
++----------------------------+--------------------------------------------+
+| generated/HelloWorldData.h | Generated datatype file.                   |
++----------------------------+--------------------------------------------+
 
 
 HelloWorldData.idl
@@ -98,8 +99,7 @@ communicate the Hello World message.
 
 An explanation of the idl content and how the source files are
 generated is not really important now and will be explained in
-the DataType chapter.
-
+the :ref:`Hello World DataType` chapter.
 
 
 HelloWorldData.c & HelloWorldData.h
@@ -107,8 +107,8 @@ HelloWorldData.c & HelloWorldData.h
 
 These are generated files. How they are generated is not really
 important at this point and will be explained later in the
-DataType chapter. The c source is normally of no interest to
-the application developer anyway.
+:ref:`Hello World DataType` chapter. The c source is normally of
+no interest to the application developer anyway.
 
 The HelloWorldData.h, however, does contain some information
 that the application developer depends on. For one, it contains
@@ -131,7 +131,6 @@ It also contains an extern variable that describes the data type
 to the DDS middleware.
 ::
 	HelloWorldData_Msg_desc
-
 
 
 HelloWorld subscriber.c
@@ -239,7 +238,6 @@ Deleting the participant meant that the reader (which is its
 child) is deleted as well.
 
 
-
 HelloWorld publisher.c
 ======================
 
@@ -315,11 +313,11 @@ child) is deleted as well.
 Building Hello World
 ********************
 
-We recommend using cmake, which is explained in a following
-chapter. Other examples will make use of that.
+We recommend using :ref:`CMake`, which is explained in a
+following chapter. Other examples will make use of that.
+
 However, to kick things off, a native way of building
 the Hello World example is provided.
-
 
 
 Linux Native Build
@@ -333,8 +331,8 @@ be found by the build process. The Makefile expects them to be
 present at system default locations or at :code:`../../lib` and
 :code:`../../include` relative to the examples/helloworld
 directory. If this isn't the case on your machine, then please
-update the :code:`CFLAGS` and :code:`LDFLAGS` to point to the
-proper locations.
+update the :code:`CFLAGS` and :code:`LDFLAGS` within the
+Makefile to point to the proper locations.
 
 This will build the HelloworldSubscriber and HelloworldPublisher
 executables in the helloworld source directory (not the bin
@@ -360,8 +358,7 @@ So far, we haven't touched the actual data type that is send
 from the writer to the reader.
 
 
-
-Data-Centric architecture
+Data-Centric Architecture
 =========================
 
 By creating a Data-centric architecture, you get a loosely
@@ -379,7 +376,6 @@ don't really know of each other. The former just waits until
 somebody provides the data it requires, while the latter just
 publishes the data without worrying if there are interested
 parties or how many.
-
 
 
 Hello World IDL
@@ -418,7 +414,6 @@ languages after which the resulting applications can communicate
 without concerns about programming languages.
 
 
-
 IDL Precompiler
 ===============
 
@@ -441,7 +436,6 @@ files that can be used in the Hello World publisher and
 subscriber.
 
 
-
 Build DataTypes
 ===============
 
@@ -452,9 +446,125 @@ For the Hello World example, the native build processes are
 extended to be able to generate the c source code.
 :Windows: TODO
 :Linux: make datatype
+This will result in new HelloWorldData.c and HelloWorldData.h in
+the generated directory.
+
 The applications are not automatically build after new data type
 files are generated. To get the new data types to take effect,
 the applications themselves need to be rebuild.
 
 After that, the Hello World example will use the new data types.
+
+
+
+*****************
+Building Examples
+*****************
+
+So far, we've been talking about building the Hello World example
+natively. However, the Hello World can also be build using the
+cmake tool. This is what is recommended. In fact, all the other
+examples don't provide native makefiles, only cmake files.
+
+
+CMake
+=====
+
+CMake is an open-source, cross-platform family of tools designed
+to build, test and package software. CMake is used to control
+the software compilation process using simple platform and
+compiler independent configuration files, and generate native
+makefiles and workspaces that can be used in the compiler
+environment of your choice.
+
+In other words, CMake's main strength is build portability.
+CMake uses the native tools, and other than requiring itself,
+does not require any additional tools to be installed. The same
+CMake input files will build with GNU make, Visual studio 6,7,8
+IDEs, borland make, nmake, and XCode.
+
+An other strength is that CMake is building out-of-source. It
+simply works out-of-the-box. There are two important reasons why
+you would want this.
+
+1. Easy cleanup (no cluttering the source tree). Simply remove
+   the build directory if you want to start from scratch.
+2. Multiple build targets. It's possible to have up-to-date
+   Debug and Release targets, without having to recompile the
+   entire tree. For systems that do cross-platform compilation,
+   it is easy to have up-to-date builds for the host and target
+   platform.
+
+
+Configuration
+=============
+
+After the CMake digression, we're back with the Hello World
+example. Apart from the native build files, CMake build files
+are provided as well. For instance
+:code:`examples/helloworld/CMakeLists.txt`
+
+It's good practice to build examples (or anything for that
+matter) out-of-source. To do that, create a :code:`build`
+directory in the :code:`examples/helloworld` directory and go
+there, making our location :code:`examples/helloworld/build`.
+
+Here, we can let CMake configure the build environment for
+us by typing
+::
+	cmake ../
+
+This will use the CMakeLists.txt in the helloworld directory
+to create makefiles that fit the native platform.
+
+.. literalinclude:: CMakeLists.txt
+	:linenos:
+	:language: cmake
+
+It will try to find the VortexDDS CMake package. When it has
+found it, every path and dependencies are automatically set so
+that an application can use it without fuss. If it can not find
+it, please add the location of VortexDDSConfig.cmake to the
+CMAKE_PREFIX_PATH environment variable.
+
+The VortexDDS provides the vddsc library that contains the DDS
+API that the application needs. But apart from that, it also
+contains helper functionality to generate library targets from
+idl files that can be easily used when compiling an application
+that depends on a data type described in such an idl file. To
+be able to do this, the VortexDDS package tries to access the
+dds_idlc tool. If it can't find it, a warning will be issued
+during the CMake configuration step. An error will be triggered
+when the build process tries to use dds_idlc while it wasn't
+found before. If that happens, please add the dds_idlc location
+to the CMAKE_PREFIX_PATH environment variable.
+
+Two application will be created, both of which only consists out
+of 1 source file.
+
+Both application need to be linked to the vddsc library in the
+VortexDDS package and the just generated HelloWorldData_lib.
+
+Now that everything is prepared, we can actually build the
+applications (HelloworldPublisher and HelloworldSubscriber in
+this case).
+
+
+Build
+=====
+
+Building the example is as easy as typing
+::
+	cmake --build .
+
+while being in the the build directory created during the
+configuration step. In this example, that directory would be
+:code:`examples/helloworld/build`.
+
+After the build finished, both the Hello World publisher and
+subscriber applications are present within the build directory.
+
+:ref:`Running Hello World` example can now be done with the
+binaries that were just build. Be sure to use the right
+directories though.
 
