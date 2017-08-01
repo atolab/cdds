@@ -1,17 +1,17 @@
 #define RTLD_DEFAULT	((void *) 0)
 
-//#include <dlfcn.h>
-//#include <time.h>
+#include <dlfcn.h>
+#include <time.h>
 #include <string.h>
-//#include <sys/time.h>
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <stdint.h>
-//#include <inttypes.h>
-//#include <signal.h>
-//#include <unistd.h>
-//#include <stdarg.h>
-//#include <math.h>
+#include <sys/time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <inttypes.h>
+#include <signal.h>
+#include <unistd.h>
+#include <stdarg.h>
+#include <math.h>
 
 #include "testtype.h"
 #include "common.h"

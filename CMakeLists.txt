@@ -44,7 +44,7 @@ endif()
 add_subdirectory(idlc)
 add_subdirectory(src)
 add_subdirectory(examples)
-#add_subdirectory(tools)
+add_subdirectory(tools)
 
 # Pull-in CPack and support for generating <Package>Config.cmake and packages.
 include(Packaging)

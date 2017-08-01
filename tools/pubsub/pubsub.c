@@ -3,29 +3,29 @@
 #endif
 
 #define _ISOC99_SOURCE
-//#include <time.h>
+#include <time.h>
 #include <string.h>
-//#include <sys/time.h>
+#include <sys/time.h>
 #include <stdio.h>
-//#include <stdlib.h>
-//#include <stdint.h>
-//#include <inttypes.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <signal.h>
-//#include <unistd.h>
-//#include <limits.h>
+#include <unistd.h>
+#include <limits.h>
 #include <ctype.h>
-//
-//#include <sys/types.h>
-//#include <sys/select.h>
-//#include <sys/fcntl.h>
-//#include <arpa/inet.h>
-//#include <netdb.h>
+
+#include <sys/types.h>
+#include <sys/select.h>
+#include <sys/fcntl.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
 #if USE_EDITLINE
 #include <histedit.h>
 #endif
 
-#include "os/os.h"
+//#include "os/os.h"
 #include "common.h"
 #include "testtype.h"
 #include "tglib.h"
@@ -1361,14 +1361,15 @@ static int w_accept(os_socket fd)
   }
 }
 
-static int unregister_instance_wrapper (dds_entity_t wr, const void *d, const dds_time_t tstamp)
-{
-	return dds_instance_unregister_ts(wr, d, DDS_HANDLE_NIL, tstamp);
-}
+//static int unregister_instance_wrapper (dds_entity_t wr, const void *d, const dds_time_t tstamp)
+//{
+//	return dds_unregister_instance_ts(wr, d, tstamp);
+//}
 
 static int register_instance_wrapper (dds_entity_t wr, const void *d, const dds_time_t tstamp)
 {
-	return (dds_instance_register(wr, d) == DDS_HANDLE_NIL) ? DDS_RETCODE_ERROR : DDS_RETCODE_OK;
+	dds_instance_handle_t handle;
+	return dds_register_instance(wr, &handle, d);
 }
 
 static write_oper_t get_write_oper(char command)
@@ -1376,9 +1377,9 @@ static write_oper_t get_write_oper(char command)
   switch (command)
   {
   	  case 'w': return dds_write_ts;
-  	  case 'd': return dds_instance_dispose_ts;
-  	  case 'D': return dds_instance_writedispose_ts;
-  	  case 'u': return unregister_instance_wrapper;
+  	  case 'd': return dds_dispose_ts;
+  	  case 'D': return dds_writedispose_ts;
+  	  case 'u': return dds_unregister_instance_ts;
   	  case 'r': return register_instance_wrapper;
   	  default:  return 0;
   }
@@ -1399,6 +1400,7 @@ static const char *get_write_operstr(char command)
 
 static void non_data_operation(char command, dds_entity_t wr)
 {
+	dds_return_t result = 0;
   switch (command)
   {
     case 'Y':
@@ -1407,21 +1409,18 @@ static void non_data_operation(char command, dds_entity_t wr)
 //        error ("DDS_Topic_dispose_all: error %d\n", (int) result);
       break;
     case 'B':
-    	printf("Begin coherent changes: not supported\n");
-//      if ((result = DDS_Publisher_begin_coherent_changes (DDS_DataWriter_get_publisher (wr))) != DDS_RETCODE_OK)
-//        error ("DDS_Publisher_begin_coherent_changes: error %d\n", (int) result);
+    	if((result = dds_begin_coherent(wr)) != DDS_SUCCESS)
+    		error ("dds_begin_coherent: error %d\n", (int) result);
       break;
     case 'E':
-    	printf("End coherent changes: not supported\n");
-//      if ((result = DDS_Publisher_end_coherent_changes (DDS_DataWriter_get_publisher (wr))) != DDS_RETCODE_OK)
-//        error ("DDS_Publisher_end_coherent_changes: error %d\n", (int) result);
+    	if ((result = dds_end_coherent(wr)) != DDS_SUCCESS)
+    		error ("dds_end_coherent: error %d\n", (int) result);
       break;
     case 'W': {
-    	printf("Publisher wait for acknowledgments: not supported\n");
-//      dds_duration_t inf = DDS_INFINITY;
-//      if ((result = DDS_DataWriter_wait_for_acknowledgments(wr, &inf)) != DDS_RETCODE_OK)
-//        error ("DDS_Publisher_wait_for_acknowledgements: error %d\n", (int) result);
-      break;
+    	dds_duration_t inf = DDS_INFINITY;
+    	if ((result = dds_wait_for_acks(wr, inf)) != DDS_RETCODE_OK)
+			error ("dds_wait_for_acks: error %d\n", (int) result);
+		break;
     }
     default:
       abort();
@@ -1497,11 +1496,11 @@ static void pub_do_auto (const struct writerspec *spec)
   for (k = 0; (uint32_t) k < nkeyvals; k++)
   {
     d.seq_keyval.keyval = k;
-    handle[k] = spec->register_instances ? dds_instance_register(spec->wr, &d) : DDS_HANDLE_NIL;
+    if(spec->register_instances) {
+    	dds_register_instance(spec->wr, handle, &d);
+    }
   }
-  os_time sDelay;
-  sDelay.tv_sec = 1;
-  sDelay.tv_nsec = 0;
+  os_time sDelay = { 1, 0 };
   os_nanoSleep(sDelay);
 //  sleep (1);
   d.seq_keyval.keyval = 0;
@@ -1514,11 +1513,9 @@ static void pub_do_auto (const struct writerspec *spec)
   {
 	  while (!termflag && tprev < tstop)
     {
-      os_time delay;
-      delay.tv_sec = 0;
-      delay.tv_nsec = 100 * 1000 * 1000;
-//      nanosleep (&delay, NULL);
+      os_time delay = { 0 , 100 * 1000 * 1000 };
       os_nanoSleep(delay);
+//      nanosleep (&delay, NULL);
     }
   }
   else if (spec->writerate <= 0)
@@ -1584,11 +1581,9 @@ static void pub_do_auto (const struct writerspec *spec)
         {
           while (((ntot / spec->burstsize) / ((t - tfirst0) / 1e9 + 5e-3)) > spec->writerate && !termflag)
           {
-            os_time delay;
-            delay.tv_sec = 0;
-            delay.tv_nsec = 10 * 1000 * 1000;
-//            nanosleep (&delay, NULL);
+            os_time delay = { 0 , 10 * 1000 * 1000 };
             os_nanoSleep(delay);
+//            nanosleep (&delay, NULL);
             t = nowll ();
           }
           bi = 0;
@@ -1699,9 +1694,7 @@ static char *pub_do_nonarb(const struct writerspec *spec, int fdin, uint32_t *se
         if (k < 0)
           printf ("invalid sleep duration: %ds\n", k);
         else {
-        	os_time delay;
-        	delay.tv_nsec = 0;
-        	delay.tv_sec = k;
+        	os_time delay = { k, 0 };
         	os_nanoSleep(delay);
 //          sleep ((unsigned) k);
         }
@@ -2022,12 +2015,12 @@ static void *subthread (void *vspec)
     case MODE_PRINT:
       /* complicated triggers */
     	if ((rdcondA = dds_create_readcondition(rd, spec->use_take ? (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
-                                                                   : (DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE))) == NULL)
+                                                                   : (DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE))) == 0)
     		error ("dds_readcondition_create (rdcondA)\n");
     	if ((result = dds_waitset_attach (ws, rdcondA, NULL)) != DDS_RETCODE_OK)
     		error ("dds_waitset_attach (rdcondA): %d (%s)\n", (int) result, dds_strerror (result));
     	nxs++; //increased because of the waitset_attach
-    	if ((rdcondD = dds_create_readcondition (rd, (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE))) == NULL)
+    	if ((rdcondD = dds_create_readcondition (rd, (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE))) == 0)
     		error ("dds_readcondition_create (rdcondD)\n");
     	if ((result = dds_waitset_attach (ws, rdcondD, NULL)) != DDS_RETCODE_OK)
     		error ("dds_waitset_attach (rdcondD): %d (%s)\n", (int) result, dds_strerror (result));
@@ -2066,13 +2059,13 @@ static void *subthread (void *vspec)
 //    dds_condition_seq *glist = os_malloc(sizeof(*glist));
     dds_duration_t timeout = (uint64_t)100000000;
     dds_attach_t *xs = os_malloc(sizeof(dds_attach_t) * nxs); //variable size array malloc
-//    dds_entity_t wsReader = 0;
-//    uint32_t reader_status;
+
     unsigned long long tstart = 0, tfirst = 0, tprint = 0;
     long long out_of_seq = 0, nreceived = 0, last_nreceived = 0;
     long long nreceived_bytes = 0, last_nreceived_bytes = 0;
     struct eseq_admin eseq_admin;
     init_eseq_admin(&eseq_admin, nkeyvals);
+
     int ii = 0;
     for(ii=0; ii<spec->read_maxsamples; ii++) {
     	mseq[ii] = NULL;
@@ -2096,9 +2089,6 @@ static void *subthread (void *vspec)
       }
 
       /* Examine the reader's status to decide what to do. */
-//      result = dds_status_take (rd, &reader_status, DDS_DATA_AVAILABLE_STATUS);
-//      if (!(reader_status & DDS_DATA_AVAILABLE_STATUS)) continue;
-
 //      dds_waitset_get_conditions(ws, glist);
 
       tnow = nowll ();
@@ -2232,9 +2222,7 @@ static void *subthread (void *vspec)
         }
         int returnVal = dds_return_loan(rd, mseq, spec->read_maxsamples);
         if (spec->sleep_us) {
-        	os_time delay;
-        	delay.tv_sec = 0;
-        	delay.tv_nsec = (spec->sleep_us) * 1000;
+        	os_time delay = { 0, (spec->sleep_us) * 1000 };
         	os_nanoSleep(delay);
 //          usleep (spec->sleep_us);
         }
@@ -2624,8 +2612,6 @@ int main (int argc, char *argv[])
 
 	save_argv0 (argv[0]);
 	pid = (int) os_procIdSelf();
-
-//	dds_lget_liveliness_changed(listener, callback)
 
 	memset (&rdlistener, 0, sizeof (rdlistener)); //Todo: Commentted listener because it was giving error. need to fix it.
 	rdlistener.on_liveliness_changed = rd_on_liveliness_changed;
@@ -3169,9 +3155,7 @@ int main (int argc, char *argv[])
 //      if (m != 0 && tnow < tend)
 //      {
 //        uint64_t tdelta = (tend-tnow) < T_SECOND/10 ? tend-tnow : T_SECOND/10;
-//        os_time delay;
-//        delay.tv_sec = (os_timeSec) (tdelta / T_SECOND);
-//        delay.tv_nsec = (os_int32) (tdelta % T_SECOND);
+//        os_time delay = { (os_timeSec) (tdelta / T_SECOND), (os_int32) (tdelta % T_SECOND)};
 //        os_nanoSleep(delay);
 //        tnow = nowll();
 //      }
@@ -3336,9 +3320,7 @@ int main (int argc, char *argv[])
   common_fini ();
   if (sleep_at_end) {
 	  PRINTD("Sleep at the end of main\n");
-	  os_time delay;
-	  delay.tv_nsec = 0;
-	  delay.tv_sec = sleep_at_end;
+	  os_time delay = { sleep_at_end, 0 };
 	  os_nanoSleep(delay);
 //    sleep (sleep_at_end);
   }
