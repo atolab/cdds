@@ -9,6 +9,12 @@ install(
   DESTINATION "${CMAKE_INSTALL_EXAMPLESDIR}/helloworld/bin"
   COMPONENT dev)
 
+install(
+  FILES "CMakeLists.export"
+  DESTINATION "${CMAKE_INSTALL_EXAMPLESDIR}/helloworld"
+  COMPONENT dev
+  RENAME "CMakeLists.txt")
+
 idlc_install_generated(
   "${CMAKE_INSTALL_EXAMPLESDIR}/helloworld/generated"
   dev

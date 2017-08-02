@@ -499,5 +499,125 @@ After that, the Hello World example will use the new data types.
 Building Examples
 *****************
 
-TODO: talk about CMake and stuff
+So far, we've been talking about building the Hello World example
+natively. However, the Hello World can also be build using the
+cmake tool. This is what is recommended. In fact, all the other
+examples don't provide native makefiles, only cmake files.
+
+
+CMake
+=====
+
+CMake is an open-source, cross-platform family of tools designed
+to build, test and package software. CMake is used to control
+the software compilation process using simple platform and
+compiler independent configuration files, and generate native
+makefiles and workspaces that can be used in the compiler
+environment of your choice.
+
+In other words, CMake's main strength is build portability.
+CMake uses the native tools, and other than requiring itself,
+does not require any additional tools to be installed. The same
+CMake input files will build with GNU make, Visual studio 6,7,8
+IDEs, borland make, nmake, and XCode.
+
+An other strength is that CMake is building out-of-source. It
+simply works out-of-the-box. There are two important reasons why
+you would want this.
+
+1. Easy cleanup (no cluttering the source tree). Simply remove
+   the build directory if you want to start from scratch.
+2. Multiple build targets. It's possible to have up-to-date
+   Debug and Release targets, without having to recompile the
+   entire tree. For systems that do cross-platform compilation,
+   it is easy to have up-to-date builds for the host and target
+   platform.
+
+There are a few other benefits to CMake, but that is out of the
+scope of this document.
+
+Hello World CMake
+=================
+
+After the CMake digression, we're back with the Hello World
+example. Apart from the native build files, CMake build files
+are provided as well. See
+:code:`examples/helloworld/CMakeLists.txt`
+
+.. literalinclude:: ../../examples/helloworld/CMakeLists.export
+    :linenos:
+    :language: cmake
+
+It will try to find the :code:`VortexDDS` CMake package. When it
+has found it, every path and dependencies are automatically set
+so that an application can use it without fuss. If it can not
+find it, please add the location of :code:`VortexDDSConfig.cmake`
+to the :code:`CMAKE_PREFIX_PATH` environment variable.
+
+The :code:`VortexDDS` package provides the :code:`vddsc` library
+that contains the DDS API that the application needs. But apart
+from that, it also contains helper functionality to generate
+library targets from idl files that can be easily used when
+compiling an application that depends on a data type described
+in such an idl file. To be able to do this, the :code:`VortexDDS`
+package tries to access the :code:`dds_idlc` tool. If it can't
+find it, a warning will be issued during the CMake configuration
+step. An error will be triggered when the build process tries to
+use :code:`dds_idlc` while it wasn't found before. If that
+happens, please add the :code:`dds_idlc` location to the
+:code:`CMAKE_PREFIX_PATH` environment variable.
+
+Two applications will be created, both of which only consists
+out of 1 source file.
+
+Both applications need to be linked to the vddsc library in the
+VortexDDS package and the just generated HelloWorldData_lib.
+
+
+Hello World Configuration
+=========================
+
+The Hello World is prepared to be build by CMake through the use
+of its :code:`CMakeLists.txt` file. The first step is letting
+CMake configure the build environment.
+
+The location where the configure step is executed, will be the
+root for the build directory. It's good practice to build
+examples (or anything for that matter) out-of-source. To do
+that, create a :code:`build` directory in the 
+:code:`examples/helloworld` directory and go there, making
+our location :code:`examples/helloworld/build`.
+
+Here, we can let CMake configure the build environment for
+us by typing
+::
+
+    cmake ../
+
+CMake will use the CMakeLists.txt in the helloworld directory
+to create makefiles that fit the native platform.
+
+Now that everything is prepared, we can actually build the
+applications (HelloworldPublisher and HelloworldSubscriber in
+this case).
+
+
+Hello World Build
+=================
+
+Building the example is as easy as typing
+::
+
+    cmake --build .
+
+while being in the the build directory created during the
+configuration step. In this example, that directory would be
+:code:`examples/helloworld/build`.
+
+After the build finished, both the Hello World publisher and
+subscriber applications are present within the build directory.
+
+`Running Hello World`_ example can now be done with the
+binaries that were just build. Be sure to use the right
+directories though.
 
