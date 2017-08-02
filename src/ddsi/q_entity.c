@@ -2650,7 +2650,7 @@ static struct writer * new_writer_guid
       wr->supports_ssm = 1;
       wr->ssm_as = new_addrset ();
       add_to_addrset (wr->ssm_as, &loc);
-      nn_log (LC_DISCOVERY, "writer %x:%x:%x:%x: ssm=%d", PGUID (wr->e.guid), wr->supports_ssm);
+      nn_log (LC_DISCOVERY, "writer %x:%x:%x:%x: ssm=%u", PGUID (wr->e.guid), wr->supports_ssm);
       nn_log_addrset (LC_DISCOVERY, "", wr->ssm_as);
       nn_log (LC_DISCOVERY, "\n");
     }
@@ -3215,7 +3215,7 @@ static struct reader * new_reader_guid
   }
 #ifdef DDSI_INCLUDE_SSM
   if (rd->favours_ssm)
-    nn_log (LC_DISCOVERY, "READER %x:%x:%x:%x ssm=%d\n", PGUID (rd->e.guid), rd->favours_ssm);
+    nn_log (LC_DISCOVERY, "READER %x:%x:%x:%x ssm=%u\n", PGUID (rd->e.guid), rd->favours_ssm);
 #endif
 #endif
 

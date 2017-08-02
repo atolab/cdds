@@ -1244,7 +1244,7 @@ static void handle_SEDP_alive (nn_plist_t *datap /* note: potentially modifies d
     ssm = addrset_contains_ssm (as);
   else if (datap->present & PP_READER_FAVOURS_SSM)
     ssm = (datap->reader_favours_ssm.state != 0);
-  nn_log (LC_DISCOVERY, " ssm=%u", ssm);
+  nn_log (LC_DISCOVERY, " ssm=%d", ssm);
 #endif
   nn_log (LC_DISCOVERY, ") QOS={");
   nn_log_xqos (LC_DISCOVERY, xqos);

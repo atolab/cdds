@@ -17,11 +17,7 @@
  * and implementing WIN32 specific
  * os_timeGet and os_nanoSleep
  */
-#include <sys/timeb.h>
-#include <time.h>
-
 #include "os/os.h"
-
 #include <assert.h>
 
 #if defined(_WIN32_WINNT) && _WIN32_WINNT > 0x0603

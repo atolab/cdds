@@ -11,9 +11,6 @@
  */
 /* Feature macros:
 
-   - ENCRYPTION: support for encryption
-     requires: NETWORK_PARTITIONS
-
    - SSM: support for source-specific multicast
      requires: NETWORK_PARTIITONS
      also requires platform support; SSM is silently disabled if the
@@ -21,9 +18,6 @@
 
    - BANDWIDTH_LIMITING: transmit-side bandwidth limiting
      requires: NETWORK_CHANNELS (for now, anyway)
-
-   - IPV6: support for IPV6
-     requires: platform support (which itself is not part of DDSI)
 
    - NETWORK_PARTITIONS: support for multiple network partitions
 

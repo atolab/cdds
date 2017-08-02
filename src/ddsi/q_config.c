@@ -2549,7 +2549,7 @@ static int sort_channels_check_nodups (struct config *cfg)
   {
     if (ary[i]->priority == ary[i+1]->priority)
     {
-      NN_ERROR3 ("config: duplicate channel definition for priority %u: channels %s and %s\n",
+      NN_ERROR3 ("config: duplicate channel definition for priority %d: channels %s and %s\n",
                  ary[i]->priority, ary[i]->name, ary[i+1]->name);
       result = ERR_ENTITY_EXISTS;
     }
