@@ -45,9 +45,9 @@ extern "C" {
 #define OS_NO_SIOCGIFINDEX      1
 #define OS_NO_NETLINK           1
 #ifdef __VXWORKS__
-#define OS_SOCKET_HAS_SSM       1
-#else
 #define OS_SOCKET_HAS_SSM       0
+#else
+#define OS_SOCKET_HAS_SSM       1
 #endif /* __VXWORKS__ */
 
 #define os_sockEAGAIN       EAGAIN      /* Operation would block, or a timeout expired before operation succeeded */
