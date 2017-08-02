@@ -440,6 +440,9 @@ void addrset_purge_ssm (struct addrset *as)
 {
   struct addrset_node *n;
   LOCK (as);
+  /* The SAL compiler can't make sense of what happens here apparently,
+   * so it doesn't realize that n is always initialized here. */
+  OS_WARNING_MSVC_OFF(6001);
   n = ut_avlCFindMin (&addrset_treedef, &as->mcaddrs);
   while (n)
   {
@@ -451,6 +454,7 @@ void addrset_purge_ssm (struct addrset *as)
       os_free (n1);
     }
   }
+  OS_WARNING_MSVC_ON(6001);
   UNLOCK (as);
 }
 #endif
