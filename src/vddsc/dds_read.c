@@ -428,15 +428,32 @@ dds_read_instance_mask_wl(
     return ret;
 }
 
-
-int
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t
 dds_read_next(
-        dds_entity_t reader,
-        void **buf,
-        dds_sample_info_t *si)
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si)
 {
   uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
-  return dds_read_impl (false, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
+  return dds_read_impl (false, reader_or_condition, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
+}
+
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t
+dds_read_next_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si)
+{
+
+  uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+  return dds_read_impl (false, reader_or_condition, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
+
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -648,14 +665,31 @@ dds_take_instance_mask_wl(
     return ret;
 }
 
-int
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t
 dds_take_next(
-        dds_entity_t reader,
-        void **buf,
-        dds_sample_info_t *si)
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si)
 {
   uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
-  return dds_read_impl (true, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
+  return dds_read_impl (true, reader_or_condition, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
+}
+
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+dds_return_t
+dds_take_next_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Out_ void **buf,
+        _Out_ dds_sample_info_t *si)
+{
+
+  uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+  return dds_read_impl (true, reader_or_condition, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
 }
 
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
