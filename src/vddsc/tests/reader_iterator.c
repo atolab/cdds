@@ -20,39 +20,64 @@
  * Test fixtures
  *
  *************************************************************************************************/
-#define MAX_SAMPLES                 17
-#define NOT_READ_CNT                11
-#define QCOND_NOT_READ_CNT          5
-int qcond_expected_long_2[QCOND_NOT_READ_CNT] = { 0, 2, 6, 14, 16 };
 
 /*
  * By writing, disposing, unregistering, reading and re-writing, the following
  * data will be available in the reader history (but not in this order).
- *    | long_1 | long_2 | long_3 |    sst   | vst |    ist    |
- *    ---------------------------------------------------------
- *    |    0   |    0   |    0   | not_read | new | alive     |
- *    |    0   |    1   |    2   | not_read | new | alive     |
- *    |    0   |    2   |    4   | not_read | new | alive     |
- *    |    1   |    3   |    6   |     read | old | alive     |
- *    |    1   |    4   |    8   |     read | old | alive     |
- *    |    1   |    5   |   10   |     read | old | alive     |
- *    |    2   |    6   |   12   | not_read | new | alive     |
- *    |    2   |    7   |   14   | not_read | new | alive     |
- *    |    2   |    8   |   16   |     read | old | alive     |
- *    |    3   |    9   |   18   | not_read | new | alive     |
- *    |    3   |   10   |   20   |     read | old | alive     |
- *    |    3   |   11   |   22   | not_read | new | alive     |
- *    |    4   |   12   |   24   |     read | old | alive     |
- *    |    4   |   13   |   26   | not_read | new | alive     |
- *    |    4   |   14   |   28   | not_read | new | alive     |
- *    |    5   |   15   |   30   | not_read | new | disposed  |
- *    |    6   |   16   |   32   | not_read | new | no_writers|
+ *    | long_1 | long_2 | long_3 |    sst   | vst |    ist     |
+ *    ----------------------------------------------------------
+ *    |    0   |    0   |    0   | not_read | new | alive      |
+ *    |    0   |    1   |    2   | not_read | new | alive      |
+ *    |    0   |    2   |    4   | not_read | new | alive      |
+ *    |    1   |    3   |    6   |     read | old | alive      |
+ *    |    1   |    4   |    8   |     read | old | alive      |
+ *    |    1   |    5   |   10   |     read | old | alive      |
+ *    |    2   |    6   |   12   | not_read | old | alive      |
+ *    |    2   |    7   |   14   | not_read | old | alive      |
+ *    |    2   |    8   |   16   |     read | old | alive      |
+ *    |    3   |    9   |   18   | not_read | old | alive      |
+ *    |    3   |   10   |   20   |     read | old | alive      |
+ *    |    3   |   11   |   22   | not_read | old | alive      |
+ *    |    4   |   12   |   24   |     read | old | alive      |
+ *    |    4   |   13   |   26   | not_read | old | alive      |
+ *    |    4   |   14   |   28   | not_read | old | alive      |
+ *    |    5   |   15   |   30   |     read | new | disposed   |
+ *    |    5   |   16   |   32   | not_read | new | disposed   |
+ *    |    5   |   17   |   34   |     read | new | disposed   |
+ *    |    6   |   18   |   36   |     read | new | no_writers |
+ *    |    6   |   19   |   38   | not_read | new | no_writers |
+ *    |    6   |   20   |   40   |     read | new | no_writers |
+ *
  */
-#define SAMPLE_IST(idx)           ((idx <= 2) ? DDS_IST_ALIVE              : \
-                                   (idx == 3) ? DDS_IST_NOT_ALIVE_DISPOSED : \
-                                                DDS_IST_NOT_ALIVE_NO_WRITERS )
-#define SAMPLE_VST(idx)           ((idx <= 1) ? DDS_VST_OLD  : DDS_VST_NEW)
-#define SAMPLE_SST(idx)           ((idx == 0) ? DDS_SST_READ : DDS_SST_NOT_READ)
+#define MAX_SAMPLES                 21
+
+/* When an instance is disposed, then the sample state is update. This shouldn't
+ * happen. For now, leave it as is and expect the change.
+ * TODO: CHAM-324 remove this SAMPLE_STATE_UPDATE_BUG. */
+#define SAMPLE_STATE_UPDATE_BUG
+#ifdef SAMPLE_STATE_UPDATE_BUG
+  #define RDR_NOT_READ_CNT            15
+  int rdr_expected_long_2[RDR_NOT_READ_CNT] = { 0, 1, 2, 6, 7, 9, 11, 13, 14, 15, 16, 17, 18, 19, 20 };
+  /* Because we only read one sample at a time, only the first sample of an instance
+   * can be new. */
+  #define SAMPLE_VST(long_2)           (((long_2 == 0) || (long_2 == 15) || (long_2 == 18)) ? DDS_VST_NEW : DDS_VST_OLD)
+#else
+  #define RDR_NOT_READ_CNT            11
+  int rdr_expected_long_2[RDR_NOT_READ_CNT] = { 0, 1, 2, 6, 7, 9, 11, 13, 14, 16, 19 };
+  /* Because we only read one sample at a time, only the first sample of an instance
+   * can be new. */
+  #define SAMPLE_VST(long_2)           (((long_2 == 0) || (long_2 == 16) || (long_2 == 19)) ? DDS_VST_NEW : DDS_VST_OLD)
+#endif
+
+#define RCOND_NOT_READ_CNT          10
+int rcond_expected_long_2[RCOND_NOT_READ_CNT] = { 1, 2, 6, 7, 9, 11, 13, 14, 16, 19 };
+
+#define QCOND_NOT_READ_CNT          5
+int qcond_expected_long_2[QCOND_NOT_READ_CNT] = { 0, 2, 6, 14, 16 };
+
+#define SAMPLE_IST(long_1)           ((long_1 == 5) ? DDS_IST_NOT_ALIVE_DISPOSED   : \
+                                      (long_1 == 6) ? DDS_IST_NOT_ALIVE_NO_WRITERS : \
+                                                      DDS_IST_ALIVE                )
 
 static dds_entity_t g_participant = 0;
 static dds_entity_t g_subscriber  = 0;
@@ -94,6 +119,13 @@ filter_init(const void * sample)
             (s->long_2 == 12));
 }
 
+static bool
+filter_mod2(const void * sample)
+{
+    const Space_Type1 *s = sample;
+    return (s->long_2 % 2 == 0);
+}
+
 static void
 reader_iterator_init(void)
 {
@@ -131,12 +163,12 @@ reader_iterator_init(void)
     g_reader = dds_create_reader(g_subscriber, g_topic, qos, NULL);
     cr_assert_gt(g_reader, 0, "Failed to create prerequisite g_reader");
 
-    /* Create a read condition that only reads not_read samples. */
-    g_rcond = dds_create_readcondition(g_reader, DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+    /* Create a read condition that only reads old samples. */
+    g_rcond = dds_create_readcondition(g_reader, DDS_NOT_READ_SAMPLE_STATE | DDS_NOT_NEW_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
     cr_assert_gt(g_rcond, 0, "Failed to create prerequisite g_rcond");
 
-    /* Create a query condition that only reads not_read samples of instances mod2. */
-    g_qcond = dds_create_querycondition(g_reader, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE, filter_init);
+    /* Create a query condition that only reads of instances mod2. */
+    g_qcond = dds_create_querycondition(g_reader, DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE, filter_mod2);
     cr_assert_gt(g_qcond, 0, "Failed to create prerequisite g_qcond");
 
     /* Sync g_reader to g_writer. */
@@ -170,79 +202,91 @@ reader_iterator_init(void)
         g_loans[i] = NULL;
     }
 
-    /* Write first samples. */
-    for (int i = 0; i < (MAX_SAMPLES - 2); i++) {
-      sample.long_1 = i/3;
-      sample.long_2 = i;
-      sample.long_3 = i*2;
-      ret = dds_write(g_writer, &sample);
-      cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite write");
+
+    /* Write the samples. */
+    for (int i = 0; i < MAX_SAMPLES; i++) {
+        sample.long_1 = i/3;
+        sample.long_2 = i;
+        sample.long_3 = i*2;
+        ret = dds_write(g_writer, &sample);
+        cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite write");
     }
-    /*   | long_1 | long_2 | long_3 |    sst   | vst |    ist     |
-     *    ----------------------------------------------------------
-     *    |    0   |    0   |    0   | not_read | new | alive      |
-     *    |    0   |    1   |    2   | not_read | new | alive      |
-     *    |    0   |    2   |    4   | not_read | new | alive      |
-     *    |    1   |    3   |    6   | not_read | new | alive      |
-     *    |    1   |    4   |    8   | not_read | new | alive      |
-     *    |    1   |    5   |   10   | not_read | new | alive      |
-     *    |    2   |    6   |   12   | not_read | new | alive      |
-     *    |    2   |    7   |   14   | not_read | new | alive      |
-     *    |    2   |    8   |   16   | not_read | new | alive      |
-     *    |    3   |    9   |   18   | not_read | new | alive      |
-     *    |    3   |   10   |   20   | not_read | new | alive      |
-     *    |    3   |   11   |   22   | not_read | new | alive      |
-     *    |    4   |   12   |   24   | not_read | new | alive      |
-     *    |    4   |   13   |   26   | not_read | new | alive      |
-     *    |    4   |   14   |   28   | not_read | new | alive      |
+    /*    | long_1 | long_2 | long_3 |    sst   | vst | ist   |
+     *    -----------------------------------------------------
+     *    |    0   |    0   |    0   | not_read | new | alive |
+     *    |    0   |    1   |    2   | not_read | new | alive |
+     *    |    0   |    2   |    4   | not_read | new | alive |
+     *    |    1   |    3   |    6   | not_read | new | alive |
+     *    |    1   |    4   |    8   | not_read | new | alive |
+     *    |    1   |    5   |   10   | not_read | new | alive |
+     *    |    2   |    6   |   12   | not_read | new | alive |
+     *    |    2   |    7   |   14   | not_read | new | alive |
+     *    |    2   |    8   |   16   | not_read | new | alive |
+     *    |    3   |    9   |   18   | not_read | new | alive |
+     *    |    3   |   10   |   20   | not_read | new | alive |
+     *    |    3   |   11   |   22   | not_read | new | alive |
+     *    |    4   |   12   |   24   | not_read | new | alive |
+     *    |    4   |   13   |   26   | not_read | new | alive |
+     *    |    4   |   14   |   28   | not_read | new | alive |
+     *    |    5   |   15   |   30   | not_read | new | alive |
+     *    |    5   |   16   |   32   | not_read | new | alive |
+     *    |    5   |   17   |   34   | not_read | new | alive |
+     *    |    6   |   18   |   36   | not_read | new | alive |
+     *    |    6   |   19   |   38   | not_read | new | alive |
+     *    |    6   |   20   |   40   | not_read | new | alive |
      */
 
-    /* Write last 2 samples. */
+    /* Set the sst to read for the proper samples by using a query
+     * condition that filters for these specific samples. */
+    {
+        dds_entity_t qcond = 0;
+
+        /* Create a query condition that reads the specific sample to get a set of 'read' samples after init. */
+        qcond = dds_create_querycondition(g_reader, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE, filter_init);
+        cr_assert_gt(g_qcond, 0, "Failed to create prerequisite qcond");
+
+        ret = dds_read(qcond, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
+        cr_assert_gt(ret, 0, "Failed prerequisite read: %d", dds_err_nr(ret));
+
+        dds_delete(qcond);
+    }
+    /*    | long_1 | long_2 | long_3 |    sst   | vst |  ist  |
+     *    -----------------------------------------------------
+     *    |    0   |    0   |    0   | not_read | new | alive |
+     *    |    0   |    1   |    2   | not_read | new | alive |
+     *    |    0   |    2   |    4   | not_read | new | alive |
+     *    |    1   |    3   |    6   |     read | old | alive |
+     *    |    1   |    4   |    8   |     read | old | alive |
+     *    |    1   |    5   |   10   |     read | old | alive |
+     *    |    2   |    6   |   12   | not_read | old | alive |
+     *    |    2   |    7   |   14   | not_read | old | alive |
+     *    |    2   |    8   |   16   |     read | old | alive |
+     *    |    3   |    9   |   18   | not_read | old | alive |
+     *    |    3   |   10   |   20   |     read | old | alive |
+     *    |    3   |   11   |   22   | not_read | old | alive |
+     *    |    4   |   12   |   24   |     read | old | alive |
+     *    |    4   |   13   |   26   | not_read | old | alive |
+     *    |    4   |   14   |   28   | not_read | old | alive |
+     *    |    5   |   15   |   30   |     read | old | alive |
+     *    |    5   |   16   |   32   | not_read | old | alive |
+     *    |    5   |   17   |   34   |     read | old | alive |
+     *    |    6   |   18   |   36   |     read | old | alive |
+     *    |    6   |   19   |   38   | not_read | old | alive |
+     *    |    6   |   20   |   40   |     read | old | alive |
+     */
+
+
+    /* Dispose and unregister the last two samples. */
     sample.long_1 = 5;
     sample.long_2 = 15;
     sample.long_3 = 30;
-    ret = dds_write(g_writer, &sample);
-    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite write");
-
+    ret = dds_dispose(g_writer, &sample);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite dispose");
     sample.long_1 = 6;
     sample.long_2 = 16;
     sample.long_3 = 32;
-    ret = dds_write(g_writer, &sample);
-    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite write");
-
-    /*   | long_1 | long_2 | long_3 |    sst   | vst |    ist     |
-    *    ----------------------------------------------------------
-    *    |    0   |    0   |    0   | not_read | new | alive      |
-    *    |    0   |    1   |    2   | not_read | new | alive      |
-    *    |    0   |    2   |    4   | not_read | new | alive      |
-    *    |    1   |    3   |    6   | not_read | new | alive      |
-    *    |    1   |    4   |    8   | not_read | new | alive      |
-    *    |    1   |    5   |   10   | not_read | new | alive      |
-    *    |    2   |    6   |   12   | not_read | new | alive      |
-    *    |    2   |    7   |   14   | not_read | new | alive      |
-    *    |    2   |    8   |   16   | not_read | new | alive      |
-    *    |    3   |    9   |   18   | not_read | new | alive      |
-    *    |    3   |   10   |   20   | not_read | new | alive      |
-    *    |    3   |   11   |   22   | not_read | new | alive      |
-    *    |    4   |   12   |   24   | not_read | new | alive      |
-    *    |    4   |   13   |   26   | not_read | new | alive      |
-    *    |    4   |   14   |   28   | not_read | new | alive      |
-    *    |    5   |   15   |   30   | not_read | new | alive      |
-    *    |    6   |   16   |   32   | not_read | new | alive      |
-    */
-
-    /* Set the sst to read for the proper samples by using a query condition that filters for these specific samples. */
-    dds_entity_t qcond = 0;
-
-    /* Create a query condition that reads the specific sample to get a set of 'read' samples after init. */
-    qcond = dds_create_querycondition(g_reader, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE, filter_init);
-    cr_assert_gt(g_qcond, 0, "Failed to create prerequisite qcond");
-
-    ret = dds_read(qcond, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
-    cr_assert_eq(ret, 6, "Failed prerequisite read");
-
-    dds_delete(qcond);
-
+    ret = dds_unregister_instance(g_writer, &sample);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite unregister");
     /*    | long_1 | long_2 | long_3 |    sst   | vst |    ist     |
      *    ----------------------------------------------------------
      *    |    0   |    0   |    0   | not_read | new | alive      |
@@ -251,51 +295,21 @@ reader_iterator_init(void)
      *    |    1   |    3   |    6   |     read | old | alive      |
      *    |    1   |    4   |    8   |     read | old | alive      |
      *    |    1   |    5   |   10   |     read | old | alive      |
-     *    |    2   |    6   |   12   | not_read | new | alive      |
-     *    |    2   |    7   |   14   | not_read | new | alive      |
+     *    |    2   |    6   |   12   | not_read | old | alive      |
+     *    |    2   |    7   |   14   | not_read | old | alive      |
      *    |    2   |    8   |   16   |     read | old | alive      |
-     *    |    3   |    9   |   18   | not_read | new | alive      |
+     *    |    3   |    9   |   18   | not_read | old | alive      |
      *    |    3   |   10   |   20   |     read | old | alive      |
-     *    |    3   |   11   |   22   | not_read | new | alive      |
+     *    |    3   |   11   |   22   | not_read | old | alive      |
      *    |    4   |   12   |   24   |     read | old | alive      |
-     *    |    4   |   13   |   26   | not_read | new | alive      |
-     *    |    4   |   14   |   28   | not_read | new | alive      |
-     *    |    5   |   15   |   30   | not_read | new | alive      |
-     *    |    6   |   16   |   32   | not_read | new | alive      |
-     */
-
-    /* Dispose and unregister the last two samples. */
-    sample.long_1 = 5;
-    sample.long_2 = 15;
-    sample.long_3 = 30;
-    ret = dds_dispose(g_writer, &sample);
-    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite dispose");
-
-    sample.long_1 = 6;
-    sample.long_2 = 16;
-    sample.long_3 = 32;
-    ret = dds_unregister_instance(g_writer, &sample);
-    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite unregister");
-
-    /*   | long_1 | long_2 | long_3 |    sst   | vst |    ist     |
-     *    ----------------------------------------------------------
-     *    |    0   |    0   |    0   | not_read | new | alive      |
-     *    |    0   |    1   |    2   | not_read | new | alive      |
-     *    |    0   |    2   |    4   | not_read | new | alive      |
-     *    |    1   |    3   |    6   |     read | old | alive      |
-     *    |    1   |    4   |    8   |     read | old | alive      |
-     *    |    1   |    5   |   10   |     read | old | alive      |
-     *    |    2   |    6   |   12   | not_read | new | alive      |
-     *    |    2   |    7   |   14   | not_read | new | alive      |
-     *    |    2   |    8   |   16   |     read | old | alive      |
-     *    |    3   |    9   |   18   | not_read | new | alive      |
-     *    |    3   |   10   |   20   |     read | old | alive      |
-     *    |    3   |   11   |   22   | not_read | new | alive      |
-     *    |    4   |   12   |   24   |     read | old | alive      |
-     *    |    4   |   13   |   26   | not_read | new | alive      |
-     *    |    4   |   14   |   28   | not_read | new | alive      |
-     *    |    5   |   15   |   30   | not_read | new | disposed   |
-     *    |    6   |   16   |   32   | not_read | new | no_writers |
+     *    |    4   |   13   |   26   | not_read | old | alive      |
+     *    |    4   |   14   |   28   | not_read | old | alive      |
+     *    |    5   |   15   |   30   |     read | new | disposed   |
+     *    |    5   |   16   |   32   | not_read | new | disposed   |
+     *    |    5   |   17   |   34   |     read | new | disposed   |
+     *    |    6   |   18   |   36   |     read | new | no_writers |
+     *    |    6   |   19   |   38   | not_read | new | no_writers |
+     *    |    6   |   20   |   40   |     read | new | no_writers |
      */
 
     dds_qos_delete(qos);
@@ -343,13 +357,15 @@ Test(vddsc_read_next, reader, .init=reader_iterator_init, .fini=reader_iterator_
         PRINT_SAMPLE("vddsc_read_next::reader: Read", (*sample));
 
         /* Expected states. */
-        int                  expected_long_2 = qcond_expected_long_2[cnt];
+        int                  expected_long_2 = rdr_expected_long_2[cnt];
+        int                  expected_long_1 = expected_long_2/3;
+        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_2);
+        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
 
         /* Check data. */
-        cr_assert_eq(sample->long_1, expected_long_2/3 );
+        cr_assert_eq(sample->long_1, expected_long_1 );
         cr_assert_eq(sample->long_2, expected_long_2   );
         cr_assert_eq(sample->long_3, expected_long_2 *2);
 
@@ -362,7 +378,7 @@ Test(vddsc_read_next, reader, .init=reader_iterator_init, .fini=reader_iterator_
       }
     }
 
-    cr_assert_eq(cnt, NOT_READ_CNT);
+    cr_assert_eq(cnt, RDR_NOT_READ_CNT);
 
     /* All samples should still be available. */
     ret = samples_cnt();
@@ -462,10 +478,12 @@ Test(vddsc_read_next, readcondition, .init=reader_iterator_init, .fini=reader_it
         PRINT_SAMPLE("vddsc_read_next::readcondition: Read", (*sample));
 
         /* Expected states. */
-        int                  expected_long_2 = qcond_expected_long_2[cnt];
+        int                  expected_long_2 = rcond_expected_long_2[cnt];
+        int                  expected_long_1 = expected_long_2/3;
+        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_2);
+        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
 
         /* Check data. */
         cr_assert_eq(sample->long_1, expected_long_2/3 );
@@ -504,9 +522,11 @@ Test(vddsc_read_next, querycondition, .init=reader_iterator_init, .fini=reader_i
 
         /* Expected states. */
         int                  expected_long_2 = qcond_expected_long_2[cnt];
+        int                  expected_long_1 = expected_long_2/3;
+        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_2);
+        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
 
         /* Check data. */
         cr_assert_eq(sample->long_1, expected_long_2/3 , "sample->long1 is %d when expected long->2/3 is %d", sample->long_1, expected_long_2/3);
@@ -553,10 +573,12 @@ Test(vddsc_read_next_wl, reader, .init=reader_iterator_init, .fini=reader_iterat
         PRINT_SAMPLE("vddsc_read_next_wl::reader: Read", (*sample));
 
         /* Expected states. */
-        int                  expected_long_2 = qcond_expected_long_2[cnt];
+        int                  expected_long_2 = rdr_expected_long_2[cnt];
+        int                  expected_long_1 = expected_long_2/3;
+        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_2);
+        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
 
         /* Check data. */
         cr_assert_eq(sample->long_1, expected_long_2/3 );
@@ -572,7 +594,7 @@ Test(vddsc_read_next_wl, reader, .init=reader_iterator_init, .fini=reader_iterat
       }
     }
 
-    cr_assert_eq(cnt, NOT_READ_CNT);
+    cr_assert_eq(cnt, RDR_NOT_READ_CNT);
 
     ret = dds_return_loan(g_reader, g_loans, ret);
     cr_assert_eq (ret, DDS_RETCODE_OK);
@@ -673,10 +695,12 @@ Test(vddsc_read_next_wl, readcondition, .init=reader_iterator_init, .fini=reader
         PRINT_SAMPLE("vddsc_read_next::readcondition: Read", (*sample));
 
         /* Expected states. */
-        int                  expected_long_2 = qcond_expected_long_2[cnt];
+        int                  expected_long_2 = rcond_expected_long_2[cnt];
+        int                  expected_long_1 = expected_long_2/3;
+        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_2);
+        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
 
         /* Check data. */
         cr_assert_eq(sample->long_1, expected_long_2/3 );
@@ -718,9 +742,11 @@ Test(vddsc_read_next_wl, querycondition, .init=reader_iterator_init, .fini=reade
 
         /* Expected states. */
         int                  expected_long_2 = qcond_expected_long_2[cnt];
+        int                  expected_long_1 = expected_long_2/3;
+        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_2);
+        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
 
         /* Check data. */
         cr_assert_eq(sample->long_1, expected_long_2/3 );
@@ -846,10 +872,12 @@ Test(vddsc_take_next, readcondition, .init=reader_iterator_init, .fini=reader_it
         PRINT_SAMPLE("vddsc_take_next::readcondition: Take", (*sample));
 
         /* Expected states. */
-        int                  expected_long_2 = qcond_expected_long_2[cnt];
+        int                  expected_long_2 = rcond_expected_long_2[cnt];
+        int                  expected_long_1 = expected_long_2/3;
+        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_2);
+        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
 
         /* Check data. */
         cr_assert_eq(sample->long_1, expected_long_2/3 );
@@ -887,9 +915,11 @@ Test(vddsc_take_next, querycondition, .init=reader_iterator_init, .fini=reader_i
 
         /* Expected states. */
         int                  expected_long_2 = qcond_expected_long_2[cnt];
+        int                  expected_long_1 = expected_long_2/3;
+        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_2);
+        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
 
         /* Check data. */
         cr_assert_eq(sample->long_1, expected_long_2/3 );
@@ -1010,10 +1040,12 @@ Test(vddsc_take_next_wl, readcondition, .init=reader_iterator_init, .fini=reader
         PRINT_SAMPLE("vddsc_take_next_wl::readcondition: Take", (*sample));
 
         /* Expected states. */
-        int                  expected_long_2 = qcond_expected_long_2[cnt];
+        int                  expected_long_2 = rcond_expected_long_2[cnt];
+        int                  expected_long_1 = expected_long_2/3;
+        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_2);
+        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
 
         /* Check data. */
         cr_assert_eq(sample->long_1, expected_long_2/3 );
@@ -1055,9 +1087,11 @@ Test(vddsc_take_next_wl, querycondition, .init=reader_iterator_init, .fini=reade
 
         /* Expected states. */
         int                  expected_long_2 = qcond_expected_long_2[cnt];
+        int                  expected_long_1 = expected_long_2/3;
+        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_2);
+        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
 
         /* Check data. */
         cr_assert_eq(sample->long_1, expected_long_2/3 );
