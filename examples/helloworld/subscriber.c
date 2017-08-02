@@ -27,10 +27,6 @@ int main (int argc, char ** argv)
     dds_sample_info_t info[MAX_SAMPLES];
     dds_return_t ret;
 
-    /* Initialize sample buffer, by pointing the void pointer within
-     * the buffer array to a valid sample memory location. */
-    samples[0] = HelloWorldData_Msg__alloc ();
-
     /* Create a Participant. */
     participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
     DDS_ERR_CHECK (participant, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
@@ -42,6 +38,10 @@ int main (int argc, char ** argv)
     /* Create a Reader. */
     reader = dds_create_reader (participant, topic, NULL, NULL);
     DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+    /* Initialize sample buffer, by pointing the void pointer within
+     * the buffer array to a valid sample memory location. */
+    samples[0] = HelloWorldData_Msg__alloc ();
 
     printf ("\n=== [Reader] waiting for a message ...\n");
 

@@ -53,6 +53,12 @@ add_custom_command(
 
 add_custom_target(idlc ALL DEPENDS "${IDLC_JAR}")
 
+install(
+  FILES "${IDLC_DIR}/${IDLC}"
+  DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_WRITE GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+  COMPONENT dev)
+
 function(IDLC_GENERATE _target)
   if(NOT ARGN)
     message(FATAL_ERROR "idlc_generate called without any idl files")
@@ -84,5 +90,26 @@ function(IDLC_GENERATE _target)
   add_library(${_target} INTERFACE)
   target_sources(${_target} INTERFACE ${_sources})
   target_include_directories(${_target} INTERFACE "${_dir}")
+endfunction()
+
+function(IDLC_INSTALL_GENERATED _dest _comp)
+  if(NOT ARGN)
+    message(FATAL_ERROR "idlc_install_generated called without any idl files")
+  endif()
+
+  set(_dir "${CMAKE_CURRENT_BINARY_DIR}")
+  set(_files)
+  foreach(FIL ${ARGN})
+    get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+    get_filename_component(FIL_WE ${FIL} NAME_WE)
+
+    set(_source "${_dir}/${FIL_WE}.c")
+    set(_header "${_dir}/${FIL_WE}.h")
+    list(APPEND _files "${_source}" "${_header}")
+  endforeach()
+
+  install(FILES ${_files}
+          DESTINATION "${_dest}"
+          COMPONENT ${_comp})
 endfunction()
 

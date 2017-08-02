@@ -19,3 +19,18 @@ target_include_directories(OSAPI PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/i
 if(BUILD_TESTING)
   add_subdirectory(tests)
 endif()
+
+install(
+  FILES "${CMAKE_SOURCE_DIR}/include/os/os_public.h" "${CMAKE_SOURCE_DIR}/include/os/os_decl_attributes.h" "${CMAKE_SOURCE_DIR}/include/os/os_decl_attributes_sal.h"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/os"
+  COMPONENT dev)
+
+install(
+  FILES "${CMAKE_SOURCE_DIR}/include/os/posix/os_platform_public.h"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/os/posix"
+  COMPONENT dev)
+
+install(
+  FILES "${CMAKE_SOURCE_DIR}/include/os/windows/os_platform_public.h"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/os/windows"
+  COMPONENT dev)
