@@ -1,26 +1,14 @@
 .. _`HelloWorld`:
 
-
 ###########
 Hello World
 ###########
 
+.. contents::
 
-***********************
-The Hello World Example
-***********************
-
-Whether you are an experienced programmer or a novice, it is
-highly likely that you have already experienced some form of
-*Pub/Sub* (Publish/Subscribe) -- an abstraction for one-to-many
-communication that provides anonymous, decoupled, and
-asynchronous communication between a publisher and its
-subscribers.
-
-*DDS* (Data Distribution Service) is an *OMG* (Object Management
-Group) standard that is a Pub/Sub abstraction implementation
-that addresses the data-sharing needs of large scale mission-
-and business-critical applications.
+************
+Introduction
+************
 
 The Hello World example is an introduction into DDS by creating
 a publisher and subscriber and sending a message from the former
@@ -495,9 +483,9 @@ After that, the Hello World example will use the new data types.
 
 
 
-*****************
-Building Examples
-*****************
+*******************
+Building With CMake
+*******************
 
 So far, we've been talking about building the Hello World example
 natively. However, the Hello World can also be build using the
