@@ -442,9 +442,12 @@ dds_read_next(
       ret = dds_read_impl (false, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
     }
     else{
-      ret = dds_valid_hdl(reader, DDS_KIND_DONTCARE);
-      if(ret == DDS_RETCODE_OK){
+      dds_retcode_t rc;
+      rc = dds_valid_hdl(reader, DDS_KIND_DONTCARE);
+      if(rc == DDS_RETCODE_OK){
         ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+      } else{
+        ret = DDS_ERRNO(rc);
       }
     }
   }
@@ -465,9 +468,12 @@ dds_read_next_wl(
       ret = dds_read_impl (false, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
     }
     else{
-      ret = dds_valid_hdl(reader, DDS_KIND_DONTCARE);
-      if(ret == DDS_RETCODE_OK){
+      dds_retcode_t rc;
+      rc = dds_valid_hdl(reader, DDS_KIND_DONTCARE);
+      if(rc == DDS_RETCODE_OK){
         ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+      } else{
+        ret = DDS_ERRNO(rc);
       }
     }
   }
@@ -697,9 +703,12 @@ dds_take_next(
       ret = dds_read_impl (true, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
     }
     else{
-      ret = dds_valid_hdl(reader, DDS_KIND_DONTCARE);
-      if(ret == DDS_RETCODE_OK){
+      dds_retcode_t rc;
+      rc = dds_valid_hdl(reader, DDS_KIND_DONTCARE);
+      if(rc == DDS_RETCODE_OK){
         ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+      } else{
+        ret = DDS_ERRNO(rc);
       }
     }
   }
@@ -720,9 +729,12 @@ dds_take_next_wl(
       ret = dds_read_impl (true, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
     }
     else{
-      ret = dds_valid_hdl(reader, DDS_KIND_DONTCARE);
-      if(ret == DDS_RETCODE_OK){
+      dds_retcode_t rc;
+      rc = dds_valid_hdl(reader, DDS_KIND_DONTCARE);
+      if(rc == DDS_RETCODE_OK){
         ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+      } else{
+        ret = DDS_ERRNO(rc);
       }
     }
   }

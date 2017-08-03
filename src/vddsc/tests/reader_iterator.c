@@ -605,22 +605,6 @@ Theory((dds_entity_t *rdr), vddsc_take_next, non_readers, .init=reader_iterator_
 /*************************************************************************************************/
 
 /*************************************************************************************************/
-TheoryDataPoints(vddsc_take_next, invalid_params) = {
-        DataPoints(dds_entity_t*,               &g_reader, &g_rcond, &g_qcond),
-        DataPoints(void**,                      g_samples, g_loans, (void**)0),
-        DataPoints(dds_sample_info_t*,          g_info, (dds_sample_info_t*)0),
-};
-Theory((dds_entity_t *rdr, void **buf, dds_sample_info_t *si), vddsc_take_next, invalid_params, .init=reader_iterator_init, .fini=reader_iterator_fini)
-{
-    dds_return_t ret;
-    cr_assume((buf != g_samples) || (si != g_info));
-    cr_assume(buf != g_loans);
-    ret = dds_take_next(*rdr, buf, si);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
-}
-/*************************************************************************************************/
-
-/*************************************************************************************************/
 TheoryDataPoints(vddsc_take_next, already_deleted) = {
         DataPoints(dds_entity_t*, &g_rcond, &g_qcond, &g_reader),
 };
@@ -687,21 +671,6 @@ Theory((dds_entity_t *rdr), vddsc_take_next_wl, non_readers, .init=reader_iterat
     dds_return_t ret;
     ret = dds_take_next_wl(*rdr, g_loans, g_info);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
-}
-/*************************************************************************************************/
-
-/*************************************************************************************************/
-TheoryDataPoints(vddsc_take_next_wl, invalid_params) = {
-        DataPoints(dds_entity_t*,               &g_reader, &g_rcond, &g_qcond),
-        DataPoints(void**,                      g_loans, (void**)0),
-        DataPoints(dds_sample_info_t*,          g_info, (dds_sample_info_t*)0),
-};
-Theory((dds_entity_t *rdr, void **buf, dds_sample_info_t *si), vddsc_take_next_wl, invalid_params, .init=reader_iterator_init, .fini=reader_iterator_fini)
-{
-    dds_return_t ret;
-    cr_assume((buf != g_loans) || (si != g_info));
-    ret = dds_take_next_wl(*rdr, buf, si);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
 
