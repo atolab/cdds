@@ -2739,9 +2739,9 @@ dds_take_instance_mask_wl(
  *
  * This operation copies the next, non-previously accessed
  * data value and corresponding sample info and removes from
- * the data reader.
+ * the data reader. As an entity, only reader is accepted.
  *
- * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[in]  reader The reader entity
  * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
  * @param[out] si The pointer to \ref dds_sample_info_t returned for a data value
  *
@@ -2756,12 +2756,10 @@ dds_take_instance_mask_wl(
  *         DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
 DDS_EXPORT dds_return_t
 dds_take_next(
-        _In_ dds_entity_t reader_or_condition,
+        _In_ dds_entity_t reader,
         _Out_ void **buf,
         _Out_ dds_sample_info_t *si);
 
@@ -2770,12 +2768,12 @@ dds_take_next(
  *
  * This operation copies the next, non-previously accessed
  * data value and corresponding sample info and removes from
- * the data reader.
+ * the data reader. As an entity, only reader is accepted.
  *
  * After dds_take_next_wl function is being called and the data has been handled,
  * dds_return_loan function must be called to possibly free memory.
  *
- * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[in]  reader The reader entity
  * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
  * @param[out] si The pointer to \ref dds_sample_info_t returned for a data value
  *
@@ -2790,12 +2788,10 @@ dds_take_next(
  *         DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
 DDS_EXPORT dds_return_t
 dds_take_next_wl(
-        _In_ dds_entity_t reader_or_condition,
+        _In_ dds_entity_t reader,
         _Out_ void **buf,
         _Out_ dds_sample_info_t *si);
 
@@ -2803,9 +2799,10 @@ dds_take_next_wl(
  * @brief Read and copy the status set for the entity
  *
  * This operation copies the next, non-previously accessed
- * data value and corresponding sample info.
+ * data value and corresponding sample info. As an entity,
+ * only reader is accepted.
  *
- * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[in]  reader The reader entity
  * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
  * @param[out] si The pointer to \ref dds_sample_info_t returned for a data value
  *
@@ -2820,12 +2817,10 @@ dds_take_next_wl(
  *         DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
 DDS_EXPORT dds_return_t
 dds_read_next(
-        _In_ dds_entity_t reader_or_condition,
+        _In_ dds_entity_t reader,
         _Out_ void **buf,
         _Out_ dds_sample_info_t *si);
 
@@ -2833,12 +2828,13 @@ dds_read_next(
  * @brief Read and copy the status set for the loaned sample
  *
  * This operation copies the next, non-previously accessed
- * data value and corresponding loaned sample info.
+ * data value and corresponding loaned sample info. As an entity,
+ * only reader is accepted.
  *
  * After dds_read_next_wl function is being called and the data has been handled,
  * dds_return_loan function must be called to possibly free memory.
  *
- * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
+ * @param[in]  reader The reader entity
  * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
  * @param[out] si The pointer to \ref dds_sample_info_t returned for a data value
  *
@@ -2853,12 +2849,10 @@ dds_read_next(
  *         DDS_RETCODE_ALREADY_DELETED
  *                  The entity has already been deleted.
  */
-_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
 DDS_EXPORT dds_return_t
 dds_read_next_wl(
-        _In_ dds_entity_t reader_or_condition,
+        _In_ dds_entity_t reader,
         _Out_ void **buf,
         _Out_ dds_sample_info_t *si);
 

@@ -391,46 +391,30 @@ Test(vddsc_read_next, reader, .init=reader_iterator_init, .fini=reader_iterator_
 TheoryDataPoints(vddsc_read_next, invalid_readers) = {
         DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
 };
-Theory((dds_entity_t rdr_or_cnd), vddsc_read_next, invalid_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t rdr), vddsc_read_next, invalid_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (rdr_or_cnd < 0) {
+    if (rdr < 0) {
         /* Entering the API with an error should return the same error. */
-        exp = rdr_or_cnd;
+        exp = rdr;
     }
 
-    ret = dds_read_next(rdr_or_cnd, g_samples, g_info);
-    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+    ret = dds_read_next(rdr, g_samples, g_info);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_str(ret), dds_err_nr(exp));
 }
 /*************************************************************************************************/
 
 /*************************************************************************************************/
 TheoryDataPoints(vddsc_read_next, non_readers) = {
-        DataPoints(dds_entity_t*, &g_participant, &g_topic, &g_writer, &g_subscriber, &g_publisher, &g_waitset),
+        DataPoints(dds_entity_t*, &g_participant, &g_topic, &g_writer, &g_subscriber, &g_publisher, &g_waitset, &g_rcond, &g_qcond),
 };
-Theory((dds_entity_t *rdr_or_cnd), vddsc_read_next, non_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t *rdr), vddsc_read_next, non_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_return_t ret;
-    ret = dds_read_next(*rdr_or_cnd, g_samples, g_info);
+    ret = dds_read_next(*rdr, g_samples, g_info);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
-}
-/*************************************************************************************************/
-
-/*************************************************************************************************/
-TheoryDataPoints(vddsc_read_next, invalid_params) = {
-        DataPoints(dds_entity_t*,               &g_reader, &g_rcond, &g_qcond),
-        DataPoints(void**,                      g_samples, g_loans, (void**)0),
-        DataPoints(dds_sample_info_t*,          g_info, (dds_sample_info_t*)0),
-};
-Theory((dds_entity_t *rdr_or_cnd, void **buf, dds_sample_info_t *si), vddsc_read_next, invalid_params, .init=reader_iterator_init, .fini=reader_iterator_fini)
-{
-    dds_return_t ret;
-    cr_assume((buf != g_samples) || (si != g_info));
-    cr_assume(buf != g_loans);
-    ret = dds_read_next(*rdr_or_cnd, buf, si);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
 
@@ -438,12 +422,12 @@ Theory((dds_entity_t *rdr_or_cnd, void **buf, dds_sample_info_t *si), vddsc_read
 TheoryDataPoints(vddsc_read_next, already_deleted) = {
         DataPoints(dds_entity_t*, &g_rcond, &g_qcond, &g_reader),
 };
-Theory((dds_entity_t *rdr_or_cnd), vddsc_read_next, already_deleted, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t *rdr), vddsc_read_next, already_deleted, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_return_t ret;
-    ret = dds_delete(*rdr_or_cnd);
+    ret = dds_delete(*rdr);
     cr_assert_eq(ret, DDS_RETCODE_OK, "prerequisite delete failed: %d", dds_err_nr(ret));
-    ret = dds_read_next(*rdr_or_cnd, g_samples, g_info);
+    ret = dds_read_next(*rdr, g_samples, g_info);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
 }
 
@@ -461,92 +445,6 @@ Theory((void **buf, dds_sample_info_t *si), vddsc_read_next, invalid_buffers, .i
     cr_assume(buf != g_loans);
     ret = dds_read_next(g_reader, buf, si);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
-}
-/*************************************************************************************************/
-
-/*************************************************************************************************/
-Test(vddsc_read_next, readcondition, .init=reader_iterator_init, .fini=reader_iterator_fini)
-{
-    dds_return_t cnt = 0;
-    dds_return_t ret = 1;
-
-    while (ret == 1){
-      ret = dds_read_next(g_rcond, g_samples, g_info);
-      cr_assert_geq(ret, 0 , "# read %d", ret);
-      if(ret == 1){
-        Space_Type1 *sample = (Space_Type1*)g_samples[0];
-        PRINT_SAMPLE("vddsc_read_next::readcondition: Read", (*sample));
-
-        /* Expected states. */
-        int                  expected_long_2 = rcond_expected_long_2[cnt];
-        int                  expected_long_1 = expected_long_2/3;
-        int                  expected_long_3 = expected_long_2*2;
-        dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
-        dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
-
-        /* Check data. */
-        cr_assert_eq(sample->long_1, expected_long_2/3 );
-        cr_assert_eq(sample->long_2, expected_long_2   );
-        cr_assert_eq(sample->long_3, expected_long_2 *2);
-
-        /* Check states. */
-        cr_assert_eq(g_info[0].valid_data,     true);
-        cr_assert_eq(g_info[0].sample_state,   expected_sst);
-        cr_assert_eq(g_info[0].view_state,     expected_vst);
-        cr_assert_eq(g_info[0].instance_state, expected_ist);
-        cnt ++;
-      }
-    }
-
-    cr_assert_eq(cnt, QCOND_NOT_READ_CNT);
-
-    /* All samples should still be available. */
-    ret = samples_cnt();
-    cr_assert_eq(ret, MAX_SAMPLES, "# samples %d, expected %d", ret, MAX_SAMPLES);
-}
-/*************************************************************************************************/
-
-/*************************************************************************************************/
-Test(vddsc_read_next, querycondition, .init=reader_iterator_init, .fini=reader_iterator_fini)
-{
-    dds_return_t cnt = 0;
-    dds_return_t ret = 1;
-
-    while (ret == 1){
-      ret = dds_read_next(g_qcond, g_samples, g_info);
-      cr_assert_geq(ret, 0 , "# read %d", ret);
-      if(ret == 1){
-        Space_Type1 *sample = (Space_Type1*)g_samples[0];
-        PRINT_SAMPLE("vddsc_read_next::querycondition: Read", (*sample));
-
-        /* Expected states. */
-        int                  expected_long_2 = qcond_expected_long_2[cnt];
-        int                  expected_long_1 = expected_long_2/3;
-        int                  expected_long_3 = expected_long_2*2;
-        dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
-        dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
-
-        /* Check data. */
-        cr_assert_eq(sample->long_1, expected_long_2/3 , "sample->long1 is %d when expected long->2/3 is %d", sample->long_1, expected_long_2/3);
-        cr_assert_eq(sample->long_2, expected_long_2   );
-        cr_assert_eq(sample->long_3, expected_long_2 *2);
-
-        /* Check states. */
-        cr_assert_eq(g_info[0].valid_data,     true);
-        cr_assert_eq(g_info[0].sample_state,   expected_sst);
-        cr_assert_eq(g_info[0].view_state,     expected_vst);
-        cr_assert_eq(g_info[0].instance_state, expected_ist);
-        cnt ++;
-      }
-    }
-
-    cr_assert_eq(cnt, QCOND_NOT_READ_CNT);
-
-    /* All samples should still be available. */
-    ret = samples_cnt();
-    cr_assert_eq(ret, MAX_SAMPLES, "# samples %d, expected %d", ret, MAX_SAMPLES);
 }
 /*************************************************************************************************/
 
@@ -610,45 +508,30 @@ Test(vddsc_read_next_wl, reader, .init=reader_iterator_init, .fini=reader_iterat
 TheoryDataPoints(vddsc_read_next_wl, invalid_readers) = {
         DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
 };
-Theory((dds_entity_t rdr_or_cnd), vddsc_read_next_wl, invalid_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t rdr), vddsc_read_next_wl, invalid_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (rdr_or_cnd < 0) {
+    if (rdr < 0) {
         /* Entering the API with an error should return the same error. */
-        exp = rdr_or_cnd;
+        exp = rdr;
     }
 
-    ret = dds_read_next_wl(rdr_or_cnd, g_loans, g_info);
+    ret = dds_read_next_wl(rdr, g_loans, g_info);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 /*************************************************************************************************/
 
 /*************************************************************************************************/
 TheoryDataPoints(vddsc_read_next_wl, non_readers) = {
-        DataPoints(dds_entity_t*, &g_participant, &g_topic, &g_writer, &g_subscriber, &g_publisher, &g_waitset),
+        DataPoints(dds_entity_t*, &g_participant, &g_topic, &g_writer, &g_subscriber, &g_publisher, &g_waitset, &g_rcond, &g_qcond),
 };
-Theory((dds_entity_t *rdr_or_cnd), vddsc_read_next_wl, non_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t *rdr), vddsc_read_next_wl, non_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_return_t ret;
-    ret = dds_read_next_wl(*rdr_or_cnd, g_loans, g_info);
+    ret = dds_read_next_wl(*rdr, g_loans, g_info);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
-}
-/*************************************************************************************************/
-
-/*************************************************************************************************/
-TheoryDataPoints(vddsc_read_next_wl, invalid_params) = {
-        DataPoints(dds_entity_t*,               &g_reader, &g_rcond, &g_qcond),
-        DataPoints(void**,                      g_loans, (void**)0),
-        DataPoints(dds_sample_info_t*,          g_info, (dds_sample_info_t*)0),
-};
-Theory((dds_entity_t *rdr_or_cnd, void **buf, dds_sample_info_t *si), vddsc_read_next_wl, invalid_params, .init=reader_iterator_init, .fini=reader_iterator_fini)
-{
-    dds_return_t ret;
-    cr_assume((buf != g_loans) || (si != g_info));
-    ret = dds_read_next_wl(*rdr_or_cnd, buf, si);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
 
@@ -656,12 +539,12 @@ Theory((dds_entity_t *rdr_or_cnd, void **buf, dds_sample_info_t *si), vddsc_read
 TheoryDataPoints(vddsc_read_next_wl, already_deleted) = {
         DataPoints(dds_entity_t*, &g_rcond, &g_qcond, &g_reader),
 };
-Theory((dds_entity_t *rdr_or_cnd), vddsc_read_next_wl, already_deleted, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t *rdr), vddsc_read_next_wl, already_deleted, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_return_t ret;
-    ret = dds_delete(*rdr_or_cnd);
+    ret = dds_delete(*rdr);
     cr_assert_eq(ret, DDS_RETCODE_OK, "prerequisite delete failed: %d", dds_err_nr(ret));
-    ret = dds_read_next_wl(*rdr_or_cnd, g_loans, g_info);
+    ret = dds_read_next_wl(*rdr, g_loans, g_info);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
 }
 
@@ -681,98 +564,6 @@ Theory((void **buf, dds_sample_info_t *si), vddsc_read_next_wl, invalid_buffers,
 }
 /*************************************************************************************************/
 
-/*************************************************************************************************/
-Test(vddsc_read_next_wl, readcondition, .init=reader_iterator_init, .fini=reader_iterator_fini)
-{
-    dds_return_t cnt = 0;
-    dds_return_t ret = 1;
-
-    while (ret == 1){
-      ret = dds_read_next_wl(g_rcond, g_loans, g_info);
-      cr_assert_geq(ret, 0 , "# read %d", ret);
-      if(ret == 1){
-        Space_Type1 *sample = (Space_Type1*)g_loans[0];
-        PRINT_SAMPLE("vddsc_read_next::readcondition: Read", (*sample));
-
-        /* Expected states. */
-        int                  expected_long_2 = rcond_expected_long_2[cnt];
-        int                  expected_long_1 = expected_long_2/3;
-        int                  expected_long_3 = expected_long_2*2;
-        dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
-        dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
-
-        /* Check data. */
-        cr_assert_eq(sample->long_1, expected_long_2/3 );
-        cr_assert_eq(sample->long_2, expected_long_2   );
-        cr_assert_eq(sample->long_3, expected_long_2 *2);
-
-        /* Check states. */
-        cr_assert_eq(g_info[0].valid_data,     true);
-        cr_assert_eq(g_info[0].sample_state,   expected_sst);
-        cr_assert_eq(g_info[0].view_state,     expected_vst);
-        cr_assert_eq(g_info[0].instance_state, expected_ist);
-        cnt ++;
-      }
-    }
-
-    cr_assert_eq(cnt, QCOND_NOT_READ_CNT);
-
-    ret = dds_return_loan(g_reader, g_loans, ret);
-    cr_assert_eq (ret, DDS_RETCODE_OK);
-
-    /* All samples should still be available. */
-    ret = samples_cnt();
-    cr_assert_eq(ret, MAX_SAMPLES, "# samples %d, expected %d", ret, MAX_SAMPLES);
-}
-/*************************************************************************************************/
-
-/*************************************************************************************************/
-Test(vddsc_read_next_wl, querycondition, .init=reader_iterator_init, .fini=reader_iterator_fini)
-{
-    dds_return_t cnt = 0;
-    dds_return_t ret = 1;
-
-    while (ret == 1){
-      ret = dds_read_next_wl(g_qcond, g_loans, g_info);
-      cr_assert_geq(ret, 0 , "# read %d", ret);
-      if(ret == 1){
-        Space_Type1 *sample = (Space_Type1*)g_loans[0];
-        PRINT_SAMPLE("vddsc_read_next::querycondition: Read", (*sample));
-
-        /* Expected states. */
-        int                  expected_long_2 = qcond_expected_long_2[cnt];
-        int                  expected_long_1 = expected_long_2/3;
-        int                  expected_long_3 = expected_long_2*2;
-        dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
-        dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
-
-        /* Check data. */
-        cr_assert_eq(sample->long_1, expected_long_2/3 );
-        cr_assert_eq(sample->long_2, expected_long_2   );
-        cr_assert_eq(sample->long_3, expected_long_2 *2);
-
-        /* Check states. */
-        cr_assert_eq(g_info[0].valid_data,     true);
-        cr_assert_eq(g_info[0].sample_state,   expected_sst);
-        cr_assert_eq(g_info[0].view_state,     expected_vst);
-        cr_assert_eq(g_info[0].instance_state, expected_ist);
-        cnt ++;
-      }
-    }
-
-    cr_assert_eq(cnt, QCOND_NOT_READ_CNT);
-
-    ret = dds_return_loan(g_reader, g_loans, ret);
-    cr_assert_eq (ret, DDS_RETCODE_OK);
-
-    /* All samples should still be available. */
-    ret = samples_cnt();
-    cr_assert_eq(ret, MAX_SAMPLES, "# samples %d, expected %d", ret, MAX_SAMPLES);
-}
-/*************************************************************************************************/
-
 
 
 
@@ -782,32 +573,33 @@ Test(vddsc_read_next_wl, querycondition, .init=reader_iterator_init, .fini=reade
  * These will check the dds_take_next() in various ways.
  *
  *************************************************************************************************/
+/*************************************************************************************************/
 TheoryDataPoints(vddsc_take_next, invalid_readers) = {
         DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
 };
-Theory((dds_entity_t rdr_or_cnd), vddsc_take_next, invalid_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t rdr), vddsc_take_next, invalid_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (rdr_or_cnd < 0) {
+    if (rdr < 0) {
         /* Entering the API with an error should return the same error. */
-        exp = rdr_or_cnd;
+        exp = rdr;
     }
 
-    ret = dds_take_next(rdr_or_cnd, g_samples, g_info);
+    ret = dds_take_next(rdr, g_samples, g_info);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 /*************************************************************************************************/
 
 /*************************************************************************************************/
 TheoryDataPoints(vddsc_take_next, non_readers) = {
-        DataPoints(dds_entity_t*, &g_participant, &g_topic, &g_writer, &g_subscriber, &g_publisher, &g_waitset),
+        DataPoints(dds_entity_t*, &g_participant, &g_topic, &g_writer, &g_subscriber, &g_publisher, &g_waitset, &g_rcond, &g_qcond),
 };
-Theory((dds_entity_t *rdr_or_cnd), vddsc_take_next, non_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t *rdr), vddsc_take_next, non_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_return_t ret;
-    ret = dds_take_next(*rdr_or_cnd, g_samples, g_info);
+    ret = dds_take_next(*rdr, g_samples, g_info);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -818,12 +610,12 @@ TheoryDataPoints(vddsc_take_next, invalid_params) = {
         DataPoints(void**,                      g_samples, g_loans, (void**)0),
         DataPoints(dds_sample_info_t*,          g_info, (dds_sample_info_t*)0),
 };
-Theory((dds_entity_t *rdr_or_cnd, void **buf, dds_sample_info_t *si), vddsc_take_next, invalid_params, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t *rdr, void **buf, dds_sample_info_t *si), vddsc_take_next, invalid_params, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_return_t ret;
     cr_assume((buf != g_samples) || (si != g_info));
     cr_assume(buf != g_loans);
-    ret = dds_take_next(*rdr_or_cnd, buf, si);
+    ret = dds_take_next(*rdr, buf, si);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -832,12 +624,12 @@ Theory((dds_entity_t *rdr_or_cnd, void **buf, dds_sample_info_t *si), vddsc_take
 TheoryDataPoints(vddsc_take_next, already_deleted) = {
         DataPoints(dds_entity_t*, &g_rcond, &g_qcond, &g_reader),
 };
-Theory((dds_entity_t *rdr_or_cnd), vddsc_take_next, already_deleted, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t *rdr), vddsc_take_next, already_deleted, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_return_t ret;
-    ret = dds_delete(*rdr_or_cnd);
+    ret = dds_delete(*rdr);
     cr_assert_eq(ret, DDS_RETCODE_OK, "prerequisite delete failed: %d", dds_err_nr(ret));
-    ret = dds_take_next(*rdr_or_cnd, g_samples, g_info);
+    ret = dds_take_next(*rdr, g_samples, g_info);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
 }
 
@@ -858,90 +650,6 @@ Theory((void **buf, dds_sample_info_t *si), vddsc_take_next, invalid_buffers, .i
 }
 /*************************************************************************************************/
 
-/*************************************************************************************************/
-Test(vddsc_take_next, readcondition, .init=reader_iterator_init, .fini=reader_iterator_fini)
-{
-    dds_return_t cnt = 0;
-    dds_return_t ret = 1;
-
-    while (ret == 1){
-      ret = dds_take_next(g_rcond, g_samples, g_info);
-      cr_assert_geq(ret, 0 , "# read %d", ret);
-      if(ret == 1){
-        Space_Type1 *sample = (Space_Type1*)g_samples[0];
-        PRINT_SAMPLE("vddsc_take_next::readcondition: Take", (*sample));
-
-        /* Expected states. */
-        int                  expected_long_2 = rcond_expected_long_2[cnt];
-        int                  expected_long_1 = expected_long_2/3;
-        int                  expected_long_3 = expected_long_2*2;
-        dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
-        dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
-
-        /* Check data. */
-        cr_assert_eq(sample->long_1, expected_long_2/3 );
-        cr_assert_eq(sample->long_2, expected_long_2   );
-        cr_assert_eq(sample->long_3, expected_long_2 *2);
-
-        /* Check states. */
-        cr_assert_eq(g_info[0].valid_data,     true);
-        cr_assert_eq(g_info[0].sample_state,   expected_sst);
-        cr_assert_eq(g_info[0].view_state,     expected_vst);
-        cr_assert_eq(g_info[0].instance_state, expected_ist);
-        cnt ++;
-      }
-    }
-
-    cr_assert_eq(cnt, QCOND_NOT_READ_CNT);
-    /* All samples should still be available. */
-    ret = samples_cnt();
-    cr_assert_eq(ret, MAX_SAMPLES, "# samples %d, expected %d", ret, MAX_SAMPLES);
-}
-/*************************************************************************************************/
-
-/*************************************************************************************************/
-Test(vddsc_take_next, querycondition, .init=reader_iterator_init, .fini=reader_iterator_fini)
-{
-    dds_return_t cnt = 0;
-    dds_return_t ret = 1;
-
-    while (ret == 1){
-      ret = dds_take_next(g_qcond, g_samples, g_info);
-      cr_assert_geq(ret, 0 , "# read %d", ret);
-      if(ret == 1){
-        Space_Type1 *sample = (Space_Type1*)g_samples[0];
-        PRINT_SAMPLE("vddsc_take_next::querycondition: Take", (*sample));
-
-        /* Expected states. */
-        int                  expected_long_2 = qcond_expected_long_2[cnt];
-        int                  expected_long_1 = expected_long_2/3;
-        int                  expected_long_3 = expected_long_2*2;
-        dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
-        dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
-
-        /* Check data. */
-        cr_assert_eq(sample->long_1, expected_long_2/3 );
-        cr_assert_eq(sample->long_2, expected_long_2   );
-        cr_assert_eq(sample->long_3, expected_long_2 *2);
-
-        /* Check states. */
-        cr_assert_eq(g_info[0].valid_data,     true);
-        cr_assert_eq(g_info[0].sample_state,   expected_sst);
-        cr_assert_eq(g_info[0].view_state,     expected_vst);
-        cr_assert_eq(g_info[0].instance_state, expected_ist);
-        cnt ++;
-      }
-    }
-
-    cr_assert_eq(cnt, QCOND_NOT_READ_CNT);
-    /* All samples should still be available. */
-    ret = samples_cnt();
-    cr_assert_eq(ret, MAX_SAMPLES, "# samples %d, expected %d", ret, MAX_SAMPLES);
-}
-/*************************************************************************************************/
-
 
 
 
@@ -955,29 +663,29 @@ Test(vddsc_take_next, querycondition, .init=reader_iterator_init, .fini=reader_i
 TheoryDataPoints(vddsc_take_next_wl, invalid_readers) = {
         DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
 };
-Theory((dds_entity_t rdr_or_cnd), vddsc_take_next_wl, invalid_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t rdr), vddsc_take_next_wl, invalid_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (rdr_or_cnd < 0) {
+    if (rdr < 0) {
         /* Entering the API with an error should return the same error. */
-        exp = rdr_or_cnd;
+        exp = rdr;
     }
 
-    ret = dds_take_next_wl(rdr_or_cnd, g_loans, g_info);
+    ret = dds_take_next_wl(rdr, g_loans, g_info);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 /*************************************************************************************************/
 
 /*************************************************************************************************/
 TheoryDataPoints(vddsc_take_next_wl, non_readers) = {
-        DataPoints(dds_entity_t*, &g_participant, &g_topic, &g_writer, &g_subscriber, &g_publisher, &g_waitset),
+        DataPoints(dds_entity_t*, &g_participant, &g_topic, &g_writer, &g_subscriber, &g_publisher, &g_waitset, &g_rcond, &g_qcond),
 };
-Theory((dds_entity_t *rdr_or_cnd), vddsc_take_next_wl, non_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t *rdr), vddsc_take_next_wl, non_readers, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_return_t ret;
-    ret = dds_take_next_wl(*rdr_or_cnd, g_loans, g_info);
+    ret = dds_take_next_wl(*rdr, g_loans, g_info);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -988,11 +696,11 @@ TheoryDataPoints(vddsc_take_next_wl, invalid_params) = {
         DataPoints(void**,                      g_loans, (void**)0),
         DataPoints(dds_sample_info_t*,          g_info, (dds_sample_info_t*)0),
 };
-Theory((dds_entity_t *rdr_or_cnd, void **buf, dds_sample_info_t *si), vddsc_take_next_wl, invalid_params, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t *rdr, void **buf, dds_sample_info_t *si), vddsc_take_next_wl, invalid_params, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_return_t ret;
     cr_assume((buf != g_loans) || (si != g_info));
-    ret = dds_take_next_wl(*rdr_or_cnd, buf, si);
+    ret = dds_take_next_wl(*rdr, buf, si);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -1001,15 +709,14 @@ Theory((dds_entity_t *rdr_or_cnd, void **buf, dds_sample_info_t *si), vddsc_take
 TheoryDataPoints(vddsc_take_next_wl, already_deleted) = {
         DataPoints(dds_entity_t*, &g_rcond, &g_qcond, &g_reader),
 };
-Theory((dds_entity_t *rdr_or_cnd), vddsc_take_next_wl, already_deleted, .init=reader_iterator_init, .fini=reader_iterator_fini)
+Theory((dds_entity_t *rdr), vddsc_take_next_wl, already_deleted, .init=reader_iterator_init, .fini=reader_iterator_fini)
 {
     dds_return_t ret;
-    ret = dds_delete(*rdr_or_cnd);
+    ret = dds_delete(*rdr);
     cr_assert_eq(ret, DDS_RETCODE_OK, "prerequisite delete failed: %d", dds_err_nr(ret));
-    ret = dds_take_next_wl(*rdr_or_cnd, g_loans, g_info);
+    ret = dds_take_next_wl(*rdr, g_loans, g_info);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
 }
-
 /*************************************************************************************************/
 
 /*************************************************************************************************/
@@ -1026,94 +733,3 @@ Theory((void **buf, dds_sample_info_t *si), vddsc_take_next_wl, invalid_buffers,
 }
 /*************************************************************************************************/
 
-/*************************************************************************************************/
-Test(vddsc_take_next_wl, readcondition, .init=reader_iterator_init, .fini=reader_iterator_fini)
-{
-    dds_return_t cnt = 0;
-    dds_return_t ret = 1;
-
-    while (ret == 1){
-      ret = dds_take_next_wl(g_rcond, g_loans, g_info);
-      cr_assert_geq(ret, 0 , "# read %d", ret);
-      if(ret == 1){
-        Space_Type1 *sample = (Space_Type1*)g_loans[0];
-        PRINT_SAMPLE("vddsc_take_next_wl::readcondition: Take", (*sample));
-
-        /* Expected states. */
-        int                  expected_long_2 = rcond_expected_long_2[cnt];
-        int                  expected_long_1 = expected_long_2/3;
-        int                  expected_long_3 = expected_long_2*2;
-        dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
-        dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
-
-        /* Check data. */
-        cr_assert_eq(sample->long_1, expected_long_2/3 );
-        cr_assert_eq(sample->long_2, expected_long_2   );
-        cr_assert_eq(sample->long_3, expected_long_2 *2);
-
-        /* Check states. */
-        cr_assert_eq(g_info[0].valid_data,     true);
-        cr_assert_eq(g_info[0].sample_state,   expected_sst);
-        cr_assert_eq(g_info[0].view_state,     expected_vst);
-        cr_assert_eq(g_info[0].instance_state, expected_ist);
-        cnt ++;
-      }
-    }
-
-    cr_assert_eq(cnt, QCOND_NOT_READ_CNT);
-
-    ret = dds_return_loan(g_reader, g_loans, ret);
-    cr_assert_eq (ret, DDS_RETCODE_OK);
-
-    /* All samples should still be available. */
-    ret = samples_cnt();
-    cr_assert_eq(ret, MAX_SAMPLES, "# samples %d, expected %d", ret, MAX_SAMPLES);
-}
-/*************************************************************************************************/
-
-/*************************************************************************************************/
-Test(vddsc_take_next_wl, querycondition, .init=reader_iterator_init, .fini=reader_iterator_fini)
-{
-    dds_return_t cnt = 0;
-    dds_return_t ret = 1;
-
-    while (ret == 1){
-      ret = dds_take_next_wl(g_qcond, g_loans, g_info);
-      cr_assert_geq(ret, 0 , "# read %d", ret);
-      if(ret == 1){
-        Space_Type1 *sample = (Space_Type1*)g_loans[0];
-        PRINT_SAMPLE("vddsc_take_next_wl::querycondition: Take", (*sample));
-
-        /* Expected states. */
-        int                  expected_long_2 = qcond_expected_long_2[cnt];
-        int                  expected_long_1 = expected_long_2/3;
-        int                  expected_long_3 = expected_long_2*2;
-        dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
-        dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
-        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
-
-        /* Check data. */
-        cr_assert_eq(sample->long_1, expected_long_2/3 );
-        cr_assert_eq(sample->long_2, expected_long_2   );
-        cr_assert_eq(sample->long_3, expected_long_2 *2);
-
-        /* Check states. */
-        cr_assert_eq(g_info[0].valid_data,     true);
-        cr_assert_eq(g_info[0].sample_state,   expected_sst);
-        cr_assert_eq(g_info[0].view_state,     expected_vst);
-        cr_assert_eq(g_info[0].instance_state, expected_ist);
-        cnt ++;
-      }
-    }
-
-    cr_assert_eq(cnt, QCOND_NOT_READ_CNT);
-
-    ret = dds_return_loan(g_reader, g_loans, ret);
-    cr_assert_eq (ret, DDS_RETCODE_OK);
-
-    /* All samples should still be available. */
-    ret = samples_cnt();
-    cr_assert_eq(ret, MAX_SAMPLES, "# samples %d, expected %d", ret, MAX_SAMPLES);
-}
-/*************************************************************************************************/

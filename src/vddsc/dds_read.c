@@ -428,32 +428,50 @@ dds_read_instance_mask_wl(
     return ret;
 }
 
-_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
 dds_return_t
 dds_read_next(
-        _In_ dds_entity_t reader_or_condition,
+        _In_ dds_entity_t reader,
         _Out_ void **buf,
         _Out_ dds_sample_info_t *si)
 {
-  uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
-  return dds_read_impl (false, reader_or_condition, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
+  dds_return_t ret = (dds_return_t) reader;
+  if(reader >= 0){
+    if(dds_entity_kind(reader) == DDS_KIND_READER){
+      uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+      ret = dds_read_impl (false, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
+    }
+    else{
+      ret = dds_valid_hdl(reader, DDS_KIND_DONTCARE);
+      if(ret == DDS_RETCODE_OK){
+        ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+      }
+    }
+  }
+  return ret;
 }
 
-_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
 dds_return_t
 dds_read_next_wl(
-        _In_ dds_entity_t reader_or_condition,
+        _In_ dds_entity_t reader,
         _Out_ void **buf,
         _Out_ dds_sample_info_t *si)
 {
-
-  uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
-  return dds_read_impl (false, reader_or_condition, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
-
+  dds_return_t ret = (dds_return_t) reader;
+  if(reader >= 0){
+    if(dds_entity_kind(reader) == DDS_KIND_READER){
+      uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+      ret = dds_read_impl (false, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
+    }
+    else{
+      ret = dds_valid_hdl(reader, DDS_KIND_DONTCARE);
+      if(ret == DDS_RETCODE_OK){
+        ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+      }
+    }
+  }
+  return ret;
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -665,31 +683,50 @@ dds_take_instance_mask_wl(
     return ret;
 }
 
-_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
 dds_return_t
 dds_take_next(
-        _In_ dds_entity_t reader_or_condition,
+        _In_ dds_entity_t reader,
         _Out_ void **buf,
         _Out_ dds_sample_info_t *si)
 {
-  uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
-  return dds_read_impl (true, reader_or_condition, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
+  dds_return_t ret = (dds_return_t) reader;
+  if(reader >= 0){
+    if(dds_entity_kind(reader) == DDS_KIND_READER){
+      uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+      ret = dds_read_impl (true, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
+    }
+    else{
+      ret = dds_valid_hdl(reader, DDS_KIND_DONTCARE);
+      if(ret == DDS_RETCODE_OK){
+        ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+      }
+    }
+  }
+  return ret;
 }
 
-_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
-                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+_Pre_satisfies_((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
 dds_return_t
 dds_take_next_wl(
-        _In_ dds_entity_t reader_or_condition,
+        _In_ dds_entity_t reader,
         _Out_ void **buf,
         _Out_ dds_sample_info_t *si)
 {
-
-  uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
-  return dds_read_impl (true, reader_or_condition, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
+  dds_return_t ret = (dds_return_t) reader;
+  if(reader >= 0){
+    if(dds_entity_kind(reader) == DDS_KIND_READER){
+      uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+      ret = dds_read_impl (true, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
+    }
+    else{
+      ret = dds_valid_hdl(reader, DDS_KIND_DONTCARE);
+      if(ret == DDS_RETCODE_OK){
+        ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+      }
+    }
+  }
+  return ret;
 }
 
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
