@@ -436,6 +436,7 @@ dds_read_next(
         _Out_ dds_sample_info_t *si)
 {
   dds_return_t ret = (dds_return_t) reader;
+  buf = (void**)dds_alloc(sizeof(**buf));
   if(reader >= 0){
     if(dds_entity_kind(reader) == DDS_KIND_READER){
       uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
@@ -451,6 +452,7 @@ dds_read_next(
       }
     }
   }
+  dds_free(buf);
   return ret;
 }
 
@@ -462,6 +464,7 @@ dds_read_next_wl(
         _Out_ dds_sample_info_t *si)
 {
   dds_return_t ret = (dds_return_t) reader;
+  buf = (void**)dds_alloc(sizeof(**buf));
   if(reader >= 0){
     if(dds_entity_kind(reader) == DDS_KIND_READER){
       uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
@@ -477,6 +480,7 @@ dds_read_next_wl(
       }
     }
   }
+  dds_free(buf);
   return ret;
 }
 
@@ -697,6 +701,7 @@ dds_take_next(
         _Out_ dds_sample_info_t *si)
 {
   dds_return_t ret = (dds_return_t) reader;
+  buf = (void**)dds_alloc(sizeof(**buf));
   if(reader >= 0){
     if(dds_entity_kind(reader) == DDS_KIND_READER){
       uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
@@ -712,10 +717,11 @@ dds_take_next(
       }
     }
   }
+  dds_free(buf);
   return ret;
 }
 
-_Pre_satisfies_((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
 dds_return_t
 dds_take_next_wl(
         _In_ dds_entity_t reader,
@@ -723,6 +729,7 @@ dds_take_next_wl(
         _Out_ dds_sample_info_t *si)
 {
   dds_return_t ret = (dds_return_t) reader;
+  buf = (void**)dds_alloc(sizeof(**buf));
   if(reader >= 0){
     if(dds_entity_kind(reader) == DDS_KIND_READER){
       uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
@@ -738,6 +745,7 @@ dds_take_next_wl(
       }
     }
   }
+  dds_free(buf);
   return ret;
 }
 
