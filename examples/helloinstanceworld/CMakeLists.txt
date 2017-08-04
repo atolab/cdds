@@ -1,0 +1,5 @@
+idlc_generate(HelloInstanceWorldData_lib "HelloWorldData.idl")
+add_executable(HelloinstanceworldPublisher publisher.c)
+add_executable(HelloinstanceworldSubscriber subscriber.c)
+target_link_libraries(HelloinstanceworldPublisher HelloInstanceWorldData_lib VortexDDS::vddsc)
+target_link_libraries(HelloinstanceworldSubscriber HelloInstanceWorldData_lib VortexDDS::vddsc)

@@ -3,6 +3,8 @@ if(NOT DEFINED CMAKE_INSTALL_EXAMPLESDIR)
 endif()
 
 add_subdirectory(helloworld)
+add_subdirectory(helloquickworld)
+add_subdirectory(helloinstanceworld)
 add_subdirectory(roundtrip)
 add_subdirectory(throughput)
 

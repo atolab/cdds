@@ -1,0 +1,5 @@
+idlc_generate(HelloQuickWorldData_lib "HelloWorldData.idl")
+add_executable(HelloquickworldPublisher publisher.c)
+add_executable(HelloquickworldSubscriber subscriber.c)
+target_link_libraries(HelloquickworldPublisher HelloQuickWorldData_lib VortexDDS::vddsc)
+target_link_libraries(HelloquickworldSubscriber HelloQuickWorldData_lib VortexDDS::vddsc)

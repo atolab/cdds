@@ -24,7 +24,7 @@ int main (int argc, char ** argv)
     dds_entity_t reader;
     HelloWorldData_Msg *msg;
     void *samples[MAX_SAMPLES];
-    dds_sample_info_t info[MAX_SAMPLES];
+    dds_sample_info_t infos[MAX_SAMPLES];
     dds_return_t ret;
 
     /* Create a Participant. */
@@ -43,18 +43,18 @@ int main (int argc, char ** argv)
      * the buffer array to a valid sample memory location. */
     samples[0] = HelloWorldData_Msg__alloc ();
 
-    printf ("\n=== [Reader] waiting for a message ...\n");
+    printf ("\n=== [Reader] Waiting for a message ...\n");
 
     /* Poll until data has been read. */
     while (true)
     {
         /* Do the actual read.
          * The return value contains the number of read samples. */
-        ret = dds_read (reader, samples, info, MAX_SAMPLES, MAX_SAMPLES);
+        ret = dds_read (reader, samples, infos, MAX_SAMPLES, MAX_SAMPLES);
         DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
         /* Check if we read some data and it is valid. */
-        if ((ret > 0) && (info[0].valid_data))
+        if ((ret > 0) && (infos[0].valid_data))
         {
             /* Print Message. */
             msg = (HelloWorldData_Msg*) samples[0];

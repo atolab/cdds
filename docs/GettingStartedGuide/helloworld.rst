@@ -1,8 +1,12 @@
 .. _`HelloWorld`:
 
-###########
-Hello World
-###########
+.. raw:: latex
+
+    \newpage
+
+################################
+Hello World (building & running)
+################################
 
 .. contents::
 
@@ -15,6 +19,7 @@ a publisher and subscriber and sending a message from the former
 to the latter.
 
 
+.. _`HelloWorldRunning`:
 
 *******************
 Running Hello World
@@ -300,8 +305,9 @@ this example and to keep things simple, we just do a sleep.
     dds_sleepfor (DDS_SECS (1));
 
 .. note::
-    As mentioned in the previous paragraph, there are alternatives
-    for this sleep and sleeping really isn't recommended.
+    As mentioned in the previous paragraph, sleeping isn't really
+    recommended. See :ref:`Hello Quick World <HelloQuickWorld>`
+    example for an alternative.
 
 Now, we need to decide what data to send.
 ::
@@ -436,6 +442,10 @@ describe the data layer. It can be translated into different
 languages after which the resulting applications can communicate
 without concerns about said programming languages.
 
+A bit more information about the :code:`#pragma keylist` can be
+found :ref:`here <HelloInstanceWorld>`.
+
+.. _`IdlCompiler`:
 
 IDL Precompiler
 ===============
@@ -492,6 +502,8 @@ natively. However, the Hello World can also be build using the
 cmake tool. This is what is recommended. In fact, all the other
 examples don't provide native makefiles, only cmake files.
 
+
+.. _`CMakeIntro`:
 
 CMake
 =====
@@ -562,6 +574,8 @@ Both applications need to be linked to the vddsc library in the
 VortexDDS package and the just generated HelloWorldData_lib.
 
 
+.. _`HelloWorldBuilding`:
+
 Hello World Configuration
 =========================
 
@@ -593,7 +607,8 @@ this case).
 Hello World Build
 =================
 
-Building the example is as easy as typing
+After the configuration step, building the example is as easy
+as typing
 ::
 
     cmake --build .

@@ -1,5 +1,9 @@
 .. _`Introduction`:
 
+.. raw:: latex
+
+    \newpage
+
 ############
 Introduction
 ############
@@ -22,10 +26,13 @@ Group) standard that is a Pub/Sub abstraction implementation
 that addresses the data-sharing needs of large scale mission-
 and business-critical applications.
 
+
 *********
 VortexDDS
 *********
 
-VortexDDS is an implementation of the DDS standard.
-TODO extend
+VortexDDS is an implementation of the DDS standard. Apart from
+the libraries needed to run DDS applications, it also contains
+development sources and tools needed during the development of
+those applications.
 
