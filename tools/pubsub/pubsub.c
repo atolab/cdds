@@ -156,7 +156,7 @@ static void terminate (void)
   const char c = 0;
   termflag = 1;
   os_write(termpipe[1], &c, 1); //Todo: for abstraction layer
-  dds_triggered(termcond);
+  dds_waitset_set_trigger(termcond, true);
 }
 
 static void sigh (int sig __attribute__ ((unused)))
@@ -168,7 +168,7 @@ static void sigh (int sig __attribute__ ((unused)))
   } while (r == -1 && os_getErrno() == os_sockEINTR);
 }
 
-static void *sigthread(void *varg __attribute__ ((unused)))
+static uint32_t sigthread(void *varg __attribute__ ((unused)))
 {
   while (1)
   {
@@ -187,7 +187,7 @@ static void *sigthread(void *varg __attribute__ ((unused)))
     else
       terminate();
   }
-  return NULL;
+  return 0;
 }
 
 static os_socket open_tcpserver_sock (int port)
@@ -1828,16 +1828,19 @@ static char *pub_do_arb(const struct writerspec *spec, struct getl_arg *getl_arg
   return ret;
 }
 
-static void *pubthread_auto(void *vspec)
+static uint32_t pubthread_auto(void *vspec)
 {
+    dds_thread_init("pubthread_auto");
 	const struct writerspec *spec = vspec;
 	assert (spec->topicsel != UNSPEC && spec->topicsel != ARB);
 	pub_do_auto(spec);
+	dds_thread_fini();
 	return 0;
 }
 
-static void *pubthread(void *vwrspecs)
+static uint32_t pubthread(void *vwrspecs)
 {
+  dds_thread_init("pubthread");
   struct wrspeclist *wrspecs = vwrspecs;
   uint32_t seq = 0;
   struct getl_arg getl_arg;
@@ -1908,6 +1911,7 @@ static void *pubthread(void *vwrspecs)
     }
   } while (fdservsock != -1 && !termflag);
   getl_fini(&getl_arg);
+  dds_thread_fini();
   return 0;
 }
 
@@ -1979,8 +1983,9 @@ static int check_eseq (struct eseq_admin *ea, unsigned seq, unsigned keyval, con
 //  return x;
 //}
 
-static void *subthread (void *vspec)
+static uint32_t subthread (void *vspec)
 {
+  dds_thread_init("subthread");
   const struct readerspec *spec = vspec;
   dds_entity_t rd = spec->rd;
 //  dds_entity_t sub = spec->sub;
@@ -2004,7 +2009,7 @@ static void *subthread (void *vspec)
 
   ws = dds_create_waitset(dp);
   if ((result = dds_waitset_attach(ws, termcond, NULL)) != DDS_RETCODE_OK)
-    error ("dds_waitset_attach (termcomd): %d (%s)\n", (int) result, dds_strerror (result));
+    error ("dds_waitset_attach (termcond): %d (%s)\n", (int) result, dds_strerror (result));
   nxs++; //increased because of the waitset_attach
   switch (spec->mode)
   {
@@ -2035,8 +2040,8 @@ static void *subthread (void *vspec)
 		  error ("dds_set_enabled_status (stcond): %d (%s)\n", (int) result, dds_strerror (result));
 //		if ((stcond = dds_statuscondition_get(rd)) == NULL) //Todo: check what is available in ddsi for this mathod.
 //		  error ("dds_statuscondition_get\n");
-		if ((result = dds_waitset_attach (ws, stcond, NULL)) != DDS_RETCODE_OK)
-		  error ("dds_waitset_attach (stcond): %d (%s)\n", (int) result, dds_strerror (result));
+		if ((result = dds_waitset_attach (ws, rd, NULL)) != DDS_RETCODE_OK)
+		  error ("dds_waitset_attach (rd): %d (%s)\n", (int) result, dds_strerror (result));
 		nxs++; //increased because of the waitset_attach
       }
       break;
@@ -2092,9 +2097,9 @@ static void *subthread (void *vspec)
 //      dds_waitset_get_conditions(ws, glist);
 
       tnow = nowll ();
-      for (gi = 0; gi < (spec->polling ? 1 : sizeof(*xs)); gi++)
+      for (gi = 0; gi < (spec->polling ? 1 : nxs); gi++)
       {
-    	  dds_entity_t cond = spec->polling ? 0 : xs[gi];
+          dds_entity_t cond = !spec->polling && xs[gi] != NULL ? *((dds_entity_t *)xs[gi]) : 0;
     	  unsigned i;
 
         assert (spec->polling || cond == rdcondA || cond == rdcondD || cond == stcond || cond == termcond);
@@ -2133,13 +2138,13 @@ static void *subthread (void *vspec)
 //          error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_strerror (result));
 
         if (spec->mode == MODE_CHECK || (spec->mode == MODE_DUMP && spec->use_take) || spec->polling) {
-        	result = dds_take(rd, mseq, iseq, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+        	result = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
 		} else if (spec->mode == MODE_DUMP) {
-			result = dds_read(rd, mseq, iseq, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+			result = dds_read_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
 		} else if (spec->use_take || cond == rdcondD) {
-			result = dds_take(cond, mseq, iseq, spec->read_maxsamples, DDS_ANY_STATE);
+			result = dds_take_mask(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
 		} else {
-		  result = dds_read(cond, mseq, iseq, spec->read_maxsamples, DDS_ANY_STATE);
+		  result = dds_read_mask(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
 		}
 
         if (result < 1)
@@ -2301,22 +2306,24 @@ static void *subthread (void *vspec)
       break;
   }
 
-  ret = dds_waitset_detach(ws, termcond);
-  PRINTD("Subthread: dds_waitset_detach: ret: %d\n",ret);
-  ret = dds_delete(ws);
-  PRINTD("Subthread: dds_waitset_delete: ret: %d\n",ret);
+//  ret = dds_waitset_detach(ws, termcond);
+//  PRINTD("Subthread: dds_waitset_detach: ret: %d\n",ret);
+//  ret = dds_delete(ws);
+//  PRINTD("Subthread: dds_waitset_delete: ret: %d\n",ret);
 
   if (once_mode)
   {
     /* trigger EOF for writer side, so we actually do terminate */
     terminate();
   }
-  return (void *) exitcode;
+  dds_thread_fini();
+  return exitcode;
 }
 
-static void *autotermthread(void *varg __attribute__((unused)))
+static uint32_t autotermthread(void *varg __attribute__((unused)))
 {
-	unsigned long long tstop, tnow;
+  dds_thread_init("autotermthread");
+  unsigned long long tstop, tnow;
   int result;
   int ret = 0;
   dds_entity_t ws;
@@ -2355,7 +2362,8 @@ static void *autotermthread(void *varg __attribute__((unused)))
   ret = dds_delete(ws);
   PRINTD("Autotermthread: dds_waitset_delete: ret: %d\n", ret);
 
-  return NULL;
+  dds_thread_fini();
+  return 0;
 }
 
 static const char *execname (int argc, char *argv[])
@@ -3094,7 +3102,7 @@ int main (int argc, char *argv[])
       PRINTD("Entering setqos for Writer\n");
       setqos_from_args (qos, nqwriter, qwriter);
       spec[i].wr.wr = new_datawriter_listener (qos, &wrlistener);
-      ret = dds_get_name(spec[i].tp, spec[i].wr.tpname, sizeof(char*));
+//      ret = dds_get_name(spec[i].tp, spec[i].wr.tpname, sizeof(char*));
       spec[i].wr.pub = pub;
       if (spec[i].wr.duplicate_writer_flag)
       {
@@ -3167,8 +3175,12 @@ int main (int argc, char *argv[])
 //      error("timed out waiting for matching subscriptions\n");
   }
 
-//  if((termcond = dds_create_condition()) == NULL)
-//	  error("dds_guardcondition_create failed\n");
+  termcond = dds_create_waitset(dp); // Waitset serves as GuardCondition here.
+  DDS_ERR_CHECK(termcond, DDS_CHECK_FAIL);
+//      error("dds_guardcondition_create failed\n");
+
+  os_threadAttr attr;
+  os_threadAttrInit(&attr);
 
   if (pipe (termpipe) != 0)
     error("pipe(termpipe): errno %d\n", os_getErrno());
@@ -3177,7 +3189,7 @@ int main (int argc, char *argv[])
   {
     if (pipe (sigpipe) != 0)
       error("pipe(sigpipe): errno %d\n", os_getErrno());
-    os_threadCreate(&sigtid, NULL, NULL, (os_threadRoutine)sigthread, NULL);
+    os_threadCreate(&sigtid, "sigthread", &attr, sigthread, NULL);
 //    pthread_create(&sigtid, NULL, sigthread, NULL);
     signal (SIGINT, sigh);
     signal (SIGTERM, sigh);
@@ -3193,7 +3205,7 @@ int main (int argc, char *argv[])
         case WRM_NONE:
           break;
         case WRM_AUTO:
-          os_threadCreate(&spec[i].wrtid, NULL, NULL, (os_threadRoutine)pubthread_auto, &spec[i].wr);
+          os_threadCreate(&spec[i].wrtid, "pubthread_auto", &attr, pubthread_auto, &spec[i].wr);
 //          pthread_create(&spec[i].wrtid, NULL, pubthread_auto, &spec[i].wr);
           break;
         case WRM_INPUT:
@@ -3212,13 +3224,13 @@ int main (int argc, char *argv[])
     if (wrspecs) /* start with first wrspec */
     {
       wrspecs = wrspecs->next;
-      os_threadCreate(&inptid, NULL, NULL, (os_threadRoutine)pubthread, wrspecs);
+      os_threadCreate(&inptid, "pubthread", &attr, pubthread, wrspecs);
 //      pthread_create(&inptid, NULL, pubthread, wrspecs);
     }
   }
   else if (dur > 0) /* note: abusing inptid */
   {
-	os_threadCreate(&inptid, NULL, NULL, (os_threadRoutine)autotermthread, NULL);
+	os_threadCreate(&inptid, "autotermthread", &attr, autotermthread, NULL);
 //    pthread_create(&inptid, NULL, autotermthread, NULL);
   }
   for (i = 0; i <= specidx; i++)
@@ -3226,7 +3238,7 @@ int main (int argc, char *argv[])
     if (spec[i].rd.mode != MODE_NONE)
     {
       spec[i].rd.idx = i;
-      os_threadCreate(&spec[i].rdtid, NULL, NULL, (os_threadRoutine)subthread, &spec[i].rd);
+      os_threadCreate(&spec[i].rdtid, "subthread", &attr, subthread, &spec[i].rd);
 //      pthread_create(&spec[i].rdtid, NULL, subthread, &spec[i].rd);
     }
   }
@@ -3316,7 +3328,7 @@ int main (int argc, char *argv[])
   }
   os_free(spec);
 
-  dds_delete(termcond);
+//  dds_delete(termcond);
   common_fini ();
   if (sleep_at_end) {
 	  PRINTD("Sleep at the end of main\n");
