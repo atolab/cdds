@@ -2944,6 +2944,33 @@ DDS_EXPORT dds_return_t
 dds_triggered(
         _In_ dds_entity_t entity);
 
+/**
+ * @brief Get the topic
+ *
+ * This operation returns a topic (handle) when the function call is done
+ * with reader, writer, read condition or query condition. For instance, it
+ * will return the topic when it is used for creating the reader or writer.
+ * For the conditions, it returns the topic that is used for creating the reader
+ * which was used to create the condition.
+ *
+ * @param[in] entity The entity
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *            The operation was successful
+ *         DDS_RETCODE_BAD_PARAMETER
+ *            The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ */
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT dds_entity_t
+dds_get_topic(
+        _In_ dds_entity_t entity);
+
 #if defined (__cplusplus)
 }
 #endif

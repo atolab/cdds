@@ -1,6 +1,9 @@
 #include <assert.h>
 #include <string.h>
 #include "kernel/dds_entity.h"
+#include "kernel/dds_write.h"
+#include "kernel/dds_writer.h"
+#include "kernel/dds_reader.h"
 #include "kernel/dds_listener.h"
 #include "os/os_report.h"
 
@@ -971,3 +974,43 @@ dds_entity_observers_signal(
     }
 }
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+dds_entity_t
+dds_get_topic(
+        _In_ dds_entity_t entity)
+{
+    dds_retcode_t rc;
+    dds_entity_t hdl = entity;
+    if (entity >= 0) {
+      if (dds_entity_kind(entity) == DDS_KIND_READER){
+        dds_reader *rd;
+        rc = dds_reader_lock(entity, &rd);
+        if(rc == DDS_RETCODE_OK) {
+          hdl = rd->m_topic->m_entity.m_hdl;
+          dds_reader_unlock(rd);
+        }
+      } else if (dds_entity_kind(entity) == DDS_KIND_WRITER) {
+        dds_writer *wr;
+        rc = dds_writer_lock(entity, &wr);
+        if(rc == DDS_RETCODE_OK) {
+          hdl = wr->m_topic->m_entity.m_hdl;
+          dds_writer_unlock(wr);
+        }
+      } else if(dds_entity_kind(entity) == DDS_KIND_COND_READ) {
+          hdl = dds_get_topic(dds_get_parent(entity));
+          rc = DDS_RETCODE_OK;
+      } else if(dds_entity_kind(entity) == DDS_KIND_COND_QUERY) {
+          hdl = dds_get_topic(dds_get_parent(entity));
+          rc = DDS_RETCODE_OK;
+      } else {
+        rc = dds_valid_hdl(entity, DDS_KIND_DONTCARE);
+        if (rc == DDS_RETCODE_OK) {
+          rc = DDS_RETCODE_ILLEGAL_OPERATION;
+        }
+      }
+      if (rc != DDS_RETCODE_OK) {
+        hdl = DDS_ERRNO(rc);
+      }
+    }
+    return hdl;
+}
