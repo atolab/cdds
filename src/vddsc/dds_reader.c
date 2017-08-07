@@ -63,7 +63,7 @@ dds_reader_delete(
     dds_reader *rd = (dds_reader*)e;
     dds_return_t ret;
     assert(e);
-    ret = dds_delete(rd->m_topic->m_entity.m_hdl);
+    ret = dds_entity_dec_usage(rd->m_topic->m_entity.m_hdl);
     dds_free(rd->m_loan);
     return ret;
 }
@@ -381,7 +381,7 @@ dds_create_reader(
     rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
     rd->m_topic = (dds_topic*)tp;
     rhc = dds_rhc_new (rd, ((dds_topic*)tp)->m_stopic);
-    dds_entity_add_ref_nolock (tp);
+    dds_entity_inc_usage (tp);
     rd->m_entity.m_deriver.close = dds_reader_close;
     rd->m_entity.m_deriver.delete = dds_reader_delete;
     rd->m_entity.m_deriver.set_qos = dds_reader_qos_set;

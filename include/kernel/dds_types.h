@@ -119,6 +119,8 @@ typedef struct dds_entity
   ut_handle_t m_hdl;
   dds_entity_deriver m_deriver;
   uint32_t m_refc;
+  uint32_t m_used;
+  struct dds_entity * m_to_be_deleted;
   struct dds_entity * m_next;
   struct dds_entity * m_parent;
   struct dds_entity * m_children;

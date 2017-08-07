@@ -220,7 +220,7 @@ dds_writer_delete(
     if (asleep) {
         thread_state_asleep(thr);
     }
-    ret = dds_delete(wr->m_topic->m_entity.m_hdl);
+    ret = dds_entity_dec_usage(wr->m_topic->m_entity.m_hdl);
     os_mutexDestroy(&wr->m_call_lock);
     return ret;
 }
@@ -385,7 +385,7 @@ dds_create_writer(
     writer = dds_entity_init(&wr->m_entity, pp_or_pub, DDS_KIND_WRITER, wqos, listener, DDS_WRITER_STATUS_MASK);
 
     wr->m_topic = (dds_topic*)tp;
-    dds_entity_add_ref_nolock(tp);
+    dds_entity_inc_usage(tp);
     wr->m_xp = nn_xpack_new(conn, get_bandwidth_limit(wqos->transport_priority), config.xpack_send_async);
     os_mutexInit (&wr->m_call_lock);
     wr->m_entity.m_deriver.close = dds_writer_close;

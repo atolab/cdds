@@ -662,7 +662,9 @@ Test(vddsc_unregister_instance, dispose_unregistered_sample, .init=unregistering
             cr_assert(false, "Unknown sample read");
         }
     }
-    dds_delete(writer);
+    /* Specifically not deleting writer as extra check for CHAM-319.
+     * dds_delete(writer);
+     */
 }
 /*************************************************************************************************/
 
@@ -711,7 +713,9 @@ Test(vddsc_unregister_instance_ts, dispose_unregistered_sample, .init=unregister
             cr_assert(false, "Unknown sample read");
         }
     }
-    dds_delete(writer);
+    /* Specifically not deleting writer as extra check for CHAM-319.
+     * dds_delete(writer);
+     */
 }
 /*************************************************************************************************/
 

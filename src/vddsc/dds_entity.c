@@ -19,19 +19,40 @@ dds_entity_observers_signal(
         _In_ uint32_t status);
 
 void
-dds_entity_add_ref(_In_ dds_entity * e)
+dds_entity_inc_refc(
+        _In_ dds_entity_t entity)
 {
-    assert (e);
-    os_mutexLock (&e->m_mutex);
-    e->m_refc++;
-    os_mutexUnlock (&e->m_mutex);
+    dds_retcode_t rc;
+    dds_entity *e;
+    rc = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
+    if (rc == DDS_RETCODE_OK) {
+        e->m_refc++;
+        dds_entity_unlock(e);
+    }
 }
 
 void
-dds_entity_add_ref_nolock(_In_ dds_entity *e)
+dds_entity_inc_usage(
+        _In_ dds_entity *e)
 {
     assert(e);
     e->m_refc++;
+    e->m_used++;
+}
+
+dds_return_t
+dds_entity_dec_usage(
+        _In_ dds_entity_t entity)
+{
+    dds_retcode_t rc;
+    dds_entity *e;
+    rc = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
+    assert(rc == DDS_RETCODE_OK);
+    assert(e);
+    assert(e->m_used > 0);
+    e->m_used--;
+    dds_entity_unlock(e);
+    return dds_delete(entity);
 }
 
 _Check_return_ dds_retcode_t
@@ -192,10 +213,12 @@ dds_entity_init(
     assert (e);
 
     e->m_refc = 1;
+    e->m_used = 0;
     e->m_parent = parent;
     e->m_qos = qos;
     e->m_cb_count = 0;
     e->m_observers = NULL;
+    e->m_to_be_deleted = NULL;
     e->m_trigger = 0;
 
     /* TODO: CHAM-96: Implement dynamic enabling of entity. */
@@ -246,8 +269,8 @@ dds_delete(
     dds_entity *e;
     dds_entity *child;
     dds_entity *prev = NULL;
-    dds_entity *next = NULL;
     dds_return_t ret = DDS_RETCODE_OK;
+    dds_entity_t hdl;
     dds_retcode_t rc;
 
     rc = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
@@ -255,7 +278,16 @@ dds_delete(
         return DDS_ERRNO(rc);
     }
 
-    if (--e->m_refc != 0) {
+    if (e->m_refc > 0) {
+        e->m_refc--;
+    }
+
+    if (e->m_refc != 0) {
+        dds_entity_unlock(e);
+        return DDS_RETCODE_OK;
+    }
+
+    if (e->m_used != 0) {
         dds_entity_unlock(e);
         return DDS_RETCODE_OK;
     }
@@ -273,15 +305,23 @@ dds_delete(
     dds_entity_status_signal(e);
 
     /* Recursively delete children */
+    os_mutexLock(&(e->m_mutex));
     child = e->m_children;
     while ((child != NULL) && (ret == DDS_RETCODE_OK)) {
-        next = child->m_next;
+        e->m_to_be_deleted = child->m_next;
+        hdl = child->m_hdl;
         /* This will probably delete the child entry from
          * the current childrens list */
-        ret = dds_delete(child->m_hdl);
+        os_mutexUnlock(&(e->m_mutex));
+        ret = dds_delete(hdl);
+        if (dds_err_nr(ret) == DDS_RETCODE_ALREADY_DELETED) {
+            ret = DDS_RETCODE_OK;
+        }
+        os_mutexLock(&(e->m_mutex));
         /* Next child. */
-        child = next;
+        child = e->m_to_be_deleted;
     }
+    os_mutexUnlock(&(e->m_mutex));
 
     if (ret == DDS_RETCODE_OK) {
         /* Close the entity. This can terminate threads or kick of
@@ -314,6 +354,16 @@ dds_delete(
                         prev->m_next = e->m_next;
                     } else {
                         e->m_parent->m_children = e->m_next;
+                    }
+                    if (child == e->m_parent->m_to_be_deleted) {
+                        /* When this entity is being deleted by a recursive
+                         * delete from the parent, it is possible that the
+                         * current entity is also the next 'to be deleted' entity.
+                         * This is possible when this entity is a topic that is
+                         * deleted through the deletion of a related reader or
+                         * writer, which again is being deleted through the
+                         * recursive functionality. */
+                        e->m_parent->m_to_be_deleted = e->m_next;
                     }
                     break;
                 }

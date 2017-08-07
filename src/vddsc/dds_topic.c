@@ -192,8 +192,8 @@ dds_find_topic(
     if (rc == DDS_RETCODE_OK) {
         st = dds_topic_lookup (p->m_domain, name);
         if (st) {
-            dds_entity_add_ref (&st->status_cb_entity->m_entity);
             tp = st->status_cb_entity->m_entity.m_hdl;
+            dds_entity_inc_refc(tp);
         } else {
             rc = DDS_RETCODE_PRECONDITION_NOT_MET;
         }

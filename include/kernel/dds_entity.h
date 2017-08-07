@@ -18,11 +18,15 @@ dds_entity_init(
         _In_     uint32_t mask);
 
 void
-dds_entity_add_ref(
-        _In_ dds_entity *e);
+dds_entity_inc_refc(
+        _In_ dds_entity_t entity);
 void
-dds_entity_add_ref_nolock(
+dds_entity_inc_usage(
         _In_ dds_entity *e);
+
+dds_return_t
+dds_entity_dec_usage(
+        _In_ dds_entity_t entity);
 
 _Check_return_ dds_retcode_t
 dds_entity_listener_propagation(
