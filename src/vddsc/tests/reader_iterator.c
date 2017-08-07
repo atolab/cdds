@@ -574,6 +574,48 @@ Theory((void **buf, dds_sample_info_t *si), vddsc_read_next_wl, invalid_buffers,
  *
  *************************************************************************************************/
 /*************************************************************************************************/
+Test(vddsc_take_next, reader, .init=reader_iterator_init, .fini=reader_iterator_fini)
+{
+    dds_return_t cnt = 0;
+    dds_return_t ret = 1;
+
+    while (ret == 1){
+      ret = dds_take_next(g_reader, g_samples, g_info);
+      cr_assert_geq(ret, 0 , "# read %d", ret);
+      if(ret == 1){
+        Space_Type1 *sample = (Space_Type1*)g_samples[0];
+        PRINT_SAMPLE("vddsc_take_next::reader: Read", (*sample));
+
+        /* Expected states. */
+        int                  expected_long_2 = rdr_expected_long_2[cnt];
+        int                  expected_long_1 = expected_long_2/3;
+        int                  expected_long_3 = expected_long_2*2;
+        dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
+        dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
+        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
+
+        /* Check data. */
+        cr_assert_eq(sample->long_1, expected_long_1 );
+        cr_assert_eq(sample->long_2, expected_long_2   );
+        cr_assert_eq(sample->long_3, expected_long_2 *2);
+
+        /* Check states. */
+        cr_assert_eq(g_info[0].valid_data,     true);
+        cr_assert_eq(g_info[0].sample_state,   expected_sst);
+        cr_assert_eq(g_info[0].view_state,     expected_vst);
+        cr_assert_eq(g_info[0].instance_state, expected_ist);
+        cnt ++;
+      }
+    }
+
+    cr_assert_eq(cnt, RDR_NOT_READ_CNT);
+
+    /* All samples should still be available. */
+    ret = samples_cnt();
+    cr_assert_eq(ret, (MAX_SAMPLES - RDR_NOT_READ_CNT), "# samples %d, expected %d", ret, MAX_SAMPLES);
+
+}
+/*************************************************************************************************/
 TheoryDataPoints(vddsc_take_next, invalid_readers) = {
         DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
 };
@@ -643,6 +685,51 @@ Theory((void **buf, dds_sample_info_t *si), vddsc_take_next, invalid_buffers, .i
  * These will check the dds_take_next_wl() in various ways.
  *
  *************************************************************************************************/
+/*************************************************************************************************/
+Test(vddsc_take_next_wl, reader, .init=reader_iterator_init, .fini=reader_iterator_fini)
+{
+    dds_return_t cnt = 0;
+    dds_return_t ret = 1;
+
+    while (ret == 1){
+      ret = dds_take_next_wl(g_reader, g_loans, g_info);
+      cr_assert_geq(ret, 0 , "# read %d", ret);
+      if(ret == 1){
+        Space_Type1 *sample = (Space_Type1*)g_loans[0];
+        PRINT_SAMPLE("vddsc_read_next_wl::reader: Read", (*sample));
+
+        /* Expected states. */
+        int                  expected_long_2 = rdr_expected_long_2[cnt];
+        int                  expected_long_1 = expected_long_2/3;
+        int                  expected_long_3 = expected_long_2*2;
+        dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
+        dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
+        dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
+
+        /* Check data. */
+        cr_assert_eq(sample->long_1, expected_long_2/3 );
+        cr_assert_eq(sample->long_2, expected_long_2   );
+        cr_assert_eq(sample->long_3, expected_long_2 *2);
+
+        /* Check states. */
+        cr_assert_eq(g_info[0].valid_data,     true);
+        cr_assert_eq(g_info[0].sample_state,   expected_sst);
+        cr_assert_eq(g_info[0].view_state,     expected_vst);
+        cr_assert_eq(g_info[0].instance_state, expected_ist);
+        cnt ++;
+      }
+    }
+
+    cr_assert_eq(cnt, RDR_NOT_READ_CNT);
+
+    ret = dds_return_loan(g_reader, g_loans, ret);
+    cr_assert_eq (ret, DDS_RETCODE_OK);
+
+    /* All samples should still be available. */
+    ret = samples_cnt();
+    cr_assert_eq(ret, (MAX_SAMPLES - RDR_NOT_READ_CNT), "# samples %d, expected %d", ret, MAX_SAMPLES);
+
+}
 /*************************************************************************************************/
 TheoryDataPoints(vddsc_take_next_wl, invalid_readers) = {
         DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
