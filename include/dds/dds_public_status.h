@@ -161,122 +161,316 @@ typedef struct dds_inconsistent_topic_status
 dds_inconsistent_topic_status_t;
 
 
-/* TODO: Move the get_<status> APIs from this file to a more appropriate place. */
-
 /*
   get_<status> APIs return the status of an entity and resets the status
 */
 
 /**
- * Description : Get the status value corresponding to INCONSISTENT_TOPIC and reset the status
- *               The value can be obtained, only if the status is enabled for an entity
+ * @brief Get INCONSISTENT_TOPIC status
  *
- * Arguments :
- *   -# topic The entity to get the status
- *   -# status The pointer to \ref DCPS_Status_InconsistentTopic to get the status
- */
-DDS_EXPORT dds_return_t dds_get_inconsistent_topic_status (dds_entity_t topic, dds_inconsistent_topic_status_t * status);
-
-
-/**
- * Description : Get the status value corresponding to PUBLICATION_MATCHED and reset the status
- *               The value can be obtained, only if the status is enabled for an entity
+ * This operation gets the status value corresponding to INCONSISTENT_TOPIC
+ * and reset the status. The value can be obtained, only if the status is enabled for an entity.
+ * NULL value for status is allowed and it will reset the trigger value.
  *
- * Arguments :
- *   -# writer The entity to get the status
- *   -# status The pointer to \ref DCPS_Status_PublicationMatched to get the status
- */
-DDS_EXPORT dds_return_t dds_get_publication_matched_status (dds_entity_t writer, dds_publication_matched_status_t * status);
-
-/**
- * Description : Get the status value corresponding to LIVELINESS_LOST and reset the status
- *               The value can be obtained, only if the status is enabled for an entity
+ * @param[in]  topic  The entity to get the status
+ * @param[out] status The pointer to \ref DCPS_Status_InconsistentTopic to get the status
  *
- * Arguments :
- *   -# writer The entity to get the status
- *   -# status The pointer to \ref DCPS_Status_LivelinessLost to get the status
+ * @returns >0 - Success
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_liveliness_lost_status (dds_entity_t writer, dds_liveliness_lost_status_t * status);
+_Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
+DDS_EXPORT dds_return_t
+dds_get_inconsistent_topic_status (
+        _In_ dds_entity_t topic,
+        _Out_opt_ dds_inconsistent_topic_status_t * status);
 
 /**
- * Description : Get the status value corresponding to OFFERED_DEADLINE_MISSED and reset the status
- *               The value can be obtained, only if the status is enabled for an entity
+ * @brief Get PUBLICATION_MATCHED status
  *
- * Arguments :
- *   -# writer The entity to get the status
- *   -# status The pointer to \ref DCPS_Status_OfferedDeadlineMissed to get the status
+ * This operation gets the status value corresponding to PUBLICATION_MATCHED
+ * and reset the status. The value can be obtained, only if the status is enabled for an entity.
+ * NULL value for status is allowed and it will reset the trigger value.
+ *
+ * @param[in]  writer  The entity to get the status
+ * @param[out] status  The pointer to \ref DCPS_Status_PublicationMatched to get the status
+ *
+ * @returns >0 - Success
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_offered_deadline_missed_status (dds_entity_t writer, dds_offered_deadline_missed_status_t * status);
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
+DDS_EXPORT dds_return_t
+dds_get_publication_matched_status (
+        _In_ dds_entity_t writer,
+        _Out_opt_ dds_publication_matched_status_t * status);
 
 /**
- * Description : Get the status value corresponding to OFFERED_INCOMPATIBLE_QOS and reset the status
- *               The value can be obtained, only if the status is enabled for an entity
+ * @brief Get LIVELINESS_LOST status
  *
- * Arguments :
- *   -# writer The entity to get the status
- *   -# status The pointer to \ref DCPS_Status_OfferedIncompatibleQoS to get the status
+ * This operation gets the status value corresponding to LIVELINESS_LOST
+ * and reset the status. The value can be obtained, only if the status is enabled for an entity.
+ * NULL value for status is allowed and it will reset the trigger value.
+ *
+ * @param[in]  writer  The entity to get the status
+ * @param[out] status  The pointer to \ref DCPS_Status_LivelinessLost to get the status
+ *
+ * @returns >0 - Success
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_offered_incompatible_qos_status (dds_entity_t writer, dds_offered_incompatible_qos_status_t * status);
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
+DDS_EXPORT dds_return_t dds_get_liveliness_lost_status (
+        _In_ dds_entity_t writer,
+        _Out_opt_ dds_liveliness_lost_status_t * status);
 
 /**
- * Description : Get the status value corresponding to SUBSCRIPTION_MATCHED and reset the status
- *               The value can be obtained, only if the status is enabled for an entity
+ * @brief Get OFFERED_DEADLINE_MISSED status
  *
- * Arguments :
- *   -# reader The entity to get the status
- *   -# status The pointer to \ref DCPS_Status_SubscriptionMatched to get the status
+ * This operation gets the status value corresponding to OFFERED_DEADLINE_MISSED
+ * and reset the status. The value can be obtained, only if the status is enabled for an entity.
+ * NULL value for status is allowed and it will reset the trigger value.
+ *
+ * @param[in]  writer  The entity to get the status
+ * @param[out] status  The pointer to \ref DCPS_Status_OfferedDeadlineMissed to get the status
+ *
+ * @returns >0 - Success
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_subscription_matched_status (dds_entity_t reader, dds_subscription_matched_status_t * status);
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
+DDS_EXPORT dds_return_t
+dds_get_offered_deadline_missed_status(
+        _In_  dds_entity_t writer,
+        _Out_opt_ dds_offered_deadline_missed_status_t *status);
 
 /**
- * Description : Get the status value corresponding to LIVELINESS_CHANGED and reset the status
- *               The value can be obtained, only if the status is enabled for an entity
+ * @brief Get OFFERED_INCOMPATIBLE_QOS status
  *
- * Arguments :
- *   -# reader The entity to get the status
- *   -# status The pointer to \ref DCPS_Status_LivelinessChanged to get the status
+ * This operation gets the status value corresponding to OFFERED_INCOMPATIBLE_QOS
+ * and reset the status. The value can be obtained, only if the status is enabled for an entity.
+ * NULL value for status is allowed and it will reset the trigger value.
+ *
+ * @param[in]  writer  The writer entity to get the status
+ * @param[out] status  The pointer to \ref DCPS_Status_OfferedIncompatibleQoS to get the status
+ *
+ * @returns >0 - Success
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_liveliness_changed_status (dds_entity_t reader, dds_liveliness_changed_status_t * status);
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
+DDS_EXPORT dds_return_t
+dds_get_offered_incompatible_qos_status (
+        _In_  dds_entity_t writer,
+        _Out_opt_ dds_offered_incompatible_qos_status_t * status);
 
 /**
- * Description : Get the status value corresponding to SAMPLE_REJECTED and reset the status
- *               The value can be obtained, only if the status is enabled for an entity
+ * @brief Get SUBSCRIPTION_MATCHED status
  *
- * Arguments :
- *   -# reader The entity to get the status
- *   -# status The pointer to \ref DCPS_Status_SampleRejected to get the status
+ * This operation gets the status value corresponding to SUBSCRIPTION_MATCHED
+ * and reset the status. The value can be obtained, only if the status is enabled for an entity.
+ * NULL value for status is allowed and it will reset the trigger value.
+ *
+ * @param[in]  reader  The reader entity to get the status
+ * @param[out] status  The pointer to \ref DCPS_Status_SubscriptionMatched to get the status
+ *
+ * @returns >0 - Success
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_sample_rejected_status (dds_entity_t reader, dds_sample_rejected_status_t * status);
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+DDS_EXPORT dds_return_t
+dds_get_subscription_matched_status (
+        _In_  dds_entity_t reader,
+        _Out_opt_ dds_subscription_matched_status_t * status);
 
 /**
- * Description : Get the status value corresponding to SAMPLE_LOST and reset the status
- *               The value can be obtained, only if the status is enabled for an entity
+ * @brief Get LIVELINESS_CHANGED status
  *
- * Arguments :
- *   -# reader The entity to get the status
- *   -# status The pointer to \ref DCPS_Status_SampleLost to get the status
+ * This operation gets the status value corresponding to LIVELINESS_CHANGED
+ * and reset the status. The value can be obtained, only if the status is enabled for an entity.
+ * NULL value for status is allowed and it will reset the trigger value.
+ *
+ * @param[in]  reader  The entity to get the status
+ * @param[out] status  The pointer to \ref DCPS_Status_LivelinessChanged to get the status
+ *
+ * @returns >0 - Success
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_sample_lost_status (dds_entity_t reader, dds_sample_lost_status_t * status);
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+DDS_EXPORT dds_return_t
+dds_get_liveliness_changed_status (
+        _In_ dds_entity_t reader,
+        _Out_opt_ dds_liveliness_changed_status_t * status);
 
 /**
- * Description : Get the status value corresponding to REQUESTED_DEADLINE_MISSED and reset the status
- *               The value can be obtained, only if the status is enabled for an entity
+ * @brief Get SAMPLE_REJECTED status
  *
- * Arguments :
- *   -# reader The entity to get the status
- *   -# status The pointer to \ref DCPS_Status_RequestedDeadlineMissed to get the status
+ * This operation gets the status value corresponding to SAMPLE_REJECTED
+ * and reset the status. The value can be obtained, only if the status is enabled for an entity.
+ * NULL value for status is allowed and it will reset the trigger value.
+ *
+ * @param[in]  reader  The entity to get the status
+ * @param[out] status  The pointer to \ref DCPS_Status_SampleRejected to get the status
+ *
+ * @returns >0 - Success
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_requested_deadline_missed_status (dds_entity_t reader, dds_requested_deadline_missed_status_t * status);
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+DDS_EXPORT dds_return_t
+dds_get_sample_rejected_status (
+        _In_  dds_entity_t reader,
+        _Out_opt_ dds_sample_rejected_status_t * status);
 
 /**
- * Description : Get the status value corresponding to REQUESTED_INCOMPATIBLE_QOS and reset the status
- *               The value can be obtained, only if the status is enabled for an entity
+ * @brief Get SAMPLE_LOST status
  *
- * Arguments :
- *   -# reader The entity to get the status
- *   -# status The pointer to \ref DCPS_Status_RequestedIncompatibleQoS to get the status
+ * This operation gets the status value corresponding to SAMPLE_LOST
+ * and reset the status. The value can be obtained, only if the status is enabled for an entity.
+ * NULL value for status is allowed and it will reset the trigger value.
+ *
+ * @param[in]  reader  The entity to get the status
+ * @param[out] status  The pointer to \ref DCPS_Status_SampleLost to get the status
+ *
+ * @returns >0 - Success
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT dds_return_t dds_get_requested_incompatible_qos_status (dds_entity_t reader, dds_requested_incompatible_qos_status_t * status);
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+DDS_EXPORT dds_return_t
+dds_get_sample_lost_status (
+        _In_  dds_entity_t reader,
+        _Out_opt_ dds_sample_lost_status_t * status);
+
+/**
+ * @brief Get REQUESTED_DEADLINE_MISSED status
+ *
+ * This operation gets the status value corresponding to REQUESTED_DEADLINE_MISSED
+ * and reset the status. The value can be obtained, only if the status is enabled for an entity.
+ * NULL value for status is allowed and it will reset the trigger value.
+ *
+ * @param[in]  reader  The entity to get the status
+ * @param[out] status  The pointer to \ref DCPS_Status_RequestedDeadlineMissed to get the status
+ *
+ * @returns >0 - Success
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ */
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+DDS_EXPORT dds_return_t
+dds_get_requested_deadline_missed_status (
+        _In_  dds_entity_t reader,
+        _Out_opt_ dds_requested_deadline_missed_status_t * status);
+
+/**
+ * @brief Get REQUESTED_INCOMPATIBLE_QOS status
+ *
+ * This operation gets the status value corresponding to REQUESTED_INCOMPATIBLE_QOS
+ * and reset the status. The value can be obtained, only if the status is enabled for an entity.
+ * NULL value for status is allowed and it will reset the trigger value.
+ *
+ * @param[in]  reader  The entity to get the status
+ * @param[out] status  The pointer to \ref DCPS_Status_RequestedIncompatibleQoS to get the status
+ *
+ * @returns >0 - Success
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_ERROR
+ *                  An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                  One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ */
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+DDS_EXPORT dds_return_t
+dds_get_requested_incompatible_qos_status (
+        _In_  dds_entity_t reader,
+        _Out_opt_ dds_requested_incompatible_qos_status_t * status);
 
 #if defined (__cplusplus)
 }

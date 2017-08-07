@@ -536,10 +536,11 @@ dds_get_subscriber(
     return entity;
 }
 
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 dds_return_t
-dds_get_subscription_matched_status(
-        dds_entity_t reader,
-        dds_subscription_matched_status_t *status)
+dds_get_subscription_matched_status (
+        _In_ dds_entity_t reader,
+        _Out_opt_ dds_subscription_matched_status_t * status)
 {
     dds_retcode_t rc;
     dds_reader *rd;
@@ -560,10 +561,11 @@ dds_get_subscription_matched_status(
     return DDS_ERRNO(rc);
 }
 
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 dds_return_t
-dds_get_liveliness_changed_status(
-        dds_entity_t reader,
-        dds_liveliness_changed_status_t *status)
+dds_get_liveliness_changed_status (
+        _In_ dds_entity_t reader,
+        _Out_opt_ dds_liveliness_changed_status_t * status)
 {
     dds_retcode_t rc;
     dds_reader *rd;
@@ -584,10 +586,10 @@ dds_get_liveliness_changed_status(
     return DDS_ERRNO(rc);
 }
 
-dds_return_t
-dds_get_sample_rejected_status(
-        dds_entity_t reader,
-        dds_sample_rejected_status_t *status)
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+dds_return_t dds_get_sample_rejected_status (
+        _In_ dds_entity_t reader,
+        _Out_opt_ dds_sample_rejected_status_t * status)
 {
     dds_retcode_t rc;
     dds_reader *rd;
@@ -608,10 +610,10 @@ dds_get_sample_rejected_status(
     return DDS_ERRNO(rc);
 }
 
-dds_return_t
-dds_get_sample_lost_status(
-        dds_entity_t reader,
-        dds_sample_lost_status_t * status)
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+dds_return_t dds_get_sample_lost_status (
+        _In_ dds_entity_t reader,
+        _Out_opt_ dds_sample_lost_status_t * status)
 {
     dds_retcode_t rc;
     dds_reader *rd;
@@ -631,10 +633,10 @@ dds_get_sample_lost_status(
     return DDS_ERRNO(rc);
 }
 
-dds_return_t
-dds_get_requested_deadline_missed_status(
-        dds_entity_t reader,
-        dds_requested_deadline_missed_status_t *status)
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+dds_return_t dds_get_requested_deadline_missed_status (
+        _In_ dds_entity_t reader,
+        _Out_opt_ dds_requested_deadline_missed_status_t * status)
 {
     dds_retcode_t rc;
     dds_reader *rd;
@@ -654,10 +656,10 @@ dds_get_requested_deadline_missed_status(
     return DDS_ERRNO(rc);
 }
 
-dds_return_t
-dds_get_requested_incompatible_qos_status(
-        dds_entity_t reader,
-        dds_requested_incompatible_qos_status_t *status)
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
+dds_return_t dds_get_requested_incompatible_qos_status (
+        _In_ dds_entity_t reader,
+        _Out_opt_ dds_requested_incompatible_qos_status_t * status)
 {
     dds_retcode_t rc;
     dds_reader *rd;

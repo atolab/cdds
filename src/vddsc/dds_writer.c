@@ -447,15 +447,16 @@ dds_get_publisher(
     return writer;
 }
 
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
 dds_return_t
-dds_get_publication_matched_status(
-        dds_entity_t entity,
-        dds_publication_matched_status_t *status)
+dds_get_publication_matched_status (
+        _In_ dds_entity_t writer,
+        _Out_opt_ dds_publication_matched_status_t * status)
 {
     dds_retcode_t rc;
     dds_writer *wr;
 
-    rc = dds_writer_lock(entity, &wr);
+    rc = dds_writer_lock(writer, &wr);
     if (rc == DDS_RETCODE_OK) {
         if (((dds_entity*)wr)->m_status_enable & DDS_PUBLICATION_MATCHED_STATUS) {
             /* status = NULL, application do not need the status, but reset the counter & triggered bit */
@@ -471,15 +472,16 @@ dds_get_publication_matched_status(
     return DDS_ERRNO(rc);
 }
 
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
 dds_return_t
-dds_get_liveliness_lost_status(
-        dds_entity_t entity,
-        dds_liveliness_lost_status_t *status)
+dds_get_liveliness_lost_status (
+        _In_ dds_entity_t writer,
+        _Out_opt_ dds_liveliness_lost_status_t * status)
 {
     dds_retcode_t rc;
     dds_writer *wr;
 
-    rc = dds_writer_lock(entity, &wr);
+    rc = dds_writer_lock(writer, &wr);
     if (rc == DDS_RETCODE_OK) {
         if (((dds_entity*)wr)->m_status_enable & DDS_LIVELINESS_LOST_STATUS) {
             /* status = NULL, application do not need the status, but reset the counter & triggered bit */
@@ -494,15 +496,16 @@ dds_get_liveliness_lost_status(
     return DDS_ERRNO(rc);
 }
 
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
 dds_return_t
 dds_get_offered_deadline_missed_status(
-        dds_entity_t entity,
-        dds_offered_deadline_missed_status_t *status)
+        _In_  dds_entity_t writer,
+        _Out_opt_ dds_offered_deadline_missed_status_t *status)
 {
     dds_retcode_t rc;
     dds_writer *wr;
 
-    rc = dds_writer_lock(entity, &wr);
+    rc = dds_writer_lock(writer, &wr);
     if (rc == DDS_RETCODE_OK) {
         if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_DEADLINE_MISSED_STATUS) {
             /* status = NULL, application do not need the status, but reset the counter & triggered bit */
@@ -517,15 +520,16 @@ dds_get_offered_deadline_missed_status(
     return DDS_ERRNO(rc);
 }
 
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
 dds_return_t
-dds_get_offered_incompatible_qos_status(
-        dds_entity_t entity,
-        dds_offered_incompatible_qos_status_t *status)
+dds_get_offered_incompatible_qos_status (
+        _In_  dds_entity_t writer,
+        _Out_opt_ dds_offered_incompatible_qos_status_t * status)
 {
     dds_retcode_t rc;
     dds_writer *wr;
 
-    rc = dds_writer_lock(entity, &wr);
+    rc = dds_writer_lock(writer, &wr);
     if (rc == DDS_RETCODE_OK) {
         if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_INCOMPATIBLE_QOS_STATUS) {
             /* status = NULL, application do not need the status, but reset the counter & triggered bit */

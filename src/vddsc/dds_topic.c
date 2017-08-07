@@ -518,11 +518,11 @@ dds_get_type_name(
     }
     return DDS_ERRNO(rc);
 }
-
+_Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 dds_return_t
 dds_get_inconsistent_topic_status(
-        dds_entity_t entity,
-        dds_inconsistent_topic_status_t *status)
+        _In_ dds_entity_t entity,
+        _Out_opt_ dds_inconsistent_topic_status_t *status)
 {
     dds_retcode_t rc;
     dds_topic *t;

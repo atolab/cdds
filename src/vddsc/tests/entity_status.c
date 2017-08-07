@@ -14,7 +14,7 @@
 static dds_entity_t    participant;
 static dds_entity_t    subscriber;
 static dds_entity_t    publisher;
-static dds_entity_t    topic;
+static dds_entity_t    topic, topic2;
 static dds_entity_t    writer;
 static dds_entity_t    reader;
 static dds_entity_t    waitSetwr;
@@ -58,6 +58,9 @@ init_entity_status(void)
     cr_assert_gt(participant, 0, "Failed to create prerequisite participant");
 
     topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_status_test", topicName, 100), NULL, NULL);
+    cr_assert_gt(topic, 0, "Failed to create prerequisite topic");
+
+    topic2 = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_status2_test", topicName, 100), NULL, NULL);
     cr_assert_gt(topic, 0, "Failed to create prerequisite topic");
 
     qos = dds_qos_create();
@@ -855,3 +858,567 @@ Theory((dds_entity_t *e), vddsc_triggered, status_ok, .init=init_entity_status, 
     status = dds_triggered (*e);
     cr_assert_geq(status, 0, "dds_triggered(entity)");
 }
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_inconsistent_topic_status, bad_params) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t topic), vddsc_get_inconsistent_topic_status, bad_params)
+{
+    dds_inconsistent_topic_status_t topic_status = {0};
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (topic < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = topic;
+    }
+
+    ret = dds_get_inconsistent_topic_status(topic, &topic_status);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_inconsistent_topic_status, null, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_inconsistent_topic_status(topic, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_inconsistent_topic_status, non_topics) = {
+        DataPoints(dds_entity_t*, &reader, &writer, &participant),
+};
+Theory((dds_entity_t *topic), vddsc_get_inconsistent_topic_status, non_topics, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_inconsistent_topic_status(*topic, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_inconsistent_topic_status, deleted_topic, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    dds_delete(topic2);
+    ret = dds_get_inconsistent_topic_status(topic2, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_publication_matched_status, bad_params) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t writer), vddsc_get_publication_matched_status, bad_params)
+{
+	dds_publication_matched_status_t status = {0};
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (writer < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = writer;
+    }
+
+    ret = dds_get_publication_matched_status(writer, &status);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_publication_matched_status, null, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_publication_matched_status(writer, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_publication_matched_status, non_writers) = {
+        DataPoints(dds_entity_t*, &reader, &topic, &participant),
+};
+Theory((dds_entity_t *writer), vddsc_get_publication_matched_status, non_writers, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_publication_matched_status(*writer, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_publication_matched_status, deleted_writer, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    dds_delete(writer);
+    ret = dds_get_publication_matched_status(writer, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_liveliness_lost_status, bad_params) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t writer), vddsc_get_liveliness_lost_status, bad_params)
+{
+	dds_liveliness_lost_status_t status = {0};
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (writer < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = writer;
+    }
+
+    ret = dds_get_liveliness_lost_status(writer, &status);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_liveliness_lost_status, null, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_liveliness_lost_status(writer, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_liveliness_lost_status, non_writers) = {
+        DataPoints(dds_entity_t*, &reader, &topic, &participant),
+};
+Theory((dds_entity_t *writer), vddsc_get_liveliness_lost_status, non_writers, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_liveliness_lost_status(*writer, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_liveliness_lost_status, deleted_writer, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    dds_delete(writer);
+    ret = dds_get_liveliness_lost_status(writer, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_offered_deadline_missed_status, bad_params) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t writer), vddsc_get_offered_deadline_missed_status, bad_params)
+{
+	dds_offered_deadline_missed_status_t status = {0};
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (writer < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = writer;
+    }
+
+    ret = dds_get_offered_deadline_missed_status(writer, &status);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_offered_deadline_missed_status, null, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_offered_deadline_missed_status(writer, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_offered_deadline_missed_status, non_writers) = {
+        DataPoints(dds_entity_t*, &reader, &topic, &participant),
+};
+Theory((dds_entity_t *writer), vddsc_get_offered_deadline_missed_status, non_writers, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_offered_deadline_missed_status(*writer, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_offered_deadline_missed_status, deleted_writer, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    dds_delete(writer);
+    ret = dds_get_offered_deadline_missed_status(writer, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_offered_incompatible_qos_status, bad_params) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t writer), vddsc_get_offered_incompatible_qos_status, bad_params)
+{
+	dds_offered_incompatible_qos_status_t status = {0};
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (writer < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = writer;
+    }
+
+    ret = dds_get_offered_incompatible_qos_status(writer, &status);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_offered_incompatible_qos_status, null, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_offered_incompatible_qos_status(writer, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_offered_incompatible_qos_status, non_writers) = {
+        DataPoints(dds_entity_t*, &reader, &topic, &participant),
+};
+Theory((dds_entity_t *writer), vddsc_get_offered_incompatible_qos_status, non_writers, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_offered_incompatible_qos_status(*writer, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_offered_incompatible_qos_status, deleted_writer, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    dds_delete(writer);
+    ret = dds_get_offered_incompatible_qos_status(writer, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_subscription_matched_status, bad_params) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t reader), vddsc_get_subscription_matched_status, bad_params)
+{
+	dds_subscription_matched_status_t status = {0};
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (reader < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = reader;
+    }
+
+    ret = dds_get_subscription_matched_status(reader, &status);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_subscription_matched_status, null, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_subscription_matched_status(reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %s", dds_err_str(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_subscription_matched_status, non_readers) = {
+        DataPoints(dds_entity_t*, &writer, &topic, &participant),
+};
+Theory((dds_entity_t *reader), vddsc_get_subscription_matched_status, non_readers, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_subscription_matched_status(*reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_subscription_matched_status, deleted_reader, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    dds_delete(reader);
+    ret = dds_get_subscription_matched_status(reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_liveliness_changed_status, bad_params) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t reader), vddsc_get_liveliness_changed_status, bad_params)
+{
+	dds_liveliness_changed_status_t status = {0};
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (reader < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = reader;
+    }
+
+    ret = dds_get_liveliness_changed_status(reader, &status);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_liveliness_changed_status, null, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_liveliness_changed_status(reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_liveliness_changed_status, non_readers) = {
+        DataPoints(dds_entity_t*, &writer, &topic, &participant),
+};
+Theory((dds_entity_t *reader), vddsc_get_liveliness_changed_status, non_readers, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_liveliness_changed_status(*reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_liveliness_changed_status, deleted_reader, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    dds_delete(reader);
+    ret = dds_get_liveliness_changed_status(reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_sample_rejected_status, bad_params) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t reader), vddsc_get_sample_rejected_status, bad_params)
+{
+	dds_sample_rejected_status_t status = {0};
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (reader < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = reader;
+    }
+
+    ret = dds_get_sample_rejected_status(reader, &status);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_sample_rejected_status, null, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_sample_rejected_status(reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_sample_rejected_status, non_readers) = {
+        DataPoints(dds_entity_t*, &writer, &topic, &participant),
+};
+Theory((dds_entity_t *reader), vddsc_get_sample_rejected_status, non_readers, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_sample_rejected_status(*reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_sample_rejected_status, deleted_reader, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    dds_delete(reader);
+    ret = dds_get_sample_rejected_status(reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_sample_lost_status, bad_params) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t reader), vddsc_get_sample_lost_status, bad_params)
+{
+	dds_sample_lost_status_t status = {0};
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (reader < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = reader;
+    }
+
+    ret = dds_get_sample_lost_status(reader, &status);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_sample_lost_status, null, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_sample_lost_status(reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_sample_lost_status, non_readers) = {
+        DataPoints(dds_entity_t*, &writer, &topic, &participant),
+};
+Theory((dds_entity_t *reader), vddsc_get_sample_lost_status, non_readers, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_sample_lost_status(*reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_sample_lost_status, deleted_reader, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    dds_delete(reader);
+    ret = dds_get_sample_lost_status(reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_requested_deadline_missed_status, bad_params) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t reader), vddsc_get_requested_deadline_missed_status, bad_params)
+{
+	dds_requested_deadline_missed_status_t status = {0};
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (reader < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = reader;
+    }
+
+    ret = dds_get_requested_deadline_missed_status(reader, &status);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_requested_deadline_missed_status, null, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_sample_lost_status(reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_requested_deadline_missed_status, non_readers) = {
+        DataPoints(dds_entity_t*, &writer, &topic, &participant),
+};
+Theory((dds_entity_t *reader), vddsc_get_requested_deadline_missed_status, non_readers, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_requested_deadline_missed_status(*reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_requested_deadline_missed_status, deleted_reader, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    dds_delete(reader);
+    ret = dds_get_requested_deadline_missed_status(reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_requested_incompatible_qos_status, bad_params) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t reader), vddsc_get_requested_incompatible_qos_status, bad_params)
+{
+	dds_requested_incompatible_qos_status_t status = {0};
+    dds_return_t ret;
+    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+
+    if (reader < 0) {
+        /* Entering the API with an error should return the same error. */
+        exp = reader;
+    }
+
+    ret = dds_get_requested_incompatible_qos_status(reader, &status);
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_requested_incompatible_qos_status, null, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_requested_incompatible_qos_status(reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_get_requested_incompatible_qos_status, non_readers) = {
+        DataPoints(dds_entity_t*, &writer, &topic, &participant),
+};
+Theory((dds_entity_t *reader), vddsc_get_requested_incompatible_qos_status, non_readers, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    ret = dds_get_requested_incompatible_qos_status(*reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_get_requested_incompatible_qos_status, deleted_reader, .init=init_entity_status, .fini=fini_entity_status)
+{
+    dds_return_t ret;
+    dds_delete(reader);
+    ret = dds_get_requested_incompatible_qos_status(reader, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
