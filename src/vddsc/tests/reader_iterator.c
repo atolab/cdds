@@ -41,39 +41,22 @@
  *    |    4   |   12   |   24   |     read | old | alive      |
  *    |    4   |   13   |   26   | not_read | old | alive      |
  *    |    4   |   14   |   28   | not_read | old | alive      |
- *    |    5   |   15   |   30   |     read | new | disposed   |
- *    |    5   |   16   |   32   | not_read | new | disposed   |
- *    |    5   |   17   |   34   |     read | new | disposed   |
- *    |    6   |   18   |   36   |     read | new | no_writers |
- *    |    6   |   19   |   38   | not_read | new | no_writers |
- *    |    6   |   20   |   40   |     read | new | no_writers |
+ *    |    5   |   15   |   30   |     read | old | disposed   |
+ *    |    5   |   16   |   32   | not_read | old | disposed   |
+ *    |    5   |   17   |   34   |     read | old | disposed   |
+ *    |    6   |   18   |   36   |     read | old | no_writers |
+ *    |    6   |   19   |   38   | not_read | old | no_writers |
+ *    |    6   |   20   |   40   |     read | old | no_writers |
  *
  */
 #define MAX_SAMPLES                 21
 
-/* When an instance is disposed, then the sample state is update. This shouldn't
- * happen. For now, leave it as is and expect the change.
- * TODO: CHAM-324 remove this SAMPLE_STATE_UPDATE_BUG. */
-#define SAMPLE_STATE_UPDATE_BUG
-#ifdef SAMPLE_STATE_UPDATE_BUG
-  #define RDR_NOT_READ_CNT            15
-  int rdr_expected_long_2[RDR_NOT_READ_CNT] = { 0, 1, 2, 6, 7, 9, 11, 13, 14, 15, 16, 17, 18, 19, 20 };
-  /* Because we only read one sample at a time, only the first sample of an instance
-   * can be new. */
-  #define SAMPLE_VST(long_2)           (((long_2 == 0) || (long_2 == 15) || (long_2 == 18)) ? DDS_VST_NEW : DDS_VST_OLD)
-#else
-  #define RDR_NOT_READ_CNT            11
-  int rdr_expected_long_2[RDR_NOT_READ_CNT] = { 0, 1, 2, 6, 7, 9, 11, 13, 14, 16, 19 };
-  /* Because we only read one sample at a time, only the first sample of an instance
-   * can be new. */
-  #define SAMPLE_VST(long_2)           (((long_2 == 0) || (long_2 == 16) || (long_2 == 19)) ? DDS_VST_NEW : DDS_VST_OLD)
-#endif
+#define RDR_NOT_READ_CNT            11
+int rdr_expected_long_2[RDR_NOT_READ_CNT] = { 0, 1, 2, 6, 7, 9, 11, 13, 14, 16, 19 };
 
-#define RCOND_NOT_READ_CNT          10
-int rcond_expected_long_2[RCOND_NOT_READ_CNT] = { 1, 2, 6, 7, 9, 11, 13, 14, 16, 19 };
-
-#define QCOND_NOT_READ_CNT          5
-int qcond_expected_long_2[QCOND_NOT_READ_CNT] = { 0, 2, 6, 14, 16 };
+/* Because we only read one sample at a time, only the first sample of an instance
+ * can be new. This turns out to be only the very first sample.  */
+#define SAMPLE_VST(long_2)           ((long_2 == 0) ? DDS_VST_NEW : DDS_VST_OLD)
 
 #define SAMPLE_IST(long_1)           ((long_1 == 5) ? DDS_IST_NOT_ALIVE_DISPOSED   : \
                                       (long_1 == 6) ? DDS_IST_NOT_ALIVE_NO_WRITERS : \
@@ -116,7 +99,11 @@ filter_init(const void * sample)
             (s->long_2 ==  5) ||
             (s->long_2 ==  8) ||
             (s->long_2 == 10) ||
-            (s->long_2 == 12));
+            (s->long_2 == 12) ||
+            (s->long_2 == 15) ||
+            (s->long_2 == 17) ||
+            (s->long_2 == 18) ||
+            (s->long_2 == 20));
 }
 
 static bool
@@ -304,12 +291,12 @@ reader_iterator_init(void)
      *    |    4   |   12   |   24   |     read | old | alive      |
      *    |    4   |   13   |   26   | not_read | old | alive      |
      *    |    4   |   14   |   28   | not_read | old | alive      |
-     *    |    5   |   15   |   30   |     read | new | disposed   |
-     *    |    5   |   16   |   32   | not_read | new | disposed   |
-     *    |    5   |   17   |   34   |     read | new | disposed   |
-     *    |    6   |   18   |   36   |     read | new | no_writers |
-     *    |    6   |   19   |   38   | not_read | new | no_writers |
-     *    |    6   |   20   |   40   |     read | new | no_writers |
+     *    |    5   |   15   |   30   |     read | old | disposed   |
+     *    |    5   |   16   |   32   | not_read | old | disposed   |
+     *    |    5   |   17   |   34   |     read | old | disposed   |
+     *    |    6   |   18   |   36   |     read | old | no_writers |
+     *    |    6   |   19   |   38   | not_read | old | no_writers |
+     *    |    6   |   20   |   40   |     read | old | no_writers |
      */
 
     dds_qos_delete(qos);
