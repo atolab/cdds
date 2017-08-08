@@ -16,10 +16,7 @@
 	extern int optind;
 	extern int optopt;
 	extern char *optarg;
-	extern int getopt(int argc,char **argv,const char *opts);
+	extern int getopt (int argc, char * const argv[], const char *opts);
 #endif
-
-
-
 
 #endif /* OS_STDLIB_GETOPT_H_ */
