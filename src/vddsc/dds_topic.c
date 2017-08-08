@@ -33,11 +33,11 @@ is_valid_name(
     bool valid = false;
     /* DDS Spec:
      *  |  TOPICNAME - A topic name is an identifier for a topic, and is defined as any series of characters
-     *  |     ‘a’, ..., ‘z’,
-     *  |     ‘A’, ..., ‘Z’,
-     *  |     ‘0’, ..., ‘9’,
-     *  |     ‘-’ but may not start with a digit.
-     * It is considered that ‘-’ is an error in the spec and should say ‘_’. So, that's what we'll check for.
+     *  |     'a', ..., 'z',
+     *  |     'A', ..., 'Z',
+     *  |     '0', ..., '9',
+     *  |     '-' but may not start with a digit.
+     * It is considered that '-' is an error in the spec and should say '_'. So, that's what we'll check for.
      */
     assert(name);
     if ((name[0] != '\0') && (!isdigit((unsigned char)name[0]))) {
@@ -190,12 +190,16 @@ dds_find_topic(
 
     rc = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &p);
     if (rc == DDS_RETCODE_OK) {
-        st = dds_topic_lookup (p->m_domain, name);
-        if (st) {
-            dds_entity_add_ref (&st->status_cb_entity->m_entity);
-            tp = st->status_cb_entity->m_entity.m_hdl;
+        if (name) {
+            st = dds_topic_lookup (p->m_domain, name);
+            if (st) {
+                dds_entity_add_ref (&st->status_cb_entity->m_entity);
+                tp = st->status_cb_entity->m_entity.m_hdl;
+            } else {
+                rc = DDS_RETCODE_PRECONDITION_NOT_MET;
+            }
         } else {
-            rc = DDS_RETCODE_PRECONDITION_NOT_MET;
+            rc = DDS_RETCODE_BAD_PARAMETER;
         }
         dds_entity_unlock(p);
     }
@@ -488,7 +492,7 @@ dds_get_name(
 {
     dds_topic *t;
     dds_retcode_t rc = DDS_RETCODE_BAD_PARAMETER;
-    if (size > 0) {
+    if ((size > 0) && (name != NULL)) {
         name[0] = '\0';
         rc = dds_topic_lock(topic, &t);
         if (rc == DDS_RETCODE_OK) {
@@ -508,7 +512,7 @@ dds_get_type_name(
 {
     dds_topic *t;
     dds_retcode_t rc = DDS_RETCODE_BAD_PARAMETER;
-    if (size > 0) {
+    if ((size > 0) && (name != NULL)) {
         name[0] = '\0';
         rc = dds_topic_lock(topic, &t);
         if (rc == DDS_RETCODE_OK) {
