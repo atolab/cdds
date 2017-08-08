@@ -1,6 +1,6 @@
 #define RTLD_DEFAULT	((void *) 0)
 
-#include <dlfcn.h>
+//#include <dlfcn.h>
 #include <time.h>
 #include <string.h>
 #include <sys/time.h>
