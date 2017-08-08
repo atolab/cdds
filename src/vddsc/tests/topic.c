@@ -79,11 +79,11 @@ vddsc_topic_fini(void)
  *************************************************************************************************/
 /*************************************************************************************************/
 TheoryDataPoints(vddsc_topic_create, valid) = {
-        DataPoints(const char *,     "valid",   "_VALID", "Val1d", "valid_", "vA_1d"),
+        DataPoints(char *,     "valid",   "_VALID", "Val1d", "valid_", "vA_1d"),
         DataPoints(dds_qos_t**,      &g_qos_null,   &g_qos        ),
         DataPoints(dds_listener_t**, &g_list_null,  &g_listener   ),
 };
-Theory((const char *name, dds_qos_t **qos, dds_listener_t **listener), vddsc_topic_create, valid, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+Theory((char *name, dds_qos_t **qos, dds_listener_t **listener), vddsc_topic_create, valid, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
 {
     dds_entity_t topic;
     dds_return_t ret;
@@ -165,9 +165,9 @@ Test(vddsc_topic_create, desc_null, .init=vddsc_topic_init, .fini=vddsc_topic_fi
 
 
 TheoryDataPoints(vddsc_topic_create, invalid_names) = {
-        DataPoints(const char *, NULL, "", "mi-dle", "-start", "end-", "1st", "Thus$", "pl+s", "t(4)"),
+        DataPoints(char *, NULL, "", "mi-dle", "-start", "end-", "1st", "Thus$", "pl+s", "t(4)"),
 };
-Theory((const char *name), vddsc_topic_create, invalid_names, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+Theory((char *name), vddsc_topic_create, invalid_names, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
 {
     dds_entity_t topic;
     topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, name, NULL, NULL);
