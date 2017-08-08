@@ -82,8 +82,8 @@ os_iterFree(
 _Success_(return >= 0) _Ret_range_(-1, INT32_MAX) int32_t
 os_iterInsert(
     _In_ os_iter *iter,
-    _In_ void *object,
-    _In_ int32_t index)
+    _In_opt_ void *object,
+    _In_range_(INT32_MIN, INT32_MAX) int32_t index)
 {
     int32_t cnt, idx = -1;
     os_iterNode *node, *prev;

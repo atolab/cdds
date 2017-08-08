@@ -17,6 +17,7 @@ CUnit_Test(os_iter, create)
     CU_ASSERT_EQUAL(os_iterLength(iter), 0);
     CU_ASSERT_PTR_NULL(os_iterObject(iter, 0));
     CU_ASSERT_PTR_NULL(os_iterTake(iter, 0));
+    os_iterFree(iter, NULL);
 }
 
 CUnit_Test(os_iter, prepend)

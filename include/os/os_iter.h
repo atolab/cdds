@@ -10,7 +10,7 @@ extern "C" {
 
 typedef struct os_iter_s os_iter; /* opaque type */
 
-OSAPI_EXPORT _Success_(return != NULL) os_iter *
+OSAPI_EXPORT _Success_(return != NULL) _Ret_maybenull_ os_iter *
 os_iterNew(
     void);
 
