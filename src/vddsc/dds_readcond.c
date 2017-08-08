@@ -86,6 +86,7 @@ dds_get_mask(
     dds_readcond *cond;
     dds_retcode_t rc;
     if (mask != NULL) {
+        *mask = 0;
         if ((dds_entity_kind(condition) == DDS_KIND_COND_READ ) ||
             (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) ){
             rc = dds_entity_lock(condition, DDS_KIND_DONTCARE, (dds_entity**)&cond);
