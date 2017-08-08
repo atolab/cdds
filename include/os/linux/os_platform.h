@@ -8,7 +8,6 @@
 #include <endian.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <getopt.h>
 
 #define PRIdSIZE "zd"
 #define PRIuSIZE "zu"
