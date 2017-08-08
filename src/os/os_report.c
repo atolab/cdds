@@ -52,7 +52,7 @@ typedef struct os_reportStack_s {
     const char *file;
     int lineno;
     const char *signature;
-    os_iter reports;  /* os_reportEventV1 */
+    os_iter *reports;  /* os_reportEventV1 */
 } *os_reportStack;
 
 void os__report_append(os_reportStack _this, const os_reportEventV1 report);
@@ -446,7 +446,7 @@ void os_reportExit()
     reports = os_threadMemGet(OS_THREAD_REPORT_STACK);
     if (reports) {
         os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__);
-        os_iterFree(reports->reports);
+        os_iterFree(reports->reports, NULL);
         os_threadMemFree(OS_THREAD_REPORT_STACK);
     }
     inited = false;
@@ -1565,7 +1565,7 @@ os_report_stack()
             _this->file = NULL;
             _this->lineno = 0;
             _this->signature = NULL;
-            _this->reports = os_iterNew(NULL);
+            _this->reports = os_iterNew();
         } else {
             OS_REPORT(OS_ERROR, "os_report_stack", 0,
                     "Failed to initialize report stack (could not allocate thread-specific memory)");
@@ -1600,7 +1600,7 @@ os_report_stack_open(
             _this->file = file;
             _this->lineno = lineno;
             _this->signature = signature;
-            _this->reports = os_iterNew(NULL);
+            _this->reports = os_iterNew();
         } else {
             OS_REPORT(OS_ERROR, "os_report_stack", 0,
                     "Failed to initialize report stack (could not allocate thread-specific memory)");
@@ -1645,10 +1645,10 @@ os_report_stack_free(
 
     _this = (os_reportStack)os_threadMemGet(OS_THREAD_REPORT_STACK);
     if (_this) {
-        while((report = os_iterTakeLast(_this->reports))) {
+        while((report = os_iterTake(_this->reports, -1))) {
             os__report_free(report);
         }
-        os_iterFree(_this->reports);
+        os_iterFree(_this->reports, NULL);
         os_threadMemFree(OS_THREAD_REPORT_STACK);
     }
 }
@@ -1747,7 +1747,7 @@ os__report_stack_unwind(
     struct os_reportEventV1_s header;
     os_reportEventV1 report;
     struct os__reportBuffer buf = { NULL, 0, 0 };
-    os_iter tempList;
+    os_iter *tempList;
     char *file;
     char tmp[2];
     int32_t code = 0;
@@ -1768,16 +1768,16 @@ os__report_stack_unwind(
         }
 
         if (filter != OS_NONE) {
-            tempList = os_iterNew(NULL);
-            if (tempList) {
-                while ((report = os_iterTakeLast(_this->reports))) {
+            tempList = os_iterNew();
+            if (tempList != NULL) {
+                while ((report = os_iterTake(_this->reports, -1))) {
                     if (report->reportType == filter) {
                         (void)os_iterAppend(tempList, report);
                     } else {
                         os__report_free(report);
                     }
                 }
-                while ((report = os_iterTakeLast(tempList))) {
+                while ((report = os_iterTake(tempList, -1))) {
                     os_iterAppend(_this->reports, report);
                 }
                 os_free(tempList);
@@ -1874,7 +1874,7 @@ os__report_stack_unwind(
         }
     }
 
-    while ((report = os_iterTakeLast (_this->reports))) {
+    while ((report = os_iterTake(_this->reports, -1))) {
         if (valid) {
             if (update == true && os_report_iserror (report)) {
                 os_reportSetApiInfo (
@@ -2146,7 +2146,3 @@ os__report_fprintf(FILE *file,
     }
     return BytesWritten;
 }
-
-
-
-

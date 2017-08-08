@@ -607,20 +607,20 @@ static void
 os_threadCleanupFini(
     void *data)
 {
-    os_iter itr;
+    os_iter *itr;
     os_threadCleanup *obj;
 
     if (data != NULL) {
-        itr = (os_iter)data;
-        for (obj = (os_threadCleanup *)os_iterTakeLast(itr);
+        itr = (os_iter *)data;
+        for (obj = (os_threadCleanup *)os_iterTake(itr, -1);
              obj != NULL;
-             obj = (os_threadCleanup *)os_iterTakeLast(itr))
+             obj = (os_threadCleanup *)os_iterTake(itr, -1))
         {
             assert(obj->func != NULL);
             obj->func(obj->data);
             os_free(obj);
         }
-        os_iterFree(itr);
+        os_iterFree(itr, NULL);
     }
 }
 
@@ -640,15 +640,15 @@ os_threadCleanupPush(
     void (*func)(void*),
     void *data)
 {
-    os_iter itr;
+    os_iter *itr;
     os_threadCleanup *obj;
 
     assert(func != NULL);
 
     (void)pthread_once(&cleanup_once, &os_threadCleanupInit);
-    itr = (os_iter)pthread_getspecific(cleanup_key);
+    itr = (os_iter *)pthread_getspecific(cleanup_key);
     if (itr == NULL) {
-        itr = os_iterNew(NULL);
+        itr = os_iterNew();
         assert(itr != NULL);
         pthread_setspecific(cleanup_key, itr);
     }
@@ -664,12 +664,12 @@ void
 os_threadCleanupPop(
     int execute)
 {
-    os_iter itr;
+    os_iter *itr;
     os_threadCleanup *obj;
 
     (void)pthread_once(&cleanup_once, &os_threadCleanupInit);
-    if ((itr = (os_iter)pthread_getspecific(cleanup_key)) != NULL) {
-        obj = (os_threadCleanup *)os_iterTakeLast(itr);
+    if ((itr = (os_iter *)pthread_getspecific(cleanup_key)) != NULL) {
+        obj = (os_threadCleanup *)os_iterTake(itr, -1);
         if (obj != NULL) {
             if (execute) {
                 obj->func(obj->data);

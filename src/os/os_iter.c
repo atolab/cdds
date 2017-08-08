@@ -1,160 +1,219 @@
 #include <assert.h>
+#include <string.h>
 
 #include "os/os.h"
 
-os_iter
+typedef struct os_iterNode_s os_iterNode;
+
+struct os_iterNode_s {
+    os_iterNode *next;
+    void *object;
+};
+
+struct os_iter_s {
+    uint32_t length;
+    os_iterNode *head;
+    os_iterNode *tail;
+};
+
+_Ret_range_(-1, iter->length) static int32_t
+os_iterIndex(
+    _In_ const os_iter *__restrict iter,
+    _In_ int32_t index)
+{
+    int32_t idx = 0;
+
+    assert(iter != NULL);
+
+    if (index == OS_ITER_LENGTH) {
+        idx = iter->length;
+    } else if (index < 0) {
+        index *= -1;
+        if ((uint32_t)index > iter->length) {
+            idx = -1;
+        } else {
+            idx = iter->length - index;
+        }
+    } else {
+        if ((uint32_t)index > iter->length) {
+            idx = iter->length;
+        } else {
+            idx = index;
+        }
+    }
+
+    return idx;
+}
+
+_Success_(return != NULL) _Ret_maybenull_ os_iter *
 os_iterNew(
-           void *object)
+    void)
 {
-    os_iter l;
+    os_iter *iter;
 
-    l = os_malloc(sizeof *l);
-    if (object == NULL) {
-        l->length = 0;
-        l->head = NULL;
-        l->tail = NULL;
-    } else {
-        l->length = 1;
-        l->head = os_malloc(sizeof *l->head);
-        l->head->next = NULL;
-        l->head->object = object;
-        l->tail = l->head;
+    if ((iter = os_malloc(sizeof(*iter))) != NULL) {
+        memset(iter, 0, sizeof(*iter));
     }
-    return l;
-}
-
-void
-os_iterFree(
-            os_iter iter)
-{
-    os_iterNode n,t;
-
-    if (iter == NULL) {
-        return;
-    }
-    n = iter->head;
-    while (n != NULL) {
-        t = n->next;
-        os_free(n);
-        n = t;
-    }
-    /* Do not free tail, because 'tail - 1' references tail already.*/
-    os_free(iter);
-}
-
-os_iter
-os_iterAppend(
-              os_iter iter,
-              void *object)
-{
-    os_iterNode n;
-
-    if (iter == NULL) return os_iterNew(object);
-    if (object == NULL) {
-        return iter;
-    }
-    n = (os_iterNode)os_malloc(sizeof(*n));
-    n->object = object;
-    n->next = NULL;
-
-    if(iter->tail){
-        iter->tail->next = n;
-        iter->tail = n;
-    } else {
-        iter->head = n;
-        iter->tail = n;
-    }
-    iter->length++;
 
     return iter;
 }
 
-void *
-os_iterObject(
-              os_iter iter,
-              uint32_t index)
+void
+os_iterFree(
+    _In_opt_ os_iter *iter,
+    _In_opt_ void(*func)(void *))
 {
-    os_iterNode l;
-    uint32_t i;
+    os_iterNode *node, *next;
 
-    if (iter == NULL) {
-        return NULL;
-    }
-    if (index >= iter->length) {
-        return NULL;
-    }
-    l = iter->head;
-    for (i = 0; i < index; i++) l = l->next;
-    return l->object;
-}
-
-void *
-os_iterTakeLast(
-                os_iter iter)
-{
-    os_iterNode n, prev;
-    void *o;
-
-    if (iter == NULL) {
-        return NULL;
-    }
-    if (iter->tail == NULL) {
-        return NULL;
-    }
-
-    n = iter->tail;
-    o = n->object;
-
-    if (iter->head == iter->tail) {
-        prev = NULL;
-    } else {
-        prev = iter->head;
-        while (prev->next != iter->tail) {
-            prev = prev->next;
+    if (iter != NULL) {
+        node = iter->head;
+        while (node != NULL) {
+            next = node->next;
+            if (node->object != NULL && func != NULL) {
+                func(node->object);
+            }
+            os_free(node);
+            node = next;
         }
+        os_free(iter);
     }
-
-    if (prev) {
-        prev->next = NULL;
-    }
-    iter->tail = prev;
-    iter->length--;
-
-    if (iter->length == 0) {
-        iter->head = NULL;
-        assert(iter->tail == NULL);
-    }
-
-    os_free(n);
-
-    return o;
 }
 
-uint32_t
-os_iterLength(
-              os_iter iter)
+_Success_(return >= 0) _Ret_range_(-1, INT32_MAX) int32_t
+os_iterInsert(
+    _In_ os_iter *iter,
+    _In_ void *object,
+    _In_ int32_t index)
 {
-    if (iter == NULL) {
-        return 0;
+    int32_t cnt, idx = -1;
+    os_iterNode *node, *prev;
+
+    if ((node = os_malloc(sizeof(*node))) != NULL) {
+        memset(node, 0, sizeof(*node));
+        node->object = object;
+
+        idx = os_iterIndex(iter, index);
+        prev = NULL;
+        if (idx > 0) {
+            assert(iter->length != 0);
+            assert(iter->head != iter->tail || iter->length == 1);
+            if (idx == iter->length) {
+                prev = iter->tail;
+                iter->tail = node;
+            } else {
+                cnt = 1;
+                prev = iter->head;
+                while (cnt++ < idx) {
+                    prev = prev->next;
+                }
+                assert(prev != iter->tail);
+                node->next = prev->next;
+                prev->next = node;
+            }
+            prev->next = node;
+        } else {
+            assert(idx == 0 || idx == -1);
+            idx = 0;
+            node->next = iter->head;
+            iter->head = node;
+            if (iter->tail == NULL) {
+                assert(iter->length == 0);
+                iter->tail = node;
+            }
+        }
+
+        iter->length++;
     }
+
+    return idx;
+}
+
+_Ret_maybenull_ void *
+os_iterObject(
+    _In_ const os_iter *__restrict iter,
+    _In_range_(INT32_MIN+1, INT32_MAX) int32_t index)
+{
+    os_iterNode *node;
+    int32_t cnt, idx;
+    void *obj = NULL;
+
+    assert(iter != NULL);
+
+    idx = os_iterIndex(iter, index);
+    if (idx >= 0 && (uint32_t)idx < iter->length) {
+        if (idx == (iter->length - 1)) {
+            node = iter->tail;
+        } else {
+            node = iter->head;
+            for (cnt = 0; cnt < idx; cnt++) {
+                node = node->next;
+            }
+        }
+        obj = node->object;
+    }
+
+    return obj;
+}
+
+_Ret_maybenull_ void *
+os_iterTake(
+    _In_ os_iter *__restrict iter,
+    _In_range_(INT32_MIN+1, INT32_MAX) int32_t index)
+{
+    os_iterNode *node, *prev;
+    int32_t cnt, idx;
+    void *obj = NULL;
+
+    assert(iter != NULL);
+
+    idx = os_iterIndex(iter, index);
+    if (idx >= 0 && (uint32_t)idx < iter->length) {
+        prev = NULL;
+        node = iter->head;
+        for (cnt = 0; cnt < idx; cnt++) {
+            prev = node;
+            node = node->next;
+        }
+        if (node == iter->head) {
+            iter->head = node->next;
+        } else {
+            assert(prev != NULL);
+            prev->next = node->next;
+        }
+        if (node == iter->tail) {
+            iter->tail = prev;
+        }
+
+        obj = node->object;
+        os_free(node);
+        iter->length--;
+    }
+
+    return obj;
+}
+
+_Ret_range_(0, INT32_MAX) uint32_t
+os_iterLength(
+    _In_ const os_iter *__restrict iter)
+{
+    assert(iter != NULL);
     return iter->length;
 }
 
-
 void
 os_iterWalk(
-            os_iter iter,
-            void (*action) (void *obj, void *arg),
-            void *actionArg)
+    _In_ const os_iter *__restrict iter,
+    _In_ void(*func)(void *obj, void *arg),
+    _In_opt_ void *arg)
 {
-    os_iterNode l;
-    if (iter == NULL) {
-        return;
-    }
-    l = iter->head;
-    while (l != NULL) {
-        action(l->object,actionArg);
-        l = l->next;
+    os_iterNode *node;
+
+    assert(iter != NULL);
+    assert(func != NULL);
+
+    node = iter->head;
+    while (node != NULL) {
+        func(node->object, arg);
+        node = node->next;
     }
 }
-////////////////////////////////

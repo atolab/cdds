@@ -94,18 +94,21 @@ void thread_states_fini (void)
   thread_states.ts = NULL;
 }
 
-static void cleanup_thread_state (void *data)
+static void
+cleanup_thread_state(
+    _In_opt_ void *data)
 {
     struct thread_state1 *ts = get_thread_state(os_threadIdSelf());
 
     assert(ts->state == THREAD_STATE_ALIVE);
     assert(vtime_asleep_p(ts->vtime));
     reset_thread_state(ts);
-    os_reportExit(); /* FIXME: should not be here */
+    os_reportExit(); /* FIXME: Should not be here! */
 }
 
-_Ret_valid_
-struct thread_state1 *lookup_thread_state (void)
+_Ret_valid_ struct thread_state1 *
+lookup_thread_state(
+    void)
 {
     struct thread_state1 *ts1 = NULL;
     char tname[128];

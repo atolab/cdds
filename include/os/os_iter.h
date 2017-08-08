@@ -1,55 +1,66 @@
 #ifndef OS_ITER_H
 #define OS_ITER_H
 
+#include <stdint.h>
+#include "os/os_defs.h"
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-typedef struct os_iter_s *os_iter;
-typedef struct os_iterNode_s *os_iterNode;
+typedef struct os_iter_s os_iter; /* opaque type */
 
-struct os_iter_s {
-    uint32_t length;
-    os_iterNode head;
-    os_iterNode tail;
-};
-
-struct os_iterNode_s {
-    os_iterNode next;
-    void *object;
-};
-
-os_iter
+OSAPI_EXPORT _Success_(return != NULL) os_iter *
 os_iterNew(
-    void *object);
+    void);
 
-void
+OSAPI_EXPORT void
 os_iterFree(
-    os_iter iter);
+    _In_opt_ os_iter *iter,
+    _In_opt_ void(*func)(void *));
 
-os_iter
-os_iterAppend(
-    os_iter iter,
-    void *object);
-
-void *
-os_iterObject(
-    os_iter iter,
-    uint32_t index);
-
-void *
-os_iterTakeLast(
-    os_iter iter);
-
-uint32_t
+OSAPI_EXPORT _Ret_range_(0, INT32_MAX) uint32_t
 os_iterLength(
-    os_iter iter);
+    _In_ const os_iter *__restrict iter);
 
-void
+/* Negative integers (borrowed from Python) can be used to access elements in
+   the iter. Most often it is used as a shorthand to access the last element.
+   i.e. os_iterOjbect(iter, -1) is functionally equivalent to
+   os_iterOjbect(iter, os_iterLength(iter) - 1) */
+
+/* Special constant functionally equivalent to the value returned by
+   os_iterLength when passed as an index to os_iterInsert. INT32_MIN never
+   represents a valid negative index as it is exactly -(pow(2, n - 1)), whereas
+   the maximum positive value is exactly (pow(2, n - 1) - 1), therefore the
+   resulting index would always be negative */
+#define OS_ITER_LENGTH (INT32_MIN)
+
+OSAPI_EXPORT _Success_(return >= 0) _Ret_range_(-1, INT32_MAX) int32_t
+os_iterInsert(
+    _In_ os_iter *iter,
+    _In_opt_ void *object,
+    _In_range_(INT32_MIN, INT32_MAX) int32_t index);
+
+#define os_iterPrepend(iter, ojbect) \
+    os_iterInsert((iter), (object), 0)
+#define os_iterAppend(iter, object) \
+    os_iterInsert((iter), (object), OS_ITER_LENGTH)
+
+OSAPI_EXPORT _Ret_maybenull_ void *
+os_iterObject(
+    _In_ const os_iter *__restrict iter,
+    _In_range_(INT32_MIN+1, INT32_MAX) int32_t index);
+
+OSAPI_EXPORT _Ret_maybenull_ void *
+os_iterTake(
+    _In_ os_iter *__restrict iter,
+    _In_range_(INT32_MIN+1, INT32_MAX) int32_t index);
+
+OSAPI_EXPORT void
 os_iterWalk(
-    os_iter iter,
-    void (*action) (void *obj, void *arg),
-    void *actionArg);
+    _In_ const os_iter *__restrict iter,
+    _In_ void(*func)(void *obj, void *arg),
+    _In_opt_ void *arg);
 
 #if defined (__cplusplus)
 }

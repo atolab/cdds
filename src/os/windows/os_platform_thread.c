@@ -500,7 +500,7 @@ os_threadMemGet(
 }
 
 
-static os_threadLocal os_iter cleanup_funcs;
+static os_threadLocal os_iter *cleanup_funcs;
 
 /* executed before dllmain within the context of the thread itself */
 void NTAPI
@@ -515,15 +515,15 @@ os_threadCleanupFini(
         case DLL_PROCESS_DETACH: /* specified when main thread exits */
         case DLL_THREAD_DETACH: /* specified when thread exits */
             if (cleanup_funcs != NULL) {
-                for (obj = (os_threadCleanup *)os_iterTakeLast(cleanup_funcs);
+                for (obj = (os_threadCleanup *)os_iterTake(cleanup_funcs, -1);
                      obj != NULL;
-                     obj = (os_threadCleanup *)os_iterTakeLast(cleanup_funcs))
+                     obj = (os_threadCleanup *)os_iterTake(cleanup_funcs, -1))
                 {
                     assert(obj->func != NULL);
                     obj->func(obj->data);
                     os_free(obj);
                 }
-                os_iterFree(cleanup_funcs);
+                os_iterFree(cleanup_funcs, NULL);
             }
             cleanup_funcs = NULL;
             break;
@@ -562,7 +562,7 @@ os_threadCleanupPush(
     assert(func != NULL);
 
     if (cleanup_funcs == NULL) {
-        cleanup_funcs = os_iterNew(NULL);
+        cleanup_funcs = os_iterNew();
         assert(cleanup_funcs != NULL);
     }
 
@@ -580,7 +580,7 @@ os_threadCleanupPop(
     os_threadCleanup *obj;
 
     if (cleanup_funcs != NULL) {
-        obj = os_iterTakeLast(cleanup_funcs);
+        obj = os_iterTake(cleanup_funcs, -1);
         if (obj != NULL) {
             if (execute) {
                 obj->func(obj->data);
