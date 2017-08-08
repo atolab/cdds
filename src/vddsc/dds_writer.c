@@ -458,16 +458,16 @@ dds_get_publication_matched_status (
 
     rc = dds_writer_lock(writer, &wr);
     if (rc == DDS_RETCODE_OK) {
-        if (((dds_entity*)wr)->m_status_enable & DDS_PUBLICATION_MATCHED_STATUS) {
-            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-            if (status) {
-                *status = wr->m_publication_matched_status;
-            }
-            wr->m_publication_matched_status.total_count_change = 0;
-            wr->m_publication_matched_status.current_count_change = 0;
-            dds_entity_status_reset(wr, DDS_PUBLICATION_MATCHED_STATUS);
-        }
-        dds_writer_unlock(wr);
+      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+      if (status) {
+        *status = wr->m_publication_matched_status;
+      }
+      if (((dds_entity*)wr)->m_status_enable & DDS_PUBLICATION_MATCHED_STATUS) {
+        wr->m_publication_matched_status.total_count_change = 0;
+        wr->m_publication_matched_status.current_count_change = 0;
+        dds_entity_status_reset(wr, DDS_PUBLICATION_MATCHED_STATUS);
+      }
+      dds_writer_unlock(wr);
     }
     return DDS_ERRNO(rc);
 }
@@ -483,15 +483,15 @@ dds_get_liveliness_lost_status (
 
     rc = dds_writer_lock(writer, &wr);
     if (rc == DDS_RETCODE_OK) {
-        if (((dds_entity*)wr)->m_status_enable & DDS_LIVELINESS_LOST_STATUS) {
-            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-            if (status) {
-                *status = wr->m_liveliness_lost_status;
-            }
-            wr->m_liveliness_lost_status.total_count_change = 0;
-            dds_entity_status_reset(wr, DDS_LIVELINESS_LOST_STATUS);
-        }
-        dds_writer_unlock(wr);
+      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+      if (status) {
+        *status = wr->m_liveliness_lost_status;
+      }
+      if (((dds_entity*)wr)->m_status_enable & DDS_LIVELINESS_LOST_STATUS) {
+        wr->m_liveliness_lost_status.total_count_change = 0;
+        dds_entity_status_reset(wr, DDS_LIVELINESS_LOST_STATUS);
+      }
+      dds_writer_unlock(wr);
     }
     return DDS_ERRNO(rc);
 }
@@ -507,15 +507,15 @@ dds_get_offered_deadline_missed_status(
 
     rc = dds_writer_lock(writer, &wr);
     if (rc == DDS_RETCODE_OK) {
-        if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_DEADLINE_MISSED_STATUS) {
-            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-            if (status) {
-                *status = wr->m_offered_deadline_missed_status;
-            }
-            wr->m_offered_deadline_missed_status.total_count_change = 0;
-            dds_entity_status_reset(wr, DDS_OFFERED_DEADLINE_MISSED_STATUS);
-        }
-        dds_writer_unlock(wr);
+      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+      if (status) {
+        *status = wr->m_offered_deadline_missed_status;
+      }
+      if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_DEADLINE_MISSED_STATUS) {
+        wr->m_offered_deadline_missed_status.total_count_change = 0;
+        dds_entity_status_reset(wr, DDS_OFFERED_DEADLINE_MISSED_STATUS);
+      }
+      dds_writer_unlock(wr);
     }
     return DDS_ERRNO(rc);
 }
@@ -531,15 +531,15 @@ dds_get_offered_incompatible_qos_status (
 
     rc = dds_writer_lock(writer, &wr);
     if (rc == DDS_RETCODE_OK) {
-        if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_INCOMPATIBLE_QOS_STATUS) {
-            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-            if (status) {
-                *status = wr->m_offered_incompatible_qos_status;
-            }
-            wr->m_offered_incompatible_qos_status.total_count_change = 0;
-            dds_entity_status_reset(wr, DDS_OFFERED_INCOMPATIBLE_QOS_STATUS);
-        }
-        dds_writer_unlock(wr);
+      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+      if (status) {
+        *status = wr->m_offered_incompatible_qos_status;
+      }
+      if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_INCOMPATIBLE_QOS_STATUS) {
+        wr->m_offered_incompatible_qos_status.total_count_change = 0;
+        dds_entity_status_reset(wr, DDS_OFFERED_INCOMPATIBLE_QOS_STATUS);
+      }
+      dds_writer_unlock(wr);
     }
     return DDS_ERRNO(rc);
 }

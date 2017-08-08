@@ -521,23 +521,23 @@ dds_get_type_name(
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 dds_return_t
 dds_get_inconsistent_topic_status(
-        _In_ dds_entity_t entity,
+        _In_ dds_entity_t topic,
         _Out_opt_ dds_inconsistent_topic_status_t *status)
 {
     dds_retcode_t rc;
     dds_topic *t;
 
-    rc = dds_topic_lock(entity, &t);
+    rc = dds_topic_lock(topic, &t);
     if (rc == DDS_RETCODE_OK) {
-        if (((dds_entity*)t)->m_status_enable & DDS_INCONSISTENT_TOPIC_STATUS) {
-            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-            if (status) {
-                *status = t->m_inconsistent_topic_status;
-            }
-            t->m_inconsistent_topic_status.total_count_change = 0;
-            dds_entity_status_reset(t, DDS_INCONSISTENT_TOPIC_STATUS);
-        }
-        dds_topic_unlock(t);
+      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+      if (status) {
+        *status = t->m_inconsistent_topic_status;
+      }
+      if (((dds_entity*)t)->m_status_enable & DDS_INCONSISTENT_TOPIC_STATUS) {
+        t->m_inconsistent_topic_status.total_count_change = 0;
+        dds_entity_status_reset(t, DDS_INCONSISTENT_TOPIC_STATUS);
+      }
+      dds_topic_unlock(t);
     }
     return DDS_ERRNO(rc);
 }
