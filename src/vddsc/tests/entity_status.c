@@ -14,7 +14,7 @@
 static dds_entity_t    participant;
 static dds_entity_t    subscriber;
 static dds_entity_t    publisher;
-static dds_entity_t    topic, topic2;
+static dds_entity_t    topic;
 static dds_entity_t    writer;
 static dds_entity_t    reader;
 static dds_entity_t    waitSetwr;
@@ -58,9 +58,6 @@ init_entity_status(void)
     cr_assert_gt(participant, 0, "Failed to create prerequisite participant");
 
     topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_status_test", topicName, 100), NULL, NULL);
-    cr_assert_gt(topic, 0, "Failed to create prerequisite topic");
-
-    topic2 = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_status2_test", topicName, 100), NULL, NULL);
     cr_assert_gt(topic, 0, "Failed to create prerequisite topic");
 
     qos = dds_qos_create();
@@ -339,16 +336,15 @@ Test(vddsc_entity, sample_rejected, .init=init_entity_status, .fini=fini_entity_
  * to go to test for inconsistent topic. */
 Test(vddsc_entity, inconsistent_topic)
 {
-    dds_entity_t topic2;
     dds_inconsistent_topic_status_t topic_status = {0};
 
-    topic2 = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip1", NULL, NULL);
-    cr_assert_gt(topic2, 0, "fails %d", dds_err_nr(topic2));
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTrip1", NULL, NULL);
+    cr_assert_gt(topic, 0, "fails %d", dds_err_nr(topic));
 
     /*Set reader topic and writer topic statuses enabled*/
     ret = dds_set_enabled_status(topic, DDS_INCONSISTENT_TOPIC_STATUS);
     cr_assert_status_eq(ret, DDS_RETCODE_OK);
-    ret = dds_set_enabled_status(topic2, DDS_INCONSISTENT_TOPIC_STATUS);
+    ret = dds_set_enabled_status(topic, DDS_INCONSISTENT_TOPIC_STATUS);
     cr_assert_status_eq(ret, DDS_RETCODE_OK);
 
     /* Wait for pub inconsistent topic status callback */
@@ -365,7 +361,7 @@ Test(vddsc_entity, inconsistent_topic)
     /* Wait for sub inconsistent topic status callback */
     ret = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, waitTimeout);
     cr_assert_eq(status, wsresultsize);
-    ret = dds_get_inconsistent_topic_status (topic2, &topic_status);
+    ret = dds_get_inconsistent_topic_status (topic, &topic_status);
     cr_assert_status_eq(ret, DDS_RETCODE_OK);
     cr_assert_gt(topic_status.total_count, 0);
 
@@ -373,7 +369,7 @@ Test(vddsc_entity, inconsistent_topic)
     status = dds_waitset_wait(waitSetrd, wsresults, wsresultsize, shortTimeout);
     cr_assert_eq(dds_err_nr(status), 0, "returned %d", dds_err_nr(status));
 
-    dds_delete(topic2);
+    dds_delete(topic);
 }
 #endif
 
@@ -905,9 +901,9 @@ Theory((dds_entity_t *topic), vddsc_get_inconsistent_topic_status, non_topics, .
 Test(vddsc_get_inconsistent_topic_status, deleted_topic, .init=init_entity_status, .fini=fini_entity_status)
 {
     dds_return_t ret;
-    dds_delete(topic2);
-    ret = dds_get_inconsistent_topic_status(topic2, NULL);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
+    dds_delete(topic);
+    ret = dds_get_inconsistent_topic_status(topic, NULL);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %s", dds_err_str(ret));
 }
 /*************************************************************************************************/
 

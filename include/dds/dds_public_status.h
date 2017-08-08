@@ -170,12 +170,12 @@ dds_inconsistent_topic_status_t;
  *
  * This operation gets the status value corresponding to INCONSISTENT_TOPIC
  * and reset the status. The value can be obtained, only if the status is enabled for an entity.
- * NULL value for status is allowed and it will reset the trigger value.
+ * NULL value for status is allowed and it will reset the trigger value when status is enabled.
  *
  * @param[in]  topic  The entity to get the status
  * @param[out] status The pointer to \ref DCPS_Status_InconsistentTopic to get the status
  *
- * @returns >0 - Success
+ * @returns  0 - Success
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_ERROR
@@ -198,12 +198,12 @@ dds_get_inconsistent_topic_status (
  *
  * This operation gets the status value corresponding to PUBLICATION_MATCHED
  * and reset the status. The value can be obtained, only if the status is enabled for an entity.
- * NULL value for status is allowed and it will reset the trigger value.
+ * NULL value for status is allowed and it will reset the trigger value when status is enabled.
  *
  * @param[in]  writer  The entity to get the status
  * @param[out] status  The pointer to \ref DCPS_Status_PublicationMatched to get the status
  *
- * @returns >0 - Success
+ * @returns  0 - Success
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_ERROR
@@ -226,12 +226,12 @@ dds_get_publication_matched_status (
  *
  * This operation gets the status value corresponding to LIVELINESS_LOST
  * and reset the status. The value can be obtained, only if the status is enabled for an entity.
- * NULL value for status is allowed and it will reset the trigger value.
+ * NULL value for status is allowed and it will reset the trigger value when status is enabled.
  *
  * @param[in]  writer  The entity to get the status
  * @param[out] status  The pointer to \ref DCPS_Status_LivelinessLost to get the status
  *
- * @returns >0 - Success
+ * @returns  0 - Success
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_ERROR
@@ -253,12 +253,12 @@ DDS_EXPORT dds_return_t dds_get_liveliness_lost_status (
  *
  * This operation gets the status value corresponding to OFFERED_DEADLINE_MISSED
  * and reset the status. The value can be obtained, only if the status is enabled for an entity.
- * NULL value for status is allowed and it will reset the trigger value.
+ * NULL value for status is allowed and it will reset the trigger value when status is enabled.
  *
  * @param[in]  writer  The entity to get the status
  * @param[out] status  The pointer to \ref DCPS_Status_OfferedDeadlineMissed to get the status
  *
- * @returns >0 - Success
+ * @returns  0 - Success
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_ERROR
@@ -281,12 +281,12 @@ dds_get_offered_deadline_missed_status(
  *
  * This operation gets the status value corresponding to OFFERED_INCOMPATIBLE_QOS
  * and reset the status. The value can be obtained, only if the status is enabled for an entity.
- * NULL value for status is allowed and it will reset the trigger value.
+ * NULL value for status is allowed and it will reset the trigger value when status is enabled.
  *
  * @param[in]  writer  The writer entity to get the status
  * @param[out] status  The pointer to \ref DCPS_Status_OfferedIncompatibleQoS to get the status
  *
- * @returns >0 - Success
+ * @returns  0 - Success
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_ERROR
@@ -309,12 +309,12 @@ dds_get_offered_incompatible_qos_status (
  *
  * This operation gets the status value corresponding to SUBSCRIPTION_MATCHED
  * and reset the status. The value can be obtained, only if the status is enabled for an entity.
- * NULL value for status is allowed and it will reset the trigger value.
+ * NULL value for status is allowed and it will reset the trigger value when status is enabled.
  *
  * @param[in]  reader  The reader entity to get the status
  * @param[out] status  The pointer to \ref DCPS_Status_SubscriptionMatched to get the status
  *
- * @returns >0 - Success
+ * @returns  0 - Success
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_ERROR
@@ -337,12 +337,12 @@ dds_get_subscription_matched_status (
  *
  * This operation gets the status value corresponding to LIVELINESS_CHANGED
  * and reset the status. The value can be obtained, only if the status is enabled for an entity.
- * NULL value for status is allowed and it will reset the trigger value.
+ * NULL value for status is allowed and it will reset the trigger value when status is enabled.
  *
  * @param[in]  reader  The entity to get the status
  * @param[out] status  The pointer to \ref DCPS_Status_LivelinessChanged to get the status
  *
- * @returns >0 - Success
+ * @returns  0 - Success
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_ERROR
@@ -365,12 +365,12 @@ dds_get_liveliness_changed_status (
  *
  * This operation gets the status value corresponding to SAMPLE_REJECTED
  * and reset the status. The value can be obtained, only if the status is enabled for an entity.
- * NULL value for status is allowed and it will reset the trigger value.
+ * NULL value for status is allowed and it will reset the trigger value when status is enabled.
  *
  * @param[in]  reader  The entity to get the status
  * @param[out] status  The pointer to \ref DCPS_Status_SampleRejected to get the status
  *
- * @returns >0 - Success
+ * @returns  0 - Success
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_ERROR
@@ -393,12 +393,12 @@ dds_get_sample_rejected_status (
  *
  * This operation gets the status value corresponding to SAMPLE_LOST
  * and reset the status. The value can be obtained, only if the status is enabled for an entity.
- * NULL value for status is allowed and it will reset the trigger value.
+ * NULL value for status is allowed and it will reset the trigger value when status is enabled.
  *
  * @param[in]  reader  The entity to get the status
  * @param[out] status  The pointer to \ref DCPS_Status_SampleLost to get the status
  *
- * @returns >0 - Success
+ * @returns  0 - Success
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_ERROR
@@ -421,12 +421,12 @@ dds_get_sample_lost_status (
  *
  * This operation gets the status value corresponding to REQUESTED_DEADLINE_MISSED
  * and reset the status. The value can be obtained, only if the status is enabled for an entity.
- * NULL value for status is allowed and it will reset the trigger value.
+ * NULL value for status is allowed and it will reset the trigger value when status is enabled.
  *
  * @param[in]  reader  The entity to get the status
  * @param[out] status  The pointer to \ref DCPS_Status_RequestedDeadlineMissed to get the status
  *
- * @returns >0 - Success
+ * @returns  0 - Success
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_ERROR
@@ -449,12 +449,12 @@ dds_get_requested_deadline_missed_status (
  *
  * This operation gets the status value corresponding to REQUESTED_INCOMPATIBLE_QOS
  * and reset the status. The value can be obtained, only if the status is enabled for an entity.
- * NULL value for status is allowed and it will reset the trigger value.
+ * NULL value for status is allowed and it will reset the trigger value when status is enabled.
  *
  * @param[in]  reader  The entity to get the status
  * @param[out] status  The pointer to \ref DCPS_Status_RequestedIncompatibleQoS to get the status
  *
- * @returns >0 - Success
+ * @returns  0 - Success
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_ERROR
