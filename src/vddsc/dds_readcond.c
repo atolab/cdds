@@ -63,21 +63,15 @@ dds_entity_t
 dds_get_datareader(
         _In_ dds_entity_t condition)
 {
-    if (condition >= 0) {
-        if (dds_entity_kind(condition) == DDS_KIND_COND_READ) {
-            return dds_get_parent(condition);
-        } else if (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) {
-            return dds_get_parent(condition);
-        } else {
-            dds_retcode_t rc = dds_valid_hdl(condition, DDS_KIND_DONTCARE);
-            if (rc == DDS_RETCODE_OK) {
-                return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
-            } else {
-                return (dds_entity_t)DDS_ERRNO(rc);
-            }
-        }
+    dds_entity_t hdl;
+    if (dds_entity_kind(condition) == DDS_KIND_COND_READ) {
+        hdl = dds_get_parent(condition);
+    } else if (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) {
+        hdl = dds_get_parent(condition);
+    } else {
+        hdl = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ));
     }
-    return condition;
+    return hdl;
 }
 
 
@@ -88,29 +82,20 @@ dds_get_mask(
         _In_ dds_entity_t condition,
         _Out_ uint32_t   *mask)
 {
-    dds_return_t ret = condition;
+    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
     dds_readcond *cond;
     dds_retcode_t rc;
-    if (condition >= 0) {
-        if (mask != NULL) {
-            if ((dds_entity_kind(condition) == DDS_KIND_COND_READ ) ||
-                (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) ){
-                rc = dds_entity_lock(condition, DDS_KIND_DONTCARE, (dds_entity**)&cond);
-                if (rc == DDS_RETCODE_OK) {
-                    *mask = (cond->m_sample_states | cond->m_view_states | cond->m_instance_states);
-                    dds_entity_unlock((dds_entity*)cond);
-                }
-                ret = DDS_ERRNO(rc);
-            } else {
-                rc = dds_valid_hdl(condition, DDS_KIND_DONTCARE);
-                if (rc == DDS_RETCODE_OK) {
-                    ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
-                } else {
-                    ret = DDS_ERRNO(rc);
-                }
+    if (mask != NULL) {
+        if ((dds_entity_kind(condition) == DDS_KIND_COND_READ ) ||
+            (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) ){
+            rc = dds_entity_lock(condition, DDS_KIND_DONTCARE, (dds_entity**)&cond);
+            if (rc == DDS_RETCODE_OK) {
+                *mask = (cond->m_sample_states | cond->m_view_states | cond->m_instance_states);
+                dds_entity_unlock((dds_entity*)cond);
             }
+            ret = DDS_ERRNO(rc);
         } else {
-            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+            ret = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ));
         }
     }
     return ret;

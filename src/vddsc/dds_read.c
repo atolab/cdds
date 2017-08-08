@@ -21,33 +21,28 @@ dds_read_lock(
     assert(condition);
     *reader = NULL;
     *condition = NULL;
-    if (hdl >= 0) {
-        switch (dds_entity_kind(hdl) ) {
-            case DDS_KIND_READER: {
-                rc = dds_entity_lock(hdl, DDS_KIND_READER, (dds_entity**)reader);
-                break;
-            }
-            case DDS_KIND_COND_READ:
-                /* FALLTHROUGH */
-            case DDS_KIND_COND_QUERY: {
-                rc = dds_entity_lock(hdl, DDS_KIND_DONTCARE, (dds_entity**)condition);
-                if (rc == DDS_RETCODE_OK) {
-                    dds_entity *parent = ((dds_entity*)*condition)->m_parent;
-                    assert(parent);
-                    rc = dds_entity_lock(parent->m_hdl, DDS_KIND_READER, (dds_entity**)reader);
-                    if (rc != DDS_RETCODE_OK) {
-                        dds_entity_unlock((dds_entity*)*condition);
-                    }
+    switch (dds_entity_kind(hdl) ) {
+        case DDS_KIND_READER: {
+            rc = dds_entity_lock(hdl, DDS_KIND_READER, (dds_entity**)reader);
+            break;
+        }
+        case DDS_KIND_COND_READ:
+            /* FALLTHROUGH */
+        case DDS_KIND_COND_QUERY: {
+            rc = dds_entity_lock(hdl, DDS_KIND_DONTCARE, (dds_entity**)condition);
+            if (rc == DDS_RETCODE_OK) {
+                dds_entity *parent = ((dds_entity*)*condition)->m_parent;
+                assert(parent);
+                rc = dds_entity_lock(parent->m_hdl, DDS_KIND_READER, (dds_entity**)reader);
+                if (rc != DDS_RETCODE_OK) {
+                    dds_entity_unlock((dds_entity*)*condition);
                 }
-                break;
             }
-            default: {
-                rc = dds_valid_hdl(hdl, DDS_KIND_DONTCARE);
-                if (rc == DDS_RETCODE_OK) {
-                    rc = DDS_RETCODE_ILLEGAL_OPERATION;
-                }
-                break;
-            }
+            break;
+        }
+        default: {
+            rc = dds_valid_hdl(hdl, DDS_KIND_READER);
+            break;
         }
     }
     return rc;
@@ -184,20 +179,12 @@ dds_read_iterator_impl(
         void **buf,
         dds_sample_info_t *si)
 {
-    dds_return_t ret = reader;
-    if (reader >= 0) {
-      if (dds_entity_kind(reader) == DDS_KIND_READER) {
+    dds_return_t ret;
+    if (dds_entity_kind(reader) == DDS_KIND_READER) {
         uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
         ret = dds_read_impl (take, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true);
-      } else {
-         dds_retcode_t rc;
-         rc = dds_valid_hdl(reader, DDS_KIND_DONTCARE);
-         if(rc == DDS_RETCODE_OK){
-           ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
-         } else{
-            ret = DDS_ERRNO(rc);
-         }
-      }
+    } else {
+        ret = DDS_ERRNO(dds_valid_hdl(reader, DDS_KIND_READER));
     }
     return ret;
 }

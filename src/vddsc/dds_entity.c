@@ -349,19 +349,17 @@ dds_get_parent(
 {
     dds_entity *e;
     dds_retcode_t rc;
-    dds_entity_t hdl = entity;
-    if (entity >= 0) {
-        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-        if (rc == DDS_RETCODE_OK) {
-            if (e->m_parent) {
-                hdl = e->m_parent->m_hdl;
-            } else {
-                hdl = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
-            }
-            dds_entity_unlock(e);
+    dds_entity_t hdl;
+    rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+    if (rc == DDS_RETCODE_OK) {
+        if (e->m_parent) {
+            hdl = e->m_parent->m_hdl;
         } else {
-            hdl = DDS_ERRNO(rc);
+            hdl = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
         }
+        dds_entity_unlock(e);
+    } else {
+        hdl = DDS_ERRNO(rc);
     }
     return hdl;
 }
@@ -375,16 +373,14 @@ dds_get_participant (
 {
     dds_entity *e;
     dds_retcode_t rc;
-    dds_entity_t hdl = entity;
-    if (entity >= 0) {
-        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-        if (rc == DDS_RETCODE_OK) {
-            assert(e->m_participant);
-            hdl = e->m_participant->m_hdl;
-            dds_entity_unlock(e);
-        } else {
-            hdl = DDS_ERRNO(rc);
-        }
+    dds_entity_t hdl;
+    rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+    if (rc == DDS_RETCODE_OK) {
+        assert(e->m_participant);
+        hdl = e->m_participant->m_hdl;
+        dds_entity_unlock(e);
+    } else {
+        hdl = DDS_ERRNO(rc);
     }
     return hdl;
 }
@@ -438,7 +434,7 @@ dds_get_qos(
 {
     dds_entity *e;
     dds_retcode_t rc = DDS_RETCODE_BAD_PARAMETER;
-    if ((entity > 0) && (qos != NULL)) {
+    if (qos != NULL) {
         rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (rc == DDS_RETCODE_OK) {
             if (e->m_deriver.set_qos) {
@@ -769,6 +765,8 @@ dds_valid_hdl(
 {
     dds_retcode_t rc = hdl;
     ut_handle_t utr;
+    /* When the given handle already contains an error, then return that
+     * same error to retain the original information. */
     if (hdl >= 0) {
         utr = ut_handle_status(hdl, NULL, kind);
         rc =  ((utr == UT_HANDLE_OK)           ? DDS_RETCODE_OK                :
@@ -790,6 +788,8 @@ dds_entity_lock(
     dds_retcode_t rc = hdl;
     ut_handle_t utr;
     assert(e);
+    /* When the given handle already contains an error, then return that
+     * same error to retain the original information. */
     if (hdl >= 0) {
         utr = ut_handle_claim(hdl, NULL, kind, (void**)e);
         if (utr == UT_HANDLE_OK) {

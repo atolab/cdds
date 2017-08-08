@@ -432,19 +432,12 @@ dds_entity_t
 dds_get_publisher(
         _In_ dds_entity_t writer)
 {
-    if (writer >= 0) {
-        if (dds_entity_kind(writer) == DDS_KIND_WRITER) {
-            return dds_get_parent(writer);
-        } else {
-            dds_retcode_t rc = dds_valid_hdl(writer, DDS_KIND_DONTCARE);
-            if (rc == DDS_RETCODE_OK) {
-                return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
-            } else {
-                return (dds_entity_t)DDS_ERRNO(rc);
-            }
-        }
+    dds_entity_t hdl;
+    hdl = DDS_ERRNO(dds_valid_hdl(writer, DDS_KIND_WRITER));
+    if (hdl == DDS_RETCODE_OK) {
+        hdl = dds_get_parent(writer);
     }
-    return writer;
+    return hdl;
 }
 
 dds_return_t
