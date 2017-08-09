@@ -131,7 +131,10 @@ os_realloc_s(
     _Pre_maybenull_ _Post_ptr_invalid_ void *memblk,
     _In_ size_t size)
 {
-    return realloc(memblk, size);
+    /* Even though newmem = realloc(mem, 0) is equivalent to calling free(mem), not all platforms
+     * will return newmem == NULL. We consistently do, so the result of a non-failing os_realloc_s
+     * always needs to be free'd, like os_malloc_s(0). */
+    return realloc(memblk, size ? size : 1);
 }
 
 /** \brief Free memory to heap

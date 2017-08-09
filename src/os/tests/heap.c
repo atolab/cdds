@@ -161,21 +161,17 @@ CUnit_Test(os_heap, os_realloc_s)
             s = allocsizes_s[i] * allocsizes_s[j]; /* Allocates up to 8MB */
             newptr = os_realloc_s(ptr, s);
             printf("%p = os_realloc_s(%p) %zu -> %zu\n", newptr, ptr, prevs, s);
-            if(s) {
-                if (s <= 16) {
-                    /* Failure to allocate can't be considered a test fault really,
-                     * except that a os_realloc_s(0 < s <=16) would fail is unlikely. */
-                    CU_ASSERT_PTR_NOT_EQUAL(newptr, NULL);
+            if (s <= 16) {
+                /* Failure to allocate can't be considered a test fault really,
+                 * except that a os_realloc_s(0 < s <=16) would fail is unlikely. */
+                CU_ASSERT_PTR_NOT_EQUAL(newptr, NULL);
+            }
+            if(newptr){
+                unchanged = (prevs < s) ? prevs : s;
+                if(unchanged) {
+                    CU_ASSERT (newptr[0] == 1 && !memcmp(newptr, newptr + 1, unchanged - 1)); /* os_realloc_s shouldn't change memory */
                 }
-                if(newptr){
-                    unchanged = (prevs < s) ? prevs : s;
-                    if(unchanged) {
-                        CU_ASSERT (newptr[0] == 1 && !memcmp(newptr, newptr + 1, unchanged - 1)); /* os_realloc_s shouldn't change memory */
-                    }
-                    memset(newptr, 1, s); /* This potentially segfaults if the actual allocated block is too small */
-                }
-            } else {
-                CU_ASSERT_PTR_EQUAL (newptr, NULL); /* os_realloc_s(ptr, 0) is supposed to equal free(ptr, 0) */
+                memset(newptr, 1, s); /* This potentially segfaults if the actual allocated block is too small */
             }
             prevs = s;
             ptr = newptr;
