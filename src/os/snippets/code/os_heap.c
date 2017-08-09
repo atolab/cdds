@@ -16,25 +16,8 @@
  * memory from and to heap respectively.
  */
 
-#include <sys/types.h>
-#include <stdlib.h>
 #include <assert.h>
-#ifdef VXWORKS_RTP
-#include <string.h>
-#endif
 #include "os/os.h"
-
-#if defined LINUX && defined OSPL_STRICT_MEM
-#include <stdint.h>
-#endif
-
-#if defined _WRS_KERNEL && defined OSPL_STRICT_MEM
-#include <stdio.h>
-#endif
-
-#ifdef OSPL_STRICT_MEM
-static pa_uint32_t alloccnt = { 0ULL };
-#endif
 
 /** \brief Allocate memory from heap
  *
@@ -45,7 +28,7 @@ void *
 os_malloc_s(
     _In_ size_t size)
 {
-    return malloc(size);
+    return malloc(size ? size : 1); /* Allocate memory even if size == 0 */
 }
 
 _Check_return_
@@ -59,13 +42,6 @@ os_malloc(
     assert(size > 0);
 
     ptr = os_malloc_s(size);
-
-    if(size == 0 && !ptr) {
-        /* os_malloc() should never return NULL. Although it is not allowed to
-         * pass size 0, this fallback assures code continues to run if the
-         * os_malloc(0) isn't caught in a DEV-build. */
-        ptr = os_malloc_s(1);
-    }
 
     if(ptr == NULL) {
         /* Heap exhausted */
@@ -95,7 +71,7 @@ _Check_return_
 _Ret_bytecount_(count * size)
 void *
 os_calloc(
-    _In_range_(<, 0) size_t count,
+    _In_range_(>, 0) size_t count,
     _In_range_(>, 0) size_t size)
 {
     char *ptr;
@@ -104,13 +80,6 @@ os_calloc(
     assert(count > 0);
 
     ptr = os_calloc_s(count, size);
-
-    if((size == 0 || count == 0) && !ptr) {
-        /* os_calloc() should never return NULL. Although it is not allowed to
-         * pass size or count 0, this fallback assures code continues to run if the
-         * os_calloc(0, 0) usage isn't caught in a DEV-build. */
-        ptr = os_calloc_s(1, 1);
-    }
 
     if(ptr == NULL) {
         /* Heap exhausted */
@@ -124,9 +93,12 @@ _Check_return_
 _Ret_opt_bytecount_(count * size)
 void *
 os_calloc_s(
-    size_t count,
-    size_t size)
+    _In_ size_t count,
+    _In_ size_t size)
 {
+    if(count == 0 || size == 0) {
+        count = size = 1;
+    }
     return calloc(count, size);
 }
 
@@ -141,14 +113,7 @@ os_realloc(
 
     assert(size > 0);
 
-    ptr = os_realloc_s(memblk, size);
-
-    if(size == 0 && !ptr) {
-        /* os_realloc() should never return NULL. Although it is not allowed to
-         * pass size 0, this fallback assures code continues to run if the
-         * os_realloc(ptr, 0) usage isn't caught in a DEV-build. */
-        ptr = os_malloc_s(1);
-    }
+    ptr = os_realloc_s(memblk, size ? size : 1); /* Allocate even if size == NULL */
 
     if(ptr == NULL){
         /* Heap exhausted */

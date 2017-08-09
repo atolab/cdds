@@ -72,7 +72,7 @@ CUnit_Test(os_heap, os_realloc)
     for(int i = 0; i < nof_allocsizes; i++) {
         for(int j = 0; j < nof_allocsizes; j++) {
             s = allocsizes[i] * allocsizes[j]; /* Allocates up to 1MB */
-            printf("os_realloc(%p) %u -> %u\n", ptr, prevs, s);
+            printf("os_realloc(%p) %zu -> %zu\n", ptr, prevs, s);
             ptr = os_realloc(ptr, s);
             CU_ASSERT (ptr != NULL); /* os_realloc is supposed to abort on failure */
             unchanged = (prevs < s) ? prevs : s;
@@ -95,7 +95,7 @@ CUnit_Test(os_heap, os_malloc_s)
     for(int i = 0; i < nof_allocsizes_s; i++) {
         for(int j = 0; j < nof_allocsizes_s; j++) {
             size_t s = allocsizes_s[i] * allocsizes_s[j]; /* Allocates up to 8MB */
-            void *ptr = os_malloc_s(s); /* If s == 0, os_malloc_s may still return a pointer */
+            void *ptr = os_malloc_s(s); /* If s == 0, os_malloc_s should still return a pointer */
             if(ptr) {
                 memset(ptr, 0, s); /* This potentially segfaults if the actual allocated block is too small */
             } else if (s <= 16) {
@@ -114,7 +114,7 @@ CUnit_Test(os_heap, os_malloc_0_s)
     for(int i = 0; i < nof_allocsizes_s; i++) {
         for(int j = 0; j < nof_allocsizes_s; j++) {
             size_t s = allocsizes_s[i] * allocsizes_s[j]; /* Allocates up to 8MB */
-            char *ptr = os_malloc_0_s(s); /* If s == 0, os_malloc_s may still return a pointer */
+            char *ptr = os_malloc_0_s(s); /* If s == 0, os_malloc_0_s should still return a pointer */
             if(ptr) {
                 if(s) {
                     CU_ASSERT (ptr[0] == 0 && !memcmp(ptr, ptr + 1, s - 1)); /* malloc_0_s should memset properly */
@@ -135,7 +135,7 @@ CUnit_Test(os_heap, os_calloc_s)
     for(int i = 0; i < nof_allocsizes_s; i++) {
         for(int j = 0; j < nof_allocsizes_s; j++) {
             size_t s = allocsizes_s[i] * allocsizes_s[j];
-            char *ptr = os_calloc_s(allocsizes_s[i], allocsizes_s[j]); /* If either one is 0, os_calloc_s may still return a pointer */
+            char *ptr = os_calloc_s(allocsizes_s[i], allocsizes_s[j]); /* If either one is 0, os_calloc_s should still return a pointer */
             if(ptr) {
                 if(s) {
                     CU_ASSERT (ptr[0] == 0 && !memcmp(ptr, ptr + 1, s - 1)); /* malloc_0_s should memset properly */
@@ -151,4 +151,36 @@ CUnit_Test(os_heap, os_calloc_s)
     CU_PASS("os_calloc_s");
 }
 
-/* TODO: os_realloc_s */
+CUnit_Test(os_heap, os_realloc_s)
+{
+    char *newptr, *ptr = NULL;
+    size_t unchanged, s, prevs = 0;
+
+    for(int i = 0; i < nof_allocsizes_s; i++) {
+        for(int j = 0; j < nof_allocsizes_s; j++) {
+            s = allocsizes_s[i] * allocsizes_s[j]; /* Allocates up to 8MB */
+            newptr = os_realloc_s(ptr, s);
+            printf("%p = os_realloc_s(%p) %zu -> %zu\n", newptr, ptr, prevs, s);
+            if(s) {
+                if (s <= 16) {
+                    /* Failure to allocate can't be considered a test fault really,
+                     * except that a os_realloc_s(0 < s <=16) would fail is unlikely. */
+                    CU_ASSERT_PTR_NOT_EQUAL(newptr, NULL);
+                }
+                if(newptr){
+                    unchanged = (prevs < s) ? prevs : s;
+                    if(unchanged) {
+                        CU_ASSERT (newptr[0] == 1 && !memcmp(newptr, newptr + 1, unchanged - 1)); /* os_realloc_s shouldn't change memory */
+                    }
+                    memset(newptr, 1, s); /* This potentially segfaults if the actual allocated block is too small */
+                }
+            } else {
+                CU_ASSERT_PTR_EQUAL (newptr, NULL); /* os_realloc_s(ptr, 0) is supposed to equal free(ptr, 0) */
+            }
+            prevs = s;
+            ptr = newptr;
+        }
+    }
+    os_free(ptr);
+    CU_PASS("os_realloc_s");
+}

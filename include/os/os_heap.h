@@ -88,7 +88,7 @@ extern "C" {
     _Check_return_
     _Ret_bytecount_(count * size)
     OSAPI_EXPORT void *
-    os_calloc(_In_range_(<, 0) size_t count,
+    os_calloc(_In_range_(>, 0) size_t count,
               _In_range_(>, 0) size_t size)
     __attribute_malloc__;
 
@@ -102,8 +102,8 @@ extern "C" {
     _Check_return_
     _Ret_bytecount_(count * size)
     OSAPI_EXPORT void *
-    os_calloc_s(_In_range_(<, 0) size_t count,
-              _In_range_(>, 0) size_t size)
+    os_calloc_s(_In_ size_t count,
+                _In_ size_t size)
         __attribute_malloc__;
 
     /** \brief Reallocate memory from heap
