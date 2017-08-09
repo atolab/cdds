@@ -35,13 +35,9 @@ _Check_return_
 _Ret_bytecap_(size)
 void *
 os_malloc(
-    _In_range_(>, 0) size_t size)
+    _In_ size_t size)
 {
-    void *ptr;
-
-    assert(size > 0);
-
-    ptr = os_malloc_s(size);
+    void *ptr = os_malloc_s(size);
 
     if(ptr == NULL) {
         /* Heap exhausted */
@@ -54,7 +50,7 @@ os_malloc(
 _Check_return_
 _Ret_bytecount_(size)
 void *
-os_malloc_0(_In_range_(>, 0) size_t size)
+os_malloc_0(_In_ size_t size)
 {
    return os_calloc(size, 1);
 }
@@ -71,13 +67,10 @@ _Check_return_
 _Ret_bytecount_(count * size)
 void *
 os_calloc(
-    _In_range_(>, 0) size_t count,
-    _In_range_(>, 0) size_t size)
+    _In_ size_t count,
+    _In_ size_t size)
 {
     char *ptr;
-
-    assert(size > 0);
-    assert(count > 0);
 
     ptr = os_calloc_s(count, size);
 
@@ -107,13 +100,11 @@ _Ret_bytecap_(size)
 void *
 os_realloc(
     _Pre_maybenull_ _Post_ptr_invalid_ void *memblk,
-    _In_range_(>, 0) size_t size)
+    _In_ size_t size)
 {
     void *ptr;
 
-    assert(size > 0);
-
-    ptr = os_realloc_s(memblk, size ? size : 1); /* Allocate even if size == NULL */
+    ptr = os_realloc_s(memblk, size);
 
     if(ptr == NULL){
         /* Heap exhausted */

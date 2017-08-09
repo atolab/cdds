@@ -20,7 +20,7 @@ CUnit_Suite_Cleanup(os_heap)
     return result;
 }
 
-static const size_t allocsizes[] = {1, 2, 3, 4, 5, 10, 20, 257, 1024};
+static const size_t allocsizes[] = {0, 1, 2, 3, 4, 5, 10, 20, 257, 1024};
 static const size_t nof_allocsizes = sizeof allocsizes / sizeof *allocsizes;
 
 CUnit_Test(os_heap, os_malloc)
@@ -29,7 +29,7 @@ CUnit_Test(os_heap, os_malloc)
         for(int j = 0; j < nof_allocsizes; j++) {
             size_t s = allocsizes[i] * allocsizes[j]; /* Allocates up to 1MB */
             void *ptr = os_malloc(s);
-            CU_ASSERT (ptr != NULL); /* os_malloc is supposed to abort on failure */
+            CU_ASSERT_PTR_NOT_EQUAL(ptr, NULL); /* os_malloc is supposed to abort on failure */
             memset(ptr, 0, s); /* This potentially segfaults if the actual allocated block is too small */
             os_free(ptr);
         }
@@ -43,8 +43,10 @@ CUnit_Test(os_heap, os_malloc_0)
         for(int j = 0; j < nof_allocsizes; j++) {
             size_t s = allocsizes[i] * allocsizes[j]; /* Allocates up to 1MB */
             char *ptr = os_malloc_0(s);
-            CU_ASSERT (ptr != NULL); /* os_malloc is supposed to abort on failure */
-            CU_ASSERT (ptr[0] == 0 && !memcmp(ptr, ptr + 1, s - 1)); /* malloc_0 should memset properly */
+            CU_ASSERT_PTR_NOT_EQUAL(ptr, NULL); /* os_malloc_0 is supposed to abort on failure */
+            if(s) {
+                CU_ASSERT (ptr[0] == 0 && !memcmp(ptr, ptr + 1, s - 1)); /* malloc_0 should memset properly */
+            }
             os_free(ptr);
         }
     }
@@ -56,8 +58,10 @@ CUnit_Test(os_heap, os_calloc)
     for(int i = 0; i < nof_allocsizes; i++) {
         for(int j = 0; j < nof_allocsizes; j++) {
             char *ptr = os_calloc(allocsizes[i], allocsizes[j]);
-            CU_ASSERT (ptr != NULL); /* os_calloc is supposed to abort on failure */
-            CU_ASSERT (ptr[0] == 0 && !memcmp(ptr, ptr + 1, (allocsizes[i] * allocsizes[j]) - 1)); /* os_calloc should memset properly */
+            CU_ASSERT_PTR_NOT_EQUAL(ptr, NULL); /* os_calloc is supposed to abort on failure */
+            if(allocsizes[i] * allocsizes[j]) {
+                CU_ASSERT (ptr[0] == 0 && !memcmp(ptr, ptr + 1, (allocsizes[i] * allocsizes[j]) - 1)); /* os_calloc should memset properly */
+            }
             os_free(ptr);
         }
     }
@@ -74,7 +78,7 @@ CUnit_Test(os_heap, os_realloc)
             s = allocsizes[i] * allocsizes[j]; /* Allocates up to 1MB */
             printf("os_realloc(%p) %zu -> %zu\n", ptr, prevs, s);
             ptr = os_realloc(ptr, s);
-            CU_ASSERT (ptr != NULL); /* os_realloc is supposed to abort on failure */
+            CU_ASSERT_PTR_NOT_EQUAL(ptr, NULL); /* os_realloc is supposed to abort on failure */
             unchanged = (prevs < s) ? prevs : s;
             if(unchanged) {
                 CU_ASSERT (ptr[0] == 1 && !memcmp(ptr, ptr + 1, unchanged - 1)); /* os_realloc shouldn't change memory */
