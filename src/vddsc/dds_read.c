@@ -74,7 +74,7 @@ dds_read_impl(
 {
   uint32_t i;
   dds_return_t ret = DDS_RETCODE_OK;
-  dds_retcode_t rc;
+  dds_retcode_t rc = DDS_RETCODE_OK;
   struct dds_reader * rd;
   struct dds_readcond * cond;
   struct thread_state1 * const thr = lookup_thread_state ();
@@ -425,7 +425,8 @@ dds_read_next(
         _Inout_ void **buf,
         _Out_ dds_sample_info_t *si)
 {
-    return dds_read_impl (false, reader, buf, 1u, 1u, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, true, true);
+    uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+    return dds_read_impl (false, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true, true);
 }
 
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
@@ -435,7 +436,8 @@ dds_read_next_wl(
         _Inout_ void **buf,
         _Out_ dds_sample_info_t *si)
 {
-    return dds_read_impl (false, reader, buf, 1u, 1u, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, true, true);
+    uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+    return dds_read_impl (false, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true, true);
 }
 
 _Pre_satisfies_(((rd_or_cnd & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
@@ -654,7 +656,8 @@ dds_take_next(
         _Inout_ void **buf,
         _Out_ dds_sample_info_t *si)
 {
-    return dds_read_impl (true, reader, buf, 1u, 1u, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, true, true);
+    uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+    return dds_read_impl (true, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true, true);
 }
 
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
@@ -664,7 +667,8 @@ dds_take_next_wl(
         _Inout_ void **buf,
         _Out_ dds_sample_info_t *si)
 {
-    return dds_read_impl (true, reader, buf, 1u, 1u, si, NO_STATE_MASK_SET, DDS_HANDLE_NIL, true, true);
+    uint32_t mask = DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
+    return dds_read_impl (true, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true, true);
 }
 
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
