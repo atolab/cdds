@@ -39,12 +39,72 @@ extern "C" {
      * - abort() if memory exhaustion is detected
      * - returns pointer to allocated memory
      */
+    _Check_return_ _Ret_bytecap_(size)
+    OSAPI_EXPORT void * os_malloc(_In_range_(>, 0) size_t size);
+
+    _Check_return_ _Ret_opt_bytecap_(size)
+    OSAPI_EXPORT void * os_malloc_s(_In_ size_t size);
+
+    /** \brief Allocate zeroed memory from heap
+     *
+     * Allocate memory from heap with the identified size and initialized to zero.
+     *
+     * Possible Results:
+     * - assertion failure: size == 0
+     * - abort() if memory exhaustion is detected
+     * - returns pointer to allocated memory
+     */
     _Check_return_
-    _Ret_bytecap_(size)
+    _Ret_bytecount_(size)
     OSAPI_EXPORT void *
-    os_malloc(_In_range_(>, 0) size_t size)
-        __attribute_malloc__
-        __attribute_alloc_size__((1));
+    os_malloc_0(_In_range_(>, 0) size_t size)
+       __attribute_malloc__
+       __attribute_alloc_size__((1));
+
+    /** \brief Allocate zeroed memory from heap
+     *
+     * Allocate memory from heap with the identified size and initialized to zero.
+     *
+     * Possible Results:
+     * - returns pointer to allocated memory, or null if out of memory
+     */
+    _Check_return_
+    _Ret_opt_bytecount_(size)
+    OSAPI_EXPORT void *
+    os_malloc_0_s(_In_ size_t size)
+       __attribute_malloc__
+       __attribute_alloc_size__((1));
+
+    /** \brief Allocate memory from heap for an array with count elements of size size
+     *
+     * The allocated memory is initialized to zero.
+     *
+     * Possible Results:
+     * - assertion failure: size == 0
+     * - assertion failure: count == 0
+     * - abort() if memory exhaustion is detected
+     * - returns pointer to allocated memory
+     */
+    _Check_return_
+    _Ret_bytecount_(count * size)
+    OSAPI_EXPORT void *
+    os_calloc(_In_range_(<, 0) size_t count,
+              _In_range_(>, 0) size_t size)
+    __attribute_malloc__;
+
+    /** \brief Allocate memory from heap for an array with count elements of size size
+     *
+     * The allocated memory is initialized to zero.
+     *
+     * Possible Results:
+     * - returns pointer to allocated memory, or null if out of memory
+     */
+    _Check_return_
+    _Ret_bytecount_(count * size)
+    OSAPI_EXPORT void *
+    os_calloc_s(_In_range_(<, 0) size_t count,
+              _In_range_(>, 0) size_t size)
+        __attribute_malloc__;
 
     /** \brief Reallocate memory from heap
      *
@@ -64,6 +124,24 @@ extern "C" {
     os_realloc(
             _Pre_maybenull_ _Post_ptr_invalid_ void *memblk,
             _In_range_(>, 0) size_t size)
+        __attribute_malloc__
+        __attribute_alloc_size__((1));
+
+    /** \brief Reallocate memory from heap
+     *
+     * Reallocate memory from heap. If memblk is NULL
+     * the function returns malloc(size). If size is 0, the function returns
+     * either NULL (and frees memblk) or a pointer that ca
+     * Possible Results:
+     * - return pointer to reallocated memory, or null if out of memory .
+     */
+    _Success_(return != NULL)
+    _Check_return_
+    _Ret_opt_bytecap_(size)
+    OSAPI_EXPORT void *
+    os_realloc_s(
+            _Pre_maybenull_ _Post_ptr_invalid_ void *memblk,
+            _In_ size_t size)
         __attribute_malloc__
         __attribute_alloc_size__((1));
 

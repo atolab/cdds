@@ -40,35 +40,31 @@ static pa_uint32_t alloccnt = { 0ULL };
  *
  */
 _Check_return_
+_Ret_opt_bytecap_(size)
+void *
+os_malloc_s(
+    _In_ size_t size)
+{
+    return malloc(size);
+}
+
+_Check_return_
 _Ret_bytecap_(size)
 void *
 os_malloc(
     _In_range_(>, 0) size_t size)
 {
-    char *ptr;
+    void *ptr;
 
     assert(size > 0);
 
-#ifdef OSPL_STRICT_MEM
-    /* Allow 24 bytes so we can store the allocation size, magic number and malloc count, ( and keep alignement ) */
-    ptr = malloc((size_t)size+24);
-    if ( ptr != NULL )
-    {
-       *((size_t *)ptr) = size;
-       ptr += 24;
-       memset(ptr, 0, size);
-       *(((uint64_t*)ptr)-1) = OS_MALLOC_MAGIC_SIG;
-       *(((uint64_t*)ptr)-2) = pa_inc32_nv(&alloccnt);
-    }
-#else
-    ptr = malloc(size);
-#endif
+    ptr = os_malloc_s(size);
 
     if(size == 0 && !ptr) {
         /* os_malloc() should never return NULL. Although it is not allowed to
          * pass size 0, this fallback assures code continues to run if the
          * os_malloc(0) isn't caught in a DEV-build. */
-        ptr = malloc(1);
+        ptr = os_malloc_s(1);
     }
 
     if(ptr == NULL) {
@@ -80,62 +76,97 @@ os_malloc(
 }
 
 _Check_return_
+_Ret_bytecount_(size)
+void *
+os_malloc_0(_In_range_(>, 0) size_t size)
+{
+   return os_calloc(size, 1);
+}
+
+_Check_return_
+_Ret_opt_bytecount_(size)
+void *
+os_malloc_0_s(_In_ size_t size)
+{
+   return os_calloc_s(size, 1);
+}
+
+_Check_return_
+_Ret_bytecount_(count * size)
+void *
+os_calloc(
+    _In_range_(<, 0) size_t count,
+    _In_range_(>, 0) size_t size)
+{
+    char *ptr;
+
+    assert(size > 0);
+    assert(count > 0);
+
+    ptr = os_calloc_s(count, size);
+
+    if((size == 0 || count == 0) && !ptr) {
+        /* os_calloc() should never return NULL. Although it is not allowed to
+         * pass size or count 0, this fallback assures code continues to run if the
+         * os_calloc(0, 0) usage isn't caught in a DEV-build. */
+        ptr = os_calloc_s(1, 1);
+    }
+
+    if(ptr == NULL) {
+        /* Heap exhausted */
+        abort();
+    }
+
+    return ptr;
+}
+
+_Check_return_
+_Ret_opt_bytecount_(count * size)
+void *
+os_calloc_s(
+    size_t count,
+    size_t size)
+{
+    return calloc(count, size);
+}
+
+_Check_return_
 _Ret_bytecap_(size)
 void *
 os_realloc(
     _Pre_maybenull_ _Post_ptr_invalid_ void *memblk,
     _In_range_(>, 0) size_t size)
 {
-    unsigned char *ptr = (unsigned char *)memblk;
+    void *ptr;
 
     assert(size > 0);
 
-#ifdef OSPL_STRICT_MEM
-    size_t origsize = 0;
-    if ( ptr != NULL )
-    {
-       size_t i;
-       origsize = *((size_t *)(ptr - 24));
+    ptr = os_realloc_s(memblk, size);
 
-       assert (*(((uint64_t*)ptr)-1) != OS_FREE_MAGIC_SIG);
-       assert (*(((uint64_t*)ptr)-1) == OS_MALLOC_MAGIC_SIG);
-       *(((uint64_t*)ptr)-1) = OS_FREE_MAGIC_SIG;
-
-       for ( i = 0; i+7 < origsize; i++ )
-       {
-          assert( OS_MAGIC_SIG_CHECK( &ptr[i] ) && "Realloc of memory containing mutex or Condition variable" );
-       }
-       ptr -= 24;
+    if(size == 0 && !ptr) {
+        /* os_realloc() should never return NULL. Although it is not allowed to
+         * pass size 0, this fallback assures code continues to run if the
+         * os_realloc(ptr, 0) usage isn't caught in a DEV-build. */
+        ptr = os_malloc_s(1);
     }
-
-    if ( size > 0 )
-    {
-       size += 24;
-    }
-#endif
-
-    ptr = realloc(ptr, size);
-
-#ifdef OSPL_STRICT_MEM
-    if ( size > 0 && ptr != NULL )
-    {
-       size -= 24;
-       if ( size > origsize )
-       {
-          memset( ptr + 24 + origsize, 0, size - origsize );
-       }
-       *((size_t *)ptr) = size;
-       ptr += 24;
-       *(((uint64_t*)ptr)-1) = OS_MALLOC_MAGIC_SIG;
-       *(((uint64_t*)ptr)-2) = pa_inc32_nv(&alloccnt);
-    }
-#endif
 
     if(ptr == NULL){
+        /* Heap exhausted */
         abort();
     }
 
     return ptr;
+}
+
+_Success_(return != NULL)
+_Check_return_
+_Ret_opt_bytecap_(size)
+void *
+os_realloc_s(
+    _Pre_maybenull_ _Post_ptr_invalid_ void *memblk,
+    _In_ size_t size)
+{
+    return realloc(memblk, size);
 }
 
 /** \brief Free memory to heap
@@ -148,28 +179,7 @@ void
 os_free (
     _Pre_maybenull_ _Post_ptr_invalid_ void *ptr)
 {
-    if (ptr != NULL)
-    {
-#ifdef OSPL_STRICT_MEM
-        {
-          size_t i;
-          unsigned char *cptr = (unsigned char *)ptr;
-          size_t memsize = *((size_t *)(cptr - 24));
-          assert (*(((uint64_t*)ptr)-1) != OS_FREE_MAGIC_SIG);
-          if (*(((uint64_t*)ptr)-1) != OS_MALLOC_MAGIC_SIG)
-          {
-             fprintf (stderr, "%s (%d): os_free error\n", __FILE__, __LINE__);
-          }
-          assert (*(((uint64_t*)ptr)-1) == OS_MALLOC_MAGIC_SIG);
-          *(((uint64_t*)ptr)-1) = OS_FREE_MAGIC_SIG;
-          for ( i = 0; i+7 < memsize; i++ )
-          {
-            assert( OS_MAGIC_SIG_CHECK( &cptr[i] ) && "Free of memory containing Mutex or Condition variable");
-          }
-          ptr = cptr - 24;
-        }
-#endif
-        free (((char *)ptr));
+    if (ptr) {
+        free (ptr);
     }
-    return;
 }
