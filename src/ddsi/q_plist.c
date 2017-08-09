@@ -3421,7 +3421,7 @@ void nn_log_xqos (logcat_t cat, const nn_xqos_t *xqos)
   DO (PRISMTECH_ENTITY_FACTORY, { LOGB1 ("entity_factory=%u", xqos->entity_factory.autoenable_created_entities); });
   DO (PRISMTECH_SYNCHRONOUS_ENDPOINT, { LOGB1 ("synchronous_endpoint=%u", xqos->synchronous_endpoint.value); });
   DO (RTI_TYPECODE, {
-    LOGB1 ("rti_typecode=%d<", xqos->rti_typecode.length);
+    LOGB1 ("rti_typecode=%u<", xqos->rti_typecode.length);
     log_octetseq (cat, xqos->rti_typecode.length, xqos->rti_typecode.value);
     nn_log (cat, ">");
   });
