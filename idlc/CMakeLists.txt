@@ -92,24 +92,3 @@ function(IDLC_GENERATE _target)
   target_include_directories(${_target} INTERFACE "${_dir}")
 endfunction()
 
-function(IDLC_INSTALL_GENERATED _dest _comp)
-  if(NOT ARGN)
-    message(FATAL_ERROR "idlc_install_generated called without any idl files")
-  endif()
-
-  set(_dir "${CMAKE_CURRENT_BINARY_DIR}")
-  set(_files)
-  foreach(FIL ${ARGN})
-    get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
-    get_filename_component(FIL_WE ${FIL} NAME_WE)
-
-    set(_source "${_dir}/${FIL_WE}.c")
-    set(_header "${_dir}/${FIL_WE}.h")
-    list(APPEND _files "${_source}" "${_header}")
-  endforeach()
-
-  install(FILES ${_files}
-          DESTINATION "${_dest}"
-          COMPONENT ${_comp})
-endfunction()
-
