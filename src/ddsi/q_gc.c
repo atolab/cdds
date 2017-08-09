@@ -79,6 +79,7 @@ static int threads_vtime_check (unsigned *nivs, struct idx_vtime *ivs)
 static uint32_t gcreq_queue_thread (struct gcreq_queue *q)
 {
   struct thread_state1 *self = lookup_thread_state ();
+  nn_mtime_t next_thread_cputime = { 0 };
   struct os_time to = { 0, 100 * T_MILLISECOND };
   struct os_time shortsleep = { 0, 1 * T_MILLISECOND };
   struct gcreq *gcreq = NULL;
@@ -86,6 +87,7 @@ static uint32_t gcreq_queue_thread (struct gcreq_queue *q)
   os_mutexLock (&q->lock);
   while (!(q->terminate && q->count == 0))
   {
+    LOG_THREAD_CPUTIME (next_thread_cputime);
     /* If we are waiting for a gcreq to become ready, don't bother
        looking at the queue; if we aren't, wait for a request to come
        in.  We can't really wait until something came in because we're

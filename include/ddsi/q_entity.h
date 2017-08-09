@@ -250,6 +250,7 @@ struct writer
   uint32_t num_acks_received; /* cum received ACKNACKs with no request for retransmission */
   uint32_t num_nacks_received; /* cum received ACKNACKs that did request retransmission */
   uint32_t throttle_count; /* cum times transmitting was throttled (whc hitting high-level mark) */
+  uint32_t throttle_tracing;
   uint32_t rexmit_count; /* cum samples retransmitted (counting events; 1 sample can be counted many times) */
   uint32_t rexmit_lost_count; /* cum samples lost but retransmit requested (also counting events) */
   struct xeventq *evq; /* timed event queue to be used by this writer */
@@ -529,8 +530,8 @@ uint64_t reader_instance_id (const struct nn_guid *guid);
 /* Set when this proxy participant is not to be announced on the built-in topics yet */
 #define CF_PROXYPP_NO_SPDP                     (1 << 3)
 
-void new_proxy_participant (const struct nn_guid *guid, unsigned bes, unsigned prismtech_bes, const struct nn_guid *privileged_pp_guid, struct addrset *as_default, struct addrset *as_meta, const struct nn_plist *plist, int64_t tlease_dur, nn_vendorid_t vendor, unsigned custom_flags);
-int delete_proxy_participant_by_guid (const struct nn_guid * guid, int isimplicit);
+void new_proxy_participant (const struct nn_guid *guid, unsigned bes, unsigned prismtech_bes, const struct nn_guid *privileged_pp_guid, struct addrset *as_default, struct addrset *as_meta, const struct nn_plist *plist, int64_t tlease_dur, nn_vendorid_t vendor, unsigned custom_flags, nn_wctime_t timestamp);
+int delete_proxy_participant_by_guid (const struct nn_guid * guid, nn_wctime_t timestamp, int isimplicit);
 uint64_t participant_instance_id (const struct nn_guid *guid);
 
 enum update_proxy_participant_source {
@@ -538,16 +539,16 @@ enum update_proxy_participant_source {
   UPD_PROXYPP_CM
 };
 
-int update_proxy_participant_plist_locked (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source);
-int update_proxy_participant_plist (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source);
+int update_proxy_participant_plist_locked (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source, nn_wctime_t timestamp);
+int update_proxy_participant_plist (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source, nn_wctime_t timestamp);
 void proxy_participant_reassign_lease (struct proxy_participant *proxypp, struct lease *newlease);
 
 void purge_proxy_participants (const nn_locator_t *loc, bool delete_from_as_disc);
 
 /* To create a new proxy writer or reader; the proxy participant is
    determined from the GUID and must exist. */
-int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, struct addrset *as, const struct nn_plist *plist, struct nn_dqueue *dqueue, struct xeventq *evq);
-int new_proxy_reader (const struct nn_guid *ppguid, const struct nn_guid *guid, struct addrset *as, const struct nn_plist *plist
+int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, struct addrset *as, const struct nn_plist *plist, struct nn_dqueue *dqueue, struct xeventq *evq, nn_wctime_t timestamp);
+int new_proxy_reader (const struct nn_guid *ppguid, const struct nn_guid *guid, struct addrset *as, const struct nn_plist *plist, nn_wctime_t timestamp
 #ifdef DDSI_INCLUDE_SSM
                       , int favours_ssm
 #endif
@@ -558,14 +559,14 @@ int new_proxy_reader (const struct nn_guid *ppguid, const struct nn_guid *guid, 
    reader or writer. Actual deletion is scheduled in the future, when
    no outstanding references may still exist (determined by checking
    thread progress, &c.). */
-int delete_proxy_writer (const struct nn_guid *guid, int isimplicit);
-int delete_proxy_reader (const struct nn_guid *guid, int isimplicit);
+int delete_proxy_writer (const struct nn_guid *guid, nn_wctime_t timestamp, int isimplicit);
+int delete_proxy_reader (const struct nn_guid *guid, nn_wctime_t timestamp, int isimplicit);
 
 void update_proxy_reader (struct proxy_reader * prd, struct addrset *as);
 void update_proxy_writer (struct proxy_writer * pwr, struct addrset *as);
 
-int new_proxy_group (const struct nn_guid *guid, const struct v_gid_s *gid, const char *name, const struct nn_xqos *xqos);
-void delete_proxy_group (const struct nn_guid *guid, int isimplicit);
+int new_proxy_group (const struct nn_guid *guid, const struct v_gid_s *gid, const char *name, const struct nn_xqos *xqos, nn_wctime_t timestamp);
+void delete_proxy_group (const struct nn_guid *guid, nn_wctime_t timestamp, int isimplicit);
 
 void writer_exit_startup_mode (struct writer *wr);
 uint64_t writer_instance_id (const struct nn_guid *guid);

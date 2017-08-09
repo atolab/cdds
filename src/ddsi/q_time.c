@@ -112,10 +112,10 @@ nn_mtime_t mtime_round_up (nn_mtime_t t, int64_t round)
 
 static int64_t add_duration_to_time (int64_t t, int64_t d)
 {
-  /* assumed T_NEVER <=> MAX_INT64 */
-  int64_t sum = t + d;
+  uint64_t sum;
   assert (t >= 0 && d >= 0);
-  return sum < t ? T_NEVER : sum;
+  sum = (uint64_t)t + (uint64_t)d;
+  return sum >= T_NEVER ? T_NEVER : (int64_t)sum;
 }
 
 nn_mtime_t add_duration_to_mtime (nn_mtime_t t, int64_t d)

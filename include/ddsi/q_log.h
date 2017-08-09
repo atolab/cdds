@@ -62,13 +62,13 @@ void nn_log_set_tstamp (nn_wctime_t tnow);
 #define LOG_THREAD_CPUTIME(guard) do {                                  \
     if (config.enabled_logcats & LC_TIMING)                             \
     {                                                                   \
-      nn_mtime_t tnow = now_mt ();                                      \
-      if (tnow.v >= (guard).v)                                          \
+      nn_mtime_t tnowlt = now_mt ();                                      \
+      if (tnowlt.v >= (guard).v)                                          \
       {                                                                 \
         int64_t ts = get_thread_cputime ();                            \
         nn_log (LC_TIMING, "thread_cputime %d.%09d\n",                  \
                 (int) (ts / T_SECOND), (int) (ts % T_SECOND));          \
-        (guard).v = tnow.v + T_SECOND;                                  \
+        (guard).v = tnowlt.v + T_SECOND;                                  \
       }                                                                 \
     }                                                                   \
   } while (0)

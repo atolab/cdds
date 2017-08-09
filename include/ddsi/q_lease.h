@@ -26,13 +26,14 @@ struct thread_state1;
 
 void lease_management_init (void);
 void lease_management_term (void);
-struct lease *lease_new (int64_t tdur, struct entity_common *e);
+struct lease *lease_new (nn_etime_t texpire, int64_t tdur, struct entity_common *e);
 void lease_register (struct lease *l);
 void lease_free (struct lease *l);
 void lease_renew (struct lease *l, nn_etime_t tnow);
+void lease_set_expiry (struct lease *l, nn_etime_t when);
 void check_and_handle_lease_expiration (struct thread_state1 *self, nn_etime_t tnow);
 
-void handle_PMD (const struct receiver_state *rst, unsigned statusinfo, const void *vdata, unsigned len);
+void handle_PMD (const struct receiver_state *rst, nn_wctime_t timestamp, unsigned statusinfo, const void *vdata, unsigned len);
 
 #if defined (__cplusplus)
 }

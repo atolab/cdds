@@ -342,6 +342,8 @@ struct config
   int64_t nack_delay;
   int64_t preemptive_ack_delay;
   int64_t schedule_time_rounding;
+  int64_t auto_resched_nack_delay;
+  int64_t ds_grace_period;
 #ifdef DDSI_INCLUDE_BANDWIDTH_LIMITING
   uint32_t auxiliary_bandwidth_limit; /* bytes/second */
 #endif

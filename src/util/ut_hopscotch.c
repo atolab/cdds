@@ -303,8 +303,7 @@ static void ut_chhResize (struct ut_chh *rt)
     idxmask1 = bsary1->size - 1;
     for (i = 0; i < bsary0->size; i++) {
         void *data = os_atomic_ldvoidp (&bs0[i].data);
-        assert (data != CHH_BUSY);
-        if (data) {
+        if (data && data != CHH_BUSY) {
             const uint32_t hash = rt->hash (data);
             const uint32_t old_start_bucket = hash & idxmask0;
             const uint32_t new_start_bucket = hash & idxmask1;
@@ -552,6 +551,7 @@ static uint32_t ut_hhFindCloserFreeBucket (struct ut_hh *rt, uint32_t free_bucke
             uint32_t new_free_bucket = (move_bucket + move_free_distance) & idxmask;
             rt->buckets[move_bucket].hopinfo |= 1u << free_dist;
             rt->buckets[free_bucket].data = rt->buckets[new_free_bucket].data;
+            rt->buckets[new_free_bucket].data = NULL;
             rt->buckets[move_bucket].hopinfo &= ~(1u << move_free_distance);
             *free_distance -= free_dist - move_free_distance;
             return new_free_bucket;
@@ -794,7 +794,7 @@ static uint32_t ut_ehhFindCloserFreeBucket (struct ut_ehh *rt, uint32_t free_buc
             mb->hopinfo |= 1u << free_dist;
             fb->inuse = 1;
             memcpy (fb->data, nfb->data, rt->elemsz);
-            fb->inuse = 0; /* FIXME: without this, I think the case where hopping ultimately fails otherwise leaks an element (see also other impls, they should suffer from the same) */
+            nfb->inuse = 0;
             mb->hopinfo &= ~(1u << move_free_distance);
             *free_distance -= free_dist - move_free_distance;
             return new_free_bucket;

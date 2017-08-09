@@ -1282,6 +1282,7 @@ void rtps_term (void)
   {
     struct ephash_enum_proxy_participant est;
     struct proxy_participant *proxypp;
+    const nn_wctime_t tnow = now();
     /* Clean up proxy readers, proxy writers and proxy
        participants. Deleting a proxy participants deletes all its
        readers and writers automatically */
@@ -1289,7 +1290,7 @@ void rtps_term (void)
     ephash_enum_proxy_participant_init (&est);
     while ((proxypp = ephash_enum_proxy_participant_next (&est)) != NULL)
     {
-      delete_proxy_participant_by_guid(&proxypp->e.guid, 1);
+      delete_proxy_participant_by_guid(&proxypp->e.guid, tnow, 1);
     }
     ephash_enum_proxy_participant_fini (&est);
     thread_state_asleep (self);
