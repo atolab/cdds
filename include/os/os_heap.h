@@ -17,8 +17,6 @@
  *  \brief Heap memory management
  *
  * os_heap.h provides abstraction to heap memory management functions.
- * It allows to redefine the default malloc and free function used
- * by the implementation.
  */
 
 #ifndef OS_HEAP_H
@@ -83,7 +81,7 @@ extern "C" {
      * - assertion failure: size == 0
      * - assertion failure: count == 0
      * - abort() if memory exhaustion is detected
-     * - returns pointer to allocated memory
+     * - returns pointer to allocated and zeroed memory. The pointer must be free'd with os_free.
      */
     _Check_return_
     _Ret_bytecount_(count * size)
@@ -94,10 +92,12 @@ extern "C" {
 
     /** \brief Allocate memory from heap for an array with count elements of size size
      *
-     * The allocated memory is initialized to zero.
+     * The allocated memory is initialized to zero. The returned pointer must be free'd
+     * with os_free. If size and/or count is 0, os_calloc_s will still return a non-NULL
+     * pointer which must be free'd with os_free.
      *
      * Possible Results:
-     * - returns pointer to allocated memory, or null if out of memory
+     * - returns pointer to allocated and zeroed memory, or null if out of memory
      */
     _Check_return_
     _Ret_bytecount_(count * size)
@@ -130,8 +130,9 @@ extern "C" {
     /** \brief Reallocate memory from heap
      *
      * Reallocate memory from heap. If memblk is NULL
-     * the function returns malloc(size). If size is 0, the function returns
-     * either NULL (and frees memblk) or a pointer that ca
+     * the function returns os_malloc_s(size). If size is 0, os_realloc_s free's the
+     * memory pointed to by memblk and returns a pointer as if os_malloc_s(0) was invoked.
+     * The returned pointer must be free'd with os_free.
      * Possible Results:
      * - return pointer to reallocated memory, or null if out of memory .
      */
