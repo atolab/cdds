@@ -42,7 +42,7 @@ typedef struct ddsi_udp_conn
 
 static struct ddsi_udp_config ddsi_udp_config_g;
 static struct ddsi_tran_factory ddsi_udp_factory_g;
-static bool ddsi_udp_init_g;
+static os_atomic_uint32_t ddsi_udp_init_g = OS_ATOMIC_UINT32_INIT(0);
 
 static ssize_t ddsi_udp_conn_read (ddsi_tran_conn_t conn, unsigned char * buf, size_t len)
 {
@@ -295,11 +295,9 @@ static void ddsi_udp_release_conn (ddsi_tran_conn_t conn)
 
 void ddsi_udp_fini (void)
 {
-    if(ddsi_udp_init_g) {
+    if(os_atomic_dec32_nv (&ddsi_udp_init_g) == 0) {
         free_group_membership(ddsi_udp_config_g.mship);
         memset (&ddsi_udp_factory_g, 0, sizeof (ddsi_udp_factory_g));
-
-        ddsi_udp_init_g = false;
         nn_log (LC_INFO | LC_CONFIG, "udp finalized\n");
     }
 }
@@ -310,9 +308,8 @@ int ddsi_udp_init (void)
    * this can be removed. Or the call does, in which case it should be done right.
    * The lack of locking suggests it isn't needed.
    */
-  if (! ddsi_udp_init_g)
+  if (os_atomic_inc32_nv (&ddsi_udp_init_g) == 1)
   {
-    ddsi_udp_init_g = true;
     memset (&ddsi_udp_factory_g, 0, sizeof (ddsi_udp_factory_g));
     ddsi_udp_factory_g.m_kind = NN_LOCATOR_KIND_UDPv4;
     ddsi_udp_factory_g.m_typename = "udp";

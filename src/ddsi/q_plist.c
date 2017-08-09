@@ -30,6 +30,7 @@
 #include "ddsi/q_config.h"
 #include "ddsi/q_protocol.h" /* for NN_STATUSINFO_... */
 #include "ddsi/q_radmin.h" /* for nn_plist_quickscan */
+#include "ddsi/q_static_assert.h"
 
 #include "util/ut_avl.h"
 #include "ddsi/q_misc.h" /* for vendor_is_... */
@@ -176,6 +177,13 @@ static int alias_octetseq (nn_octetseq_t *oseq, const struct dd *dd)
     oseq->value = (len == 0) ? NULL : (unsigned char *) x->value;
     return 0;
   }
+}
+
+static int alias_blob (nn_octetseq_t *oseq, const struct dd *dd)
+{
+  oseq->length = dd->bufsz;
+  oseq->value = (oseq->length == 0) ? NULL : (unsigned char *) dd->buf;
+  return 0;
 }
 
 static void unalias_octetseq (nn_octetseq_t *oseq, UNUSED_ARG (int bswap))
@@ -471,6 +479,19 @@ static int do_octetseq (nn_octetseq_t *dst, uint64_t *present, uint64_t *aliased
   if (!(wanted & fl))
     return NN_STRICT_P ? validate_octetseq (dd, &len) : 0;
   if ((res = alias_octetseq (dst, dd)) >= 0)
+  {
+    *present |= fl;
+    *aliased |= fl;
+  }
+  return res;
+}
+
+static int do_blob (nn_octetseq_t *dst, uint64_t *present, uint64_t *aliased, uint64_t wanted, uint64_t fl, const struct dd *dd)
+{
+  int res;
+  if (!(wanted & fl))
+    return 0;
+  if ((res = alias_blob (dst, dd)) >= 0)
   {
     *present |= fl;
     *aliased |= fl;
@@ -1910,13 +1931,24 @@ static int init_one_parameter
       memcpy (&dest->statusinfo, dd->buf, sizeof (dest->statusinfo));
       dest->statusinfo = fromBE4u (dest->statusinfo);
       if (NN_STRICT_P && !protocol_version_is_newer (dd->protocol_version) &&
-          (dest->statusinfo & ~(NN_STATUSINFO_DISPOSE | NN_STATUSINFO_UNREGISTER)))
+          (dest->statusinfo & ~NN_STATUSINFO_STANDARDIZED))
       {
         /* Spec says I may not interpret the reserved bits. But no-one
            may use them in this version of the specification */
         TRACE (("plist/init_one_parameter[pid=STATUSINFO,mode=STRICT,proto=%u.%u]: invalid statusinfo (0x%x)\n",
                 dd->protocol_version.major, dd->protocol_version.minor, dest->statusinfo));
         return ERR_INVALID;
+      }
+      /* Clear all bits we don't understand, then add the extended bits if present */
+      dest->statusinfo &= NN_STATUSINFO_STANDARDIZED;
+      if (dd->bufsz >= 2 * sizeof (dest->statusinfo) && vendor_is_opensplice(dd->vendorid))
+      {
+        uint32_t statusinfox;
+        Q_STATIC_ASSERT_CODE (sizeof(statusinfox) == sizeof(dest->statusinfo));
+        memcpy (&statusinfox, dd->buf + sizeof (dest->statusinfo), sizeof (statusinfox));
+        statusinfox = fromBE4u (statusinfox);
+        if (statusinfox & NN_STATUSINFOX_OSPL_AUTO)
+          dest->statusinfo |= NN_STATUSINFO_OSPL_AUTO;
       }
       dest->present |= PP_STATUSINFO;
       return 0;
@@ -1966,12 +1998,22 @@ static int init_one_parameter
       }
       return do_guid (&dest->endpoint_guid, &dest->present, PP_ENDPOINT_GUID, valid_endpoint_guid, dd);
 
-    case PID_PRISMTECH_ENDPOINT_GUID:
-      /* PrismTech specific variant of ENDPOINT_GUID, for strict compliancy */
-      if (!vendor_is_prismtech (dd->vendorid))
-        return 0;
-      else
+    case PID_PRISMTECH_ENDPOINT_GUID: /* case PID_RTI_TYPECODE: */
+      if (vendor_is_prismtech (dd->vendorid))
+      {
+        /* PrismTech specific variant of ENDPOINT_GUID, for strict compliancy */
         return do_guid (&dest->endpoint_guid, &dest->present, PP_ENDPOINT_GUID, valid_endpoint_guid, dd);
+      }
+      else if (vendor_is_rti (dd->vendorid))
+      {
+        /* For RTI it is a typecode */
+        return do_blob (&dest->qos.rti_typecode, &dest->qos.present, &dest->qos.aliased, qwanted, QP_RTI_TYPECODE, dd);
+
+      }
+      else
+      {
+        return 0;
+      }
 
 
     case PID_PRISMTECH_PARTICIPANT_VERSION_INFO:
@@ -2475,11 +2517,12 @@ unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn
         else
         {
           unsigned stinfo = fromBE4u (*((unsigned *) pl));
+          unsigned stinfox = (length < 8 || !vendor_is_opensplice(src->vendorid)) ? 0 : fromBE4u (*((unsigned *) pl + 1));
 #if (NN_STATUSINFO_DISPOSE | NN_STATUSINFO_UNREGISTER) != 3
 #error "expected dispose/unregister to be in lowest 2 bits"
 #endif
           dest->statusinfo = stinfo & 3u;
-          if (stinfo & ~3u)
+          if ((stinfo & ~3u) || stinfox)
             dest->complex_qos = 1;
         }
         break;
@@ -2736,6 +2779,7 @@ void nn_xqos_mergein_missing (nn_xqos_t *a, const nn_xqos_t *b)
   CQ (USER_DATA, user_data, octetseq, nn_octetseq_t);
   CQ (TOPIC_NAME, topic_name, string, char *);
   CQ (TYPE_NAME, type_name, string, char *);
+  CQ (RTI_TYPECODE, rti_typecode, octetseq, nn_octetseq_t);
 #undef CQ
   if (!(a->present & QP_PRISMTECH_SUBSCRIPTION_KEYS) && (b->present & QP_PRISMTECH_SUBSCRIPTION_KEYS))
   {
@@ -2772,6 +2816,7 @@ void nn_xqos_unalias (nn_xqos_t *xqos)
   Q (TYPE_NAME, string, type_name);
   Q (PARTITION, stringseq, partition);
   Q (PRISMTECH_SUBSCRIPTION_KEYS, subscription_keys_qospolicy, subscription_keys);
+  Q (RTI_TYPECODE, octetseq, rti_typecode);
 #undef Q
   assert (xqos->aliased == 0);
 }
@@ -2785,6 +2830,7 @@ void nn_xqos_fini (nn_xqos_t *xqos)
     { QP_USER_DATA, offsetof (nn_xqos_t, user_data.value) },
     { QP_TOPIC_NAME, offsetof (nn_xqos_t, topic_name) },
     { QP_TYPE_NAME, offsetof (nn_xqos_t, type_name) },
+    { QP_RTI_TYPECODE, offsetof (nn_xqos_t, rti_typecode.value) }
   };
   int i;
   TRACE_PLIST (("NN_XQOS_FINI\n"));
@@ -3101,6 +3147,10 @@ uint64_t nn_xqos_delta (const nn_xqos_t *a, const nn_xqos_t *b, uint64_t mask)
     if (a->synchronous_endpoint.value != b->synchronous_endpoint.value)
       delta |= QP_PRISMTECH_SYNCHRONOUS_ENDPOINT;
   }
+  if (check & QP_RTI_TYPECODE) {
+    if (octetseqs_differ (&a->rti_typecode, &b->rti_typecode))
+      delta |= QP_RTI_TYPECODE;
+  }
   return delta;
 }
 
@@ -3160,6 +3210,7 @@ void nn_xqos_addtomsg (struct nn_xmsg *m, const nn_xqos_t *xqos, uint64_t wanted
   FUNC_BY_REF (PRISMTECH_SUBSCRIPTION_KEYS, subscription_keys, subscription_keys);
   SIMPLE (PRISMTECH_ENTITY_FACTORY, entity_factory);
   SIMPLE (PRISMTECH_SYNCHRONOUS_ENDPOINT, synchronous_endpoint);
+  FUNC_BY_REF (RTI_TYPECODE, rti_typecode, octetseq);
 #undef FUNC_BY_REF
 #undef FUNC_BY_VAL
 #undef SIMPLE
@@ -3221,7 +3272,8 @@ void nn_plist_addtomsg (struct nn_xmsg *m, const nn_plist_t *ps, uint64_t pwante
   FUNC_BY_REF (PARTICIPANT_GUID, participant_guid, guid);
   SIMPLE_TYPE (BUILTIN_ENDPOINT_SET, builtin_endpoint_set, unsigned);
   SIMPLE_TYPE (KEYHASH, keyhash, nn_keyhash_t);
-  FUNC_BY_VAL (STATUSINFO, statusinfo, BE4u);
+  if (w & PP_STATUSINFO)
+    nn_xmsg_addpar_statusinfo (m, ps->statusinfo);
   SIMPLE_TYPE (COHERENT_SET, coherent_set_seqno, nn_sequence_number_t);
   if (! NN_PEDANTIC_P)
     FUNC_BY_REF (ENDPOINT_GUID, endpoint_guid, guid);
@@ -3255,7 +3307,7 @@ void nn_plist_addtomsg (struct nn_xmsg *m, const nn_plist_t *ps, uint64_t pwante
 static unsigned isprint_runlen (unsigned n, const unsigned char *xs)
 {
   unsigned m;
-  for (m = 0; m < n && isprint (xs[m]); m++)
+  for (m = 0; m < n && xs[m] != '"' && isprint (xs[m]); m++)
     ;
   return m;
 }
@@ -3368,6 +3420,11 @@ void nn_log_xqos (logcat_t cat, const nn_xqos_t *xqos)
   });
   DO (PRISMTECH_ENTITY_FACTORY, { LOGB1 ("entity_factory=%u", xqos->entity_factory.autoenable_created_entities); });
   DO (PRISMTECH_SYNCHRONOUS_ENDPOINT, { LOGB1 ("synchronous_endpoint=%u", xqos->synchronous_endpoint.value); });
+  DO (RTI_TYPECODE, {
+    LOGB1 ("rti_typecode=%d<", xqos->rti_typecode.length);
+    log_octetseq (cat, xqos->rti_typecode.length, xqos->rti_typecode.value);
+    nn_log (cat, ">");
+  });
 
 #undef PRINTARG_DUR
 #undef FMT_DUR

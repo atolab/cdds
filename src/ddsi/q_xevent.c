@@ -909,6 +909,12 @@ static void handle_xevk_acknack (UNUSED_ARG (struct nn_xpack *xp), struct xevent
     {
       rwn->t_last_nack = tnow;
       rwn->seq_last_nack = nack_seq;
+      /* If NACKing, make sure we don't give up too soon: even though
+         we're not allowed to send an ACKNACK unless in response to a
+         HEARTBEAT, I've seen too many cases of not sending an NACK
+         because the writing side got confused ...  Better to recover
+         eventually. */
+      resched_xevent_if_earlier (ev, add_duration_to_mtime (tnow, config.auto_resched_nack_delay));
     }
     TRACE (("send acknack(rd %x:%x:%x:%x -> pwr %x:%x:%x:%x)\n",
             PGUID (ev->u.acknack.rd_guid), PGUID (ev->u.acknack.pwr_guid)));
@@ -1330,6 +1336,7 @@ static uint32_t xevent_thread (struct xeventq * xevq)
 {
   struct thread_state1 *self = lookup_thread_state ();
   struct nn_xpack *xp;
+  nn_mtime_t next_thread_cputime = { 0 };
 
   xp = nn_xpack_new (xevq->tev_conn, xevq->auxiliary_bandwidth_limit, config.xpack_send_async);
 
@@ -1337,6 +1344,8 @@ static uint32_t xevent_thread (struct xeventq * xevq)
   while (!xevq->terminate)
   {
     nn_mtime_t tnow = now_mt ();
+
+    LOG_THREAD_CPUTIME (next_thread_cputime);
 
     handle_xevents (self, xevq, xp, tnow);
 

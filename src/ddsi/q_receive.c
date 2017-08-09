@@ -643,7 +643,7 @@ static void force_heartbeat_to_peer (struct writer *wr, struct proxy_reader *prd
 
 static seqno_t grow_gap_to_next_seq (const struct writer *wr, seqno_t seq)
 {
-  seqno_t next_seq = whc_next_seq (wr->whc, seq);
+  seqno_t next_seq = whc_next_seq (wr->whc, seq - 1);
   seqno_t seq_xmit = READ_SEQ_XMIT(wr);
   if (next_seq == MAX_SEQ_NUMBER) /* no next sample */
     return seq_xmit + 1;
