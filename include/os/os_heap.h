@@ -100,7 +100,7 @@ extern "C" {
      * - returns pointer to allocated and zeroed memory, or null if out of memory
      */
     _Check_return_
-    _Ret_bytecount_(count * size)
+    _Ret_opt_bytecount_(count * size)
     OSAPI_EXPORT void *
     os_calloc_s(_In_ size_t count,
                 _In_ size_t size)
