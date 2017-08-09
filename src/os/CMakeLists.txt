@@ -25,12 +25,16 @@ install(
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/os"
   COMPONENT dev)
 
-install(
-  FILES "${CMAKE_SOURCE_DIR}/include/os/posix/os_platform_public.h"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/os/posix"
-  COMPONENT dev)
+# Currently, only windows and posix platforms are supported.
+IF(WIN32 AND NOT UNIX)
+    install(
+      FILES "${CMAKE_SOURCE_DIR}/include/os/windows/os_platform_public.h"
+      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/os"
+      COMPONENT dev)
+ELSE()
+    install(
+      FILES "${CMAKE_SOURCE_DIR}/include/os/posix/os_platform_public.h"
+      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/os"
+      COMPONENT dev)
+ENDIF()
 
-install(
-  FILES "${CMAKE_SOURCE_DIR}/include/os/windows/os_platform_public.h"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/os/windows"
-  COMPONENT dev)
