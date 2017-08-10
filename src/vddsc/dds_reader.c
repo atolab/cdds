@@ -87,10 +87,7 @@ dds_reader_qos_validate(
     if (consistent) {
         ret = DDS_RETCODE_OK;
         if (enabled) {
-            /* TODO: Improve/check immutable check. */
-            if (qos->present != QP_LATENCY_BUDGET) {
-                ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
-            }
+            ret = dds_qos_validate_mutable_common(qos);
         }
     }
     return ret;

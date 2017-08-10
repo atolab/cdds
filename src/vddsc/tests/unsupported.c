@@ -156,3 +156,32 @@ ParameterizedTest(struct index_result *par, vddsc_unsupported, dds_instancehandl
     result = dds_instancehandle_get(e[par->index], &ih);
     cr_expect_eq(dds_err_nr(result), par->exp_res, "Unexpected return code %d \"%s\" (expected %d \"%s\") from dds_instancehandle_get(%s): (%d)", dds_err_nr(result), dds_err_str(result), par->exp_res, dds_err_str(-par->exp_res), entity_kind_str(e[par->index]), result);
 }
+
+/*************************************************************************************************/
+ParameterizedTestParameters(vddsc_unsupported, dds_set_qos) {
+    /* The parameters seem to be initialized before spawning children,
+     * so it makes no sense to try and store anything dynamic here. */
+    static struct index_result pars[] = {
+       {PAR, DDS_RETCODE_UNSUPPORTED},
+       {TOP, DDS_RETCODE_UNSUPPORTED},
+       {PUB, DDS_RETCODE_UNSUPPORTED},
+       {WRI, DDS_RETCODE_UNSUPPORTED},
+       {SUB, DDS_RETCODE_UNSUPPORTED},
+       {REA, DDS_RETCODE_UNSUPPORTED},
+       {RCD, DDS_RETCODE_ILLEGAL_OPERATION},
+       {BAD, DDS_RETCODE_BAD_PARAMETER}
+    };
+
+    return cr_make_param_array(struct index_result, pars, sizeof pars / sizeof *pars);
+};
+
+ParameterizedTest(struct index_result *par, vddsc_unsupported, dds_set_qos, .init = setup, .fini = teardown)
+{
+    dds_return_t result;
+    dds_qos_t *qos;
+
+    qos = dds_qos_create();
+    result = dds_set_qos(e[par->index], qos);
+    cr_expect_eq(dds_err_nr(result), par->exp_res, "Unexpected return code %d \"%s\" (expected %d \"%s\") from dds_set_qos(%s, qos): (%d)", dds_err_nr(result), dds_err_str(result), par->exp_res, dds_err_str(-par->exp_res), entity_kind_str(e[par->index]), result);
+    dds_qos_delete(qos);
+}

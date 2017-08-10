@@ -65,11 +65,8 @@ void entity_qos_get_set(dds_entity_t e, const char* info)
     status = dds_get_qos (e, qos);
     cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_qos(e, qos) ret: %d, %s", dds_err_nr(status), info);
 
-    /* Entity (partition) is enabled, so we shouldn't be able to set QoS. */
-    /* Checking all QoS internals (also related to enabled/disabled) should be
-     * done by a QoS test and specific 'child' entities. */
-    status = dds_set_qos (e, qos);
-    cr_assert_status_eq(status, DDS_RETCODE_IMMUTABLE_POLICY, "dds_set_qos(entity, qos) %s", info);
+    status = dds_set_qos (e, qos); /* Doesn't change anything, so no need to forbid. But we return NOT_SUPPORTED anyway for now*/
+    cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_set_qos(entity, qos) %s", info);
 
     dds_qos_delete(qos);
 }

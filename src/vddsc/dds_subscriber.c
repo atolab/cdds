@@ -34,7 +34,7 @@ dds_subscriber_qos_validate(
         validate_entityfactory_qospolicy(&qos->entity_factory) : true;
 
     if (consistent) {
-        if (enabled) {
+        if (enabled && (qos->present & QP_PRESENTATION)) {
             /* TODO: Improve/check immutable check. */
             ret = DDS_ERRNO (DDS_RETCODE_IMMUTABLE_POLICY);
         } else {

@@ -98,8 +98,8 @@ dds_participant_qos_validate(
             validate_entityfactory_qospolicy(&qos->entity_factory) : true;
     if (consistent) {
         if (enabled) {
-            /* TODO: Improve/check immutable check. */
-            ret = DDS_ERRNO (DDS_RETCODE_IMMUTABLE_POLICY);
+            /* A participant has no immutable QoS. Still, we don't support changing it for now. */
+            ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
         } else {
             ret = DDS_RETCODE_OK;
         }

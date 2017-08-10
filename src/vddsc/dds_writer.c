@@ -245,10 +245,7 @@ dds_writer_qos_validate(
     {
         ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY);
     } else if (enabled) {
-        /* TODO: Improve/check immutable check. */
-        if (!(qos->present & (QP_LATENCY_BUDGET | QP_OWNERSHIP_STRENGTH))) {
-            ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
-        }
+        ret = dds_qos_validate_mutable_common(qos);
     }
 
     return ret;
