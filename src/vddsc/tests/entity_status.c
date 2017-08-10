@@ -892,6 +892,7 @@ Theory((dds_entity_t topic), vddsc_get_inconsistent_topic_status, bad_params)
 Test(vddsc_get_inconsistent_topic_status, null, .init=init_entity_status, .fini=fini_entity_status)
 {
     dds_return_t ret;
+    dds_set_enabled_status(topic, 0);
     ret = dds_get_inconsistent_topic_status(topic, NULL);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
 }
@@ -943,6 +944,7 @@ Theory((dds_entity_t writer), vddsc_get_publication_matched_status, bad_params)
 Test(vddsc_get_publication_matched_status, null, .init=init_entity_status, .fini=fini_entity_status)
 {
     dds_return_t ret;
+    dds_set_enabled_status(writer, 0);
     ret = dds_get_publication_matched_status(writer, NULL);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
 }
@@ -1006,6 +1008,7 @@ Theory((dds_entity_t writer), vddsc_get_liveliness_lost_status, bad_params)
 Test(vddsc_get_liveliness_lost_status, null, .init=init_entity_status, .fini=fini_entity_status)
 {
     dds_return_t ret;
+    dds_set_enabled_status(writer, 0);
     ret = dds_get_liveliness_lost_status(writer, NULL);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
 }
@@ -1070,6 +1073,7 @@ Theory((dds_entity_t writer), vddsc_get_offered_deadline_missed_status, bad_para
 Test(vddsc_get_offered_deadline_missed_status, null, .init=init_entity_status, .fini=fini_entity_status)
 {
     dds_return_t ret;
+    dds_set_enabled_status(writer, 0);
     ret = dds_get_offered_deadline_missed_status(writer, NULL);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
 }
@@ -1121,6 +1125,7 @@ Theory((dds_entity_t writer), vddsc_get_offered_incompatible_qos_status, bad_par
 Test(vddsc_get_offered_incompatible_qos_status, null, .init=init_entity_status, .fini=fini_entity_status)
 {
     dds_return_t ret;
+    dds_set_enabled_status(writer, 0);
     ret = dds_get_offered_incompatible_qos_status(writer, NULL);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
 }
@@ -1172,6 +1177,7 @@ Theory((dds_entity_t reader), vddsc_get_subscription_matched_status, bad_params)
 Test(vddsc_get_subscription_matched_status, null, .init=init_entity_status, .fini=fini_entity_status)
 {
     dds_return_t ret;
+    dds_set_enabled_status(reader, 0);
     ret = dds_get_subscription_matched_status(reader, NULL);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %s", dds_err_str(ret));
 }
@@ -1223,6 +1229,7 @@ Theory((dds_entity_t reader), vddsc_get_liveliness_changed_status, bad_params)
 Test(vddsc_get_liveliness_changed_status, null, .init=init_entity_status, .fini=fini_entity_status)
 {
     dds_return_t ret;
+    dds_set_enabled_status(reader, 0);
     ret = dds_get_liveliness_changed_status(reader, NULL);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
 }
@@ -1274,6 +1281,7 @@ Theory((dds_entity_t reader), vddsc_get_sample_rejected_status, bad_params)
 Test(vddsc_get_sample_rejected_status, null, .init=init_entity_status, .fini=fini_entity_status)
 {
     dds_return_t ret;
+    dds_set_enabled_status(reader, 0);
     ret = dds_get_sample_rejected_status(reader, NULL);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
 }
@@ -1325,6 +1333,7 @@ Theory((dds_entity_t reader), vddsc_get_sample_lost_status, bad_params)
 Test(vddsc_get_sample_lost_status, null, .init=init_entity_status, .fini=fini_entity_status)
 {
     dds_return_t ret;
+    dds_set_enabled_status(reader, 0);
     ret = dds_get_sample_lost_status(reader, NULL);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
 }
@@ -1389,6 +1398,7 @@ Theory((dds_entity_t reader), vddsc_get_requested_deadline_missed_status, bad_pa
 Test(vddsc_get_requested_deadline_missed_status, null, .init=init_entity_status, .fini=fini_entity_status)
 {
     dds_return_t ret;
+    dds_set_enabled_status(reader, 0);
     ret = dds_get_requested_deadline_missed_status(reader, NULL);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
 }
@@ -1440,6 +1450,7 @@ Theory((dds_entity_t reader), vddsc_get_requested_incompatible_qos_status, bad_p
 Test(vddsc_get_requested_incompatible_qos_status, null, .init=init_entity_status, .fini=fini_entity_status)
 {
     dds_return_t ret;
+    dds_set_enabled_status(reader, 0);
     ret = dds_get_requested_incompatible_qos_status(reader, NULL);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
 }
