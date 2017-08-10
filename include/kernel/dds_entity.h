@@ -59,7 +59,7 @@ void
 dds_entity_unlock(
         _In_ dds_entity *e);
 
-#define dds_entity_kind(hdl) (hdl & DDS_ENTITY_KIND_MASK)
+#define dds_entity_kind(hdl) ((hdl > 0) ? (hdl & DDS_ENTITY_KIND_MASK) : 0)
 
 _Check_return_ dds_retcode_t
 dds_entity_observer_register_nl(

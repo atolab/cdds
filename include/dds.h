@@ -2735,36 +2735,126 @@ dds_take_instance_mask_wl(
 */
 
 /**
- * Description : This operation copies the next, non-previously accessed data value and corresponding
- *               sample info and removes from the data reader.
+ * @brief Read, copy and remove the status set for the entity
  *
- * Arguments :
- * -# rd Reader entity
- * -# buf an array of pointers to samples into which data is read (pointers can be NULL)
- * -# si pointer to \ref dds_sample_info_t returned for a data value
- * -# Returns 1 on successful operation, else 0 if there is no data to be read.
+ * This operation copies the next, non-previously accessed
+ * data value and corresponding sample info and removes from
+ * the data reader. As an entity, only reader is accepted.
+ *
+ * @param[in]  reader The reader entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si The pointer to \ref dds_sample_info_t returned for a data value
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The operation was successful
+ *         DDS_RETCODE_BAD_PARAMETER
+ *                  The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT int
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
+DDS_EXPORT dds_return_t
 dds_take_next(
-        dds_entity_t reader_or_condition,
-        void **buf,
-        dds_sample_info_t *si);
+        _In_ dds_entity_t reader,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si);
 
 /**
- * Description : This operation copies the next, non-previously accessed data value and corresponding
- *               sample info.
+ * @brief Read, copy and remove the status set for the entity
  *
- * Arguments :
- * -# rd Reader entity
- * -# buf an array of pointers to samples into which data is read (pointers can be NULL)
- * -# si pointer to \ref dds_sample_info_t returned for a data value
- * -# Returns 1 on successful operation, else 0 if there is no data to be read.
+ * This operation copies the next, non-previously accessed
+ * data value and corresponding sample info and removes from
+ * the data reader. As an entity, only reader is accepted.
+ *
+ * After dds_take_next_wl function is being called and the data has been handled,
+ * dds_return_loan function must be called to possibly free memory.
+ *
+ * @param[in]  reader The reader entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si The pointer to \ref dds_sample_info_t returned for a data value
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The operation was successful
+ *         DDS_RETCODE_BAD_PARAMETER
+ *                  The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
  */
-DDS_EXPORT int
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
+DDS_EXPORT dds_return_t
+dds_take_next_wl(
+        _In_ dds_entity_t reader,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si);
+
+/**
+ * @brief Read and copy the status set for the entity
+ *
+ * This operation copies the next, non-previously accessed
+ * data value and corresponding sample info. As an entity,
+ * only reader is accepted.
+ *
+ * @param[in]  reader The reader entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si The pointer to \ref dds_sample_info_t returned for a data value
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The operation was successful
+ *         DDS_RETCODE_BAD_PARAMETER
+ *                  The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ */
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
+DDS_EXPORT dds_return_t
 dds_read_next(
-        dds_entity_t reader_or_condition,
-        void **buf,
-        dds_sample_info_t *si);
+        _In_ dds_entity_t reader,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si);
+
+/**
+ * @brief Read and copy the status set for the loaned sample
+ *
+ * This operation copies the next, non-previously accessed
+ * data value and corresponding loaned sample info. As an entity,
+ * only reader is accepted.
+ *
+ * After dds_read_next_wl function is being called and the data has been handled,
+ * dds_return_loan function must be called to possibly free memory.
+ *
+ * @param[in]  reader The reader entity
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
+ * @param[out] si The pointer to \ref dds_sample_info_t returned for a data value
+ *
+ * @returns - A dds_return_t indicating success or failure
+ *
+ * @retval DDS_RETCODE_OK
+ *                  The operation was successful
+ *         DDS_RETCODE_BAD_PARAMETER
+ *                  The entity parameter is not a valid parameter.
+ *         DDS_RETCODE_ILLEGAL_OPERATION
+ *                  The operation is invoked on an inappropriate object.
+ *         DDS_RETCODE_ALREADY_DELETED
+ *                  The entity has already been deleted.
+ */
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
+DDS_EXPORT dds_return_t
+dds_read_next_wl(
+        _In_ dds_entity_t reader,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si);
 
 /**
  * @brief Return loaned samples to data-reader or condition associated with a data-reader
