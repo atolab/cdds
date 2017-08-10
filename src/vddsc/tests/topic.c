@@ -409,7 +409,7 @@ Test(vddsc_topic_set_qos, inconsistent, .init=vddsc_topic_init, .fini=vddsc_topi
 Test(vddsc_topic_set_qos, immutable, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
 {
     dds_return_t ret;
-    dds_qset_lifespan(g_qos, DDS_SECS(1));
+    dds_qset_destination_order(g_qos, DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP); /* Immutable */
     ret = dds_set_qos(g_topicRtmDataType, g_qos);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_IMMUTABLE_POLICY, "returned %s", dds_err_str(ret));
 }
