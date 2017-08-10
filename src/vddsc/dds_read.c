@@ -85,19 +85,19 @@ dds_read_impl(
     thread_state_awake (thr);
   }
   if(buf == NULL){
-    rc = DDS_RETCODE_BAD_PARAMETER;
+    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
   }
   if(si == NULL){
-    rc = DDS_RETCODE_BAD_PARAMETER;
+    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
   }
   if(maxs == 0){
-    rc = DDS_RETCODE_BAD_PARAMETER;
+    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
   }
   if(bufsz == 0){
-    rc = DDS_RETCODE_BAD_PARAMETER;
+    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
   }
   if(bufsz < maxs){
-    rc = DDS_RETCODE_BAD_PARAMETER;
+    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
   }
   if (rc == DDS_RETCODE_OK) {
     rc = dds_read_lock(reader_or_condition, &rd, &cond, only_reader);
