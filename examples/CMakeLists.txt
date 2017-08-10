@@ -1,6 +1,4 @@
-if(NOT DEFINED CMAKE_INSTALL_EXAMPLESDIR)
-    set(CMAKE_INSTALL_EXAMPLESDIR "examples" CACHE PATH "examples root dir")
-endif()
+set(CMAKE_INSTALL_EXAMPLESDIR "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}/examples")
 
 add_subdirectory(helloworld)
 add_subdirectory(helloquickworld)
@@ -12,4 +10,5 @@ install(
   DIRECTORY "${CMAKE_SOURCE_DIR}/examples/"
   DESTINATION "${CMAKE_INSTALL_EXAMPLESDIR}"
   COMPONENT dev
-  PATTERN "CMakeLists.*" EXCLUDE)
+  PATTERN "CMakeLists.export" EXCLUDE
+  PATTERN "examples/CMakeLists.txt" EXCLUDE)

@@ -7,7 +7,7 @@ include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
 set(PACKAGING_MODULE_DIR "${CMAKE_SOURCE_DIR}/cmake/modules/Packaging")
-set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}")
+set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}")
 
 # Generates <Package>Config.cmake.
 configure_package_config_file(
@@ -24,7 +24,6 @@ write_basic_package_version_file(
 install(
   FILES "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake"
         "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}Version.cmake"
-        "${PACKAGING_MODULE_DIR}/${CMAKE_PROJECT_NAME}Idlc.cmake"
   DESTINATION "${CMAKE_INSTALL_CMAKEDIR}")
 
 if(VDDSC_SHARED AND ((NOT DEFINED BUILD_SHARED_LIBS) OR BUILD_SHARED_LIBS))
