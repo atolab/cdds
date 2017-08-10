@@ -33,11 +33,11 @@ is_valid_name(
     bool valid = false;
     /* DDS Spec:
      *  |  TOPICNAME - A topic name is an identifier for a topic, and is defined as any series of characters
-     *  |     ‘a’, ..., ‘z’,
-     *  |     ‘A’, ..., ‘Z’,
-     *  |     ‘0’, ..., ‘9’,
-     *  |     ‘-’ but may not start with a digit.
-     * It is considered that ‘-’ is an error in the spec and should say ‘_’. So, that's what we'll check for.
+     *  |     'a', ..., 'z',
+     *  |     'A', ..., 'Z',
+     *  |     '0', ..., '9',
+     *  |     '-' but may not start with a digit.
+     * It is considered that '-' is an error in the spec and should say '_'. So, that's what we'll check for.
      */
     assert(name);
     if ((name[0] != '\0') && (!isdigit((unsigned char)name[0]))) {
@@ -230,10 +230,7 @@ dds_topic_qos_validate(
     if (consistent) {
         ret = DDS_RETCODE_OK;
         if (enabled) {
-            /* TODO: Improve/check immutable check. */
-            if (qos->present != QP_LATENCY_BUDGET) {
-                ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
-            }
+            ret = dds_qos_validate_mutable_common(qos);
         }
     }
     return ret;
