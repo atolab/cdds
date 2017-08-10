@@ -108,8 +108,14 @@ endforeach()
 add_custom_target(docs ALL DEPENDS vddsc_docs ${docs_outputs})
 
 if (BUILD_DOCS_HTML)
-  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION "docs")
+  install(
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}/docs"
+    COMPONENT dev)
 endif()
 if (BUILD_DOCS_PDF)
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/latex/${CMAKE_PROJECT_NAME}.pdf DESTINATION "docs")
+  install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/latex/${CMAKE_PROJECT_NAME}.pdf
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}/docs"
+    COMPONENT dev)
 endif()
