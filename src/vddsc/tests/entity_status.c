@@ -85,9 +85,9 @@ init_entity_status(void)
     cr_assert_status_eq(status, DDS_RETCODE_OK);
 
     /* Get reader/writer handles because they can be tested against. */
-    ret = dds_instancehandle_get(reader, &reader_i_hdl);
+    ret = dds_get_instance_handle(reader, &reader_i_hdl);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to get prerequisite reader_i_hdl");
-    ret = dds_instancehandle_get(writer, &writer_i_hdl);
+    ret = dds_get_instance_handle(writer, &writer_i_hdl);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to get prerequisite writer_i_hdl");
 }
 

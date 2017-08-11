@@ -134,7 +134,7 @@ ParameterizedTest(struct index_result *par, vddsc_unsupported, dds_suspend_resum
 }
 
 /*************************************************************************************************/
-ParameterizedTestParameters(vddsc_unsupported, dds_instancehandle_get) {
+ParameterizedTestParameters(vddsc_unsupported, dds_get_instance_handle) {
     /* The parameters seem to be initialized before spawning children,
      * so it makes no sense to try and store anything dynamic here. */
     static struct index_result pars[] = {
@@ -148,13 +148,13 @@ ParameterizedTestParameters(vddsc_unsupported, dds_instancehandle_get) {
     return cr_make_param_array(struct index_result, pars, sizeof pars / sizeof *pars);
 };
 
-ParameterizedTest(struct index_result *par, vddsc_unsupported, dds_instancehandle_get, .init = setup, .fini = teardown)
+ParameterizedTest(struct index_result *par, vddsc_unsupported, dds_get_instance_handle, .init = setup, .fini = teardown)
 {
     dds_return_t result;
     dds_instance_handle_t ih;
 
-    result = dds_instancehandle_get(e[par->index], &ih);
-    cr_expect_eq(dds_err_nr(result), par->exp_res, "Unexpected return code %d \"%s\" (expected %d \"%s\") from dds_instancehandle_get(%s): (%d)", dds_err_nr(result), dds_err_str(result), par->exp_res, dds_err_str(-par->exp_res), entity_kind_str(e[par->index]), result);
+    result = dds_get_instance_handle(e[par->index], &ih);
+    cr_expect_eq(dds_err_nr(result), par->exp_res, "Unexpected return code %d \"%s\" (expected %d \"%s\") from dds_get_instance_handle(%s): (%d)", dds_err_nr(result), dds_err_str(result), par->exp_res, dds_err_str(-par->exp_res), entity_kind_str(e[par->index]), result);
 }
 
 /*************************************************************************************************/

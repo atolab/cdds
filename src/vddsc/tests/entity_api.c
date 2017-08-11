@@ -253,15 +253,15 @@ Test(vddsc_entity, instance_handle, .init = create_entity, .fini = delete_entity
      * for the specific entity children, not for the generic part. */
 
     /* Check getting Handle with bad parameters. */
-    status = dds_instancehandle_get (0, NULL);
+    status = dds_get_instance_handle (0, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(NULL, NULL)");
-    status = dds_instancehandle_get (entity, NULL);
+    status = dds_get_instance_handle (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(entity, NULL)");
-    status = dds_instancehandle_get (0, &hdl);
+    status = dds_get_instance_handle (0, &hdl);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(NULL, handle)");
 
     /* Get Instance Handle, which should not be 0 for a participant. */
-    status = dds_instancehandle_get (entity, &hdl);
+    status = dds_get_instance_handle (entity, &hdl);
     cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_instancehandle_get(entity, handle)");
     cr_assert_neq(hdl, 0, "Entity instance handle is 0");
 }

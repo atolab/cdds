@@ -672,7 +672,7 @@ Test(vddsc_listener, publication_matched, .init=init_triggering_test, .fini=fini
     uint32_t status;
 
     /* Get reader handle that should be part of the status. */
-    ret = dds_instancehandle_get(g_reader, &reader_hdl);
+    ret = dds_get_instance_handle(g_reader, &reader_hdl);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to get prerequisite reader_hdl");
 
     /* Publication matched should be triggered with the right status. */
@@ -715,7 +715,7 @@ Test(vddsc_listener, subscription_matched, .init=init_triggering_test, .fini=fin
     uint32_t status;
 
     /* Get writer handle that should be part of the status. */
-    ret = dds_instancehandle_get(g_writer, &writer_hdl);
+    ret = dds_get_instance_handle(g_writer, &writer_hdl);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to get prerequisite writer_hdl");
 
     /* Subscription matched should be triggered with the right status. */
@@ -940,7 +940,7 @@ Test(vddsc_listener, liveliness_changed, .init=init_triggering_test, .fini=fini_
     /* The init_triggering_test_byliveliness set our interest in liveliness. */
 
     /* Get writer handle that should be part of the status. */
-    ret = dds_instancehandle_get(g_writer, &writer_hdl);
+    ret = dds_get_instance_handle(g_writer, &writer_hdl);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to get prerequisite writer_hdl");
 
     /* Liveliness changed should be triggered with the right status. */

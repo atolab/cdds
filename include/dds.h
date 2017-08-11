@@ -367,7 +367,7 @@ dds_get_mask(
 /* TODO: document. */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
-dds_instancehandle_get(
+dds_get_instance_handle(
         _In_  dds_entity_t entity,
         _Out_ dds_instance_handle_t *ihdl);
 
