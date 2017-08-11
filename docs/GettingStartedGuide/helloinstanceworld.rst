@@ -14,12 +14,13 @@ Hello Instance World (data states & history)
 Introduction
 ************
 
-It is expected that the :ref:`Hello World <HelloWorld>` and
-:ref:`Hello Quick World <HelloQuickWorld>` examples are known.
+In this chapter, it is assumed that the reader has knowledge about the
+:ref:`Hello World <HelloWorld>`and :ref:`Hello Quick World <HelloQuickWorld>`
+examples.
 
-In these previous examples, only one message was sent and received. The
-Hello Instance World will sent more messages and explore the different
-states of the data.
+In the previous examples, only one message is sent and received. In the
+Hello Instance World example, more than one messages are sent and
+different states of data are explored.
 
 :ref:`Building <HelloWorldBuilding>` this example is done through
 :ref:`CMake <CMakeIntro>` and executing it is a bit like
@@ -32,19 +33,20 @@ but in the CMake build directory.
 Data Instances
 **************
 
-The Hello Intance World uses the HelloWorldData type:
+The Hello Intance World uses the HelloWorldData type, which is described
+in the HelloWorldData.idl file:
 
 .. literalinclude:: ../../examples/helloinstanceworld/HelloWorldData.idl
     :linenos:
     :language: idl
 
-There's one line in that idl file that determines the key:
+There's one line in that IDL file that determines the key:
 ::
 
     #pragma keylist Msg userID
 
-In short: the key for the :code:`Msg` struct is the :code:`userId`
-variable. A key can consists out of multiple struct variables.
+The key for the :code:`Msg` struct is the :code:`userId`
+variable. A key can consist out of multiple struct variables.
 However, in this example, only one is used.
 
 Samples with identical keys will be grouped together into one
@@ -72,9 +74,9 @@ Reader History
 **************
 
 Every reader has a history in which samples can be available. The default
-setting for a reader is that it will keep the last sample of every
-instance, which means that a new sample of a particular instance will
-replace an already existing sample in the reader history.
+setting of a reader will keep the last sample of every instance. This
+means that a new sample of a particular instance will replace any
+existing older sample in the reader history.
 See the 3rd read in `States Examples`_ where this takes place.
 
 It is possible to change the number of samples per instance that the
@@ -88,13 +90,14 @@ reader keeps in its history.
 If a reader is created with this QoS, then it will keep the last 2 samples
 of every instance within its history.
 
+    \newpage
 
 **************
 States Summary
 **************
 
 Every sample has mainly three states related to it. Two of these states
-are related to the instance.
+are related to the instance, which is shown in the table below.
 
 +-----------------+------------------------------+-----------------------------------------------+
 | State           | Value                        | Description                                   |
@@ -148,7 +151,7 @@ The HelloinstanceworldPublisher will write three samples in two instances.
 
 After that, it will dispose instance 2. Because the dispose is related to
 instances only, only the key variable (thus :code:`userID`) is of
-influence and the rest of the sample will be ignored (in the helloworld
+importance and the rest of the sample will be ignored (in the helloworld
 case that'll be :code:`message`).
 
 This results in the following output from the publisher
@@ -212,7 +215,7 @@ perform a read between every write from the publisher. This is the result
 4th read
 
     | This time, both samples have been read before. It's just that
-      instance nr 2 has been disposed by the writer. The dispose did not
+      instance 2 has been disposed by the writer. The dispose did not
       change the data of that sample. Only the instance state has changed.
 
 HelloinstanceworldSubscriber has been implemented to terminate when it
@@ -223,10 +226,11 @@ receives a sample that is not alive (disposed or unregistered).
 Take & Invalid Data
 *******************
 
-So far, we've just been calling :code:`dds_read()`. This will leave the
-samples in the reader history. However, you could also call
-:code:`dds_take()`. This will remove the sample from the reader history,
-which means it can't be read afterwards anymore.
+In the example code of the previous chapters, only :code:`dds_read()` is
+used. This will leave the samples in the reader history. On the other
+hand, :code:`dds_take()` can also be used to read. In contrast to
+:code:`dds_read(), :code:`dds_take()` will remove the sample(s) from the
+reader history, which means it can't be read afterwards anymore.
 
 When changing the line
 ::
@@ -284,8 +288,10 @@ you'll see the following output:
 Source Code
 ***********
 
-When taking :ref:`Hello Quick World <HelloQuickWorld>` as basis and add
-the mentioned changes to that, you get the Hello Instance World code.
+In the previous chapters, :ref:`Hello Quick World <HelloQuickWorld>` is
+taken as basis and some changes that can be applied to it are explained.
+
+Applying these changes results in the following Hello Instance World code.
 
 Publisher:
 

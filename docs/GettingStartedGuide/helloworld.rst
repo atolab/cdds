@@ -15,7 +15,7 @@ Introduction
 ************
 
 The Hello World example is an introduction into DDS by creating
-a publisher and subscriber and sending a message from the former
+a publisher and subscriber and senting a message from the former
 to the latter.
 
 
@@ -26,21 +26,23 @@ Running Hello World
 *******************
 
 The Hello World example is packaged with pre-build executables
-that can be found :code:`examples/helloworld/bin` directory.
+that can normally be found in:
+
+:Windows: :code:`%TODO_CHAM-332%/share/VortexDDS/examples/helloworld/bin`
+:Linux: :code:`/usr/share/VortexDDS/examples/helloworld/bin`
+
+.. note::
+    The root directories (:code:`%TODO_CHAM-332%/` and
+    :code:`/usr/`) can be different if VortexDDS was
+    not :ref:`installed <Installation>` in the system
+    default locations.
+
 These two executables are called HelloworldPublisher and
 HelloworldSubscriber.
 
-To be able to run these two executables, the vddsc library needs
-to be available and can be found by the executables.
-This can mean that the library search path has to be changed if
-the library is not installed on a system default location.
-For instance, by executing the command
-
-:Windows: :code:`set PATH=../../../lib;%PATH%`
-:Linux: :code:`export LD_LIBRARY_PATH=../../../lib:$LD_LIBRARY_PATH`
-
-When the library is available, then the HelloworldSubscriber can
-be started by going to the executables directory.
+After going to the helloworld executables directory, the
+HelloworldSubscriber can be started
+:ref:`* <HelloWorldRunningNote>` by the following command.
 
 :Windows: :code:`HelloworldSubscriber.exe`
 :Linux: :code:`./HelloworldSubscriber`
@@ -63,8 +65,15 @@ While the HelloworldSubscriber will print this:
     === [Reader] waiting for a message ...
     === [Subscriber] Received : Message (1, Hello World)
 
-This shows that the message was send from the publisher to the
+This shows that the message was sent from the publisher to the
 waiting subscriber.
+
+.. _`HelloWorldRunningNote`:
+
+\* When the executables do not run due to lacking VortexDDS
+libraries, please look at these notes for
+:ref:`Windows <WindowsSetLibPath>` and
+:ref:`Linux <LinuxSetLibPath>`.
 
 
 ******************
@@ -84,40 +93,58 @@ following files, which will be explained in more detail later on.
 +----------------------------+--------------------------------------------+
 | HelloWorldData.idl         | Datatype description file.                 |
 +----------------------------+--------------------------------------------+
-| generated/HelloWorldData.c | Generated datatype file.                   |
+| Makefile                   | Linux native build file.                   |
 +----------------------------+--------------------------------------------+
-| generated/HelloWorldData.h | Generated datatype file.                   |
+| TODO                       | Windows native build file.                 |
 +----------------------------+--------------------------------------------+
+| CMakeLists.txt             | CMake build file.                          |
++----------------------------+--------------------------------------------+
+| generated/HelloWorldData.c | Generated datatype source file.            |
++----------------------------+--------------------------------------------+
+| generated/HelloWorldData.h | Generated datatype header file.            |
++----------------------------+--------------------------------------------+
+
+
+Build Files
+===========
+
+Three files are available to support building the example. Both
+:ref:`Windows native <WindowsNativeBuild>` and
+:ref:`Linux native <LinuxNativeBuild>` build files will only be
+available for this Hello World example. All the other examples
+make use of the :ref:`CMake <CMakeIntro>` build system and thus
+only have the CMakeLists.txt build related file.
 
 
 HelloWorldData.idl
 ==================
 
-To be able to send data from a writer to a reader, DDS needs to
+To be able to sent data from a writer to a reader, DDS needs to
 know the data type. For the Hello World example, this data type
 is described in the HelloWorldData.idl file.
 
-Source files are generated from this idl file that can be used
+Source files are generated from this IDL file that can be used
 by the writer and reader of the Hello World example to
 communicate the Hello World message.
 
-An explanation of the idl content and how the source files are
-generated is not really important now and will be explained in
+An explanation of the IDL content and how the source files are
+generated is not needed at this point and will be explained in
 the `Hello World DataType`_ chapter.
 
+.. _`HelloWorldDataFiles`:
 
 HelloWorldData.c & HelloWorldData.h
 ===================================
 
-These are generated files. How they are generated is not really
-important at this point and will be explained later in the
-`Hello World DataType`_ chapter. The c source is normally of
-no interest to the application developer anyway.
+These are the generated files related to the data type of the
+messages that are sent and received. How they are generated will
+be explained in the further chapter called
+`Hello World DataType`_.
 
-The HelloWorldData.h, however, does contain some information
-that the application developer depends on. For one, it contains
-the actual message structure that is used when writing or
-reading data.
+While the c source has no interest for the application
+developers, HelloWorldData.h contains some information that they
+depend on. For example, it contains the actual message structure
+that is used when writing or reading data.
 ::
 
     typedef struct HelloWorldData_Msg
@@ -133,8 +160,8 @@ space for the specific data types.
     HelloWorldData_Msg__alloc()
     HelloWorldData_Msg_free(d,o)
 
-It also contains an extern variable that describes the data type
-to the DDS middleware.
+It contains an extern variable that describes the data type to
+the DDS middleware as well.
 ::
 
     HelloWorldData_Msg_desc
@@ -150,9 +177,9 @@ message and reads it when it receives one.
     :linenos:
     :language: c
 
-We will be using the dds API and the HelloWorldData_Msg data
-type to send and receive. For that, we need to include the
-appropriate header files
+We will be using the DDS API and the HelloWorldData_Msg type
+to sent and receive data. For that, we need to include the
+appropriate header files.
 ::
 
     #include "dds.h"
@@ -182,14 +209,15 @@ Hello World example case, it is part of the default domain.
 
     participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
 
-We also need a topic. This basically describes the data type
-that is used by the reader. Here we see the data type
-description for the DDS middleware that is present in the
-HelloWorldData.h. The topic also has a name. Topics with the
-same data type description, but with other names, are considered
-different. This means that readers/writers created with topic
-with name A will not interfere with readers/writers created with
-topic with name B, even though they use the same data type.
+The another requisite is the topic which basically describes the
+data type that is used by the reader. When creating the topic,
+the :ref:`data description <HelloWorldDataFiles>` for the DDS
+middleware that is present in the HelloWorldData.h is used.
+The topic also has a name. Topics with the same data type
+description, but with different names, are considered as
+different topics. This means that readers/writers created with a
+topic named "A" will not interfere with readers/writers created
+with a topic named "B".
 ::
 
     topic = dds_create_topic (participant, &HelloWorldData_Msg_desc, "HelloWorldData_Msg", NULL, NULL);
@@ -218,7 +246,7 @@ initialized array of pointers (:code:`samples`), an array that
 holds information about the read sample(s) (:code:`info`), the
 size of the arrays and the maximum number of samples to read.
 Every read sample in the samples array has related information
-in the info array at the very same index.
+in the info array at the same index.
 ::
 
     ret = dds_read (reader, samples, info, MAX_SAMPLES, MAX_SAMPLES);
@@ -252,22 +280,23 @@ clean up.
     HelloWorldData_Msg_free (samples[0], DDS_FREE_ALL);
     dds_delete (participant);
 
-Deleting the participant meant that the reader (which is its
-child) is deleted as well.
+All the entities that are created using the participant are also
+deleted. This means that deleting the participant will
+automatically the reader as well.
 
 
 HelloWorld publisher.c
 ======================
 
 This contains the source that will write an Hello World message
-on which the subscriber was waiting.
+on which the subscriber is waiting.
 
 .. literalinclude:: ../../examples/helloworld/publisher.c
     :linenos:
     :language: c
 
 We will be using the dds API and the HelloWorldData_Msg data
-type to send and receive. For that, we need to include the
+type to sent and receive. For that, we need to include the
 appropriate header files
 ::
 
@@ -277,7 +306,7 @@ appropriate header files
 Just like with the reader in subscriber.c, we need a participant
 and topic to be able to create a writer. We use the same topic
 name as in subscriber.c. Otherwise the reader and writer are not
-considered related and data will not be send between them.
+considered related and data will not be sent between them.
 ::
 
     dds_entity_t participant;
@@ -291,12 +320,14 @@ considered related and data will not be send between them.
 The DDS middleware is a pub/sub implementation. This means that
 it will discover related readers and writers and connect them so
 that written data can be received by readers, without the
-application to worry about it. There is a catch though and that
-is that this discovery and coupling takes a small amount of
+application having to worry about it. There is a catch though:
+this discovery and coupling takes a small amount of
 time. There are various ways to work around this problem. For
-instance by making the readers and writers reliable or wait for
-publication/subscription matched events or just don't care if
-the reader misses a few samples (f.i. when the publishing
+instance by making the readers and writers
+:ref:`reliable <ReliabilityIntro>` or wait for
+:ref:`publication <WaitsetIntro>`/subscription matched events
+or just don't care if the reader misses a few samples (f.i. when
+the publishing
 frequency is high enough). However, that is out of the scope of
 this example and to keep things simple, we just do a sleep.
 ::
@@ -309,7 +340,7 @@ this example and to keep things simple, we just do a sleep.
     recommended. See :ref:`Hello Quick World <HelloQuickWorld>`
     example for an alternative.
 
-Now, we need to decide what data to send.
+Now, we need to decide which data to sent.
 ::
 
     HelloWorldData_Msg msg;
@@ -317,7 +348,8 @@ Now, we need to decide what data to send.
     msg.userID = 1;
     msg.message = "Hello World";
 
-Then we can actually send the message for the subscriber to receive.
+Then we can actually sent the message to be received by the
+subscriber.
 ::
 
     ret = dds_write (writer, &msg);
@@ -327,8 +359,9 @@ After the sample is written, we need to clean up.
 
     ret = dds_delete (participant);
 
-Deleting the participant meant that the writer (which is its
-child) is deleted as well.
+All the entities that are created using the participant are also
+deleted. This means that deleting the participant will
+automatically the writer as well.
 
 
 
@@ -336,28 +369,29 @@ child) is deleted as well.
 Building Hello World
 ********************
 
-We recommend using `CMake`_, which is explained in a
-following chapter. Other examples will make use of that.
+We recommend using `CMake`_, which is explained in one of the
+following chapters. Other examples will make use of that.
 
-However, to kick things off, a native way of building
+However, to start things off, a native way of building
 the Hello World example is provided.
 
+
+.. _`LinuxNativeBuild`:
 
 Linux Native Build
 ==================
 
-A Linux native Makefile is provided in the 
-:code:`examples/helloworld` directory. Just go to that
-directory and type 
+A Linux native :code:`Makefile` is provided in the
+:code:`examples/helloworld` directory. In a terminal, go to that
+directory and type
 ::
 
     make
 
-Be sure, however, that the include files and vddsc library can
-be found by the build process. The Makefile expects them to be
-present at system default locations or at :code:`../../lib` and
-:code:`../../include` relative to the :code:`examples/helloworld`
-directory. If this isn't the case on your machine, then please
+The build process should have access to the include files and
+the vddsc library. The Makefile expects them to be present at
+system default locations so that it can find them automatically.
+If this isn't the case on your machine, then please
 update the :code:`CFLAGS` and :code:`LDFLAGS` within the
 Makefile to point to the proper locations.
 
@@ -365,10 +399,11 @@ This will build the HelloworldSubscriber and HelloworldPublisher
 executables in the helloworld source directory (not the bin
 directory that contains the pre-build binaries).
 
-`Running Hello World`_ example can now be done with the
-binaries that were just build. Be sure to use the right
-directories though.
+`Running Hello World`_ example can now be done with the binaries
+that were just build. Be sure to use the right directories.
 
+
+.. _`WindowsNativeBuild`:
 
 Windows Native Build
 ====================
@@ -381,7 +416,7 @@ TODO
 Hello World DataType
 ********************
 
-So far, we haven't touched the actual data type that is send
+So far, we haven't touched the actual data type that is sent
 from the writer to the reader.
 
 
@@ -393,37 +428,41 @@ coupled information-driven systems. It emphasizes a data layer
 that is common for all the distributed applications within the
 system. Because there is no direct coupling among the
 applications in the DDS model, they can be added and removed
-easily in a modular and scalable manner. This makes that a
-data-centric architecture doesn't really increase in complexity
-when the amount of data is increased.
+easily in a modular and scalable manner. This makes that the
+complexity of a data-centric architecture doesn't really
+increase when more and more publishers/subscribers are added.
 
-The HelloWorld has a very simple 'data layer' of only one data
-type :code:`HelloWorldData_Msg`. The subscriber and publisher
-don't really know of each other. The former just waits until
-somebody provides the data it requires, while the latter just
-publishes the data without worrying if there are interested
-parties or how many.
+The HelloWorld example has a very simple 'data layer' of only
+one data type :code:`HelloWorldData_Msg`. The subscriber and
+publisher are not aware of each other. The former just waits
+until somebody provides the data it requires, while the latter
+just publishes the data without considering the number of
+interested parties. In other words, it doesn't matter for the
+publisher if there are none or multiple subscribers. It just
+writes the data. The DDS middleware takes care of delivering
+the data when needed.
 
 
 Hello World IDL
 ===============
 
 There are a few ways to describe the structures that make up the
-data layer. The HelloWorld uses the idl language to describe the
+data layer. The HelloWorld uses the IDL language to describe the
 data type in HelloWorldData.idl:
 
 .. literalinclude:: ../../examples/helloworld/HelloWorldData.idl
     :linenos:
     :language: idl
 
-An extensive explanation of idl is outside the scope of this
-example. A quick overview of the example is given anyway.
+An extensive explanation of IDL lies outside the scope of this
+example. Nevertheless, a quick overview of this example is given
+anyway.
 
-First, there's the :code:`module HelloWorldData`. This is kind
-of a namespace or scope or similar.
+First, there's the :code:`module HelloWorldData`. This is a kind
+of namespace or scope or similar.
 Within that module, there's the :code:`struct Msg`. This is the
-actual data structure that used for the communication. In this
-case, it contains a :code:`userID` and :code:`message`.
+actual data structure that is used for the communication. In
+this case, it contains a :code:`userID` and :code:`message`.
 
 The combination of this module and struct translates to the
 following when using the c language.
@@ -435,72 +474,70 @@ following when using the c language.
       char * message;
     } HelloWorldData_Msg;
 
-When it is translate to a different language, it will look
+When it is translated to a different language, it will look
 different and more tailored towards that language. This is the
-advantage of using a data oriented language, like idl, to
+advantage of using a data oriented language, like IDL, to
 describe the data layer. It can be translated into different
 languages after which the resulting applications can communicate
-without concerns about said programming languages.
+without concerns about the (possible different) programming
+languages these application are written in.
 
 A bit more information about the :code:`#pragma keylist` can be
 found :ref:`here <HelloInstanceWorld>`.
 
 .. _`IdlCompiler`:
 
-IDL Precompiler
-===============
+Generate DataTypes
+==================
 
-Like already said, an idl file needs to be translated to another
-programming language in which the communication application will
-be written.
+Like already mentioned in the `Hello World IDL`_ chapter, an IDL
+file contains the description of data type(s). This needs to be
+translated into programming languages to be useful in the
+creation of DDS applications.
 
 To be able to do that, there's a pre-compile step that actually
-compiles the idl file into the desired programming language.
+compiles the IDL file into the desired programming language.
 
-The tool :code:`dds_idlc` (idl compiler) is supplied for this.
+A java application :code:`com.prismtech.vortex.compilers.Idlc`
+is supplied to support this pre-compile step. This is available
+in :code:`idlc-jar-with-dependencies.jar`
 
-The compilation from idl into c source code is as simple as
-calling dds_idlc with the idl file.
+The compilation from IDL into c source code is as simple as
+calling dds_idlc with an IDL file. In the case of the Hello
+World example, that IDL file is HelloWorldData.idl.
 ::
 
-    dds_idlc HelloWorldData.idl
+    java -classpath "<install_dir>/share/VortexDDS/idlc/idlc-jar-with-dependencies.jar" com.prismtech.vortex.compilers.Idlc HelloWorldData.idl
+
+This seems a bit elaborate, but this step will be done
+automatically if you use the :ref:`idlc_generate <IdlcGenerate>`
+function in the :ref:`VortexDDS CMake package <VortexDdsPackage>`.
+But we get ahead of ourselfs with `CMake`_. Native build targets
+have been provided for the Hello World example for your
+convenience.
+
+:Windows: :code:`TODO`
+:Linux: :code:`make datatype`
 
 This will result in new HelloWorldData.c and HelloWorldData.h
 files that can be used in the Hello World publisher and
 subscriber applications.
 
+The application has to be rebuild when the data type source
+files were re-generated.
 
-Build DataTypes
-===============
-
-If the idl file is updated, the dds_idlc needs to be called to
-create the related source files.
-
-For the Hello World example, the native build processes are
-extended to be able to generate the c source code.
-
-:Windows: :code:`TODO`
-:Linux: :code:`make datatype`
-
-This will result in new HelloWorldData.c and HelloWorldData.h in
-the generated directory.
-
-The applications are not automatically build after new data type
-files are generated. To get the new data types to take effect,
-the applications themselves need to be rebuild.
-
-After that, the Hello World example will use the new data types.
-
+Again, this is all for the native builds. When using CMake, all
+this is done automatically.
 
 
 *******************
 Building With CMake
 *******************
 
-So far, we've been talking about building the Hello World example
+In the earlier chapters, building the Hello World example is done
 natively. However, the Hello World can also be build using the
-cmake tool. This is what is recommended. In fact, all the other
-examples don't provide native makefiles, only cmake files.
+CMake tool. This is what is recommended. In fact, all the other
+examples don't provide native makefiles, only CMake files.
 
 
 .. _`CMakeIntro`:
@@ -521,9 +558,9 @@ does not require any additional tools to be installed. The same
 CMake input files will build with GNU make, Visual studio 6,7,8
 IDEs, borland make, nmake, and XCode.
 
-An other strength is that CMake is building out-of-source. It
-simply works out-of-the-box. There are two important reasons why
-you would want this.
+An other advantage of CMake is building out-of-source. It simply
+works out-of-the-box. There are two important reasons to choose
+this:
 
 1. Easy cleanup (no cluttering the source tree). Simply remove
    the build directory if you want to start from scratch.
@@ -536,8 +573,10 @@ you would want this.
 There are a few other benefits to CMake, but that is out of the
 scope of this document.
 
-Hello World CMake
-=================
+.. _`VortexDdsPackage`:
+
+Hello World CMake (VortexDDS Package)
+=====================================
 
 After the CMake digression, we're back with the Hello World
 example. Apart from the native build files, CMake build files
@@ -549,29 +588,30 @@ are provided as well. See
     :language: cmake
 
 It will try to find the :code:`VortexDDS` CMake package. When it
-has found it, every path and dependencies are automatically set
-so that an application can use it without fuss. If it can not
-find it, please add the location of :code:`VortexDDSConfig.cmake`
-to the :code:`CMAKE_PREFIX_PATH` environment variable.
+has found it, every path and dependencies are automatically set.
+After that, an application can use it without fuss. CMake will
+look in the default locations for the code:`VortexDDS` package.
+If it can not find it, you need to add the location of
+:code:`VortexDDSConfig.cmake` to the :code:`CMAKE_PREFIX_PATH`
+environment variable.
+
+.. _`IdlcGenerate`:
 
 The :code:`VortexDDS` package provides the :code:`vddsc` library
 that contains the DDS API that the application needs. But apart
-from that, it also contains helper functionality to generate
-library targets from idl files that can be easily used when
-compiling an application that depends on a data type described
-in such an idl file. To be able to do this, the :code:`VortexDDS`
-package tries to access the :code:`dds_idlc` tool. If it can't
-find it, a warning will be issued during the CMake configuration
-step. An error will be triggered when the build process tries to
-use :code:`dds_idlc` while it wasn't found before. If that
-happens, please add the :code:`dds_idlc` location to the
-:code:`CMAKE_PREFIX_PATH` environment variable.
+from that, it also contains helper functionality
+(:code:`idlc_generate`) to generate library targets from IDL
+files. These library targets can be easily used when compiling
+an application that depends on a data type described
+in an IDL file.
 
-Two applications will be created, both of which only consists
-out of 1 source file.
+Two applications will be created, :code:`HelloworldPublisher`
+and :code:`HelloworldSubscriber`. Both consist only out of one
+source file.
 
-Both applications need to be linked to the vddsc library in the
-VortexDDS package and the just generated HelloWorldData_lib.
+Both applications need to be linked to the :code:`vddsc` library
+in the :code:`VortexDDS` package and :code:`HelloWorldData_lib`
+that was generated by the call to :code:`idlc_generate`.
 
 
 .. _`HelloWorldBuilding`:
@@ -579,19 +619,19 @@ VortexDDS package and the just generated HelloWorldData_lib.
 Hello World Configuration
 =========================
 
-The Hello World is prepared to be build by CMake through the use
+The Hello World is prepared to be built by CMake through the use
 of its :code:`CMakeLists.txt` file. The first step is letting
 CMake configure the build environment.
 
-The location where the configure step is executed, will be the
-root for the build directory. It's good practice to build
-examples (or anything for that matter) out-of-source. To do
-that, create a :code:`build` directory in the 
-:code:`examples/helloworld` directory and go there, making
-our location :code:`examples/helloworld/build`.
+It can be a good practise to build examples out-of-scope. In order to do that, create ...
+
+It's good practice to build examples or applications
+out-of-source. In order to do that, create a :code:`build`
+directory in the :code:`examples/helloworld` directory and go
+there, making our location :code:`examples/helloworld/build`.
 
 Here, we can let CMake configure the build environment for
-us by typing
+us by typing:
 ::
 
     cmake ../
@@ -599,7 +639,7 @@ us by typing
 CMake will use the CMakeLists.txt in the helloworld directory
 to create makefiles that fit the native platform.
 
-Now that everything is prepared, we can actually build the
+Since everything is prepared, we can actually build the
 applications (HelloworldPublisher and HelloworldSubscriber in
 this case).
 
@@ -608,19 +648,20 @@ Hello World Build
 =================
 
 After the configuration step, building the example is as easy
-as typing
+as typing:
 ::
 
     cmake --build .
 
-while being in the the build directory created during the
+while being in the build directory created during the
 configuration step. In this example, that directory would be
 :code:`examples/helloworld/build`.
 
 After the build finished, both the Hello World publisher and
-subscriber applications are present within the build directory.
+subscriber applications will be present within the build
+directory.
 
 `Running Hello World`_ example can now be done with the
 binaries that were just build. Be sure to use the right
-directories though.
+directories.
 

@@ -39,11 +39,16 @@ distclean: clean
 
 
 
-# Make sure that the location where the idl compiler is installed is
-# known to the makefile. If idlc is not installed in a system default
-# spot, then PATH can be changed to introduce its location.
-#PATH += $PATH:../../../../bin
+# Make sure that the idlc jar file is available and java can find its
+# location. In this example, it is assumed that the jar is located at
+# a specific relative directory. Change the classpath variable if
+# this is not the case on your system.
+classpath:= ../../idlc/idlc-jar-with-dependencies.jar
+ifneq ($(CLASSPATH),)
+        classpath:= $(CLASSPATH):$(classpath)
+endif
+export CLASSPATH:=$(classpath)
 
 datatype:
-	dds_idlc -d generated HelloWorldData.idl
+	java com.prismtech.vortex.compilers.Idlc HelloWorldData.idl
 

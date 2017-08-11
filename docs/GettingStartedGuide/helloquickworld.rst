@@ -14,10 +14,11 @@ Hello Quick World (events & reliability)
 Introduction
 ************
 
-It is expected that the :ref:`Hello World <HelloWorld>` example is known.
+In this chapter, it is assumed that the :ref:`Hello World <HelloWorld>`
+example is known by the reader.
 
-The :ref:`Hello World <HelloWorld>` example is simple indeed, but it has
-some idiosyncrasies:
+Although the  :ref:`Hello World <HelloWorld>` example is simple, it has
+some idiosyncrasies which are:
 
 - The HelloworldSubsriber needs to be started before HelloworldPublisher.
 - The HelloworldSubsriber polls for data.
@@ -32,15 +33,16 @@ The Hello Quick World example will solve these issues.
 the binaries can not be found in the pre-compiled bin directory,
 but in the CMake build directory.
 
+.. _`WaitsetIntro`:
 
 *******
 Waitset
 *******
 
-The waitset is an object to which entities (like readers and writers) can
-be attached. It supplies a wait function that'll block until the status
+The waitset is an object which entities (like readers and writers) can be
+attached to. It supplies a wait function that'll block until the status
 of one (or multiple) of these entities change. There are two status
-changes that interests us:
+changes that are of interest for the Hello World example:
 
 - The writer discovered a reader.
 - The reader received data.
@@ -48,8 +50,8 @@ changes that interests us:
 The writer event related to the discovery is :code:`publication matched`.
 This means that doing the following will block the HelloquickworldPublisher
 until a reader that matches the publication is detected within 30 seconds.
-The number of triggered entities are returned by the wait, so if 0 is
-returned, you know it timed out.
+The number of triggered entities are returned by the wait. So, for
+example, if 0 is returned, it means that the wait timed out.
 ::
 
     dds_return_t ret;
@@ -63,14 +65,14 @@ returned, you know it timed out.
         // write
     }
 
-By adding this to the publisher, the Hello Quick World publisher will wait
-until it detects the subscriber. This means that you don't have to start
-the subscriber before the publisher, like you had to with the
+By adding this code to the publisher, the Hello Quick World publisher will
+wait until it detects the subscriber. This means that you don't have to
+start the subscriber before the publisher, which you had to with the
 :ref:`Hello World <HelloWorld>` example.
 
-Adding the same kind of code block to the subscriber let's us get rid of
-the polling loop. Just wait for the :code:`data available` status change
-on the reader.
+Adding the same kind of code block to the subscriber allows the user to
+get rid of the polling loop. Just wait for the :code:`data available`
+status change on the reader.
 ::
 
     dds_return_t ret;
@@ -85,20 +87,22 @@ on the reader.
     }
 
 By using a waitset in the publisher and subscriber, we got rid of the
-sleeps that were in the :ref:`Hello World <HelloWorld>` example.
+sleeps which are needed in the :ref:`Hello World <HelloWorld>` example.
 
+.. _`ReliabilityIntro`:
 
 ***********
 Reliability
 ***********
 
-The Hello Quick World publisher waits for it to detect a reader by means
-of the :code:`publication matched` status change. However, the writers'
-discovery can be quicker than the readers'. This can mean that the writer
-already discovered the reader and starts writing while the reader hasn't
-discovered the writer yet. The result is that the subscriber receives
-samples of an unknown origin and ignores them so they don't reach the
-reader.
+As we can see in the previous chapter, the Hello Quick World publisher
+uses the `WaitSet`_ to wait for a reader by means of detecting the
+:code:`publication matched` status change. However, the writers'
+detection of the reader can be quicker than the readers' detection of the
+writer. This can mean that the writer already discovered the reader and
+starts writing while the reader hasn't discovered the writer yet. The
+result is that the subscriber receives samples of an unknown origin and
+ignores them so they don't reach the reader.
 
 This doesn't seem like a reliable communication. Which, in fact, it isn't.
 The default setting of a reader and writer is :code:`best effort`. This
@@ -124,11 +128,14 @@ still :code:`best effort`. So, we have to use that QoS when creating them.
     reader = dds_create_reader (participant, topic, qos, NULL);
     writer = dds_create_writer (participant, topic, qos, NULL);
 
-The :code:`best effort` QoS is a bit more efficient compared to
+The :code:`best effort` QoS is more efficient when compared to
 :code:`reliable`, especially when considering the writer:
 
 - It doesn't have to wait/respond to ack/nacks.
 - It doesn't have to maintain samples in memory for possible resends.
+
+A :code:`best effort` reader is also more efficient then a
+:code:`reliable` reader.
 
 For some forms of communication, :code:`best effort` is good enough (f.i.
 with periodic updates). For others, you'd really like to have
@@ -137,13 +144,13 @@ So, the choice between them is a comparison between performance and how
 reliable the communication should be.
 
 
-
 ***********
 Source Code
 ***********
 
-When taking :ref:`Hello World <HelloWorld>` as basis and add the mentioned
-improvements to that, you get the Hello Quick World code.
+In the previous chapters, :ref:`Hello World <HelloWorld>` is taken as
+basis and explained how it can be improved. These improvements are shown
+in this chapter with the  Hello Quick World code.
 
 Publisher:
 
