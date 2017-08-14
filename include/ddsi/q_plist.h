@@ -76,6 +76,7 @@ typedef struct nn_original_writer_info {
 #ifdef DDSI_INCLUDE_SSM
 #define PP_READER_FAVOURS_SSM                   ((uint64_t)1 << 39)
 #endif
+#define PP_RTI_TYPECODE                         ((uint64_t)1 << 40)
 /* Set for unrecognized parameters that are in the reserved space or
    in our own vendor-specific space that have the
    PID_UNRECOGNIZED_INCOMPATIBLE_FLAG set (see DDSI 2.1 9.6.2.2.1) */
@@ -89,6 +90,9 @@ typedef struct nn_original_writer_info {
 #define NN_PRISMTECH_FL_DDSI2_PARTICIPANT_FLAG  (1u << 3)
 #define NN_PRISMTECH_FL_PARTICIPANT_IS_DDSI2    (1u << 4)
 #define NN_PRISMTECH_FL_MINIMAL_BES_MODE        (1u << 5)
+#define NN_PRISMTECH_FL_SUPPORTS_STATUSINFOX    (1u << 5)
+/* SUPPORTS_STATUSINFOX: when set, also means any combination of
+   write/unregister/dispose supported */
 
 /* For locators one could patch the received message data to create
    singly-linked lists (parameter header -> offset of next entry in

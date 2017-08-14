@@ -1,137 +1,419 @@
 #include "dds.h"
+#include "os/os.h"
 #include "RoundTrip.h"
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
+#include <criterion/theories.h>
 
 /* We are deliberately testing some bad arguments that SAL will complain about.
  * So, silence SAL regarding these issues. */
 #pragma warning(push)
 #pragma warning(disable: 6387 28020)
 
-Test(vddsc_topic, create)
+
+
+/**************************************************************************************************
+ *
+ * Test fixtures
+ *
+ *************************************************************************************************/
+static dds_entity_t g_participant      = 0;
+static dds_entity_t g_topicRtmAddress  = 0;
+static dds_entity_t g_topicRtmDataType = 0;
+
+static dds_qos_t    *g_qos        = NULL;
+static dds_qos_t    *g_qos_null   = NULL;
+static dds_listener_t *g_listener = NULL;
+static dds_listener_t *g_list_null= NULL;
+
+#define MAX_NAME_SIZE (100)
+char g_topicRtmAddressName[MAX_NAME_SIZE];
+char g_topicRtmDataTypeName[MAX_NAME_SIZE];
+char g_nameBuffer[MAX_NAME_SIZE];
+
+static char*
+create_topic_name(const char *prefix, char *name, size_t size)
 {
-  dds_entity_t participant;
-  dds_entity_t topic, topic2;
-  dds_listener_t *listener;
-  dds_qos_t *qos;
-
-  participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-
-  /* Creating initial topic (with listener) should succeed. */
-  listener = dds_listener_create(NULL);
-  cr_assert_neq(listener, NULL, "dds_listener_create(NULL)");
-  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
-  cr_assert_gt(topic, 0, "dds_create_topic(RoundTrip) 1st");
-
-  /* Creating the same topic (without listener) should fail.  */
-  topic2 = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, listener);
-  cr_assert_eq(dds_err_nr(topic2), DDS_RETCODE_PRECONDITION_NOT_MET, "dds_create_topic(RoundTrip) 2nd");
-
-
-  /* Creating the same topic (same type, different name) should succeed.  */
-  topic2 = dds_create_topic (participant, &RoundTripModule_DataType_desc, "TrippedyTrip", NULL, NULL);
-  cr_assert_gt(topic2, 0, "dds_create_topic(TrippedyTrip) 1st");
-  dds_delete(topic2);
-
-  /* Re-creating previously created topic should succeed.  */
-  topic2 = dds_create_topic (participant, &RoundTripModule_DataType_desc, "TrippedyTrip", NULL, NULL);
-  cr_assert_gt(topic2, 0, "dds_create_topic(TrippedyTrip) 2nd");
-  dds_delete(topic2);
-
-  /* Creating the same topic (with default QoS) should succeed.  */
-  qos = dds_qos_create();
-  topic2 = dds_create_topic (participant, &RoundTripModule_DataType_desc, "TrippedyTrip2", qos, NULL);
-  cr_assert_gt(topic2, 0, "dds_create_topic(Compatible)");
-  dds_delete(topic2);
-  dds_qos_delete(qos);
-
-  /* Creating the same topic (with inconsistent QoS) should fail.  */
-  qos = dds_qos_create();
-  dds_qset_lifespan(qos, -2000000000);
-  topic2 = dds_create_topic (participant, &RoundTripModule_DataType_desc, "Inconsistent", qos, NULL);
-  cr_assert_eq(dds_err_nr(topic2), DDS_RETCODE_INCONSISTENT_POLICY, "dds_create_topic(Inconsistent)");
-  dds_qos_delete(qos);
-
-  /* Creating the different topic with same name should fail.  */
-  topic2 = dds_create_topic (participant, &RoundTripModule_Address_desc, "RoundTrip", NULL, NULL);
-  cr_assert_eq(dds_err_nr(topic2), DDS_RETCODE_PRECONDITION_NOT_MET, "dds_create_topic(RoundTrip) other");
-
-  /* Creating the topic without description should fail.  */
-  topic2 = dds_create_topic (participant, NULL, "RoundTrip", NULL, NULL);
-  cr_assert_eq(dds_err_nr(topic2), DDS_RETCODE_BAD_PARAMETER, "dds_create_topic(RoundTrip)");
-
-  /* Creating the topic with an invalid name should fail.  */
-  topic2 = dds_create_topic (participant, NULL, "Round-Trip", NULL, NULL);
-  cr_assert_eq(dds_err_nr(topic2), DDS_RETCODE_BAD_PARAMETER, "dds_create_topic(RoundTrip)");
-
-  /* Creating the topic without name should fail.  */
-  topic2 = dds_create_topic (participant, &RoundTripModule_Address_desc, NULL, NULL, NULL);
-  cr_assert_eq(dds_err_nr(topic2), DDS_RETCODE_BAD_PARAMETER, "dds_create_topic(NULL)");
-
-  dds_delete (topic);
-  dds_listener_delete(listener);
-  dds_delete (participant);
+    /* Get semi random g_topic name. */
+    os_procId pid = os_procIdSelf();
+    uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
+    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    return name;
 }
 
-Test(vddsc_topic, find)
+static void
+vddsc_topic_init(void)
 {
-    dds_entity_t participant;
-    dds_entity_t topic, found;
+    create_topic_name("vddsc_topic_test_rtm_address",  g_topicRtmAddressName,  MAX_NAME_SIZE);
+    create_topic_name("vddsc_topic_test_rtm_datatype", g_topicRtmDataTypeName, MAX_NAME_SIZE);
 
-    participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+    g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(g_participant, 0, "Failed to create prerequisite g_participant");
 
-    found = dds_find_topic(participant, "RoundTripFind");
-    cr_assert_eq(dds_err_nr(found), DDS_RETCODE_PRECONDITION_NOT_MET, "dds_find_topic(RoundTripFind) 1st");
+    g_topicRtmAddress  = dds_create_topic(g_participant, &RoundTripModule_Address_desc,  g_topicRtmAddressName,  NULL, NULL);
+    cr_assert_gt(g_topicRtmAddress, 0, "Failed to create prerequisite g_topicRtmAddress");
 
-    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, "RoundTripFind", NULL, NULL);
-    cr_assert_gt(topic, 0, "dds_create_topic(RoundTripFind)");
+    g_topicRtmDataType = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, g_topicRtmDataTypeName, NULL, NULL);
+    cr_assert_gt(g_topicRtmDataType, 0, "Failed to create prerequisite g_topicRtmDataType");
 
-    found = dds_find_topic(participant, "RoundTripFind");
-    cr_assert_gt(found, 0, "dds_find_topic(RoundTripFind) 2nd");
-    dds_delete(found);
-
-    dds_delete(topic);
-
-    found = dds_find_topic(participant, "RoundTripFind");
-    cr_assert_eq(dds_err_nr(found), DDS_RETCODE_PRECONDITION_NOT_MET, "dds_find_topic(RoundTripFind) 3nd");
-
-    dds_delete(participant);
+    g_qos = dds_qos_create();
+    g_listener = dds_listener_create(NULL);
 }
 
-#define MAX_NAME_SIZE (200)
 
-Test(vddsc_topic, get_name)
+static void
+vddsc_topic_fini(void)
 {
-  dds_entity_t participant;
-  dds_entity_t topic, topic2;
-  dds_return_t retCode;
-  char name[MAX_NAME_SIZE];
-
-  participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-
-  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
-  cr_assert_gt(topic, 0, "dds_create_topic");
-  topic2 = dds_create_topic (participant, &RoundTripModule_Address_desc, "UDPRoundTrip", NULL, NULL);
-  cr_assert_gt(topic2, 0, "dds_create_topic");
-
-  retCode = dds_get_type_name(topic, name, MAX_NAME_SIZE);
-  cr_assert_eq(retCode, DDS_RETCODE_OK, "dds_get_type_name");
-  cr_assert_str_eq(name, "RoundTripModule::DataType", "Type name is expected to be RoundTripModule::DataType");
-
-  retCode = dds_get_type_name(topic2, name, MAX_NAME_SIZE);
-  cr_assert_eq(retCode, DDS_RETCODE_OK, "dds_get_type_name");
-  cr_assert_str_eq(name, "RoundTripModule::Address", "Type name is expected to be RoundTripModule::Address");
-
-  retCode = dds_get_name(topic, name, MAX_NAME_SIZE);
-  cr_assert_eq(retCode, DDS_RETCODE_OK, "dds_get_name");
-  cr_assert_str_eq(name, "RoundTrip", "Name is expected to be RoundTrip");
-  retCode = dds_get_name(topic2, name, MAX_NAME_SIZE);
-  cr_assert_eq(retCode, DDS_RETCODE_OK, "dds_get_name");
-  cr_assert_str_eq(name, "UDPRoundTrip", "Name is expected to be UDPRoundTrip");
-
-  dds_delete (topic);
-  dds_delete (topic2);
-  dds_delete (participant);
+    dds_qos_delete(g_qos);
+    dds_listener_delete(g_listener);
+    dds_delete(g_topicRtmDataType);
+    dds_delete(g_topicRtmAddress);
+    dds_delete(g_participant);
 }
+
+
+/**************************************************************************************************
+ *
+ * These will check the topic creation in various ways.
+ *
+ *************************************************************************************************/
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_topic_create, valid) = {
+        DataPoints(char *,     "valid",   "_VALID", "Val1d", "valid_", "vA_1d"),
+        DataPoints(dds_qos_t**,      &g_qos_null,   &g_qos        ),
+        DataPoints(dds_listener_t**, &g_list_null,  &g_listener   ),
+};
+Theory((char *name, dds_qos_t **qos, dds_listener_t **listener), vddsc_topic_create, valid, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    dds_return_t ret;
+    topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, name, *qos, *listener);
+    cr_assert_gt(topic, 0, "Failed dds_create_topic(par, desc, %s, %p, %p): %s", name, *qos, *listener, dds_err_str(topic));
+    ret = dds_delete(topic);
+    cr_assert_eq(ret, DDS_RETCODE_OK);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_create, invalid_qos, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    dds_qos_t *qos = dds_qos_create();
+    dds_qset_lifespan(qos, DDS_SECS(-1));
+    topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, "inconsistent", qos, NULL);
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_INCONSISTENT_POLICY, "returned %s", dds_err_str(topic));
+    dds_qos_delete(qos);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_create, non_participants, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    topic = dds_create_topic(g_topicRtmDataType, &RoundTripModule_DataType_desc, "non_participant", NULL, NULL);
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_ILLEGAL_OPERATION, "returned %s", dds_err_str(topic));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_create, duplicate, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    /* Creating the same topic should fail.  */
+    topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, g_topicRtmDataTypeName, NULL, NULL);
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %s", dds_err_str(topic));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_create, same_name, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    /* Creating the different topic with same name should fail.  */
+    topic = dds_create_topic(g_participant, &RoundTripModule_Address_desc, g_topicRtmDataTypeName, NULL, NULL);
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %s", dds_err_str(topic));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_create, recreate, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    dds_return_t ret;
+
+    /* Re-creating previously created topic should succeed.  */
+    ret = dds_delete(g_topicRtmDataType);
+    cr_assert_eq(ret, DDS_RETCODE_OK);
+    topic = dds_create_topic (g_participant, &RoundTripModule_DataType_desc, g_topicRtmDataTypeName, NULL, NULL);
+    cr_assert_gt(topic, 0, "returned %s", dds_err_str(topic));
+
+    ret = dds_delete(topic);
+    cr_assert_eq(ret, DDS_RETCODE_OK);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_create, desc_null, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    topic = dds_create_topic (g_participant, NULL, "desc_null", NULL, NULL);
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_BAD_PARAMETER, "returned %s", dds_err_str(topic));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+
+
+TheoryDataPoints(vddsc_topic_create, invalid_names) = {
+        DataPoints(char *, NULL, "", "mi-dle", "-start", "end-", "1st", "Thus$", "pl+s", "t(4)"),
+};
+Theory((char *name), vddsc_topic_create, invalid_names, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, name, NULL, NULL);
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_BAD_PARAMETER, "dds_create_topic(%s) returned %s", name, dds_err_str(topic));
+}
+/*************************************************************************************************/
+
+
+
+/**************************************************************************************************
+ *
+ * These will check the topic finding in various ways.
+ *
+ *************************************************************************************************/
+/*************************************************************************************************/
+Test(vddsc_topic_find, valid, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    dds_return_t ret;
+
+    topic = dds_find_topic(g_participant, g_topicRtmDataTypeName);
+    cr_assert_eq(topic, g_topicRtmDataType, "returned %s", dds_err_str(topic));
+
+    ret = dds_delete(topic);
+    cr_assert_eq(ret, DDS_RETCODE_OK);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_find, non_participants, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    topic = dds_find_topic(g_topicRtmDataType, "non_participant");
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_ILLEGAL_OPERATION, "returned %s", dds_err_str(topic));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_find, null, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    topic = dds_find_topic(g_participant, NULL);
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_BAD_PARAMETER, "returned %s", dds_err_str(topic));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_find, unknown, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    topic = dds_find_topic(g_participant, "unknown");
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %s", dds_err_str(topic));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_find, deleted, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    dds_delete(g_topicRtmDataType);
+    topic = dds_find_topic(g_participant, g_topicRtmDataTypeName);
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %s", dds_err_str(topic));
+}
+/*************************************************************************************************/
+
+
+
+/**************************************************************************************************
+ *
+ * These will check getting the topic name in various ways.
+ *
+ *************************************************************************************************/
+/*************************************************************************************************/
+Test(vddsc_topic_get_name, valid, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    char name[MAX_NAME_SIZE];
+    dds_return_t ret;
+
+    ret = dds_get_name(g_topicRtmDataType, name, MAX_NAME_SIZE);
+    cr_assert_eq(ret, DDS_RETCODE_OK);
+    cr_assert_str_eq(name, g_topicRtmDataTypeName);
+
+    ret = dds_get_name(g_topicRtmAddress, name, MAX_NAME_SIZE);
+    cr_assert_eq(ret, DDS_RETCODE_OK);
+    cr_assert_str_eq(name, g_topicRtmAddressName);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_get_name, too_small, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    char name[10];
+    dds_return_t ret;
+
+    ret = dds_get_name(g_topicRtmDataType, name, 10);
+    cr_assert_eq(ret, DDS_RETCODE_OK);
+    g_topicRtmDataTypeName[9] = '\0';
+    cr_assert_str_eq(name, g_topicRtmDataTypeName);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_get_name, non_topic, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    char name[MAX_NAME_SIZE];
+    dds_return_t ret;
+    ret = dds_get_name(g_participant, name, MAX_NAME_SIZE);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %s", dds_err_str(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_topic_get_name, invalid_params) = {
+        DataPoints(char*,     (char*)0, g_nameBuffer),
+        DataPoints(size_t,    0,        MAX_NAME_SIZE),
+};
+Theory((char *name, size_t size), vddsc_topic_get_name, invalid_params, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_return_t ret;
+    cr_assume((name != g_nameBuffer) || (size != MAX_NAME_SIZE));
+    ret = dds_get_name(g_topicRtmDataType, name, size);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %s", dds_err_str(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_get_name, deleted, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    char name[MAX_NAME_SIZE];
+    dds_return_t ret;
+    dds_delete(g_topicRtmDataType);
+    ret = dds_get_name(g_topicRtmDataType, name, MAX_NAME_SIZE);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %s", dds_err_str(ret));
+}
+/*************************************************************************************************/
+
+
+
+/**************************************************************************************************
+ *
+ * These will check getting the type name in various ways.
+ *
+ *************************************************************************************************/
+/*************************************************************************************************/
+Test(vddsc_topic_get_type_name, valid, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    const char *rtmDataTypeType = "RoundTripModule::DataType";
+    const char *rtmAddressType  = "RoundTripModule::Address";
+    char name[MAX_NAME_SIZE];
+    dds_return_t ret;
+
+    ret = dds_get_type_name(g_topicRtmDataType, name, MAX_NAME_SIZE);
+    cr_assert_eq(ret, DDS_RETCODE_OK);
+    cr_assert_str_eq(name, rtmDataTypeType);
+
+    ret = dds_get_type_name(g_topicRtmAddress, name, MAX_NAME_SIZE);
+    cr_assert_eq(ret, DDS_RETCODE_OK);
+    cr_assert_str_eq(name, rtmAddressType);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_get_type_name, too_small, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    const char *rtmDataTypeType = "RoundTrip";
+    char name[10];
+    dds_return_t ret;
+
+    ret = dds_get_type_name(g_topicRtmDataType, name, 10);
+    cr_assert_eq(ret, DDS_RETCODE_OK);
+    cr_assert_str_eq(name, rtmDataTypeType);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_get_type_name, non_topic, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    char name[MAX_NAME_SIZE];
+    dds_return_t ret;
+    ret = dds_get_type_name(g_participant, name, MAX_NAME_SIZE);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %s", dds_err_str(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_topic_get_type_name, invalid_params) = {
+        DataPoints(char*,     (char*)0, g_nameBuffer),
+        DataPoints(size_t,    0,        MAX_NAME_SIZE),
+};
+Theory((char *name, size_t size), vddsc_topic_get_type_name, invalid_params, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_return_t ret;
+    cr_assume((name != g_nameBuffer) || (size != MAX_NAME_SIZE));
+    ret = dds_get_type_name(g_topicRtmDataType, name, size);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %s", dds_err_str(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_get_type_name, deleted, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    char name[MAX_NAME_SIZE];
+    dds_return_t ret;
+    dds_delete(g_topicRtmDataType);
+    ret = dds_get_type_name(g_topicRtmDataType, name, MAX_NAME_SIZE);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %s", dds_err_str(ret));
+}
+/*************************************************************************************************/
+
+
+
+/**************************************************************************************************
+ *
+ * These will set the topic qos in various ways.
+ *
+ *************************************************************************************************/
+/*************************************************************************************************/
+Test(vddsc_topic_set_qos, valid, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_return_t ret;
+    /* Latency is the only one allowed to change. */
+    dds_qset_latency_budget(g_qos, DDS_SECS(1));
+    ret = dds_set_qos(g_topicRtmDataType, g_qos);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_UNSUPPORTED, "returned %s", dds_err_str(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_set_qos, inconsistent, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_return_t ret;
+    dds_qset_lifespan(g_qos, DDS_SECS(-1));
+    ret = dds_set_qos(g_topicRtmDataType, g_qos);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_INCONSISTENT_POLICY, "returned %s", dds_err_str(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_topic_set_qos, immutable, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_return_t ret;
+    dds_qset_destination_order(g_qos, DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP); /* Immutable */
+    ret = dds_set_qos(g_topicRtmDataType, g_qos);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_IMMUTABLE_POLICY, "returned %s", dds_err_str(ret));
+}
+/*************************************************************************************************/
+
 
 #pragma warning(pop)

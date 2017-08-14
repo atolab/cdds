@@ -642,7 +642,7 @@ void whc_free_deferred_free_list (struct whc *whc, struct whc_node *deferred_fre
   }
 }
 
-static unsigned whc_removed_acked_messages_noidx (struct whc *whc, seqno_t max_drop_seq, struct whc_node **deferred_free_list)
+static unsigned whc_remove_acked_messages_noidx (struct whc *whc, seqno_t max_drop_seq, struct whc_node **deferred_free_list)
 {
   struct whc_intvnode *intv;
   struct whc_node *whcn;
@@ -844,7 +844,7 @@ unsigned whc_remove_acked_messages (struct whc *whc, seqno_t max_drop_seq, struc
   assert (max_drop_seq < MAX_SEQ_NUMBER);
   assert (max_drop_seq >= whc->max_drop_seq);
 
-  TRACE_WHC(("whc_removed_acked_messages(%p max_drop_seq %"PRId64")\n", (void *)whc, max_drop_seq));
+  TRACE_WHC(("whc_remove_acked_messages(%p max_drop_seq %"PRId64")\n", (void *)whc, max_drop_seq));
   TRACE_WHC(("  whc: [%"PRId64",%"PRId64"] max_drop_seq %"PRId64" h %u tl %u\n",
              whc_empty(whc) ? (seqno_t)-1 : whc_min_seq(whc),
              whc_empty(whc) ? (seqno_t)-1 : whc_max_seq(whc),
@@ -854,7 +854,7 @@ unsigned whc_remove_acked_messages (struct whc *whc, seqno_t max_drop_seq, struc
 
   if (whc->idxdepth == 0)
   {
-    return whc_removed_acked_messages_noidx (whc, max_drop_seq, deferred_free_list);
+    return whc_remove_acked_messages_noidx (whc, max_drop_seq, deferred_free_list);
   }
   else
   {
@@ -986,6 +986,13 @@ int whc_insert (struct whc *whc, seqno_t max_drop_seq, seqno_t seq, struct nn_pl
     {
       TRACE_WHC((" unreg:delete\n"));
       delete_one_instance_from_idx (whc, max_drop_seq, idxn);
+      if (newn->seq <= max_drop_seq)
+      {
+        struct whc_node *prev_seq = newn->prev_seq;
+        TRACE_WHC((" unreg:seq <= max_drop_seq: delete newn\n"));
+        whc_delete_one (whc, newn);
+        whc->maxseq_node = prev_seq;
+      }
     }
     else
     {
@@ -1052,6 +1059,13 @@ int whc_insert (struct whc *whc, seqno_t max_drop_seq, seqno_t seq, struct nn_pl
     else
     {
       TRACE_WHC((" unreg:skip"));
+      if (newn->seq <= max_drop_seq)
+      {
+        struct whc_node *prev_seq = newn->prev_seq;
+        TRACE_WHC((" unreg:seq <= max_drop_seq: delete newn\n"));
+        whc_delete_one (whc, newn);
+        whc->maxseq_node = prev_seq;
+      }
     }
     TRACE_WHC(("\n"));
   }

@@ -28,24 +28,15 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
-# FIXME: Use sphinx+breathe to replace doxygen.
-# FIXME: Move this to Documentation module.
-find_package(Doxygen)
-if(Doxygen_FOUND)
-  configure_file(${CMAKE_CURRENT_LIST_DIR}/Doxyfile.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-  add_custom_target(docs
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Executing Doxygen for document generation"
-    VERBATIM)
-endif()
-
 add_subdirectory(idlc)
 add_subdirectory(src)
 add_subdirectory(examples)
 add_subdirectory(tools)
 
+option(BUILD_DOCS, "Enable generation of docs" OFF)
+if (BUILD_DOCS)
+  add_subdirectory(docs EXCLUDE_FROM_ALL)
+endif()
+
 # Pull-in CPack and support for generating <Package>Config.cmake and packages.
 include(Packaging)
-

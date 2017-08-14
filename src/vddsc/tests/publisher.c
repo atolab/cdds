@@ -124,26 +124,26 @@ Test(vddsc_publisher, suspend_resume)
 
   /* Suspend a 0 publisher */
   status = dds_suspend(0);
-  cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_suspend(NULL)");
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_suspend(NULL)");
 
   /* Resume a 0 publisher */
   status = dds_resume(0);
-  cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_resume(NULL)");
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_resume(NULL)");
 
   /* Uae dds_suspend on something else than a publisher */
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   cr_assert_gt(participant, 0, "dds_create_participant(DDS_DOMAIN_DEFAULT,NULL,NULL)");
   status = dds_suspend(participant);
-  cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_suspend(participant)");
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_suspend(participant)");
 
   /* Use dds_resume on something else than a publisher */
   status = dds_resume(participant);
-  cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_resume(participant)");
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_resume(participant)");
 
   /* Use dds_resume without calling dds_suspend */
   publisher = dds_create_publisher(participant, NULL, NULL);
   cr_assert_gt(publisher, 0, "dds_create_publisher(participant,NULL,NULL)");
-  status = dds_resume(publisher);
+  status = dds_resume(publisher); /* Should be precondition not met? */
   cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_resume(publisher) without prior suspend");
 
   /* Use dds_suspend on non-null publisher */
@@ -170,38 +170,38 @@ Test(vddsc_publisher, wait_for_acks)
 
   /* Wait_for_acks on 0 publisher or writer and minusOneSec timeout */
   status = dds_wait_for_acks(0, minusOneSec);
-  cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_wait_for_acks(NULL,-1)");
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(NULL,-1)");
 
   /* Wait_for_acks on NULL publisher or writer and zeroSec timeout */
   status = dds_wait_for_acks(0, zeroSec);
-  cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_wait_for_acks(NULL,0)");
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(NULL,0)");
 
   /* wait_for_acks on NULL publisher or writer and oneSec timeout */
   status = dds_wait_for_acks(0, oneSec);
-  cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_wait_for_acks(NULL,1)");
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(NULL,1)");
 
   /* wait_for_acks on NULL publisher or writer and DDS_INFINITE timeout */
   status = dds_wait_for_acks(0, DDS_INFINITY);
-  cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_wait_for_acks(NULL,DDS_INFINITY)");
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(NULL,DDS_INFINITY)");
 
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   cr_assert_gt(participant, 0, "dds_create_participant(DDS_DOMAIN_DEFAULT,NULL,NULL)");
 
   /* Wait_for_acks on participant and minusOneSec timeout */
   status = dds_wait_for_acks(participant, minusOneSec);
-  cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_wait_for_acks(participant,-1)");
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(participant,-1)");
 
   /* Wait_for_acks on participant and zeroSec timeout */
   status = dds_wait_for_acks(participant, zeroSec);
-  cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_wait_for_acks(participant,0)");
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(participant,0)");
 
   /* Wait_for_acks on participant and oneSec timeout */
   status = dds_wait_for_acks(participant, oneSec);
-  cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_wait_for_acks(participant,1)");
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(participant,1)");
 
   /* Wait_for_acks on participant and DDS_INFINITE timeout */
   status = dds_wait_for_acks(participant, DDS_INFINITY);
-  cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_wait_for_acks(participant,DDS_INFINITY)");
+  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(participant,DDS_INFINITY)");
 
   publisher = dds_create_publisher(participant, NULL, NULL);
   cr_assert_gt(publisher, 0, "dds_create_publisher(participant,NULL,NULL)");

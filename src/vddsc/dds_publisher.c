@@ -32,7 +32,7 @@ dds_publisher_qos_validate(
     consistent &= (qos->present & QP_PRISMTECH_ENTITY_FACTORY) ? \
             validate_entityfactory_qospolicy(&qos->entity_factory) : true;
     if (consistent) {
-        if (enabled) {
+        if (enabled && (qos->present & QP_PRESENTATION)) {
             /* TODO: Improve/check immutable check. */
             ret = DDS_ERRNO (DDS_RETCODE_IMMUTABLE_POLICY);
         } else {
@@ -114,8 +114,10 @@ DDS_EXPORT dds_return_t
 dds_suspend(
         _In_ dds_entity_t publisher)
 {
+    if(dds_entity_kind(publisher) != DDS_KIND_PUBLISHER) {
+        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    }
     /* TODO: CHAM-123 Currently unsupported. */
-    OS_UNUSED_ARG(publisher);
     return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
 }
 
@@ -125,8 +127,10 @@ dds_return_t
 dds_resume(
         _In_ dds_entity_t publisher)
 {
+    if(dds_entity_kind(publisher) != DDS_KIND_PUBLISHER) {
+        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    }
     /* TODO: CHAM-123 Currently unsupported. */
-    OS_UNUSED_ARG(publisher);
     return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
 }
 
@@ -138,10 +142,24 @@ dds_wait_for_acks(
         _In_ dds_entity_t publisher_or_writer,
         _In_ dds_duration_t timeout)
 {
-  /* TODO: CHAM-125 Currently unsupported. */
-  OS_UNUSED_ARG(publisher_or_writer);
-  OS_UNUSED_ARG(timeout);
-  return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+    dds_return_t ret;
+
+    /* TODO: CHAM-125 Currently unsupported. */
+    OS_UNUSED_ARG(timeout);
+
+    switch(dds_entity_kind(publisher_or_writer)) {
+        case DDS_KIND_WRITER:
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+            break;
+        case DDS_KIND_PUBLISHER:
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+            break;
+        default:
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+            break;
+    }
+
+    return ret;
 }
 
 dds_return_t

@@ -33,11 +33,11 @@ is_valid_name(
     bool valid = false;
     /* DDS Spec:
      *  |  TOPICNAME - A topic name is an identifier for a topic, and is defined as any series of characters
-     *  |     ‘a’, ..., ‘z’,
-     *  |     ‘A’, ..., ‘Z’,
-     *  |     ‘0’, ..., ‘9’,
-     *  |     ‘-’ but may not start with a digit.
-     * It is considered that ‘-’ is an error in the spec and should say ‘_’. So, that's what we'll check for.
+     *  |     'a', ..., 'z',
+     *  |     'A', ..., 'Z',
+     *  |     '0', ..., '9',
+     *  |     '-' but may not start with a digit.
+     * It is considered that '-' is an error in the spec and should say '_'. So, that's what we'll check for.
      */
     assert(name);
     if ((name[0] != '\0') && (!isdigit((unsigned char)name[0]))) {
@@ -190,12 +190,16 @@ dds_find_topic(
 
     rc = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &p);
     if (rc == DDS_RETCODE_OK) {
-        st = dds_topic_lookup (p->m_domain, name);
-        if (st) {
-            dds_entity_add_ref (&st->status_cb_entity->m_entity);
-            tp = st->status_cb_entity->m_entity.m_hdl;
+        if (name) {
+            st = dds_topic_lookup (p->m_domain, name);
+            if (st) {
+                dds_entity_add_ref (&st->status_cb_entity->m_entity);
+                tp = st->status_cb_entity->m_entity.m_hdl;
+            } else {
+                rc = DDS_RETCODE_PRECONDITION_NOT_MET;
+            }
         } else {
-            rc = DDS_RETCODE_PRECONDITION_NOT_MET;
+            rc = DDS_RETCODE_BAD_PARAMETER;
         }
         dds_entity_unlock(p);
     }
@@ -230,10 +234,7 @@ dds_topic_qos_validate(
     if (consistent) {
         ret = DDS_RETCODE_OK;
         if (enabled) {
-            /* TODO: Improve/check immutable check. */
-            if (qos->present != QP_LATENCY_BUDGET) {
-                ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
-            }
+            ret = dds_qos_validate_mutable_common(qos);
         }
     }
     return ret;
@@ -488,7 +489,7 @@ dds_get_name(
 {
     dds_topic *t;
     dds_retcode_t rc = DDS_RETCODE_BAD_PARAMETER;
-    if (size > 0) {
+    if ((size > 0) && (name != NULL)) {
         name[0] = '\0';
         rc = dds_topic_lock(topic, &t);
         if (rc == DDS_RETCODE_OK) {
@@ -508,7 +509,7 @@ dds_get_type_name(
 {
     dds_topic *t;
     dds_retcode_t rc = DDS_RETCODE_BAD_PARAMETER;
-    if (size > 0) {
+    if ((size > 0) && (name != NULL)) {
         name[0] = '\0';
         rc = dds_topic_lock(topic, &t);
         if (rc == DDS_RETCODE_OK) {
@@ -518,26 +519,26 @@ dds_get_type_name(
     }
     return DDS_ERRNO(rc);
 }
-
+_Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 dds_return_t
 dds_get_inconsistent_topic_status(
-        dds_entity_t entity,
-        dds_inconsistent_topic_status_t *status)
+        _In_ dds_entity_t topic,
+        _Out_opt_ dds_inconsistent_topic_status_t *status)
 {
     dds_retcode_t rc;
     dds_topic *t;
 
-    rc = dds_topic_lock(entity, &t);
+    rc = dds_topic_lock(topic, &t);
     if (rc == DDS_RETCODE_OK) {
-        if (((dds_entity*)t)->m_status_enable & DDS_INCONSISTENT_TOPIC_STATUS) {
-            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-            if (status) {
-                *status = t->m_inconsistent_topic_status;
-            }
-            t->m_inconsistent_topic_status.total_count_change = 0;
-            dds_entity_status_reset(t, DDS_INCONSISTENT_TOPIC_STATUS);
-        }
-        dds_topic_unlock(t);
+      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+      if (status) {
+        *status = t->m_inconsistent_topic_status;
+      }
+      if (((dds_entity*)t)->m_status_enable & DDS_INCONSISTENT_TOPIC_STATUS) {
+        t->m_inconsistent_topic_status.total_count_change = 0;
+        dds_entity_status_reset(t, DDS_INCONSISTENT_TOPIC_STATUS);
+      }
+      dds_topic_unlock(t);
     }
     return DDS_ERRNO(rc);
 }

@@ -458,8 +458,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_children, invalid_entities, .init
 
 
 
-#if 0
-/* TODO: CHAM-291 Switch tests on when dds_get_topic gets available. */
 /**************************************************************************************************
  *
  * These will check the dds_get_topic in various ways.
@@ -467,13 +465,13 @@ Theory((dds_entity_t entity), vddsc_entity_get_children, invalid_entities, .init
  *************************************************************************************************/
 /*************************************************************************************************/
 TheoryDataPoints(vddsc_entity_get_topic, data_entities) = {
-        DataPoints(dds_entity_t*, &g_readcond, &data_entities, &g_reader, &g_writer),
+        DataPoints(dds_entity_t*, &g_readcond, &g_querycond, &g_reader, &g_writer),
 };
 Theory((dds_entity_t *entity), vddsc_entity_get_topic, data_entities, .init=hierarchy_init, .fini=hierarchy_fini)
 {
     dds_entity_t topic;
     topic = dds_get_topic(*entity);
-    cr_assert_eq(topic, g_topic);
+    cr_assert_eq(topic, g_topic );
 }
 /*************************************************************************************************/
 
@@ -520,7 +518,7 @@ Theory((dds_entity_t *entity), vddsc_entity_get_topic, non_data_entities, .init=
     cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(topic));
 }
 /*************************************************************************************************/
-#endif
+
 
 
 
