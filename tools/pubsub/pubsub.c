@@ -5,7 +5,6 @@
 #define _ISOC99_SOURCE
 #include <time.h>
 #include <string.h>
-#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -25,7 +24,6 @@
 #include <histedit.h>
 #endif
 
-//#include "os/os.h"
 #include "common.h"
 #include "testtype.h"
 #include "tglib.h"
@@ -59,7 +57,6 @@ enum readermode { MODE_PRINT, MODE_CHECK, MODE_ZEROLOAD, MODE_DUMP, MODE_NONE };
 #define PM_RANKS 512u
 #define PM_STATE 1024u
 
-static os_socket fdservsock = -1;
 static volatile sig_atomic_t termflag = 0;
 static int pid;
 static dds_entity_t termcond;
@@ -68,9 +65,6 @@ static int once_mode = 0;
 static int wait_hist_data = 0;
 static dds_duration_t wait_hist_data_timeout = 0;
 static double dur = 0.0;
-static int sigpipe[2];
-static int termpipe[2];
-static int fdin = 0;
 static enum tgprint_mode printmode = TGPM_FIELDS;
 static unsigned print_metadata = PM_STATE;
 static int printtype = 0;
@@ -155,71 +149,8 @@ static void terminate (void)
 {
   const char c = 0;
   termflag = 1;
-  os_write(termpipe[1], &c, 1); //Todo: for abstraction layer
+//  os_write(termpipe[1], &c, 1); //Todo: for abstraction layer
   dds_waitset_set_trigger(termcond, true);
-}
-
-static void sigh (int sig __attribute__ ((unused)))
-{
-  const char c = 1;
-  ssize_t r;
-  do {
-    r = os_write (sigpipe[1], &c, 1); //Todo: for abstraction layer
-  } while (r == -1 && os_getErrno() == os_sockEINTR);
-}
-
-static uint32_t sigthread(void *varg __attribute__ ((unused)))
-{
-  while (1)
-  {
-    char c;
-    ssize_t r;
-    if ((r = read (sigpipe[0], &c, 1)) < 0)
-    {
-      if (os_getErrno() == os_sockEINTR)
-        continue;
-      error ("sigthread: read failed, errno %d\n", (int) os_getErrno());
-    }
-    else if (r == 0)
-      error ("sigthread: unexpected eof\n");
-    else if (c == 0)
-      break;
-    else
-      terminate();
-  }
-  return 0;
-}
-
-static os_socket open_tcpserver_sock (int port)
-{
-  os_sockaddr_in saddr;
-  os_socket fd;
-#if __APPLE__
-  saddr.sin_len = sizeof (saddr);
-#endif
-  saddr.sin_family = AF_INET;
-  saddr.sin_port = htons (port);
-  saddr.sin_addr.s_addr = INADDR_ANY;
-//  if ((fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
-//  {
-  if ((fd = os_sockNew(AF_INET, SOCK_STREAM)) == -1) //Todo: This will use Protocol 0 instead of IPPROTO_TCP.
-  {
-    perror ("socket()");
-    exit (1); /* will kill any waiting threads */
-  }
-  if (os_sockBind (fd, (os_sockaddr *) &saddr, sizeof (saddr)) == -1)
-  {
-    perror ("bind()");
-    exit (1); /* will kill any waiting threads */
-  }
-  if (listen (fd, 1) == -1)
-  {
-    perror ("listen()");
-    exit (1); /* will kill any waiting threads */
-  }
-  printf ("listening ... ");
-  fflush (stdout);
-  return fd;
 }
 
 static void usage (const char *argv0)
@@ -623,55 +554,10 @@ static void make_persistent_snapshot(const char *args)
 //	free(px);
 }
 
-static int fd_getc (int fd)
-{
-  /* like fgetc, but also returning EOF when need to terminate */
-  fd_set fds;
-  int maxfd;
-  int r;
-
-  FD_ZERO(&fds);
-  FD_SET(fd, &fds);
-  FD_SET(termpipe[0], &fds);
-  maxfd = (fd > termpipe[0]) ? fd : termpipe[0];
-
-  while (1)
-  {
-    r = select(maxfd + 1, &fds, NULL, NULL, NULL);
-    if ((r == -1 && os_getErrno() == os_sockEINTR) || r == 0)
-      continue;
-    if (r == -1)
-    {
-      perror("fd_getc: select()");
-      exit(1);
-    }
-
-    if (FD_ISSET(termpipe[0], &fds))
-    {
-      return EOF;
-    }
-    if (FD_ISSET(fd, &fds))
-    {
-      unsigned char c;
-      ssize_t n = read (fd, &c, 1);
-      if (n == 1)
-        return c;
-      else if (n == 0)
-        return EOF;
-      else if (os_getErrno() != os_sockEINTR)
-      {
-        perror("fd_getc: read()");
-        exit(1);
-      }
-      /* else try again */
-    }
-  }
-}
-
-static int read_int (int fd, char *buf, int bufsize, int pos, int accept_minus)
+static int read_int (char *buf, int bufsize, int pos, int accept_minus)
 {
   int c = EOF;
-  while (pos < bufsize-1 && (c = fd_getc (fd)) != EOF && (isdigit ((unsigned char) c) || (c == '-' && accept_minus)))
+  while (pos < bufsize-1 && (c = getc (stdin)) != EOF && (isdigit ((unsigned char) c) || (c == '-' && accept_minus)))
   {
     accept_minus = 0;
     buf[pos++] = (char) c;
@@ -692,17 +578,17 @@ static int read_int (int fd, char *buf, int bufsize, int pos, int accept_minus)
   return 1;
 }
 
-static int read_int_w_tstamp (struct tstamp_t *tstamp, int fd, char *buf, int bufsize, int pos)
+static int read_int_w_tstamp (struct tstamp_t *tstamp, char *buf, int bufsize, int pos)
 {
   int c;
   assert (pos < bufsize - 2);
-  c = fd_getc (fd);
+  c = getc (stdin);
   if (c == EOF)
     return 0;
   else if (c == '@')
   {
     int posoff = 0;
-    c = fd_getc (fd);
+    c = getc (stdin);
     if (c == EOF)
       return 0;
     else if (c == '=')
@@ -712,17 +598,17 @@ static int read_int_w_tstamp (struct tstamp_t *tstamp, int fd, char *buf, int bu
       buf[pos] = (char) c;
       posoff = 1;
     }
-    if (read_int (fd, buf, bufsize, pos + posoff, 1))
-      tstamp->t = os_atoll (buf + pos) * T_SECOND; //Todo: it was atoi(). To move to os layer, called atoll();
+    if (read_int (buf, bufsize, pos + posoff, 1))
+      tstamp->t = atoi (buf + pos) * T_SECOND;
     else
       return 0;
-    while ((c = fd_getc (fd)) != EOF && isspace ((unsigned char) c))
+    while ((c = getc (stdin)) != EOF && isspace ((unsigned char) c))
       ;
     if (!isdigit ((unsigned char) c))
       return 0;
   }
   buf[pos++] = (char) c;
-  while (pos < bufsize-1 && (c = fd_getc (fd)) != EOF && isdigit ((unsigned char) c))
+  while (pos < bufsize-1 && (c = getc (stdin)) != EOF && isdigit ((unsigned char) c))
     buf[pos++] = (char) c;
   buf[pos] = 0;
   if (c == EOF || isspace ((unsigned char) c))
@@ -740,7 +626,7 @@ static int read_int_w_tstamp (struct tstamp_t *tstamp, int fd, char *buf, int bu
   return 1;
 }
 
-static int read_value (int fd, char *command, int *key, struct tstamp_t *tstamp, char **arg)
+static int read_value (char *command, int *key, struct tstamp_t *tstamp, char **arg)
 {
   char buf[1024];
   int c;
@@ -748,7 +634,7 @@ static int read_value (int fd, char *command, int *key, struct tstamp_t *tstamp,
   tstamp->isabs = 0;
   tstamp->t = 0;
   do {
-    while ((c = fd_getc (fd)) != EOF && isspace ((unsigned char) c))
+	  while ((c = getc (stdin)) != EOF && isspace ((unsigned char) c))
       ;
     if (c == EOF)
       return 0;
@@ -758,7 +644,7 @@ static int read_value (int fd, char *command, int *key, struct tstamp_t *tstamp,
       case '0': case '1': case '2': case '3': case '4':
       case '5': case '6': case '7': case '8': case '9':
         buf[0] = (char) c;
-        if (read_int (fd, buf, sizeof (buf), 1, 0))
+        if (read_int (buf, sizeof (buf), 1, 0))
         {
           *command = 'w';
           *key = atoi (buf);
@@ -767,7 +653,7 @@ static int read_value (int fd, char *command, int *key, struct tstamp_t *tstamp,
         break;
       case 'w': case 'd': case 'D': case 'u': case 'r':
         *command = (char) c;
-        if (read_int_w_tstamp (tstamp, fd, buf, sizeof (buf), 0))
+        if (read_int_w_tstamp (tstamp, buf, sizeof (buf), 0))
         {
           *key = atoi (buf);
           return 1;
@@ -775,7 +661,7 @@ static int read_value (int fd, char *command, int *key, struct tstamp_t *tstamp,
         break;
       case 'z': case 's':
         *command = (char) c;
-        if (read_int (fd, buf, sizeof (buf), 0, 0))
+        if (read_int (buf, sizeof (buf), 0, 0))
         {
           *key = atoi (buf);
           return 1;
@@ -784,7 +670,7 @@ static int read_value (int fd, char *command, int *key, struct tstamp_t *tstamp,
       case 'p': case 'S': case ':': {
         int i = 0;
         *command = (char) c;
-        while ((c = fd_getc (fd)) != EOF && !isspace ((unsigned char) c))
+        while ((c = getc (stdin)) != EOF && !isspace ((unsigned char) c))
         {
           assert (i < (int) sizeof (buf) - 1);
           buf[i++] = (char) c;
@@ -801,7 +687,7 @@ static int read_value (int fd, char *command, int *key, struct tstamp_t *tstamp,
         fprintf (stderr, "'%c': unexpected character\n", c);
         break;
     }
-    while ((c = fd_getc (fd)) != EOF && !isspace ((unsigned char) c))
+    while ((c = getc (stdin)) != EOF && !isspace ((unsigned char) c))
       ;
   } while (c != EOF);
   return 0;
@@ -813,7 +699,7 @@ static char *getl_simple (int fd, int *count)
   char *line;
   int c;
 
-  if ((c = fd_getc(fd)) == EOF)
+  if ((c = getc(stdin)) == EOF)
   {
     *count = 0;
     return NULL;
@@ -823,7 +709,7 @@ static char *getl_simple (int fd, int *count)
   do {
     if (n == sz) line = os_realloc(line, sz += 256);
     line[n++] = (char) c;
-  } while ((c = fd_getc (fd)) != EOF && c != '\n');
+  } while ((c = getc (stdin)) != EOF && c != '\n');
   if (n == sz) line = os_realloc(line, sz += 256);
   line[n++] = 0;
   *count = (int) (n-1);
@@ -1316,54 +1202,9 @@ static void wr_on_publication_matched (dds_entity_t wr __attribute__((unused)), 
           status.last_subscription_handle);
 }
 
-static int w_accept(os_socket fd)
-{
-  fd_set fds;
-  int maxfd;
-  os_sockaddr_in saddr;
-  socklen_t saddrlen = sizeof (saddr);
-  int r;
-
-  FD_ZERO(&fds);
-  FD_SET(fd, &fds);
-  FD_SET(termpipe[0], &fds);
-  maxfd = (fd > termpipe[0]) ? fd : termpipe[0];
-
-  while (1)
-  {
-    r = select(maxfd + 1, &fds, NULL, NULL, NULL);
-   if ((r == -1 && os_getErrno() == os_sockEINTR) || r == 0)
-     continue;
-    if (r == -1)
-    {
-      perror("w_accept: select()");
-      exit(1);
-    }
-
-    if (FD_ISSET(termpipe[0], &fds))
-    {
-      return -1;
-    }
-    if (FD_ISSET(fd, &fds))
-    {
-      int fdacc;
-      if ((fdacc = accept (fd, (os_sockaddr *) &saddr, &saddrlen)) == -1)
-      {
-        if (os_getErrno() != os_sockEINTR)
-        {
-          perror ("accept()");
-          exit (1);
-        }
-      }
-      printf ("to %s\n", inet_ntoa (saddr.sin_addr));
-      return fdacc;
-    }
-  }
-}
-
 //static int unregister_instance_wrapper (dds_entity_t wr, const void *d, const dds_time_t tstamp)
 //{
-//	return dds_unregister_instance_ts(wr, d, tstamp);
+// return dds_unregister_instance_ts(wr, d, tstamp);
 //}
 
 static int register_instance_wrapper (dds_entity_t wr, const void *d, const dds_time_t tstamp)
@@ -1490,7 +1331,6 @@ static void pub_do_auto (const struct writerspec *spec)
     case OU:
       break;
     case ARB:
-      assert (!(fdin == -1 && fdservsock == -1));
       break;
   }
   for (k = 0; (uint32_t) k < nkeyvals; k++)
@@ -1602,7 +1442,7 @@ static void pub_do_auto (const struct writerspec *spec)
   os_free(handle);
 }
 
-static char *pub_do_nonarb(const struct writerspec *spec, int fdin, uint32_t *seq)
+static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq)
 {
   struct tstamp_t tstamp_spec = { .isabs = 0, .t = 0 };
   int result;
@@ -1636,13 +1476,11 @@ static char *pub_do_nonarb(const struct writerspec *spec, int fdin, uint32_t *se
     case OU:
       break;
     case ARB:
-      assert (!(fdin == -1 && fdservsock == -1));
       break;
   }
-  assert (fdin >= 0);
   d.seq = *seq;
   command = 0;
-  while (command != ':' && read_value (fdin, &command, &k, &tstamp_spec, &arg))
+  while (command != ':' && read_value (&command, &k, &tstamp_spec, &arg))
   {
     d.seq_keyval.keyval = k;
     switch (command)
@@ -1843,27 +1681,15 @@ static uint32_t pubthread(void *vwrspecs)
   dds_thread_init("pubthread");
   struct wrspeclist *wrspecs = vwrspecs;
   uint32_t seq = 0;
-  struct getl_arg getl_arg;
-#if USE_EDITLINE
-  getl_init_editline(&getl_arg, fdin);
-#else
-  getl_init_simple(&getl_arg, fdin);
-#endif
-  do {
+
     struct wrspeclist *cursor = wrspecs;
     struct writerspec *spec = cursor->spec;
     char *nextspec = NULL;
-    if (fdservsock != -1) {
-      /* w_accept doesn't return on error, uses -1 to signal termination */
-      if ((fdin = w_accept(fdservsock)) < 0)
-        continue;
-    }
-    assert (fdin >= 0);
     do {
       if (spec->topicsel != ARB)
-        nextspec = pub_do_nonarb(spec, fdin, &seq);
-      else
-        nextspec = pub_do_arb(spec, &getl_arg);
+        nextspec = pub_do_nonarb(spec, &seq);
+//      else
+//        nextspec = pub_do_arb(spec, &getl_arg);
       if (nextspec == NULL)
         spec = NULL;
       else
@@ -1902,15 +1728,7 @@ static uint32_t pubthread(void *vwrspecs)
         spec = cursor->spec;
       }
     } while (spec);
-    if (fdin > 0)
-      close (fdin);
-    if (fdservsock != -1)
-    {
-      printf ("listening ... ");
-      fflush (stdout);
-    }
-  } while (fdservsock != -1 && !termflag);
-  getl_fini(&getl_arg);
+
   dds_thread_fini();
   return 0;
 }
@@ -2038,8 +1856,6 @@ static uint32_t subthread (void *vspec)
         /* fastest trigger we have */
     	if ((result = dds_set_enabled_status(rd, DDS_DATA_AVAILABLE_STATUS)) != DDS_RETCODE_OK) //Todo: Changed the method to match ddsi
 		  error ("dds_set_enabled_status (stcond): %d (%s)\n", (int) result, dds_strerror (result));
-//		if ((stcond = dds_statuscondition_get(rd)) == NULL) //Todo: check what is available in ddsi for this mathod.
-//		  error ("dds_statuscondition_get\n");
 		if ((result = dds_waitset_attach (ws, rd, NULL)) != DDS_RETCODE_OK)
 		  error ("dds_waitset_attach (rd): %d (%s)\n", (int) result, dds_strerror (result));
 		nxs++; //increased because of the waitset_attach
@@ -2505,8 +2321,7 @@ static void addspec(unsigned whatfor, unsigned *specsofar, unsigned *specidx, st
     s->findtopic_timeout = 10;
     s->rd = def_readerspec;
     s->wr = def_writerspec;
-    if (fdin == -1 && fdservsock == -1)
-      s->wr.mode = WRM_NONE;
+    s->wr.mode = WRM_NONE;
     if (!want_reader)
       s->rd.mode = MODE_NONE;
     *specsofar = 0;
@@ -2614,7 +2429,7 @@ int main (int argc, char *argv[])
 	memset (&inptid, 0, sizeof(inptid));
 
 	if (os_strcasecmp(execname(argc, argv), "sub") == 0)
-		want_writer = 0, fdin = -1;
+		want_writer = 0;
 	else if(os_strcasecmp(execname(argc, argv), "pub") == 0)
 		want_reader = 0;
 
@@ -2793,9 +2608,6 @@ int main (int argc, char *argv[])
         spec[specidx].wr.burstsize = 1;
         if (strcmp (optarg, "-") == 0)
         {
-          if (fdin > 0) close (fdin);
-          if (fdservsock != -1) { close (fdservsock); fdservsock = -1; }
-          fdin = 0;
           spec[specidx].wr.mode = WRM_INPUT;
         }
         else if (sscanf (optarg, "%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
@@ -2812,22 +2624,14 @@ int main (int argc, char *argv[])
         }
         else if (sscanf (optarg, ":%d%n", &port, &pos) == 1 && optarg[pos] == 0)
         {
-          if (fdin > 0) close (fdin);
-          if (fdservsock != -1) { close (fdservsock); fdservsock = -1; }
-          fdservsock = open_tcpserver_sock (port);
-          fdin = -1;
-          spec[specidx].wr.mode = WRM_INPUT;
+        	fprintf(stderr, "listen on TCP port P: not supported\n");
+			exit(1);
         }
         else
         {
-          if (fdin > 0) close (fdin);
-          if (fdservsock != -1) { close (fdservsock); fdservsock = -1; }
-          if ((fdin = open (optarg, O_RDONLY)) < 0)
-          {
-            fprintf (stderr, "%s: can't open\n", optarg);
-            exit (1);
-          }
           spec[specidx].wr.mode = WRM_INPUT;
+          fprintf(stderr, "%s: can't open\n", optarg);
+          exit(1);
         }
         break;
       }
@@ -2992,10 +2796,10 @@ int main (int argc, char *argv[])
       nkeyvals = 1;
       if (spec[i].rd.topicsel == ARB)
       {
-        if (((spec[i].rd.mode != MODE_PRINT || spec[i].rd.mode != MODE_DUMP) && spec[i].rd.mode != MODE_NONE) || (fdin == -1 && fdservsock == -1))
-          error ("-K ARB requires readers in PRINT or DUMP mode and writers in interactive mode\n");
-        if (nqtopic != 0 && spec[i].metadata == NULL)
-          error ("-K ARB disallows specifying topic QoS when using find_topic\n");
+//        if (((spec[i].rd.mode != MODE_PRINT || spec[i].rd.mode != MODE_DUMP) && spec[i].rd.mode != MODE_NONE) || (fdin == -1 && fdservsock == -1))
+//          error ("-K ARB requires readers in PRINT or DUMP mode and writers in interactive mode\n");
+//        if (nqtopic != 0 && spec[i].metadata == NULL)
+//          error ("-K ARB disallows specifying topic QoS when using find_topic\n");
       }
     }
     if (spec[i].rd.mode == MODE_ZEROLOAD)
@@ -3032,6 +2836,7 @@ int main (int argc, char *argv[])
     	os_free (ps[i]);
     os_free(ps);
   }
+
 
   for (i = 0; i <= specidx; i++)
   {
@@ -3182,19 +2987,6 @@ int main (int argc, char *argv[])
   os_threadAttr attr;
   os_threadAttrInit(&attr);
 
-  if (pipe (termpipe) != 0)
-    error("pipe(termpipe): errno %d\n", os_getErrno());
-
-  if (!disable_signal_handlers)
-  {
-    if (pipe (sigpipe) != 0)
-      error("pipe(sigpipe): errno %d\n", os_getErrno());
-    os_threadCreate(&sigtid, "sigthread", &attr, sigthread, NULL);
-//    pthread_create(&sigtid, NULL, sigthread, NULL);
-    signal (SIGINT, sigh);
-    signal (SIGTERM, sigh);
-  }
-
   if (want_writer)
   {
     for (i = 0; i <= specidx; i++)
@@ -3274,19 +3066,6 @@ int main (int argc, char *argv[])
         if ((uintptr_t) ret > exitcode)
           exitcode = (uintptr_t) ret;
       }
-    }
-  }
-
-  if (!disable_signal_handlers)
-  {
-    const char c = 0;
-    os_write(sigpipe[1], &c, 1);
-    os_threadWaitExit(sigtid, NULL);
-//    pthread_join(sigtid, NULL);
-    for(i = 0; i < 2; i++)
-    {
-      close(sigpipe[i]);
-      close(termpipe[i]);
     }
   }
 
