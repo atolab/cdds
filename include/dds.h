@@ -1106,7 +1106,7 @@ dds_create_reader(
  * @param[in]  reader The reader on which to wait for historical data
  * @param[in]  max_wait The maximum duration to wait for historical data to be delivered before time out
  *
- * @returns >0 - Success.
+ * @returns >=0 - Success.
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_OK
@@ -1114,9 +1114,9 @@ dds_create_reader(
  * @retval DDS_RETCODE_BAD_PARAMETER
  *                The reader parameter is not a valid entity, or the max_wait parameter is negative
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                The reader parameter is a valid entity, but not a valid reader.
+ *                The reader parameter is not a valid reader.
  * @retval DDS_RETCODE_TIMEOUT
- *                Timeout expired before all acknowledgements from reliable reader entities were received.
+ *                Timeout expired before all available historical data was delivered.
  * @retval DDS_RETCODE_UNSUPPORTED
  *                Operation is not supported.
  *

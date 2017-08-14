@@ -624,6 +624,7 @@ Test(vddsc_reader, wait_for_historical_data)
 
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   qos = dds_qos_create ();
+  dds_qset_durability(qos, DDS_DURABILITY_TRANSIENT_LOCAL);
   topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", qos, NULL);
   cr_assert_gt(topic, 0, "dds_create_topic(Roundtrip)");
 
@@ -631,10 +632,9 @@ Test(vddsc_reader, wait_for_historical_data)
   ret = dds_wait_for_historical_data(0, oneSec);
   cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_historial_data(NULL, oneSec)");
   ret = dds_wait_for_historical_data(participant, oneSec);
-  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "dds_wait_for_historial_data(NULL, oneSec)");
+  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "dds_wait_for_historial_data(participant, oneSec)");
 
   /* Call wait_for_historical_data with a transient-localreader and various max_wait arguments */
-  dds_qset_durability(qos, DDS_DURABILITY_TRANSIENT_LOCAL);
   reader = dds_create_reader (participant, topic, qos, NULL);
   cr_assert_gt(reader, 0, "transient-local reader created");
   ret = dds_wait_for_historical_data(reader, minusOneSec);
@@ -647,7 +647,7 @@ Test(vddsc_reader, wait_for_historical_data)
   cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "dds_wait_for_historial_data(reader, infinite)");
   dds_delete(reader);
 
-  /* Call wait_for_historical_data fon volatile, transient and persistent readers */
+  /* Call wait_for_historical_data on volatile, transient and persistent readers */
   dds_qset_durability(qos, DDS_DURABILITY_VOLATILE);
   reader = dds_create_reader (participant, topic, qos, NULL);
   cr_assert_gt(reader, 0, "volatile reader created");
@@ -670,8 +670,8 @@ Test(vddsc_reader, wait_for_historical_data)
   dds_delete(reader);
 
   dds_qos_delete (qos);
-  dds_delete(topic);
   dds_delete(reader);
+  dds_delete(topic);
   dds_delete(participant);
 }
 
@@ -693,7 +693,7 @@ TheoryDataPoints(vddsc_reader, read_invalid_params) = {
 };
 Theory((dds_entity_t rdr), vddsc_reader, read_invalid_params, .init=reader_env_init, .fini=reader_env_fini)
 {
-    dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
+    dds_entity_t exp = -DDS_RETCODE_BAD_PARAMETER;
     dds_sample_info_t info[MAX_SAMPLES];
     void *samples[MAX_SAMPLES];
     dds_return_t ret;
