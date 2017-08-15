@@ -224,13 +224,8 @@ dds_reader_status_cb(
     /* DATA_AVAILABLE is handled differently to normal status changes. */
     if (data->status == DDS_DATA_AVAILABLE_STATUS) {
         dds_entity *parent = rd->m_entity.m_parent;
-        /* First, try to ship it off to its parent(s) DDS_DATA_ON_READERS_STATUS.
-         * But that only makes sense when the parent is actually a subscriber (a subscriber
-         * needs to be supplied when calling the data_on_readers listener function). */
-        rc = DDS_RETCODE_NO_DATA;
-        if (dds_entity_kind(parent->m_hdl) == DDS_KIND_SUBSCRIBER) {
-            rc = dds_entity_listener_propagation(parent, parent, DDS_DATA_ON_READERS_STATUS, NULL, true);
-        }
+        /* First, try to ship it off to its parent(s) DDS_DATA_ON_READERS_STATUS. */
+        rc = dds_entity_listener_propagation(parent, parent, DDS_DATA_ON_READERS_STATUS, NULL, true);
 
         if (rc == DDS_RETCODE_NO_DATA) {
             /* No parent was interested (NO_DATA == NO_CALL).
@@ -238,7 +233,7 @@ dds_reader_status_cb(
             rc = dds_entity_listener_propagation(entity, entity, DDS_DATA_AVAILABLE_STATUS, NULL, false);
         }
 
-        if ((rc == DDS_RETCODE_NO_DATA) && (dds_entity_kind(parent->m_hdl) == DDS_KIND_SUBSCRIBER)) {
+        if ( rc == DDS_RETCODE_NO_DATA ) {
             /* Nobody was interested (NO_DATA == NO_CALL). Set the status on the subscriber. */
             dds_entity_status_set(parent, DDS_DATA_ON_READERS_STATUS);
             /* Notify possible interested observers of the subscriber. */
@@ -317,6 +312,7 @@ dds_create_reader(
     dds_qos_t * rqos;
     dds_retcode_t rc;
     dds_entity * parent = NULL;
+    dds_entity_t subscriber;
     dds_subscriber  * sub = NULL;
     dds_reader * rd;
     struct rhc * rhc;
@@ -327,19 +323,21 @@ dds_create_reader(
     int ret = DDS_RETCODE_OK;
 
     /* Try claiming a participant. If that's not working, then it could be a subscriber. */
-    rc = dds_entity_lock(participant_or_subscriber, DDS_KIND_PARTICIPANT, &parent);
+
+    if(dds_entity_kind(participant_or_subscriber) == DDS_KIND_PARTICIPANT){
+      subscriber = dds_create_subscriber(participant_or_subscriber, qos, NULL);
+    } else{
+       subscriber = participant_or_subscriber;
+    }
+    rc = dds_entity_lock(subscriber, DDS_KIND_SUBSCRIBER, &parent);
     if (rc != DDS_RETCODE_OK) {
-        if (rc == DDS_RETCODE_ILLEGAL_OPERATION) {
-            rc = dds_entity_lock(participant_or_subscriber, DDS_KIND_SUBSCRIBER, &parent);
-            if (rc != DDS_RETCODE_OK) {
-                return (dds_entity_t)DDS_ERRNO(rc);
-            }
-            sub = (dds_subscriber*)parent;
-        } else {
-            return (dds_entity_t)DDS_ERRNO(rc);
-        }
+      return (dds_entity_t)DDS_ERRNO(rc);
     }
 
+    if (subscriber != participant_or_subscriber) {
+      parent->m_flags |= DDS_ENTITY_IMPLICIT;
+    }
+    sub = (dds_subscriber*)parent;
     rc = dds_entity_lock(topic, DDS_KIND_TOPIC, &tp);
     if (rc != DDS_RETCODE_OK) {
         dds_entity_unlock(parent);

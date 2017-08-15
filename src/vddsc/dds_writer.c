@@ -196,6 +196,7 @@ dds_writer_close(
     if (asleep) {
         thread_state_asleep(thr);
     }
+    dds_delete_impl(e->m_parent->m_hdl, true);
     return DDS_ERRNO(rc);
 }
 
@@ -326,27 +327,29 @@ dds_create_writer(
     dds_entity_t writer = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
     dds_entity * pp_or_pub = NULL;
     dds_entity * tp;
+    dds_entity_t publisher;
     struct thread_state1 * const thr = lookup_thread_state();
     const bool asleep = !vtime_awake_p(thr->vtime);
     ddsi_tran_conn_t conn = gv.data_conn_mc ? gv.data_conn_mc : gv.data_conn_uc;
     int ret = DDS_RETCODE_OK;
 
     /* Try claiming a participant. If that's not working, then it could be a subscriber. */
-    rc = dds_entity_lock(participant_or_publisher, DDS_KIND_PARTICIPANT, &pp_or_pub);
+    if(dds_entity_kind(participant_or_publisher) == DDS_KIND_PARTICIPANT){
+      publisher = dds_create_publisher(participant_or_publisher, qos, NULL);
+    } else{
+        publisher = participant_or_publisher;
+    }
+    rc = dds_entity_lock(publisher, DDS_KIND_PUBLISHER, &pp_or_pub);
+
     if (rc != DDS_RETCODE_OK) {
-        if (rc == DDS_RETCODE_ILLEGAL_OPERATION) {
-            rc = dds_entity_lock(participant_or_publisher, DDS_KIND_PUBLISHER, &pp_or_pub);
-            if (rc != DDS_RETCODE_OK) {
-                writer = (dds_entity_t)DDS_ERRNO(rc);
-                goto err_pp_or_pub_lock;
-            }
-            pub = (dds_publisher*)pp_or_pub;
-        } else {
-            writer = (dds_entity_t)DDS_ERRNO(rc);
-            goto err_pp_or_pub_lock;
-        }
+      writer = (dds_entity_t)DDS_ERRNO(rc);
+      goto err_pp_or_pub_lock;
     }
 
+    if (publisher != participant_or_publisher) {
+      pp_or_pub->m_flags |= DDS_ENTITY_IMPLICIT;
+    }
+    pub = (dds_publisher*)pp_or_pub;
     rc = dds_entity_lock(topic, DDS_KIND_TOPIC, &tp);
     if (rc != DDS_RETCODE_OK) {
         writer = (dds_entity_t)DDS_ERRNO(rc);

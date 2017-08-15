@@ -83,6 +83,10 @@ dds_entity_observer_unregister(
         _In_ dds_entity_t observed,
         _In_ dds_entity_t observer);
 
+dds_return_t
+dds_delete_impl(
+        _In_ dds_entity_t entity,
+        _In_ bool check);
 
 #if defined (__cplusplus)
 }
