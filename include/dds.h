@@ -745,6 +745,11 @@ dds_create_participant(
  * For instance, it will return the Participant that was used when
  * creating a Publisher (when that Publisher was provided here).
  *
+ * Note that the entity can have a flag value of implicit (DDS_ENTITY_IMPLICIT).
+ * If the flag is set as implicit and reader/writer will be deleted, publisher/subscriber
+ * must be deleted explicitly. In this case, implicit flag will be unset when
+ * the publisher/subscriber is returned by dds_get_parent().
+ *
  * TODO: Link to generic dds entity relations documentation.
  *
  * @param[in]  entity  Entity from which to get its parent.
@@ -812,6 +817,11 @@ dds_get_participant (
  *
  * When supplying NULL as list and 0 as size, you can use this to acquire
  * the number of children without having to pre-allocate a list.
+ *
+ * Note that the entity can have a flag value of implicit (DDS_ENTITY_IMPLICIT).
+ * If the flag is set as implicit and reader/writer will be deleted, publisher/subscriber
+ * must be deleted explicitly. In this case, implicit flag will be unset when
+ * the publisher/subscriber is returned by dds_get_children().
  *
  * TODO: Link to generic dds entity relations documentation.
  *
@@ -1124,7 +1134,9 @@ dds_wait_for_acks(
 
 
 /**
- * @brief Creates a new instance of a DDS reader
+ * @brief Creates a new instance of a DDS reader. The participant or subscriber on which the reader is
+ * being created can have flag value of implicit (DDS_ENTITY_IMPLICIT). When the flag is set as implicit,
+ * supplied participant or subscriber will be deleted when the reader is deleted.
  *
  * @param[in]  participant_or_subscriber The participant or subscriber on which the reader is being created
  *
@@ -1166,7 +1178,9 @@ dds_reader_wait_for_historical_data(
         dds_duration_t max_wait);
 
 /**
- * @brief Creates a new instance of a DDS writer
+ * @brief Creates a new instance of a DDS writer.The participant or publisher on which the writer is
+ * being created can have flag value of implicit (DDS_ENTITY_IMPLICIT). When the flag is set as implicit,
+ * supplied participant or publisher will be deleted when the writer is deleted.
  *
  * @param[in]  participant_or_publisher The participant or publisher on which the writer is being created
  * @param[in]  topic The topic to write
