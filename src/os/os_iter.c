@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "os/os_iter.h"
+#include "os/os.h"
 
 typedef struct os_iterNode_s os_iterNode;
 

@@ -1,8 +1,6 @@
 #ifndef OS_ITER_H
 #define OS_ITER_H
 
-
-#include "os/os.h"
 #if defined(__cplusplus)
 extern "C" {
 #endif

@@ -651,14 +651,19 @@ os_threadCleanupPush(
     if (itr == NULL) {
         itr = os_iterNew();
         assert(itr != NULL);
-        pthread_setspecific(cleanup_key, itr);
+        if (pthread_setspecific(cleanup_key, itr) == EINVAL) {
+            OS_REPORT (OS_WARNING, OS_FUNCTION, 0, "pthread_setspecific failed with error EINVAL (%d)", EINVAL);
+            os_iterFree(itr, NULL);
+            itr = NULL;
+        }
     }
 
-    obj = os_malloc(sizeof(*obj));
-    assert(obj != NULL);
-    obj->func = func;
-    obj->data = data;
-    os_iterAppend(itr, obj);
+    if(itr) {
+        obj = os_malloc(sizeof(*obj));
+        obj->func = func;
+        obj->data = data;
+        os_iterAppend(itr, obj);
+    }
 }
 
 void
