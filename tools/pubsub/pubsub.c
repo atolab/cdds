@@ -17,7 +17,7 @@
 #include <sys/types.h>
 //#include <sys/select.h>
 //#include <sys/fcntl.h>
-#include <arpa/inet.h>
+//#include <arpa/inet.h>
 #include <netdb.h>
 
 #if USE_EDITLINE
@@ -1698,11 +1698,11 @@ static uint32_t pubthread(void *vwrspecs)
         char *tmp = nextspec + strlen(nextspec);
         while (tmp > nextspec && isspace((unsigned char)tmp[-1]))
           *--tmp = 0;
-        if ((sscanf (nextspec, "+%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "+") == 0)) {
+        if ((sscanf_s (nextspec, "+%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "+") == 0)) {
           while (cnt--) cursor = cursor->next;
-        } else if ((sscanf (nextspec, "-%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "+") == 0)) {
+        } else if ((sscanf_s (nextspec, "-%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "+") == 0)) {
           while (cnt--) cursor = cursor->prev;
-        } else if (sscanf (nextspec, "%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) {
+        } else if (sscanf_s (nextspec, "%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) {
           cursor = wrspecs; while (cnt--) cursor = cursor->next;
         } else {
           struct wrspeclist *endm = cursor, *cand = NULL;
@@ -2485,7 +2485,7 @@ int main (int argc, char *argv[])
         sleep_at_end = (unsigned) os_atoll(optarg);
         break;
       case 'M':
-        if (sscanf(optarg, "%lf:%n", &wait_for_matching_reader_timeout, &pos) != 1)
+        if (sscanf_s(optarg, "%lf:%n", &wait_for_matching_reader_timeout, &pos) != 1)
         {
           fprintf (stderr, "-M %s: invalid timeout\n", optarg);
           exit (2);
@@ -2530,7 +2530,7 @@ int main (int argc, char *argv[])
           if (strcmp (p, "inf") == 0 || strncmp (p, "inf:", 4) == 0) {
             have_to = 1;
             set_infinite_dds_duration (&spec[specidx].findtopic_timeout);
-          } else if (sscanf (p, "%lf%n", &d, &pos) == 1 && (p[pos] == 0 || p[pos] == ':')) {
+          } else if (sscanf_s (p, "%lf%n", &d, &pos) == 1 && (p[pos] == 0 || p[pos] == ':')) {
             if (double_to_dds_duration (&spec[specidx].findtopic_timeout, d) < 0)
               error ("-T %s: %s: duration invalid\n", optarg, p);
             have_to = 1;
@@ -2591,11 +2591,11 @@ int main (int argc, char *argv[])
           spec[specidx].rd.mode = MODE_PRINT, spec[specidx].rd.polling = 1;
         else if (strcmp (optarg, "c") == 0)
           spec[specidx].rd.mode = MODE_CHECK;
-        else if (sscanf (optarg, "c:%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf_s (optarg, "c:%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
           spec[specidx].rd.mode = MODE_CHECK;
         else if (strcmp (optarg, "cp") == 0)
           spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
-        else if (sscanf (optarg, "cp:%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf_s (optarg, "cp:%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
           spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
         else if (strcmp (optarg, "z") == 0)
           spec[specidx].rd.mode = MODE_ZEROLOAD;
@@ -2617,19 +2617,19 @@ int main (int argc, char *argv[])
         {
           spec[specidx].wr.mode = WRM_INPUT;
         }
-        else if (sscanf (optarg, "%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf_s (optarg, "%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf (optarg, "%d:%lf*%u%n", &nkeyvals, &spec[specidx].wr.writerate, &spec[specidx].wr.burstsize, &pos) == 3 && optarg[pos] == 0)
+        else if (sscanf_s (optarg, "%d:%lf*%u%n", &nkeyvals, &spec[specidx].wr.writerate, &spec[specidx].wr.burstsize, &pos) == 3 && optarg[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf (optarg, "%d:%lf%n", &nkeyvals, &spec[specidx].wr.writerate, &pos) == 2 && optarg[pos] == 0)
+        else if (sscanf_s (optarg, "%d:%lf%n", &nkeyvals, &spec[specidx].wr.writerate, &pos) == 2 && optarg[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf (optarg, ":%d%n", &port, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf_s (optarg, ":%d%n", &port, &pos) == 1 && optarg[pos] == 0)
         {
         	fprintf(stderr, "listen on TCP port P: not supported\n");
 			exit(1);
@@ -2666,7 +2666,7 @@ int main (int argc, char *argv[])
           wait_hist_data = 1;
           if (strcmp (optarg, "inf") == 0)
             set_infinite_dds_duration (&wait_hist_data_timeout);
-          else if (sscanf (optarg, "%lf%n", &t, &pos) == 1 && optarg[pos] == 0 && t >= 0)
+          else if (sscanf_s (optarg, "%lf%n", &t, &pos) == 1 && optarg[pos] == 0 && t >= 0)
             double_to_dds_duration (&wait_hist_data_timeout, t);
           else
           {
