@@ -253,7 +253,7 @@ _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 dds_return_t
 dds_delete_impl(
         _In_ dds_entity_t entity,
-        _In_ bool check)
+        _In_ bool delete_if_implicit)
 {
     os_time    timeout = { 10, 0 };
     dds_entity *e;
@@ -266,6 +266,11 @@ dds_delete_impl(
     rc = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
     if (rc != DDS_RETCODE_OK) {
         return DDS_ERRNO(rc);
+    }
+
+    if(delete_if_implicit == true && ((e->m_flags & DDS_ENTITY_IMPLICIT) == 0)){
+        dds_entity_unlock(e);
+        return DDS_RETCODE_OK;
     }
 
     if (--e->m_refc != 0) {
@@ -285,15 +290,17 @@ dds_delete_impl(
     /* Signal observers that this entity will be deleted. */
     dds_entity_status_signal(e);
 
-    /* Recursively delete children */
-    child = e->m_children;
-    while ((child != NULL) && (ret == DDS_RETCODE_OK)) {
-        next = child->m_next;
-        /* This will probably delete the child entry from
-         * the current childrens list */
-        ret = dds_delete(child->m_hdl);
-        /* Next child. */
-        child = next;
+    if(delete_if_implicit == false){
+        /* Recursively delete children */
+        child = e->m_children;
+        while ((child != NULL) && (ret == DDS_RETCODE_OK)) {
+            next = child->m_next;
+            /* This will probably delete the child entry from
+             * the current childrens list */
+            ret = dds_delete(child->m_hdl);
+            /* Next child. */
+            child = next;
+        }
     }
 
     if (ret == DDS_RETCODE_OK) {

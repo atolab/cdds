@@ -196,7 +196,6 @@ dds_writer_close(
     if (asleep) {
         thread_state_asleep(thr);
     }
-    dds_delete_impl(e->m_parent->m_hdl, true);
     return DDS_ERRNO(rc);
 }
 
@@ -222,6 +221,9 @@ dds_writer_delete(
         thread_state_asleep(thr);
     }
     ret = dds_delete(wr->m_topic->m_entity.m_hdl);
+    if(ret == DDS_RETCODE_OK){
+      ret = dds_delete_impl(e->m_parent->m_hdl, true);
+    }
     os_mutexDestroy(&wr->m_call_lock);
     return ret;
 }

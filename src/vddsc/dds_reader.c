@@ -64,6 +64,9 @@ dds_reader_delete(
     dds_return_t ret;
     assert(e);
     ret = dds_delete(rd->m_topic->m_entity.m_hdl);
+    if(ret == DDS_RETCODE_OK){
+        ret = dds_delete_impl(e->m_parent->m_hdl, true);
+    }
     dds_free(rd->m_loan);
     return ret;
 }
