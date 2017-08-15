@@ -623,8 +623,6 @@ The Hello World is prepared to be built by CMake through the use
 of its :code:`CMakeLists.txt` file. The first step is letting
 CMake configure the build environment.
 
-It can be a good practise to build examples out-of-scope. In order to do that, create ...
-
 It's good practice to build examples or applications
 out-of-source. In order to do that, create a :code:`build`
 directory in the :code:`examples/helloworld` directory and go
@@ -635,6 +633,13 @@ us by typing:
 ::
 
     cmake ../
+
+.. note::
+    It is possible that you have to supply a specific generator for
+    the configuration:
+    ::
+
+        cmake -G "Visual Studio 14 2015 Win64" ..
 
 CMake will use the CMakeLists.txt in the helloworld directory
 to create makefiles that fit the native platform.
@@ -653,9 +658,18 @@ as typing:
 
     cmake --build .
 
+.. note::
+    On Windows, it is likely that you have to supply the config
+    of Visual Studio:
+    ::
+
+        cmake --build . --config "Release"
+
 while being in the build directory created during the
-configuration step. In this example, that directory would be
-:code:`examples/helloworld/build`.
+configuration step. In this example, that directory would be:
+
+:Windows:  :code:`examples\helloworld\build\Release`.
+:Linux: :code:`examples/helloworld/build`.
 
 After the build finished, both the Hello World publisher and
 subscriber applications will be present within the build

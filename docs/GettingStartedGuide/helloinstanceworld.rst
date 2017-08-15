@@ -15,7 +15,7 @@ Introduction
 ************
 
 In this chapter, it is assumed that the reader has knowledge about the
-:ref:`Hello World <HelloWorld>`and :ref:`Hello Quick World <HelloQuickWorld>`
+:ref:`Hello World <HelloWorld>` and :ref:`Hello Quick World <HelloQuickWorld>`
 examples.
 
 In the previous examples, only one message is sent and received. In the
