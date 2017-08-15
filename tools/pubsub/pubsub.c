@@ -18,7 +18,7 @@
 //#include <sys/select.h>
 //#include <sys/fcntl.h>
 //#include <arpa/inet.h>
-#include <netdb.h>
+//#include <netdb.h>
 
 #if USE_EDITLINE
 #include <histedit.h>
