@@ -88,6 +88,7 @@ os_iterInsert(
     os_iterNode *node, *prev;
 
     node = os_malloc(sizeof *node);
+    memset(node, 0, sizeof(*node)); /* TODO: replace with os_malloc_0 on master */
     node->object = object;
 
     idx = os__iterIndex(iter, index);
