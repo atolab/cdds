@@ -25,7 +25,6 @@ extern "C" {
 #define OS_WIN32 1
 #define OS_SOCKET_USE_FCNTL 0
 #define OS_SOCKET_USE_IOCTL 1
-#define OS_HAS_TSD_USING_THREAD_KEYWORD 0 /* yes if using __declspec(thread), I believe */
 #define OS_FILESEPCHAR '/'
 #define OS_HAS_NO_SET_NAME_PRCTL 1
 #define OS_HAS_UCONTEXT_T 0

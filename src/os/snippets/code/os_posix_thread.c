@@ -24,12 +24,10 @@
 #include <strings.h>
 #include <string.h>
 #include <stdio.h>
-#ifndef INTEGRITY
 #include <signal.h>
 /* TODO: should introduce a HAVE_PRCTL define rather than blacklisting some platforms */
 #if !defined __VXWORKS__ && !defined __APPLE__
 #include <sys/prctl.h>
-#endif
 #endif
 #include <limits.h>
 
@@ -42,11 +40,7 @@ typedef struct {
 static pthread_key_t os_threadNameKey;
 static pthread_key_t os_threadMemKey;
 
-static os_threadHook os_threadCBs;
-
-#ifndef INTEGRITY
 static sigset_t os_threadBlockAllMask;
-#endif
 
 /** \brief Initialize the thread private memory array
  *
@@ -117,41 +111,6 @@ os_threadMemExit(
     }
 }
 
-static int
-os_threadStartCallback(
-    os_threadId id,
-    void *arg)
-{
-    OS_UNUSED_ARG(id);
-    OS_UNUSED_ARG(arg);
-    return 0;
-}
-
-static int
-os_threadStopCallback(
-    os_threadId id,
-    void *arg)
-{
-    OS_UNUSED_ARG(id);
-    OS_UNUSED_ARG(arg);
-    return 0;
-}
-
-static void
-os_threadHookInit(void)
-{
-    os_threadCBs.startCb = os_threadStartCallback;
-    os_threadCBs.startArg = NULL;
-    os_threadCBs.stopCb = os_threadStopCallback;
-    os_threadCBs.stopArg = NULL;
-}
-
-static void
-os_threadHookExit(void)
-{
-    return;
-}
-
 /** \brief Initialize the thread module
  *
  * \b os_threadModuleInit initializes the thread module for the
@@ -164,14 +123,9 @@ os_threadModuleInit (
     pthread_key_create (&os_threadNameKey, NULL);
     pthread_key_create (&os_threadMemKey, NULL);
 
-#ifndef INTEGRITY
     sigfillset(&os_threadBlockAllMask);
-#endif
 
     os_threadMemInit();
-
-    os_threadHookInit();
-
 }
 
 /** \brief Deinitialize the thread module
@@ -182,46 +136,10 @@ os_threadModuleInit (
 void
 os_threadModuleExit(void)
 {
-    os_threadHookExit();
     os_threadMemExit();
 
     pthread_key_delete(os_threadNameKey);
     pthread_key_delete(os_threadMemKey);
-}
-
-os_result
-os_threadModuleSetHook(
-    os_threadHook *hook,
-    os_threadHook *oldHook)
-{
-    os_result result;
-    os_threadHook oh;
-
-    result = os_resultFail;
-    oh = os_threadCBs;
-
-    if (hook) {
-        if (hook->startCb) {
-            os_threadCBs.startCb = hook->startCb;
-            os_threadCBs.startArg = hook->startArg;
-        } else {
-            os_threadCBs.startCb = os_threadStartCallback;
-            os_threadCBs.startArg = NULL;
-        }
-        if (hook->stopCb) {
-            os_threadCBs.stopCb = hook->stopCb;
-            os_threadCBs.stopArg = hook->stopArg;
-        } else {
-            os_threadCBs.stopCb = os_threadStopCallback;
-            os_threadCBs.stopArg = NULL;
-        }
-
-        if (oldHook) {
-            *oldHook = oh;
-        }
-    }
-
-    return result;
 }
 
 /** \brief Wrap thread start routine
@@ -241,9 +159,7 @@ os_startRoutineWrapper (
 
     resultValue = 0;
 
-#if defined(INTEGRITY)
-    SetTaskName(CurrentTask(), context->threadName, strlen(context->threadName));
-#elif !defined(__VXWORKS__) && !defined(__APPLE__)
+#if !defined(__VXWORKS__) && !defined(__APPLE__)
     prctl(PR_SET_NAME, context->threadName);
 #endif
 
@@ -258,13 +174,8 @@ os_startRoutineWrapper (
     os_threadMemInit ();
 
     id.v = pthread_self();
-    /* Call the start callback */
-    if (os_threadCBs.startCb(id, os_threadCBs.startArg) == 0) {
-        /* Call the user routine */
-        resultValue = context->startRoutine (context->arguments);
-    }
-
-    os_threadCBs.stopCb(id, os_threadCBs.stopArg);
+    /* Call the user routine */
+    resultValue = context->startRoutine (context->arguments);
 
     /* Free the thread context resources, arguments is responsibility */
     /* for the caller of os_procCreate                                */
@@ -315,12 +226,8 @@ os_threadCreate (
 
     if (tattr.schedClass == OS_SCHED_DEFAULT) {
 #if 0 /* FIXME! */
-#ifndef PIKEOS_POSIX
-#ifndef VXWORKS_RTP
         tattr.schedClass = os_procAttrGetClass ();
-#endif
         tattr.schedPriority = os_procAttrGetPriority ();
-#endif
 #endif
     }
     if (pthread_attr_init (&attr) != 0)
@@ -495,7 +402,7 @@ os_threadIdSelf (void)
  *
  * \b os_threadFigureIdentity determines the numeric identity
  * of a thread. POSIX does not identify threads by name,
- * therefor only the numeric identification is returned,
+ * therefore only the numeric identification is returned,
  */
 int32_t
 os_threadFigureIdentity (
@@ -693,3 +600,82 @@ os_threadMemGet (
     return threadMemLoc;
 }
 
+
+static pthread_key_t cleanup_key;
+static pthread_once_t cleanup_once = PTHREAD_ONCE_INIT;
+
+static void
+os_threadCleanupFini(
+    void *data)
+{
+    os_iter *itr;
+    os_threadCleanup *obj;
+
+    if (data != NULL) {
+        itr = (os_iter *)data;
+        for (obj = (os_threadCleanup *)os_iterTake(itr, -1);
+             obj != NULL;
+             obj = (os_threadCleanup *)os_iterTake(itr, -1))
+        {
+            assert(obj->func != NULL);
+            obj->func(obj->data);
+            os_free(obj);
+        }
+        os_iterFree(itr, NULL);
+    }
+}
+
+static void
+os_threadCleanupInit(
+    void)
+{
+    (void)pthread_key_create(&cleanup_key, &os_threadCleanupFini);
+}
+
+/* os_threadCleanupPush and os_threadCleanupPop are mapped onto a destructor
+   registered with pthread_key_create in stead of being mapped directly onto
+   pthread_cleanup_push/pthread_cleanup_pop because the cleanup routines could
+   otherwise be popped of the stack by the user */
+void
+os_threadCleanupPush(
+    void (*func)(void*),
+    void *data)
+{
+    os_iter *itr;
+    os_threadCleanup *obj;
+
+    assert(func != NULL);
+
+    (void)pthread_once(&cleanup_once, &os_threadCleanupInit);
+    itr = (os_iter *)pthread_getspecific(cleanup_key);
+    if (itr == NULL) {
+        itr = os_iterNew();
+        assert(itr != NULL);
+        pthread_setspecific(cleanup_key, itr);
+    }
+
+    obj = os_malloc(sizeof(*obj));
+    assert(obj != NULL);
+    obj->func = func;
+    obj->data = data;
+    os_iterAppend(itr, obj);
+}
+
+void
+os_threadCleanupPop(
+    int execute)
+{
+    os_iter *itr;
+    os_threadCleanup *obj;
+
+    (void)pthread_once(&cleanup_once, &os_threadCleanupInit);
+    if ((itr = (os_iter *)pthread_getspecific(cleanup_key)) != NULL) {
+        obj = (os_threadCleanup *)os_iterTake(itr, -1);
+        if (obj != NULL) {
+            if (execute) {
+                obj->func(obj->data);
+            }
+            os_free(obj);
+        }
+    }
+}
