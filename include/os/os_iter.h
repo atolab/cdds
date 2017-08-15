@@ -1,23 +1,24 @@
 #ifndef OS_ITER_H
 #define OS_ITER_H
 
-#include <stdint.h>
-#include "os/os_defs.h"
 
+#include "os/os.h"
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 typedef struct os_iter_s os_iter; /* opaque type */
 
-OSAPI_EXPORT _Success_(return != NULL) _Ret_maybenull_ os_iter *
+_Check_return_
+_Ret_valid_
+OSAPI_EXPORT os_iter *
 os_iterNew(
     void);
 
 OSAPI_EXPORT void
 os_iterFree(
-    _In_opt_ os_iter *iter,
-    _In_opt_ void(*func)(void *));
+    _In_opt_ _Post_ptr_invalid_ os_iter *iter,
+    _In_opt_ void(*func)(_Inout_ void *));
 
 OSAPI_EXPORT _Ret_range_(0, INT32_MAX) uint32_t
 os_iterLength(
@@ -37,30 +38,30 @@ os_iterLength(
 
 OSAPI_EXPORT _Success_(return >= 0) _Ret_range_(-1, INT32_MAX) int32_t
 os_iterInsert(
-    _In_ os_iter *iter,
+    _Inout_ os_iter *iter,
     _In_opt_ void *object,
-    _In_range_(INT32_MIN, INT32_MAX) int32_t index);
+    _In_ int32_t index);
 
 #define os_iterPrepend(iter, ojbect) \
     os_iterInsert((iter), (object), 0)
 #define os_iterAppend(iter, object) \
     os_iterInsert((iter), (object), OS_ITER_LENGTH)
 
-OSAPI_EXPORT _Ret_maybenull_ void *
+OSAPI_EXPORT _Ret_opt_valid_ void *
 os_iterObject(
-    _In_ const os_iter *__restrict iter,
+    _In_ const os_iter *iter,
     _In_range_(INT32_MIN+1, INT32_MAX) int32_t index);
 
-OSAPI_EXPORT _Ret_maybenull_ void *
+OSAPI_EXPORT _Ret_opt_valid_ void *
 os_iterTake(
-    _In_ os_iter *__restrict iter,
+    _Inout_ os_iter *iter,
     _In_range_(INT32_MIN+1, INT32_MAX) int32_t index);
 
 OSAPI_EXPORT void
 os_iterWalk(
-    _In_ const os_iter *__restrict iter,
-    _In_ void(*func)(void *obj, void *arg),
-    _In_opt_ void *arg);
+    _In_ const os_iter *iter,
+    _In_ void(*func)(_Inout_ void *obj, _Inout_opt_ void *arg),
+    _Inout_opt_ void *arg);
 
 #if defined (__cplusplus)
 }

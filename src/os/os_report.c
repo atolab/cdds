@@ -1655,8 +1655,8 @@ os_report_stack_free(
 
 static void
 os__report_stack_event_length (
-        void *object,
-        void *argument)
+        _Inout_ void *object,
+        _Inout_opt_ void *argument)
 {
     char tmp[2];
     os_reportEventV1 event;
