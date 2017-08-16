@@ -314,9 +314,8 @@ dds_create_reader(
 {
     dds_qos_t * rqos;
     dds_retcode_t rc;
-    dds_entity * parent = NULL;
+    dds_entity * sub = NULL;
     dds_entity_t subscriber;
-    dds_subscriber  * sub = NULL;
     dds_reader * rd;
     struct rhc * rhc;
     dds_entity * tp;
@@ -328,26 +327,26 @@ dds_create_reader(
     /* Try claiming a participant. If that's not working, then it could be a subscriber. */
 
     if(dds_entity_kind(participant_or_subscriber) == DDS_KIND_PARTICIPANT){
-      subscriber = dds_create_subscriber(participant_or_subscriber, qos, NULL);
+        subscriber = dds_create_subscriber(participant_or_subscriber, qos, NULL);
     } else{
-       subscriber = participant_or_subscriber;
+        subscriber = participant_or_subscriber;
     }
-    rc = dds_entity_lock(subscriber, DDS_KIND_SUBSCRIBER, &parent);
+    rc = dds_entity_lock(subscriber, DDS_KIND_SUBSCRIBER, &sub);
     if (rc != DDS_RETCODE_OK) {
-      return (dds_entity_t)DDS_ERRNO(rc);
+        return (dds_entity_t)DDS_ERRNO(rc);
     }
 
     if (subscriber != participant_or_subscriber) {
-      parent->m_flags |= DDS_ENTITY_IMPLICIT;
+        sub->m_flags |= DDS_ENTITY_IMPLICIT;
     }
-    sub = (dds_subscriber*)parent;
+
     rc = dds_entity_lock(topic, DDS_KIND_TOPIC, &tp);
     if (rc != DDS_RETCODE_OK) {
-        dds_entity_unlock(parent);
+        dds_entity_unlock(sub);
         return (dds_entity_t)DDS_ERRNO(rc);
     }
     assert (((dds_topic*)tp)->m_stopic);
-    assert (parent->m_domain == tp->m_domain);
+    assert (sub->m_domain == tp->m_domain);
 
     /* Merge qos from topic and subscriber */
     rqos = dds_qos_create ();
@@ -357,9 +356,10 @@ dds_create_reader(
         (void)dds_qos_copy(rqos, qos);
     }
 
-    if (sub && sub->m_entity.m_qos) {
-        dds_qos_merge (rqos, sub->m_entity.m_qos);
+    if(sub->m_qos){
+        dds_qos_merge (rqos, sub->m_qos);
     }
+
     if (tp->m_qos) {
         dds_qos_merge (rqos, tp->m_qos);
 
@@ -372,13 +372,13 @@ dds_create_reader(
     if (ret != 0) {
         dds_qos_delete(rqos);
         dds_entity_unlock(tp);
-        dds_entity_unlock(parent);
+        dds_entity_unlock(sub);
         return ret;
     }
 
     /* Create reader and associated read cache */
     rd = dds_alloc (sizeof (*rd));
-    reader = dds_entity_init (&rd->m_entity, parent, DDS_KIND_READER, rqos, listener, DDS_READER_STATUS_MASK);
+    reader = dds_entity_init (&rd->m_entity, sub, DDS_KIND_READER, rqos, listener, DDS_READER_STATUS_MASK);
     rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
     rd->m_topic = (dds_topic*)tp;
     rhc = dds_rhc_new (rd, ((dds_topic*)tp)->m_stopic);
@@ -396,14 +396,14 @@ dds_create_reader(
     }
 
     os_mutexUnlock(&tp->m_mutex);
-    os_mutexUnlock(&parent->m_mutex);
+    os_mutexUnlock(&sub->m_mutex);
 
     if (asleep) {
         thread_state_awake (thr);
     }
-    rd->m_rd = new_reader(&rd->m_entity.m_guid, NULL, &parent->m_participant->m_guid, ((dds_topic*)tp)->m_stopic,
+    rd->m_rd = new_reader(&rd->m_entity.m_guid, NULL, &sub->m_participant->m_guid, ((dds_topic*)tp)->m_stopic,
                           rqos, rhc, dds_reader_status_cb, rd);
-    os_mutexLock(&parent->m_mutex);
+    os_mutexLock(&sub->m_mutex);
     os_mutexLock(&tp->m_mutex);
     assert (rd->m_rd);
     if (asleep) {
@@ -415,7 +415,7 @@ dds_create_reader(
         (dds_global.m_dur_reader) (rd, rhc);
     }
     dds_entity_unlock(tp);
-    dds_entity_unlock(parent);
+    dds_entity_unlock(sub);
     return reader;
 }
 

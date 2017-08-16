@@ -86,7 +86,7 @@ dds_entity_observer_unregister(
 dds_return_t
 dds_delete_impl(
         _In_ dds_entity_t entity,
-        _In_ bool delete_if_implicit);
+        _In_ bool keep_if_implicit);
 
 #if defined (__cplusplus)
 }

@@ -253,7 +253,7 @@ _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 dds_return_t
 dds_delete_impl(
         _In_ dds_entity_t entity,
-        _In_ bool delete_if_implicit)
+        _In_ bool keep_if_implicit)
 {
     os_time    timeout = { 10, 0 };
     dds_entity *e;
@@ -268,7 +268,7 @@ dds_delete_impl(
         return DDS_ERRNO(rc);
     }
 
-    if(delete_if_implicit == true && ((e->m_flags & DDS_ENTITY_IMPLICIT) == 0)){
+    if(keep_if_implicit == true && ((e->m_flags & DDS_ENTITY_IMPLICIT) == 0)){
         dds_entity_unlock(e);
         return DDS_RETCODE_OK;
     }
@@ -290,17 +290,15 @@ dds_delete_impl(
     /* Signal observers that this entity will be deleted. */
     dds_entity_status_signal(e);
 
-    if(delete_if_implicit == false){
-        /* Recursively delete children */
-        child = e->m_children;
-        while ((child != NULL) && (ret == DDS_RETCODE_OK)) {
-            next = child->m_next;
-            /* This will probably delete the child entry from
-             * the current childrens list */
-            ret = dds_delete(child->m_hdl);
-            /* Next child. */
-            child = next;
-        }
+    /* Recursively delete children */
+    child = e->m_children;
+    while ((child != NULL) && (ret == DDS_RETCODE_OK)) {
+        next = child->m_next;
+        /* This will probably delete the child entry from
+         * the current childrens list */
+        ret = dds_delete(child->m_hdl);
+        /* Next child. */
+        child = next;
     }
 
     if (ret == DDS_RETCODE_OK) {
@@ -371,20 +369,19 @@ dds_get_parent(
     dds_retcode_t rc;
     dds_entity_t hdl = entity;
     if (entity >= 0) {
-      rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-      if (rc == DDS_RETCODE_OK) {
-          if (e->m_parent) {
-              hdl = e->m_parent->m_hdl;
-              dds_set_explicit(hdl);
-          } else {
-              hdl = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
-          }
-          dds_entity_unlock(e);
-      } else {
-          hdl = DDS_ERRNO(rc);
+        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+        if (rc == DDS_RETCODE_OK) {
+            if (e->m_parent) {
+                hdl = e->m_parent->m_hdl;
+                dds_set_explicit(hdl);
+            } else {
+                hdl = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+            }
+            dds_entity_unlock(e);
+        } else {
+            hdl = DDS_ERRNO(rc);
+        }
       }
-    }
-
     return hdl;
 }
 
@@ -1002,8 +999,8 @@ dds_set_explicit(
     dds_retcode_t rc;
     rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
     if( rc == DDS_RETCODE_OK){
-      e->m_flags &= ~DDS_ENTITY_IMPLICIT;
-      dds_entity_unlock(e);
+        e->m_flags &= ~DDS_ENTITY_IMPLICIT;
+        dds_entity_unlock(e);
     } else {
         DDS_ERRNO(rc);
     }

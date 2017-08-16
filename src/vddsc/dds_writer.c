@@ -222,7 +222,7 @@ dds_writer_delete(
     }
     ret = dds_delete(wr->m_topic->m_entity.m_hdl);
     if(ret == DDS_RETCODE_OK){
-      ret = dds_delete_impl(e->m_parent->m_hdl, true);
+        ret = dds_delete_impl(e->m_parent->m_hdl, true);
     }
     os_mutexDestroy(&wr->m_call_lock);
     return ret;
@@ -324,10 +324,9 @@ dds_create_writer(
 {
     dds_retcode_t rc;
     dds_qos_t * wqos;
-    dds_publisher * pub = NULL;
     dds_writer * wr;
     dds_entity_t writer = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
-    dds_entity * pp_or_pub = NULL;
+    dds_entity * pub = NULL;
     dds_entity * tp;
     dds_entity_t publisher;
     struct thread_state1 * const thr = lookup_thread_state();
@@ -337,28 +336,28 @@ dds_create_writer(
 
     /* Try claiming a participant. If that's not working, then it could be a subscriber. */
     if(dds_entity_kind(participant_or_publisher) == DDS_KIND_PARTICIPANT){
-      publisher = dds_create_publisher(participant_or_publisher, qos, NULL);
+        publisher = dds_create_publisher(participant_or_publisher, qos, NULL);
     } else{
         publisher = participant_or_publisher;
     }
-    rc = dds_entity_lock(publisher, DDS_KIND_PUBLISHER, &pp_or_pub);
+    rc = dds_entity_lock(publisher, DDS_KIND_PUBLISHER, &pub);
 
     if (rc != DDS_RETCODE_OK) {
-      writer = (dds_entity_t)DDS_ERRNO(rc);
-      goto err_pp_or_pub_lock;
+        writer = (dds_entity_t)DDS_ERRNO(rc);
+        goto err_pub_lock;
     }
 
     if (publisher != participant_or_publisher) {
-      pp_or_pub->m_flags |= DDS_ENTITY_IMPLICIT;
+        pub->m_flags |= DDS_ENTITY_IMPLICIT;
     }
-    pub = (dds_publisher*)pp_or_pub;
+
     rc = dds_entity_lock(topic, DDS_KIND_TOPIC, &tp);
     if (rc != DDS_RETCODE_OK) {
         writer = (dds_entity_t)DDS_ERRNO(rc);
         goto err_tp_lock;
     }
     assert(((dds_topic*)tp)->m_stopic);
-    assert(pp_or_pub->m_domain == tp->m_domain);
+    assert(pub->m_domain == tp->m_domain);
 
     /* Merge Topic & Publisher qos */
     wqos = dds_qos_create();
@@ -368,8 +367,8 @@ dds_create_writer(
         (void)dds_qos_copy(wqos, qos);
     }
 
-    if (pub && pub->m_entity.m_qos) {
-        dds_qos_merge(wqos, pub->m_entity.m_qos);
+    if (pub->m_qos) {
+        dds_qos_merge(wqos, pub->m_qos);
     }
 
     if (tp->m_qos) {
@@ -387,7 +386,7 @@ dds_create_writer(
 
     /* Create writer */
     wr = dds_alloc(sizeof (*wr));
-    writer = dds_entity_init(&wr->m_entity, pp_or_pub, DDS_KIND_WRITER, wqos, listener, DDS_WRITER_STATUS_MASK);
+    writer = dds_entity_init(&wr->m_entity, pub, DDS_KIND_WRITER, wqos, listener, DDS_WRITER_STATUS_MASK);
 
     wr->m_topic = (dds_topic*)tp;
     dds_entity_add_ref_nolock(tp);
@@ -406,27 +405,27 @@ dds_create_writer(
     }
 
     os_mutexUnlock(&tp->m_mutex);
-    os_mutexUnlock(&pp_or_pub->m_mutex);
+    os_mutexUnlock(&pub->m_mutex);
 
     if (asleep) {
         thread_state_awake(thr);
     }
-    wr->m_wr = new_writer(&wr->m_entity.m_guid, NULL, &pp_or_pub->m_participant->m_guid, ((dds_topic*)tp)->m_stopic,
+    wr->m_wr = new_writer(&wr->m_entity.m_guid, NULL, &pub->m_participant->m_guid, ((dds_topic*)tp)->m_stopic,
                           wqos, dds_writer_status_cb, wr);
-    os_mutexLock(&pp_or_pub->m_mutex);
+    os_mutexLock(&pub->m_mutex);
     os_mutexLock(&tp->m_mutex);
     assert(wr->m_wr);
     if (asleep) {
         thread_state_asleep(thr);
     }
     dds_entity_unlock(tp);
-    dds_entity_unlock(pp_or_pub);
+    dds_entity_unlock(pub);
     return writer;
 err_bad_qos:
     dds_entity_unlock(tp);
 err_tp_lock:
-    dds_entity_unlock(pp_or_pub);
-err_pp_or_pub_lock:
+    dds_entity_unlock(pub);
+err_pub_lock:
     return writer;
 }
 
