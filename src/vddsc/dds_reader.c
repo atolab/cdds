@@ -458,39 +458,64 @@ uint32_t dds_reader_lock_samples (dds_entity_t reader)
     return ret;
 }
 
+
+
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 dds_return_t
 dds_wait_for_historical_data(
         _In_ dds_entity_t reader,
         _In_range_(0, DDS_INFINITY) dds_duration_t max_wait)
 {
-    dds_reader *rd;
-    uint32_t errnr;
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+  dds_reader *dds_rd;
+  uint32_t errnr;
 
-    errnr = dds_reader_lock(reader, &rd);
+  errnr = dds_reader_lock(reader, &dds_rd);
+  if (errnr != DDS_RETCODE_OK) {
+     return DDS_ERRNO(errnr);
+  }
+  if (max_wait < 0) {
+    errnr = DDS_RETCODE_BAD_PARAMETER;
+    goto skip;
+  }
+  if (!((dds_entity*)dds_rd)->m_status_enable) {
+    errnr = DDS_RETCODE_NOT_ENABLED;
+    goto skip;
+  }
+  /* TODO wait_for_historical data is currently only supported for transient-local readers
+   * For volatile, transient and persistent readers the behaviour of wait_for_historical_data
+   * requires a durability service or something equivalent. Until a durability service is
+   * not available UNSUPPORTED will be returned.
+   */ 
+  if (((dds_entity*)dds_rd)->m_qos->durability.kind != NN_TRANSIENT_LOCAL_DURABILITY_QOS) {
+    errnr = DDS_RETCODE_UNSUPPORTED;
+    goto skip;
+  }
+  /* At this point the reader must be transient-local */
 
-    if (errnr == DDS_RETCODE_OK) {
-        /* TODO Wait_for_historical data is currently only supported for transient-local readers
-         * For transient-local readers ddsi will deliver the data.
-         * For volatile, transient and persistent readers the behaviour of wait_for_historical_data
-         * requires a durability service or somehting equivalent. Until a durability service is
-         * not available UNSUPPORTED will be returned.
-         */ 
-        if (max_wait < 0) {
-            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
-        } else if (((dds_entity*)rd)->m_qos->durability.kind == NN_TRANSIENT_LOCAL_DURABILITY_QOS) {
-            /* Transient local is handled by ddsi */
-            ret = DDS_ERRNO(DDS_RETCODE_OK);
-        } else {
-            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
-        }
-        dds_reader_unlock(rd);
-    } else {
-        ret = DDS_ERRNO(errnr);
+  {
+    struct reader *rd;
+    os_time timeout;
+    os_result result = os_resultSuccess;
+
+    rd = dds_rd->m_rd;
+    if (rd->in_sync) {
+      errnr = DDS_RETCODE_OK;
+      goto skip;
     }
+    /* TODO Until CHAM-142 is fixed we need to translate dds_duration to os_time */
+    timeout.tv_sec = (int32_t) (max_wait / T_SECOND);
+    timeout.tv_nsec = (int32_t) (max_wait % T_SECOND);
+    os_mutexLock (&rd->complete_lock);
+    result = os_condTimedWait (&rd->complete_cond, &rd->complete_lock, &timeout);
+    os_mutexUnlock (&rd->complete_lock);
+    errnr = ((result == os_resultSuccess) ? DDS_RETCODE_OK      :
+             (result == os_resultTimeout) ? DDS_RETCODE_TIMEOUT :
+                                            DDS_RETCODE_ERROR);
+  }
 
-    return ret;
+skip:
+    dds_reader_unlock(dds_rd);
+    return DDS_ERRNO(errnr);
 }
 
 _Pre_satisfies_(((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER    ) || \

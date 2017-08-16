@@ -278,6 +278,9 @@ struct reader
   ut_avlTree_t local_writers; /* all matching LOCAL writers, see struct rd_wr_match */
   ddsi2direct_directread_cb_t ddsi2direct_cb;
   void *ddsi2direct_cbarg;
+  os_cond complete_cond; /* condition variable to indicate completeness */
+  os_mutex complete_lock;
+  unsigned in_sync: 1;  /* 1 iff reader has all transient-local historical data */
 };
 
 struct proxy_participant

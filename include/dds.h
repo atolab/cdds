@@ -1111,10 +1111,12 @@ dds_create_reader(
  *
  * @retval DDS_RETCODE_OK
  *                All historical data successfully received within the specified duration.
- * @retval DDS_RETCODE_BAD_PARAMETER
- *                The reader parameter is not a valid entity, or the max_wait parameter is negative
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
  *                The reader parameter is not a valid reader.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                The reader parameter is not a valid entity, or the max_wait parameter is negative
+ * @retval DDS_RETCODE_NOT_ENABLED
+ *                The reader is not enabled
  * @retval DDS_RETCODE_TIMEOUT
  *                Timeout expired before all available historical data was delivered.
  * @retval DDS_RETCODE_UNSUPPORTED

@@ -634,15 +634,17 @@ Test(vddsc_reader, wait_for_historical_data)
   ret = dds_wait_for_historical_data(participant, oneSec);
   cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "dds_wait_for_historial_data(participant, oneSec)");
 
-  /* Call wait_for_historical_data with a transient-localreader and various max_wait arguments */
+  /* Call wait_for_historical_data with a transient-local reader and various max_wait arguments */
   reader = dds_create_reader (participant, topic, qos, NULL);
   cr_assert_gt(reader, 0, "transient-local reader created");
   ret = dds_wait_for_historical_data(reader, minusOneSec);
   cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_historial_data(reader, minusOneSec)");
-  ret = dds_wait_for_historical_data(reader, zeroSec);
-  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "dds_wait_for_historial_data(reader, zeroSec)");
   ret = dds_wait_for_historical_data(reader, oneSec);
   cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "dds_wait_for_historial_data(reader, oneSec)");
+  ret = dds_wait_for_historical_data(reader, oneSec);
+  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "dds_wait_for_historial_data(reader, oneSec) again");
+  ret = dds_wait_for_historical_data(reader, zeroSec);
+  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "dds_wait_for_historial_data(reader, zeroSec)");
   ret = dds_wait_for_historical_data(reader, infinite);
   cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "dds_wait_for_historial_data(reader, infinite)");
   dds_delete(reader);
@@ -674,7 +676,6 @@ Test(vddsc_reader, wait_for_historical_data)
   dds_delete(topic);
   dds_delete(participant);
 }
-
 
 static dds_entity_t g_participant = 0;
 static void reader_env_init(void)

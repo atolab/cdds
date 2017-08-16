@@ -42,6 +42,7 @@
 
 #include "ddsi/sysdeps.h"
 
+
 struct deleted_participant {
   ut_avlNode_t avlnode;
   nn_guid_t guid;
@@ -114,6 +115,10 @@ static int gcreq_reader (struct reader *rd);
 static int gcreq_proxy_participant (struct proxy_participant *proxypp);
 static int gcreq_proxy_writer (struct proxy_writer *pwr);
 static int gcreq_proxy_reader (struct proxy_reader *prd);
+
+static void notify_wait_for_historical_data_impl (const nn_guid_t *rd_guid);
+static void notify_wait_for_historical_data_cb (void *varg);
+
 
 static int compare_guid (const void *va, const void *vb)
 {
@@ -3093,6 +3098,81 @@ static void leave_mcast_helper (const nn_locator_t *n, void * varg)
 }
 #endif /* DDSI_INCLUDE_NETWORK_PARTITIONS */
 
+static void notify_wait_for_historical_data_impl (const nn_guid_t *rd_guid)
+{
+  struct reader *rd;
+
+  if ((rd = ephash_lookup_reader_guid(rd_guid)) == NULL)
+  {
+    nn_log (LC_DISCOVERY, "wfh(%x:%x:%x:%x ddsi2-reader-gone)\n", PGUID(*rd_guid));
+    return;
+  }
+  nn_log(LC_DISCOVERY, "wfh(%x:%x:%x:%x ", PGUID(*rd_guid));
+  /* Must not actually notify the reader until in sync with all matching proxy writers.
+   * Maintaining that state in the reader is hard because of all the asynchronous events
+   * and the attendant risk of deadlocks (though not impossible), but checking it here,
+   * from the delivery queue thread is "easy". */
+  {
+    struct rd_pwr_match *rdm;
+    int all_complete = 1;
+    os_mutexLock (&rd->e.lock);
+    rdm = ut_avlFindMin (&rd_writers_treedef, &rd->writers);
+    while (rdm != NULL && all_complete)
+    {
+      nn_guid_t pwr_guid = rdm->pwr_guid;
+      struct proxy_writer *pwr;
+      if ((pwr = ephash_lookup_proxy_writer_guid (&pwr_guid)) != NULL)
+      {
+        struct pwr_rd_match *pwrm;
+        os_mutexUnlock (&rd->e.lock);
+        os_mutexLock (&pwr->e.lock);
+        if ((pwrm = ut_avlLookup (&pwr_readers_treedef, &pwr->readers, rd_guid)) != NULL && pwrm->in_sync != PRMSS_SYNC)
+        {
+          nn_log (LC_DISCOVERY, "pwr %x:%x:%x:%x incomplete)\n", PGUID(pwr_guid));
+          all_complete = 0;
+        }
+        os_mutexUnlock (&pwr->e.lock);
+        os_mutexLock (&rd->e.lock);
+      }
+      rdm = ut_avlLookupSucc (&rd_writers_treedef, &rd->writers, &pwr_guid);
+    }
+    rd->in_sync = all_complete;
+    os_mutexUnlock (&rd->e.lock);
+    if (!all_complete)
+    {
+      return;
+    }
+    /* All proxy writers associated with the reader are synced, so the reader is complete */
+    nn_log(LC_DISCOVERY,"notifying)\n");
+    os_mutexLock(&rd->complete_lock);
+    os_condBroadcast (&rd->complete_cond);
+    os_mutexUnlock(&rd->complete_lock);
+    return;
+  }
+}
+
+struct notify_wait_for_historical_data_cb_arg {
+  nn_guid_t rd_guid;
+};
+
+static void notify_wait_for_historical_data_cb (void *varg)
+{
+  struct notify_wait_for_historical_data_cb_arg *arg = varg;
+  notify_wait_for_historical_data_impl (&arg->rd_guid);
+  os_free(arg);
+}
+
+void notify_wait_for_historical_data (struct proxy_writer *pwr, const nn_guid_t *rd_guid)
+{
+  /* always trigger asynchronously via the delivery queue: data received in "out-of-sync" mode is
+   delivered asynchronously, and the overhead of the asynchronous notification is negligible */
+  struct notify_wait_for_historical_data_cb_arg *arg;
+  nn_log (LC_DISCOVERY, "msr_in_sync(%x:%x:%x:%x queue-wfh)\n", PGUID (*rd_guid));
+  arg = os_malloc(sizeof(*arg));
+  arg->rd_guid = *rd_guid;
+  nn_dqueue_enqueue_callback(pwr ? pwr->dqueue : gv.builtins_dqueue, notify_wait_for_historical_data_cb, arg);
+}
+
 static struct reader * new_reader_guid
 (
   const struct nn_guid *guid,
@@ -3144,6 +3224,8 @@ static struct reader * new_reader_guid
   rd->ddsi2direct_cb = 0;
   rd->ddsi2direct_cbarg = 0;
   rd->init_acknack_count = 0;
+  os_mutexInit (&rd->complete_lock);
+  os_condInit (&rd->complete_cond, &rd->complete_lock);
 #ifdef DDSI_INCLUDE_SSM
   rd->favours_ssm = 0;
 #endif
@@ -3218,6 +3300,7 @@ static struct reader * new_reader_guid
     nn_log (LC_DISCOVERY, "READER %x:%x:%x:%x ssm=%d\n", PGUID (rd->e.guid), rd->favours_ssm);
 #endif
 #endif
+  rd->in_sync = 0;
 
   ut_avlInit (&rd_writers_treedef, &rd->writers);
   ut_avlInit (&rd_local_writers_treedef, &rd->local_writers);
@@ -3226,6 +3309,11 @@ static struct reader * new_reader_guid
   match_reader_with_proxy_writers (rd, tnow);
   match_reader_with_local_writers (rd, tnow);
   sedp_write_reader (rd);
+  /* If no writers matched, must notify a wait_for_historical_data in OSPL. In Lite,
+     I would argue that wait_for_historical_data should look at the state in DDSI ...
+     but that coupling is problematic in OSPL. */
+  if (rd->xqos->durability.kind == NN_TRANSIENT_LOCAL_DURABILITY_QOS)
+    notify_wait_for_historical_data (NULL, &rd->e.guid);
   return rd;
 }
 
