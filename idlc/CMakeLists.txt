@@ -77,6 +77,11 @@ function(IDLC_GENERATE _target)
       DEPENDS  "${ABS_FIL}" idlc
       COMMENT  "Running idlc on ${FIL}"
       VERBATIM)
+
+    add_custom_target(
+     "${_target}_idlc_generate"
+     DEPENDS "${_source}" "${_header}"
+    )
   endforeach()
 
   set_source_files_properties(
@@ -84,5 +89,6 @@ function(IDLC_GENERATE _target)
   add_library(${_target} INTERFACE)
   target_sources(${_target} INTERFACE ${_sources})
   target_include_directories(${_target} INTERFACE "${_dir}")
+  add_dependencies(${_target} "${_target}_idlc_generate")
 endfunction()
 
