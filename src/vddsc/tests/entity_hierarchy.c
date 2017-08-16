@@ -131,7 +131,7 @@ Test(vddsc_entity_delete, recursive, .init=hierarchy_init, .fini=hierarchy_fini)
 
     /* Deleting the top dog (participant) should delete all children. */
     ret = dds_delete(g_participant);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, " returned %d : expected %d", dds_err_nr(ret), dds_err_nr(DDS_RETCODE_OK));
 
     /* Check if all the entities are deleted now. */
     ret = dds_get_domainid(g_participant, &id);
