@@ -77,12 +77,12 @@ function(IDLC_GENERATE _target)
       DEPENDS  "${ABS_FIL}" idlc
       COMMENT  "Running idlc on ${FIL}"
       VERBATIM)
-
-    add_custom_target(
-     "${_target}_idlc_generate"
-     DEPENDS "${_source}" "${_header}"
-    )
   endforeach()
+
+  add_custom_target(
+    "${_target}_idlc_generate"
+    DEPENDS "${_sources}" "${_headers}"
+  )
 
   set_source_files_properties(
     ${_sources} ${_headers} PROPERTIES GENERATED TRUE)
