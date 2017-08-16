@@ -1,15 +1,11 @@
 #define RTLD_DEFAULT	((void *) 0)
 
-//#include <dlfcn.h>
 #include <time.h>
 #include <string.h>
-//#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-//#include <inttypes.h>
 #include <signal.h>
-//#include <unistd.h>
 #include <stdarg.h>
 #include <math.h>
 
@@ -319,8 +315,8 @@ int common_init (const char *argv0)
 {
 	save_argv0 (argv0);
 	PRINTD("common_init: Before creating domain participant=%p\n",dp);
-	dp = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL); // changed method name
-//	DDS_ENTITY_CHECK (dp, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+	dp = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+	DDS_ERR_CHECK (dp, DDS_CHECK_FAIL);
 
 	PRINTD("common_init: Domain participant=%p created\n",dp);
 
@@ -681,7 +677,7 @@ void qos_history (struct qos *a, const char *arg)
 		dds_qset_history(qp, DDS_HISTORY_KEEP_ALL, DDS_LENGTH_UNLIMITED);
 		PRINTD("%s: qos: History keep all\n\n",enumValue(a));
 	}
-	else if (sscanf_s (arg, "%d%n", &hist_depth, &pos) == 1 && arg[pos] == 0 && hist_depth > 0)
+	else if (sscanf (arg, "%d%n", &hist_depth, &pos) == 1 && arg[pos] == 0 && hist_depth > 0)
 	{
 		dds_qset_history(qp, DDS_HISTORY_KEEP_LAST, hist_depth);
 	}
@@ -717,7 +713,7 @@ void qos_ownership (struct qos *a, const char *arg)
 	else if (strcmp (arg, "x") == 0) {
 		dds_qset_ownership(qp, DDS_OWNERSHIP_EXCLUSIVE);
 	}
-	else if (sscanf_s (arg, "x:%d%n", &strength, &pos) == 1 && arg[pos] == 0)
+	else if (sscanf (arg, "x:%d%n", &strength, &pos) == 1 && arg[pos] == 0)
 	{
 		dds_qos_t *qps = get_qos_W(a, "ownership_strength");
 		dds_qset_ownership(qp, DDS_OWNERSHIP_EXCLUSIVE);
@@ -736,7 +732,7 @@ void qos_transport_priority (struct qos *a, const char *arg)
 	int value;
 	if (qp == NULL)
 		return;
-	if (sscanf_s (arg, "%d%n", &value, &pos) != 1 || arg[pos] != 0)
+	if (sscanf (arg, "%d%n", &value, &pos) != 1 || arg[pos] != 0)
 		error ("transport_priority qos: %s invalid\n", arg);
 	dds_qset_transport_priority(qp, value);
 	PRINTD("%s: %d: dds_qset_transport_priority\n\n",enumValue(a),value);
@@ -899,7 +895,7 @@ void qos_reliability (struct qos *a, const char *arg)
 				  set_infinite_dds_duration (&max_block_t);
 				  argp += 4;
 				}
-				else if (sscanf_s (argp, ":%lf%n", &max_blocking_time, &pos) == 1 && argp[pos] == 0)
+				else if (sscanf (argp, ":%lf%n", &max_blocking_time, &pos) == 1 && argp[pos] == 0)
 				{
 				  if (max_blocking_time <= 0 || double_to_dds_duration (&max_block_t, max_blocking_time) < 0)
 					error ("reliability qos: %s: max blocking time out of range\n", arg);
@@ -941,13 +937,13 @@ void qos_liveliness (struct qos *a, const char *arg)
 		PRINTD("Inside qos_liveliness_automatic\n\n");
 		dds_qset_liveliness(qp, DDS_LIVELINESS_AUTOMATIC, DDS_INFINITY);
 	}
-	else if (sscanf_s (arg, "p:%lf%n", &lease_duration, &pos) == 1 && arg[pos] == 0)
+	else if (sscanf (arg, "p:%lf%n", &lease_duration, &pos) == 1 && arg[pos] == 0)
 	{
 		if (lease_duration <= 0 || double_to_dds_duration (&dd, lease_duration) < 0)
 		  error ("liveliness qos: %s: lease duration out of range\n", arg);
 		dds_qset_liveliness(qp, DDS_LIVELINESS_MANUAL_BY_PARTICIPANT, lease_duration);
 	}
-	else if (sscanf_s (arg, "w:%lf%n", &lease_duration, &pos) == 1 && arg[pos] == 0)
+	else if (sscanf (arg, "w:%lf%n", &lease_duration, &pos) == 1 && arg[pos] == 0)
 	{
 		if (lease_duration <= 0 || double_to_dds_duration (&dd, lease_duration) < 0)
 		  error ("liveliness qos: %s: lease duration out of range\n", arg);
@@ -965,7 +961,7 @@ static void qos_simple_duration (dds_duration_t *dd, const char *name, const cha
   int pos;
   if (strcmp (arg, "inf") == 0)
     set_infinite_dds_duration (dd);
-  else if (sscanf_s (arg, "%lf%n", &duration, &pos) == 1 && arg[pos] == 0)
+  else if (sscanf (arg, "%lf%n", &duration, &pos) == 1 && arg[pos] == 0)
   {
     if (double_to_dds_duration (dd, duration) < 0)
       error ("%s qos: %s: duration invalid\n", name, arg);
@@ -1018,7 +1014,7 @@ static int one_resource_limit (int32_t *val, const char **arg)
     (*arg) += 3;
     return 1;
   }
-  else if (sscanf_s (*arg, "%d%n", val, &pos) == 1)
+  else if (sscanf (*arg, "%d%n", val, &pos) == 1)
   {
     (*arg) += pos;
     return 1;
@@ -1081,7 +1077,7 @@ void qos_durability_service (struct qos *a, const char *arg)
 	if (strncmp (argp, "inf", 3) == 0) {
 		set_infinite_dds_duration (&service_cleanup_delay);
 		pos = 3;
-	} else if (sscanf_s (argp, "%lf%n", &service_cleanup_delay_t, &pos) == 1) {
+	} else if (sscanf (argp, "%lf%n", &service_cleanup_delay_t, &pos) == 1) {
 		if (service_cleanup_delay_t < 0 || double_to_dds_duration (&service_cleanup_delay, service_cleanup_delay_t) < 0)
 			error ("durability service qos: %s: service cleanup delay out of range\n", arg);
 	} else {
@@ -1097,7 +1093,7 @@ void qos_durability_service (struct qos *a, const char *arg)
 	if (strncmp (argp, "all", 3) == 0) {
 		history_kind = DDS_HISTORY_KEEP_ALL;
 		pos = 3;
-	} else if (sscanf_s (argp, "%d%n", &hist_depth, &pos) == 1 && hist_depth > 0) {
+	} else if (sscanf (argp, "%d%n", &hist_depth, &pos) == 1 && hist_depth > 0) {
 		history_depth = hist_depth;
 	} else {
 		goto err;

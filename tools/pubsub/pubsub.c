@@ -8,17 +8,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-//#include <inttypes.h>
 #include <signal.h>
-//#include <unistd.h>
 #include <limits.h>
 #include <ctype.h>
-
 #include <sys/types.h>
-//#include <sys/select.h>
-//#include <sys/fcntl.h>
-//#include <arpa/inet.h>
-//#include <netdb.h>
 
 #if USE_EDITLINE
 #include <histedit.h>
@@ -28,9 +21,9 @@
 #include "testtype.h"
 #include "tglib.h"
 #include "porting.h"
-#include "kernel/dds_reader.h"
+#include "os/os.h"
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #define PRINTD printf
 #else
@@ -1698,11 +1691,11 @@ static uint32_t pubthread(void *vwrspecs)
         char *tmp = nextspec + strlen(nextspec);
         while (tmp > nextspec && isspace((unsigned char)tmp[-1]))
           *--tmp = 0;
-        if ((sscanf_s (nextspec, "+%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "+") == 0)) {
+        if ((sscanf (nextspec, "+%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "+") == 0)) {
           while (cnt--) cursor = cursor->next;
-        } else if ((sscanf_s (nextspec, "-%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "+") == 0)) {
+        } else if ((sscanf (nextspec, "-%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "+") == 0)) {
           while (cnt--) cursor = cursor->prev;
-        } else if (sscanf_s (nextspec, "%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) {
+        } else if (sscanf (nextspec, "%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) {
           cursor = wrspecs; while (cnt--) cursor = cursor->next;
         } else {
           struct wrspeclist *endm = cursor, *cand = NULL;
@@ -2397,9 +2390,9 @@ int main (int argc, char *argv[])
 {
 	dds_entity_t sub = 0;
 	dds_entity_t pub = 0;
-	dds_listener_t rdlistener;  //Todo: added #include "kernel/dds_reader.h" to resolve this error.
+	dds_listener_t *rdlistener = dds_listener_create(NULL); // TODO free these
 	uint32_t rdstatusmask = 0;
-	dds_listener_t wrlistener;	//Todo: added #include "kernel/dds_reader.h" to resolve this error.
+	dds_listener_t *wrlistener = dds_listener_create(NULL); // TODO free these
 	uint32_t wrstatusmask = 0;
 
 	struct qos *qos;
@@ -2443,19 +2436,19 @@ int main (int argc, char *argv[])
 	save_argv0 (argv[0]);
 	pid = (int) os_procIdSelf();
 
-	memset (&rdlistener, 0, sizeof (rdlistener)); //Todo: Commentted listener because it was giving error. need to fix it.
-	rdlistener.on_liveliness_changed = rd_on_liveliness_changed;
-	rdlistener.on_sample_lost = rd_on_sample_lost;
-	rdlistener.on_sample_rejected = rd_on_sample_rejected;
-	rdlistener.on_subscription_matched = rd_on_subscription_matched;
-	rdlistener.on_requested_deadline_missed = rd_on_requested_deadline_missed;
-	rdlistener.on_requested_incompatible_qos = rd_on_requested_incompatible_qos;
+	memset (rdlistener, 0, sizeof (rdlistener));
+	dds_lset_liveliness_changed (rdlistener, rd_on_liveliness_changed);
+    dds_lset_sample_lost (rdlistener, rd_on_sample_lost);
+    dds_lset_sample_rejected (rdlistener, rd_on_sample_rejected);
+    dds_lset_subscription_matched (rdlistener, rd_on_subscription_matched);
+    dds_lset_requested_deadline_missed (rdlistener, rd_on_requested_deadline_missed);
+    dds_lset_requested_incompatible_qos (rdlistener, rd_on_requested_incompatible_qos);
 
-	memset (&wrlistener, 0, sizeof (wrlistener));
-	wrlistener.on_offered_deadline_missed = wr_on_offered_deadline_missed;
-	wrlistener.on_liveliness_lost = wr_on_liveliness_lost;
-	wrlistener.on_publication_matched = wr_on_publication_matched;
-	wrlistener.on_offered_incompatible_qos = wr_on_offered_incompatible_qos;
+	memset (wrlistener, 0, sizeof (wrlistener));
+    dds_lset_offered_deadline_missed (wrlistener, wr_on_offered_deadline_missed);
+    dds_lset_liveliness_lost (wrlistener, wr_on_liveliness_lost);
+    dds_lset_publication_matched (wrlistener, wr_on_publication_matched);
+    dds_lset_offered_incompatible_qos (wrlistener, wr_on_offered_incompatible_qos);
 
 //	qreader[0] = "k=all";
 //	qreader[1] = "R=10000/inf/inf";
@@ -2485,7 +2478,7 @@ int main (int argc, char *argv[])
         sleep_at_end = (unsigned) os_atoll(optarg);
         break;
       case 'M':
-        if (sscanf_s(optarg, "%lf:%n", &wait_for_matching_reader_timeout, &pos) != 1)
+        if (sscanf(optarg, "%lf:%n", &wait_for_matching_reader_timeout, &pos) != 1)
         {
           fprintf (stderr, "-M %s: invalid timeout\n", optarg);
           exit (2);
@@ -2530,7 +2523,7 @@ int main (int argc, char *argv[])
           if (strcmp (p, "inf") == 0 || strncmp (p, "inf:", 4) == 0) {
             have_to = 1;
             set_infinite_dds_duration (&spec[specidx].findtopic_timeout);
-          } else if (sscanf_s (p, "%lf%n", &d, &pos) == 1 && (p[pos] == 0 || p[pos] == ':')) {
+          } else if (sscanf (p, "%lf%n", &d, &pos) == 1 && (p[pos] == 0 || p[pos] == ':')) {
             if (double_to_dds_duration (&spec[specidx].findtopic_timeout, d) < 0)
               error ("-T %s: %s: duration invalid\n", optarg, p);
             have_to = 1;
@@ -2591,11 +2584,11 @@ int main (int argc, char *argv[])
           spec[specidx].rd.mode = MODE_PRINT, spec[specidx].rd.polling = 1;
         else if (strcmp (optarg, "c") == 0)
           spec[specidx].rd.mode = MODE_CHECK;
-        else if (sscanf_s (optarg, "c:%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf (optarg, "c:%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
           spec[specidx].rd.mode = MODE_CHECK;
         else if (strcmp (optarg, "cp") == 0)
           spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
-        else if (sscanf_s (optarg, "cp:%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf (optarg, "cp:%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
           spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
         else if (strcmp (optarg, "z") == 0)
           spec[specidx].rd.mode = MODE_ZEROLOAD;
@@ -2617,19 +2610,19 @@ int main (int argc, char *argv[])
         {
           spec[specidx].wr.mode = WRM_INPUT;
         }
-        else if (sscanf_s (optarg, "%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf (optarg, "%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf_s (optarg, "%d:%lf*%u%n", &nkeyvals, &spec[specidx].wr.writerate, &spec[specidx].wr.burstsize, &pos) == 3 && optarg[pos] == 0)
+        else if (sscanf (optarg, "%d:%lf*%u%n", &nkeyvals, &spec[specidx].wr.writerate, &spec[specidx].wr.burstsize, &pos) == 3 && optarg[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf_s (optarg, "%d:%lf%n", &nkeyvals, &spec[specidx].wr.writerate, &pos) == 2 && optarg[pos] == 0)
+        else if (sscanf (optarg, "%d:%lf%n", &nkeyvals, &spec[specidx].wr.writerate, &pos) == 2 && optarg[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf_s (optarg, ":%d%n", &port, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf (optarg, ":%d%n", &port, &pos) == 1 && optarg[pos] == 0)
         {
         	fprintf(stderr, "listen on TCP port P: not supported\n");
 			exit(1);
@@ -2666,7 +2659,7 @@ int main (int argc, char *argv[])
           wait_hist_data = 1;
           if (strcmp (optarg, "inf") == 0)
             set_infinite_dds_duration (&wait_hist_data_timeout);
-          else if (sscanf_s (optarg, "%lf%n", &t, &pos) == 1 && optarg[pos] == 0 && t >= 0)
+          else if (sscanf (optarg, "%lf%n", &t, &pos) == 1 && optarg[pos] == 0 && t >= 0)
             double_to_dds_duration (&wait_hist_data_timeout, t);
           else
           {
@@ -2901,7 +2894,7 @@ int main (int argc, char *argv[])
       qos = new_rdqos (sub, spec[i].cftp);
       PRINTD("Entering setqos for Reader\n");
       setqos_from_args (qos, nqreader, qreader);
-      spec[i].rd.rd = new_datareader_listener (qos, &rdlistener);
+      spec[i].rd.rd = new_datareader_listener (qos, rdlistener);
 //      ret = dds_get_name(spec[i].tp, spec[i].rd.tpname, sizeof(char*)); //Todo: now working properly.
       spec[i].rd.sub = sub;
       free_qos (qos);
@@ -2913,7 +2906,7 @@ int main (int argc, char *argv[])
       qos = new_wrqos (pub, spec[i].tp);
       PRINTD("Entering setqos for Writer\n");
       setqos_from_args (qos, nqwriter, qwriter);
-      spec[i].wr.wr = new_datawriter_listener (qos, &wrlistener);
+      spec[i].wr.wr = new_datawriter_listener (qos, wrlistener);
 //      ret = dds_get_name(spec[i].tp, spec[i].wr.tpname, sizeof(char*));
       spec[i].wr.pub = pub;
       if (spec[i].wr.duplicate_writer_flag)
