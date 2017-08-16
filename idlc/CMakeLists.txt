@@ -50,7 +50,7 @@ add_custom_command(
     COMMAND "${Maven_EXECUTABLE}"
     ARGS    "-q" "package"
     DEPENDS "pom.xml" ${IDLC_G4_SOURCES} ${IDLC_JAVA_SOURCES} ${IDLC_ST_SOURCES}
-    MESSAGE "Building JAR file ${IDLC_JAR}")
+    COMMENT "Building JAR file ${IDLC_JAR}")
 
 add_custom_target(idlc ALL DEPENDS "${IDLC_JAR}")
 
