@@ -424,10 +424,14 @@ dds_create_writer(
     dds_entity_unlock(tp);
     dds_entity_unlock(pub);
     return writer;
+
 err_bad_qos:
     dds_entity_unlock(tp);
 err_tp_lock:
     dds_entity_unlock(pub);
+    if((pub->m_flags & DDS_ENTITY_IMPLICIT) != 0){
+        dds_delete(publisher);
+    }
 err_pub_lock:
     return writer;
 }

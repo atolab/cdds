@@ -346,6 +346,9 @@ dds_create_reader(
     rc = dds_entity_lock(topic, DDS_KIND_TOPIC, &tp);
     if (rc != DDS_RETCODE_OK) {
         dds_entity_unlock(sub);
+        if((sub->m_flags & DDS_ENTITY_IMPLICIT) != 0){
+            dds_delete(subscriber);
+        }
         return (dds_entity_t)DDS_ERRNO(rc);
     }
     assert (((dds_topic*)tp)->m_stopic);
@@ -376,6 +379,9 @@ dds_create_reader(
         dds_qos_delete(rqos);
         dds_entity_unlock(tp);
         dds_entity_unlock(sub);
+        if((sub->m_flags & DDS_ENTITY_IMPLICIT) != 0){
+            dds_delete(subscriber);
+        }
         return ret;
     }
 

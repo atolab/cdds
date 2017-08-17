@@ -774,7 +774,7 @@ Test(vddsc_entity_implicit_subscriber, deleted)
 /*************************************************************************************************/
 
 /*************************************************************************************************/
-Test(vddsc_entity_implicit_publisher, explicit)
+Test(vddsc_entity_get_children, implicit_publisher)
 {
     dds_entity_t participant;
     dds_entity_t publisher;
@@ -819,7 +819,7 @@ Test(vddsc_entity_implicit_publisher, explicit)
 /*************************************************************************************************/
 
 /*************************************************************************************************/
-Test(vddsc_entity_implicit_subscriber, explicit)
+Test(vddsc_entity_get_children, implicit_subscriber)
 {
     dds_entity_t participant;
     dds_entity_t subscriber;
@@ -865,7 +865,7 @@ Test(vddsc_entity_implicit_subscriber, explicit)
 /*************************************************************************************************/
 
 /*************************************************************************************************/
-Test(vddsc_entity_implicit_publisher, explicit_promotion)
+Test(vddsc_entity_get_parent, implicit_publisher)
 {
     dds_entity_t participant;
     dds_entity_t writer;
@@ -896,7 +896,7 @@ Test(vddsc_entity_implicit_publisher, explicit_promotion)
 /*************************************************************************************************/
 
 /*************************************************************************************************/
-Test(vddsc_entity_implicit_subscriber, explicit_promotion)
+Test(vddsc_entity_get_parent, implicit_subscriber)
 {
     dds_entity_t participant;
     dds_entity_t reader;

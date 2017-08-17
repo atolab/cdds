@@ -745,7 +745,15 @@ dds_create_participant(
  * For instance, it will return the Participant that was used when
  * creating a Publisher (when that Publisher was provided here).
  *
- * Note that entity can be created implicitly or explicitly.
+ * When a reader or a writer are created with a partition, then a
+ * subscriber or publisher respectively are created implicitly. These
+ * implicit subscribers or publishers will be deleted automatically
+ * when the reader or writer is deleted. However, when this function
+ * returns such an implicit entity, it is from there on out considered
+ * 'explicit'. This means that it isn't deleted automatically anymore.
+ * The application should explicitly call dds_delete on those entities
+ * now (or delete the parent participant which will delete all entities
+ * within its hierarchy).
  *
  * TODO: Link to generic dds entity relations documentation.
  *
@@ -815,7 +823,15 @@ dds_get_participant (
  * When supplying NULL as list and 0 as size, you can use this to acquire
  * the number of children without having to pre-allocate a list.
  *
- * Note that entity can be created implicitly or explicitly.
+ * When a reader or a writer are created with a partition, then a
+ * subscriber or publisher respectively are created implicitly. These
+ * implicit subscribers or publishers will be deleted automatically
+ * when the reader or writer is deleted. However, when this function
+ * returns such an implicit entity, it is from there on out considered
+ * 'explicit'. This means that it isn't deleted automatically anymore.
+ * The application should explicitly call dds_delete on those entities
+ * now (or delete the parent participant which will delete all entities
+ * within its hierarchy).
  *
  * TODO: Link to generic dds entity relations documentation.
  *
@@ -1130,7 +1146,8 @@ dds_wait_for_acks(
 /**
  * @brief Creates a new instance of a DDS reader.
  *
- * Note that if participant is provided, subscriber will be created implicitly.
+ * This implicit subscriber will be deleted automatically when the created reader
+ * is deleted.
  *
  * @param[in]  participant_or_subscriber The participant or subscriber on which the reader is being created
  *
@@ -1174,7 +1191,8 @@ dds_reader_wait_for_historical_data(
 /**
  * @brief Creates a new instance of a DDS writer.
  *
- * Note that if participant is provided, publisher will be created implicitly.
+ * This implicit publisher will be deleted automatically when the created writer
+ * is deleted.
  *
  * @param[in]  participant_or_publisher The participant or publisher on which the writer is being created
  * @param[in]  topic The topic to write
