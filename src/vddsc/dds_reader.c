@@ -67,7 +67,7 @@ dds_reader_delete(
     if(ret == DDS_RETCODE_OK){
         ret = dds_delete_impl(e->m_parent->m_hdl, true);
         if(dds_err_nr(ret) == DDS_RETCODE_ALREADY_DELETED){
-            ret = DDS_RETCODE_ALREADY_DELETED;
+            ret = DDS_RETCODE_OK;
         }
     }
     dds_free(rd->m_loan);

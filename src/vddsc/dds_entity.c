@@ -290,17 +290,15 @@ dds_delete_impl(
     /* Signal observers that this entity will be deleted. */
     dds_entity_status_signal(e);
 
-    if(keep_if_explicit == false){
-        /* Recursively delete children */
-        child = e->m_children;
-        while ((child != NULL) && (ret == DDS_RETCODE_OK)) {
-            next = child->m_next;
-            /* This will probably delete the child entry from
-             * the current childrens list */
-            ret = dds_delete(child->m_hdl);
-            /* Next child. */
-            child = next;
-        }
+    /* Recursively delete children */
+    child = e->m_children;
+    while ((child != NULL) && (ret == DDS_RETCODE_OK)) {
+        next = child->m_next;
+        /* This will probably delete the child entry from
+         * the current childrens list */
+        ret = dds_delete(child->m_hdl);
+        /* Next child. */
+        child = next;
     }
 
 

@@ -27,11 +27,7 @@ void delete_entities(void)
 {
     dds_return_t result;
     result = dds_delete(participant);
-    //cr_assert_eq(dds_err_nr(result), DDS_RETCODE_OK, "Recursively delete entities, Expected(%s) Returned(%s)",
-     //   DDS_TO_STRING(DDS_RETCODE_OK),
-     //   dds_err_str(result));
-    cr_assert_eq(dds_err_nr(result), DDS_RETCODE_OK, " returned %d : expected %d", dds_err_nr(result), dds_err_nr(DDS_RETCODE_OK));
-
+    cr_assert_eq(dds_err_nr(result), DDS_RETCODE_OK, "Recursively delete entities, Expected(%s) Returned(%s)", DDS_TO_STRING(DDS_RETCODE_OK), dds_err_str(result));
     dds_delete(read_condition);
 }
 
