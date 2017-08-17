@@ -25,9 +25,11 @@ struct ut_chhIter {
 
 /*
  * The hopscotch hash table is dependent on a proper functioning hash.
- * If the hash function generates a lot of clustered hash values or even
- * hash collisions, then it will not be able to handle that by design.
- * It is capable of handle some clustering and collisions, but not many.
+ * If the hash function generates a lot of hash collisions, then it will
+ * not be able to handle that by design.
+ * It is capable of handling some collisions, but not more than 32 per
+ * bucket (less, when other hash values are clustered around the
+ * collision value).
  * When proper distributed hash values are generated, then hopscotch
  * works nice and quickly.
  */
