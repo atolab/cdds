@@ -30,6 +30,10 @@ dds_entity_add_ref(_In_ dds_entity * e)
     os_mutexUnlock (&e->m_mutex);
 }
 
+static void
+dds_set_explicit(
+        _In_ dds_entity_t entity);
+
 void
 dds_entity_add_ref_nolock(_In_ dds_entity *e)
 {
@@ -239,11 +243,20 @@ dds_entity_init(
 }
 
 
-
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 dds_return_t
 dds_delete(
         _In_ dds_entity_t entity)
+{
+    return dds_delete_impl(entity, false);
+}
+
+
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+dds_return_t
+dds_delete_impl(
+        _In_ dds_entity_t entity,
+        _In_ bool keep_if_explicit)
 {
     os_time    timeout = { 10, 0 };
     dds_entity *e;
@@ -256,6 +269,11 @@ dds_delete(
     rc = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
     if (rc != DDS_RETCODE_OK) {
         return DDS_ERRNO(rc);
+    }
+
+    if(keep_if_explicit == true && ((e->m_flags & DDS_ENTITY_IMPLICIT) == 0)){
+        dds_entity_unlock(e);
+        return DDS_RETCODE_OK;
     }
 
     if (--e->m_refc != 0) {
@@ -285,6 +303,7 @@ dds_delete(
         /* Next child. */
         child = next;
     }
+
 
     if (ret == DDS_RETCODE_OK) {
         /* Close the entity. This can terminate threads or kick of
@@ -357,6 +376,7 @@ dds_get_parent(
     if (rc == DDS_RETCODE_OK) {
         if (e->m_parent) {
             hdl = e->m_parent->m_hdl;
+            dds_set_explicit(hdl);
         } else {
             hdl = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
         }
@@ -415,6 +435,7 @@ dds_get_children(
             while (iter) {
                 if ((size_t)ret < size) { /*To fix the warning of signed/unsigned mismatch, type casting is done for the variable 'ret'*/
                     children[ret] = iter->m_hdl;
+                    dds_set_explicit(iter->m_hdl);
                 }
                 ret++;
                 iter = iter->m_next;
@@ -1001,4 +1022,19 @@ dds_get_topic(
       hdl = DDS_ERRNO(rc);
     }
     return hdl;
+}
+
+static void
+dds_set_explicit(
+        _In_ dds_entity_t entity)
+{
+    dds_entity *e;
+    dds_retcode_t rc;
+    rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+    if( rc == DDS_RETCODE_OK){
+        e->m_flags &= ~DDS_ENTITY_IMPLICIT;
+        dds_entity_unlock(e);
+    } else {
+        DDS_ERRNO(rc);
+    }
 }

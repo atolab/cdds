@@ -706,7 +706,225 @@ Theory((dds_entity_t *cond), vddsc_entity_get_datareader, non_conds, .init=hiera
     reader = dds_get_datareader(*cond);
     cr_assert_eq(dds_err_nr(reader), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(reader));
 }
+
 /*************************************************************************************************/
 
+/*************************************************************************************************/
+Test(vddsc_entity_implicit_publisher, deleted)
+{
+    dds_entity_t participant;
+    dds_entity_t writer;
+    dds_entity_t topic;
+    dds_return_t ret;
+    char name[100];
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_entity_implicit_publisher_test", name, 100), NULL, NULL);
+    cr_assert_gt(topic, 0);
+
+    writer = dds_create_writer(participant, topic, NULL, NULL);
+    cr_assert_gt(writer, 0);
+
+    ret = dds_get_children(participant, NULL, 0);
+    cr_assert_eq(ret, 2);
+
+    dds_delete(writer);
+
+    ret = dds_get_children(participant, NULL, 0);
+    cr_assert_eq(ret, 1);
+
+    dds_delete(topic);
+    dds_delete(participant);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_entity_implicit_subscriber, deleted)
+{
+    dds_entity_t participant;
+    dds_entity_t reader;
+    dds_entity_t topic;
+    dds_return_t ret;
+    char name[100];
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_entity_implicit_subscriber_test", name, 100), NULL, NULL);
+    cr_assert_gt(topic, 0);
+
+    reader = dds_create_reader(participant, topic, NULL, NULL);
+    cr_assert_gt(reader, 0);
+
+    ret = dds_get_children(participant, NULL, 0);
+    cr_assert_eq(ret, 2);
+
+    dds_delete(reader);
+
+    ret = dds_get_children(participant, NULL, 0);
+    cr_assert_eq(ret, 1);
+
+    dds_delete(topic);
+    dds_delete(participant);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_entity_get_children, implicit_publisher)
+{
+    dds_entity_t participant;
+    dds_entity_t publisher;
+    dds_entity_t writer;
+    dds_entity_t topic;
+    dds_entity_t child[2], child2[2];
+    dds_return_t ret;
+    char name[100];
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_entity_implicit_publisher_test", name, 100), NULL, NULL);
+    cr_assert_gt(topic, 0);
+
+    writer = dds_create_writer(participant, topic, NULL, NULL);
+    cr_assert_gt(writer, 0);
+    ret = dds_get_children(participant, child, 2);
+    cr_assert_eq(ret, 2);
+    if(child[0] == topic){
+      publisher = child[1];
+    } else if(child[1] == topic){
+        publisher = child[0];
+    } else{
+       cr_assert(false, "topic was not returned");
+    }
+    cr_assert_neq(publisher, topic);
+
+    cr_assert_gt(publisher, 0);
+    cr_assert_neq(publisher, writer);
+
+    dds_delete(writer);
+
+    ret = dds_get_children(participant, child2, 2);
+    cr_assert_eq(ret, 2);
+    cr_assert( (child2[0] == child[0]) || (child2[0] == child[1]) );
+    cr_assert( (child2[1] == child[0]) || (child2[1] == child[1]) );
+
+    dds_delete(topic);
+    dds_delete(participant);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_entity_get_children, implicit_subscriber)
+{
+    dds_entity_t participant;
+    dds_entity_t subscriber;
+    dds_entity_t reader;
+    dds_entity_t topic;
+    dds_entity_t child[2], child2[2];
+    dds_return_t ret;
+    char name[100];
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_entity_implicit_subscriber_test", name, 100), NULL, NULL);
+    cr_assert_gt(topic, 0);
+
+    reader = dds_create_reader(participant, topic, NULL, NULL);
+    cr_assert_gt(reader, 0);
+    ret = dds_get_children(participant, child, 2);
+    cr_assert_eq(ret, 2);
+    if(child[0] == topic){
+      subscriber = child[1];
+    } else if(child[1] == topic){
+    	subscriber = child[0];
+    } else{
+       cr_assert(false, "topic was not returned");
+    }
+    cr_assert_neq(subscriber, topic);
+
+    cr_assert_gt(subscriber, 0);
+    cr_assert_neq(subscriber, reader);
+
+    dds_delete(reader);
+
+    ret = dds_get_children(participant, child2, 2);
+    cr_assert_eq(ret, 2);
+    cr_assert( (child2[0] == child[0]) || (child2[0] == child[1]) );
+    cr_assert( (child2[1] == child[0]) || (child2[1] == child[1]) );
+
+    dds_delete(topic);
+    dds_delete(participant);
+
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_entity_get_parent, implicit_publisher)
+{
+    dds_entity_t participant;
+    dds_entity_t writer;
+    dds_entity_t parent;
+    dds_entity_t topic;
+    dds_return_t ret;
+    char name[100];
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_entity_implicit_publisher_promotion_test", name, 100), NULL, NULL);
+    cr_assert_gt(topic, 0);
+
+    writer = dds_create_writer(participant, topic, NULL, NULL);
+    cr_assert_gt(writer, 0);
+
+    parent = dds_get_parent(writer);
+    cr_assert_neq(parent, participant);
+    cr_assert_gt(parent, 0);
+
+    dds_delete(writer);
+
+    ret = dds_delete(parent);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK);
+    dds_delete(participant);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_entity_get_parent, implicit_subscriber)
+{
+    dds_entity_t participant;
+    dds_entity_t reader;
+    dds_entity_t parent;
+    dds_entity_t topic;
+    dds_return_t ret;
+    char name[100];
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_entity_implicit_subscriber_promotion_test", name, 100), NULL, NULL);
+    cr_assert_gt(topic, 0);
+
+    reader = dds_create_reader(participant, topic, NULL, NULL);
+    cr_assert_gt(reader, 0);
+
+    parent = dds_get_parent(reader);
+    cr_assert_neq(parent, participant);
+    cr_assert_gt(parent, 0);
+
+    dds_delete(reader);
+
+    ret = dds_delete(parent);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK);
+    dds_delete(participant);
+
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
 
 #endif
