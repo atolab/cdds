@@ -83,6 +83,7 @@ dds_entity_observer_unregister(
         _In_ dds_entity_t observed,
         _In_ dds_entity_t observer);
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 dds_return_t
 dds_delete_impl(
         _In_ dds_entity_t entity,

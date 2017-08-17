@@ -868,7 +868,6 @@ Test(vddsc_entity_implicit_subscriber, explicit)
 Test(vddsc_entity_implicit_publisher, explicit_promotion)
 {
     dds_entity_t participant;
-    dds_entity_t publisher;
     dds_entity_t writer;
     dds_entity_t parent;
     dds_entity_t topic;
