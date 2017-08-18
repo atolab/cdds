@@ -1,4 +1,3 @@
-#define RTLD_DEFAULT	((void *) 0)
 
 #include <time.h>
 #include <string.h>
@@ -19,10 +18,6 @@
 #define PRINTD printf
 #else
 #define PRINTD(...)
-#endif
-
-#ifndef DDS_DOMAIN_DEFAULT /* pre-6.0 */
-#define DDS_DOMAIN_DEFAULT 0
 #endif
 
 enum qostype {
@@ -490,9 +485,7 @@ dds_entity_t new_topic (const char *name, const dds_topic_descriptor_t *topicDes
 		error ("new_topic called with non-topic qos\n");
 
 	tp = dds_create_topic(dp, topicDesc, name, a->u.topic.q, NULL);
-//	errorMsg(ret, "new_topic: dds_topic_create");
-	printf("topic create: return number: %d\n str: %s\nreturn code: %d\n", tp, dds_err_str(tp), dds_err_nr(tp));
-
+//	errorMsg(tp, "new_topic: dds_topic_create");
 	return tp;
 }
 

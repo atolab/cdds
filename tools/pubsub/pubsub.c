@@ -961,9 +961,9 @@ static void print_sampleinfo (unsigned long long *tstart, unsigned long long tno
     n += printf ("%s%" PRIu64, n > 0 ? sep : "", si->instance_handle);
   sep = " : ";
   if (print_metadata & PM_STIME)
-    n += printf ("%s%"PRId64".%09"PRId64, n > 0 ? sep : "", si->source_timestamp, si->source_timestamp), sep = " ";
+    n += printf ("%s%"PRIu32".%09"PRIu32, n > 0 ? sep : "", (uint32_t) (si->source_timestamp/DDS_NSECS_IN_SEC), (uint32_t) (si->source_timestamp%DDS_NSECS_IN_SEC)), sep = " ";
   if (print_metadata & PM_RTIME)
-    n += printf ("%s%"PRId64".%09"PRId64, n > 0 ? sep : "", si->reception_timestamp, si->reception_timestamp);
+    n += printf ("%s%"PRIu32".%09"PRIu32, n > 0 ? sep : "", (uint32_t) (si->reception_timestamp/DDS_NSECS_IN_SEC), (uint32_t) (si->reception_timestamp%DDS_NSECS_IN_SEC));
   sep = " : ";
   if (print_metadata & PM_DGEN)
     n += printf ("%s%d", n > 0 ? sep : "", si->disposed_generation_count), sep = " ";
@@ -1007,7 +1007,7 @@ static void print_K (unsigned long long *tstart, unsigned long long tnow, dds_en
 static void print_seq_KS (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, KeyedSeq **mseq, int count)
 {
   unsigned i;
-  for (i = 0; i < count; i++) return;
+  for (i = 0; i < count; i++)
     print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_KS);
 }
 
@@ -1304,9 +1304,8 @@ static void pub_do_auto (const struct writerspec *spec)
     case UNSPEC:
       assert(0);
     case KS:
-    	d.ks.baggage._maximum = d.ks.baggage._length = spec->baggagesize;
-//    	d.ks.baggage._buffer = DDS_sequence_octet_allocbuf(spec->baggagesize); //Todo: fix this
-    	d.ks.baggage._buffer = (uint8_t *) dds_alloc(spec->baggagesize); //for testing
+        d.ks.baggage._maximum = d.ks.baggage._length = spec->baggagesize;
+        d.ks.baggage._buffer = (uint8_t *) dds_alloc(spec->baggagesize);
       memset (d.ks.baggage._buffer, 0xee, spec->baggagesize);
       break;
     case K32:
@@ -1450,7 +1449,6 @@ static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq)
       assert(0);
     case KS:
       d.ks.baggage._maximum = d.ks.baggage._length = spec->baggagesize;
-//      d.ks.baggage._buffer = DDS_sequence_octet_allocbuf (spec->baggagesize); //todo: fix this
       d.ks.baggage._buffer = (uint8_t *) dds_alloc(spec->baggagesize);
       memset (d.ks.baggage._buffer, 0xee, spec->baggagesize);
       break;
@@ -1513,7 +1511,6 @@ static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq)
           if (d.ks.baggage._buffer)
             dds_free (d.ks.baggage._buffer);
           d.ks.baggage._maximum = d.ks.baggage._length = baggagesize;
-//          d.ks.baggage._buffer = DDS_sequence_octet_allocbuf (baggagesize); //Commentted. Need to fix it.
           d.ks.baggage._buffer = (uint8_t *) dds_alloc(baggagesize);
           memset (d.ks.baggage._buffer, 0xee, d.ks.baggage._length);
         }
@@ -2321,7 +2318,8 @@ static void addspec(unsigned whatfor, unsigned *specsofar, unsigned *specidx, st
     s->findtopic_timeout = 10;
     s->rd = def_readerspec;
     s->wr = def_writerspec;
-    s->wr.mode = WRM_NONE;
+//    if (fdin == -1 && fdservsock == -1)
+//      s->wr.mode = WRM_NONE;
     if (!want_reader)
       s->rd.mode = MODE_NONE;
     *specsofar = 0;
@@ -2391,9 +2389,7 @@ int main (int argc, char *argv[])
 	dds_entity_t sub = 0;
 	dds_entity_t pub = 0;
 	dds_listener_t *rdlistener = dds_listener_create(NULL); // TODO free these
-	uint32_t rdstatusmask = 0;
 	dds_listener_t *wrlistener = dds_listener_create(NULL); // TODO free these
-	uint32_t wrstatusmask = 0;
 
 	struct qos *qos;
 //	const char *qtopic[argc];
@@ -2412,6 +2408,7 @@ int main (int argc, char *argv[])
 	uintptr_t exitcode = 0;
 	int want_reader = 1;
 	int want_writer = 1;
+	bool isWriterListenerSet = false;
 	int disable_signal_handlers = 0;
 	unsigned sleep_at_end = 0;
 	os_threadId sigtid;
@@ -2435,20 +2432,6 @@ int main (int argc, char *argv[])
 
 	save_argv0 (argv[0]);
 	pid = (int) os_procIdSelf();
-
-	memset (rdlistener, 0, sizeof (rdlistener));
-	dds_lset_liveliness_changed (rdlistener, rd_on_liveliness_changed);
-    dds_lset_sample_lost (rdlistener, rd_on_sample_lost);
-    dds_lset_sample_rejected (rdlistener, rd_on_sample_rejected);
-    dds_lset_subscription_matched (rdlistener, rd_on_subscription_matched);
-    dds_lset_requested_deadline_missed (rdlistener, rd_on_requested_deadline_missed);
-    dds_lset_requested_incompatible_qos (rdlistener, rd_on_requested_incompatible_qos);
-
-	memset (wrlistener, 0, sizeof (wrlistener));
-    dds_lset_offered_deadline_missed (wrlistener, wr_on_offered_deadline_missed);
-    dds_lset_liveliness_lost (wrlistener, wr_on_liveliness_lost);
-    dds_lset_publication_matched (wrlistener, wr_on_publication_matched);
-    dds_lset_offered_incompatible_qos (wrlistener, wr_on_offered_incompatible_qos);
 
 //	qreader[0] = "k=all";
 //	qreader[1] = "R=10000/inf/inf";
@@ -2670,36 +2653,34 @@ int main (int argc, char *argv[])
         break;
       case 'S':
         {
-          static const struct { const char *a; const char *n; int isrd; uint32_t m; } s[] = {
-			  { "pr",  "pre-read", 1, 0 },
-			  { "sl",  "sample-lost", 1, DDS_SAMPLE_LOST_STATUS },
-			  { "sr",  "sample-rejected", 1, DDS_SAMPLE_REJECTED_STATUS },
-			  { "lc",  "liveliness-changed", 1, DDS_LIVELINESS_CHANGED_STATUS },
-			  { "sm",  "subscription-matched", 1, DDS_SUBSCRIPTION_MATCHED_STATUS },
-			  { "ll",  "liveliness-lost", 0, DDS_LIVELINESS_LOST_STATUS },
-			  { "odm", "offered-deadline-missed", 0, DDS_OFFERED_DEADLINE_MISSED_STATUS },
-			  { "pm",  "publication-matched", 0, DDS_PUBLICATION_MATCHED_STATUS },
-			  { "rdm", "requested-deadline-missed", 1, DDS_REQUESTED_DEADLINE_MISSED_STATUS },
-			  { "riq", "requested-incompatible-qos", 1, DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS },
-			  { "oiq", "offered-incompatible-qos", 0, DDS_OFFERED_INCOMPATIBLE_QOS_STATUS }
-          };
           char *copy = os_strdup (optarg), *tok, *lasts;
           if (copy == NULL)
             abort ();
           tok = os_strtok_r (copy, ",", &lasts);
           while (tok)
           {
-            int i;
-            for (i = 0; i < (int) (sizeof (s) / sizeof (*s)); i++)
-              if (strcmp (tok, s[i].a) == 0 || strcmp (tok, s[i].n) == 0)
-                break;
-            if (i == 0)
-              spec[specidx].rd.print_match_pre_read = 1;
-            else if (i < (int) (sizeof (s) / sizeof (*s)))
-            {
-            	uint32_t *x = s[i].isrd ? &rdstatusmask : &wrstatusmask;
-            	*x |= s[i].m;
-            }
+            if (strcmp (tok, "pr") == 0 || strcmp (tok, "pre-read") == 0)
+                spec[specidx].rd.print_match_pre_read = 1;
+            else if (strcmp (tok, "sl") == 0 || strcmp (tok, "sample-lost") == 0)
+                dds_lset_sample_lost (rdlistener, rd_on_sample_lost);
+            else if (strcmp (tok, "sr") == 0 || strcmp (tok, "sample-rejected") == 0)
+                dds_lset_sample_rejected (rdlistener, rd_on_sample_rejected);
+            else if (strcmp (tok, "lc") == 0 || strcmp (tok, "liveliness-changed") == 0)
+                dds_lset_liveliness_changed (rdlistener, rd_on_liveliness_changed);
+            else if (strcmp (tok, "sm") == 0 || strcmp (tok, "subscription-matched") == 0)
+                dds_lset_subscription_matched (rdlistener, rd_on_subscription_matched);
+            else if (strcmp (tok, "ll") == 0 || strcmp (tok, "liveliness-lost") == 0) {
+                dds_lset_liveliness_lost (wrlistener, wr_on_liveliness_lost); isWriterListenerSet = true;}
+            else if (strcmp (tok, "odm") == 0 || strcmp (tok, "offered-deadline-missed") == 0) {
+                dds_lset_offered_deadline_missed (wrlistener, wr_on_offered_deadline_missed); isWriterListenerSet = true;}
+            else if (strcmp (tok, "pm") == 0 || strcmp (tok, "publication-matched") == 0){
+                dds_lset_publication_matched (wrlistener, wr_on_publication_matched); isWriterListenerSet = true;}
+            else if (strcmp (tok, "rdm") == 0 || strcmp (tok, "requested-deadline-missed") == 0)
+                dds_lset_requested_deadline_missed (rdlistener, rd_on_requested_deadline_missed);
+            else if (strcmp (tok, "riq") == 0 || strcmp (tok, "requested-incompatible-qos") == 0)
+                dds_lset_requested_incompatible_qos (rdlistener, rd_on_requested_incompatible_qos);
+            else if (strcmp (tok, "oiq") == 0 || strcmp (tok, "offered-incompatible-qos") == 0){
+                dds_lset_offered_incompatible_qos (wrlistener, wr_on_offered_incompatible_qos); isWriterListenerSet = true;}
             else
             {
               fprintf (stderr, "-S %s: invalid event\n", tok);
@@ -2765,7 +2746,7 @@ int main (int argc, char *argv[])
     assert(spec[i].rd.topicsel != UNSPEC && spec[i].rd.topicsel == spec[i].wr.topicsel);
   }
 
-  if (wrstatusmask == 0x0)
+  if (!isWriterListenerSet)
   {
     want_writer = 0;
     want_reader = 0;
@@ -2998,7 +2979,6 @@ int main (int argc, char *argv[])
           break;
         case WRM_AUTO:
           os_threadCreate(&spec[i].wrtid, "pubthread_auto", &attr, pubthread_auto, &spec[i].wr);
-//          pthread_create(&spec[i].wrtid, NULL, pubthread_auto, &spec[i].wr);
           break;
         case WRM_INPUT:
           wsl = os_malloc(sizeof(*wsl));
@@ -3017,13 +2997,11 @@ int main (int argc, char *argv[])
     {
       wrspecs = wrspecs->next;
       os_threadCreate(&inptid, "pubthread", &attr, pubthread, wrspecs);
-//      pthread_create(&inptid, NULL, pubthread, wrspecs);
     }
   }
   else if (dur > 0) /* note: abusing inptid */
   {
 	os_threadCreate(&inptid, "autotermthread", &attr, autotermthread, NULL);
-//    pthread_create(&inptid, NULL, autotermthread, NULL);
   }
   for (i = 0; i <= specidx; i++)
   {
@@ -3031,7 +3009,6 @@ int main (int argc, char *argv[])
     {
       spec[i].rd.idx = i;
       os_threadCreate(&spec[i].rdtid, "subthread", &attr, subthread, &spec[i].rd);
-//      pthread_create(&spec[i].rdtid, NULL, subthread, &spec[i].rd);
     }
   }
   if (want_writer || dur > 0)
@@ -3040,7 +3017,6 @@ int main (int argc, char *argv[])
     if (!want_writer || wrspecs)
     {
       os_threadWaitExit(inptid, NULL);
-//      pthread_join(inptid, NULL);
       term_called = 1;
       terminate ();
     }
@@ -3048,7 +3024,6 @@ int main (int argc, char *argv[])
     {
       if (spec[i].wr.mode == WRM_AUTO)
     	os_threadWaitExit(spec[i].wrtid, NULL);
-//        pthread_join(spec[i].wrtid, NULL);
     }
     if (!term_called)
       terminate ();
@@ -3062,7 +3037,6 @@ int main (int argc, char *argv[])
       if (spec[i].rd.mode != MODE_NONE)
       {
     	os_threadWaitExit(spec[i].rdtid, &ret);
-//        pthread_join (spec[i].rdtid, &ret);
         if ((uintptr_t) ret > exitcode)
           exitcode = (uintptr_t) ret;
       }
