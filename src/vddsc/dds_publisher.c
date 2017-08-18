@@ -22,7 +22,7 @@ dds_publisher_qos_validate(
         _In_ const dds_qos_t *qos,
         _In_ bool enabled)
 {
-    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
+    dds_return_t ret;
     bool consistent = true;
     assert(qos);
     /* Check consistency. */
@@ -38,6 +38,8 @@ dds_publisher_qos_validate(
         } else {
             ret = DDS_RETCODE_OK;
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
     }
     return ret;
 }
@@ -52,7 +54,7 @@ dds_publisher_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = (dds_return_t)(DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED));
+            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
         }
     }
     return ret;

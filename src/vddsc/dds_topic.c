@@ -222,7 +222,7 @@ dds_topic_qos_validate(
         const dds_qos_t *qos,
         bool enabled)
 {
-    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
+    dds_return_t ret = DDS_RETCODE_OK;
     bool consistent = true;
     assert(qos);
     /* Check consistency. */
@@ -232,10 +232,11 @@ dds_topic_qos_validate(
     consistent &= (qos->present & QP_LIFESPAN) ? (validate_duration(&qos->lifespan.duration) == 0) : true;
     consistent &= ((qos->present & QP_HISTORY) && (qos->present & QP_RESOURCE_LIMITS)) ? (validate_history_and_resource_limits(&qos->history, &qos->resource_limits) == 0) : true;
     if (consistent) {
-        ret = DDS_RETCODE_OK;
         if (enabled) {
             ret = dds_qos_validate_mutable_common(qos);
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
     }
     return ret;
 }

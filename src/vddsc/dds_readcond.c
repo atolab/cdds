@@ -82,7 +82,7 @@ dds_get_mask(
         _In_ dds_entity_t condition,
         _Out_ uint32_t   *mask)
 {
-    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret;
     dds_readcond *cond;
     dds_retcode_t rc;
     if (mask != NULL) {
@@ -98,6 +98,8 @@ dds_get_mask(
         } else {
             ret = DDS_ERRNO_DEPRECATED(dds_valid_hdl(condition, DDS_KIND_COND_READ));
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
     return ret;
 }

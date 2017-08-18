@@ -399,7 +399,7 @@ dds_get_children(
 {
     dds_entity *e;
     dds_retcode_t rc;
-    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret;
     if (((children != NULL) && (size  > 0) && (size < INT32_MAX)) ||
         ((children == NULL) && (size == 0)) )
     {
@@ -423,6 +423,8 @@ dds_get_children(
         } else {
             ret = DDS_ERRNO_DEPRECATED(rc);
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
     return ret;
 }
@@ -461,7 +463,7 @@ dds_set_qos(
 {
     dds_entity *e;
     dds_retcode_t rc;
-    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret;
     if (qos != NULL) {
         rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (rc == DDS_RETCODE_OK) {
@@ -482,6 +484,8 @@ dds_set_qos(
         } else {
             ret = DDS_ERRNO_DEPRECATED(rc);
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
     return ret;
 }
@@ -495,16 +499,21 @@ dds_get_listener(
         _Out_ dds_listener_t *listener)
 {
     dds_entity *e;
-    dds_retcode_t rc = DDS_RETCODE_BAD_PARAMETER;
+    dds_return_t ret = DDS_RETCODE_OK;
+    dds_retcode_t rc;
     if (listener != NULL) {
         rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (rc == DDS_RETCODE_OK) {
             dds_entity_cb_wait(e);
             dds_listener_copy (listener, &e->m_listener);
             dds_entity_unlock(e);
+        } else {
+          ret = DDS_ERRNO_DEPRECATED(rc);
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
-    return DDS_ERRNO_DEPRECATED(rc);
+    return ret;
 }
 
 
@@ -643,7 +652,7 @@ dds_read_status(
 {
     dds_entity *e;
     dds_retcode_t rc;
-    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret;
     if (status != NULL) {
         rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (rc == DDS_RETCODE_OK) {
@@ -660,6 +669,8 @@ dds_read_status(
         } else {
             ret = DDS_ERRNO_DEPRECATED(rc);
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
     return ret;
 }
@@ -675,7 +686,7 @@ dds_take_status(
 {
     dds_entity *e;
     dds_retcode_t rc;
-    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret;
     if (status != NULL) {
         rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (rc == DDS_RETCODE_OK) {
@@ -696,6 +707,8 @@ dds_take_status(
         } else {
             ret = DDS_ERRNO_DEPRECATED(rc);
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
     return ret;
 }
@@ -744,7 +757,7 @@ dds_get_instance_handle(
 {
     dds_entity *e;
     dds_retcode_t rc;
-    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret;
     if (ihdl != NULL) {
         rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (rc == DDS_RETCODE_OK) {
@@ -757,6 +770,8 @@ dds_get_instance_handle(
         } else {
             ret = DDS_ERRNO_DEPRECATED(rc);
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
     return ret;
 }

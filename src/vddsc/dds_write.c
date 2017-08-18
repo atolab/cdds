@@ -24,7 +24,7 @@ dds_write(
         _In_ dds_entity_t writer,
         _In_ const void *data)
 {
-    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret;
     dds_retcode_t rc;
     dds_writer *wr;
 
@@ -36,6 +36,8 @@ dds_write(
         } else {
             ret = DDS_ERRNO_DEPRECATED(rc);
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
 
     return ret;
@@ -70,7 +72,7 @@ dds_write_ts(
         _In_ const void *data,
         _In_ dds_time_t timestamp)
 {
-    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret;
     dds_retcode_t rc;
     dds_writer *wr;
 
@@ -82,6 +84,8 @@ dds_write_ts(
         } else {
             ret = DDS_ERRNO_DEPRECATED(rc);
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
 
     return ret;

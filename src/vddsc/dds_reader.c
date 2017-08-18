@@ -73,7 +73,7 @@ dds_reader_qos_validate(
         const dds_qos_t *qos,
         bool enabled)
 {
-    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
+    dds_return_t ret = DDS_RETCODE_OK;
     bool consistent = true;
     assert(qos);
     /* Check consistency. */
@@ -85,10 +85,11 @@ dds_reader_qos_validate(
                   ((qos->present & QP_TIME_BASED_FILTER) && (qos->present & QP_DEADLINE))        ? (validate_deadline_and_timebased_filter (qos->deadline.deadline, qos->time_based_filter.minimum_separation)) : true;
 
     if (consistent) {
-        ret = DDS_RETCODE_OK;
         if (enabled) {
             ret = dds_qos_validate_mutable_common(qos);
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
     }
     return ret;
 }
