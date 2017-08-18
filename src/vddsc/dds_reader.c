@@ -344,7 +344,7 @@ dds_create_reader(
     if (rc != DDS_RETCODE_OK) {
         dds_entity_unlock(sub);
         if((sub->m_flags & DDS_ENTITY_IMPLICIT) != 0){
-            dds_delete(subscriber);
+            (void)dds_delete(subscriber);
         }
         return (dds_entity_t)DDS_ERRNO(rc);
     }
