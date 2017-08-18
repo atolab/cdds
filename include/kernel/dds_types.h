@@ -50,7 +50,7 @@ struct rhc;
 
 #define DDS_ERRNO_DEPRECATED(e) ((e <= 0) ? e : -(DDS__FILE_ID__ + DDS__LINE__ + (e)))
 
-static inline dds_return_t handle_dds_errno(int e, const char * context, const char * file, int line, const char * msg, ...)
+static VDDS_INLINE dds_return_t handle_dds_errno(int e, const char * context, const char * file, int line, const char * msg, ...)
 {
   dds_return_t ret;
   if (e <= 0) {
