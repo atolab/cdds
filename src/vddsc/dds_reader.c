@@ -377,7 +377,7 @@ dds_create_reader(
         dds_entity_unlock(tp);
         dds_entity_unlock(sub);
         if((sub->m_flags & DDS_ENTITY_IMPLICIT) != 0){
-            dds_delete(subscriber);
+            (void)dds_delete(subscriber);
         }
         return ret;
     }

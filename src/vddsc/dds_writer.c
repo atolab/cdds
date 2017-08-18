@@ -427,7 +427,7 @@ err_bad_qos:
 err_tp_lock:
     dds_entity_unlock(pub);
     if((pub->m_flags & DDS_ENTITY_IMPLICIT) != 0){
-        dds_delete(publisher);
+        (void)dds_delete(publisher);
     }
 err_pub_lock:
     return writer;

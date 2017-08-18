@@ -190,7 +190,9 @@ dds_entity_cb_wait (_In_ dds_entity *e)
 _Check_return_ dds_entity_t
 dds_entity_init(
         _In_     dds_entity * e,
-        _In_opt_ dds_entity * parent,
+        _In_opt_ _When_(kind != DDS_KIND_PARTICIPANT, _NotNull_)
+                 _When_(kind == DDS_KIND_PARTICIPANT, _Null_)
+                 dds_entity * parent,
         _In_     dds_entity_kind_t kind,
         _In_opt_ dds_qos_t *qos,
         _In_opt_ const dds_listener_t *listener,
@@ -199,7 +201,6 @@ dds_entity_init(
     assert (e);
 
     e->m_refc = 1;
-    e->m_parent = parent;
     e->m_qos = qos;
     e->m_cb_count = 0;
     e->m_observers = NULL;
@@ -215,6 +216,7 @@ dds_entity_init(
     os_condInit (&e->m_cond, &e->m_mutex);
 
     if (parent) {
+        e->m_parent = parent;
         e->m_domain = parent->m_domain;
         e->m_domainid = parent->m_domainid;
         e->m_participant = parent->m_participant;
