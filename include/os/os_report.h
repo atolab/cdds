@@ -40,6 +40,10 @@ extern "C" {
 #define OS_REPORT(type,context,code,...) \
 (((type) >= os_reportVerbosity) ? os_report((type),(context),__FILE__,__LINE__,(code),__VA_ARGS__) : (void)0)
 
+#define OS_REPORT_FROM_FILE(type,context,file,line,code,...) \
+(((type) >= os_reportVerbosity) ? os_report((type),(context),(file),(line),(code),__VA_ARGS__) : (void)0)
+
+
 #define OS_REPORT_STACK() \
 os_report_stack()
 

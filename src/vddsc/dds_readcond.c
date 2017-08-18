@@ -51,7 +51,7 @@ dds_create_readcondition(
         hdl = cond->m_entity.m_hdl;
         dds_reader_unlock(rd);
     } else {
-        hdl = DDS_ERRNO(rc);
+        hdl = DDS_ERRNO_DEPRECATED(rc);
     }
 
     return hdl;
@@ -69,7 +69,7 @@ dds_get_datareader(
     } else if (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) {
         hdl = dds_get_parent(condition);
     } else {
-        hdl = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ));
+        hdl = DDS_ERRNO_DEPRECATED(dds_valid_hdl(condition, DDS_KIND_COND_READ));
     }
     return hdl;
 }
@@ -82,7 +82,7 @@ dds_get_mask(
         _In_ dds_entity_t condition,
         _Out_ uint32_t   *mask)
 {
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     dds_readcond *cond;
     dds_retcode_t rc;
     if (mask != NULL) {
@@ -94,9 +94,9 @@ dds_get_mask(
                 *mask = (cond->m_sample_states | cond->m_view_states | cond->m_instance_states);
                 dds_entity_unlock((dds_entity*)cond);
             }
-            ret = DDS_ERRNO(rc);
+            ret = DDS_ERRNO_DEPRECATED(rc);
         } else {
-            ret = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ));
+            ret = DDS_ERRNO_DEPRECATED(dds_valid_hdl(condition, DDS_KIND_COND_READ));
         }
     }
     return ret;

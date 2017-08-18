@@ -15,7 +15,7 @@ dds_subscriber_instance_hdl(
     assert(e);
     assert(i);
     /* TODO: Get/generate proper handle. */
-    return DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
 }
 
 static dds_return_t
@@ -23,7 +23,7 @@ dds_subscriber_qos_validate(
         const dds_qos_t *qos,
         bool enabled)
 {
-    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
     bool consistent = true;
 
     assert(qos);
@@ -36,7 +36,7 @@ dds_subscriber_qos_validate(
     if (consistent) {
         if (enabled && (qos->present & QP_PRESENTATION)) {
             /* TODO: Improve/check immutable check. */
-            ret = DDS_ERRNO (DDS_RETCODE_IMMUTABLE_POLICY);
+            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
         } else {
             ret = DDS_RETCODE_OK;
         }
@@ -54,7 +54,7 @@ dds_subscriber_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED));
+            ret = (dds_return_t)(DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED));
         }
     }
     return ret;
@@ -65,7 +65,7 @@ dds_subscriber_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_SUBSCRIBER_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER) :
+                     DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER) :
                      DDS_RETCODE_OK;
 }
 
@@ -107,7 +107,7 @@ dds_create_subscriber(
 
     errnr = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
     if (errnr != DDS_RETCODE_OK) {
-        return DDS_ERRNO(errnr);
+        return DDS_ERRNO_DEPRECATED(errnr);
     }
 
     /* Validate qos */
@@ -157,7 +157,7 @@ dds_notify_readers(
         dds_entity_unlock(sub);
     }
 
-    return DDS_ERRNO(errnr);
+    return DDS_ERRNO_DEPRECATED(errnr);
 }
 
 dds_return_t
@@ -165,7 +165,7 @@ dds_subscriber_begin_coherent(
         _In_ dds_entity_t e)
 {
     /* TODO: CHAM-124 Currently unsupported. */
-    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
 }
 
 dds_return_t
@@ -173,5 +173,5 @@ dds_subscriber_end_coherent(
         _In_ dds_entity_t e)
 {
     /* TODO: CHAM-124 Currently unsupported. */
-    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
 }

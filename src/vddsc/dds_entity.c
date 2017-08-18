@@ -255,7 +255,7 @@ dds_delete(
 
     rc = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
     if (rc != DDS_RETCODE_OK) {
-        return DDS_ERRNO(rc);
+        return DDS_ERRNO_DEPRECATED(rc);
     }
 
     if (--e->m_refc != 0) {
@@ -299,7 +299,7 @@ dds_delete(
          * is released. It is possible that this last release will be done by a thread
          * that was kicked during the close(). */
         if (ut_handle_delete(e->m_hdl, e->m_hdllink, timeout) != UT_HANDLE_OK) {
-            ret = DDS_ERRNO(DDS_RETCODE_TIMEOUT);
+            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_TIMEOUT);
         }
     }
 
@@ -358,11 +358,11 @@ dds_get_parent(
         if (e->m_parent) {
             hdl = e->m_parent->m_hdl;
         } else {
-            hdl = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+            hdl = DDS_ERRNO_DEPRECATED(DDS_RETCODE_ILLEGAL_OPERATION);
         }
         dds_entity_unlock(e);
     } else {
-        hdl = DDS_ERRNO(rc);
+        hdl = DDS_ERRNO_DEPRECATED(rc);
     }
     return hdl;
 }
@@ -383,7 +383,7 @@ dds_get_participant (
         hdl = e->m_participant->m_hdl;
         dds_entity_unlock(e);
     } else {
-        hdl = DDS_ERRNO(rc);
+        hdl = DDS_ERRNO_DEPRECATED(rc);
     }
     return hdl;
 }
@@ -399,7 +399,7 @@ dds_get_children(
 {
     dds_entity *e;
     dds_retcode_t rc;
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     if (((children != NULL) && (size  > 0) && (size < INT32_MAX)) ||
         ((children == NULL) && (size == 0)) )
     {
@@ -421,7 +421,7 @@ dds_get_children(
             }
             dds_entity_unlock(e);
         } else {
-            ret = DDS_ERRNO(rc);
+            ret = DDS_ERRNO_DEPRECATED(rc);
         }
     }
     return ret;
@@ -448,7 +448,7 @@ dds_get_qos(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 
@@ -461,14 +461,14 @@ dds_set_qos(
 {
     dds_entity *e;
     dds_retcode_t rc;
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     if (qos != NULL) {
         rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (rc == DDS_RETCODE_OK) {
             if (e->m_deriver.set_qos) {
                 ret = e->m_deriver.set_qos(e, qos, e->m_flags & DDS_ENTITY_ENABLED);
             } else {
-                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+                ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_ILLEGAL_OPERATION);
             }
             if (ret == DDS_RETCODE_OK) {
                 /* Remember this QoS. */
@@ -476,11 +476,11 @@ dds_set_qos(
                     e->m_qos = dds_qos_create();
                 }
                 rc = dds_qos_copy(e->m_qos, qos);
-                ret = DDS_ERRNO(rc);
+                ret = DDS_ERRNO_DEPRECATED(rc);
             }
             dds_entity_unlock(e);
         } else {
-            ret = DDS_ERRNO(rc);
+            ret = DDS_ERRNO_DEPRECATED(rc);
         }
     }
     return ret;
@@ -504,7 +504,7 @@ dds_get_listener(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 
@@ -526,7 +526,7 @@ dds_set_listener(
         }
         dds_entity_unlock(e);
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 
@@ -547,7 +547,7 @@ dds_enable(
         }
         dds_entity_unlock(e);
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 
@@ -571,7 +571,7 @@ dds_get_status_changes(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 
@@ -595,7 +595,7 @@ dds_get_enabled_status(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 
@@ -623,11 +623,11 @@ dds_set_enabled_status(
                 }
             }
         } else {
-            ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_ILLEGAL_OPERATION);
         }
         dds_entity_unlock(e);
     } else {
-        ret = DDS_ERRNO(rc);
+        ret = DDS_ERRNO_DEPRECATED(rc);
     }
     return ret;
 }
@@ -643,7 +643,7 @@ dds_read_status(
 {
     dds_entity *e;
     dds_retcode_t rc;
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     if (status != NULL) {
         rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (rc == DDS_RETCODE_OK) {
@@ -654,11 +654,11 @@ dds_read_status(
                     *status = e->m_trigger & mask;
                 }
             } else {
-                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+                ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_ILLEGAL_OPERATION);
             }
             dds_entity_unlock(e);
         } else {
-            ret = DDS_ERRNO(rc);
+            ret = DDS_ERRNO_DEPRECATED(rc);
         }
     }
     return ret;
@@ -675,7 +675,7 @@ dds_take_status(
 {
     dds_entity *e;
     dds_retcode_t rc;
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     if (status != NULL) {
         rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (rc == DDS_RETCODE_OK) {
@@ -690,11 +690,11 @@ dds_take_status(
                     e->m_trigger &= ~mask;
                 }
             } else {
-                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+                ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_ILLEGAL_OPERATION);
             }
             dds_entity_unlock(e);
         } else {
-            ret = DDS_ERRNO(rc);
+            ret = DDS_ERRNO_DEPRECATED(rc);
         }
     }
     return ret;
@@ -731,7 +731,7 @@ dds_get_domainid(
             dds_entity_unlock(e);
         }
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 
@@ -744,18 +744,18 @@ dds_get_instance_handle(
 {
     dds_entity *e;
     dds_retcode_t rc;
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     if (ihdl != NULL) {
         rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
         if (rc == DDS_RETCODE_OK) {
             if (e->m_deriver.get_instance_hdl) {
                 ret = e->m_deriver.get_instance_hdl(e, ihdl);
             } else {
-                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
+                ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_ILLEGAL_OPERATION);
             }
             dds_entity_unlock(e);
         } else {
-            ret = DDS_ERRNO(rc);
+            ret = DDS_ERRNO_DEPRECATED(rc);
         }
     }
     return ret;
@@ -839,7 +839,7 @@ dds_triggered(
         ret = (e->m_trigger != 0);
         dds_entity_unlock(e);
     } else {
-        ret = DDS_ERRNO(rc);
+        ret = DDS_ERRNO_DEPRECATED(rc);
     }
     return ret;
 }
@@ -998,7 +998,7 @@ dds_get_topic(
         }
     }
     if (rc != DDS_RETCODE_OK) {
-      hdl = DDS_ERRNO(rc);
+      hdl = DDS_ERRNO_DEPRECATED(rc);
     }
     return hdl;
 }

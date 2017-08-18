@@ -14,7 +14,7 @@ dds_publisher_instance_hdl(
     assert(e);
     assert(i);
     /* TODO: Get/generate proper handle. */
-    return DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
 }
 
 static dds_return_t
@@ -22,7 +22,7 @@ dds_publisher_qos_validate(
         _In_ const dds_qos_t *qos,
         _In_ bool enabled)
 {
-    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
     bool consistent = true;
     assert(qos);
     /* Check consistency. */
@@ -34,7 +34,7 @@ dds_publisher_qos_validate(
     if (consistent) {
         if (enabled && (qos->present & QP_PRESENTATION)) {
             /* TODO: Improve/check immutable check. */
-            ret = DDS_ERRNO (DDS_RETCODE_IMMUTABLE_POLICY);
+            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
         } else {
             ret = DDS_RETCODE_OK;
         }
@@ -52,7 +52,7 @@ dds_publisher_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED));
+            ret = (dds_return_t)(DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED));
         }
     }
     return ret;
@@ -61,7 +61,7 @@ dds_publisher_qos_set(
 static dds_return_t dds_publisher_status_validate (uint32_t mask)
 {
     return (mask & ~(DDS_PUBLISHER_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER) :
+                     DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER) :
                      DDS_RETCODE_OK;
 }
 
@@ -81,7 +81,7 @@ dds_create_publisher(
 
     rc = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
     if (rc != DDS_RETCODE_OK) {
-        return DDS_ERRNO(rc);
+        return DDS_ERRNO_DEPRECATED(rc);
     }
 
     /* Validate qos */
@@ -115,10 +115,10 @@ dds_suspend(
         _In_ dds_entity_t publisher)
 {
     if(dds_entity_kind(publisher) != DDS_KIND_PUBLISHER) {
-        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+        return DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
     /* TODO: CHAM-123 Currently unsupported. */
-    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
 }
 
 
@@ -128,10 +128,10 @@ dds_resume(
         _In_ dds_entity_t publisher)
 {
     if(dds_entity_kind(publisher) != DDS_KIND_PUBLISHER) {
-        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+        return DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
     /* TODO: CHAM-123 Currently unsupported. */
-    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
 }
 
 
@@ -149,13 +149,13 @@ dds_wait_for_acks(
 
     switch(dds_entity_kind(publisher_or_writer)) {
         case DDS_KIND_WRITER:
-            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
             break;
         case DDS_KIND_PUBLISHER:
-            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
             break;
         default:
-            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
             break;
     }
 
@@ -167,7 +167,7 @@ dds_publisher_begin_coherent(
         _In_ dds_entity_t e)
 {
     /* TODO: CHAM-124 Currently unsupported. */
-    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
 }
 
 dds_return_t
@@ -175,6 +175,6 @@ dds_publisher_end_coherent(
         _In_ dds_entity_t e)
 {
     /* TODO: CHAM-124 Currently unsupported. */
-    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
 }
 

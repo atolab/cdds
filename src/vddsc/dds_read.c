@@ -85,19 +85,19 @@ dds_read_impl(
     thread_state_awake (thr);
   }
   if(buf == NULL){
-    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    rc = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
   }
   if(si == NULL){
-    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    rc = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
   }
   if(maxs == 0){
-    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    rc = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
   }
   if(bufsz == 0){
-    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    rc = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
   }
   if(bufsz < maxs){
-    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    rc = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
   }
   if (rc == DDS_RETCODE_OK) {
     rc = dds_read_lock(reader_or_condition, &rd, &cond, only_reader);
@@ -168,7 +168,7 @@ dds_read_impl(
       }
       dds_read_unlock(rd, cond);
   } else {
-      ret = DDS_ERRNO(rc);
+      ret = DDS_ERRNO_DEPRECATED(rc);
   }
 
   if (asleep)
@@ -229,7 +229,7 @@ dds_readcdr_impl(
       }
       dds_read_unlock(rd, cond);
   } else {
-      ret = DDS_ERRNO(rc);
+      ret = DDS_ERRNO_DEPRECATED(rc);
   }
 
   if (asleep)
@@ -336,7 +336,7 @@ dds_read_instance(
         _In_ uint32_t maxs,
         _In_ dds_instance_handle_t handle)
 {
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -361,7 +361,7 @@ dds_read_instance_wl(
         _In_ uint32_t maxs,
         _In_ dds_instance_handle_t handle)
 {
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -389,7 +389,7 @@ dds_read_instance_mask(
         _In_ dds_instance_handle_t handle,
         _In_ uint32_t mask)
 {
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -416,7 +416,7 @@ dds_read_instance_mask_wl(
         _In_ dds_instance_handle_t handle,
         _In_ uint32_t mask)
 {
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -567,7 +567,7 @@ dds_take_instance(
         _In_ uint32_t maxs,
         _In_ dds_instance_handle_t handle)
 {
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -592,7 +592,7 @@ dds_take_instance_wl(
         _In_ uint32_t maxs,
         _In_ dds_instance_handle_t handle)
 {
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -620,7 +620,7 @@ dds_take_instance_mask(
         _In_ dds_instance_handle_t handle,
         _In_ uint32_t mask)
 {
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -647,7 +647,7 @@ dds_take_instance_mask_wl(
         _In_ dds_instance_handle_t handle,
         _In_ uint32_t mask)
 {
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+    dds_return_t ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -698,7 +698,7 @@ dds_return_loan(
     dds_readcond *cond;
 
     if (!buf || (*buf == NULL && bufsz > 0)) {
-        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+        return DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
 
     rc = dds_read_lock(reader_or_condition, &rd, &cond, false);
@@ -723,5 +723,5 @@ dds_return_loan(
         dds_read_unlock(rd, cond);
     }
 
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }

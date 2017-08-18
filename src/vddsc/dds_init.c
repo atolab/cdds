@@ -116,20 +116,20 @@ dds_init(void)
   if (ut_handleserver_init() != UT_HANDLE_OK)
   {
     fprintf (stderr, "Initializing handle server failed\n");
-    return DDS_ERRNO (DDS_RETCODE_ERROR);
+    return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize server");
   }
 
   dds_cfgst = config_init (uri);
   if (dds_cfgst == NULL)
   {
     fprintf (stderr, "Configuration XML file failed to parse\n");
-    return DDS_ERRNO (DDS_RETCODE_ERROR);
+    return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to parse configuration XML file %s", uri);
   }
 
   if (! rtps_config_open ())
   {
     fprintf (stderr, "Failed to open log file\n");
-    return DDS_ERRNO (DDS_RETCODE_ERROR);
+    return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to open log file %s", config.tracingOutputFileName);
   }
   dds_set_report_level ();
 
@@ -152,11 +152,13 @@ dds_init_impl(
 {
   char buff[64];
   uint32_t len;
+  char * reason;
 
   if (dds_global.m_default_domain != DDS_DOMAIN_DEFAULT)
   {
     if ((dds_global.m_default_domain != domain) && (domain != DDS_DOMAIN_DEFAULT))
     {
+      sprintf(reason, "dds_init_impl", "Inconsistent domain configuration detected: default domain %d, domain %d", dds_global.m_default_domain, domain);
       goto fail;
     }
     return DDS_RETCODE_OK;
@@ -179,6 +181,7 @@ dds_init_impl(
   dds_global.m_default_domain = config.domainId;
   if (rtps_config_prep (dds_cfgst) != 0)
   {
+    sprintf(reason, "RTPS configuration failed.");
     goto fail;
   }
   ut_avlInit (&dds_domaintree_def, &dds_global.m_domains);
@@ -225,7 +228,7 @@ dds_init_impl(
 
 fail:
 
-  return DDS_ERRNO (DDS_RETCODE_ERROR);
+  return DDS_ERRNO(DDS_RETCODE_ERROR, "DDS Init failed: %s", reason);
 }
 
 extern void dds_fini (void)
