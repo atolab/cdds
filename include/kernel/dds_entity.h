@@ -10,14 +10,14 @@ extern "C" {
 
 _Check_return_ dds_entity_t
 dds_entity_init(
-        _In_     dds_entity * e,
-        _When_(kind != DDS_KIND_PARTICIPANT, _NotNull_)
-        _When_(kind == DDS_KIND_PARTICIPANT, _Null_)
-               dds_entity * parent,
-        _In_     dds_entity_kind_t kind,
-        _In_opt_ dds_qos_t * qos,
-        _In_opt_ const dds_listener_t *listener,
-        _In_     uint32_t mask);
+        _In_       dds_entity * e,
+        _When_(kind != DDS_KIND_PARTICIPANT, _At_(parent,_NotNull_))
+        _When_(kind == DDS_KIND_PARTICIPANT, _At_(parent,_Null_))
+          _In_opt_ dds_entity * parent,
+        _In_       dds_entity_kind_t kind,
+        _In_opt_   dds_qos_t * qos,
+        _In_opt_   const dds_listener_t *listener,
+        _In_       uint32_t mask);
 
 void
 dds_entity_add_ref(
