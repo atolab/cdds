@@ -811,7 +811,6 @@ CUnit_Test(os_stdlib, getopt)
 	CU_ASSERT (c == 'b');
 	c = os_getopt(argc, argv001, "abc:");
 	CU_ASSERT (c == -1);
-	CU_ASSERT (os_get_optarg() == NULL);
 
 	/* Check correct functioning of os_set_optind and os_get_optind */
 	printf ("Starting os_stdlib_getopt_002\n");
@@ -825,7 +824,6 @@ CUnit_Test(os_stdlib, getopt)
 	CU_ASSERT (strcmp(os_get_optarg(), "foo") == 0);
 	c = os_getopt(argc, argv002, "c:");
 	CU_ASSERT (c == -1);
-	CU_ASSERT (os_get_optarg() == NULL);
 
 	/* Check correct functioning of os_get_optopt */
 	printf ("Starting os_stdlib_getopt_004\n");
