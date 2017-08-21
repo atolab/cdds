@@ -220,7 +220,7 @@ OPTIONS:\n\
                     fields         field names, some white space\n\
                     multiline      field names, one field per line\n\
                   default is \"nometa,state,fields\".\n\
-  -r              register instances (-mN mode only)\n\
+  -r              register instances (-wN mode only)\n\
   -R              use 'read' instead of 'take'\n\
   -s MS           sleep MS ms after each read/take (default: 0)\n\
   -W TO           wait_for_historical_data TO (TO in seconds or inf)\n\
@@ -1658,17 +1658,14 @@ static char *pub_do_arb(const struct writerspec *spec, struct getl_arg *getl_arg
 
 static uint32_t pubthread_auto(void *vspec)
 {
-    dds_thread_init("pubthread_auto");
 	const struct writerspec *spec = vspec;
 	assert (spec->topicsel != UNSPEC && spec->topicsel != ARB);
 	pub_do_auto(spec);
-	dds_thread_fini();
 	return 0;
 }
 
 static uint32_t pubthread(void *vwrspecs)
 {
-  dds_thread_init("pubthread");
   struct wrspeclist *wrspecs = vwrspecs;
   uint32_t seq = 0;
 
@@ -1719,7 +1716,6 @@ static uint32_t pubthread(void *vwrspecs)
       }
     } while (spec);
 
-  dds_thread_fini();
   return 0;
 }
 
@@ -1793,7 +1789,6 @@ static int check_eseq (struct eseq_admin *ea, unsigned seq, unsigned keyval, con
 
 static uint32_t subthread (void *vspec)
 {
-  dds_thread_init("subthread");
   const struct readerspec *spec = vspec;
   dds_entity_t rd = spec->rd;
 //  dds_entity_t sub = spec->sub;
@@ -2129,13 +2124,11 @@ static uint32_t subthread (void *vspec)
     /* trigger EOF for writer side, so we actually do terminate */
     terminate();
   }
-  dds_thread_fini();
   return exitcode;
 }
 
 static uint32_t autotermthread(void *varg __attribute__((unused)))
 {
-  dds_thread_init("autotermthread");
   unsigned long long tstop, tnow;
   int result;
   int ret = 0;
@@ -2175,7 +2168,6 @@ static uint32_t autotermthread(void *varg __attribute__((unused)))
   ret = dds_delete(ws);
   PRINTD("Autotermthread: dds_waitset_delete: ret: %d\n", ret);
 
-  dds_thread_fini();
   return 0;
 }
 
@@ -2733,12 +2725,12 @@ int main (int argc, char *argv[])
       switch (spec[i].rd.topicsel)
       {
         case UNSPEC: assert(0);
-        case KS: spec[i].topicname = "PubSub"; break;
-        case K32: spec[i].topicname = "PubSub32"; break;
-        case K64: spec[i].topicname = "PubSub64"; break;
-        case K128: spec[i].topicname = "PubSub128"; break;
-        case K256: spec[i].topicname = "PubSub256"; break;
-        case OU: spec[i].topicname = "PubSubOU"; break;
+        case KS: spec[i].topicname = os_strdup("PubSub"); break;
+        case K32: spec[i].topicname = os_strdup("PubSub32"); break;
+        case K64: spec[i].topicname = os_strdup("PubSub64"); break;
+        case K128: spec[i].topicname = os_strdup("PubSub128"); break;
+        case K256: spec[i].topicname = os_strdup("PubSub256"); break;
+        case OU: spec[i].topicname = os_strdup("PubSubOU"); break;
         case ARB: error ("-K ARB requires specifying a topic name\n"); break;
       }
       assert (spec[i].topicname != NULL);
