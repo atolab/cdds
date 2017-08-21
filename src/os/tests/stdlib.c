@@ -794,3 +794,47 @@ CUnit_Test(os_stdlib, flockfile)
 
 	printf ("Ending os_stdlib_flockfile\n");
 }
+
+CUnit_Test(os_stdlib, getopt)
+{
+	int argc = 3;
+	int c;
+
+	/* Check correct functioning of os_getopt */
+	printf ("Starting os_stdlib_getopt_001\n");
+	char *argv001[] = {"", "-a", "-b"};
+	c = os_getopt(argc, argv001, "abc:");
+	CU_ASSERT (c == 'a');
+	c = os_getopt(argc, argv001, "abc:");
+	CU_ASSERT (c == 'b');
+	c = os_getopt(argc, argv001, "abc:");
+	CU_ASSERT (c == -1);
+	CU_ASSERT (os_get_optarg() == NULL);
+
+	/* Check correct functioning of os_set_optind and os_get_optind */
+	printf ("Starting os_stdlib_getopt_002\n");
+	os_set_optind(1);
+	CU_ASSERT (os_get_optind() == 1);
+
+	/* Check correct functioning of os_get_optarg */
+	printf ("Starting os_stdlib_getopt_003\n");
+	char *argv002[] = {"", "-c", "foo"};
+	c = os_getopt (argc, argv002, "c:");
+	CU_ASSERT (c == 'c');
+	CU_ASSERT (strcmp(os_get_optarg(), "foo") == 0);
+	c = os_getopt(argc, argv002, "c:");
+	CU_ASSERT (c == -1);
+	CU_ASSERT (os_get_optarg() == NULL);
+
+	/* Check correct functioning of os_get_optopt */
+	printf ("Starting os_stdlib_getopt_004\n");
+	argc = 2;
+	char *argv003[] = {"", "-d"};
+	os_set_opterr(0);
+	os_set_optind(1);
+	c = os_getopt (argc, argv003, "c:");
+	CU_ASSERT (c == '?');
+	CU_ASSERT (os_get_optopt() == 'd');
+
+	printf ("Ending os_stdlib_getopt\n");
+}

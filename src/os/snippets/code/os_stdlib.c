@@ -307,3 +307,38 @@ void os_funlockfile(FILE *file)
 {
 	funlockfile (file);
 }
+
+int os_getopt(int argc, char **argv, const char *opts)
+{
+	return getopt(argc, argv, opts);
+}
+
+void os_set_opterr(int err)
+{
+	opterr = err;
+}
+
+int os_get_opterr(void)
+{
+	return opterr;
+}
+
+void os_set_optind(int index)
+{
+	optind = index;
+}
+
+int os_get_optind(void)
+{
+	return optind;
+}
+
+int os_get_optopt(void)
+{
+	return optopt;
+}
+
+char * os_get_optarg(void)
+{
+	return optarg;
+}
