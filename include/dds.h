@@ -232,7 +232,7 @@ dds_enable(
  *
  * TODO: Link to generic dds entity relations documentation.
  *
- * @param[in]  entity  Entity from which to get its parent.
+ * @param[in]  entity  Entity to delete
  *
  * @returns  0 - Success (DDS_RETCODE_OK).
  * @returns <0 - Failure (use dds_err_nr() to get error value).
@@ -745,6 +745,16 @@ dds_create_participant(
  * For instance, it will return the Participant that was used when
  * creating a Publisher (when that Publisher was provided here).
  *
+ * When a reader or a writer are created with a partition, then a
+ * subscriber or publisher respectively are created implicitly. These
+ * implicit subscribers or publishers will be deleted automatically
+ * when the reader or writer is deleted. However, when this function
+ * returns such an implicit entity, it is from there on out considered
+ * 'explicit'. This means that it isn't deleted automatically anymore.
+ * The application should explicitly call dds_delete on those entities
+ * now (or delete the parent participant which will delete all entities
+ * within its hierarchy).
+ *
  * TODO: Link to generic dds entity relations documentation.
  *
  * @param[in]  entity  Entity from which to get its parent.
@@ -812,6 +822,16 @@ dds_get_participant (
  *
  * When supplying NULL as list and 0 as size, you can use this to acquire
  * the number of children without having to pre-allocate a list.
+ *
+ * When a reader or a writer are created with a partition, then a
+ * subscriber or publisher respectively are created implicitly. These
+ * implicit subscribers or publishers will be deleted automatically
+ * when the reader or writer is deleted. However, when this function
+ * returns such an implicit entity, it is from there on out considered
+ * 'explicit'. This means that it isn't deleted automatically anymore.
+ * The application should explicitly call dds_delete on those entities
+ * now (or delete the parent participant which will delete all entities
+ * within its hierarchy).
  *
  * TODO: Link to generic dds entity relations documentation.
  *
@@ -1124,7 +1144,10 @@ dds_wait_for_acks(
 
 
 /**
- * @brief Creates a new instance of a DDS reader
+ * @brief Creates a new instance of a DDS reader.
+ *
+ * This implicit subscriber will be deleted automatically when the created reader
+ * is deleted.
  *
  * @param[in]  participant_or_subscriber The participant or subscriber on which the reader is being created
  *
@@ -1166,7 +1189,10 @@ dds_reader_wait_for_historical_data(
         dds_duration_t max_wait);
 
 /**
- * @brief Creates a new instance of a DDS writer
+ * @brief Creates a new instance of a DDS writer.
+ *
+ * This implicit publisher will be deleted automatically when the created writer
+ * is deleted.
  *
  * @param[in]  participant_or_publisher The participant or publisher on which the writer is being created
  * @param[in]  topic The topic to write
@@ -2923,27 +2949,6 @@ dds_instance_get_key(
         dds_entity_t entity,
         dds_instance_handle_t inst,
         void *data);
-
-/**
- * Description : This operation stores the thread state for the thread created.
- *
- * Arguments :
- * -# name Thread name
- * -# Returns 0 on successful thread creation, else a non-zero value to indicate an error,
- *    which could be a lack of resources or a thread with the same name already exists.
- */
-DDS_EXPORT int
-dds_thread_init(
-        const char * name);
-
-/**
- * Description : This operation frees the thread state stored
- *
- * Note: This function should be called from the same thread context before exiting
- */
-DDS_EXPORT void
-dds_thread_fini(
-        void);
 
 /**
  * @brief Begin coherent publishing or begin accessing a coherent set in a subscriber

@@ -81,6 +81,7 @@ typedef struct c_listener {
 /* Entity flag values */
 
 #define DDS_ENTITY_ENABLED      0x0001
+#define DDS_ENTITY_IMPLICIT     0x0002
 
 typedef struct dds_domain
 {

@@ -38,10 +38,10 @@ struct ut_chhBackingLock {
 struct ut_chh {
     os_atomic_voidp_t buckets; /* struct ut_chhBucketArray * */
     struct ut_chhBackingLock backingLocks[N_BACKING_LOCKS];
-    uint32_t (*hash) (const void *a);
-    int (*equals) (const void *a, const void *b);
+    ut_hhHash_fn hash;
+    ut_hhEquals_fn equals;
     os_rwlock resize_locks[N_RESIZE_LOCKS];
-    void (*gc_buckets) (void *a);
+    ut_hhBucketsGc_fn gc_buckets;
 };
 
 #define CHH_MAX_TRIES 4
@@ -52,7 +52,7 @@ static int ut_chhDataValid_p (void *data)
     return data != NULL && data != CHH_BUSY;
 }
 
-static int ut_chhInit (struct ut_chh *rt, uint32_t init_size, uint32_t (*hash) (const void *a), int (*equals) (const void *a, const void *b), void (*gc_buckets) (void *a))
+static int ut_chhInit (struct ut_chh *rt, uint32_t init_size, ut_hhHash_fn hash, ut_hhEquals_fn equals, ut_hhBucketsGc_fn gc_buckets)
 {
     uint32_t size;
     uint32_t i;
@@ -105,7 +105,7 @@ static void ut_chhFini (struct ut_chh *rt)
     }
 }
 
-struct ut_chh *ut_chhNew (uint32_t init_size, uint32_t (*hash) (const void *a), int (*equals) (const void *a, const void *b), void (*gc_buckets) (void *a))
+struct ut_chh *ut_chhNew (uint32_t init_size, ut_hhHash_fn hash, ut_hhEquals_fn equals, ut_hhBucketsGc_fn gc_buckets)
 {
     struct ut_chh *hh = os_malloc (sizeof (*hh));
     if (ut_chhInit (hh, init_size, hash, equals, gc_buckets) < 0) {
@@ -184,10 +184,9 @@ static void ut_chhUnlockBucket (struct ut_chh *rt, uint32_t bidx)
     }
 }
 
-static void *ut_chhLookupInternal (struct ut_chh * rt, const uint32_t bucket, const void *template)
+static void *ut_chhLookupInternal (struct ut_chhBucketArray const * const bsary, ut_hhEquals_fn equals, const uint32_t bucket, const void *template)
 {
-    struct ut_chhBucketArray * const bsary = os_atomic_ldvoidp (&rt->buckets);
-    struct ut_chhBucket * const bs = bsary->bs;
+    struct ut_chhBucket const * const bs = bsary->bs;
     const uint32_t idxmask = bsary->size - 1;
     uint32_t timestamp;
     int try_counter = 0;
@@ -195,14 +194,16 @@ static void *ut_chhLookupInternal (struct ut_chh * rt, const uint32_t bucket, co
     do {
         uint32_t hopinfo;
         timestamp = os_atomic_ld32 (&bs[bucket].timestamp);
+        os_atomic_fence ();
         hopinfo = os_atomic_ld32 (&bs[bucket].hopinfo);
         for (idx = 0; hopinfo != 0; hopinfo >>= 1, idx++) {
             const uint32_t bidx = (bucket + idx) & idxmask;
             void *data = os_atomic_ldvoidp (&bs[bidx].data);
-            if (ut_chhDataValid_p (data) && rt->equals (data, template)) {
+            if (ut_chhDataValid_p (data) && equals (data, template)) {
                 return data;
             }
         }
+        os_atomic_fence ();
     } while (timestamp != os_atomic_ld32 (&bs[bucket].timestamp) && ++try_counter < CHH_MAX_TRIES);
     if (try_counter == CHH_MAX_TRIES) {
         /* Note: try_counter would not have been incremented to
@@ -211,7 +212,7 @@ static void *ut_chhLookupInternal (struct ut_chh * rt, const uint32_t bucket, co
         for (idx = 0; idx < HH_HOP_RANGE; idx++) {
             const uint32_t bidx = (bucket + idx) & idxmask;
             void *data = os_atomic_ldvoidp (&bs[bidx].data);
-            if (ut_chhDataValid_p (data) && rt->equals (data, template)) {
+            if (ut_chhDataValid_p (data) && equals (data, template)) {
                 return data;
             }
         }
@@ -231,7 +232,7 @@ void *ut_chhLookup (struct ut_chh * UT_HH_RESTRICT rt, const void * UT_HH_RESTRI
     const uint32_t hash = rt->hash (template);
     const uint32_t idxmask = bsary->size - 1;
     const uint32_t bucket = hash & idxmask;
-    return ut_chhLookupInternal (rt, bucket, template);
+    return ut_chhLookupInternal (bsary, rt->equals, bucket, template);
 }
 
 static uint32_t ut_chhFindCloserFreeBucket (struct ut_chh *rt, uint32_t free_bucket, uint32_t *free_distance)
@@ -315,8 +316,8 @@ static void ut_chhResize (struct ut_chh *rt)
         }
     }
 
-    os_atomic_stvoidp (&rt->buckets, bsary1);
     os_atomic_fence ();
+    os_atomic_stvoidp (&rt->buckets, bsary1);
     rt->gc_buckets (bsary0);
 }
 
@@ -337,7 +338,7 @@ int ut_chhAdd (struct ut_chh * UT_HH_RESTRICT rt, const void * UT_HH_RESTRICT da
         start_bucket = hash & idxmask;
 
         ut_chhLockBucket (rt, start_bucket);
-        if (ut_chhLookupInternal (rt, start_bucket, data)) {
+        if (ut_chhLookupInternal (bsary, rt->equals, start_bucket, data)) {
             ut_chhUnlockBucket (rt, start_bucket);
             os_rwlockUnlock (&rt->resize_locks[hash % N_RESIZE_LOCKS]);
             return 0;
@@ -470,11 +471,11 @@ struct ut_hhBucket {
 struct ut_hh {
     uint32_t size; /* power of 2 */
     struct ut_hhBucket *buckets;
-    uint32_t (*hash) (const void *a);
-    int (*equals) (const void *a, const void *b);
+    ut_hhHash_fn hash;
+    ut_hhEquals_fn equals;
 };
 
-static void ut_hhInit (struct ut_hh *rt, uint32_t init_size, uint32_t (*hash) (const void *a), int (*equals) (const void *a, const void *b))
+static void ut_hhInit (struct ut_hh *rt, uint32_t init_size, ut_hhHash_fn hash, ut_hhEquals_fn equals)
 {
     uint32_t size = HH_HOP_RANGE;
     uint32_t i;
@@ -497,7 +498,7 @@ static void ut_hhFini (struct ut_hh *rt)
     os_free (rt->buckets);
 }
 
-struct ut_hh *ut_hhNew (uint32_t init_size, uint32_t (*hash) (const void *a), int (*equals) (const void *a, const void *b))
+struct ut_hh *ut_hhNew (uint32_t init_size, ut_hhHash_fn hash, ut_hhEquals_fn equals)
 {
     struct ut_hh *hh = os_malloc (sizeof (*hh));
     ut_hhInit (hh, init_size, hash, equals);
@@ -694,11 +695,11 @@ struct ut_ehh {
     size_t elemsz;
     size_t bucketsz;
     char *buckets; /* ehhBucket, but embedded data messes up the layout */
-    uint32_t (*hash) (const void *a);
-    int (*equals) (const void *a, const void *b);
+    ut_hhHash_fn hash;
+    ut_hhEquals_fn equals;
 };
 
-static void ut_ehhInit (struct ut_ehh *rt, size_t elemsz, uint32_t init_size, uint32_t (*hash) (const void *a), int (*equals) (const void *a, const void *b))
+static void ut_ehhInit (struct ut_ehh *rt, size_t elemsz, uint32_t init_size, ut_hhHash_fn hash, ut_hhEquals_fn equals)
 {
     uint32_t size = HH_HOP_RANGE;
     uint32_t i;
@@ -724,7 +725,7 @@ static void ut_ehhFini (struct ut_ehh *rt)
     os_free (rt->buckets);
 }
 
-struct ut_ehh *ut_ehhNew (size_t elemsz, uint32_t init_size, uint32_t (*hash) (const void *a), int (*equals) (const void *a, const void *b))
+struct ut_ehh *ut_ehhNew (size_t elemsz, uint32_t init_size, ut_hhHash_fn hash, ut_hhEquals_fn equals)
 {
     struct ut_ehh *hh = os_malloc (sizeof (*hh));
     ut_ehhInit (hh, elemsz, init_size, hash, equals);

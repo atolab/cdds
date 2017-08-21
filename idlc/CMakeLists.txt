@@ -49,7 +49,8 @@ add_custom_command(
     OUTPUT  "${IDLC_JAR}"
     COMMAND "${Maven_EXECUTABLE}"
     ARGS    "-q" "package"
-    DEPENDS "pom.xml" ${IDLC_G4_SOURCES} ${IDLC_JAVA_SOURCES} ${IDLC_ST_SOURCES})
+    DEPENDS "pom.xml" ${IDLC_G4_SOURCES} ${IDLC_JAVA_SOURCES} ${IDLC_ST_SOURCES}
+    COMMENT "Building JAR file ${IDLC_JAR}")
 
 add_custom_target(idlc ALL DEPENDS "${IDLC_JAR}")
 
@@ -79,10 +80,16 @@ function(IDLC_GENERATE _target)
       VERBATIM)
   endforeach()
 
+  add_custom_target(
+    "${_target}_idlc_generate"
+    DEPENDS "${_sources}" "${_headers}"
+  )
+
   set_source_files_properties(
     ${_sources} ${_headers} PROPERTIES GENERATED TRUE)
   add_library(${_target} INTERFACE)
   target_sources(${_target} INTERFACE ${_sources})
   target_include_directories(${_target} INTERFACE "${_dir}")
+  add_dependencies(${_target} "${_target}_idlc_generate")
 endfunction()
 

@@ -42,6 +42,7 @@
 #include "os_init.h"
 #include "os_process.h"
 #include "os_errno.h"
+#include "os_iter.h"
 
 
 #define OSPL_VERSION_STR "aap"

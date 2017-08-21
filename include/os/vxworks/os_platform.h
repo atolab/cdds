@@ -89,7 +89,6 @@ extern "C" {
 #define OS_VXWORKS 1
 #define OS_SOCKET_USE_FCNTL 0
 #define OS_SOCKET_USE_IOCTL 1
-#define OS_HAS_TSD_USING_THREAD_KEYWORD 1
 #define OS_FILESEPCHAR '/'
 #define OS_HAS_NO_SET_NAME_PRCTL 1 /* FIXME: Move to CMake */
 #define OS_HAS_UCONTEXT_T 1
