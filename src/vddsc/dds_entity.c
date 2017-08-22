@@ -198,8 +198,8 @@ dds_entity_cb_wait (_In_ dds_entity *e)
 _Check_return_ dds_entity_t
 dds_entity_init(
         _In_       dds_entity * e,
-        _When_(kind != DDS_KIND_PARTICIPANT, _At_(parent,_NotNull_))
-        _When_(kind == DDS_KIND_PARTICIPANT, _At_(parent,_Null_))
+        _When_(kind != DDS_KIND_PARTICIPANT, _Notnull_)
+        _When_(kind == DDS_KIND_PARTICIPANT, _Null_)
           _In_opt_ dds_entity * parent,
         _In_       dds_entity_kind_t kind,
         _In_opt_   dds_qos_t * qos,
