@@ -34,7 +34,7 @@ int main (int argc, char ** argv)
     DDS_ERR_CHECK (writer, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     /* Sleep to allow discovery of reader by writer and vice versa. */
-    dds_sleepfor (DDS_SECS (1));
+    dds_sleepfor (DDS_SECS (2));
     /* Sleeping isn't really recommended but is just added for simplicity.
      * See the documentation or other examples for alternatives. */
 
