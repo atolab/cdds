@@ -45,6 +45,20 @@ os_putenv(
     return result;
 }
 
+os_result
+os_setenv(
+    const char *name, const char *value)
+{
+    os_result result;
+
+    if (setenv(name, value, true) == 0) {
+      result = os_resultSuccess;
+    } else {
+      result = os_resultFail;
+    }
+    return result;
+}
+
 const char *
 os_fileSep(void)
 {

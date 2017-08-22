@@ -40,6 +40,15 @@ extern "C" {
 #define OS_REPORT(type,context,code,...) \
 (((type) >= os_reportVerbosity) ? os_report((type),(context),__FILE__,__LINE__,(code),__VA_ARGS__) : (void)0)
 
+
+#define OS_REPORT_DEBUG(context,code,...) OS_REPORT(OS_DEBUG,(context),(code),##__VA_ARGS__)
+#define OS_REPORT_INFO(context,code,...) OS_REPORT(OS_INFO,(context),(code),##__VA_ARGS__)
+#define OS_REPORT_WARNING(context,code,...) OS_REPORT(OS_WARNING,(context),(code),##__VA_ARGS__)
+#define OS_REPORT_ERROR(context,code,...) OS_REPORT(OS_ERROR,(context),(code),##__VA_ARGS__)
+#define OS_REPORT_CRITICAL(context,code,...) OS_REPORT(OS_CRITICAL,(context),(code),##__VA_ARGS__)
+#define OS_REPORT_FATAL(context,code,...) OS_REPORT(OS_FATAL,(context),(code),##__VA_ARGS__)
+#define OS_REPORT_REPAIRED(context,code,...) OS_REPORT(OS_REPAIRED,(context),(code),##__VA_ARGS__)
+
 #define OS_REPORT_STACK() \
 os_report_stack()
 
@@ -48,8 +57,6 @@ os_report_flush((condition), OS_FUNCTION, __FILE__, __LINE__)
 
 #define OS_REPORT_DUMPSTACK() \
 os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
-
-    typedef void * os_reportPlugin;
 
     /**
      * 'Base' of all ::os_report event data structures.
@@ -179,56 +186,6 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
     OSAPI_EXPORT void
     os_reportClearApiInfo(void);
 
-    OSAPI_EXPORT int32_t
-    os_reportRegisterPlugin(
-                            const char *library_file_name,
-                            const char *initialize_method_name,
-                            const char *argument,
-                            const char *report_method_name,
-                            const char *typedreport_method_name,
-                            const char *finalize_method_name,
-                            bool suppressDefaultLogs,
-                            os_reportPlugin *plugin);
-
-    typedef void *os_reportPlugin_context;
-
-    typedef int
-    (*os_reportPlugin_initialize)(
-    const char *argument,
-    os_reportPlugin_context *context);
-
-    typedef int
-    (*os_reportPlugin_report)(
-    os_reportPlugin_context context,
-    const char *report);
-
-    /**
-     * Function pointer type for a plugged in report method
-     * taking a typed report event
-     */
-    typedef int
-    (*os_reportPlugin_typedreport)(
-    os_reportPlugin_context context,
-    os_reportEvent report);
-
-    typedef int
-    (*os_reportPlugin_finalize)(
-    os_reportPlugin_context context);
-
-    OSAPI_EXPORT int32_t
-    os_reportInitPlugin(
-                        const char *argument,
-                        os_reportPlugin_initialize initFunction,
-                        os_reportPlugin_finalize finalizeFunction,
-                        os_reportPlugin_report reportFunction,
-                        os_reportPlugin_typedreport typedReportFunction,
-                        bool suppressDefaultLogs,
-                        os_reportPlugin *plugin);
-
-    OSAPI_EXPORT int32_t
-    os_reportUnregisterPlugin(
-                              os_reportPlugin plugin);
-
     OSAPI_EXPORT void
     os_reportDisplayLogLocations(void);
 
@@ -254,19 +211,8 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * The stack will be disabled again by the os_report_flush operation.
      */
     OSAPI_EXPORT void
-    os_report_stack(void);
-
-    /**
-     * The os_report_stack_open operation enables a report stack for the current thread.
-     * It initializes the report record with the file, line and the signature of the
-     * operation that called this operation.
-     * The stack will be disabled again by the os_report_flush operation.
-     */
-    OSAPI_EXPORT void
-    os_report_stack_open(
-                         const char *file,
-                         int lineno,
-                         const char *signature);
+    os_report_stack(
+                    void);
 
     /**
      * The os_report_stack_free operation frees all memory allocated by the current
@@ -360,13 +306,6 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
                         const char *context,
                         const char *file,
                         const int line);
-
-    /**
-     * The os_report_stack_size operation returns the number of messages in the report stack.
-     * This operation will return -1 when no stack is active.
-     */
-    OSAPI_EXPORT int32_t
-    os_report_stack_size(void);
 
     /**
      * The os_report_read operation returns the report message specified by a given index in the stack.

@@ -21,14 +21,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef INTEGRITY
-#include "os_log_cfg.h"
-#endif
-
 #define os_report_iserror(report) \
         (((report)->reportType >= OS_ERROR && (report)->code != 0))
-
-#define OS_REPORTPLUGINS_MAX    (10)
 
 #define OS_REPORT_TYPE_DEBUG     (1u)
 #define OS_REPORT_TYPE_INFO      (1u<<OS_INFO)
@@ -41,9 +35,9 @@
 #define OS_REPORT_TYPE_NONE      (1u<<OS_NONE)
 
 #define OS_REPORT_TYPE_FLAG(x)   (1u<<(x))
-#define OS_REPORT_ALWAYS(x)      ((x) & (OS_REPORT_TYPE_CRITICAL | OS_REPORT_TYPE_FATAL | OS_REPORT_TYPE_REPAIRED))
-#define OS_REPORT_DEPRECATED(x)  ((x) & OS_REPORT_TYPE_API_INFO)
-#define OS_REPORT_WARNING(x)     ((x) & OS_REPORT_TYPE_WARNING)
+#define OS_REPORT_IS_ALWAYS(x)      ((x) & (OS_REPORT_TYPE_CRITICAL | OS_REPORT_TYPE_FATAL | OS_REPORT_TYPE_REPAIRED))
+#define OS_REPORT_IS_DEPRECATED(x)  ((x) & OS_REPORT_TYPE_API_INFO)
+#define OS_REPORT_IS_WARNING(x)     ((x) & OS_REPORT_TYPE_WARNING)
 #define OS_REPORT_IS_ERROR(x)    ((x) & (OS_REPORT_TYPE_ERROR | OS_REPORT_TYPE_CRITICAL | OS_REPORT_TYPE_FATAL | OS_REPORT_TYPE_REPAIRED))
 
 typedef struct os_reportStack_s {
@@ -55,53 +49,20 @@ typedef struct os_reportStack_s {
     os_iter *reports;  /* os_reportEventV1 */
 } *os_reportStack;
 
-void os__report_append(os_reportStack _this, const os_reportEventV1 report);
+void os_report_append(os_reportStack _this, const os_reportEventV1 report);
 
-static int os__report_fprintf(FILE *file, const char *format, ...);
+static int os_report_fprintf(FILE *file, const char *format, ...);
 
-void os__report_free(os_reportEventV1 report);
-
-typedef struct os_reportPlugin_s {
-    os_reportPlugin_initialize initialize_symbol;
-    os_reportPlugin_report report_symbol;
-    /** Pointer to the function for a typed event report method */
-    os_reportPlugin_typedreport typedreport_symbol;
-    os_reportPlugin_finalize finalize_symbol;
-    os_reportPlugin_context plugin_context;
-    struct os_reportPlugin_s* pstNext;
-    struct os_reportPlugin_s* pstPrevious;
-} *os_reportPlugin_t;
+void os_report_free(os_reportEventV1 report);
 
 static FILE* error_log = NULL;
 static FILE* info_log = NULL;
 
-static bool doDefault = true;
 static os_mutex reportMutex;
 static os_mutex reportPluginMutex;
 
 static bool inited = false;
-
-/**
- * Count any plugins registered with an XML string Report method
- * This is only used in an optimization. The count is protected by
- * reportPluginMutex, But can be used outside protection if linked
- * list is not accessed unprotected .
- * (worst case a report is build and not reported because plugin is just
- * unregistered)
- */
-static uint32_t xmlReportPluginsCount = 0;
-
-static uint32_t typedReportPluginsCount = 0;
-
-/**
- * reportPluginAdmin contains pointer to first registered report plugin.
- * This is a linked list protected by reportPluginMutex.
- * If reportPluginAdmin is NULL, there are no registered plugins.
- * It is safe to check for NULL to see if we need to report data.
- * Using the linked list is only safe within locked reportPluginMutex.
- */
-static os_reportPlugin_t reportPluginAdmin = NULL;
-
+//
 /**
  * Process global verbosity level for OS_REPORT output. os_reportType
  * values >= this value will be written.
@@ -131,52 +92,18 @@ enum os_report_logType {
     OS_REPORT_ERROR
 };
 
-static char * os_report_defaultInfoFileName = "ospl-info.log";
-static char * os_report_defaultErrorFileName = "ospl-error.log";
-static const char os_env_logdir[] = "OSPL_LOGPATH";
-static const char os_env_infofile[] = "OSPL_INFOFILE";
-static const char os_env_errorfile[] = "OSPL_ERRORFILE";
-static const char os_env_verbosity[] = "OSPL_VERBOSITY";
-static const char os_env_append[] = "OSPL_LOGAPPEND";
-#ifdef VXWORKS_RTP
-static const char os_env_procname[] = "SPLICE_PROCNAME";
-#endif
-#if defined VXWORKS_RTP || defined _WRS_KERNEL
+static char * os_report_defaultInfoFileName = "vortex-info.log";
+static char * os_report_defaultErrorFileName = "vortex-error.log";
+static const char os_env_logdir[] = "VORTEX_LOGPATH";
+static const char os_env_infofile[] = "VORTEX_INFOFILE";
+static const char os_env_errorfile[] = "VORTEX_ERRORFILE";
+static const char os_env_verbosity[] = "VORTEX_VERBOSITY";
+static const char os_env_append[] = "VORTEX_LOGAPPEND";
+#if defined _WRS_KERNEL
 static const char os_default_logdir[] = "/tgtsvr";
 #else
 static const char os_default_logdir[] = ".";
 #endif
-
-
-static const char
-os__report_xml_head[] =
-        "<%s>\n"
-        "<DESCRIPTION>%.*s</DESCRIPTION>\n"
-        "<CONTEXT>%s</CONTEXT>\n"
-        "<FILE>%s</FILE>\n"
-        "<LINE>%d</LINE>\n"
-        "<CODE>%d</CODE>\n"
-        "<PROCESS>\n"
-        "<ID>%"PRIprocId"</ID>\n"
-        "<NAME>%s</NAME>\n"
-        "</PROCESS>\n"
-        "<THREAD>\n"
-        "<ID>%"PRIuMAX"</ID>\n"
-        "<NAME>%s</NAME>\n"
-        "</THREAD>\n"
-        "<VERSION>%s</VERSION>\n"
-        "<REVISION>%s %s</REVISION>\n";
-
-static const char
-os__report_xml_body[] =
-        "<DETAIL>\n"
-        "<REPORT>%s</REPORT>\n"
-        "<INTERNALS>%s/%d/%d</INTERNALS>\n"
-        "</DETAIL>\n";
-
-static const char
-os__report_xml_tail[] =
-        "</%s>";
 
 static const char
 os__report_version[] = OSPL_VERSION_STR;
@@ -198,8 +125,6 @@ os_reportSetApiInfo (
         int32_t line,
         int32_t code,
         const char *message);
-
-#if !defined(INTEGRITY)
 
 static FILE * open_socket (char *host, unsigned short port)
 {
@@ -232,7 +157,7 @@ err_connect:
     (void) close((int)sock); /* Type casting is done for the warning of possible loss of data for Parameter "sock" with the type of "os_socket" */
 err_socket:
     (void)os_strerror_r(os_getErrno(), msg, sizeof(msg));
-    os__report_fprintf(stderr, "%s: %s\n", errstr, msg);
+    os_report_fprintf(stderr, "%s: %s\n", errstr, msg);
 
     return NULL;
 }
@@ -247,11 +172,6 @@ os_open_file (char * file_name)
     int ret;
     size_t len;
     os_result res = os_resultSuccess;
-#ifdef VXWORKS_RTP
-    char serverfile[256];
-    char *proc;
-    char *ptr;
-#endif
 
     /* OSPL-4002: Only OSPL_INFOFILE and OSPL_ERRORFILE can specify a host:port
                   combination. Since OSPL_LOGPATH and OSPL_INFOFILE/
@@ -292,52 +212,13 @@ os_open_file (char * file_name)
             }
             os_free (dir);
 
-#ifdef VXWORKS_RTP
-            /* FIXME: It isn't pretty, but we must remain bug compatible! */
-            str = NULL;
-            ptr = os_index (file, '%');
-            if (ptr != NULL && *ptr == 's') {
-                proc = os_getenv (os_env_procname);
-                if (proc != NULL) {
-                    len = (strlen (file)-1) + strlen (proc); /* -"%s" +'\0' */
-                    str = os_malloc (len);
-                    if (str != NULL) {
-                        (void)snprintf (str, len, file, proc);
-                        file = str;
-                    } else {
-                        res = os_resultFail;
-                    }
-                }
-            }
-
-            if (res == os_resultSuccess) {
-                fmt = "%255[^:]:%hu:%255[^:]";
-                ret = sscanf (file, fmt, host, &port, serverfile);
-                if (ret != 3) {
-                    fmt = "%255[^:]:%hu";
-                    ret = sscanf (file, fmt, host, &port);
-                }
-
-                if (str != NULL) {
-                    os_free (str);
-                }
-            }
-#else
             fmt = "%255[^:]:%hu";
             ret = sscanf (file, fmt, host, &port);
-#endif
             file = NULL;
 
             if (res == os_resultSuccess) {
                 if (ret >= 2) {
                     logfile = open_socket (host, port);
-#ifdef VXWORKS_RTP
-                    if (logfile != NULL) {
-                        if (ret == 3) {
-                            os__report_fprintf (logfile, "FILENAME:%s\n", serverfile);
-                        }
-                    }
-#endif
                 } else {
                     logfile = fopen (file_name, "a");
                 }
@@ -348,7 +229,6 @@ os_open_file (char * file_name)
     return logfile;
 }
 
-#endif
 static void os_close_file (char * file_name, FILE *file)
 {
     if (strcmp(file_name, "<stderr>") != 0 && strcmp(file_name, "<stdout>") != 0)
@@ -410,7 +290,7 @@ os_reportInit(bool forceReInit)
         {
             if (os_reportSetVerbosity(envValue) == os_resultFail)
             {
-                OS_REPORT(OS_WARNING, "os_reportInit", 0,
+                OS_REPORT_WARNING("os_reportInit", 0,
                         "Cannot parse report verbosity %s value \"%s\","
                         " reporting verbosity remains %s", os_env_verbosity, envValue, os_reportTypeText[os_reportVerbosity]);
             }
@@ -422,7 +302,7 @@ os_reportInit(bool forceReInit)
             bool shouldAppend;
             if (os_configIsTrue(envValue, &shouldAppend) == os_resultFail)
             {
-                OS_REPORT(OS_WARNING, "os_reportInit", 0,
+                OS_REPORT_WARNING("os_reportInit", 0,
                         "Cannot parse report %s value \"%s\","
                         " reporting append mode unchanged", os_env_append, envValue);
             }
@@ -477,26 +357,7 @@ static bool os_report_is_local_file(char * file_name, char **new_name)
     char server_file[256];
     unsigned short port;
 
-#if defined VXWORKS_RTP
-    char *ptok;
-    char *splice_procname;
-    if ( file_name != NULL
-            && ((ptok = os_index( file_name, '%' ) ) != NULL)
-            && ptok[1] == 's'
-                    && ( splice_procname = os_getenv( os_env_procname ) ) != NULL )
-    {
-        *new_name = (char *)os_malloc( strlen( file_name )
-                + strlen( splice_procname )
-                -1 );
-        os_sprintf( *new_name, file_name, splice_procname );
-    }
-    else
-    {
-        *new_name = os_strdup(file_name);
-    }
-#else
     *new_name = file_name;
-#endif
     return ((sscanf (*new_name, "%255[^:]:%hu", host, &port) != 2
             && sscanf (*new_name, "%255[^:]:%hu:%255[^:]", host, &port, server_file) != 3) ? true : false);
 }
@@ -508,15 +369,9 @@ static char *os_report_createFileNormalize(char *file_path, char *file_dir, char
 
     len = snprintf(file_path, MAX_FILE_PATH, "%s/%s", file_dir, file_name);
     /* Note bug in glibc < 2.0.6 returns -1 for output truncated */
-    if ( len < MAX_FILE_PATH && len > -1 )
-    {
-#if defined VXWORKS_RTP
-        os_free (file_name);
-#endif
+    if ( len < MAX_FILE_PATH && len > -1 ) {
         return (os_fileNormalize(file_path));
-    }
-    else
-    {
+    } else {
         return (file_name);
     }
 }
@@ -581,22 +436,6 @@ os_report_file_path(char * default_file, char * override_variable, enum os_repor
         }
         os_free (full_file_path);
     }
-#if defined VXWORKS_RTP
-    if (override != NULL)
-    {
-        {
-            char * new_name = NULL;
-            if (os_report_is_local_file(file_name, &new_name))
-            {
-                return (os_report_createFileNormalize(file_path, file_dir, new_name));
-            }
-            else
-            {
-                return (new_name);
-            }
-        }
-    }
-#endif
     if (strcmp(file_name, "<stderr>") != 0 && strcmp(file_name, "<stdout>") != 0)
     {
         if (os_report_is_local_file(file_name, &file_name))
@@ -644,7 +483,6 @@ os_reportGetErrorFileName()
     /* file_name = os_report_file_path (os_procIsOpenSpliceService() ? "ospl-error.log" : "<stderr>", os_env_errorfile); */
     return file_name;
 }
-#if !defined(INTEGRITY)
 
 static FILE *
 os_open_info_file (void)
@@ -693,8 +531,6 @@ os_reportDisplayLogLocations()
     os_free (errorFileName);
 }
 
-#endif
-
 static void
 os_sectionReport(
         os_reportEventV1 event,
@@ -719,25 +555,18 @@ os_sectionReport(
 
     ostime = os_timeGet();
     os_mutexLock(&reportMutex);
-#ifdef INTEGRITY
-    os_logprintf
-#else
-    os__report_fprintf
-#endif
-    (log,
-     "----------------------------------------------------------------------------------------\n"
-     "Report      : %s\n"
-     "Internals   : %s/%s/%d/%d/%d.%09d\n",
-     event->description,
-     event->reportContext,
-     event->fileName,
-     event->lineNo,
-     event->code,
-     ostime.tv_sec,
-     ostime.tv_nsec);
-#ifndef INTEGRITY
+    os_report_fprintf(log,
+        "----------------------------------------------------------------------------------------\n"
+        "Report      : %s\n"
+        "Internals   : %s/%s/%d/%d/%d.%09d\n",
+        event->description,
+        event->reportContext,
+        event->fileName,
+        event->lineNo,
+        event->code,
+        ostime.tv_sec,
+        ostime.tv_nsec);
     fflush (log);
-#endif
     os_mutexUnlock(&reportMutex);
 }
 
@@ -782,59 +611,47 @@ os_headerReport(
 
     os_mutexLock(&reportMutex);
     if (useErrorLog) {
-#ifdef INTEGRITY
-        os_logprintf
-#else
-        os__report_fprintf
-#endif
-        (log,
-         "========================================================================================\n"
-         "Context     : %s\n"
-         "Date        : %s\n"
-         "Node        : %s\n"
-         "Process     : %s\n"
-         "Thread      : %s\n"
-         "Internals   : %s/%d/%s/%s/%s\n",
-         event->description,
-         date_time,
-         node,
-         event->processDesc,
-         event->threadDesc,
-         event->fileName,
-         event->lineNo,
-         OSPL_VERSION_STR,
-         OSPL_INNER_REV_STR,
-         OSPL_OUTER_REV_STR);
+        os_report_fprintf(log,
+            "========================================================================================\n"
+            "Context     : %s\n"
+            "Date        : %s\n"
+            "Node        : %s\n"
+            "Process     : %s\n"
+            "Thread      : %s\n"
+            "Internals   : %s/%d/%s/%s/%s\n",
+            event->description,
+            date_time,
+            node,
+            event->processDesc,
+            event->threadDesc,
+            event->fileName,
+            event->lineNo,
+            OSPL_VERSION_STR,
+            OSPL_INNER_REV_STR,
+            OSPL_OUTER_REV_STR);
     } else {
-#ifdef INTEGRITY
-        os_logprintf
-#else
-        os__report_fprintf
-#endif
-        (log,
-         "========================================================================================\n"
-         "Report      : %s\n"
-         "Context     : %s\n"
-         "Date        : %s\n"
-         "Node        : %s\n"
-         "Process     : %s\n"
-         "Thread      : %s\n"
-         "Internals   : %s/%d/%s/%s/%s\n",
-         os_reportTypeText[event->reportType],
-         event->description,
-         date_time,
-         node,
-         event->processDesc,
-         event->threadDesc,
-         event->fileName,
-         event->lineNo,
-         OSPL_VERSION_STR,
-         OSPL_INNER_REV_STR,
-         OSPL_OUTER_REV_STR);
+        os_report_fprintf(log,
+            "========================================================================================\n"
+            "Report      : %s\n"
+            "Context     : %s\n"
+            "Date        : %s\n"
+            "Node        : %s\n"
+            "Process     : %s\n"
+            "Thread      : %s\n"
+            "Internals   : %s/%d/%s/%s/%s\n",
+            os_reportTypeText[event->reportType],
+            event->description,
+            date_time,
+            node,
+            event->processDesc,
+            event->threadDesc,
+            event->fileName,
+            event->lineNo,
+            OSPL_VERSION_STR,
+            OSPL_INNER_REV_STR,
+            OSPL_OUTER_REV_STR);
     }
-#ifndef INTEGRITY
     fflush (log);
-#endif
     os_mutexUnlock(&reportMutex);
 }
 
@@ -889,38 +706,31 @@ os_defaultReport(
     }
 
     os_mutexLock(&reportMutex);
-#ifdef INTEGRITY
-    os_logprintf
-#else
-    os__report_fprintf
-#endif
-    (log,
-     "========================================================================================\n"
-     "Report      : %s\n"
-     "Date        : %s\n"
-     "Description : %s\n"
-     "Node        : %s\n"
-     "Process     : %s\n"
-     "Thread      : %s\n"
-     "Internals   : %s/%s/%s/%s/%s/%d/%d/%d.%09d\n",
-     os_reportTypeText[event->reportType],
-     date_time,
-     event->description,
-     node,
-     event->processDesc,
-     event->threadDesc,
-     OSPL_VERSION_STR,
-     OSPL_INNER_REV_STR,
-     OSPL_OUTER_REV_STR,
-     event->reportContext,
-     event->fileName,
-     event->lineNo,
-     event->code,
-     ostime.tv_sec,
-     ostime.tv_nsec);
-#ifndef INTEGRITY
+    os_report_fprintf (log,
+        "========================================================================================\n"
+        "Report      : %s\n"
+        "Date        : %s\n"
+        "Description : %s\n"
+        "Node        : %s\n"
+        "Process     : %s\n"
+        "Thread      : %s\n"
+        "Internals   : %s/%s/%s/%s/%s/%d/%d/%d.%09d\n",
+        os_reportTypeText[event->reportType],
+        date_time,
+        event->description,
+        node,
+        event->processDesc,
+        event->threadDesc,
+        OSPL_VERSION_STR,
+        OSPL_INNER_REV_STR,
+        OSPL_OUTER_REV_STR,
+        event->reportContext,
+        event->fileName,
+        event->lineNo,
+        event->code,
+        ostime.tv_sec,
+        ostime.tv_nsec);
     fflush (log);
-#endif
     os_mutexUnlock(&reportMutex);
 }
 
@@ -958,7 +768,6 @@ os_report_noargs(
 {
     char *file;
     char procid[256], thrid[64], tmp[2];
-    os_reportPlugin_t plugin;
     os_reportStack stack;
 
     struct os_reportEventV1_s report = { OS_REPORT_EVENT_V1, /* version */
@@ -971,12 +780,6 @@ os_report_noargs(
             NULL, /* threadDesc */
             NULL /* processDesc */
     };
-#if 0
-    /* OS_API_INFO label is kept for backwards compatibility. */
-    if (type == OS_API_INFO) {
-        type = OS_ERROR;
-    }
-#endif
 
     if (inited == false) {
         return;
@@ -995,123 +798,26 @@ os_report_noargs(
 
     /* Only figure out process and thread identities if the user requested an
        entry in the default log file or registered a typed report plugin. */
-    if ((doDefault) || (xmlReportPluginsCount > 0) || (typedReportPluginsCount > 0))
-    {
-        os_procNamePid (procid, sizeof (procid));
-        os_threadFigureIdentity (thrid, sizeof (thrid));
+    os_procNamePid (procid, sizeof (procid));
+    os_threadFigureIdentity (thrid, sizeof (thrid));
 
-        report.reportType = type;
-        report.reportContext = (char *)context;
-        report.fileName = (char *)file;
-        report.lineNo = line;
-        report.code = code;
-        report.description = (char *)message;
-        report.threadDesc = thrid;
-        report.processDesc = procid;
-    }
+    report.reportType = type;
+    report.reportContext = (char *)context;
+    report.fileName = (char *)file;
+    report.lineNo = line;
+    report.code = code;
+    report.description = (char *)message;
+    report.threadDesc = thrid;
+    report.processDesc = procid;
 
     stack = (os_reportStack)os_threadMemGet(OS_THREAD_REPORT_STACK);
     if (stack && stack->count) {
         if (report.reportType != OS_NONE) {
-            os__report_append (stack, &report);
+            os_report_append (stack, &report);
         }
 
     } else {
-        if (doDefault) {
-            os_defaultReport (&report);
-        }
-
-        if (reportPluginAdmin != NULL) {
-            char buf[OS_REPORT_BUFLEN], *ptr = NULL;
-            size_t len = 0;
-            ssize_t off, cnt = 0;
-
-            if (xmlReportPluginsCount > 0) {
-                bool again;
-                char proc[256], thr[64];
-                os_procId pid;
-                uintmax_t tid;
-
-                pid = os_procIdSelf ();
-                tid = os_threadIdToInteger (os_threadIdSelf ());
-
-                os_procName (proc, sizeof (proc));
-                os_threadGetThreadName (thr, sizeof (thr));
-
-                ptr = buf;
-                len = sizeof(buf);
-
-                /* Try using the fixed length buffer first. If it's not
-                   sufficiently large enough, dynamically allocate a block of
-                   memory to hold the XML document. */
-                do {
-                    cnt = (ssize_t)snprintf(
-                            ptr,
-                            len,
-                            os__report_xml_head,
-                            os_reportTypeText[type],
-                            OS_REPORT_BUFLEN,
-                            message,
-                            context,
-                            file,
-                            line,
-                            code,
-                            pid, proc,
-                            tid, thr,
-                            os__report_version,
-                            os__report_inner_revision, os__report_outer_revision);
-                    again = false;
-
-                    if (cnt < 0) {
-                        if (ptr != buf) {
-                            os_free (ptr);
-                        }
-                        ptr = NULL;
-                    } else {
-                        off = cnt;
-                        cnt += 1;
-                        cnt += (ssize_t)snprintf(
-                                tmp,
-                                sizeof(tmp),
-                                os__report_xml_tail,
-                                os_reportTypeText[type]);
-                        if ((size_t)cnt > len) {
-                            assert (ptr == buf);
-                            ptr = os_malloc ((size_t)cnt);
-                            if (ptr != NULL) {
-                                len = (size_t)cnt;
-                                again = true;
-                            }
-                        } else {
-                            (void)snprintf(
-                                    ptr + off,
-                                    len - (size_t) off,
-                                    os__report_xml_tail,
-                                    os_reportTypeText[type]);
-                        }
-                    }
-                } while (again == true);
-            }
-            os_mutexLock(&reportPluginMutex);
-            plugin = reportPluginAdmin;
-            while (plugin != NULL) {
-                if (plugin->report_symbol != NULL && ptr != NULL) {
-                    plugin->report_symbol (
-                            plugin->plugin_context, ptr);
-                }
-
-                if (plugin->typedreport_symbol != NULL) {
-                    plugin->typedreport_symbol (
-                            plugin->plugin_context, (os_reportEvent) &report);
-                }
-                plugin = plugin->pstNext;
-            }
-            os_mutexUnlock(&reportPluginMutex);
-            /* Cleanup if memory was allocated */
-            if (ptr != buf) {
-                os_free (ptr);
-            }
-        }
+        os_defaultReport (&report);
 
         if (os_report_iserror (&report)) {
             os_reportSetApiInfo (context, file, line, code, message);
@@ -1239,235 +945,6 @@ os_reportClearApiInfo(void)
     }
 }
 
-int32_t
-os_reportRegisterPlugin(
-        const char *library_file_name,
-        const char *initialize_method_name,
-        const char *argument,
-        const char *report_method_name,
-        const char *typedreport_method_name,
-        const char *finalize_method_name,
-        bool suppressDefaultLogs,
-        os_reportPlugin *plugin)
-{
-#ifdef INCLUDE_PLUGGABLE_REPORTING
-    os_library libraryHandle;
-    os_libraryAttr attr;
-    bool error = false;
-    int32_t initResult;
-
-    os_reportPlugin_initialize initFunction;
-    os_reportPlugin_finalize finalizeFunction;
-    os_reportPlugin_report reportFunction = NULL;
-    os_reportPlugin_typedreport typedReportFunction = NULL;
-
-    os_libraryAttrInit(&attr);
-    libraryHandle = NULL;
-    if (library_file_name != NULL )
-    {
-        libraryHandle = os_libraryOpen (library_file_name, &attr);
-    }
-    if (libraryHandle == NULL)
-    {
-        OS_REPORT (OS_ERROR, "os_reportRegisterPlugin", 0,
-                "Unable to load library: %s", library_file_name);
-        error = true;
-    }
-
-    if (!error && typedreport_method_name == NULL && report_method_name == NULL)
-    {
-        OS_REPORT (OS_ERROR, "os_reportRegisterPlugin", 0,
-                "At least one of TypedReport or Report symbole must be defined");
-
-        error = true;
-    }
-
-    if (!error)
-    {
-        initFunction =  (os_reportPlugin_initialize)os_fptr(os_libraryGetSymbol (libraryHandle, initialize_method_name));
-
-        if (initFunction == NULL)
-        {
-            OS_REPORT (OS_ERROR, "os_reportRegisterPlugin", 0,
-                    "Unable to resolve report intialize function: %s", initialize_method_name);
-
-            error = true;
-        }
-    }
-
-    if (!error)
-    {
-        finalizeFunction = (os_reportPlugin_finalize)os_fptr(os_libraryGetSymbol (libraryHandle, finalize_method_name));
-
-        if (finalizeFunction == NULL)
-        {
-            OS_REPORT (OS_ERROR, "os_reportRegisterPlugin", 0,
-                    "Unable to resolve report finalize function: %s", finalize_method_name);
-
-            error = true;
-        }
-    }
-
-    if (!error )
-    {
-        if (report_method_name != NULL)
-        {
-            reportFunction = (os_reportPlugin_report)os_fptr(os_libraryGetSymbol (libraryHandle, report_method_name));
-
-            if (reportFunction == NULL)
-            {
-                OS_REPORT (OS_ERROR, "os_reportRegisterPlugin", 0,
-                        "Unable to resolve report Report function: %s", report_method_name);
-
-                error = true;
-            }
-        }
-
-        if (typedreport_method_name != NULL)
-        {
-            typedReportFunction = (os_reportPlugin_typedreport)os_fptr(os_libraryGetSymbol (libraryHandle, typedreport_method_name));
-
-            if (typedReportFunction == NULL)
-            {
-                OS_REPORT (OS_ERROR, "os_reportRegisterPlugin", 0,
-                        "Unable to resolve report TypedReport function: %s", typedreport_method_name);
-
-                error = true;
-            }
-        }
-    }
-
-    if (!error)
-    {
-        initResult = os_reportInitPlugin(argument,
-                initFunction,
-                finalizeFunction,
-                reportFunction,
-                typedReportFunction,
-                suppressDefaultLogs,
-                plugin);
-        if (initResult)
-        {
-            OS_REPORT (OS_ERROR, "os_reportRegisterPlugin", 0,
-                    "Plug-in initialization method failed : %s", initialize_method_name);
-        }
-        else
-        {
-            return 0;
-        }
-    }
-
-    OS_REPORT (OS_WARNING, "os_reportRegisterPlugin", 0,
-            "Failed to register report plugin : %s", library_file_name);
-
-    return -1;
-#else
-    if (library_file_name != NULL ) {
-        OS_REPORT(OS_ERROR, "os_reportRegisterPlugin", 0, "Unable to register report plugin: %s because \
-                   product was not built with INCLUDE_PLUGGABLE_REPORTING enabled", library_file_name);
-    } else {
-        OS_REPORT(OS_ERROR, "os_reportRegisterPlugin", 0, "Unable to register report plugin because \
-                 product was not built with INCLUDE_PLUGGABLE_REPORTING enabled");
-    }
-    (void)library_file_name;
-    (void)initialize_method_name;
-    (void)argument;
-    (void)report_method_name;
-    (void)typedreport_method_name;
-    (void)finalize_method_name;
-    (void)suppressDefaultLogs;
-    (void)plugin;
-    return -1;
-#endif
-}
-
-int32_t
-os_reportInitPlugin(
-        const char *argument,
-        os_reportPlugin_initialize initFunction,
-        os_reportPlugin_finalize finalizeFunction,
-        os_reportPlugin_report reportFunction,
-        os_reportPlugin_typedreport typedReportFunction,
-        bool suppressDefaultLogs,
-        os_reportPlugin *plugin)
-{
-#ifdef INCLUDE_PLUGGABLE_REPORTING
-    os_reportPlugin_context context;
-    os_reportPlugin_t rplugin;
-    int osr;
-
-    osr = initFunction (argument, &context);
-
-    if (osr != 0)
-    {
-        OS_REPORT (OS_ERROR, "os_reportInitPlugin", 0,
-                "Initialize report plugin failed : Return code %d\n", osr);
-        return -1;
-    }
-
-    rplugin = os_malloc(sizeof *rplugin);
-    rplugin->initialize_symbol = initFunction;
-    rplugin->report_symbol = reportFunction;
-    rplugin->typedreport_symbol = typedReportFunction;
-    rplugin->finalize_symbol = finalizeFunction;
-    rplugin->plugin_context = context;
-
-    *plugin = rplugin;
-
-    if (suppressDefaultLogs) {
-        doDefault = false;
-    }
-
-    os_reportPluginAddToAdministration(rplugin);
-    return 0;
-#else
-    (void)argument;
-    (void)initFunction;
-    (void)finalizeFunction;
-    (void)reportFunction;
-    (void)typedReportFunction;
-    (void)suppressDefaultLogs;
-    (void)plugin;
-    return -1;
-#endif
-}
-
-int32_t
-os_reportUnregisterPlugin(
-        os_reportPlugin plugin)
-{
-#ifdef INCLUDE_PLUGGABLE_REPORTING
-    os_reportPlugin_t rplugin;
-    os_reportPlugin_finalize finalize_symbol = NULL;
-    os_reportPlugin_context plugin_context = NULL;
-    int osr;
-
-    rplugin = (os_reportPlugin_t)plugin;
-    finalize_symbol = rplugin->finalize_symbol;
-    plugin_context = rplugin->plugin_context;
-
-    os_reportPluginRemoveFromAdministration(rplugin);
-    os_free(rplugin);
-    rplugin = NULL;
-    if (finalize_symbol) {
-        osr = finalize_symbol(plugin_context);
-        if (osr != 0){
-            OS_REPORT (OS_ERROR,
-                    "os_reportUnregisterPlugin", 0,
-                    "Finalize report plugin failed : Return code %d\n",
-                    osr);
-            return -1;
-        }
-    }
-    return 0;
-#else
-    (void)plugin;
-    return -1;
-#endif
-}
-
-
-
 /**
  * Overrides the current minimum output level to be reported from
  * this process.
@@ -1482,15 +959,11 @@ os_reportSetVerbosity(
         const char* newVerbosity)
 {
     long verbosityInt;
-    os_result result;
-
-    result = os_resultFail;
+    os_result result = os_resultFail;
     verbosityInt = strtol(newVerbosity, NULL, 0);
 
     os_reportInit(false);
-    if (verbosityInt == 0
-            && strcmp("0", newVerbosity)
-    )
+    if (verbosityInt == 0 && strcmp("0", newVerbosity))
     {
         /* Conversion from int failed. See if it's one of the string forms. */
         while (verbosityInt < (long) (sizeof(os_reportTypeText) / sizeof(os_reportTypeText[0])))
@@ -1528,19 +1001,17 @@ os_reportRemoveStaleLogs()
     os_reportInit(false);
 
     if (!alreadyDeleted) {
-        /* Only a single process or spliced (as 1st process) is allowed to
+        /* TODO: Only a single process or spliced (as 1st process) is allowed to
          * delete the log files. */
-        if (/* DISABLES CODE */ (0)) { // os_procIsOpenSpliceDomainDaemon() || os_serviceGetSingleProcess()) {
-            /* Remove ospl-info.log and ospl-error.log.
-             * Ignore the result because it is possible that they don't exist yet. */
-            name = os_reportGetInfoFileName();
-            (void)os_remove(name);
-            os_free(name);
-            name = os_reportGetErrorFileName();
-            (void)os_remove(name);
-            os_free(name);
-            alreadyDeleted = true;
-        }
+        /* Remove ospl-info.log and ospl-error.log.
+         * Ignore the result because it is possible that they don't exist yet. */
+        name = os_reportGetInfoFileName();
+        (void)os_remove(name);
+        os_free(name);
+        name = os_reportGetErrorFileName();
+        (void)os_remove(name);
+        os_free(name);
+        alreadyDeleted = true;
     }
 }
 
@@ -1567,7 +1038,7 @@ os_report_stack()
             _this->signature = NULL;
             _this->reports = os_iterNew();
         } else {
-            OS_REPORT(OS_ERROR, "os_report_stack", 0,
+            OS_REPORT_ERROR("os_report_stack", 0,
                     "Failed to initialize report stack (could not allocate thread-specific memory)");
         }
     } else {
@@ -1579,40 +1050,6 @@ os_report_stack()
         }
         _this->count++;
 
-    }
-}
-
-void
-os_report_stack_open(
-        const char *file,
-        int lineno,
-        const char *signature)
-{
-    os_reportStack _this;
-
-    _this = (os_reportStack)os_threadMemGet(OS_THREAD_REPORT_STACK);
-    if (!_this) {
-        /* Report stack does not exist yet, so create it */
-        _this = os_threadMemMalloc(OS_THREAD_REPORT_STACK, sizeof(struct os_reportStack_s));
-        if (_this) {
-            _this->count = 1;
-            _this->typeset = 0;
-            _this->file = file;
-            _this->lineno = lineno;
-            _this->signature = signature;
-            _this->reports = os_iterNew();
-        } else {
-            OS_REPORT(OS_ERROR, "os_report_stack", 0,
-                    "Failed to initialize report stack (could not allocate thread-specific memory)");
-        }
-    } else {
-        /* Use previously created report stack */
-        if (_this->count == 0) {
-            _this->file = file;
-            _this->lineno = lineno;
-            _this->signature = signature;
-        }
-        _this->count++;
     }
 }
 
@@ -1646,31 +1083,11 @@ os_report_stack_free(
     _this = (os_reportStack)os_threadMemGet(OS_THREAD_REPORT_STACK);
     if (_this) {
         while((report = os_iterTake(_this->reports, -1))) {
-            os__report_free(report);
+            os_report_free(report);
         }
         os_iterFree(_this->reports, NULL);
         os_threadMemFree(OS_THREAD_REPORT_STACK);
     }
-}
-
-static void
-os__report_stack_event_length (
-        _Inout_ void *object,
-        _Inout_opt_ void *argument)
-{
-    char tmp[2];
-    os_reportEventV1 event;
-
-    assert (object != NULL);
-    assert (argument != NULL);
-
-    event = (os_reportEventV1)object;
-    *((size_t *)argument) +=
-            sizeof (os__report_xml_body) +
-            strlen (event->description) +
-            strlen (event->fileName) +
-            (size_t)snprintf (tmp, sizeof(tmp), "%d", event->lineNo) +
-            (size_t)snprintf (tmp, sizeof(tmp), "%d", event->code);
 }
 
 struct os__reportBuffer {
@@ -1680,63 +1097,7 @@ struct os__reportBuffer {
 };
 
 static void
-os__report_stack_event_print (
-        void *object,
-        void *argument)
-{
-    os_reportEventV1 event;
-    struct os__reportBuffer *buf;
-    size_t len;
-
-    assert (object != NULL);
-    assert (argument != NULL);
-
-    event = (os_reportEventV1)object;
-    buf = (struct os__reportBuffer *)argument;
-
-    len = (size_t)snprintf (
-            buf->str + buf->off,
-            buf->len - buf->off,
-            os__report_xml_body,
-            event->description,
-            event->fileName,
-            event->lineNo,
-            event->code);
-
-    assert (len <= (buf->len - buf->off));
-
-    buf->off += len;
-}
-
-#if 0
-static os_reportType
-os__report_stack_report_type(
-        os_reportStack _this)
-{
-    os_reportType reportType;
-
-    if (_this->typeset & OS_REPORT_TYPE_REPAIRED) {
-        reportType = OS_REPAIRED;
-    } else if (_this->typeset & OS_REPORT_TYPE_FATAL) {
-        reportType = OS_FATAL;
-    } else if (_this->typeset & OS_REPORT_TYPE_CRITICAL) {
-        reportType = OS_CRITICAL;
-    } else if (_this->typeset & OS_REPORT_TYPE_ERROR) {
-        reportType = OS_ERROR;
-    } else if (_this->typeset & OS_REPORT_TYPE_API_INFO) {
-        reportType = OS_API_INFO;
-    } else if (_this->typeset & OS_REPORT_TYPE_WARNING) {
-        reportType = OS_WARNING;
-    } else if (_this->typeset & OS_REPORT_TYPE_INFO) {
-        reportType = OS_INFO;
-    }
-
-    return reportType;
-}
-#endif
-
-static void
-os__report_stack_unwind(
+os_report_stack_unwind(
         os_reportStack _this,
         bool valid,
         const char *context,
@@ -1751,16 +1112,15 @@ os__report_stack_unwind(
     char *file;
     char tmp[2];
     int32_t code = 0;
-    os_reportPlugin_t plugin;
     bool update = true;
     os_reportType filter = OS_NONE;
     bool useErrorLog;
     os_reportType reportType = OS_ERROR;
 
     if (!valid) {
-        if (OS_REPORT_ALWAYS(_this->typeset)) {
+        if (OS_REPORT_IS_ALWAYS(_this->typeset)) {
             valid = true;
-        } else if (OS_REPORT_DEPRECATED(_this->typeset)) {
+        } else if (OS_REPORT_IS_DEPRECATED(_this->typeset)) {
             filter = OS_API_INFO;
             reportType = OS_API_INFO;
         } else {
@@ -1774,7 +1134,7 @@ os__report_stack_unwind(
                     if (report->reportType == filter) {
                         (void)os_iterAppend(tempList, report);
                     } else {
-                        os__report_free(report);
+                        os_report_free(report);
                     }
                 }
                 while ((report = os_iterTake(tempList, -1))) {
@@ -1813,70 +1173,19 @@ os__report_stack_unwind(
         os_threadFigureIdentity (thrid, sizeof (thrid));
         os_threadGetThreadName (thr, sizeof (thr));
 
-        if (reportPluginAdmin != NULL && xmlReportPluginsCount > 0) {
-            buf.len = sizeof (os__report_xml_head) +
-                    sizeof (os__report_xml_tail) +
-                    sizeof (description) +
-                    (size_t)(strlen (os_reportTypeText[reportType]) * 2) +
-                    strlen (context) +
-                    strlen (file) +
-                    (size_t)snprintf (tmp, sizeof(tmp), "%d", line) +
-                    (size_t)snprintf (tmp, sizeof(tmp), "%d", code) +
-                    (size_t)snprintf (tmp, sizeof(tmp), "%"PRIprocId, pid) +
-                    strlen (proc) +
-                    (size_t)snprintf (tmp, sizeof(tmp), "%"PRIuMAX, tid) +
-                    strlen (thr) +
-                    strlen (os__report_version) +
-                    strlen (os__report_inner_revision) +
-                    strlen (os__report_outer_revision);
+        header.reportType = reportType;
+        header.description = (char *)context;
+        header.processDesc = procid;
+        header.threadDesc = thrid;
+        header.fileName = file;
+        header.lineNo = line;
 
-            os_iterWalk (
-                    _this->reports, &os__report_stack_event_length, &buf.len);
-
-            buf.str = (char *)os_malloc(buf.len);
-            if (buf.str != NULL) {
-                buf.off = (size_t)snprintf (
-                        buf.str,
-                        buf.len,
-                        os__report_xml_head,
-                        os_reportTypeText[reportType],
-                        OS_REPORT_BUFLEN,
-                        description,
-                        context,
-                        file,
-                        line,
-                        code,
-                        pid, proc,
-                        tid, thr,
-                        os__report_version,
-                        os__report_inner_revision, os__report_outer_revision);
-
-                os_iterWalk (
-                        _this->reports, &os__report_stack_event_print, &buf);
-
-                buf.off = (size_t)snprintf (
-                        buf.str + buf.off,
-                        buf.len - buf.off,
-                        os__report_xml_tail,
-                        os_reportTypeText[reportType]);
-            }
-        }
-
-        if (doDefault) {
-            header.reportType = reportType;
-            header.description = (char *)context;
-            header.processDesc = procid;
-            header.threadDesc = thrid;
-            header.fileName = file;
-            header.lineNo = line;
-
-            os_headerReport (&header, useErrorLog);
-        }
+        os_headerReport (&header, useErrorLog);
     }
 
     while ((report = os_iterTake(_this->reports, -1))) {
         if (valid) {
-            if (update == true && os_report_iserror (report)) {
+            if (update && os_report_iserror (report)) {
                 os_reportSetApiInfo (
                         report->reportContext,
                         report->fileName,
@@ -1885,38 +1194,11 @@ os__report_stack_unwind(
                         report->description);
                 update = false;
             }
-
-            if (doDefault) {
-                os_sectionReport (report, useErrorLog);
-            }
-            if (reportPluginAdmin != NULL) {
-                os_mutexLock(&reportPluginMutex);
-                plugin = reportPluginAdmin;
-                while (plugin != NULL) {
-                    if (plugin->typedreport_symbol != NULL) {
-                        plugin->typedreport_symbol (
-                                plugin->plugin_context, (os_reportEvent) report);
-                    }
-                    plugin = plugin->pstNext;
-                }
-                os_mutexUnlock(&reportPluginMutex);
-            }
+            os_sectionReport (report, useErrorLog);
         }
-        os__report_free(report);
+        os_report_free(report);
     }
 
-    if (valid && (reportPluginAdmin != NULL)) {
-        os_mutexLock(&reportPluginMutex);
-        plugin = reportPluginAdmin;
-        while (plugin != NULL) {
-            if ((plugin->report_symbol != NULL) && (buf.str != NULL)) {
-                plugin->report_symbol (
-                        plugin->plugin_context, buf.str);
-            }
-            plugin = plugin->pstNext;
-        }
-        os_mutexUnlock(&reportPluginMutex);
-    }
     os_free (buf.str);
 }
 
@@ -1933,7 +1215,7 @@ os_report_dumpStack(
     }
     _this = os_threadMemGet(OS_THREAD_REPORT_STACK);
     if ((_this) && (_this->count > 0)) {
-        os__report_stack_unwind(_this, true, context, path, line);
+        os_report_stack_unwind(_this, true, context, path, line);
     }
 }
 
@@ -1945,9 +1227,9 @@ os_report_flush_required(void)
 
     _this = os_threadMemGet(OS_THREAD_REPORT_STACK);
     if (_this) {
-        if (OS_REPORT_ALWAYS(_this->typeset)     ||
-                OS_REPORT_WARNING(_this->typeset)    ||
-                OS_REPORT_DEPRECATED(_this->typeset)) {
+        if (OS_REPORT_IS_ALWAYS(_this->typeset)     ||
+                OS_REPORT_IS_WARNING(_this->typeset)    ||
+                OS_REPORT_IS_DEPRECATED(_this->typeset)) {
             flush = true;
         }
     }
@@ -1970,7 +1252,7 @@ os_report_flush(
     _this = os_threadMemGet(OS_THREAD_REPORT_STACK);
     if ((_this) && (_this->count)) {
         if (_this->count == 1) {
-            os__report_stack_unwind(_this, valid, context, path, line);
+            os_report_stack_unwind(_this, valid, context, path, line);
             _this->file = NULL;
             _this->signature = NULL;
             _this->lineno = 0;
@@ -1998,7 +1280,7 @@ os_report_flush_context(
             if (context == NULL) {
                 context = _this->signature;
             }
-            os__report_stack_unwind(_this, valid, context, _this->file, _this->lineno);
+            os_report_stack_unwind(_this, valid, context, _this->file, _this->lineno);
             _this->file = NULL;
             _this->signature = NULL;
             _this->lineno = 0;
@@ -2025,7 +1307,7 @@ os_report_flush_context_unconditional(
         if (context == NULL) {
             context = _this->signature;
         }
-        os__report_stack_unwind(_this, true, context, _this->file, _this->lineno);
+        os_report_stack_unwind(_this, true, context, _this->file, _this->lineno);
         _this->file = NULL;
         _this->signature = NULL;
         _this->lineno = 0;
@@ -2044,25 +1326,12 @@ os_report_flush_unconditional(
 
     _this = os_threadMemGet(OS_THREAD_REPORT_STACK);
     if ((_this) && (_this->count)) {
-        os__report_stack_unwind(_this, valid, context, path, line);
+        os_report_stack_unwind(_this, valid, context, path, line);
         _this->file = NULL;
         _this->signature = NULL;
         _this->lineno = 0;
         _this->count = 0;
     }
-}
-
-int32_t
-os_report_stack_size()
-{
-    os_reportStack _this;
-    int32_t result = -1; /* -1 means disabled */
-
-    _this = os_threadMemGet(OS_THREAD_REPORT_STACK);
-    if (_this && _this->count) {
-        result = (int32_t) os_iterLength(_this->reports);
-    }
-    return result;
 }
 
 os_reportEventV1
@@ -2080,7 +1349,7 @@ os_report_read(
             report = (os_reportEventV1)os_iterObject(_this->reports, (uint32_t) index);
         }
     } else {
-        OS_REPORT(OS_ERROR, "os_report_read", 0,
+        OS_REPORT_ERROR("os_report_read", 0,
                 "Failed to retrieve report administration from thread-specific memory");
     }
     return report;
@@ -2089,7 +1358,7 @@ os_report_read(
 #define OS__STRDUP(str) (str != NULL ? os_strdup(str) : os_strdup("NULL"))
 
 void
-os__report_append(
+os_report_append(
         os_reportStack _this,
         const os_reportEventV1 report)
 {
@@ -2110,13 +1379,13 @@ os__report_append(
         _this->typeset |= OS_REPORT_TYPE_FLAG(report->reportType);
         os_iterAppend(_this->reports, copy);
     } else {
-        os__report_fprintf(stderr, "Failed to allocate %d bytes for log report!", (int)sizeof(*copy));
-        os__report_fprintf(stderr, "Report: %s\n", report->description);
+        os_report_fprintf(stderr, "Failed to allocate %d bytes for log report!", (int)sizeof(*copy));
+        os_report_fprintf(stderr, "Report: %s\n", report->description);
     }
 }
 
 void
-os__report_free(os_reportEventV1 report)
+os_report_free(os_reportEventV1 report)
 {
     os_free(report->description);
     os_free(report->fileName);
@@ -2127,7 +1396,7 @@ os__report_free(os_reportEventV1 report)
 }
 
 static int
-os__report_fprintf(FILE *file,
+os_report_fprintf(FILE *file,
         const char *format,
         ...)
 {
