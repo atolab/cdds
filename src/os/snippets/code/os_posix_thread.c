@@ -65,13 +65,13 @@ os_threadMemInit (
     if (pthreadMemArray != NULL) {
         memset (pthreadMemArray, 0, sizeof(void *) * OS_THREAD_MEM_ARRAY_SIZE);
         if (pthread_setspecific (os_threadMemKey, pthreadMemArray) == EINVAL) {
-            OS_REPORT_ERROR("os_threadMemInit", 4,
+            OS_ERROR("os_threadMemInit", 4,
                          "pthread_setspecific failed with error EINVAL (%d), "
                          "invalid threadMemKey value", EINVAL);
             os_free(pthreadMemArray);
         }
     } else {
-        OS_REPORT_ERROR("os_threadMemInit", 3, "Out of heap memory");
+        OS_ERROR("os_threadMemInit", 3, "Out of heap memory");
     }
 }
 
@@ -106,7 +106,7 @@ os_threadMemExit(
         os_free (pthreadMemArray);
         pthreadMemArray = NULL;
         if (pthread_setspecific (os_threadMemKey, pthreadMemArray) == EINVAL) {
-            OS_REPORT_ERROR("os_threadMemExit", 4, "pthread_setspecific failed with error %d", EINVAL);
+            OS_ERROR("os_threadMemExit", 4, "pthread_setspecific failed with error %d", EINVAL);
         }
     }
 }
@@ -165,7 +165,7 @@ os_startRoutineWrapper (
 
     /* store the thread name with the thread via thread specific data; failure isn't  */
     if (pthread_setspecific (os_threadNameKey, context->threadName) == EINVAL) {
-        OS_REPORT_WARNING("os_startRoutineWrapper", 0,
+        OS_WARNING("os_startRoutineWrapper", 0,
                      "pthread_setspecific failed with error EINVAL (%d), "
                      "invalid os_threadNameKey value", EINVAL);
     }
@@ -276,21 +276,21 @@ os_threadCreate (
              if (result != 0) {
                 char errmsg[64];
                 (void)os_strerror_r(result, errmsg, sizeof(errmsg));
-                OS_REPORT_WARNING("os_threadCreate", 2,
+                OS_WARNING("os_threadCreate", 2,
                              "pthread_attr_setschedpolicy failed for SCHED_FIFO with "\
                              "error %d (%s) for thread '%s', reverting to SCHED_OTHER.",
                              result, errmsg, name);
 
                 result = pthread_attr_setschedpolicy (&attr, SCHED_OTHER);
                 if (result != 0) {
-                   OS_REPORT_WARNING("os_threadCreate", 2, "pthread_attr_setschedpolicy failed with error %d (%s)", result, name);
+                   OS_WARNING("os_threadCreate", 2, "pthread_attr_setschedpolicy failed with error %d (%s)", result, name);
                 }
              }
           } else {
              result = pthread_attr_setschedpolicy (&attr, SCHED_OTHER);
 
              if (result != 0) {
-                OS_REPORT_WARNING("os_threadCreate", 2,
+                OS_WARNING("os_threadCreate", 2,
                              "pthread_attr_setschedpolicy failed with error %d (%s)",
                              result, name);
              }
@@ -299,7 +299,7 @@ os_threadCreate (
 
           if ((tattr.schedPriority < sched_get_priority_min(policy)) ||
               (tattr.schedPriority > sched_get_priority_max(policy))) {
-             OS_REPORT_WARNING("os_threadCreate", 2,
+             OS_WARNING("os_threadCreate", 2,
                           "scheduling priority outside valid range for the policy "\
                           "reverted to valid value (%s)", name);
              sched_param.sched_priority = (sched_get_priority_min(policy) +
@@ -317,7 +317,7 @@ os_threadCreate (
           /* start the thread */
           result = pthread_attr_setschedparam (&attr, &sched_param);
           if (result != 0) {
-             OS_REPORT_WARNING("os_threadCreate", 2,
+             OS_WARNING("os_threadCreate", 2,
                           "pthread_attr_setschedparam failed with error %d (%s)",
                           result, name);
           }
@@ -330,7 +330,7 @@ os_threadCreate (
               */
              if((create_ret == EPERM) && (tattr.schedClass == OS_SCHED_REALTIME))
              {
-                OS_REPORT_WARNING("os_threadCreate", 2,
+                OS_WARNING("os_threadCreate", 2,
                              "pthread_create failed with SCHED_FIFO "     \
                              "for thread '%s', reverting to SCHED_OTHER.",
                              name);
@@ -340,7 +340,7 @@ os_threadCreate (
                 if ((tattr.schedPriority < sched_get_priority_min(policy)) ||
                     (tattr.schedPriority > sched_get_priority_max(policy)))
                 {
-                   OS_REPORT_WARNING("os_threadCreate", 2,
+                   OS_WARNING("os_threadCreate", 2,
                                 "scheduling priority outside valid range for the " \
                                 "policy reverted to valid value (%s)", name);
                    sched_param.sched_priority =
@@ -352,7 +352,7 @@ os_threadCreate (
 
                 result = pthread_attr_setschedparam (&attr, &sched_param);
                 if (result != 0) {
-                   OS_REPORT_WARNING("os_threadCreate", 2,
+                   OS_WARNING("os_threadCreate", 2,
                                 "pthread_attr_setschedparam failed "      \
                                 "with error %d (%s)", result, name);
                 } else {
@@ -366,7 +366,7 @@ os_threadCreate (
           if(create_ret != 0){
              os_free (threadContext->threadName);
              os_free (threadContext);
-             OS_REPORT_WARNING("os_threadCreate", 2, "pthread_create failed with error %d (%s)", create_ret, name);
+             OS_WARNING("os_threadCreate", 2, "pthread_create failed with error %d (%s)", create_ret, name);
              rv = os_resultFail;
           }
        }
@@ -486,7 +486,7 @@ os_threadWaitExit (
     if (result != 0) {
         /* NOTE: The below report actually is a debug output; makes no sense from
          * a customer perspective. Made OS_INFO for now. */
-        OS_REPORT_INFO("os_threadWaitExit", 2, "pthread_join(0x%"PRIxMAX") failed with error %d", os_threadIdToInteger(threadId), result);
+        OS_INFO("os_threadWaitExit", 2, "pthread_join(0x%"PRIxMAX") failed with error %d", os_threadIdToInteger(threadId), result);
         rv = os_resultFail;
     } else {
         rv = os_resultSuccess;
@@ -652,7 +652,7 @@ os_threadCleanupPush(
         itr = os_iterNew();
         assert(itr != NULL);
         if (pthread_setspecific(cleanup_key, itr) == EINVAL) {
-            OS_REPORT_WARNING(OS_FUNCTION, 0, "pthread_setspecific failed with error EINVAL (%d)", EINVAL);
+            OS_WARNING(OS_FUNCTION, 0, "pthread_setspecific failed with error EINVAL (%d)", EINVAL);
             os_iterFree(itr, NULL);
             itr = NULL;
         }

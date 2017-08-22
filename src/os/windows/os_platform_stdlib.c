@@ -61,7 +61,7 @@ os_gethostname(
 
         err = WSAStartup(wVersionRequested, &wsaData);
         if (err != 0) {
-                OS_REPORT_FATAL("os_gethostname", 0, "WSAStartup failed, no compatible socket implementation available");
+                OS_FATAL("os_gethostname", 0, "WSAStartup failed, no compatible socket implementation available");
                 /* Tell the user that we could not find a usable */
                 /* WinSock DLL.                                  */
                 return os_resultFail;
@@ -349,19 +349,19 @@ os_getTempDir()
         * path while it doesn't exist and therefore running into errors.
         */
         if (dir_name == NULL || (strcmp(dir_name, "") == 0)) {
-                OS_REPORT_ERROR("os_getTempDir", 0,
+                OS_ERROR("os_getTempDir", 0,
                         "Could not retrieve temporary directory path - "
                         "neither of environment variables TEMP, TMP, OSPL_TEMP were set");
         }
         else if (os_ensurePathExists(dir_name) != 0)
         {
-                OS_REPORT_ERROR("os_getTempDir", 0,
-                        "Could not ensure all (sub)directories of the temporary directory "OS_REPORT_NL
-                        "path '%s' exist. "OS_REPORT_NL
-                        "This has consequences for the ability of OpenSpliceDDS to run "OS_REPORT_NL
-                        "properly, as the directory path must be accessible to create "OS_REPORT_NL
-                        "database and key files in. Without this ability OpenSpliceDDS can "OS_REPORT_NL
-                        "not start."OS_REPORT_NL,
+                OS_ERROR("os_getTempDir", 0,
+                        "Could not ensure all (sub)directories of the temporary directory "OS_INFO_NL
+                        "path '%s' exist. "OS_INFO_NL
+                        "This has consequences for the ability of OpenSpliceDDS to run "OS_INFO_NL
+                        "properly, as the directory path must be accessible to create "OS_INFO_NL
+                        "database and key files in. Without this ability OpenSpliceDDS can "OS_INFO_NL
+                        "not start."OS_INFO_NL,
                         dir_name);
         }
 
@@ -405,7 +405,7 @@ os_ensurePathExists(
                                         }
                                         else
                                         {
-                                                OS_REPORT_ERROR("os_ensurePathExists", 0,
+                                                OS_ERROR("os_ensurePathExists", 0,
                                                         "Unable to create directory '%s' within path '%s'. Errorcode: %d",
                                                         tmp,
                                                         dir_name,

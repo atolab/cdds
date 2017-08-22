@@ -90,7 +90,7 @@ os_sockaddrInit(os_sockaddr* sa,
 #if (OS_SOCKET_HAS_IPV6 == 1)
         os__sockaddrInit6(sa);
 #else
-        OS_REPORT(OS_ERROR,"os_sockaddrInit", 0,
+        OS_ERROR("os_sockaddrInit", 0,
                   "Unsupported parameter value: IPV6 address requested but not supported by this platform");
         os__sockaddrInit4(sa);
         result = os_resultInvalid;
@@ -307,13 +307,13 @@ os_sockaddrStringToAddress(
     ret = getaddrinfo(addressString, NULL, &hints, &res);
     if (ret != 0) {
         fmt = "getaddrinfo(\"%s\") failed: %s";
-        OS_REPORT_DEBUG(OS_FUNCTION, 0, fmt, addressString, os_gai_strerror(ret));
+        OS_DEBUG(OS_FUNCTION, 0, fmt, addressString, os_gai_strerror(ret));
     } else if (res != NULL) {
         memcpy(addressOut, res->ai_addr, res->ai_addrlen);
         freeaddrinfo(res);
     } else {
         fmt = "getaddrinfo(\"%s\") did not return any results";
-        OS_REPORT_DEBUG(OS_FUNCTION, 0, fmt, addressString);
+        OS_DEBUG(OS_FUNCTION, 0, fmt, addressString);
     }
 
     return (ret == 0 && res != NULL);
@@ -372,11 +372,11 @@ os_sockaddrSizeof(
             break;
         default:
 #if (OS_SOCKET_HAS_IPV6 == 1)
-            OS_REPORT_ERROR("os_sockaddrSizeof", 0,
+            OS_ERROR("os_sockaddrSizeof", 0,
                 "Unkown address family specified: %d. Should be AF_INET (%d) or AF_INET6 (%d)",
                 (int)sa->sa_family, AF_INET, AF_INET6);
 #else
-            OS_REPORT_ERROR("os_sockaddrSizeof", 0,
+            OS_ERROR("os_sockaddrSizeof", 0,
                 "Unkown address family specified: %d. Should be AF_INET (%d)",
                 (int)sa->sa_family, AF_INET);
 #endif

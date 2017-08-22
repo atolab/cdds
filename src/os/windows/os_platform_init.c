@@ -66,7 +66,7 @@ void os_osExit (void)
     /* The 0 boundary is passed, so os_osExit is called more often than
      * os_osInit. Therefore undo decrement as nothing happened and warn. */
     os_atomic_inc32(&_ospl_osInitCount);
-    OS_REPORT_WARNING("os_osExit", 1, "OS-layer not initialized");
+    OS_WARNING("os_osExit", 1, "OS-layer not initialized");
     /* Fail in case of DEV, as it is incorrect API usage */
     assert(0);
   }

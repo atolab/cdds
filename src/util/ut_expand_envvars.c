@@ -44,7 +44,7 @@ static char *expand_env (const char *name, char op, const char *alt, expand_fn e
                 return os_strdup (env);
             } else {
                 char *altx = expand (alt);
-                OS_REPORT_ERROR("configuration parser", 0, "%s: %s\n", name, altx);
+                OS_ERROR("configuration parser", 0, "%s: %s\n", name, altx);
                 os_free (altx);
                 return NULL;
             }
@@ -123,7 +123,7 @@ static char *expand_envbrace (const char **src, expand_fn expand)
         return x;
     }
 err:
-    OS_REPORT_ERROR("configuration parser", 0, "%*.*s: invalid expansion\n", (int) (*src - start), (int) (*src - start), start);
+    OS_ERROR("configuration parser", 0, "%*.*s: invalid expansion\n", (int) (*src - start), (int) (*src - start), start);
     return NULL;
 }
 
@@ -163,7 +163,7 @@ char *ut_expand_envvars_sh (const char *src0)
         if (*src == '\\') {
             src++;
             if (*src == 0) {
-                OS_REPORT_ERROR("configuration parser", 0, "%s: incomplete escape at end of string\n", src0);
+                OS_ERROR("configuration parser", 0, "%s: incomplete escape at end of string\n", src0);
                 os_free(dst);
                 return NULL;
             }
@@ -172,7 +172,7 @@ char *ut_expand_envvars_sh (const char *src0)
             char *x, *xp;
             src++;
             if (*src == 0) {
-                OS_REPORT_ERROR("configuration parser", 0, "%s: incomplete variable expansion at end of string\n", src0);
+                OS_ERROR("configuration parser", 0, "%s: incomplete variable expansion at end of string\n", src0);
                 os_free(dst);
                 return NULL;
             } else if (*src == '{') {

@@ -61,7 +61,7 @@ os_socketModuleInit()
 
     err = WSAStartup (wVersionRequested, &wsaData);
     if (err != 0) {
-    OS_REPORT_FATAL("os_socketModuleInit", 0, "WSAStartup failed, no compatible socket implementation available");
+    OS_FATAL("os_socketModuleInit", 0, "WSAStartup failed, no compatible socket implementation available");
         /* Tell the user that we could not find a usable */
         /* WinSock DLL.                                  */
         return;
@@ -77,14 +77,14 @@ os_socketModuleInit()
         (HIBYTE(wsaData.wVersion) != OS_SOCK_REVISION)) {
         /* Tell the user that we could not find a usable */
         /* WinSock DLL.                                  */
-    OS_REPORT_FATAL("os_socketModuleInit", 1, "WSAStartup failed, no compatible socket implementation available");
+    OS_FATAL("os_socketModuleInit", 1, "WSAStartup failed, no compatible socket implementation available");
         WSACleanup();
         return;
     }
 
     qwaveDLLModuleLock = CreateMutex(NULL, FALSE, NULL);
     if (qwaveDLLModuleLock == NULL) {
-        OS_REPORT_ERROR("os_socketModuleInit", 0, "Failed to create mutex");
+        OS_ERROR("os_socketModuleInit", 0, "Failed to create mutex");
     }
 }
 
@@ -235,7 +235,7 @@ os_sockSetDscpValueWithTos(
         char errmsg[1024];
         int errNo = os_getErrno();
         (void) os_strerror_r(errNo, errmsg, sizeof errmsg);
-        OS_REPORT_WARNING("os_sockSetDscpValue", 0, "Failed to set diffserv value to %ld: %d %s", value, errNo, errmsg);
+        OS_WARNING("os_sockSetDscpValue", 0, "Failed to set diffserv value to %ld: %d %s", value, errNo, errmsg);
         result = os_resultFail;
     }
 
@@ -247,7 +247,7 @@ static os_result
 os_sockLoadQwaveLibrary(void)
 {
     if (qwaveDLLModuleLock == NULL) {
-        OS_REPORT_WARNING("os_sockLoadQwaveLibrary", 0,
+        OS_WARNING("os_sockLoadQwaveLibrary", 0,
                 "Failed to load QWAVE.DLL for using diffserv on outgoing IP packets");
         goto err_lock;
     }
@@ -255,7 +255,7 @@ os_sockLoadQwaveLibrary(void)
     WaitForSingleObject(qwaveDLLModuleLock, INFINITE);
     if (qwaveDLLModuleHandle == NULL) {
         if ((qwaveDLLModuleHandle = LoadLibrary("QWAVE.DLL")) == NULL) {
-            OS_REPORT_WARNING("os_sockLoadQwaveLibrary", 0,
+            OS_WARNING("os_sockLoadQwaveLibrary", 0,
                     "Failed to load QWAVE.DLL for using diffserv on outgoing IP packets");
             goto err_load_lib;
         }
@@ -267,7 +267,7 @@ os_sockLoadQwaveLibrary(void)
 
         if ((qwaveQOSCreateHandleFunc == 0) || (qwaveQOSCloseHandleFunc == 0) ||
             (qwaveQOSAddSocketToFlowFunc == 0) || (qwaveQOSSetFlowFunc == 0)) {
-            OS_REPORT_WARNING("os_sockLoadQwaveLibrary", 0,
+            OS_WARNING("os_sockLoadQwaveLibrary", 0,
                     "Failed to resolve entry points for using diffserv on outgoing IP packets");
             goto err_find_func;
         }
@@ -387,7 +387,7 @@ os_sockSetDscpValueWithQos(
         char errmsg[1024];
         errNo = os_getErrno();
         (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
-        OS_REPORT_ERROR("os_sockSetDscpValue", 0, "QOSCreateHandle failed: %d %s", errNo, errmsg);
+        OS_ERROR("os_sockSetDscpValue", 0, "QOSCreateHandle failed: %d %s", errNo, errmsg);
         goto err_create_handle;
     }
 
@@ -400,7 +400,7 @@ os_sockSetDscpValueWithQos(
         char errmsg[1024];
         errNo = os_getErrno();
         (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
-        OS_REPORT_ERROR("os_sockSetDscpValue", 0, "QOSAddSocketToFlow failed: %d %s", errNo, errmsg);
+        OS_ERROR("os_sockSetDscpValue", 0, "QOSAddSocketToFlow failed: %d %s", errNo, errmsg);
         qwaveQOSCloseHandleFunc(qosHandle);
         goto err_add_flow;
     }
@@ -408,7 +408,7 @@ os_sockSetDscpValueWithQos(
     if (value != defaultDscp) {
 
         if (!setDscpSupported) {
-            OS_REPORT_WARNING("os_sockSetDscpValue", 0,
+            OS_WARNING("os_sockSetDscpValue", 0,
                     "Failed to set diffserv value to %ld value used is %d, not supported on this platform",
                     value, defaultDscp);
             goto err_set_flow;
@@ -420,14 +420,14 @@ os_sockSetDscpValueWithQos(
         if (!qosResult) {
             errNo = os_getErrno();
             if ((errNo == ERROR_ACCESS_DENIED) || (errNo == ERROR_ACCESS_DISABLED_BY_POLICY)) {
-                OS_REPORT_WARNING("os_sockSetDscpValue", 0,
+                OS_WARNING("os_sockSetDscpValue", 0,
                         "Failed to set diffserv value to %ld value used is %d, not enough privileges",
                         value, defaultDscp);
             } else {
                 char errmsg[1024];
                 errNo = os_getErrno();
                 (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
-                OS_REPORT_ERROR("os_sockSetDscpValue", 0, "QOSSetFlow failed: %d %s", errNo, errmsg);
+                OS_ERROR("os_sockSetDscpValue", 0, "QOSSetFlow failed: %d %s", errNo, errmsg);
             }
             goto err_set_flow;
         }
@@ -519,7 +519,7 @@ os_sockSetNonBlocking(
                 r = os_resultInvalid;
                 break;
             case WSANOTINITIALISED:
-                OS_REPORT_FATAL("os_sockSetNonBlocking", 0, "Socket-module not initialised; ensure os_socketModuleInit is performed before using the socket module.");
+                OS_FATAL("os_sockSetNonBlocking", 0, "Socket-module not initialised; ensure os_socketModuleInit is performed before using the socket module.");
             default:
                 r = os_resultFail;
                 break;

@@ -41,13 +41,12 @@ extern "C" {
 (((type) >= os_reportVerbosity) ? os_report((type),(context),__FILE__,__LINE__,(code),__VA_ARGS__) : (void)0)
 
 
-#define OS_REPORT_DEBUG(context,code,...) OS_REPORT(OS_DEBUG,(context),(code),##__VA_ARGS__)
-#define OS_REPORT_INFO(context,code,...) OS_REPORT(OS_INFO,(context),(code),##__VA_ARGS__)
-#define OS_REPORT_WARNING(context,code,...) OS_REPORT(OS_WARNING,(context),(code),##__VA_ARGS__)
-#define OS_REPORT_ERROR(context,code,...) OS_REPORT(OS_ERROR,(context),(code),##__VA_ARGS__)
-#define OS_REPORT_CRITICAL(context,code,...) OS_REPORT(OS_CRITICAL,(context),(code),##__VA_ARGS__)
-#define OS_REPORT_FATAL(context,code,...) OS_REPORT(OS_FATAL,(context),(code),##__VA_ARGS__)
-#define OS_REPORT_REPAIRED(context,code,...) OS_REPORT(OS_REPAIRED,(context),(code),##__VA_ARGS__)
+#define OS_DEBUG(context,code,...) OS_REPORT(OS_DEBUG_TYPE,(context),(code),##__VA_ARGS__)
+#define OS_INFO(context,code,...) OS_REPORT(OS_INFO_TYPE,(context),(code),##__VA_ARGS__)
+#define OS_WARNING(context,code,...) OS_REPORT(OS_WARNING_TYPE,(context),(code),##__VA_ARGS__)
+#define OS_ERROR(context,code,...) OS_REPORT(OS_ERROR_TYPE,(context),(code),##__VA_ARGS__)
+#define OS_CRITICAL(context,code,...) OS_REPORT(OS_CRITICAL_TYPE,(context),(code),##__VA_ARGS__)
+#define OS_FATAL(context,code,...) OS_REPORT(OS_FATAL_TYPE,(context),(code),##__VA_ARGS__)
 
 #define OS_REPORT_STACK() \
 os_report_stack()
@@ -79,15 +78,13 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * @see os_reportVerbosity
      */
     typedef enum os_reportType {
-        OS_DEBUG,
-        OS_INFO,
-        OS_WARNING,
-        OS_API_INFO, /* Deprecated, only here for backwards compatibility */
-        OS_ERROR,
-        OS_CRITICAL,
-        OS_FATAL,
-        OS_REPAIRED,
-        OS_NONE
+        OS_DEBUG_TYPE,
+        OS_INFO_TYPE,
+        OS_WARNING_TYPE,
+        OS_ERROR_TYPE,
+        OS_CRITICAL_TYPE,
+        OS_FATAL_TYPE,
+        OS_NONE_TYPE
     } os_reportType;
 
     /**
@@ -148,7 +145,7 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
 
     OSAPI_EXPORT void os_reportExit(void);
 
-    /** \brief Report message directly and do not treat as formatting string
+    /** \brief Report message
      *
      * Consider this function private. It should be invoked by reporting functions
      * specified in the language bindings only.
@@ -159,16 +156,9 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
      * @param path path of file from which function was invoked
      * @param line line of file from which function was invoked
      * @param code error code associated with the report
-     * @param message message to report
+     * @param format message to log
+     * @param ... Parameter to log
      */
-    OSAPI_EXPORT void
-    os_report_noargs(
-                     os_reportType type,
-                     const char *context,
-                     const char *path,
-                     int32_t line,
-                     int32_t code,
-                     const char *message);
 
     OSAPI_EXPORT void
     os_report(
@@ -179,15 +169,6 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
               int32_t code,
               const char *format,
               ...) __attribute_format__((printf,6,7));
-
-    OSAPI_EXPORT os_reportInfo *
-    os_reportGetApiInfo(void);
-
-    OSAPI_EXPORT void
-    os_reportClearApiInfo(void);
-
-    OSAPI_EXPORT void
-    os_reportDisplayLogLocations(void);
 
     OSAPI_EXPORT char *
     os_reportGetInfoFileName(void);

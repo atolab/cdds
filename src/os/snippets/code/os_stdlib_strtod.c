@@ -77,7 +77,7 @@ os_lcNumericGet(void)
         (void) snprintf(num, 4, "%3f", 2.2);
         lcNumeric = num [1];
         if (lcNumeric != '.') {
-            OS_REPORT_WARNING("os_stdlib", 0,
+            OS_WARNING("os_stdlib", 0,
                       "Locale with LC_NUMERIC \'%c\' detected, which is not '.'. This can decrease performance.",
                       lcNumeric);
         }
