@@ -11,8 +11,8 @@ extern "C" {
 _Check_return_ dds_entity_t
 dds_entity_init(
         _In_       dds_entity * e,
-        _When_(kind != DDS_KIND_PARTICIPANT, parent != NULL)
-        _When_(kind == DDS_KIND_PARTICIPANT, parent == NULL)
+        _When_(kind != DDS_KIND_PARTICIPANT, _Notnull_)
+        _When_(kind == DDS_KIND_PARTICIPANT, _Null_)
                    dds_entity * parent,
         _In_       dds_entity_kind_t kind,
         _In_opt_   dds_qos_t * qos,
