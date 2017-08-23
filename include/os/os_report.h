@@ -180,9 +180,6 @@ os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__)
     os_reportSetVerbosity(
                           const char* newVerbosityString);
 
-    OSAPI_EXPORT void
-    os_reportRemoveStaleLogs(void);
-
     /*****************************************
      * Report stack related functions
      *****************************************/

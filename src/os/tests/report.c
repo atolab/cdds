@@ -8,10 +8,12 @@
 
 CUnit_Suite_Initialize(os_report)
 {
-  os_setenv("VORTEX_ERRORFILE", ERROR_FILE);
-  os_setenv("VORTEX_INFOFILE", INFO_FILE);
+  os_putenv("VORTEX_ERRORFILE=vdds_test_error");
+  os_putenv("VORTEX_INFOFILE=vdds_test_info");
 
   os_reportInit(true);
+
+  return 0;
 }
 
 void remove_logs()
@@ -31,8 +33,8 @@ void check_existence(os_result error_log_existence, os_result info_log_existence
   char * error_file_name = os_reportGetErrorFileName();
   char * info_file_name = os_reportGetInfoFileName();
 
-  CU_ASSERT(os_access(error_file_name, F_OK) == error_log_existence);
-  CU_ASSERT(os_access(info_file_name, F_OK) == info_log_existence);
+  CU_ASSERT(os_access(error_file_name, OS_ROK) == error_log_existence);
+  CU_ASSERT(os_access(info_file_name, OS_ROK) == info_log_existence);
 
   os_free(error_file_name);
   os_free(info_file_name);
@@ -42,14 +44,13 @@ void check_existence(os_result error_log_existence, os_result info_log_existence
 CUnit_Suite_Cleanup(os_report)
 {
   os_reportExit();
-
   remove_logs();
+
+  return 0;
 }
 
 CUnit_Test(os_report, os_report_stack_critical)
 {
-  os_putenv("VORTEX_LOGAPPEND=NO");
-
   check_existence(os_resultFail, os_resultFail);
 
   OS_REPORT_STACK();
@@ -68,8 +69,6 @@ CUnit_Test(os_report, os_report_stack_critical)
 
 CUnit_Test(os_report, os_report_stack_non_critical)
 {
-  os_putenv("VORTEX_LOGAPPEND=NO");
-
   check_existence(os_resultFail, os_resultFail);
 
   OS_REPORT_STACK();
@@ -89,8 +88,6 @@ CUnit_Test(os_report, os_report_stack_non_critical)
 
 CUnit_Test(os_report, os_report_set_verbosity)
 {
-  os_putenv("VORTEX_LOGAPPEND=NO");
-
   os_reportSetVerbosity("NONE");
 
   check_existence(os_resultFail, os_resultFail);
@@ -104,8 +101,6 @@ CUnit_Test(os_report, os_report_set_verbosity)
 
 CUnit_Test(os_report, os_report_error_file_creation_critical)
 {
-  os_putenv("VORTEX_LOGAPPEND=NO");
-
   check_existence(os_resultFail, os_resultFail);
 
   OS_CRITICAL(OS_FUNCTION, 0, "os_report-critical-test %d", 123);
@@ -117,8 +112,6 @@ CUnit_Test(os_report, os_report_error_file_creation_critical)
 
 CUnit_Test(os_report, os_report_error_file_creation_fatal)
 {
-  os_putenv("VORTEX_LOGAPPEND=NO");
-
   check_existence(os_resultFail, os_resultFail);
 
   OS_FATAL(OS_FUNCTION, 0, "os_report-fatal-test %d", 123);
@@ -127,83 +120,6 @@ CUnit_Test(os_report, os_report_error_file_creation_fatal)
 
   remove_logs();
 }
-
-CUnit_Test(os_report, os_report_error_log_append_off)
-{
-  os_putenv("VORTEX_LOGAPPEND=NO");
-
-  os_reportInit(true);
-
-  check_existence(os_resultFail, os_resultFail);
-
-  OS_ERROR(OS_FUNCTION, 0, "os_report-error-test %d", 123);
-
-  check_existence(os_resultSuccess, os_resultFail);
-
-  os_reportRemoveStaleLogs();
-
-  // error log shouldn't be removed since already deleted at start (VORTEX_LOGAPPEND is off)
-  check_existence(os_resultSuccess, os_resultFail);
-
-  remove_logs();
-}
-
-CUnit_Test(os_report, os_report_info_log_append_off)
-{
-  os_putenv("VORTEX_LOGAPPEND=NO");
-
-  os_reportInit(true);
-
-  check_existence(os_resultFail, os_resultFail);
-
-  OS_INFO(OS_FUNCTION, 0, "os_report-error-test %d", 123);
-
-  check_existence(os_resultFail, os_resultSuccess);
-
-  os_reportRemoveStaleLogs();
-
-  // info log shouldn't be removed since already deleted at start (VORTEX_LOGAPPEND is off)
-//  check_existence(os_resultFail, os_resultSuccess);
-
-  remove_logs();
-}
-
-CUnit_Test(os_report, os_report_error_log_append_on)
-{
-  os_putenv("VORTEX_LOGAPPEND=YES");
-
-  check_existence(os_resultFail, os_resultFail);
-
-  OS_ERROR(OS_FUNCTION, 0, "os_report-error-test %d", 123);
-
-  check_existence(os_resultSuccess, os_resultFail);
-
-  os_reportRemoveStaleLogs();
-
-  // error log should be removed since not deleted at start (VORTEX_LOGAPPEND is on)
-  check_existence(os_resultFail, os_resultFail);
-
-  remove_logs();
-}
-
-CUnit_Test(os_report, os_report_info_log_append_on)
-{
-  os_putenv("VORTEX_LOGAPPEND=YES");
-
-  check_existence(os_resultFail, os_resultFail);
-
-  OS_INFO(OS_FUNCTION, 0, "os_report-error-test %d", 123);
-
-  check_existence(os_resultFail, os_resultSuccess);
-
-  os_reportRemoveStaleLogs();
-
-  // info log should be removed since not deleted at start (VORTEX_LOGAPPEND is on)
-  check_existence(os_resultFail, os_resultFail);
-
-  remove_logs();
-}
-
 
 CUnit_Test(os_report, os_reportGetErrorFileName)
 {

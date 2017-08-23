@@ -54,6 +54,8 @@ static FILE* info_log = NULL;
 
 static os_mutex reportMutex;
 static bool inited = false;
+static bool doneOnce = false;
+static bool StaleLogsRemoved = false;
 
 //
 /**
@@ -109,10 +111,7 @@ static FILE *
 os_open_file (char * file_name)
 {
     FILE *logfile=NULL;
-    char host[256];
-    unsigned short port;
     char *dir, *str;
-    int ret;
     size_t len;
     os_result res = os_resultSuccess;
 
@@ -164,7 +163,33 @@ void set_verbosity()
     }
 }
 
-void check_removal_stale_logs()
+void remove_stale_logs()
+{
+    char * name;
+
+    os_reportInit(false);
+
+    if (!StaleLogsRemoved) {
+            /* TODO: Only a single process or spliced (as 1st process) is allowed to
+              * delete the log files. */
+              /* Remove ospl-info.log and ospl-error.log.
+              * Ignore the result because it is possible that they don't exist yet. */
+
+            name = os_reportGetInfoFileName();
+            (void)os_remove(name);
+            os_free(name);
+
+            name = os_reportGetErrorFileName();
+            (void)os_remove(name);
+            os_free(name);
+
+            StaleLogsRemoved = true;
+    }
+}
+
+
+void
+check_removal_stale_logs()
 {
     char * envValue = os_getenv(os_env_append);
     if (envValue != NULL)
@@ -172,7 +197,7 @@ void check_removal_stale_logs()
         if (os_strcasecmp(envValue, "FALSE") == 0 ||
             os_strcasecmp(envValue, "0") == 0 ||
 -           os_strcasecmp(envValue, "NO") == 0) {
-          os_reportRemoveStaleLogs();
+          remove_stale_logs();
         }
     }
 }
@@ -184,9 +209,6 @@ void check_removal_stale_logs()
 void
 os_reportInit(bool forceReInit)
 {
-    static bool doneOnce = false;
-    char *envValue;
-
     if (!doneOnce || forceReInit)
     {
         if (!doneOnce)
@@ -541,7 +563,7 @@ os_defaultReport(
 
 
 void
-os_report_noargs(
+os_report_message(
         os_reportType type,
         const char *context,
         const char *path,
@@ -550,7 +572,7 @@ os_report_noargs(
         const char *message)
 {
     char *file;
-    char procid[256], thrid[64], tmp[2];
+    char procid[256], thrid[64];
     os_reportStack stack;
 
     struct os_reportEventV1_s report = { OS_REPORT_EVENT_V1, /* version */
@@ -615,7 +637,7 @@ os_report(
     (void)os_vsnprintf (buf, sizeof(buf), format, args);
     va_end (args);
 
-    os_report_noargs (type, context, path, line, code, buf);
+    os_report_message(type, context, path, line, code, buf);
 }
 
 /**
@@ -652,32 +674,6 @@ os_reportSetVerbosity(
     }
 
     return result;
-}
-
-/**
- * Remove possible existing log files to start cleanly.
- */
-void
-os_reportRemoveStaleLogs()
-{
-    static bool alreadyDeleted = false;
-    char * name;
-
-    os_reportInit(false);
-
-    if (!alreadyDeleted) {
-        /* TODO: Only a single process or spliced (as 1st process) is allowed to
-         * delete the log files. */
-        /* Remove ospl-info.log and ospl-error.log.
-         * Ignore the result because it is possible that they don't exist yet. */
-        name = os_reportGetInfoFileName();
-        (void)os_remove(name);
-        os_free(name);
-        name = os_reportGetErrorFileName();
-        (void)os_remove(name);
-        os_free(name);
-        alreadyDeleted = true;
-    }
 }
 
 /*****************************************
@@ -775,7 +771,6 @@ os_report_stack_unwind(
     struct os__reportBuffer buf = { NULL, 0, 0 };
     os_iter *tempList;
     char *file;
-    char tmp[2];
     int32_t code = 0;
     bool update = true;
     os_reportType filter = OS_NONE_TYPE;
