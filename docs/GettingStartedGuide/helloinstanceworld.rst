@@ -90,7 +90,8 @@ reader keeps in its history.
 If a reader is created with this QoS, then it will keep the last 2 samples
 of every instance within its history.
 
-    \newpage
+
+.. _`SampleStatesSummary`:
 
 **************
 States Summary
@@ -102,11 +103,11 @@ are related to the instance, which is shown in the table below.
 +-----------------+------------------------------+-----------------------------------------------+
 | State           | Value                        | Description                                   |
 +=================+==============================+===============================================+
-| sample_state    |                 DDS_SST_READ | This sample has never been read before read   |
+| sample_state    |                 DDS_SST_READ | This sample has never been read before        |
 |                 |                              | by the related reader.                        |
 |                 +------------------------------+-----------------------------------------------+
-|                 |             DDS_SST_NOT_READ | This sample has been read in a previous read  |
-|                 |                              | of the related reader.                        |
+|                 |             DDS_SST_NOT_READ | This sample has been read previously          |
+|                 |                              | by the related reader.                        |
 +-----------------+------------------------------+-----------------------------------------------+
 | view_state      |                  DDS_VST_NEW | The related instance of this sample has never |
 |                 |                              | been seen before by the related reader.       |
@@ -229,7 +230,7 @@ Take & Invalid Data
 In the example code of the previous chapters, only :code:`dds_read()` is
 used. This will leave the samples in the reader history. On the other
 hand, :code:`dds_take()` can also be used to read. In contrast to
-:code:`dds_read(), :code:`dds_take()` will remove the sample(s) from the
+:code:`dds_read()`, :code:`dds_take()` will remove the sample(s) from the
 reader history, which means it can't be read afterwards anymore.
 
 When changing the line

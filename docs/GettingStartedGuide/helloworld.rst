@@ -15,7 +15,7 @@ Introduction
 ************
 
 The Hello World example is an introduction into DDS by creating
-a publisher and subscriber and senting a message from the former
+a publisher and subscriber and sending a message from the former
 to the latter.
 
 
@@ -76,44 +76,63 @@ libraries, please look at these notes for
 :ref:`Linux <LinuxSetLibPath>`.
 
 
-******************
-Hello World Source
-******************
 
-The Hello World example source code can be found in the
-:code:`examples/helloworld directory`. It consists out of the
-following files, which will be explained in more detail later on.
+*****************
+Hello World Files
+*****************
 
-+----------------------------+--------------------------------------------+
-| File name                  | Description                                |
-+============================+============================================+
-| publisher.c                | Publishes the Helloworld message.          |
-+----------------------------+--------------------------------------------+
-| subscriber.c               | Waits and receives the Helloworld message. |
-+----------------------------+--------------------------------------------+
-| HelloWorldData.idl         | Datatype description file.                 |
-+----------------------------+--------------------------------------------+
-| Makefile                   | Linux native build file.                   |
-+----------------------------+--------------------------------------------+
-| TODO                       | Windows native build file.                 |
-+----------------------------+--------------------------------------------+
-| CMakeLists.txt             | CMake build file.                          |
-+----------------------------+--------------------------------------------+
-| generated/HelloWorldData.c | Generated datatype source file.            |
-+----------------------------+--------------------------------------------+
-| generated/HelloWorldData.h | Generated datatype header file.            |
-+----------------------------+--------------------------------------------+
+The Hello World example directory (:code:`examples/helloworld`)
+contains the following files, which will be explained in more
+detail later on.
+
++--------------------------------+--------------------------------------------+
+| File name                      | Description                                |
++================================+============================================+
+| publisher.c                    | Publishes the Helloworld message.          |
++--------------------------------+--------------------------------------------+
+| subscriber.c                   | Waits and receives the Helloworld message. |
++--------------------------------+--------------------------------------------+
+| HelloWorldData.idl             | Datatype description file.                 |
++--------------------------------+--------------------------------------------+
+| Makefile                       | Linux native build file.                   |
++--------------------------------+--------------------------------------------+
+| HelloWorld.sln                 | Windows Visual Studio solutions file.      |
++--------------------------------+--------------------------------------------+
+| CMakeLists.txt                 | CMake build file.                          |
++--------------------------------+--------------------------------------------+
+| bin/HelloworldPublisher<.exe>  | Hello World Publisher executable.          |
++--------------------------------+--------------------------------------------+
+| bin/HelloworldSubscriber<.exe> | Hello World Subscriber executable.         |
++--------------------------------+--------------------------------------------+
+| generated/HelloWorldData.c     | Generated datatype source file.            |
++--------------------------------+--------------------------------------------+
+| generated/HelloWorldData.h     | Generated datatype header file.            |
++--------------------------------+--------------------------------------------+
+| vs/*                           | Windows Visual Studio support files.       |
++--------------------------------+--------------------------------------------+
+
+
+Publisher and Subscriber
+========================
+
+The publisher.c and subscriber.c contain the source for the
+Hello World example :ref:`Publisher <HelloWorldPublisherSource>`
+and :ref:`Subscriber <HelloWorldSubscriberSource>` respectively.
+
+The Publisher writes one message that is received by the
+Subscriber.
 
 
 Build Files
 ===========
 
-Three files are available to support building the example. Both
-:ref:`Windows native <WindowsNativeBuild>` and
-:ref:`Linux native <LinuxNativeBuild>` build files will only be
-available for this Hello World example. All the other examples
-make use of the :ref:`CMake <CMakeIntro>` build system and thus
-only have the CMakeLists.txt build related file.
+Three files are available Hello World root directory to support
+building the example. Both
+:ref:`Windows native <WindowsNativeBuild>` (HelloWorld.sln) and
+:ref:`Linux native <LinuxNativeBuild>` (Makefile) build files
+will only be available for this Hello World example. All the
+other examples make use of the :ref:`CMake <CMakeIntro>` build
+system and thus only have the CMakeLists.txt build related file.
 
 
 HelloWorldData.idl
@@ -167,6 +186,20 @@ the DDS middleware as well.
     HelloWorldData_Msg_desc
 
 
+
+******************
+Hello World Source
+******************
+
+Apart from the
+:ref:`HelloWorldData data type files <HelloWorldDataFiles>` that
+the Hello World example uses to send messages, it also contains
+two source files (:ref:`subscriber.c <HelloWorldPublisherSource>`
+and :ref:`publisher.c <HelloWorldSubscriberSource>`) with the
+business logic, which is explained in the following chapters.
+
+.. _`HelloWorldSubscriberSource`:
+
 HelloWorld subscriber.c
 =======================
 
@@ -177,8 +210,9 @@ message and reads it when it receives one.
     :linenos:
     :language: c
 
-We will be using the DDS API and the HelloWorldData_Msg type
-to sent and receive data. For that, we need to include the
+We will be using the DDS API and the
+:ref:`HelloWorldData_Msg <HelloWorldDataFiles>` type
+to receive data. For that, we need to include the
 appropriate header files.
 ::
 
@@ -212,9 +246,10 @@ Hello World example case, it is part of the default domain.
 The another requisite is the topic which basically describes the
 data type that is used by the reader. When creating the topic,
 the :ref:`data description <HelloWorldDataFiles>` for the DDS
-middleware that is present in the HelloWorldData.h is used.
+middleware that is present in the
+:ref:`HelloWorldData.h <HelloWorldDataFiles>` is used.
 The topic also has a name. Topics with the same data type
-description, but with different names, are considered as
+description, but with different names, are considered
 different topics. This means that readers/writers created with a
 topic named "A" will not interfere with readers/writers created
 with a topic named "B".
@@ -243,7 +278,9 @@ when data has been read.
 
 Within the polling loop, we do the actual read. We provide the
 initialized array of pointers (:code:`samples`), an array that
-holds information about the read sample(s) (:code:`info`), the
+holds
+:ref:`information about the read sample(s) <SampleStatesSummary>`
+(:code:`info`), the
 size of the arrays and the maximum number of samples to read.
 Every read sample in the samples array has related information
 in the info array at the same index.
@@ -285,6 +322,8 @@ deleted. This means that deleting the participant will
 automatically the reader as well.
 
 
+.. _`HelloWorldPublisherSource`:
+
 HelloWorld publisher.c
 ======================
 
@@ -295,18 +334,21 @@ on which the subscriber is waiting.
     :linenos:
     :language: c
 
-We will be using the dds API and the HelloWorldData_Msg data
-type to sent and receive. For that, we need to include the
-appropriate header files
+We will be using the DDS API and the
+:ref:`HelloWorldData_Msg <HelloWorldDataFiles>` type
+to sent data. For that, we need to include the
+appropriate header files.
 ::
 
     #include "dds.h"
     #include "HelloWorldData.h"
 
-Just like with the reader in subscriber.c, we need a participant
-and topic to be able to create a writer. We use the same topic
-name as in subscriber.c. Otherwise the reader and writer are not
-considered related and data will not be sent between them.
+Just like with the
+:ref:`reader in subscriber.c <HelloWorldSubscriberSource>`,
+we need a participant and topic to be able to create a writer.
+We use the same topic name as in subscriber.c. Otherwise the
+reader and writer are not considered related and data will not
+be sent between them.
 ::
 
     dds_entity_t participant;
@@ -325,7 +367,7 @@ this discovery and coupling takes a small amount of
 time. There are various ways to work around this problem. For
 instance by making the readers and writers
 :ref:`reliable <ReliabilityIntro>` or wait for
-:ref:`publication <WaitsetIntro>`/subscription matched events
+:ref:`publication/subscription matched events <WaitsetIntro>`
 or just don't care if the reader misses a few samples (f.i. when
 the publishing
 frequency is high enough). However, that is out of the scope of
@@ -408,7 +450,58 @@ that were just build. Be sure to use the right directories.
 Windows Native Build
 ====================
 
-TODO
+For the Windows Native Build, a Visual Studio solution file is
+available in the :code:`examples/helloworld` directory. Use a
+file explorer to navigate to that directory and double click on
+the :code:`HelloWorld.sln` file. Visual Studio should now start
+with the HelloWorld solution that contains three projects.
+
++----------------------+-------------------------------------------------+
+| Project              | Description                                     |
++======================+=================================================+
+| HelloWorldPublisher  | Information to build the example publisher.     |
++----------------------+-------------------------------------------------+
+| HelloWorldSubscriber | Information to build the example subcriber.     |
++----------------------+-------------------------------------------------+
+| HelloWorldType       | Information to (re)generate                     |
+|                      | :ref:`HelloWorldData_Msg <HelloWorldDataFiles>` |
+|                      | data type.                                      |
++----------------------+-------------------------------------------------+
+
+Creating the Hello World example executables is as simple as
+selecting the required configuration and building the solution.
+
+.. note::
+    It is expected that the various Vortex and Hello World
+    example files are installed at system default locations. If
+    that is not the case, then the file
+    :code:`helloworld\vs\directories.props` contains some best
+    guesses of where those files could be. This should mean that
+    building the HelloWorld solution works out-of-the-box.
+    However, if you find that Visual Studio complains about
+    header files or libraries that it can not find, then please
+    update the information in :code:`helloworld\vs\directories.props`
+    to point to the right locations.
+
+To run the example, Visual Studio should run both the publisher
+and subscriber simultaneously. It is capable of doing so, but
+it's not its default setting. To change it, open the HelloWorld
+solution property page by right clicking the solution and
+selecting :code:`Properties`. Then go to :code:`Common Properties`
+-> :code:`Startup Project`, select :code:`Multiple startup project`
+and set :code:`Action "Start"` for HelloWorldPublisher and
+HelloWorldSubscriber. Finish the change by selecting :code:`OK`.
+
+Visual Studio is now ready to actually run the Hello World
+example, which can be done by selecting :code:`Debug` ->
+:code:`Start without debugging`.
+Both the subscriber and the publisher will be started and the
+publisher will write a message that is received by the subscriber.
+
+Building the solution also (re)generates the
+:ref:`HelloWorldData_Msg <HelloWorldDataFiles>` data type files
+automatically. Changing that data type is explained in the
+following chapter.
 
 
 
@@ -503,8 +596,8 @@ is supplied to support this pre-compile step. This is available
 in :code:`idlc-jar-with-dependencies.jar`
 
 The compilation from IDL into c source code is as simple as
-calling dds_idlc with an IDL file. In the case of the Hello
-World example, that IDL file is HelloWorldData.idl.
+starting that java application with an IDL file. In the case of
+the Hello World example, that IDL file is HelloWorldData.idl.
 ::
 
     java -classpath "<install_dir>/share/VortexDDS/idlc/idlc-jar-with-dependencies.jar" com.prismtech.vortex.compilers.Idlc HelloWorldData.idl
@@ -516,8 +609,8 @@ But we get ahead of ourselfs with `CMake`_. Native build targets
 have been provided for the Hello World example for your
 convenience.
 
-:Windows: :code:`TODO`
-:Linux: :code:`make datatype`
+:Windows: The :code:`HelloWorldType` project within the HelloWorld solution.
+:Linux: The :code:`make datatype` command.
 
 This will result in new HelloWorldData.c and HelloWorldData.h
 files that can be used in the Hello World publisher and
@@ -528,6 +621,7 @@ files were re-generated.
 
 Again, this is all for the native builds. When using CMake, all
 this is done automatically.
+
 
 
 *******************
@@ -636,10 +730,15 @@ us by typing:
 
 .. note::
     It is possible that you have to supply a specific generator for
-    the configuration:
+    the configuration, like:
     ::
 
         cmake -G "Visual Studio 14 2015 Win64" ..
+
+.. note::
+    CMake generators can also create IDE environments. For instance,
+    the "Visual Studio 14 2015 Win64" will generate a Visual Studio
+    solution file. Other IDE's are also possible, like Eclipse.
 
 CMake will use the CMakeLists.txt in the helloworld directory
 to create makefiles that fit the native platform.
@@ -666,14 +765,13 @@ as typing:
         cmake --build . --config "Release"
 
 while being in the build directory created during the
-configuration step. In this example, that directory would be:
+configuration step: :code:`examples/helloworld/build`.
+
+The resulting Publisher and Subscriber applications can be found
+in:
 
 :Windows:  :code:`examples\helloworld\build\Release`.
 :Linux: :code:`examples/helloworld/build`.
-
-After the build finished, both the Hello World publisher and
-subscriber applications will be present within the build
-directory.
 
 `Running Hello World`_ example can now be done with the
 binaries that were just build. Be sure to use the right
