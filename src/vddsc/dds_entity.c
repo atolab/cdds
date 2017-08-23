@@ -832,7 +832,7 @@ dds_entity_lock(
             os_mutexLock(&((*e)->m_mutex));
             /* The handle could have been closed while we were waiting for the mutex. */
             if (ut_handle_is_closed(hdl, (*e)->m_hdllink)) {
-                os_mutexUnlock(&((*e)->m_mutex));
+                dds_entity_unlock(*e);
                 utr = UT_HANDLE_CLOSED;
             }
         }
