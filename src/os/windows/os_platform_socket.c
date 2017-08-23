@@ -605,16 +605,16 @@ addressToIndexAndMask(struct sockaddr *addr, unsigned int *ifIndex, struct socka
         if (pIPAddrTable != NULL) {
             if (GetIpAddrTable(pIPAddrTable, &dwSize, 0) != NO_ERROR) {
                 errNo = os_getErrno();
-                os_report(OS_ERROR, "addressToIndexAndMask", __FILE__, __LINE__, 0, "GetIpAddrTable failed: %d", errNo);
+                OS_ERROR("addressToIndexAndMask", 0, "GetIpAddrTable failed: %d", errNo);
                 result = os_resultFail;
             }
         } else {
-            os_report(OS_ERROR, "addressToIndexAndMask", __FILE__, __LINE__, 0, "Failed to allocate %d bytes for IP address table", dwSize);
+            OS_ERROR("addressToIndexAndMask", 0, "Failed to allocate %d bytes for IP address table", dwSize);
             result = os_resultFail;
         }
     } else {
         errNo = os_getErrno();
-        os_report(OS_ERROR, "addressToIndexAndMask", __FILE__, __LINE__, 0, "GetIpAddrTable failed: %d", errNo);
+        OS_ERROR("addressToIndexAndMask", 0, "GetIpAddrTable failed: %d", errNo);
         result = os_resultFail;
     }
 
@@ -665,8 +665,7 @@ os_sockQueryInterfaces(
     do {
         pAddresses = (IP_ADAPTER_ADDRESSES *) os_malloc(outBufLen);
         if (!pAddresses) {
-            os_report(OS_ERROR, "os_sockQueryInterfaces", __FILE__, __LINE__, 0,
-                "Failed to allocate %d bytes for Adapter addresses", outBufLen);
+            OS_ERROR("os_sockQueryInterfaces", 0, "Failed to allocate %d bytes for Adapter addresses", outBufLen);
             return os_resultFail;
         }
         retVal = GetAdaptersAddresses(AF_INET, filter, NULL, pAddresses, &outBufLen);
@@ -685,8 +684,7 @@ os_sockQueryInterfaces(
             os_free(pAddresses);
             pAddresses = NULL;
         }
-        os_report(OS_ERROR, "os_sockQueryInterfaces", __FILE__, __LINE__, 0,
-                "Failed to GetAdaptersAddresses");
+        OS_ERROR("os_sockQueryInterfaces", 0, "Failed to GetAdaptersAddresses");
         return os_resultFail;
     }
 
@@ -779,8 +777,7 @@ os_sockQueryIPv6Interfaces (
     do {
         pAddresses = (IP_ADAPTER_ADDRESSES *) os_malloc(outBufLen);
         if (!pAddresses) {
-            os_report(OS_ERROR, "os_sockQueryIPv6Interfaces", __FILE__, __LINE__, 0,
-                "Failed to allocate %d bytes for Adapter addresses", outBufLen);
+            OS_ERROR("os_sockQueryIPv6Interfaces", 0, "Failed to allocate %d bytes for Adapter addresses", outBufLen);
             return os_resultFail;
         }
         retVal = GetAdaptersAddresses(AF_INET6, filter, NULL, pAddresses, &outBufLen);
@@ -799,8 +796,7 @@ os_sockQueryIPv6Interfaces (
             os_free(pAddresses);
             pAddresses = NULL;
         }
-        os_report(OS_ERROR, "os_sockQueryIPv6Interfaces", __FILE__, __LINE__, 0,
-                "Failed to GetAdaptersAddresses");
+        OS_ERROR("os_sockQueryIPv6Interfaces", 0, "Failed to GetAdaptersAddresses");
         return os_resultFail;
     }
 
