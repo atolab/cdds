@@ -189,7 +189,6 @@ os_startRoutineWrapper(
     resultValue = context->startRoutine(context->arguments);
 
     os_report_stack_free();
-    os_reportClearApiInfo();
 
     /* Free the thread context resources, arguments is responsibility */
     /* for the caller of os_threadCreate                                */
