@@ -129,8 +129,8 @@ os_open_file (char * file_name)
         if (dir == NULL) {
             res = os_resultFail;
         }
+        os_free(dir);
     } else {
-        dir = NULL;
         res = os_resultFail;
     }
 
