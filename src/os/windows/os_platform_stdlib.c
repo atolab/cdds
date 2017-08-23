@@ -356,12 +356,12 @@ os_getTempDir()
         else if (os_ensurePathExists(dir_name) != 0)
         {
                 OS_ERROR("os_getTempDir", 0,
-                        "Could not ensure all (sub)directories of the temporary directory "OS_INFO_NL
-                        "path '%s' exist. "OS_INFO_NL
-                        "This has consequences for the ability of OpenSpliceDDS to run "OS_INFO_NL
-                        "properly, as the directory path must be accessible to create "OS_INFO_NL
-                        "database and key files in. Without this ability OpenSpliceDDS can "OS_INFO_NL
-                        "not start."OS_INFO_NL,
+                        "Could not ensure all (sub)directories of the temporary directory "OS_REPORT_NL
+                        "path '%s' exist. "OS_REPORT_NL
+                        "This has consequences for the ability of OpenSpliceDDS to run "OS_REPORT_NL
+                        "properly, as the directory path must be accessible to create "OS_REPORT_NL
+                        "database and key files in. Without this ability OpenSpliceDDS can "OS_REPORT_NL
+                        "not start."OS_REPORT_NL,
                         dir_name);
         }
 
