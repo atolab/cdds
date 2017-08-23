@@ -23,6 +23,7 @@ dds_create_readcond(
         _In_ uint32_t mask)
 {
     dds_readcond * cond = dds_alloc(sizeof(*cond));
+    assert(kind == DDS_KIND_COND_READ || kind == DDS_KIND_COND_QUERY);
     cond->m_entity.m_hdl = dds_entity_init(&cond->m_entity, (dds_entity*)rd, kind, NULL, NULL, 0);
     cond->m_entity.m_deriver.delete = dds_readcond_delete;
     cond->m_rhc = rd->m_rd->rhc;

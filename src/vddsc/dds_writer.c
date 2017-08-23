@@ -221,6 +221,12 @@ dds_writer_delete(
         thread_state_asleep(thr);
     }
     ret = dds_delete(wr->m_topic->m_entity.m_hdl);
+    if(ret == DDS_RETCODE_OK){
+        ret = dds_delete_impl(e->m_parent->m_hdl, true);
+        if(dds_err_nr(ret) == DDS_RETCODE_ALREADY_DELETED){
+            ret = DDS_RETCODE_OK;
+        }
+    }
     os_mutexDestroy(&wr->m_call_lock);
     return ret;
 }
@@ -318,30 +324,31 @@ dds_create_writer(
 {
     dds_retcode_t rc;
     dds_qos_t * wqos;
-    dds_publisher * pub = NULL;
     dds_writer * wr;
     dds_entity_t writer = (dds_entity_t)DDS_ERRNO_DEPRECATED(DDS_RETCODE_ERROR);
-    dds_entity * pp_or_pub = NULL;
+    dds_entity * pub = NULL;
     dds_entity * tp;
+    dds_entity_t publisher;
     struct thread_state1 * const thr = lookup_thread_state();
     const bool asleep = !vtime_awake_p(thr->vtime);
     ddsi_tran_conn_t conn = gv.data_conn_mc ? gv.data_conn_mc : gv.data_conn_uc;
     int ret = DDS_RETCODE_OK;
 
     /* Try claiming a participant. If that's not working, then it could be a subscriber. */
-    rc = dds_entity_lock(participant_or_publisher, DDS_KIND_PARTICIPANT, &pp_or_pub);
+    if(dds_entity_kind(participant_or_publisher) == DDS_KIND_PARTICIPANT){
+        publisher = dds_create_publisher(participant_or_publisher, qos, NULL);
+    } else{
+        publisher = participant_or_publisher;
+    }
+    rc = dds_entity_lock(publisher, DDS_KIND_PUBLISHER, &pub);
+
     if (rc != DDS_RETCODE_OK) {
-        if (rc == DDS_RETCODE_ILLEGAL_OPERATION) {
-            rc = dds_entity_lock(participant_or_publisher, DDS_KIND_PUBLISHER, &pp_or_pub);
-            if (rc != DDS_RETCODE_OK) {
-                writer = (dds_entity_t)DDS_ERRNO_DEPRECATED(rc);
-                goto err_pp_or_pub_lock;
-            }
-            pub = (dds_publisher*)pp_or_pub;
-        } else {
-            writer = (dds_entity_t)DDS_ERRNO_DEPRECATED(rc);
-            goto err_pp_or_pub_lock;
-        }
+        writer = (dds_entity_t)DDS_ERRNO_DEPRECATED(rc);
+        goto err_pub_lock;
+    }
+
+    if (publisher != participant_or_publisher) {
+        pub->m_flags |= DDS_ENTITY_IMPLICIT;
     }
 
     rc = dds_entity_lock(topic, DDS_KIND_TOPIC, &tp);
@@ -350,7 +357,7 @@ dds_create_writer(
         goto err_tp_lock;
     }
     assert(((dds_topic*)tp)->m_stopic);
-    assert(pp_or_pub->m_domain == tp->m_domain);
+    assert(pub->m_domain == tp->m_domain);
 
     /* Merge Topic & Publisher qos */
     wqos = dds_qos_create();
@@ -360,8 +367,8 @@ dds_create_writer(
         (void)dds_qos_copy(wqos, qos);
     }
 
-    if (pub && pub->m_entity.m_qos) {
-        dds_qos_merge(wqos, pub->m_entity.m_qos);
+    if (pub->m_qos) {
+        dds_qos_merge(wqos, pub->m_qos);
     }
 
     if (tp->m_qos) {
@@ -379,7 +386,7 @@ dds_create_writer(
 
     /* Create writer */
     wr = dds_alloc(sizeof (*wr));
-    writer = dds_entity_init(&wr->m_entity, pp_or_pub, DDS_KIND_WRITER, wqos, listener, DDS_WRITER_STATUS_MASK);
+    writer = dds_entity_init(&wr->m_entity, pub, DDS_KIND_WRITER, wqos, listener, DDS_WRITER_STATUS_MASK);
 
     wr->m_topic = (dds_topic*)tp;
     dds_entity_add_ref_nolock(tp);
@@ -398,27 +405,31 @@ dds_create_writer(
     }
 
     os_mutexUnlock(&tp->m_mutex);
-    os_mutexUnlock(&pp_or_pub->m_mutex);
+    os_mutexUnlock(&pub->m_mutex);
 
     if (asleep) {
         thread_state_awake(thr);
     }
-    wr->m_wr = new_writer(&wr->m_entity.m_guid, NULL, &pp_or_pub->m_participant->m_guid, ((dds_topic*)tp)->m_stopic,
+    wr->m_wr = new_writer(&wr->m_entity.m_guid, NULL, &pub->m_participant->m_guid, ((dds_topic*)tp)->m_stopic,
                           wqos, dds_writer_status_cb, wr);
-    os_mutexLock(&pp_or_pub->m_mutex);
+    os_mutexLock(&pub->m_mutex);
     os_mutexLock(&tp->m_mutex);
     assert(wr->m_wr);
     if (asleep) {
         thread_state_asleep(thr);
     }
     dds_entity_unlock(tp);
-    dds_entity_unlock(pp_or_pub);
+    dds_entity_unlock(pub);
     return writer;
+
 err_bad_qos:
     dds_entity_unlock(tp);
 err_tp_lock:
-    dds_entity_unlock(pp_or_pub);
-err_pp_or_pub_lock:
+    dds_entity_unlock(pub);
+    if((pub->m_flags & DDS_ENTITY_IMPLICIT) != 0){
+        (void)dds_delete(publisher);
+    }
+err_pub_lock:
     return writer;
 }
 

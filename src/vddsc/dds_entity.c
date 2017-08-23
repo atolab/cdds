@@ -30,6 +30,18 @@ dds_entity_add_ref(_In_ dds_entity * e)
     os_mutexUnlock (&e->m_mutex);
 }
 
+static void
+dds_set_explicit(
+        _In_ dds_entity_t entity);
+
+/*This function returns the parent entity of e. If e is a participant it returns NULL*/
+_Ret_maybenull_
+static dds_entity *
+dds__parent_entity(
+        _In_ dds_entity *e){
+    return e->m_parent == e ? NULL : e->m_parent;
+}
+
 void
 dds_entity_add_ref_nolock(_In_ dds_entity *e)
 {
@@ -185,17 +197,18 @@ dds_entity_cb_wait (_In_ dds_entity *e)
 
 _Check_return_ dds_entity_t
 dds_entity_init(
-        _In_     dds_entity * e,
-        _In_opt_ dds_entity * parent,
-        _In_     dds_entity_kind_t kind,
-        _In_opt_ dds_qos_t *qos,
-        _In_opt_ const dds_listener_t *listener,
-        _In_     uint32_t mask)
+        _In_       dds_entity * e,
+        _When_(kind != DDS_KIND_PARTICIPANT, _Notnull_)
+        _When_(kind == DDS_KIND_PARTICIPANT, _Null_)
+          _In_opt_ dds_entity * parent,
+        _In_       dds_entity_kind_t kind,
+        _In_opt_   dds_qos_t * qos,
+        _In_opt_   const dds_listener_t *listener,
+        _In_       uint32_t mask)
 {
     assert (e);
 
     e->m_refc = 1;
-    e->m_parent = parent;
     e->m_qos = qos;
     e->m_cb_count = 0;
     e->m_observers = NULL;
@@ -209,6 +222,7 @@ dds_entity_init(
 
     os_mutexInit (&e->m_mutex);
     os_condInit (&e->m_cond, &e->m_mutex);
+    e->m_parent = parent;
 
     if (parent) {
         e->m_domain = parent->m_domain;
@@ -239,15 +253,25 @@ dds_entity_init(
 }
 
 
-
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 dds_return_t
 dds_delete(
         _In_ dds_entity_t entity)
 {
+    return dds_delete_impl(entity, false);
+}
+
+
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+dds_return_t
+dds_delete_impl(
+        _In_ dds_entity_t entity,
+        _In_ bool keep_if_explicit)
+{
     os_time    timeout = { 10, 0 };
     dds_entity *e;
     dds_entity *child;
+    dds_entity *parent;
     dds_entity *prev = NULL;
     dds_entity *next = NULL;
     dds_return_t ret = DDS_RETCODE_OK;
@@ -256,6 +280,11 @@ dds_delete(
     rc = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
     if (rc != DDS_RETCODE_OK) {
         return DDS_ERRNO_DEPRECATED(rc);
+    }
+
+    if(keep_if_explicit == true && ((e->m_flags & DDS_ENTITY_IMPLICIT) == 0)){
+        dds_entity_unlock(e);
+        return DDS_RETCODE_OK;
     }
 
     if (--e->m_refc != 0) {
@@ -286,6 +315,7 @@ dds_delete(
         child = next;
     }
 
+
     if (ret == DDS_RETCODE_OK) {
         /* Close the entity. This can terminate threads or kick of
          * other destroy stuff that takes a while. */
@@ -308,22 +338,22 @@ dds_delete(
         dds_entity_observers_delete(e);
 
         /* Remove from parent */
-        if (e->m_parent) {
-            os_mutexLock (&e->m_parent->m_mutex);
-            child = e->m_parent->m_children;
+        if ((parent = dds__parent_entity(e)) != NULL) {
+            os_mutexLock (&parent->m_mutex);
+            child = parent->m_children;
             while (child) {
                 if (child == e) {
                     if (prev) {
                         prev->m_next = e->m_next;
                     } else {
-                        e->m_parent->m_children = e->m_next;
+                        parent->m_children = e->m_next;
                     }
                     break;
                 }
                 prev = child;
                 child = child->m_next;
             }
-            os_mutexUnlock (&e->m_parent->m_mutex);
+            os_mutexUnlock (&parent->m_mutex);
         }
 
         /* Do some specific deletion when needed. */
@@ -353,10 +383,12 @@ dds_get_parent(
     dds_entity *e;
     dds_retcode_t rc;
     dds_entity_t hdl;
+    dds_entity *parent;
     rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
     if (rc == DDS_RETCODE_OK) {
-        if (e->m_parent) {
-            hdl = e->m_parent->m_hdl;
+        if ((parent = dds__parent_entity(e)) != NULL) {
+            hdl = parent->m_hdl;
+            dds_set_explicit(hdl);
         } else {
             hdl = DDS_ERRNO_DEPRECATED(DDS_RETCODE_ILLEGAL_OPERATION);
         }
@@ -415,6 +447,7 @@ dds_get_children(
             while (iter) {
                 if ((size_t)ret < size) { /*To fix the warning of signed/unsigned mismatch, type casting is done for the variable 'ret'*/
                     children[ret] = iter->m_hdl;
+                    dds_set_explicit(iter->m_hdl);
                 }
                 ret++;
                 iter = iter->m_next;
@@ -1016,4 +1049,19 @@ dds_get_topic(
       hdl = DDS_ERRNO_DEPRECATED(rc);
     }
     return hdl;
+}
+
+static void
+dds_set_explicit(
+        _In_ dds_entity_t entity)
+{
+    dds_entity *e;
+    dds_retcode_t rc;
+    rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+    if( rc == DDS_RETCODE_OK){
+        e->m_flags &= ~DDS_ENTITY_IMPLICIT;
+        dds_entity_unlock(e);
+    } else {
+        DDS_ERRNO(rc);
+    }
 }
