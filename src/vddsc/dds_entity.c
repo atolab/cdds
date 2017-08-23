@@ -1062,6 +1062,6 @@ dds_set_explicit(
         e->m_flags &= ~DDS_ENTITY_IMPLICIT;
         dds_entity_unlock(e);
     } else {
-        DDS_ERRNO(rc);
+        DDS_ERRNO_DEPRECATED(rc);
     }
 }
