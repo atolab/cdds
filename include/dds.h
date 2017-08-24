@@ -760,6 +760,7 @@ dds_create_participant(
  * @param[in]  entity  Entity from which to get its parent.
  *
  * @returns >0 - Success (valid entity handle).
+ * @returns  0 - DDS_ENTITY_NIL (function was called with a participant).
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_ERROR
