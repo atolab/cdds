@@ -76,13 +76,13 @@ struct os_reportEventV1_s
 
 typedef struct os_reportEventV1_s* os_reportEventV1;
 
-void os__report_append(os_reportStack _this, const os_reportEventV1 report);
+static void os__report_append(_Inout_ os_reportStack _this, _In_ const os_reportEventV1 report);
 
-static void os__report_fprintf(FILE *file, const char *format, ...);
+static void os__report_fprintf(_Inout_ FILE *file, _In_z_ _Printf_format_string_ const char *format, ...);
 
-void os__report_free(os_reportEventV1 report);
+static void os__report_free(_In_ _Post_invalid_ os_reportEventV1 report);
 
-void os__report_dumpStack(const char *context, const char *path, int line);
+static void os__report_dumpStack(_In_z_ const char *context, _In_z_ const char *path, _In_ int line);
 
 static FILE* error_log = NULL;
 static FILE* info_log = NULL;
@@ -170,9 +170,10 @@ os__open_file (
     return logfile;
 }
 
-static void _Ret_ os__close_file (
-        _In_z_ const char * file_name,
-        _In_ _Post_invalid_ FILE *file)
+static void
+os__close_file (
+    _In_z_ const char * file_name,
+    _In_ _Post_invalid_ FILE *file)
 {
     if (strcmp(file_name, "<stderr>") != 0 && strcmp(file_name, "<stdout>") != 0)
     {
@@ -180,7 +181,8 @@ static void _Ret_ os__close_file (
     }
 }
 
-static _Ret_z_ const char *os__report_createFileNormalize(
+_Check_return_ _Ret_z_
+static const char *os__report_createFileNormalize(
         _In_z_ const char *file_dir,
         _In_z_ const char *file_name)
 {
@@ -271,9 +273,9 @@ os__report_file_path(
  * @return os_resultFail if the string contains neither of the above;
  * os_resultSuccess otherwise.
  */
-_Ret_ os_result
+static os_result
 os__determine_verbosity(
-        _In_z_ const char* newVerbosity)
+    _In_z_ const char* newVerbosity)
 {
     long verbosityInt;
     os_result result = os_resultFail;
@@ -444,8 +446,8 @@ void os_reportExit(void)
 }
 
 static void os__report_fprintf(
-        _Pre_notnull_ _Post_notnull_ FILE *file,
-        _In_z_ const char *format, ...)
+        _Inout_ FILE *file,
+        _In_z_ _Printf_format_string_ const char *format, ...)
 {
     int BytesWritten = 0;
     va_list args;
@@ -686,7 +688,7 @@ void os_report(
         _In_z_ const char *path,
         _In_ int32_t line,
         _In_ int32_t code,
-        _In_z_ const char *format,
+        _In_z_ _Printf_format_string_ const char *format,
         ...)
 {
     char buf[OS_REPORT_BUFLEN];
@@ -759,8 +761,9 @@ void os_report_stack_free(void)
     }
 }
 
-static void os__report_stack_unwind(
-        _Pre_notnull_ _Post_notnull_ os_reportStack _this,
+static void
+os__report_stack_unwind(
+        _Inout_ os_reportStack _this,
         _In_ bool valid,
         _In_z_ const char *context,
         _In_z_ const char *path,
@@ -818,7 +821,8 @@ static void os__report_stack_unwind(
     }
 }
 
-void os__report_dumpStack(
+static void
+os__report_dumpStack(
         _In_z_ const char *context,
         _In_z_ const char *path,
         _In_ int line)
@@ -859,34 +863,30 @@ void os_report_flush(
 
 #define OS__STRDUP(str) (str != NULL ? os_strdup(str) : os_strdup("NULL"))
 
-void os__report_append(
-        _Pre_notnull_ _Post_notnull_ os_reportStack _this,
-        _Pre_notnull_ _Post_notnull_ const os_reportEventV1 report)
+static void
+os__report_append(
+    _Inout_ os_reportStack _this,
+    _In_ const os_reportEventV1 report)
 {
     os_reportEventV1 copy;
-    assert(report);
 
     copy = os_malloc(sizeof(*copy));
-    if (copy) {
-        copy->code = report->code;
-        copy->description = OS__STRDUP(report->description);
-        copy->fileName = OS__STRDUP(report->fileName);
-        copy->lineNo = report->lineNo;
-        copy->processDesc = OS__STRDUP(report->processDesc);
-        copy->reportContext = OS__STRDUP(report->reportContext);
-        copy->reportType = report->reportType;
-        copy->threadDesc = OS__STRDUP(report->threadDesc);
-        copy->version = report->version;
-        _this->typeset |= OS_REPORT_TYPE_FLAG(report->reportType);
-        os_iterAppend(_this->reports, copy);
-    } else {
-        os__report_fprintf(stderr, "Failed to allocate %d bytes for log report!", (int)sizeof(*copy));
-        os__report_fprintf(stderr, "Report: %s\n", report->description);
-    }
+    copy->code = report->code;
+    copy->description = OS__STRDUP(report->description);
+    copy->fileName = OS__STRDUP(report->fileName);
+    copy->lineNo = report->lineNo;
+    copy->processDesc = OS__STRDUP(report->processDesc);
+    copy->reportContext = OS__STRDUP(report->reportContext);
+    copy->reportType = report->reportType;
+    copy->threadDesc = OS__STRDUP(report->threadDesc);
+    copy->version = report->version;
+    _this->typeset |= OS_REPORT_TYPE_FLAG(report->reportType);
+    os_iterAppend(_this->reports, copy);
 }
 
-void os__report_free(
-        _Pre_notnull_ _Post_invalid_ os_reportEventV1 report)
+static void
+os__report_free(
+    _In_ _Post_invalid_ os_reportEventV1 report)
 {
     os_free(report->description);
     os_free(report->fileName);

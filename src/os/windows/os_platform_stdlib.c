@@ -20,7 +20,7 @@
 #include "../snippets/code/os_stdlib_strtok_r.c"
 
 
-static _Ret_ int32_t
+static int32_t
 os__ensurePathExists(
         _In_z_ const char* dir_name);
 
@@ -368,64 +368,59 @@ os_getTempDir(void)
         return dir_name;
 }
 
-_Ret_ int32_t
+int32_t
 os__ensurePathExists(
-        _In_z_ const char* dir_name)
+    _In_z_ const char* dir_name)
 {
-        char* tmp;
-        char* ptr;
-        char ptrTmp;
-        struct os_stat statBuf;
-        os_result status;
-        int32_t result = 0;
-        int32_t cont = 1;
+    char* tmp;
+    char* ptr;
+    char ptrTmp;
+    struct os_stat statBuf;
+    os_result status;
+    int32_t result = 0;
+    int32_t cont = 1;
 
-        if (dir_name)
+    tmp = os_strdup(dir_name);
+
+    for (ptr = tmp; cont; ptr++)
+    {
+        if (*ptr == '\\' || *ptr == '/' || *ptr == '\0')
         {
-                tmp = os_strdup(dir_name);
+            ptrTmp = ptr[0];
+            ptr[0] = '\0';
+            status = os_stat(tmp, &statBuf);
 
-                for (ptr = tmp; cont; ptr++)
-                {
-                        if (*ptr == '\\' || *ptr == '/' || *ptr == '\0')
-                        {
-                                ptrTmp = ptr[0];
-                                ptr[0] = '\0';
-                                status = os_stat(tmp, &statBuf);
+            if (status != os_resultSuccess)
+            {
+                os_mkdir(tmp, 0);
+                status = os_stat(tmp, &statBuf);
+            }
 
-                                if (status != os_resultSuccess)
-                                {
-                                        os_mkdir(tmp, 0);
-                                        status = os_stat(tmp, &statBuf);
-                                }
-
-                                if (!OS_ISDIR(statBuf.stat_mode))
-                                {
-                                        if ((strlen(tmp) == 2) && (tmp[1] == ':')) {
-                                                /*This is a device like for instance: 'C:'*/
-                                        }
-                                        else
-                                        {
-                                                OS_ERROR("os_ensurePathExists", 0,
-                                                        "Unable to create directory '%s' within path '%s'. Errorcode: %d",
-                                                        tmp,
-                                                        dir_name,
-                                                        os_getErrno());
-                                                result = -1;
-                                        }
-                                }
-                                ptr[0] = ptrTmp;
-                        }
-                        if (*ptr == '\0' || result == -1)
-                        {
-                                cont = 0;
-                        }
+            if (!OS_ISDIR(statBuf.stat_mode))
+            {
+                if ((strlen(tmp) == 2) && (tmp[1] == ':')) {
+                    /*This is a device like for instance: 'C:'*/
                 }
-                if (tmp)
+                else
                 {
-                        os_free(tmp);
+                    OS_ERROR("os_ensurePathExists", 0,
+                        "Unable to create directory '%s' within path '%s'. Errorcode: %d",
+                        tmp,
+                        dir_name,
+                        os_getErrno());
+                    result = -1;
                 }
+            }
+            ptr[0] = ptrTmp;
         }
-        return result;
+        if (*ptr == '\0' || result == -1)
+        {
+            cont = 0;
+        }
+    }
+    os_free(tmp);
+
+    return result;
 }
 
 #pragma warning( disable : 4996 )

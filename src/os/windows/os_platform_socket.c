@@ -235,7 +235,7 @@ os_sockSetDscpValueWithTos(
         char errmsg[1024];
         int errNo = os_getErrno();
         (void) os_strerror_r(errNo, errmsg, sizeof errmsg);
-        OS_WARNING("os_sockSetDscpValue", 0, "Failed to set diffserv value to %ld: %d %s", value, errNo, errmsg);
+        OS_WARNING("os_sockSetDscpValue", 0, "Failed to set diffserv value to %lu: %d %s", value, errNo, errmsg);
         result = os_resultFail;
     }
 
@@ -409,7 +409,7 @@ os_sockSetDscpValueWithQos(
 
         if (!setDscpSupported) {
             OS_WARNING("os_sockSetDscpValue", 0,
-                    "Failed to set diffserv value to %ld value used is %d, not supported on this platform",
+                    "Failed to set diffserv value to %lu value used is %d, not supported on this platform",
                     value, defaultDscp);
             goto err_set_flow;
         }
@@ -421,7 +421,7 @@ os_sockSetDscpValueWithQos(
             errNo = os_getErrno();
             if ((errNo == ERROR_ACCESS_DENIED) || (errNo == ERROR_ACCESS_DISABLED_BY_POLICY)) {
                 OS_WARNING("os_sockSetDscpValue", 0,
-                        "Failed to set diffserv value to %ld value used is %d, not enough privileges",
+                        "Failed to set diffserv value to %lu value used is %d, not enough privileges",
                         value, defaultDscp);
             } else {
                 char errmsg[1024];
@@ -609,7 +609,7 @@ addressToIndexAndMask(struct sockaddr *addr, unsigned int *ifIndex, struct socka
                 result = os_resultFail;
             }
         } else {
-            OS_ERROR("addressToIndexAndMask", 0, "Failed to allocate %d bytes for IP address table", dwSize);
+            OS_ERROR("addressToIndexAndMask", 0, "Failed to allocate %lu bytes for IP address table", dwSize);
             result = os_resultFail;
         }
     } else {
@@ -665,7 +665,7 @@ os_sockQueryInterfaces(
     do {
         pAddresses = (IP_ADAPTER_ADDRESSES *) os_malloc(outBufLen);
         if (!pAddresses) {
-            OS_ERROR("os_sockQueryInterfaces", 0, "Failed to allocate %d bytes for Adapter addresses", outBufLen);
+            OS_ERROR("os_sockQueryInterfaces", 0, "Failed to allocate %lu bytes for Adapter addresses", outBufLen);
             return os_resultFail;
         }
         retVal = GetAdaptersAddresses(AF_INET, filter, NULL, pAddresses, &outBufLen);
@@ -777,7 +777,7 @@ os_sockQueryIPv6Interfaces (
     do {
         pAddresses = (IP_ADAPTER_ADDRESSES *) os_malloc(outBufLen);
         if (!pAddresses) {
-            OS_ERROR("os_sockQueryIPv6Interfaces", 0, "Failed to allocate %d bytes for Adapter addresses", outBufLen);
+            OS_ERROR("os_sockQueryIPv6Interfaces", 0, "Failed to allocate %lu bytes for Adapter addresses", outBufLen);
             return os_resultFail;
         }
         retVal = GetAdaptersAddresses(AF_INET6, filter, NULL, pAddresses, &outBufLen);
