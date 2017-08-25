@@ -84,6 +84,9 @@ struct cdrstring {
 
 #define NN_STATUSINFO_DISPOSE      0x1u
 #define NN_STATUSINFO_UNREGISTER   0x2u
+#define NN_STATUSINFO_STANDARDIZED (NN_STATUSINFO_DISPOSE | NN_STATUSINFO_UNREGISTER)
+#define NN_STATUSINFO_OSPL_AUTO    0x10000000u /* OSPL extension, not on the wire */
+#define NN_STATUSINFOX_OSPL_AUTO   0x1         /* statusinfo word 2, OSPL L_AUTO flag on the wire */
 
 #define NN_GUID_PREFIX_UNKNOWN_INITIALIZER {{0,0,0,0, 0,0,0,0, 0,0,0,0}}
 
@@ -403,6 +406,8 @@ typedef struct ParticipantMessageData {
 #define PID_DIRECTED_WRITE                      0x57u
 #define PID_ORIGINAL_WRITER_INFO                0x61u
 #define PID_ENDPOINT_GUID                       0x5au /* !SPEC <=> PRISMTECH_ENDPOINT_GUID */
+
+#define PID_RTI_TYPECODE                        (PID_VENDORSPECIFIC_FLAG | 0x4u)
 
 #ifdef DDSI_INCLUDE_SSM
 /* To indicate whether a reader favours the use of SSM.  Iff the

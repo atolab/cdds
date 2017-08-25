@@ -221,6 +221,12 @@ dds_writer_delete(
         thread_state_asleep(thr);
     }
     ret = dds_delete(wr->m_topic->m_entity.m_hdl);
+    if(ret == DDS_RETCODE_OK){
+        ret = dds_delete_impl(e->m_parent->m_hdl, true);
+        if(dds_err_nr(ret) == DDS_RETCODE_ALREADY_DELETED){
+            ret = DDS_RETCODE_OK;
+        }
+    }
     os_mutexDestroy(&wr->m_call_lock);
     return ret;
 }
@@ -245,10 +251,7 @@ dds_writer_qos_validate(
     {
         ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY);
     } else if (enabled) {
-        /* TODO: Improve/check immutable check. */
-        if (!(qos->present & (QP_LATENCY_BUDGET | QP_OWNERSHIP_STRENGTH))) {
-            ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
-        }
+        ret = dds_qos_validate_mutable_common(qos);
     }
 
     return ret;
@@ -321,30 +324,31 @@ dds_create_writer(
 {
     dds_retcode_t rc;
     dds_qos_t * wqos;
-    dds_publisher * pub = NULL;
     dds_writer * wr;
     dds_entity_t writer = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
-    dds_entity * pp_or_pub = NULL;
+    dds_entity * pub = NULL;
     dds_entity * tp;
+    dds_entity_t publisher;
     struct thread_state1 * const thr = lookup_thread_state();
     const bool asleep = !vtime_awake_p(thr->vtime);
     ddsi_tran_conn_t conn = gv.data_conn_mc ? gv.data_conn_mc : gv.data_conn_uc;
     int ret = DDS_RETCODE_OK;
 
     /* Try claiming a participant. If that's not working, then it could be a subscriber. */
-    rc = dds_entity_lock(participant_or_publisher, DDS_KIND_PARTICIPANT, &pp_or_pub);
+    if(dds_entity_kind(participant_or_publisher) == DDS_KIND_PARTICIPANT){
+        publisher = dds_create_publisher(participant_or_publisher, qos, NULL);
+    } else{
+        publisher = participant_or_publisher;
+    }
+    rc = dds_entity_lock(publisher, DDS_KIND_PUBLISHER, &pub);
+
     if (rc != DDS_RETCODE_OK) {
-        if (rc == DDS_RETCODE_ILLEGAL_OPERATION) {
-            rc = dds_entity_lock(participant_or_publisher, DDS_KIND_PUBLISHER, &pp_or_pub);
-            if (rc != DDS_RETCODE_OK) {
-                writer = (dds_entity_t)DDS_ERRNO(rc);
-                goto err_pp_or_pub_lock;
-            }
-            pub = (dds_publisher*)pp_or_pub;
-        } else {
-            writer = (dds_entity_t)DDS_ERRNO(rc);
-            goto err_pp_or_pub_lock;
-        }
+        writer = (dds_entity_t)DDS_ERRNO(rc);
+        goto err_pub_lock;
+    }
+
+    if (publisher != participant_or_publisher) {
+        pub->m_flags |= DDS_ENTITY_IMPLICIT;
     }
 
     rc = dds_entity_lock(topic, DDS_KIND_TOPIC, &tp);
@@ -353,7 +357,7 @@ dds_create_writer(
         goto err_tp_lock;
     }
     assert(((dds_topic*)tp)->m_stopic);
-    assert(pp_or_pub->m_domain == tp->m_domain);
+    assert(pub->m_domain == tp->m_domain);
 
     /* Merge Topic & Publisher qos */
     wqos = dds_qos_create();
@@ -363,8 +367,8 @@ dds_create_writer(
         (void)dds_qos_copy(wqos, qos);
     }
 
-    if (pub && pub->m_entity.m_qos) {
-        dds_qos_merge(wqos, pub->m_entity.m_qos);
+    if (pub->m_qos) {
+        dds_qos_merge(wqos, pub->m_qos);
     }
 
     if (tp->m_qos) {
@@ -382,7 +386,7 @@ dds_create_writer(
 
     /* Create writer */
     wr = dds_alloc(sizeof (*wr));
-    writer = dds_entity_init(&wr->m_entity, pp_or_pub, DDS_KIND_WRITER, wqos, listener, DDS_WRITER_STATUS_MASK);
+    writer = dds_entity_init(&wr->m_entity, pub, DDS_KIND_WRITER, wqos, listener, DDS_WRITER_STATUS_MASK);
 
     wr->m_topic = (dds_topic*)tp;
     dds_entity_add_ref_nolock(tp);
@@ -401,27 +405,31 @@ dds_create_writer(
     }
 
     os_mutexUnlock(&tp->m_mutex);
-    os_mutexUnlock(&pp_or_pub->m_mutex);
+    os_mutexUnlock(&pub->m_mutex);
 
     if (asleep) {
         thread_state_awake(thr);
     }
-    wr->m_wr = new_writer(&wr->m_entity.m_guid, NULL, &pp_or_pub->m_participant->m_guid, ((dds_topic*)tp)->m_stopic,
+    wr->m_wr = new_writer(&wr->m_entity.m_guid, NULL, &pub->m_participant->m_guid, ((dds_topic*)tp)->m_stopic,
                           wqos, dds_writer_status_cb, wr);
-    os_mutexLock(&pp_or_pub->m_mutex);
+    os_mutexLock(&pub->m_mutex);
     os_mutexLock(&tp->m_mutex);
     assert(wr->m_wr);
     if (asleep) {
         thread_state_asleep(thr);
     }
     dds_entity_unlock(tp);
-    dds_entity_unlock(pp_or_pub);
+    dds_entity_unlock(pub);
     return writer;
+
 err_bad_qos:
     dds_entity_unlock(tp);
 err_tp_lock:
-    dds_entity_unlock(pp_or_pub);
-err_pp_or_pub_lock:
+    dds_entity_unlock(pub);
+    if((pub->m_flags & DDS_ENTITY_IMPLICIT) != 0){
+        (void)dds_delete(publisher);
+    }
+err_pub_lock:
     return writer;
 }
 
@@ -432,110 +440,107 @@ dds_entity_t
 dds_get_publisher(
         _In_ dds_entity_t writer)
 {
-    if (writer >= 0) {
-        if (dds_entity_kind(writer) == DDS_KIND_WRITER) {
-            return dds_get_parent(writer);
-        } else {
-            dds_retcode_t rc = dds_valid_hdl(writer, DDS_KIND_DONTCARE);
-            if (rc == DDS_RETCODE_OK) {
-                return (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION);
-            } else {
-                return (dds_entity_t)DDS_ERRNO(rc);
-            }
-        }
+    dds_entity_t hdl;
+    hdl = DDS_ERRNO(dds_valid_hdl(writer, DDS_KIND_WRITER));
+    if (hdl == DDS_RETCODE_OK) {
+        hdl = dds_get_parent(writer);
     }
-    return writer;
+    return hdl;
 }
 
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
 dds_return_t
-dds_get_publication_matched_status(
-        dds_entity_t entity,
-        dds_publication_matched_status_t *status)
+dds_get_publication_matched_status (
+        _In_ dds_entity_t writer,
+        _Out_opt_ dds_publication_matched_status_t * status)
 {
     dds_retcode_t rc;
     dds_writer *wr;
 
-    rc = dds_writer_lock(entity, &wr);
+    rc = dds_writer_lock(writer, &wr);
     if (rc == DDS_RETCODE_OK) {
-        if (((dds_entity*)wr)->m_status_enable & DDS_PUBLICATION_MATCHED_STATUS) {
-            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-            if (status) {
-                *status = wr->m_publication_matched_status;
-            }
-            wr->m_publication_matched_status.total_count_change = 0;
-            wr->m_publication_matched_status.current_count_change = 0;
-            dds_entity_status_reset(wr, DDS_PUBLICATION_MATCHED_STATUS);
-        }
-        dds_writer_unlock(wr);
+      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+      if (status) {
+        *status = wr->m_publication_matched_status;
+      }
+      if (((dds_entity*)wr)->m_status_enable & DDS_PUBLICATION_MATCHED_STATUS) {
+        wr->m_publication_matched_status.total_count_change = 0;
+        wr->m_publication_matched_status.current_count_change = 0;
+        dds_entity_status_reset(wr, DDS_PUBLICATION_MATCHED_STATUS);
+      }
+      dds_writer_unlock(wr);
     }
     return DDS_ERRNO(rc);
 }
 
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
 dds_return_t
-dds_get_liveliness_lost_status(
-        dds_entity_t entity,
-        dds_liveliness_lost_status_t *status)
+dds_get_liveliness_lost_status (
+        _In_ dds_entity_t writer,
+        _Out_opt_ dds_liveliness_lost_status_t * status)
 {
     dds_retcode_t rc;
     dds_writer *wr;
 
-    rc = dds_writer_lock(entity, &wr);
+    rc = dds_writer_lock(writer, &wr);
     if (rc == DDS_RETCODE_OK) {
-        if (((dds_entity*)wr)->m_status_enable & DDS_LIVELINESS_LOST_STATUS) {
-            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-            if (status) {
-                *status = wr->m_liveliness_lost_status;
-            }
-            wr->m_liveliness_lost_status.total_count_change = 0;
-            dds_entity_status_reset(wr, DDS_LIVELINESS_LOST_STATUS);
-        }
-        dds_writer_unlock(wr);
+      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+      if (status) {
+        *status = wr->m_liveliness_lost_status;
+      }
+      if (((dds_entity*)wr)->m_status_enable & DDS_LIVELINESS_LOST_STATUS) {
+        wr->m_liveliness_lost_status.total_count_change = 0;
+        dds_entity_status_reset(wr, DDS_LIVELINESS_LOST_STATUS);
+      }
+      dds_writer_unlock(wr);
     }
     return DDS_ERRNO(rc);
 }
 
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
 dds_return_t
 dds_get_offered_deadline_missed_status(
-        dds_entity_t entity,
-        dds_offered_deadline_missed_status_t *status)
+        _In_  dds_entity_t writer,
+        _Out_opt_ dds_offered_deadline_missed_status_t *status)
 {
     dds_retcode_t rc;
     dds_writer *wr;
 
-    rc = dds_writer_lock(entity, &wr);
+    rc = dds_writer_lock(writer, &wr);
     if (rc == DDS_RETCODE_OK) {
-        if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_DEADLINE_MISSED_STATUS) {
-            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-            if (status) {
-                *status = wr->m_offered_deadline_missed_status;
-            }
-            wr->m_offered_deadline_missed_status.total_count_change = 0;
-            dds_entity_status_reset(wr, DDS_OFFERED_DEADLINE_MISSED_STATUS);
-        }
-        dds_writer_unlock(wr);
+      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+      if (status) {
+        *status = wr->m_offered_deadline_missed_status;
+      }
+      if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_DEADLINE_MISSED_STATUS) {
+        wr->m_offered_deadline_missed_status.total_count_change = 0;
+        dds_entity_status_reset(wr, DDS_OFFERED_DEADLINE_MISSED_STATUS);
+      }
+      dds_writer_unlock(wr);
     }
     return DDS_ERRNO(rc);
 }
 
+_Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
 dds_return_t
-dds_get_offered_incompatible_qos_status(
-        dds_entity_t entity,
-        dds_offered_incompatible_qos_status_t *status)
+dds_get_offered_incompatible_qos_status (
+        _In_  dds_entity_t writer,
+        _Out_opt_ dds_offered_incompatible_qos_status_t * status)
 {
     dds_retcode_t rc;
     dds_writer *wr;
 
-    rc = dds_writer_lock(entity, &wr);
+    rc = dds_writer_lock(writer, &wr);
     if (rc == DDS_RETCODE_OK) {
-        if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_INCOMPATIBLE_QOS_STATUS) {
-            /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-            if (status) {
-                *status = wr->m_offered_incompatible_qos_status;
-            }
-            wr->m_offered_incompatible_qos_status.total_count_change = 0;
-            dds_entity_status_reset(wr, DDS_OFFERED_INCOMPATIBLE_QOS_STATUS);
-        }
-        dds_writer_unlock(wr);
+      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+      if (status) {
+        *status = wr->m_offered_incompatible_qos_status;
+      }
+      if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_INCOMPATIBLE_QOS_STATUS) {
+        wr->m_offered_incompatible_qos_status.total_count_change = 0;
+        dds_entity_status_reset(wr, DDS_OFFERED_INCOMPATIBLE_QOS_STATUS);
+      }
+      dds_writer_unlock(wr);
     }
     return DDS_ERRNO(rc);
 }

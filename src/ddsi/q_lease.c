@@ -47,7 +47,7 @@ struct lease {
   ut_fibheapNode_t heapnode;
   nn_etime_t tsched;  /* access guarded by leaseheap_lock */
   nn_etime_t tend;    /* access guarded by lock_lease/unlock_lease */
-  int64_t tdur;       /* constant */
+  int64_t tdur;      /* constant (renew depends on it) */
   struct entity_common *entity; /* constant */
 };
 
@@ -98,14 +98,14 @@ static void unlock_lease (const struct lease *l)
   os_mutexUnlock (lock_lease_addr (l));
 }
 
-struct lease *lease_new (int64_t tdur, struct entity_common *e)
+struct lease *lease_new (nn_etime_t texpire, int64_t tdur, struct entity_common *e)
 {
   struct lease *l;
   if ((l = os_malloc (sizeof (*l))) == NULL)
     return NULL;
   TRACE (("lease_new(tdur %"PRId64" guid %x:%x:%x:%x) @ %p\n", tdur, PGUID (e->guid), (void *) l));
   l->tdur = tdur;
-  l->tend = add_duration_to_etime (now_et (), tdur);
+  l->tend = texpire;
   l->tsched.v = TSCHED_NOT_ON_HEAP;
   l->entity = e;
   return l;
@@ -114,24 +114,25 @@ struct lease *lease_new (int64_t tdur, struct entity_common *e)
 void lease_register (struct lease *l)
 {
   TRACE (("lease_register(l %p guid %x:%x:%x:%x)\n", (void *) l, PGUID (l->entity->guid)));
-  assert (l->tsched.v == TSCHED_NOT_ON_HEAP);
   os_mutexLock (&gv.leaseheap_lock);
   lock_lease (l);
-  l->tsched = l->tend;
+  assert (l->tsched.v == TSCHED_NOT_ON_HEAP);
+  if (l->tend.v != T_NEVER)
+  {
+    l->tsched = l->tend;
+    ut_fibheapInsert (&lease_fhdef, &gv.leaseheap, l);
+  }
   unlock_lease (l);
-  ut_fibheapInsert (&lease_fhdef, &gv.leaseheap, l);
   os_mutexUnlock (&gv.leaseheap_lock);
 }
 
 void lease_free (struct lease *l)
 {
   TRACE (("lease_free(l %p guid %x:%x:%x:%x)\n", (void *) l, PGUID (l->entity->guid)));
+  os_mutexLock (&gv.leaseheap_lock);
   if (l->tsched.v != TSCHED_NOT_ON_HEAP)
-  {
-    os_mutexLock (&gv.leaseheap_lock);
     ut_fibheapDelete (&lease_fhdef, &gv.leaseheap, l);
-    os_mutexUnlock (&gv.leaseheap_lock);
-  }
+  os_mutexUnlock (&gv.leaseheap_lock);
   os_free (l);
 }
 
@@ -140,7 +141,8 @@ void lease_renew (struct lease *l, nn_etime_t tnowE)
   nn_etime_t tend_new = add_duration_to_etime (tnowE, l->tdur);
   int did_update;
   lock_lease (l);
-  if (tend_new.v <= l->tend.v)
+  /* do not touch tend if moving forward or if already expired */
+  if (tend_new.v <= l->tend.v || tnowE.v >= l->tend.v)
     did_update = 0;
   else
   {
@@ -149,7 +151,7 @@ void lease_renew (struct lease *l, nn_etime_t tnowE)
   }
   unlock_lease (l);
 
-  if ((config.enabled_logcats & LC_TRACE) && did_update)
+  if (did_update && (config.enabled_logcats & LC_TRACE))
   {
     int tsec, tusec;
     TRACE ((" L("));
@@ -162,9 +164,33 @@ void lease_renew (struct lease *l, nn_etime_t tnowE)
   }
 }
 
+void lease_set_expiry (struct lease *l, nn_etime_t when)
+{
+  assert (when.v >= 0);
+  os_mutexLock (&gv.leaseheap_lock);
+  lock_lease (l);
+  l->tend = when;
+  if (l->tend.v < l->tsched.v)
+  {
+    /* moved forward and currently scheduled (by virtue of
+       TSCHED_NOT_ON_HEAP == INT64_MIN) */
+    l->tsched = l->tend;
+    ut_fibheapDecreaseKey (&lease_fhdef, &gv.leaseheap, l);
+  }
+  else if (l->tsched.v == TSCHED_NOT_ON_HEAP && l->tend.v < T_NEVER)
+  {
+    /* not currently scheduled, with a finite new expiry time */
+    l->tsched = l->tend;
+    ut_fibheapInsert (&lease_fhdef, &gv.leaseheap, l);
+  }
+  unlock_lease (l);
+  os_mutexUnlock (&gv.leaseheap_lock);
+}
+
 void check_and_handle_lease_expiration (UNUSED_ARG (struct thread_state1 *self), nn_etime_t tnowE)
 {
   struct lease *l;
+  const nn_wctime_t tnow = now();
   os_mutexLock (&gv.leaseheap_lock);
   while ((l = ut_fibheapMin (&lease_fhdef, &gv.leaseheap)) != NULL && l->tsched.v <= tnowE.v)
   {
@@ -177,9 +203,15 @@ void check_and_handle_lease_expiration (UNUSED_ARG (struct thread_state1 *self),
     lock_lease (l);
     if (tnowE.v < l->tend.v)
     {
-      l->tsched = l->tend;
-      unlock_lease (l);
-      ut_fibheapInsert (&lease_fhdef, &gv.leaseheap, l);
+      if (l->tend.v == T_NEVER) {
+        /* don't reinsert if it won't expire */
+        l->tsched.v = TSCHED_NOT_ON_HEAP;
+        unlock_lease (l);
+      } else {
+        l->tsched = l->tend;
+        unlock_lease (l);
+        ut_fibheapInsert (&lease_fhdef, &gv.leaseheap, l);
+      }
       continue;
     }
 
@@ -236,19 +268,19 @@ void check_and_handle_lease_expiration (UNUSED_ARG (struct thread_state1 *self),
         delete_participant (&g);
         break;
       case EK_PROXY_PARTICIPANT:
-        delete_proxy_participant_by_guid (&g, 1);
+        delete_proxy_participant_by_guid (&g, tnow, 1);
         break;
       case EK_WRITER:
         delete_writer_nolinger (&g);
         break;
       case EK_PROXY_WRITER:
-        delete_proxy_writer (&g, 1);
+        delete_proxy_writer (&g, tnow, 1);
         break;
       case EK_READER:
         (void)delete_reader (&g);
         break;
       case EK_PROXY_READER:
-        delete_proxy_reader (&g, 1);
+        delete_proxy_reader (&g, tnow, 1);
         break;
     }
 
@@ -274,7 +306,7 @@ static void debug_print_rawdata (const char *msg, const void *data, size_t len)
   TRACE ((">"));
 }
 
-void handle_PMD (UNUSED_ARG (const struct receiver_state *rst), unsigned statusinfo, const void *vdata, unsigned len)
+void handle_PMD (UNUSED_ARG (const struct receiver_state *rst), nn_wctime_t timestamp, unsigned statusinfo, const void *vdata, unsigned len)
 {
   const struct CDRHeader *data = vdata; /* built-ins not deserialized (yet) */
   const int bswap = (data->identifier == CDR_LE) ^ PLATFORM_IS_LITTLE_ENDIAN;
@@ -327,7 +359,7 @@ void handle_PMD (UNUSED_ARG (const struct receiver_state *rst), unsigned statusi
       {
         ppguid.prefix = nn_ntoh_guid_prefix (*((nn_guid_prefix_t *) (data + 1)));
         ppguid.entityid.u = NN_ENTITYID_PARTICIPANT;
-        if (delete_proxy_participant_by_guid (&ppguid, 0) < 0)
+        if (delete_proxy_participant_by_guid (&ppguid, timestamp, 0) < 0)
           TRACE ((" unknown"));
         else
           TRACE ((" delete"));

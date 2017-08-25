@@ -46,185 +46,13 @@
 #define OS_REPORT_WARNING(x)     ((x) & OS_REPORT_TYPE_WARNING)
 #define OS_REPORT_IS_ERROR(x)    ((x) & (OS_REPORT_TYPE_ERROR | OS_REPORT_TYPE_CRITICAL | OS_REPORT_TYPE_FATAL | OS_REPORT_TYPE_REPAIRED))
 
-////////////////////////////////
-typedef struct os_iter_s *os_iter;
-typedef struct os_iterNode_s *os_iterNode;
-
-struct os_iter_s {
-    uint32_t length;
-    os_iterNode head;
-    os_iterNode tail;
-};
-
-struct os_iterNode_s {
-    os_iterNode next;
-    void *object;
-};
-
-os_iter
-os_iterNew(
-           void *object)
-{
-    os_iter l;
-
-    l = os_malloc(sizeof *l);
-    if (object == NULL) {
-        l->length = 0;
-        l->head = NULL;
-        l->tail = NULL;
-    } else {
-        l->length = 1;
-        l->head = os_malloc(sizeof *l->head);
-        l->head->next = NULL;
-        l->head->object = object;
-        l->tail = l->head;
-    }
-    return l;
-}
-
-void
-os_iterFree(
-            os_iter iter)
-{
-    os_iterNode n,t;
-
-    if (iter == NULL) {
-        return;
-    }
-    n = iter->head;
-    while (n != NULL) {
-        t = n->next;
-        os_free(n);
-        n = t;
-    }
-    /* Do not free tail, because 'tail - 1' references tail already.*/
-    os_free(iter);
-}
-
-static os_iter
-os_iterAppend(
-              os_iter iter,
-              void *object)
-{
-    os_iterNode n;
-
-    if (iter == NULL) return os_iterNew(object);
-    if (object == NULL) {
-        return iter;
-    }
-    n = (os_iterNode)os_malloc(sizeof(*n));
-    n->object = object;
-    n->next = NULL;
-
-    if(iter->tail){
-        iter->tail->next = n;
-        iter->tail = n;
-    } else {
-        iter->head = n;
-        iter->tail = n;
-    }
-    iter->length++;
-
-    return iter;
-}
-
-static void *
-os_iterObject(
-              os_iter iter,
-              uint32_t index)
-{
-    os_iterNode l;
-    uint32_t i;
-
-    if (iter == NULL) {
-        return NULL;
-    }
-    if (index >= iter->length) {
-        return NULL;
-    }
-    l = iter->head;
-    for (i = 0; i < index; i++) l = l->next;
-    return l->object;
-}
-
-static void *
-os_iterTakeLast(
-                os_iter iter)
-{
-    os_iterNode n, prev;
-    void *o;
-
-    if (iter == NULL) {
-        return NULL;
-    }
-    if (iter->tail == NULL) {
-        return NULL;
-    }
-
-    n = iter->tail;
-    o = n->object;
-
-    if (iter->head == iter->tail) {
-        prev = NULL;
-    } else {
-        prev = iter->head;
-        while (prev->next != iter->tail) {
-            prev = prev->next;
-        }
-    }
-
-    if (prev) {
-        prev->next = NULL;
-    }
-    iter->tail = prev;
-    iter->length--;
-
-    if (iter->length == 0) {
-        iter->head = NULL;
-        assert(iter->tail == NULL);
-    }
-
-    os_free(n);
-
-    return o;
-}
-
-static uint32_t
-os_iterLength(
-              os_iter iter)
-{
-    if (iter == NULL) {
-        return 0;
-    }
-    return iter->length;
-}
-
-
-static void
-os_iterWalk(
-            os_iter iter,
-            void (*action) (void *obj, void *arg),
-            void *actionArg)
-{
-    os_iterNode l;
-    if (iter == NULL) {
-        return;
-    }
-    l = iter->head;
-    while (l != NULL) {
-        action(l->object,actionArg);
-        l = l->next;
-    }
-}
-////////////////////////////////
-
 typedef struct os_reportStack_s {
     int count;
     unsigned typeset;
     const char *file;
     int lineno;
     const char *signature;
-    os_iter reports;  /* os_reportEventV1 */
+    os_iter *reports;  /* os_reportEventV1 */
 } *os_reportStack;
 
 void os__report_append(os_reportStack _this, const os_reportEventV1 report);
@@ -618,7 +446,7 @@ void os_reportExit()
     reports = os_threadMemGet(OS_THREAD_REPORT_STACK);
     if (reports) {
         os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__);
-        os_iterFree(reports->reports);
+        os_iterFree(reports->reports, NULL);
         os_threadMemFree(OS_THREAD_REPORT_STACK);
     }
     inited = false;
@@ -1737,7 +1565,7 @@ os_report_stack()
             _this->file = NULL;
             _this->lineno = 0;
             _this->signature = NULL;
-            _this->reports = os_iterNew(NULL);
+            _this->reports = os_iterNew();
         } else {
             OS_REPORT(OS_ERROR, "os_report_stack", 0,
                     "Failed to initialize report stack (could not allocate thread-specific memory)");
@@ -1772,7 +1600,7 @@ os_report_stack_open(
             _this->file = file;
             _this->lineno = lineno;
             _this->signature = signature;
-            _this->reports = os_iterNew(NULL);
+            _this->reports = os_iterNew();
         } else {
             OS_REPORT(OS_ERROR, "os_report_stack", 0,
                     "Failed to initialize report stack (could not allocate thread-specific memory)");
@@ -1817,18 +1645,18 @@ os_report_stack_free(
 
     _this = (os_reportStack)os_threadMemGet(OS_THREAD_REPORT_STACK);
     if (_this) {
-        while((report = os_iterTakeLast(_this->reports))) {
+        while((report = os_iterTake(_this->reports, -1))) {
             os__report_free(report);
         }
-        os_iterFree(_this->reports);
+        os_iterFree(_this->reports, NULL);
         os_threadMemFree(OS_THREAD_REPORT_STACK);
     }
 }
 
 static void
 os__report_stack_event_length (
-        void *object,
-        void *argument)
+        _Inout_ void *object,
+        _Inout_opt_ void *argument)
 {
     char tmp[2];
     os_reportEventV1 event;
@@ -1919,7 +1747,7 @@ os__report_stack_unwind(
     struct os_reportEventV1_s header;
     os_reportEventV1 report;
     struct os__reportBuffer buf = { NULL, 0, 0 };
-    os_iter tempList;
+    os_iter *tempList;
     char *file;
     char tmp[2];
     int32_t code = 0;
@@ -1940,16 +1768,16 @@ os__report_stack_unwind(
         }
 
         if (filter != OS_NONE) {
-            tempList = os_iterNew(NULL);
-            if (tempList) {
-                while ((report = os_iterTakeLast(_this->reports))) {
+            tempList = os_iterNew();
+            if (tempList != NULL) {
+                while ((report = os_iterTake(_this->reports, -1))) {
                     if (report->reportType == filter) {
                         (void)os_iterAppend(tempList, report);
                     } else {
                         os__report_free(report);
                     }
                 }
-                while ((report = os_iterTakeLast(tempList))) {
+                while ((report = os_iterTake(tempList, -1))) {
                     os_iterAppend(_this->reports, report);
                 }
                 os_free(tempList);
@@ -2046,7 +1874,7 @@ os__report_stack_unwind(
         }
     }
 
-    while ((report = os_iterTakeLast (_this->reports))) {
+    while ((report = os_iterTake(_this->reports, -1))) {
         if (valid) {
             if (update == true && os_report_iserror (report)) {
                 os_reportSetApiInfo (
@@ -2318,7 +2146,3 @@ os__report_fprintf(FILE *file,
     }
     return BytesWritten;
 }
-
-
-
-

@@ -85,6 +85,7 @@ dds_topic_descriptor_t;
 
 #define DDS_DOMAIN_DEFAULT -1
 #define DDS_HANDLE_NIL 0
+#define DDS_ENTITY_NIL 0
 
 #define DDS_ENTITY_KIND_MASK (0x7F000000) /* Should be same as UT_HANDLE_KIND_MASK. */
 typedef enum dds_entity_kind

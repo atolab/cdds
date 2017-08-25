@@ -20,17 +20,6 @@
 #define NN_C99_INLINE
 #endif
 
-NN_C99_INLINE struct thread_state1 *lookup_thread_state (void)
-{
-#if OS_HAS_TSD_USING_THREAD_KEYWORD
-  if (tsd_thread_state == NULL)
-    tsd_thread_state = lookup_thread_state_real ();
-  return tsd_thread_state;
-#else
-  return lookup_thread_state_real ();
-#endif
-}
-
 NN_C99_INLINE int vtime_awake_p (_In_ vtime_t vtime)
 {
   return (vtime % 2) == 0;
@@ -110,5 +99,3 @@ NN_C99_INLINE void thread_state_unblocked (_Inout_ struct thread_state1 *ts1)
     ts1->watchdog = wd + 2;
   }
 }
-
-

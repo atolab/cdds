@@ -66,6 +66,7 @@ static uint32_t lease_renewal_thread (struct nn_servicelease *sl)
      assignment. */
   const int64_t min_progress_check_intv = 100 * T_MILLISECOND;
   struct thread_state1 *self = lookup_thread_state ();
+  nn_mtime_t next_thread_cputime = { 0 };
   nn_mtime_t tlast = { 0 };
   int was_alive = 1;
   unsigned i;
@@ -79,6 +80,8 @@ static uint32_t lease_renewal_thread (struct nn_servicelease *sl)
   {
     unsigned n_alive = 0;
     nn_mtime_t tnow = now_mt ();
+
+    LOG_THREAD_CPUTIME (next_thread_cputime);
 
     TRACE (("servicelease: tnow %"PRId64":", tnow.v));
 

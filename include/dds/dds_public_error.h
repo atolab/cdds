@@ -76,13 +76,13 @@ typedef _Return_type_success_(return == DDS_RETCODE_OK) int32_t dds_retcode_t;
 /** @}*/
 
 /** Macro to extract error number */
-#define dds_err_nr(e) ((-e) & DDS_ERR_NR_MASK)
+#define dds_err_nr(e) ((-(e)) & DDS_ERR_NR_MASK)
 
 /** Macro to extract line number */
-#define dds_err_line(e) (((-e) & DDS_ERR_LINE_MASK) >> 8)
+#define dds_err_line(e) (((-(e)) & DDS_ERR_LINE_MASK) >> 8)
 
 /** Macro to extract file identifier */
-#define dds_err_file_id(e) (((-e) & DDS_ERR_FILE_ID_MASK) >> 22)
+#define dds_err_file_id(e) (((-(e)) & DDS_ERR_FILE_ID_MASK) >> 22)
 
 /**
  * Description : This operation takes the error value and outputs a string

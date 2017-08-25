@@ -58,10 +58,16 @@ function(IDLC_GENERATE _target)
       VERBATIM)
   endforeach()
 
+  add_custom_target(
+    "${_target}_idlc_generate"
+    DEPENDS "${_sources}" "${_headers}"
+  )
+
   set_source_files_properties(
     ${_sources} ${_headers} PROPERTIES GENERATED TRUE)
   add_library(${_target} INTERFACE)
   target_sources(${_target} INTERFACE ${_sources})
   target_include_directories(${_target} INTERFACE "${_dir}")
+  add_dependencies(${_target} "${_target}_idlc_generate")
 endfunction()
 

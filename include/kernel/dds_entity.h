@@ -10,12 +10,14 @@ extern "C" {
 
 _Check_return_ dds_entity_t
 dds_entity_init(
-        _In_     dds_entity * e,
-        _In_opt_ dds_entity * parent,
-        _In_     dds_entity_kind_t kind,
-        _In_opt_ dds_qos_t * qos,
-        _In_opt_ const dds_listener_t *listener,
-        _In_     uint32_t mask);
+        _In_       dds_entity * e,
+        _When_(kind != DDS_KIND_PARTICIPANT, _Notnull_)
+        _When_(kind == DDS_KIND_PARTICIPANT, _Null_)
+          _In_opt_ dds_entity * parent,
+        _In_       dds_entity_kind_t kind,
+        _In_opt_   dds_qos_t * qos,
+        _In_opt_   const dds_listener_t *listener,
+        _In_       uint32_t mask);
 
 void
 dds_entity_add_ref(
@@ -26,7 +28,7 @@ dds_entity_add_ref_nolock(
 
 _Check_return_ dds_retcode_t
 dds_entity_listener_propagation(
-        _In_ dds_entity *e,
+        _Inout_opt_ dds_entity *e,
         _In_ dds_entity *src,
         _In_ uint32_t status,
         _In_opt_ void *metrics,
@@ -59,7 +61,7 @@ void
 dds_entity_unlock(
         _In_ dds_entity *e);
 
-#define dds_entity_kind(hdl) (hdl & DDS_ENTITY_KIND_MASK)
+#define dds_entity_kind(hdl) ((hdl > 0) ? (hdl & DDS_ENTITY_KIND_MASK) : 0)
 
 _Check_return_ dds_retcode_t
 dds_entity_observer_register_nl(
@@ -83,6 +85,11 @@ dds_entity_observer_unregister(
         _In_ dds_entity_t observed,
         _In_ dds_entity_t observer);
 
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+dds_return_t
+dds_delete_impl(
+        _In_ dds_entity_t entity,
+        _In_ bool keep_if_explicit);
 
 #if defined (__cplusplus)
 }
