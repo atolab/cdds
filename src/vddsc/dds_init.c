@@ -71,22 +71,22 @@ void ddsi_impl_init (void)
 
 static void dds_set_report_level (void)
 {
-  os_reportVerbosity = OS_NONE_TYPE;
+  os_reportVerbosity = OS_REPORT_NONE;
   if (config.enabled_logcats & LC_FATAL)
   {
-    os_reportVerbosity = OS_FATAL_TYPE;
+    os_reportVerbosity = OS_REPORT_FATAL;
   }
   if (config.enabled_logcats & LC_ERROR)
   {
-    os_reportVerbosity = OS_ERROR_TYPE;
+    os_reportVerbosity = OS_REPORT_ERROR;
   }
   if (config.enabled_logcats & LC_WARNING)
   {
-    os_reportVerbosity = OS_WARNING_TYPE;
+    os_reportVerbosity = OS_REPORT_WARNING;
   }
   if (config.enabled_logcats != 0)
   {
-    os_reportVerbosity = OS_DEBUG_TYPE;
+    os_reportVerbosity = OS_REPORT_DEBUG;
   }
 }
 

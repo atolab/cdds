@@ -21,18 +21,17 @@
 #include <stdio.h>
 #include <string.h>
 
-#define OS_REPORT_TYPE_DEBUG     (1u)
-#define OS_REPORT_TYPE_INFO      (1u<<OS_INFO_TYPE)
-#define OS_REPORT_TYPE_WARNING   (1u<<OS_WARNING_TYPE)
-#define OS_REPORT_TYPE_ERROR     (1u<<OS_ERROR_TYPE)
-#define OS_REPORT_TYPE_CRITICAL  (1u<<OS_CRITICAL_TYPE)
-#define OS_REPORT_TYPE_FATAL     (1u<<OS_FATAL_TYPE)
-#define OS_REPORT_TYPE_NONE      (1u<<OS_NONE_TYPE)
+#define OS_REPORT_TYPE_WARNING   (1u<<OS_REPORT_WARNING)
+#define OS_REPORT_TYPE_ERROR     (1u<<OS_REPORT_ERROR)
+#define OS_REPORT_TYPE_CRITICAL  (1u<<OS_REPORT_CRITICAL)
+#define OS_REPORT_TYPE_FATAL     (1u<<OS_REPORT_FATAL)
 
 #define OS_REPORT_TYPE_FLAG(x)   (1u<<(x))
 #define OS_REPORT_IS_ALWAYS(x)   ((x) & (OS_REPORT_TYPE_CRITICAL | OS_REPORT_TYPE_FATAL))
 #define OS_REPORT_IS_WARNING(x)  ((x) & OS_REPORT_TYPE_WARNING)
 #define OS_REPORT_IS_ERROR(x)    ((x) & (OS_REPORT_TYPE_ERROR | OS_REPORT_TYPE_CRITICAL | OS_REPORT_TYPE_FATAL))
+
+#define MAX_FILE_PATH 2048
 
 typedef struct os_reportStack_s {
     int count;
@@ -43,11 +42,47 @@ typedef struct os_reportStack_s {
     os_iter *reports;  /* os_reportEventV1 */
 } *os_reportStack;
 
+
+/**
+  * The information that is made available to a plugged in logger
+  * via its TypedReport symbol.
+  */
+struct os_reportEventV1_s
+{
+    /** The version of this struct i.e. 1. */
+    uint32_t version;
+    /** The type / level of this report.
+      * @see os_reportType */
+    os_reportType reportType;
+    /** Context information relating to where the even was generated.
+      * May contain a function or compnent name or a stacktrace */
+    char* reportContext;
+    /** The source file name where the report even was generated */
+    char* fileName;
+    /** The source file line number where the report was generated */
+    int32_t lineNo;
+    /** An integer code associated with the event. */
+    int32_t code;
+    /** A description of the reported event */
+    char *description;
+    /** A string identifying the thread the event occured in */
+    char* threadDesc;
+    /** A string identifying the process the event occured in */
+    char* processDesc;
+};
+
+#define OS_REPORT_EVENT_V1 1
+
+
+typedef struct os_reportEventV1_s* os_reportEventV1;
+
 void os_report_append(os_reportStack _this, const os_reportEventV1 report);
 
-static int os_report_fprintf(FILE *file, const char *format, ...);
+static int os__report_fprintf(FILE *file, const char *format, ...);
 
 void os_report_free(os_reportEventV1 report);
+
+void os_report_dumpStack(const char *context, const char *path, int line);
 
 static FILE* error_log = NULL;
 static FILE* info_log = NULL;
@@ -57,14 +92,13 @@ static bool inited = false;
 static bool doneOnce = false;
 static bool StaleLogsRemoved = false;
 
-//
 /**
  * Process global verbosity level for OS_REPORT output. os_reportType
  * values >= this value will be written.
- * This value defaults to OS_INFO, meaning that all types 'above' (i.e.
- * other than) OS_DEBUG will be written and OS_DEBUG will not be.
+ * This value defaults to OS_REPORT_INFO, meaning that all types 'above' (i.e.
+ * other than) OS_REPORT_DEBUG will be written and OS_REPORT_DEBUG will not be.
  */
-os_reportType os_reportVerbosity = OS_INFO_TYPE;
+os_reportType os_reportVerbosity = OS_REPORT_INFO;
 
 /**
  * Labels corresponding to os_reportType values.
@@ -98,17 +132,8 @@ static const char os_default_logdir[] = "/tgtsvr";
 static const char os_default_logdir[] = ".";
 #endif
 
-static const char
-os__report_version[] = OSPL_VERSION_STR;
-
-static const char
-os__report_inner_revision[] = OSPL_INNER_REV_STR;
-
-static const char
-os__report_outer_revision[] = OSPL_OUTER_REV_STR;
-
 static FILE *
-os_open_file (char * file_name)
+os__open_file (char * file_name)
 {
     FILE *logfile=NULL;
     char *dir, *str;
@@ -146,112 +171,6 @@ static void os_close_file (char * file_name, FILE *file)
     if (strcmp(file_name, "<stderr>") != 0 && strcmp(file_name, "<stdout>") != 0)
     {
         fclose(file);
-    }
-}
-
-void set_verbosity()
-{
-    char * envValue = os_getenv(os_env_verbosity);
-    if (envValue != NULL)
-    {
-        if (os_reportSetVerbosity(envValue) == os_resultFail)
-        {
-            OS_WARNING("os_reportInit", 0,
-                    "Cannot parse report verbosity %s value \"%s\","
-                    " reporting verbosity remains %s", os_env_verbosity, envValue, os_reportTypeText[os_reportVerbosity]);
-        }
-    }
-}
-
-void remove_stale_logs()
-{
-    char * name;
-
-    os_reportInit(false);
-
-    if (!StaleLogsRemoved) {
-            /* TODO: Only a single process or spliced (as 1st process) is allowed to
-              * delete the log files. */
-              /* Remove ospl-info.log and ospl-error.log.
-              * Ignore the result because it is possible that they don't exist yet. */
-
-            name = os_reportGetInfoFileName();
-            (void)os_remove(name);
-            os_free(name);
-
-            name = os_reportGetErrorFileName();
-            (void)os_remove(name);
-            os_free(name);
-
-            StaleLogsRemoved = true;
-    }
-}
-
-
-void
-check_removal_stale_logs()
-{
-    char * envValue = os_getenv(os_env_append);
-    if (envValue != NULL)
-    {
-        if (os_strcasecmp(envValue, "FALSE") == 0 ||
-            os_strcasecmp(envValue, "0") == 0 ||
--           os_strcasecmp(envValue, "NO") == 0) {
-          remove_stale_logs();
-        }
-    }
-}
-
-/**
- * Read environment properties. In particular ones that can't be left until
- * there is a requirement to log.
- */
-void
-os_reportInit(bool forceReInit)
-{
-    if (!doneOnce || forceReInit)
-    {
-        if (!doneOnce)
-        {
-            os_mutexInit(&reportMutex);
-        }
-        doneOnce = true;
-
-        set_verbosity();
-        check_removal_stale_logs();
-
-    }
-    inited = true;
-}
-
-void os_reportExit()
-{
-    char *name;
-    os_reportStack reports;
-
-    reports = os_threadMemGet(OS_THREAD_REPORT_STACK);
-    if (reports) {
-        os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__);
-        os_iterFree(reports->reports, NULL);
-        os_threadMemFree(OS_THREAD_REPORT_STACK);
-    }
-    inited = false;
-    os_mutexDestroy(&reportMutex);
-
-    if (error_log)
-    {
-        name = os_reportGetErrorFileName();
-        os_close_file(name, error_log);
-        os_free (name);
-        error_log = NULL;
-    }
-
-    if (info_log)
-    {
-        name = os_reportGetInfoFileName();
-        os_close_file(name, info_log);
-        os_free (name);
-        info_log = NULL;
     }
 }
 
@@ -323,7 +242,7 @@ os_report_file_path(char * default_file, char * override_variable, enum os_repor
          * passed in we would create an empty error log (which is bad for testing) and we
          * cannot delete it as we open the file with append
          */
-        if (type == OS_INFO_TYPE)
+        if (type == OS_REPORT_INFO)
         {
             full_file_path = (char*) os_malloc(strlen(file_dir) + 1 + strlen(file_name) + 1 );
             strcpy(full_file_path, file_dir);
@@ -351,41 +270,196 @@ os_report_file_path(char * default_file, char * override_variable, enum os_repor
 }
 
 /**
+ * Overrides the current minimum output level to be reported from
+ * this process.
+ * @param newVerbosity String holding either an integer value corresponding
+ * to an acceptable (in range) log verbosity or a string verbosity 'name'
+ * like 'ERROR' or 'warning' or 'DEBUG' or somesuch.
+ * @return os_resultFail if the string contains neither of the above;
+ * os_resultSuccess otherwise.
+ */
+os_result
+os_reportSetVerbosity(
+        const char* newVerbosity)
+{
+    long verbosityInt;
+    os_result result = os_resultFail;
+    verbosityInt = strtol(newVerbosity, NULL, 0);
+
+    os_reportInit(false);
+    if (verbosityInt == 0 && strcmp("0", newVerbosity)) {
+        /* Conversion from int failed. See if it's one of the string forms. */
+        while (verbosityInt < (long) (sizeof(os_reportTypeText) / sizeof(os_reportTypeText[0]))) {
+            if (os_strcasecmp(newVerbosity, os_reportTypeText[verbosityInt]) == 0) {
+                break;
+            }
+            ++verbosityInt;
+        }
+    }
+    if (verbosityInt >= 0 && verbosityInt < (long) (sizeof(os_reportTypeText) / sizeof(os_reportTypeText[0]))) {
+        /* OS_API_INFO label is kept for backwards compatibility. */
+        os_reportVerbosity = (os_reportType)verbosityInt;
+        result = os_resultSuccess;
+    }
+
+    return result;
+}
+
+void set_verbosity()
+{
+    char * envValue = os_getenv(os_env_verbosity);
+    if (envValue != NULL)
+    {
+        if (os_reportSetVerbosity(envValue) == os_resultFail)
+        {
+            OS_WARNING("os_reportInit", 0,
+                    "Cannot parse report verbosity %s value \"%s\","
+                    " reporting verbosity remains %s", os_env_verbosity, envValue, os_reportTypeText[os_reportVerbosity]);
+        }
+    }
+}
+
+/**
  * Get the destination for logging error reports. Env property VORTEX_INFOFILE and
  * VORTEX_LOGPATH controls this value.
  * If VORTEX_INFOFILE is not set & this process is an OpenSplice service default
- * to logging to a file named ospl-info.log, otherwise
+ * to logging to a file named votex-info.log, otherwise
  * use standard out.
  * @see os_report_file_path
  */
 char *
 os_reportGetInfoFileName()
 {
-    char* file_name;
     os_reportInit(false);
-    file_name = os_report_file_path (os_report_defaultInfoFileName, (char *)os_env_infofile, OS_REPORT);
-    /* @todo dds2881 - Uncomment below & remove above to enable application default error logging to stderr */
-    /* file_name = os_report_file_path (os_procIsOpenSpliceService() ? "ospl-info.log" : "<stdout>", os_env_infofile);*/
-    return file_name;
+    return os_report_file_path (os_report_defaultInfoFileName, (char *)os_env_infofile, OS_REPORT);
 }
 
 /**
  * Get the destination for logging error reports. Env property VORTEX_ERRORFILE and
  * VORTEX_LOGPATH controls this value.
  * If VORTEX_ERRORFILE is not set & this process is an OpenSplice service default
- * to logging to a file named ospl-error.log, otherwise
+ * to logging to a file named votex-error.log, otherwise
  * use standard error.
  * @see os_report_file_path
  */
 char *
 os_reportGetErrorFileName()
 {
-    char* file_name;
     os_reportInit(false);
-    file_name = os_report_file_path (os_report_defaultErrorFileName, (char *)os_env_errorfile, OS_ERROR);
-    /* @todo dds2881 - Uncomment below & remove above to enable application default error logging to stderr */
-    /* file_name = os_report_file_path (os_procIsOpenSpliceService() ? "ospl-error.log" : "<stderr>", os_env_errorfile); */
-    return file_name;
+    return os_report_file_path (os_report_defaultErrorFileName, (char *)os_env_errorfile, OS_ERROR);
+}
+
+void remove_stale_logs()
+{
+    char * name;
+
+    os_reportInit(false);
+
+    if (!StaleLogsRemoved) {
+        /* TODO: Only a single process or spliced (as 1st process) is allowed to
+          * delete the log files. */
+          /* Remove ospl-info.log and ospl-error.log.
+          * Ignore the result because it is possible that they don't exist yet. */
+
+        name = os_reportGetInfoFileName();
+        (void)os_remove(name);
+        os_free(name);
+
+        name = os_reportGetErrorFileName();
+        (void)os_remove(name);
+        os_free(name);
+
+        StaleLogsRemoved = true;
+    }
+}
+
+
+void
+check_removal_stale_logs()
+{
+    char * envValue = os_getenv(os_env_append);
+    if (envValue != NULL)
+    {
+        if (os_strcasecmp(envValue, "FALSE") == 0 ||
+            os_strcasecmp(envValue, "0") == 0 ||
+-           os_strcasecmp(envValue, "NO") == 0) {
+          remove_stale_logs();
+        }
+    }
+}
+
+/**
+ * Read environment properties. In particular ones that can't be left until
+ * there is a requirement to log.
+ */
+void
+os_reportInit(bool forceReInit)
+{
+    if (!doneOnce || forceReInit)
+    {
+        if (!doneOnce)
+        {
+            os_mutexInit(&reportMutex);
+        }
+        doneOnce = true;
+
+        set_verbosity();
+        check_removal_stale_logs();
+
+    }
+    inited = true;
+}
+
+void os_reportExit()
+{
+    char *name;
+    os_reportStack reports;
+
+    reports = os_threadMemGet(OS_THREAD_REPORT_STACK);
+    if (reports) {
+        os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__);
+        os_iterFree(reports->reports, NULL);
+        os_threadMemFree(OS_THREAD_REPORT_STACK);
+    }
+    inited = false;
+    os_mutexDestroy(&reportMutex);
+
+    if (error_log)
+    {
+        name = os_reportGetErrorFileName();
+        os_close_file(name, error_log);
+        os_free (name);
+        error_log = NULL;
+    }
+
+    if (info_log)
+    {
+        name = os_reportGetInfoFileName();
+        os_close_file(name, info_log);
+        os_free (name);
+        info_log = NULL;
+    }
+}
+
+static int
+os_report_fprintf(FILE *file,
+        const char *format,
+        ...)
+{
+    int BytesWritten = 0;
+    va_list args;
+    va_start(args, format);
+    BytesWritten = os_vfprintfnosigpipe(file, format, args);
+    va_end(args);
+    if (BytesWritten == -1) {
+        /* error occured ?, try to write to stdout. (also with no sigpipe,
+         * stdout can also give broken pipe)
+         */
+        va_start(args, format);
+        (void) os_vfprintfnosigpipe(stdout, format, args);
+        va_end(args);
+    }
+    return BytesWritten;
 }
 
 static FILE*
@@ -395,7 +469,7 @@ os_get_info_file (void)
 
     if (info_log == NULL) {
       name = os_reportGetInfoFileName();
-      info_log = os_open_file(name);
+      info_log = os__open_file(name);
       if (!info_log)
       {
           info_log = stdout;
@@ -412,7 +486,7 @@ os_get_error_file (void)
 
     if (error_log == NULL) {
       name = os_reportGetErrorFileName();
-      error_log = os_open_file(name);
+      error_log = os__open_file(name);
       if (!error_log)
       {
           error_log = stderr;
@@ -507,14 +581,14 @@ os_defaultReport(
     FILE *log;
 
     switch (event->reportType) {
-    case OS_DEBUG_TYPE:
-    case OS_INFO_TYPE:
-    case OS_WARNING_TYPE:
+    case OS_REPORT_DEBUG:
+    case OS_REPORT_INFO:
+    case OS_REPORT_WARNING:
         log = os_get_info_file();
         break;
-    case OS_ERROR_TYPE:
-    case OS_CRITICAL_TYPE:
-    case OS_FATAL_TYPE:
+    case OS_REPORT_ERROR:
+    case OS_REPORT_CRITICAL:
+    case OS_REPORT_FATAL:
     default:
         log = os_get_error_file();
         break;
@@ -576,7 +650,7 @@ os_report_message(
     os_reportStack stack;
 
     struct os_reportEventV1_s report = { OS_REPORT_EVENT_V1, /* version */
-            OS_NONE_TYPE, /* reportType */
+            OS_REPORT_NONE, /* reportType */
             NULL, /* reportContext */
             NULL, /* fileName */
             0, /* lineNo */
@@ -604,7 +678,7 @@ os_report_message(
 
     stack = (os_reportStack)os_threadMemGet(OS_THREAD_REPORT_STACK);
     if (stack && stack->count) {
-        if (report.reportType != OS_NONE_TYPE) {
+        if (report.reportType != OS_REPORT_NONE) {
             os_report_append (stack, &report);
         }
     } else {
@@ -638,42 +712,6 @@ os_report(
     va_end (args);
 
     os_report_message(type, context, path, line, code, buf);
-}
-
-/**
- * Overrides the current minimum output level to be reported from
- * this process.
- * @param newVerbosity String holding either an integer value corresponding
- * to an acceptable (in range) log verbosity or a string verbosity 'name'
- * like 'ERROR' or 'warning' or 'DEBUG' or somesuch.
- * @return os_resultFail if the string contains neither of the above;
- * os_resultSuccess otherwise.
- */
-os_result
-os_reportSetVerbosity(
-        const char* newVerbosity)
-{
-    long verbosityInt;
-    os_result result = os_resultFail;
-    verbosityInt = strtol(newVerbosity, NULL, 0);
-
-    os_reportInit(false);
-    if (verbosityInt == 0 && strcmp("0", newVerbosity)) {
-        /* Conversion from int failed. See if it's one of the string forms. */
-        while (verbosityInt < (long) (sizeof(os_reportTypeText) / sizeof(os_reportTypeText[0]))) {
-            if (os_strcasecmp(newVerbosity, os_reportTypeText[verbosityInt]) == 0) {
-                break;
-            }
-            ++verbosityInt;
-        }
-    }
-    if (verbosityInt >= 0 && verbosityInt < (long) (sizeof(os_reportTypeText) / sizeof(os_reportTypeText[0]))) {
-        /* OS_API_INFO label is kept for backwards compatibility. */
-        os_reportVerbosity = (os_reportType)verbosityInt;
-        result = os_resultSuccess;
-    }
-
-    return result;
 }
 
 /*****************************************
@@ -714,26 +752,6 @@ os_report_stack()
     }
 }
 
-bool
-os_report_get_context(
-        const char **file,
-        int *lineno,
-        const char **signature)
-{
-    bool result = false;
-    os_reportStack _this;
-
-    _this = os_threadMemGet(OS_THREAD_REPORT_STACK);
-    if ((_this) && (_this->count) && (_this->file)) {
-        *file = _this->file;
-        *lineno = _this->lineno;
-        *signature = _this->signature;
-        result = true;
-    }
-    return result;
-}
-
-
 void
 os_report_stack_free(
         void)
@@ -751,40 +769,30 @@ os_report_stack_free(
     }
 }
 
-struct os__reportBuffer {
-    char *str;
-    size_t len;
-    size_t off;
-};
-
 static void
-os_report_stack_unwind(
+os__report_stack_unwind(
         os_reportStack _this,
         bool valid,
         const char *context,
         const char *path,
         const int line)
 {
-    static const char description[] = "Operation failed.";
     struct os_reportEventV1_s header;
     os_reportEventV1 report;
-    struct os__reportBuffer buf = { NULL, 0, 0 };
     os_iter *tempList;
     char *file;
-    int32_t code = 0;
-    bool update = true;
-    os_reportType filter = OS_NONE_TYPE;
+    os_reportType filter = OS_REPORT_NONE;
     bool useErrorLog;
-    os_reportType reportType = OS_ERROR_TYPE;
+    os_reportType reportType = OS_REPORT_ERROR;
 
     if (!valid) {
         if (OS_REPORT_IS_ALWAYS(_this->typeset)) {
             valid = true;
         } else {
-            filter = OS_NONE_TYPE;
+            filter = OS_REPORT_NONE;
         }
 
-        if (filter != OS_NONE_TYPE) {
+        if (filter != OS_REPORT_NONE) {
             tempList = os_iterNew();
             if (tempList != NULL) {
                 while ((report = os_iterTake(_this->reports, -1))) {
@@ -842,8 +850,6 @@ os_report_stack_unwind(
         }
         os_report_free(report);
     }
-
-    os_free (buf.str);
 }
 
 void
@@ -859,21 +865,8 @@ os_report_dumpStack(
     }
     _this = os_threadMemGet(OS_THREAD_REPORT_STACK);
     if ((_this) && (_this->count > 0)) {
-        os_report_stack_unwind(_this, true, context, path, line);
+        os__report_stack_unwind(_this, true, context, path, line);
     }
-}
-
-bool
-os_report_flush_required(void)
-{
-    os_reportStack _this = os_threadMemGet(OS_THREAD_REPORT_STACK);
-    bool flush = false;
-
-    if (_this) {
-        flush = (OS_REPORT_IS_ALWAYS(_this->typeset) || OS_REPORT_IS_WARNING(_this->typeset));
-    }
-
-    return flush;
 }
 
 void
@@ -891,107 +884,13 @@ os_report_flush(
     _this = os_threadMemGet(OS_THREAD_REPORT_STACK);
     if ((_this) && (_this->count)) {
         if (_this->count == 1) {
-            os_report_stack_unwind(_this, valid, context, path, line);
+            os__report_stack_unwind(_this, valid, context, path, line);
             _this->file = NULL;
             _this->signature = NULL;
             _this->lineno = 0;
         }
         _this->count--;
     }
-}
-
-void
-os_report_flush_context(
-        bool valid,
-        os_report_context_callback callback,
-        void *arg)
-{
-    os_reportStack _this;
-    char buffer[1024];
-    const char *context = NULL;
-
-    _this = os_threadMemGet(OS_THREAD_REPORT_STACK);
-    if ((_this) && (_this->count)) {
-        if (_this->count == 1) {
-            if ((char *)callback) {
-                context = callback(_this->signature, buffer, sizeof(buffer), arg);
-            }
-            if (context == NULL) {
-                context = _this->signature;
-            }
-            os_report_stack_unwind(_this, valid, context, _this->file, _this->lineno);
-            _this->file = NULL;
-            _this->signature = NULL;
-            _this->lineno = 0;
-        }
-        _this->count--;
-
-    }
-}
-
-void
-os_report_flush_context_unconditional(
-        os_report_context_callback callback,
-        void *arg)
-{
-    os_reportStack _this;
-    char buffer[1024];
-    const char *context = NULL;
-
-    _this = os_threadMemGet(OS_THREAD_REPORT_STACK);
-    if ((_this) && (_this->count)) {
-        if ((char *)callback) {
-            context = callback(_this->signature, buffer, sizeof(buffer), arg);
-        }
-        if (context == NULL) {
-            context = _this->signature;
-        }
-        os_report_stack_unwind(_this, true, context, _this->file, _this->lineno);
-        _this->file = NULL;
-        _this->signature = NULL;
-        _this->lineno = 0;
-        _this->count = 0;
-    }
-}
-
-void
-os_report_flush_unconditional(
-        bool valid,
-        const char *context,
-        const char *path,
-        const int line)
-{
-    os_reportStack _this;
-
-    _this = os_threadMemGet(OS_THREAD_REPORT_STACK);
-    if ((_this) && (_this->count)) {
-        os_report_stack_unwind(_this, valid, context, path, line);
-        _this->file = NULL;
-        _this->signature = NULL;
-        _this->lineno = 0;
-        _this->count = 0;
-    }
-}
-
-os_reportEventV1
-os_report_read(
-        int32_t index)
-{
-    os_reportEventV1 report = NULL;
-    os_reportStack _this;
-
-    _this = os_threadMemGet(OS_THREAD_REPORT_STACK);
-    if (_this) {
-        if (index < 0) {
-            report = NULL;
-        } else {
-            report = (os_reportEventV1)os_iterObject(_this->reports, (uint32_t) index);
-        }
-    } else {
-        OS_ERROR("os_report_read", 0,
-                "Failed to retrieve report administration from thread-specific memory");
-    }
-    return report;
 }
 
 #define OS__STRDUP(str) (str != NULL ? os_strdup(str) : os_strdup("NULL"))
@@ -1032,25 +931,4 @@ os_report_free(os_reportEventV1 report)
     os_free(report->reportContext);
     os_free(report->threadDesc);
     os_free(report);
-}
-
-static int
-os_report_fprintf(FILE *file,
-        const char *format,
-        ...)
-{
-    int BytesWritten = 0;
-    va_list args;
-    va_start(args, format);
-    BytesWritten = os_vfprintfnosigpipe(file, format, args);
-    va_end(args);
-    if (BytesWritten == -1) {
-        /* error occured ?, try to write to stdout. (also with no sigpipe,
-         * stdout can also give broken pipe)
-         */
-        va_start(args, format);
-        (void) os_vfprintfnosigpipe(stdout, format, args);
-        va_end(args);
-    }
-    return BytesWritten;
 }
