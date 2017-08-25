@@ -791,34 +791,11 @@ os__report_stack_unwind(
 {
     struct os_reportEventV1_s header;
     os_reportEventV1 report;
-    os_iter *tempList;
     char *file;
-    os_reportType filter = OS_REPORT_NONE;
     bool useErrorLog;
-    os_reportType reportType = OS_REPORT_ERROR;
 
     if (!valid) {
         if (OS_REPORT_IS_ALWAYS(_this->typeset)) {
-            valid = true;
-        } else {
-            filter = OS_REPORT_NONE;
-        }
-
-        if (filter != OS_REPORT_NONE) {
-            tempList = os_iterNew();
-            if (tempList != NULL) {
-                while ((report = os_iterTake(_this->reports, -1))) {
-                    if (report->reportType == filter) {
-                        (void)os_iterAppend(tempList, report);
-                    } else {
-                        os__report_free(report);
-                    }
-                }
-                while ((report = os_iterTake(tempList, -1))) {
-                    os_iterAppend(_this->reports, report);
-                }
-                os_free(tempList);
-            }
             valid = true;
         }
     }
@@ -846,7 +823,7 @@ os__report_stack_unwind(
         os_threadFigureIdentity (thrid, sizeof (thrid));
         os_threadGetThreadName (thr, sizeof (thr));
 
-        header.reportType = reportType;
+        header.reportType = OS_REPORT_ERROR;
         header.description = (char *)context;
         header.processDesc = procid;
         header.threadDesc = thrid;
