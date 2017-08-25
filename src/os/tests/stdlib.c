@@ -825,11 +825,12 @@ CUnit_Test(os_stdlib, getopt)
 	c = os_getopt(argc, argv002, "c:");
 	CU_ASSERT (c == -1);
 
-	/* Check correct functioning of os_get_optopt */
+	/* Check correct functioning of os_set_opterr, os_get_opterr and os_get_optopt */
 	printf ("Starting os_stdlib_getopt_004\n");
 	argc = 2;
-	os_set_opterr(0);
 	os_set_optind(1);
+	os_set_opterr(0);
+	CU_ASSERT(os_get_opterr() == 0)
 	c = os_getopt (argc, argv003, "c:");
 	CU_ASSERT (c == '?');
 	CU_ASSERT (os_get_optopt() == 'd');
