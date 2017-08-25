@@ -102,7 +102,8 @@ int main (int argc, char ** argv)
     }
 
     /* Deleting the participant will delete all its children recursively as well. */
-    dds_delete (participant);
+    ret = dds_delete (participant);
+    DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     return 0;
 }
