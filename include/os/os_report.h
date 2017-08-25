@@ -88,7 +88,6 @@ os_report_flush((condition), OS_FUNCTION, __FILE__, __LINE__)
      * @param ... Parameter to log
      */
 
-    // SAL annotation
     OSAPI_EXPORT void
     os_report(
               _In_ os_reportType type,
@@ -124,7 +123,6 @@ os_report_flush((condition), OS_FUNCTION, __FILE__, __LINE__)
      * and if valid is TRUE also writes them into the report device.
      * This operation additionally disables the stack.
      */
-    // SAL annotation
     OSAPI_EXPORT void
     os_report_flush(
                     _In_ bool valid,

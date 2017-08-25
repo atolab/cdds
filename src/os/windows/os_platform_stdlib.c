@@ -368,7 +368,7 @@ os_getTempDir(void)
         return dir_name;
 }
 
-int32_t
+_Ret_ int32_t
 os__ensurePathExists(
         _In_z_ const char* dir_name)
 {
