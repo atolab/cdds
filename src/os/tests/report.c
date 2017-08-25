@@ -3,9 +3,6 @@
 
 #include <stdio.h>
 
-#define ERROR_FILE "vdds_test_error"
-#define INFO_FILE  "vdds_test_info"
-
 CUnit_Suite_Initialize(os_report)
 {
   os_putenv("VORTEX_ERRORFILE=vdds_test_error");
@@ -43,7 +40,7 @@ CUnit_Suite_Cleanup(os_report)
   return 0;
 }
 
-CUnit_Test(os_report, os_report_stack_critical)
+CUnit_Test(os_report, stack_critical)
 {
   check_existence(os_resultFail, os_resultFail);
 
@@ -61,7 +58,7 @@ CUnit_Test(os_report, os_report_stack_critical)
   remove_logs();
 }
 
-CUnit_Test(os_report, os_report_stack_non_critical)
+CUnit_Test(os_report, stack_non_critical)
 {
   check_existence(os_resultFail, os_resultFail);
 
@@ -79,7 +76,7 @@ CUnit_Test(os_report, os_report_stack_non_critical)
   remove_logs();
 }
 
-CUnit_Test(os_report, os_report_error_file_creation_critical)
+CUnit_Test(os_report, error_file_creation_critical)
 {
   check_existence(os_resultFail, os_resultFail);
 
@@ -90,13 +87,35 @@ CUnit_Test(os_report, os_report_error_file_creation_critical)
   remove_logs();
 }
 
-CUnit_Test(os_report, os_report_error_file_creation_fatal)
+CUnit_Test(os_report, error_file_creation_fatal)
 {
   check_existence(os_resultFail, os_resultFail);
 
   OS_FATAL(OS_FUNCTION, 0, "os_report-fatal-test %d", 123);
 
   check_existence(os_resultSuccess, os_resultFail);
+
+  remove_logs();
+}
+
+CUnit_Test(os_report, info_file_creation_warning)
+{
+  check_existence(os_resultFail, os_resultFail);
+
+  OS_WARNING(OS_FUNCTION, 0, "os_report-warning-test %d", 123);
+
+  check_existence(os_resultFail, os_resultSuccess);
+
+  remove_logs();
+}
+
+CUnit_Test(os_report, info_file_creation_info)
+{
+  check_existence(os_resultFail, os_resultFail);
+
+  OS_INFO(OS_FUNCTION, 0, "os_report-info-test %d", 123);
+
+  check_existence(os_resultFail, os_resultSuccess);
 
   remove_logs();
 }

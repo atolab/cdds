@@ -76,18 +76,20 @@ struct os_reportEventV1_s
 
 typedef struct os_reportEventV1_s* os_reportEventV1;
 
-void os_report_append(os_reportStack _this, const os_reportEventV1 report);
+void os__report_append(os_reportStack _this, const os_reportEventV1 report);
 
 static int os__report_fprintf(FILE *file, const char *format, ...);
 
-void os_report_free(os_reportEventV1 report);
+void os__report_free(os_reportEventV1 report);
 
-void os_report_dumpStack(const char *context, const char *path, int line);
+void os__report_dumpStack(const char *context, const char *path, int line);
 
 static FILE* error_log = NULL;
 static FILE* info_log = NULL;
 
 static os_mutex reportMutex;
+static os_mutex infologcreateMutex;
+static os_mutex errorlogcreateMutex;
 static bool inited = false;
 static bool doneOnce = false;
 static bool StaleLogsRemoved = false;
@@ -166,7 +168,7 @@ os__open_file (char * file_name)
     return logfile;
 }
 
-static void os_close_file (char * file_name, FILE *file)
+static void os__close_file (char * file_name, FILE *file)
 {
     if (strcmp(file_name, "<stderr>") != 0 && strcmp(file_name, "<stdout>") != 0)
     {
@@ -174,7 +176,7 @@ static void os_close_file (char * file_name, FILE *file)
     }
 }
 
-static bool os_report_is_local_file(char * file_name, char **new_name)
+static bool os__report_is_local_file(char * file_name, char **new_name)
 {
     char host[256];
     char server_file[256];
@@ -185,8 +187,7 @@ static bool os_report_is_local_file(char * file_name, char **new_name)
             && sscanf (*new_name, "%255[^:]:%hu:%255[^:]", host, &port, server_file) != 3) ? true : false);
 }
 
-#define MAX_FILE_PATH 2048
-static char *os_report_createFileNormalize(char *file_path, char *file_dir, char *file_name)
+static char *os__report_createFileNormalize(char *file_path, char *file_dir, char *file_name)
 {
     int len;
 
@@ -211,7 +212,7 @@ static char *os_report_createFileNormalize(char *file_path, char *file_dir, char
  * this is the filename used.
  */
 static char *
-os_report_file_path(char * default_file, char * override_variable, enum os_report_logType type)
+os__report_file_path(char * default_file, char * override_variable, enum os_report_logType type)
 {
     char *file_dir;
     char file_path[MAX_FILE_PATH];
@@ -248,7 +249,7 @@ os_report_file_path(char * default_file, char * override_variable, enum os_repor
             strcpy(full_file_path, file_dir);
             strcat(full_file_path, "/");
             strcat(full_file_path, file_name);
-            if (os_report_is_local_file(full_file_path,&full_file_path))
+            if (os__report_is_local_file(full_file_path,&full_file_path))
             {
                 logfile = fopen (full_file_path, "a");
                 if (logfile)
@@ -261,9 +262,9 @@ os_report_file_path(char * default_file, char * override_variable, enum os_repor
     }
     if (strcmp(file_name, "<stderr>") != 0 && strcmp(file_name, "<stdout>") != 0)
     {
-        if (os_report_is_local_file(file_name, &file_name))
+        if (os__report_is_local_file(file_name, &file_name))
         {
-            return (os_report_createFileNormalize(file_path, file_dir, file_name));
+            return (os__report_createFileNormalize(file_path, file_dir, file_name));
         }
     }
     return os_strdup (file_name);
@@ -279,7 +280,7 @@ os_report_file_path(char * default_file, char * override_variable, enum os_repor
  * os_resultSuccess otherwise.
  */
 os_result
-os_reportSetVerbosity(
+os__determine_verbosity(
         const char* newVerbosity)
 {
     long verbosityInt;
@@ -305,12 +306,12 @@ os_reportSetVerbosity(
     return result;
 }
 
-void set_verbosity()
+void os__set_verbosity(void)
 {
     char * envValue = os_getenv(os_env_verbosity);
     if (envValue != NULL)
     {
-        if (os_reportSetVerbosity(envValue) == os_resultFail)
+        if (os__determine_verbosity(envValue) == os_resultFail)
         {
             OS_WARNING("os_reportInit", 0,
                     "Cannot parse report verbosity %s value \"%s\","
@@ -328,10 +329,14 @@ void set_verbosity()
  * @see os_report_file_path
  */
 char *
-os_reportGetInfoFileName()
+os__get_info_file_name(void)
 {
+    char * file_name;
     os_reportInit(false);
-    return os_report_file_path (os_report_defaultInfoFileName, (char *)os_env_infofile, OS_REPORT);
+    os_mutexLock(&infologcreateMutex);
+    file_name = os__report_file_path (os_report_defaultInfoFileName, (char *)os_env_infofile, OS_REPORT);
+    os_mutexUnlock(&infologcreateMutex);
+    return file_name;
 }
 
 /**
@@ -343,13 +348,17 @@ os_reportGetInfoFileName()
  * @see os_report_file_path
  */
 char *
-os_reportGetErrorFileName()
+os__get_error_file_name(void)
 {
+    char * file_name;
     os_reportInit(false);
-    return os_report_file_path (os_report_defaultErrorFileName, (char *)os_env_errorfile, OS_ERROR);
+    os_mutexLock(&errorlogcreateMutex);
+    file_name = os__report_file_path (os_report_defaultErrorFileName, (char *)os_env_errorfile, OS_ERROR);
+    os_mutexUnlock(&errorlogcreateMutex);
+    return file_name;
 }
 
-void remove_stale_logs()
+void os__remove_stale_logs(void)
 {
     char * name;
 
@@ -361,11 +370,11 @@ void remove_stale_logs()
           /* Remove ospl-info.log and ospl-error.log.
           * Ignore the result because it is possible that they don't exist yet. */
 
-        name = os_reportGetInfoFileName();
+        name = os__get_error_file_name();
         (void)os_remove(name);
         os_free(name);
 
-        name = os_reportGetErrorFileName();
+        name = os__get_info_file_name();
         (void)os_remove(name);
         os_free(name);
 
@@ -375,7 +384,7 @@ void remove_stale_logs()
 
 
 void
-check_removal_stale_logs()
+os__check_removal_stale_logs(void)
 {
     char * envValue = os_getenv(os_env_append);
     if (envValue != NULL)
@@ -383,7 +392,7 @@ check_removal_stale_logs()
         if (os_strcasecmp(envValue, "FALSE") == 0 ||
             os_strcasecmp(envValue, "0") == 0 ||
 -           os_strcasecmp(envValue, "NO") == 0) {
-          remove_stale_logs();
+          os__remove_stale_logs();
         }
     }
 }
@@ -400,24 +409,26 @@ os_reportInit(bool forceReInit)
         if (!doneOnce)
         {
             os_mutexInit(&reportMutex);
+            os_mutexInit(&errorlogcreateMutex);
+            os_mutexInit(&infologcreateMutex);
         }
         doneOnce = true;
 
-        set_verbosity();
-        check_removal_stale_logs();
+        os__set_verbosity();
+        os__check_removal_stale_logs();
 
     }
     inited = true;
 }
 
-void os_reportExit()
+void os_reportExit(void)
 {
     char *name;
     os_reportStack reports;
 
     reports = os_threadMemGet(OS_THREAD_REPORT_STACK);
     if (reports) {
-        os_report_dumpStack(OS_FUNCTION, __FILE__, __LINE__);
+        os__report_dumpStack(OS_FUNCTION, __FILE__, __LINE__);
         os_iterFree(reports->reports, NULL);
         os_threadMemFree(OS_THREAD_REPORT_STACK);
     }
@@ -426,23 +437,25 @@ void os_reportExit()
 
     if (error_log)
     {
-        name = os_reportGetErrorFileName();
-        os_close_file(name, error_log);
+        name = os__get_error_file_name();
+        os__close_file(name, error_log);
         os_free (name);
         error_log = NULL;
     }
 
     if (info_log)
     {
-        name = os_reportGetInfoFileName();
-        os_close_file(name, info_log);
+        name = os__get_info_file_name();
+        os__close_file(name, info_log);
         os_free (name);
         info_log = NULL;
     }
+    os_mutexDestroy(&errorlogcreateMutex);
+    os_mutexDestroy(&infologcreateMutex);
 }
 
 static int
-os_report_fprintf(FILE *file,
+os__report_fprintf(FILE *file,
         const char *format,
         ...)
 {
@@ -463,12 +476,12 @@ os_report_fprintf(FILE *file,
 }
 
 static FILE*
-os_get_info_file (void)
+os__get_info_file (void)
 {
     char * name;
 
     if (info_log == NULL) {
-      name = os_reportGetInfoFileName();
+      name = os__get_info_file_name();
       info_log = os__open_file(name);
       if (!info_log)
       {
@@ -480,12 +493,12 @@ os_get_info_file (void)
 }
 
 static FILE*
-os_get_error_file (void)
+os__get_error_file (void)
 {
     char * name;
 
     if (error_log == NULL) {
-      name = os_reportGetErrorFileName();
+      name = os__get_error_file_name();
       error_log = os__open_file(name);
       if (!error_log)
       {
@@ -497,16 +510,16 @@ os_get_error_file (void)
 }
 
 static void
-os_sectionReport(
+os__sectionReport(
         os_reportEventV1 event,
         bool useErrorLog)
 {
     os_time ostime;
-    FILE *log = useErrorLog ? os_get_error_file() : os_get_info_file();
+    FILE *log = useErrorLog ? os__get_error_file() : os__get_info_file();
 
     ostime = os_timeGet();
     os_mutexLock(&reportMutex);
-    os_report_fprintf(log,
+    os__report_fprintf(log,
         "----------------------------------------------------------------------------------------\n"
         "Report      : %s\n"
         "Internals   : %s/%s/%d/%d/%d.%09d\n",
@@ -522,14 +535,14 @@ os_sectionReport(
 }
 
 static void
-os_headerReport(
+os__headerReport(
         os_reportEventV1 event,
         bool useErrorLog)
 {
     os_time ostime;
     char node[64];
     char date_time[128];
-    FILE *log = useErrorLog ? os_get_error_file() : os_get_info_file();
+    FILE *log = useErrorLog ? os__get_error_file() : os__get_info_file();
 
     ostime = os_timeGet();
     os_ctime_r(&ostime, date_time, sizeof(date_time));
@@ -545,7 +558,7 @@ os_headerReport(
 
     os_mutexLock(&reportMutex);
 
-    os_report_fprintf(log,
+    os__report_fprintf(log,
         "========================================================================================\n"
         "ReportType  : %s\n"
         "Context     : %s\n"
@@ -572,7 +585,7 @@ os_headerReport(
 }
 
 static void
-os_defaultReport(
+os__defaultReport(
         os_reportEventV1 event)
 {
     os_time ostime;
@@ -584,13 +597,13 @@ os_defaultReport(
     case OS_REPORT_DEBUG:
     case OS_REPORT_INFO:
     case OS_REPORT_WARNING:
-        log = os_get_info_file();
+        log = os__get_info_file();
         break;
     case OS_REPORT_ERROR:
     case OS_REPORT_CRITICAL:
     case OS_REPORT_FATAL:
     default:
-        log = os_get_error_file();
+        log = os__get_error_file();
         break;
     }
 
@@ -606,7 +619,7 @@ os_defaultReport(
     }
 
     os_mutexLock(&reportMutex);
-    os_report_fprintf (log,
+    os__report_fprintf (log,
         "========================================================================================\n"
         "Report      : %s\n"
         "Date        : %s\n"
@@ -679,10 +692,10 @@ os_report_message(
     stack = (os_reportStack)os_threadMemGet(OS_THREAD_REPORT_STACK);
     if (stack && stack->count) {
         if (report.reportType != OS_REPORT_NONE) {
-            os_report_append (stack, &report);
+            os__report_append (stack, &report);
         }
     } else {
-        os_defaultReport (&report);
+        os__defaultReport (&report);
     }
 }
 
@@ -718,7 +731,7 @@ os_report(
  * Report-stack related functions
  *****************************************/
 void
-os_report_stack()
+os_report_stack(void)
 {
     os_reportStack _this;
 
@@ -753,8 +766,7 @@ os_report_stack()
 }
 
 void
-os_report_stack_free(
-        void)
+os_report_stack_free(void)
 {
     os_reportStack _this;
     os_reportEventV1 report;
@@ -762,7 +774,7 @@ os_report_stack_free(
     _this = (os_reportStack)os_threadMemGet(OS_THREAD_REPORT_STACK);
     if (_this) {
         while((report = os_iterTake(_this->reports, -1))) {
-            os_report_free(report);
+            os__report_free(report);
         }
         os_iterFree(_this->reports, NULL);
         os_threadMemFree(OS_THREAD_REPORT_STACK);
@@ -799,7 +811,7 @@ os__report_stack_unwind(
                     if (report->reportType == filter) {
                         (void)os_iterAppend(tempList, report);
                     } else {
-                        os_report_free(report);
+                        os__report_free(report);
                     }
                 }
                 while ((report = os_iterTake(tempList, -1))) {
@@ -841,19 +853,19 @@ os__report_stack_unwind(
         header.fileName = file;
         header.lineNo = line;
 
-        os_headerReport (&header, useErrorLog);
+        os__headerReport (&header, useErrorLog);
     }
 
     while ((report = os_iterTake(_this->reports, -1))) {
         if (valid) {
-            os_sectionReport (report, useErrorLog);
+            os__sectionReport (report, useErrorLog);
         }
-        os_report_free(report);
+        os__report_free(report);
     }
 }
 
 void
-os_report_dumpStack(
+os__report_dumpStack(
         const char *context,
         const char *path,
         const int line)
@@ -896,7 +908,7 @@ os_report_flush(
 #define OS__STRDUP(str) (str != NULL ? os_strdup(str) : os_strdup("NULL"))
 
 void
-os_report_append(
+os__report_append(
         os_reportStack _this,
         const os_reportEventV1 report)
 {
@@ -917,13 +929,13 @@ os_report_append(
         _this->typeset |= OS_REPORT_TYPE_FLAG(report->reportType);
         os_iterAppend(_this->reports, copy);
     } else {
-        os_report_fprintf(stderr, "Failed to allocate %d bytes for log report!", (int)sizeof(*copy));
-        os_report_fprintf(stderr, "Report: %s\n", report->description);
+        os__report_fprintf(stderr, "Failed to allocate %d bytes for log report!", (int)sizeof(*copy));
+        os__report_fprintf(stderr, "Report: %s\n", report->description);
     }
 }
 
 void
-os_report_free(os_reportEventV1 report)
+os__report_free(os_reportEventV1 report)
 {
     os_free(report->description);
     os_free(report->fileName);

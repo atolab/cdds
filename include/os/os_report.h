@@ -33,16 +33,16 @@ extern "C" {
      args if not necessary.
      */
 
-#define OS_REPORT(type,context,code,...) \
-(((type) >= os_reportVerbosity) ? os_report((type),(context),__FILE__,__LINE__,(code),__VA_ARGS__) : (void)0)
+#define OS_REPORT(type,context,code,message,...) \
+(((type) >= os_reportVerbosity) ? os_report((type),(context),__FILE__,__LINE__,(code),(message),##__VA_ARGS__) : (void)0)
 
 
-#define OS_DEBUG(context,code,...) OS_REPORT(OS_REPORT_DEBUG,(context),(code),##__VA_ARGS__)
-#define OS_INFO(context,code,...) OS_REPORT(OS_REPORT_INFO,(context),(code),##__VA_ARGS__)
-#define OS_WARNING(context,code,...) OS_REPORT(OS_REPORT_WARNING,(context),(code),##__VA_ARGS__)
-#define OS_ERROR(context,code,...) OS_REPORT(OS_REPORT_ERROR,(context),(code),##__VA_ARGS__)
-#define OS_CRITICAL(context,code,...) OS_REPORT(OS_REPORT_CRITICAL,(context),(code),##__VA_ARGS__)
-#define OS_FATAL(context,code,...) OS_REPORT(OS_REPORT_FATAL,(context),(code),##__VA_ARGS__)
+#define OS_DEBUG(context,code,message,...) OS_REPORT(OS_REPORT_DEBUG,(context),(code),(message),##__VA_ARGS__)
+#define OS_INFO(context,code,message,...) OS_REPORT(OS_REPORT_INFO,(context),(code),(message),##__VA_ARGS__)
+#define OS_WARNING(context,code,message,...) OS_REPORT(OS_REPORT_WARNING,(context),(code),(message),##__VA_ARGS__)
+#define OS_ERROR(context,code,message,...) OS_REPORT(OS_REPORT_ERROR,(context),(code),(message),##__VA_ARGS__)
+#define OS_CRITICAL(context,code,message,...) OS_REPORT(OS_REPORT_CRITICAL,(context),(code),(message),##__VA_ARGS__)
+#define OS_FATAL(context,code,message,...) OS_REPORT(OS_REPORT_FATAL,(context),(code),(message),##__VA_ARGS__)
 
 #define OS_REPORT_STACK() \
 os_report_stack()
