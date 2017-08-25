@@ -232,9 +232,9 @@ int main (int argc, char *argv[])
   waitSet = dds_create_waitset (participant);
   readCond = dds_create_readcondition (reader, DDS_ANY_STATE);
 
-  status = dds_waitset_attach (waitSet, readCond, (dds_attach_t)(intptr_t)reader);
+  status = dds_waitset_attach (waitSet, readCond, reader);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  status = dds_waitset_attach (waitSet, waitSet, (dds_attach_t)(intptr_t)waitSet);
+  status = dds_waitset_attach (waitSet, waitSet, waitSet);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
   setvbuf(stdout, NULL, _IONBF, 0);

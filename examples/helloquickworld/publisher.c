@@ -16,7 +16,6 @@ int main (int argc, char ** argv)
     dds_entity_t topic;
     dds_entity_t writer;
     dds_entity_t waitset;
-    dds_attach_t triggered;
     dds_return_t ret;
     dds_qos_t *qos;
     HelloWorldData_Msg msg;
@@ -52,7 +51,7 @@ int main (int argc, char ** argv)
     waitset = dds_create_waitset(participant);
     DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    ret = dds_waitset_attach(waitset, writer, NULL);
+    ret = dds_waitset_attach(waitset, writer, (dds_attach_t)NULL);
     DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     /* The dds_waitset_wait returns the number of triggered entities,
@@ -60,7 +59,7 @@ int main (int argc, char ** argv)
      * 0 means that within the timeout, no entities were triggered.
      * Returning a negative value indicates an error. */
     printf ("\n=== [Publisher] Waiting for a reader ...\n");
-    ret = dds_waitset_wait(waitset, &triggered, 1, DDS_SECS(30));
+    ret = dds_waitset_wait(waitset, NULL, 0, DDS_SECS(30));
     DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     if (ret > 0)
     {

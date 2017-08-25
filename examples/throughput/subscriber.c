@@ -291,10 +291,10 @@ int main (int argc, char **argv)
     pollingWaitset = dds_create_waitset (participant);
     DDS_ERR_CHECK (pollingWaitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    status = dds_waitset_attach (waitSet, pollingWaitset, (dds_attach_t)(intptr_t)pollingWaitset);
+    status = dds_waitset_attach (waitSet, pollingWaitset, pollingWaitset);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    status = dds_waitset_attach (waitSet, waitSet, (dds_attach_t)(intptr_t)waitSet);
+    status = dds_waitset_attach (waitSet, waitSet, waitSet);
     DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     /* Read samples until the maxCycles has been reached (0 = infinite) */

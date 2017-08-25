@@ -21,7 +21,6 @@ int main (int argc, char ** argv)
     dds_entity_t topic;
     dds_entity_t reader;
     dds_entity_t waitset;
-    dds_attach_t triggered;
     HelloWorldData_Msg *msg;
     void *samples[MAX_SAMPLES];
     dds_sample_info_t infos[MAX_SAMPLES];
@@ -56,13 +55,13 @@ int main (int argc, char ** argv)
     DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     waitset = dds_create_waitset(participant);
     DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-    ret = dds_waitset_attach(waitset, reader, NULL);
+    ret = dds_waitset_attach(waitset, reader, (dds_attach_t)NULL);
     DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     while (!terminate)
     {
         printf ("\n=== [Subscriber] Waiting for message(s) ...\n");
-        ret = dds_waitset_wait(waitset, &triggered, 1, DDS_SECS(30));
+        ret = dds_waitset_wait(waitset, NULL, 0, DDS_SECS(30));
         DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
         if (ret > 0)

@@ -56,11 +56,10 @@ example, if 0 is returned, it means that the wait timed out.
 
     dds_return_t ret;
     dds_entity_t waitset;
-    dds_attach_t triggered;
     ret = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
     waitset = dds_create_waitset(participant);
     ret = dds_waitset_attach(waitset, writer, NULL);
-    ret = dds_waitset_wait(waitset, &triggered, 1, DDS_SECS(30));
+    ret = dds_waitset_wait(waitset, NULL, 0, DDS_SECS(30));
     if (ret > 0) {
         // write
     }
@@ -77,11 +76,10 @@ status change on the reader.
 
     dds_return_t ret;
     dds_entity_t waitset;
-    dds_attach_t triggered;
     ret = dds_set_enabled_status(reader, DDS_DATA_AVAILABLE_STATUS);
     waitset = dds_create_waitset(participant);
     ret = dds_waitset_attach(waitset, reader, NULL);
-    ret = dds_waitset_wait(waitset, &triggered, 1, DDS_SECS(30));
+    ret = dds_waitset_wait(waitset, NULL, 0, DDS_SECS(30));
     if (ret > 0) {
         // read
     }
