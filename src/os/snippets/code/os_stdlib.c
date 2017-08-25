@@ -24,9 +24,9 @@
 
 #include "os_stdlib_strsep.c"
 
-const char *
+_Ret_opt_z_ const char *
 os_getenv(
-    const char *variable)
+    _In_z_ const char *variable)
 {
     return getenv(variable);
 }

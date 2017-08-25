@@ -78,7 +78,7 @@ typedef struct os_reportEventV1_s* os_reportEventV1;
 
 void os__report_append(os_reportStack _this, const os_reportEventV1 report);
 
-static int os__report_fprintf(FILE *file, const char *format, ...);
+static void os__report_fprintf(FILE *file, const char *format, ...);
 
 void os__report_free(os_reportEventV1 report);
 
@@ -134,8 +134,9 @@ static const char os_default_logdir[] = "/tgtsvr";
 static const char os_default_logdir[] = ".";
 #endif
 
-static FILE *
-os__open_file (const char * file_name)
+static _Ret_maybenull_ FILE *
+os__open_file (
+        _In_z_ const char * file_name)
 {
     FILE *logfile=NULL;
     const char *dir = os_getenv (os_env_logdir);
@@ -169,7 +170,9 @@ os__open_file (const char * file_name)
     return logfile;
 }
 
-static void os__close_file (const char * file_name, FILE *file)
+static void _Ret_ os__close_file (
+        _In_z_ const char * file_name,
+        _In_ _Post_invalid_ FILE *file)
 {
     if (strcmp(file_name, "<stderr>") != 0 && strcmp(file_name, "<stdout>") != 0)
     {
@@ -177,18 +180,9 @@ static void os__close_file (const char * file_name, FILE *file)
     }
 }
 
-static bool os__report_is_local_file(const char * file_name, char **new_name)
-{
-    char host[256];
-    char server_file[256];
-    unsigned short port;
-
-    *new_name = (char *)file_name;
-    return ((sscanf (*new_name, "%255[^:]:%hu", host, &port) != 2
-            && sscanf (*new_name, "%255[^:]:%hu:%255[^:]", host, &port, server_file) != 3) ? true : false);
-}
-
-static const char *os__report_createFileNormalize(const char *file_dir, const char *file_name)
+static _Ret_z_ const char *os__report_createFileNormalize(
+        _In_z_ const char *file_dir,
+        _In_z_ const char *file_name)
 {
     char file_path[MAX_FILE_PATH];
     int len;
@@ -213,8 +207,11 @@ static const char *os__report_createFileNormalize(const char *file_dir, const ch
  * @param default_file If override_variable is not defined in the environment
  * this is the filename used.
  */
-static const char *
-os__report_file_path(const char * default_file, const char * override_variable, enum os_report_logType type)
+static _Ret_z_ const char *
+os__report_file_path(
+        _In_z_ const char * default_file,
+        _In_opt_z_ const char * override_variable,
+        _In_ enum os_report_logType type)
 {
     const char *file_dir;
     const char *file_name = NULL;
@@ -250,24 +247,17 @@ os__report_file_path(const char * default_file, const char * override_variable, 
             strcpy(full_file_path, file_dir);
             strcat(full_file_path, "/");
             strcat(full_file_path, file_name);
-            if (os__report_is_local_file(full_file_path,&full_file_path))
+            logfile = fopen (full_file_path, "a");
+            if (logfile)
             {
-                logfile = fopen (full_file_path, "a");
-                if (logfile)
-                {
-                    fclose(logfile);
-                }
+                fclose(logfile);
             }
         }
         os_free (full_file_path);
     }
     if (strcmp(file_name, "<stderr>") != 0 && strcmp(file_name, "<stdout>") != 0)
     {
-        char * new_file;
-        if (os__report_is_local_file(file_name, &new_file))
-        {
-            return (os__report_createFileNormalize(file_dir, new_file));
-        }
+        return (os__report_createFileNormalize(file_dir, file_name));
     }
     return os_strdup (file_name);
 }
@@ -281,9 +271,9 @@ os__report_file_path(const char * default_file, const char * override_variable, 
  * @return os_resultFail if the string contains neither of the above;
  * os_resultSuccess otherwise.
  */
-os_result
+_Ret_ os_result
 os__determine_verbosity(
-        const char* newVerbosity)
+        _In_z_ const char* newVerbosity)
 {
     long verbosityInt;
     os_result result = os_resultFail;
@@ -330,8 +320,7 @@ void os__set_verbosity(void)
  * use standard out.
  * @see os_report_file_path
  */
-const char *
-os__get_info_file_name(void)
+_Ret_z_ const char * os__get_info_file_name(void)
 {
     const char * file_name;
     os_reportInit(false);
@@ -349,8 +338,7 @@ os__get_info_file_name(void)
  * use standard error.
  * @see os_report_file_path
  */
-const char *
-os__get_error_file_name(void)
+_Ret_z_ const char * os__get_error_file_name(void)
 {
     const char * file_name;
     os_reportInit(false);
@@ -385,8 +373,7 @@ void os__remove_stale_logs(void)
 }
 
 
-void
-os__check_removal_stale_logs(void)
+void os__check_removal_stale_logs(void)
 {
     const char * envValue = os_getenv(os_env_append);
     if (envValue != NULL)
@@ -403,8 +390,8 @@ os__check_removal_stale_logs(void)
  * Read environment properties. In particular ones that can't be left until
  * there is a requirement to log.
  */
-void
-os_reportInit(bool forceReInit)
+void os_reportInit(
+        _In_ bool forceReInit)
 {
     if (!doneOnce || forceReInit)
     {
@@ -456,10 +443,9 @@ void os_reportExit(void)
     os_mutexDestroy(&infologcreateMutex);
 }
 
-static int
-os__report_fprintf(FILE *file,
-        const char *format,
-        ...)
+static void os__report_fprintf(
+        _Pre_notnull_ _Post_notnull_ FILE *file,
+        _In_z_ const char *format, ...)
 {
     int BytesWritten = 0;
     va_list args;
@@ -474,11 +460,9 @@ os__report_fprintf(FILE *file,
         (void) os_vfprintfnosigpipe(stdout, format, args);
         va_end(args);
     }
-    return BytesWritten;
 }
 
-static FILE*
-os__get_info_file (void)
+static _Ret_notnull_ FILE* os__get_info_file (void)
 {
     const char * name;
 
@@ -494,8 +478,7 @@ os__get_info_file (void)
     return info_log;
 }
 
-static FILE*
-os__get_error_file (void)
+static _Ret_notnull_ FILE* os__get_error_file (void)
 {
     const char * name;
 
@@ -511,10 +494,9 @@ os__get_error_file (void)
     return error_log;
 }
 
-static void
-os__sectionReport(
-        os_reportEventV1 event,
-        bool useErrorLog)
+static void os__sectionReport(
+        _Pre_notnull_ _Post_notnull_ os_reportEventV1 event,
+        _In_ bool useErrorLog)
 {
     os_time ostime;
     FILE *log = useErrorLog ? os__get_error_file() : os__get_info_file();
@@ -536,10 +518,9 @@ os__sectionReport(
     os_mutexUnlock(&reportMutex);
 }
 
-static void
-os__headerReport(
-        os_reportEventV1 event,
-        bool useErrorLog)
+static void os__headerReport(
+        _Pre_notnull_ _Post_notnull_ os_reportEventV1 event,
+        _In_ bool useErrorLog)
 {
     os_time ostime;
     char node[64];
@@ -586,9 +567,8 @@ os__headerReport(
     os_mutexUnlock(&reportMutex);
 }
 
-static void
-os__defaultReport(
-        os_reportEventV1 event)
+static void os__defaultReport(
+        _Pre_notnull_ _Post_notnull_ os_reportEventV1 event)
 {
     os_time ostime;
     char node[64];
@@ -651,14 +631,13 @@ os__defaultReport(
 
 
 
-void
-os_report_message(
-        os_reportType type,
-        const char *context,
-        const char *path,
-        int32_t line,
-        int32_t code,
-        const char *message)
+void os_report_message(
+        _In_ os_reportType type,
+        _In_z_ const char *context,
+        _In_z_ const char *path,
+        _In_ int32_t line,
+        _In_ int32_t code,
+        _In_z_ const char *message)
 {
     char *file;
     char procid[256], thrid[64];
@@ -701,14 +680,13 @@ os_report_message(
     }
 }
 
-void
-os_report(
-        os_reportType type,
-        const char *context,
-        const char *path,
-        int32_t line,
-        int32_t code,
-        const char *format,
+void os_report(
+        _In_ os_reportType type,
+        _In_z_ const char *context,
+        _In_z_ const char *path,
+        _In_ int32_t line,
+        _In_ int32_t code,
+        _In_z_ const char *format,
         ...)
 {
     char buf[OS_REPORT_BUFLEN];
@@ -732,8 +710,7 @@ os_report(
 /*****************************************
  * Report-stack related functions
  *****************************************/
-void
-os_report_stack(void)
+void os_report_stack(void)
 {
     os_reportStack _this;
 
@@ -767,8 +744,7 @@ os_report_stack(void)
     }
 }
 
-void
-os_report_stack_free(void)
+void os_report_stack_free(void)
 {
     os_reportStack _this;
     os_reportEventV1 report;
@@ -783,13 +759,12 @@ os_report_stack_free(void)
     }
 }
 
-static void
-os__report_stack_unwind(
-        os_reportStack _this,
-        bool valid,
-        const char *context,
-        const char *path,
-        const int line)
+static void os__report_stack_unwind(
+        _Pre_notnull_ _Post_notnull_ os_reportStack _this,
+        _In_ bool valid,
+        _In_z_ const char *context,
+        _In_z_ const char *path,
+        _In_ int line)
 {
     struct os_reportEventV1_s header;
     os_reportEventV1 report;
@@ -843,11 +818,10 @@ os__report_stack_unwind(
     }
 }
 
-void
-os__report_dumpStack(
-        const char *context,
-        const char *path,
-        const int line)
+void os__report_dumpStack(
+        _In_z_ const char *context,
+        _In_z_ const char *path,
+        _In_ int line)
 {
     os_reportStack _this;
 
@@ -860,12 +834,11 @@ os__report_dumpStack(
     }
 }
 
-void
-os_report_flush(
-        bool valid,
-        const char *context,
-        const char *path,
-        const int line)
+void os_report_flush(
+        _In_ bool valid,
+        _In_z_ const char *context,
+        _In_z_ const char *path,
+        _In_ int line)
 {
     os_reportStack _this;
 
@@ -886,10 +859,9 @@ os_report_flush(
 
 #define OS__STRDUP(str) (str != NULL ? os_strdup(str) : os_strdup("NULL"))
 
-void
-os__report_append(
-        os_reportStack _this,
-        const os_reportEventV1 report)
+void os__report_append(
+        _Pre_notnull_ _Post_notnull_ os_reportStack _this,
+        _Pre_notnull_ _Post_notnull_ const os_reportEventV1 report)
 {
     os_reportEventV1 copy;
     assert(report);
@@ -913,8 +885,8 @@ os__report_append(
     }
 }
 
-void
-os__report_free(os_reportEventV1 report)
+void os__report_free(
+        _Pre_notnull_ _Post_invalid_ os_reportEventV1 report)
 {
     os_free(report->description);
     os_free(report->fileName);

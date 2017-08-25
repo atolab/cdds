@@ -68,7 +68,7 @@ os_report_flush((condition), OS_FUNCTION, __FILE__, __LINE__)
     OSAPI_EXPORT extern os_reportType os_reportVerbosity;
 
     OSAPI_EXPORT void
-    os_reportInit(bool forceReInit);
+    os_reportInit(_In_ bool forceReInit);
 
     OSAPI_EXPORT void
     os_reportExit(void);
@@ -91,12 +91,12 @@ os_report_flush((condition), OS_FUNCTION, __FILE__, __LINE__)
     // SAL annotation
     OSAPI_EXPORT void
     os_report(
-              os_reportType type,
-              const char *context,
-              const char *path,
-              int32_t line,
-              int32_t code,
-              const char *format,
+              _In_ os_reportType type,
+              _In_z_ const char *context,
+              _In_z_ const char *path,
+              _In_ int32_t line,
+              _In_ int32_t code,
+              _In_z_ const char *format,
               ...) __attribute_format__((printf,6,7));
 
     /*****************************************
@@ -127,10 +127,10 @@ os_report_flush((condition), OS_FUNCTION, __FILE__, __LINE__)
     // SAL annotation
     OSAPI_EXPORT void
     os_report_flush(
-                    bool valid,
-                    const char *context,
-                    const char *file,
-                    const int line);
+                    _In_ bool valid,
+                    _In_z_ const char *context,
+                    _In_z_ const char *file,
+                    _In_ int line);
 
 #if defined (__cplusplus)
 }

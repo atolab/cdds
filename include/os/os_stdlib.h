@@ -55,9 +55,9 @@ extern "C" {
      * - returns NULL if
      *     variable is not found
      */
-    OSAPI_EXPORT const char *
+    OSAPI_EXPORT _Ret_opt_z_ const char *
     os_getenv(
-              const char *variable);
+              _In_z_ const char *variable);
 
     /** \brief Set environment variable definition
      *

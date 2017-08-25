@@ -20,9 +20,9 @@
 #include "../snippets/code/os_stdlib_strtok_r.c"
 
 
-static int32_t
-os_ensurePathExists(
-        char* dir_name);
+static _Ret_ int32_t
+os__ensurePathExists(
+        _In_z_ const char* dir_name);
 
 /**
 *  \brief create a directory with default
@@ -82,9 +82,9 @@ os_gethostname(
 }
 
 #pragma warning( disable : 4996 )
-const char *
+_Ret_opt_z_ const char *
 os_getenv(
-        const char *variable)
+        _In_z_ const char *variable)
 {
         const char * result;
         result = getenv(variable);
@@ -326,8 +326,8 @@ os_fsync(
         return r;
 }
 
-const char *
-os_getTempDir()
+_Ret_opt_z_ const char *
+os_getTempDir(void)
 {
         const char * dir_name = NULL;
 
@@ -353,7 +353,7 @@ os_getTempDir()
                         "Could not retrieve temporary directory path - "
                         "neither of environment variables TEMP, TMP, OSPL_TEMP were set");
         }
-        else if (os_ensurePathExists(dir_name) != 0)
+        else if (os__ensurePathExists(dir_name) != 0)
         {
                 OS_ERROR("os_getTempDir", 0,
                         "Could not ensure all (sub)directories of the temporary directory\n"
@@ -369,8 +369,8 @@ os_getTempDir()
 }
 
 int32_t
-os_ensurePathExists(
-        char* dir_name)
+os__ensurePathExists(
+        _In_z_ const char* dir_name)
 {
         char* tmp;
         char* ptr;
