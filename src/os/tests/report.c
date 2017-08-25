@@ -15,8 +15,8 @@ CUnit_Suite_Initialize(os_report)
 
 void remove_logs()
 {
-  char * error_file_name = os_getenv("VORTEX_ERRORFILE");
-  char * info_file_name = os_getenv("VORTEX_INFOFILE");
+  const char * error_file_name = os_getenv("VORTEX_ERRORFILE");
+  const char * info_file_name = os_getenv("VORTEX_INFOFILE");
 
   os_remove(error_file_name);
   os_remove(info_file_name);
@@ -24,8 +24,8 @@ void remove_logs()
 
 void check_existence(os_result error_log_existence, os_result info_log_existence)
 {
-  char * error_file_name = os_getenv("VORTEX_ERRORFILE");
-  char * info_file_name = os_getenv("VORTEX_INFOFILE");
+  const char * error_file_name = os_getenv("VORTEX_ERRORFILE");
+  const char * info_file_name = os_getenv("VORTEX_INFOFILE");
 
   CU_ASSERT(os_access(error_file_name, OS_ROK) == error_log_existence);
   CU_ASSERT(os_access(info_file_name, OS_ROK) == info_log_existence);

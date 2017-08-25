@@ -55,7 +55,7 @@ extern "C" {
      * - returns NULL if
      *     variable is not found
      */
-    OSAPI_EXPORT char *
+    OSAPI_EXPORT const char *
     os_getenv(
               const char *variable);
 

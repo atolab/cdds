@@ -135,14 +135,15 @@ static const char os_default_logdir[] = ".";
 #endif
 
 static FILE *
-os__open_file (char * file_name)
+os__open_file (const char * file_name)
 {
     FILE *logfile=NULL;
-    char *dir, *str;
+    const char *dir = os_getenv (os_env_logdir);
+    char * nomalized_dir;
+    char *str;
     size_t len;
     os_result res = os_resultSuccess;
 
-    dir = os_getenv (os_env_logdir);
     if (dir == NULL) {
         dir = (char *)os_default_logdir;
     }
@@ -151,12 +152,12 @@ os__open_file (char * file_name)
     str = os_malloc (len);
     if (str != NULL) {
         (void)snprintf (str, len, "%s/", dir);
-        dir = os_fileNormalize (str);
+        nomalized_dir = os_fileNormalize (str);
         os_free (str);
-        if (dir == NULL) {
+        if (nomalized_dir == NULL) {
             res = os_resultFail;
         }
-        os_free(dir);
+        os_free(nomalized_dir);
     } else {
         res = os_resultFail;
     }
@@ -168,7 +169,7 @@ os__open_file (char * file_name)
     return logfile;
 }
 
-static void os__close_file (char * file_name, FILE *file)
+static void os__close_file (const char * file_name, FILE *file)
 {
     if (strcmp(file_name, "<stderr>") != 0 && strcmp(file_name, "<stdout>") != 0)
     {
@@ -176,19 +177,20 @@ static void os__close_file (char * file_name, FILE *file)
     }
 }
 
-static bool os__report_is_local_file(char * file_name, char **new_name)
+static bool os__report_is_local_file(const char * file_name, char **new_name)
 {
     char host[256];
     char server_file[256];
     unsigned short port;
 
-    *new_name = file_name;
+    *new_name = (char *)file_name;
     return ((sscanf (*new_name, "%255[^:]:%hu", host, &port) != 2
             && sscanf (*new_name, "%255[^:]:%hu:%255[^:]", host, &port, server_file) != 3) ? true : false);
 }
 
-static char *os__report_createFileNormalize(char *file_path, char *file_dir, char *file_name)
+static const char *os__report_createFileNormalize(const char *file_dir, const char *file_name)
 {
+    char file_path[MAX_FILE_PATH];
     int len;
 
     len = snprintf(file_path, MAX_FILE_PATH, "%s/%s", file_dir, file_name);
@@ -211,15 +213,14 @@ static char *os__report_createFileNormalize(char *file_path, char *file_dir, cha
  * @param default_file If override_variable is not defined in the environment
  * this is the filename used.
  */
-static char *
-os__report_file_path(char * default_file, char * override_variable, enum os_report_logType type)
+static const char *
+os__report_file_path(const char * default_file, const char * override_variable, enum os_report_logType type)
 {
-    char *file_dir;
-    char file_path[MAX_FILE_PATH];
-    char *file_name = NULL;
+    const char *file_dir;
+    const char *file_name = NULL;
     char *full_file_path = NULL;
     FILE *logfile = NULL;
-    char *override = NULL;
+    const char *override = NULL;
 
     if (override_variable != NULL)
     {
@@ -234,7 +235,7 @@ os__report_file_path(char * default_file, char * override_variable, enum os_repo
     file_dir = os_getenv(os_env_logdir);
     if (!file_dir)
     {
-        file_dir = (char *)os_default_logdir;
+        file_dir = os_default_logdir;
     }
     else
     {
@@ -262,9 +263,10 @@ os__report_file_path(char * default_file, char * override_variable, enum os_repo
     }
     if (strcmp(file_name, "<stderr>") != 0 && strcmp(file_name, "<stdout>") != 0)
     {
-        if (os__report_is_local_file(file_name, &file_name))
+        char * new_file;
+        if (os__report_is_local_file(file_name, &new_file))
         {
-            return (os__report_createFileNormalize(file_path, file_dir, file_name));
+            return (os__report_createFileNormalize(file_dir, new_file));
         }
     }
     return os_strdup (file_name);
@@ -308,7 +310,7 @@ os__determine_verbosity(
 
 void os__set_verbosity(void)
 {
-    char * envValue = os_getenv(os_env_verbosity);
+    const char * envValue = os_getenv(os_env_verbosity);
     if (envValue != NULL)
     {
         if (os__determine_verbosity(envValue) == os_resultFail)
@@ -328,10 +330,10 @@ void os__set_verbosity(void)
  * use standard out.
  * @see os_report_file_path
  */
-char *
+const char *
 os__get_info_file_name(void)
 {
-    char * file_name;
+    const char * file_name;
     os_reportInit(false);
     os_mutexLock(&infologcreateMutex);
     file_name = os__report_file_path (os_report_defaultInfoFileName, (char *)os_env_infofile, OS_REPORT);
@@ -347,10 +349,10 @@ os__get_info_file_name(void)
  * use standard error.
  * @see os_report_file_path
  */
-char *
+const char *
 os__get_error_file_name(void)
 {
-    char * file_name;
+    const char * file_name;
     os_reportInit(false);
     os_mutexLock(&errorlogcreateMutex);
     file_name = os__report_file_path (os_report_defaultErrorFileName, (char *)os_env_errorfile, OS_ERROR);
@@ -360,7 +362,7 @@ os__get_error_file_name(void)
 
 void os__remove_stale_logs(void)
 {
-    char * name;
+    const char * name;
 
     os_reportInit(false);
 
@@ -372,11 +374,11 @@ void os__remove_stale_logs(void)
 
         name = os__get_error_file_name();
         (void)os_remove(name);
-        os_free(name);
+        os_free((char *)name);
 
         name = os__get_info_file_name();
         (void)os_remove(name);
-        os_free(name);
+        os_free((char *)name);
 
         StaleLogsRemoved = true;
     }
@@ -386,7 +388,7 @@ void os__remove_stale_logs(void)
 void
 os__check_removal_stale_logs(void)
 {
-    char * envValue = os_getenv(os_env_append);
+    const char * envValue = os_getenv(os_env_append);
     if (envValue != NULL)
     {
         if (os_strcasecmp(envValue, "FALSE") == 0 ||
@@ -423,7 +425,7 @@ os_reportInit(bool forceReInit)
 
 void os_reportExit(void)
 {
-    char *name;
+    const char *name;
     os_reportStack reports;
 
     reports = os_threadMemGet(OS_THREAD_REPORT_STACK);
@@ -439,7 +441,7 @@ void os_reportExit(void)
     {
         name = os__get_error_file_name();
         os__close_file(name, error_log);
-        os_free (name);
+        os_free ((char *)name);
         error_log = NULL;
     }
 
@@ -447,7 +449,7 @@ void os_reportExit(void)
     {
         name = os__get_info_file_name();
         os__close_file(name, info_log);
-        os_free (name);
+        os_free ((char *)name);
         info_log = NULL;
     }
     os_mutexDestroy(&errorlogcreateMutex);
@@ -478,7 +480,7 @@ os__report_fprintf(FILE *file,
 static FILE*
 os__get_info_file (void)
 {
-    char * name;
+    const char * name;
 
     if (info_log == NULL) {
       name = os__get_info_file_name();
@@ -487,7 +489,7 @@ os__get_info_file (void)
       {
           info_log = stdout;
       }
-      os_free (name);
+      os_free ((char *)name);
     }
     return info_log;
 }
@@ -495,7 +497,7 @@ os__get_info_file (void)
 static FILE*
 os__get_error_file (void)
 {
-    char * name;
+    const char * name;
 
     if (error_log == NULL) {
       name = os__get_error_file_name();
@@ -504,7 +506,7 @@ os__get_error_file (void)
       {
           error_log = stderr;
       }
-      os_free (name);
+      os_free ((char *)name);
     }
     return error_log;
 }

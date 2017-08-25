@@ -166,7 +166,7 @@ dds_init_impl(
 
   if (domain == DDS_DOMAIN_DEFAULT)
   {
-    char * edom = os_getenv ("VORTEX_DOMAIN");
+    const char * edom = os_getenv ("VORTEX_DOMAIN");
     if (edom)
     {
       config.domainId = atoi (edom);

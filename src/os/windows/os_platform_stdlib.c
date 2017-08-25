@@ -82,11 +82,11 @@ os_gethostname(
 }
 
 #pragma warning( disable : 4996 )
-char *
+const char *
 os_getenv(
         const char *variable)
 {
-        char * result;
+        const char * result;
         result = getenv(variable);
 
         return result;
@@ -329,7 +329,7 @@ os_fsync(
 const char *
 os_getTempDir()
 {
-        char * dir_name = NULL;
+        const char * dir_name = NULL;
 
         dir_name = os_getenv("OSPL_TEMP");
 
