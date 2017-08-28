@@ -189,7 +189,6 @@ os_startRoutineWrapper(
     resultValue = context->startRoutine(context->arguments);
 
     os_report_stack_free();
-    os_reportClearApiInfo();
 
     /* Free the thread context resources, arguments is responsibility */
     /* for the caller of os_threadCreate                                */
@@ -237,7 +236,7 @@ os_threadCreate(
         (LPVOID)threadContext,
         (DWORD)0, &threadIdent);
     if (threadHandle == 0) {
-        OS_REPORT(OS_WARNING, "os_threadCreate", os_getErrno(), "Failed with System Error Code: %i\n", os_getErrno ());
+        OS_WARNING("os_threadCreate", os_getErrno(), "Failed with System Error Code: %i\n", os_getErrno ());
         return os_resultFail;
     }
 
@@ -278,7 +277,7 @@ os_threadCreate(
         }
     }
     if (SetThreadPriority (threadHandle, effective_priority) == 0) {
-        OS_REPORT(OS_INFO, "os_threadCreate", os_getErrno(), "SetThreadPriority failed with %i", os_getErrno());
+        OS_INFO("os_threadCreate", os_getErrno(), "SetThreadPriority failed with %i", os_getErrno());
     }
 
    /* ES: dds2086: Close handle should not be performed here. Instead the handle

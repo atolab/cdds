@@ -55,9 +55,9 @@ extern "C" {
      * - returns NULL if
      *     variable is not found
      */
-    OSAPI_EXPORT char *
+    OSAPI_EXPORT _Ret_opt_z_ const char *
     os_getenv(
-              const char *variable);
+              _In_z_ const char *variable);
 
     /** \brief Set environment variable definition
      *
@@ -78,21 +78,6 @@ extern "C" {
     OSAPI_EXPORT os_result
     os_putenv(
               char *variable_definition);
-
-    /** \brief Set an environment variable definition
-     * Possible Results:
-     * - assertion failure: name or value are null.
-     * @param name variable name to be set
-     * @param value the value to set it to
-     * @return os_resultSuccess if
-     *     environment variable is set according the variable_definition or
-     * os_resultFail if
-     *     environment variable could not be set according the
-     *     variable_definition
-     */
-    OSAPI_EXPORT os_result
-    os_setenv(
-              const char *name, const char *value);
 
     /** \brief Get file seperator
      *
@@ -627,9 +612,11 @@ extern "C" {
      * - returns normalized filepath conform current platform
      * - return NULL if out of memory.
      */
+    _Ret_z_
+    _Must_inspect_result_
     OSAPI_EXPORT char *
     os_fileNormalize(
-                     const char *filepath);
+                     _In_z_ const char *filepath);
 
     /**
      * \brief Flushes the internal buffers associated with the file handle to disk
@@ -657,7 +644,7 @@ extern "C" {
      * - char * of the absolute path of the temporary location.  This will return
      * always return a valid value, using a default if necessary
      */
-    OSAPI_EXPORT const char *
+    OSAPI_EXPORT _Ret_opt_z_ const char *
     os_getTempDir(void);
 
     /**

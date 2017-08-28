@@ -77,11 +77,11 @@ init_entity_status(void)
     cr_assert_gt(writer, 0);
 
     waitSetwr = dds_create_waitset(participant);
-    status = dds_waitset_attach (waitSetwr, writer, (dds_attach_t)(intptr_t)writer);
+    status = dds_waitset_attach (waitSetwr, writer, writer);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
 
     waitSetrd = dds_create_waitset(participant);
-    status = dds_waitset_attach (waitSetrd, reader, (dds_attach_t)(intptr_t)reader);
+    status = dds_waitset_attach (waitSetrd, reader, reader);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
 
     /* Get reader/writer handles because they can be tested against. */
@@ -195,7 +195,7 @@ Test(vddsc_entity, incompatible_qos, .init=init_entity_status, .fini=fini_entity
     /* Create a reader with persistent durability */
     reader2 = dds_create_reader(participant, topic, qos, NULL);
     cr_assert_gt(reader2, 0);
-    status = dds_waitset_attach (waitSetrd, reader2, (dds_attach_t)(intptr_t)reader2);
+    status = dds_waitset_attach (waitSetrd, reader2, reader2);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
 
     /* Get reader and writer status conditions and attach to waitset */
@@ -484,7 +484,7 @@ Test(vddsc_entity, all_data_available, .init=init_entity_status, .fini=fini_enti
     cr_assert_status_eq(status, DDS_RETCODE_OK);
 
     waitSetrd2 = dds_create_waitset(participant);
-    status = dds_waitset_attach (waitSetrd2, reader2, (dds_attach_t)(intptr_t)reader2);
+    status = dds_waitset_attach (waitSetrd2, reader2, reader2);
     cr_assert_status_eq(status, DDS_RETCODE_OK);
 
     /* Wait for publication matched status */
@@ -926,7 +926,7 @@ TheoryDataPoints(vddsc_get_publication_matched_status, bad_params) = {
 };
 Theory((dds_entity_t writer), vddsc_get_publication_matched_status, bad_params)
 {
-	dds_publication_matched_status_t status = {0};
+    dds_publication_matched_status_t status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
@@ -990,7 +990,7 @@ TheoryDataPoints(vddsc_get_liveliness_lost_status, bad_params) = {
 };
 Theory((dds_entity_t writer), vddsc_get_liveliness_lost_status, bad_params)
 {
-	dds_liveliness_lost_status_t status = {0};
+    dds_liveliness_lost_status_t status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
@@ -1055,7 +1055,7 @@ TheoryDataPoints(vddsc_get_offered_deadline_missed_status, bad_params) = {
 };
 Theory((dds_entity_t writer), vddsc_get_offered_deadline_missed_status, bad_params)
 {
-	dds_offered_deadline_missed_status_t status = {0};
+    dds_offered_deadline_missed_status_t status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
@@ -1107,7 +1107,7 @@ TheoryDataPoints(vddsc_get_offered_incompatible_qos_status, bad_params) = {
 };
 Theory((dds_entity_t writer), vddsc_get_offered_incompatible_qos_status, bad_params)
 {
-	dds_offered_incompatible_qos_status_t status = {0};
+    dds_offered_incompatible_qos_status_t status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
@@ -1159,7 +1159,7 @@ TheoryDataPoints(vddsc_get_subscription_matched_status, bad_params) = {
 };
 Theory((dds_entity_t reader), vddsc_get_subscription_matched_status, bad_params)
 {
-	dds_subscription_matched_status_t status = {0};
+    dds_subscription_matched_status_t status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
@@ -1211,7 +1211,7 @@ TheoryDataPoints(vddsc_get_liveliness_changed_status, bad_params) = {
 };
 Theory((dds_entity_t reader), vddsc_get_liveliness_changed_status, bad_params)
 {
-	dds_liveliness_changed_status_t status = {0};
+    dds_liveliness_changed_status_t status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
@@ -1315,7 +1315,7 @@ TheoryDataPoints(vddsc_get_sample_lost_status, bad_params) = {
 };
 Theory((dds_entity_t reader), vddsc_get_sample_lost_status, bad_params)
 {
-	dds_sample_lost_status_t status = {0};
+    dds_sample_lost_status_t status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 

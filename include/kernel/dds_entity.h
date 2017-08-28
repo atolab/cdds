@@ -28,7 +28,7 @@ dds_entity_add_ref_nolock(
 
 _Check_return_ dds_retcode_t
 dds_entity_listener_propagation(
-        _In_ dds_entity *e,
+        _Inout_opt_ dds_entity *e,
         _In_ dds_entity *src,
         _In_ uint32_t status,
         _In_opt_ void *metrics,

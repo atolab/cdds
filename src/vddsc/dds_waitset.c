@@ -46,7 +46,7 @@ dds_waitset_signal_entity(
 static dds_return_t
 dds_waitset_wait_impl(
         _In_ dds_entity_t waitset,
-        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _Out_writes_to_opt_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
         _In_ size_t nxs,
         _In_ dds_time_t abstimeout,
         _In_ dds_time_t tnow)
@@ -58,7 +58,8 @@ dds_waitset_wait_impl(
     dds_attachment *next;
     dds_attachment *prev;
 
-    if ((xs == NULL) || (nxs == 0)) {
+    if (((xs == NULL) && (nxs != 0)) ||
+        ((xs != NULL) && (nxs == 0)) ){
         return DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
 
@@ -401,7 +402,7 @@ _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 dds_return_t
 dds_waitset_wait_until(
         _In_ dds_entity_t waitset,
-        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _Out_writes_to_opt_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
         _In_ size_t nxs,
         _In_ dds_time_t abstimeout)
 {
@@ -412,7 +413,7 @@ _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 dds_return_t
 dds_waitset_wait(
         _In_ dds_entity_t waitset,
-        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _Out_writes_to_opt_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
         _In_ size_t nxs,
         _In_ dds_duration_t reltimeout)
 {

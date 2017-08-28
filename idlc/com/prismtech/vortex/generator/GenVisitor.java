@@ -95,12 +95,12 @@ public class GenVisitor extends com.prismtech.vortex.parser.IDLBaseVisitor <Void
     {
       banner.add ("date", new Date ());
     }
-    banner.add ("version", Version.version);
+    banner.add ("version", Project.version);
 
     file.add ("banner", banner);
     if (params.forcpp)
     {
-      file.add ("name", params.basename + "-lite");
+      file.add ("name", params.basename + "-vortex");
     }
     else
     {

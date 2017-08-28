@@ -24,9 +24,9 @@
 
 #include "os_stdlib_strsep.c"
 
-char *
+_Ret_opt_z_ const char *
 os_getenv(
-    const char *variable)
+    _In_z_ const char *variable)
 {
     return getenv(variable);
 }
@@ -231,34 +231,32 @@ os_result os_rename (const char *oldpath, const char *newpath)
 }
 
 /* The result of os_fileNormalize should be freed with os_free */
+_Ret_z_
+_Must_inspect_result_
 char *
 os_fileNormalize(
-    const char *filepath)
+        _In_z_ const char *filepath)
 {
     char *norm;
     const char *fpPtr;
     char *normPtr;
 
-    norm = NULL;
-    if ((filepath != NULL) && (*filepath != '\0')) {
-        norm = os_malloc(strlen(filepath) + 1);
-        /* replace any / or \ by OS_FILESEPCHAR */
-        fpPtr = (char *) filepath;
-        normPtr = norm;
-        while (*fpPtr != '\0') {
-            *normPtr = *fpPtr;
-            if ((*fpPtr == '/') || (*fpPtr == '\\')) {
-                *normPtr = OS_FILESEPCHAR;
+    norm = os_malloc(strlen(filepath) + 1);
+    fpPtr = filepath;
+    normPtr = norm;
+    while (*fpPtr != '\0') {
+        *normPtr = *fpPtr;
+        if ((*fpPtr == '/') || (*fpPtr == '\\')) {
+            *normPtr = OS_FILESEPCHAR;
+            normPtr++;
+        } else {
+            if (*fpPtr != '\"') {
                 normPtr++;
-            } else {
-                if (*fpPtr != '\"') {
-                    normPtr++;
-                }
             }
-            fpPtr++;
         }
-        *normPtr = '\0';
+        fpPtr++;
     }
+    *normPtr = '\0';
 
     return norm;
 }
@@ -278,10 +276,10 @@ os_fsync(
     return r;
 }
 
-const char *
-os_getTempDir()
+_Ret_opt_z_ const char *
+os_getTempDir(void)
 {
-    char * dir_name = NULL;
+    const char * dir_name = NULL;
 
     dir_name = os_getenv("OSPL_TEMP");
 

@@ -71,22 +71,22 @@ void ddsi_impl_init (void)
 
 static void dds_set_report_level (void)
 {
-  os_reportVerbosity = OS_NONE;
+  os_reportVerbosity = OS_REPORT_NONE;
   if (config.enabled_logcats & LC_FATAL)
   {
-    os_reportVerbosity = OS_FATAL;
+    os_reportVerbosity = OS_REPORT_FATAL;
   }
   if (config.enabled_logcats & LC_ERROR)
   {
-    os_reportVerbosity = OS_ERROR;
+    os_reportVerbosity = OS_REPORT_ERROR;
   }
   if (config.enabled_logcats & LC_WARNING)
   {
-    os_reportVerbosity = OS_WARNING;
+    os_reportVerbosity = OS_REPORT_WARNING;
   }
   if (config.enabled_logcats != 0)
   {
-    os_reportVerbosity = OS_DEBUG;
+    os_reportVerbosity = OS_REPORT_DEBUG;
   }
 }
 
@@ -168,7 +168,7 @@ dds_init_impl(
 
   if (domain == DDS_DOMAIN_DEFAULT)
   {
-    char * edom = os_getenv ("VORTEX_DOMAIN");
+    const char * edom = os_getenv ("VORTEX_DOMAIN");
     if (edom)
     {
       config.domainId = atoi (edom);

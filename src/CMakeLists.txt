@@ -73,7 +73,7 @@ install(
 # FIXME: Not sure if this is actually required.
 install(
   FILES "${CMAKE_CURRENT_BINARY_DIR}/exports/dds/dds_export.h"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/dds"
   COMPONENT dev)
 
 install(

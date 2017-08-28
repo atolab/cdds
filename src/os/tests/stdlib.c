@@ -195,7 +195,7 @@ CUnit_Test(os_stdlib, putenv)
 
 CUnit_Test(os_stdlib, getenv)
 {
-    char *env;
+    const char *env;
     os_result res;
 
     printf ("Starting os_stdlib_getenv_001\n");
