@@ -508,12 +508,15 @@ void os_funlockfile(FILE *file)
 	_unlock_file (file);
 }
 
-int os_getopt(int argc, char **argv, const char *opts)
+int os_getopt(
+		_In_ int argc,
+		_In_ char **argv,
+		_In_ const char *opts)
 {
 	return getopt(argc, argv, opts);
 }
 
-void os_set_opterr(int err)
+void os_set_opterr(_In_ int err)
 {
 	opterr = err;
 }
@@ -523,7 +526,7 @@ int os_get_opterr(void)
 	return opterr;
 }
 
-void os_set_optind(int index)
+void os_set_optind(_In_ int index)
 {
 	optind = index;
 }

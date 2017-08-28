@@ -752,7 +752,7 @@ extern "C" {
 	 *
 	 */
 	OSAPI_EXPORT int
-	os_getopt(int argc, char **argv, const char *opts);
+	os_getopt(_In_ int argc, _In_ char **argv, _In_ const char *opts);
 
 	/**
 	 * \brief the os_set_opterr function sets the value of the opterr variable.
@@ -769,7 +769,7 @@ extern "C" {
 	 *
 	 */
 	OSAPI_EXPORT void
-	os_set_opterr(int err);
+	os_set_opterr(_In_ int err);
 
 	/**
 	 * \brief the os_get_opterr returns the value of the opterr variable.
@@ -799,7 +799,7 @@ extern "C" {
 	 *
 	 */
 	OSAPI_EXPORT void
-	os_set_optind(int index);
+	os_set_optind(_In_ int index);
 
 	/**
 	 * \brief the os_get_optind function returns the value of the optind variable.
