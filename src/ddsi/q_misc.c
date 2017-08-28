@@ -44,9 +44,9 @@ int vendor_is_prismtech (nn_vendorid_t vid)
 
   return
     (vid.id[0] == pt1.id[0]) &&
-    ((vid.id[1] == pt1.id[1]) || (vid.id[1] == pt6.id[1])
+    ((vid.id[1] == pt1.id[1]) || (vid.id[1] == pt2.id[1])
      || (vid.id[1] == pt3.id[1]) || (vid.id[1] == pt4.id[1])
-     || (vid.id[1] == pt5.id[1]));
+     || (vid.id[1] == pt5.id[1]) || (vid.id[1] == pt6.id[1]));
 }
 
 int vendor_is_opensplice (nn_vendorid_t vid)
