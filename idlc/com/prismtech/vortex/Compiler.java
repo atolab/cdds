@@ -179,7 +179,7 @@ public class Compiler
 
           if (params.forcpp)
           {
-            fileRoot = fileRoot.concat ("-lite");
+            fileRoot = fileRoot.concat ("-vortex");
           }
           try
           {
@@ -226,8 +226,8 @@ public class Compiler
 
   private static void version ()
   {
-    System.out.print ("Vortex DDS ");
-    System.out.println ("C IDL Compiler v" + Version.version);
+    System.out.print (Project.name);
+    System.out.println ("C IDL Compiler v" + Project.version);
   }
 
   private static IdlParams params;

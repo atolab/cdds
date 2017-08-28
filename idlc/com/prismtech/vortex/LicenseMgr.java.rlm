@@ -13,12 +13,12 @@ class LicenseMgr
 {
   private static final String FS = System.getProperty ("file.separator");
 
-  private static final String LIC_PROPS_FILE = "license.properties";
-  private static final String LIC_FEATURE    = "VORTEX_IDLC";
-  private static final String LIC_VERSION    = "#VERSION#";
-  private static final String LIC_REL_PATH   = "etc";
-  private static final String LIC_FILE_NAME  = "license.lic";
-  private static final String LITE_HOME_PROP = "LITE_HOME";
+  private static final String LIC_PROPS_FILE      = "license.properties";
+  private static final String LIC_FEATURE         = "VORTEX_IDLC";
+  private static final String LIC_VERSION         = "#VERSION#";
+  private static final String LIC_REL_PATH        = "etc";
+  private static final String LIC_FILE_NAME       = "license.lic";
+  private static final String VORTEXDDS_HOME_PROP = "VORTEXDDS_HOME";
 
   private static final String LIC_RLM_PROP   = "RLM_LICENSE";
   private static final String LIC_LOC_PROP    = "prismtech_LICENSE";
@@ -26,7 +26,7 @@ class LicenseMgr
   private static RlmLicense license = null;
   private static RlmHandle handle = null;
 
-  private static String vlHome = System.getProperty (LITE_HOME_PROP);
+  private static String vlHome = System.getProperty (VORTEXDDS_HOME_PROP);
   private static String licPropsPath;
   private static String defaultLic;
   private static String licRelPath;
@@ -36,15 +36,15 @@ class LicenseMgr
   {
   }
 
-  private static boolean getLiteHome()
+  private static boolean getVortexHome()
   {
     // Use the property, if null then fall back to the env
     if (vlHome == null)
     {
-      vlHome = System.getenv("LITE_HOME");
+      vlHome = System.getenv("VORTEXDDS_HOME");
       if (vlHome == null)
       {
-        System.err.println ("LITE_HOME environment variable or property must be set");
+        System.err.println ("VORTEXDDS_HOME environment variable or property must be set");
         return false;
       }
     }
@@ -62,7 +62,7 @@ class LicenseMgr
 
 
   /* Locations for license:
-     1 : $LITE_HOME/etc/ANY.lic
+     1 : $VORTEXDDS_HOME/etc/ANY.lic
      2 : ../../../license/ANY.lic
      3 : Read from environment variable prismtech_LICENSE or RLM_LICENSE
   */
@@ -149,7 +149,7 @@ class LicenseMgr
         FileInputStream fis  = null;
         Properties licProps  = null;
 
-        if (!getLiteHome())
+        if (!getVortexHome())
         {
           return false;
         }
@@ -186,8 +186,8 @@ class LicenseMgr
       if (licLoc == null)
       {
         // No valid source set or found use the default as
-        // $LITE_HOME/etc/license.lic as fall back
-        if (!getLiteHome())
+        // $VORTEXDDS_HOME/etc/license.lic as fall back
+        if (!getVortexHome())
         {
           return false;
         }

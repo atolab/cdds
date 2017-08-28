@@ -43,7 +43,7 @@ endif()
 set(basedir "${CMAKE_CURRENT_SOURCE_DIR}")
 mark_as_advanced(basedir)
 configure_file("pom.xml" "pom.xml")
-configure_file("com/prismtech/vortex/Version.java.in" "com/prismtech/vortex/Version.java")
+configure_file("com/prismtech/vortex/Project.java.in" "com/prismtech/vortex/Project.java")
 
 add_custom_command(
     OUTPUT  "${IDLC_JAR}"

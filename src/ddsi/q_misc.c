@@ -40,6 +40,7 @@ int vendor_is_prismtech (nn_vendorid_t vid)
   const nn_vendorid_t pt3 = NN_VENDORID_PRISMTECH_GATEWAY;
   const nn_vendorid_t pt4 = NN_VENDORID_PRISMTECH_JAVA;
   const nn_vendorid_t pt5 = NN_VENDORID_PRISMTECH_CLOUD;
+  const nn_vendorid_t pt6 = NN_VENDORID_PRISMTECH_VORTEXDDS;
 
   return
     (vid.id[0] == pt1.id[0]) &&

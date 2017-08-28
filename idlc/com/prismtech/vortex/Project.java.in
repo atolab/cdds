@@ -1,6 +1,7 @@
 package com.prismtech.vortex;
 
-public class Version
+public class Project
 {
   public static String version = "@PROJECT_VERSION@";
+  public static String name    = "@CMAKE_PROJECT_NAME@";
 }
