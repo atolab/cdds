@@ -95,16 +95,18 @@ os_rindex(
     return last;
 }
 
+_Ret_z_
+_Check_return_
 char *
 os_strdup(
-    const char *s1)
+    _In_z_ const char *s1)
 {
     size_t len;
     char *dup;
 
-    len = strlen (s1) + 1;
-    dup = os_malloc (len);
-    memcpy (dup, s1, len);
+    len = strlen(s1) + 1;
+    dup = os_malloc(len);
+    memcpy(dup, s1, len);
 
     return dup;
 }
@@ -231,32 +233,34 @@ os_result os_rename (const char *oldpath, const char *newpath)
 }
 
 /* The result of os_fileNormalize should be freed with os_free */
-_Ret_z_
-_Must_inspect_result_
 char *
 os_fileNormalize(
-        _In_z_ const char *filepath)
+    const char *filepath)
 {
     char *norm;
     const char *fpPtr;
     char *normPtr;
 
-    norm = os_malloc(strlen(filepath) + 1);
-    fpPtr = filepath;
-    normPtr = norm;
-    while (*fpPtr != '\0') {
-        *normPtr = *fpPtr;
-        if ((*fpPtr == '/') || (*fpPtr == '\\')) {
-            *normPtr = OS_FILESEPCHAR;
-            normPtr++;
-        } else {
-            if (*fpPtr != '\"') {
+    norm = NULL;
+    if ((filepath != NULL) && (*filepath != '\0')) {
+        norm = os_malloc(strlen(filepath) + 1);
+        /* replace any / or \ by OS_FILESEPCHAR */
+        fpPtr = (char *) filepath;
+        normPtr = norm;
+        while (*fpPtr != '\0') {
+            *normPtr = *fpPtr;
+            if ((*fpPtr == '/') || (*fpPtr == '\\')) {
+                *normPtr = OS_FILESEPCHAR;
                 normPtr++;
+            } else {
+                if (*fpPtr != '\"') {
+                    normPtr++;
+                }
             }
+            fpPtr++;
         }
-        fpPtr++;
+        *normPtr = '\0';
     }
-    *normPtr = '\0';
 
     return norm;
 }

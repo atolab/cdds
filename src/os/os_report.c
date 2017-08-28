@@ -181,7 +181,7 @@ os__close_file (
     }
 }
 
-_Must_inspect_result_ _Ret_z_
+_Check_return_ _Ret_z_
 static char *os__report_createFileNormalize(
         _In_z_ const char *file_dir,
         _In_z_ const char *file_name)
@@ -210,7 +210,7 @@ static char *os__report_createFileNormalize(
  * this is the filename used.
  */
 _Ret_z_
-_Must_inspect_result_
+_Check_return_
 static char *
 os__report_file_path(
         _In_z_ const char * default_file,
@@ -219,12 +219,10 @@ os__report_file_path(
 {
     const char *file_dir;
     const char *file_name = NULL;
-    const char *override = NULL;
 
     if (override_variable != NULL)
     {
-        override = os_getenv(override_variable);
-        file_name = override;
+        file_name = os_getenv(override_variable);
     }
     if (!file_name)
     {
@@ -326,8 +324,8 @@ void os__set_verbosity(void)
  * @see os_report_file_path
  */
 _Ret_z_
-_Must_inspect_result_
-char *
+_Check_return_
+static char *
 os__get_info_file_name(void)
 {
     char * file_name;
@@ -347,8 +345,8 @@ os__get_info_file_name(void)
  * @see os_report_file_path
  */
 _Ret_z_
-_Must_inspect_result_
-char *
+_Check_return_
+static char *
 os__get_error_file_name(void)
 {
     char * file_name;
