@@ -2,6 +2,7 @@
 #include <string.h>
 #include "kernel/dds_listener.h"
 #include "kernel/dds_qos.h"
+#include "kernel/dds_report.h"
 #include "ddsi/q_entity.h"
 
 #define DDS_SUBSCRIBER_STATUS_MASK                               \
@@ -105,6 +106,7 @@ dds_create_subscriber(
     dds_return_t ret;
     int32_t errnr;
 
+
     errnr = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
     if (errnr != DDS_RETCODE_OK) {
         return DDS_ERRNO(errnr);
@@ -130,6 +132,10 @@ dds_create_subscriber(
     sub->m_entity.m_deriver.validate_status = dds_subscriber_status_validate;
     sub->m_entity.m_deriver.propagate_status = dds_subscriber_status_propagate;
     sub->m_entity.m_deriver.get_instance_hdl = dds_subscriber_instance_hdl;
+    DDS_REPORT_STACK();
+    DDS_REPORT(hdl, "report wrapper testing in create subscriber.");
+    //DDS_REPORT_WARNING("report wrapper testing in create subscriber.");
+    DDS_REPORT_FLUSH(true);
     dds_entity_unlock(par);
 
     return hdl;

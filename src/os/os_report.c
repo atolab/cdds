@@ -763,66 +763,6 @@ void os_report_stack_free(void)
 }
 
 static void
-os__report_stack_unwind(
-        _Inout_ os_reportStack _this,
-        _In_ bool valid,
-        _In_z_ const char *context,
-        _In_z_ const char *path,
-        _In_ int line)
-{
-    struct os_reportEventV1_s header;
-    os_reportEventV1 report;
-    char *file;
-    bool useErrorLog;
-
-    if (!valid) {
-        if (OS_REPORT_IS_ALWAYS(_this->typeset)) {
-            valid = true;
-        }
-    }
-
-    useErrorLog = OS_REPORT_IS_ERROR(_this->typeset);
-
-    _this->typeset = 0;
-
-    if (valid) {
-        char proc[256], procid[256];
-        char thr[64], thrid[64];
-        os_procId pid;
-        uintmax_t tid;
-
-        assert (context != NULL);
-        assert (path != NULL);
-
-        file = (char *)path;
-
-        pid = os_procIdSelf ();
-        tid = os_threadIdToInteger (os_threadIdSelf ());
-
-        os_procNamePid (procid, sizeof (procid));
-        os_procName (proc, sizeof (proc));
-        os_threadFigureIdentity (thrid, sizeof (thrid));
-        os_threadGetThreadName (thr, sizeof (thr));
-
-        header.reportType = OS_REPORT_ERROR;
-        header.description = (char *)context;
-        header.processDesc = procid;
-        header.threadDesc = thrid;
-        header.fileName = file;
-        header.lineNo = line;
-
-        os__headerReport (&header, useErrorLog);
-    }
-
-    while ((report = os_iterTake(_this->reports, -1))) {
-        if (valid) {
-            os__sectionReport (report, useErrorLog);
-        }
-        os__report_free(report);
-    }
-}
-
-static void
 os__report_dumpStack(
         _In_z_ const char *context,
         _In_z_ const char *path,
