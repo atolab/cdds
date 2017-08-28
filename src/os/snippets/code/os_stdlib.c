@@ -24,9 +24,9 @@
 
 #include "os_stdlib_strsep.c"
 
-char *
+_Ret_opt_z_ const char *
 os_getenv(
-    const char *variable)
+    _In_z_ const char *variable)
 {
     return getenv(variable);
 }
@@ -278,10 +278,10 @@ os_fsync(
     return r;
 }
 
-const char *
-os_getTempDir()
+_Ret_opt_z_ const char *
+os_getTempDir(void)
 {
-    char * dir_name = NULL;
+    const char * dir_name = NULL;
 
     dir_name = os_getenv("OSPL_TEMP");
 

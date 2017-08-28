@@ -61,7 +61,7 @@ os_socketModuleInit()
 
     err = WSAStartup (wVersionRequested, &wsaData);
     if (err != 0) {
-    OS_REPORT (OS_FATAL, "os_socketModuleInit", 0, "WSAStartup failed, no compatible socket implementation available");
+    OS_FATAL("os_socketModuleInit", 0, "WSAStartup failed, no compatible socket implementation available");
         /* Tell the user that we could not find a usable */
         /* WinSock DLL.                                  */
         return;
@@ -77,14 +77,14 @@ os_socketModuleInit()
         (HIBYTE(wsaData.wVersion) != OS_SOCK_REVISION)) {
         /* Tell the user that we could not find a usable */
         /* WinSock DLL.                                  */
-    OS_REPORT (OS_FATAL, "os_socketModuleInit", 1, "WSAStartup failed, no compatible socket implementation available");
+    OS_FATAL("os_socketModuleInit", 1, "WSAStartup failed, no compatible socket implementation available");
         WSACleanup();
         return;
     }
 
     qwaveDLLModuleLock = CreateMutex(NULL, FALSE, NULL);
     if (qwaveDLLModuleLock == NULL) {
-        OS_REPORT (OS_ERROR, "os_socketModuleInit", 0, "Failed to create mutex");
+        OS_ERROR("os_socketModuleInit", 0, "Failed to create mutex");
     }
 }
 
@@ -235,7 +235,7 @@ os_sockSetDscpValueWithTos(
         char errmsg[1024];
         int errNo = os_getErrno();
         (void) os_strerror_r(errNo, errmsg, sizeof errmsg);
-        OS_REPORT(OS_WARNING, "os_sockSetDscpValue", 0, "Failed to set diffserv value to %ld: %d %s", value, errNo, errmsg);
+        OS_WARNING("os_sockSetDscpValue", 0, "Failed to set diffserv value to %lu: %d %s", value, errNo, errmsg);
         result = os_resultFail;
     }
 
@@ -247,7 +247,7 @@ static os_result
 os_sockLoadQwaveLibrary(void)
 {
     if (qwaveDLLModuleLock == NULL) {
-        OS_REPORT(OS_WARNING, "os_sockLoadQwaveLibrary", 0,
+        OS_WARNING("os_sockLoadQwaveLibrary", 0,
                 "Failed to load QWAVE.DLL for using diffserv on outgoing IP packets");
         goto err_lock;
     }
@@ -255,7 +255,7 @@ os_sockLoadQwaveLibrary(void)
     WaitForSingleObject(qwaveDLLModuleLock, INFINITE);
     if (qwaveDLLModuleHandle == NULL) {
         if ((qwaveDLLModuleHandle = LoadLibrary("QWAVE.DLL")) == NULL) {
-            OS_REPORT(OS_WARNING, "os_sockLoadQwaveLibrary", 0,
+            OS_WARNING("os_sockLoadQwaveLibrary", 0,
                     "Failed to load QWAVE.DLL for using diffserv on outgoing IP packets");
             goto err_load_lib;
         }
@@ -267,7 +267,7 @@ os_sockLoadQwaveLibrary(void)
 
         if ((qwaveQOSCreateHandleFunc == 0) || (qwaveQOSCloseHandleFunc == 0) ||
             (qwaveQOSAddSocketToFlowFunc == 0) || (qwaveQOSSetFlowFunc == 0)) {
-            OS_REPORT(OS_WARNING, "os_sockLoadQwaveLibrary", 0,
+            OS_WARNING("os_sockLoadQwaveLibrary", 0,
                     "Failed to resolve entry points for using diffserv on outgoing IP packets");
             goto err_find_func;
         }
@@ -387,7 +387,7 @@ os_sockSetDscpValueWithQos(
         char errmsg[1024];
         errNo = os_getErrno();
         (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
-        OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0, "QOSCreateHandle failed: %d %s", errNo, errmsg);
+        OS_ERROR("os_sockSetDscpValue", 0, "QOSCreateHandle failed: %d %s", errNo, errmsg);
         goto err_create_handle;
     }
 
@@ -400,7 +400,7 @@ os_sockSetDscpValueWithQos(
         char errmsg[1024];
         errNo = os_getErrno();
         (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
-        OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0, "QOSAddSocketToFlow failed: %d %s", errNo, errmsg);
+        OS_ERROR("os_sockSetDscpValue", 0, "QOSAddSocketToFlow failed: %d %s", errNo, errmsg);
         qwaveQOSCloseHandleFunc(qosHandle);
         goto err_add_flow;
     }
@@ -408,8 +408,8 @@ os_sockSetDscpValueWithQos(
     if (value != defaultDscp) {
 
         if (!setDscpSupported) {
-            OS_REPORT(OS_WARNING, "os_sockSetDscpValue", 0,
-                    "Failed to set diffserv value to %ld value used is %d, not supported on this platform",
+            OS_WARNING("os_sockSetDscpValue", 0,
+                    "Failed to set diffserv value to %lu value used is %d, not supported on this platform",
                     value, defaultDscp);
             goto err_set_flow;
         }
@@ -420,14 +420,14 @@ os_sockSetDscpValueWithQos(
         if (!qosResult) {
             errNo = os_getErrno();
             if ((errNo == ERROR_ACCESS_DENIED) || (errNo == ERROR_ACCESS_DISABLED_BY_POLICY)) {
-                OS_REPORT(OS_WARNING, "os_sockSetDscpValue", 0,
-                        "Failed to set diffserv value to %ld value used is %d, not enough privileges",
+                OS_WARNING("os_sockSetDscpValue", 0,
+                        "Failed to set diffserv value to %lu value used is %d, not enough privileges",
                         value, defaultDscp);
             } else {
                 char errmsg[1024];
                 errNo = os_getErrno();
                 (void)os_strerror_r(errNo, errmsg, sizeof errmsg);
-                OS_REPORT(OS_ERROR, "os_sockSetDscpValue", 0, "QOSSetFlow failed: %d %s", errNo, errmsg);
+                OS_ERROR("os_sockSetDscpValue", 0, "QOSSetFlow failed: %d %s", errNo, errmsg);
             }
             goto err_set_flow;
         }
@@ -519,7 +519,7 @@ os_sockSetNonBlocking(
                 r = os_resultInvalid;
                 break;
             case WSANOTINITIALISED:
-                OS_REPORT (OS_FATAL, "os_sockSetNonBlocking", 0, "Socket-module not initialised; ensure os_socketModuleInit is performed before using the socket module.");
+                OS_FATAL("os_sockSetNonBlocking", 0, "Socket-module not initialised; ensure os_socketModuleInit is performed before using the socket module.");
             default:
                 r = os_resultFail;
                 break;
@@ -605,16 +605,16 @@ addressToIndexAndMask(struct sockaddr *addr, unsigned int *ifIndex, struct socka
         if (pIPAddrTable != NULL) {
             if (GetIpAddrTable(pIPAddrTable, &dwSize, 0) != NO_ERROR) {
                 errNo = os_getErrno();
-                os_report(OS_ERROR, "addressToIndexAndMask", __FILE__, __LINE__, 0, "GetIpAddrTable failed: %d", errNo);
+                OS_ERROR("addressToIndexAndMask", 0, "GetIpAddrTable failed: %d", errNo);
                 result = os_resultFail;
             }
         } else {
-            os_report(OS_ERROR, "addressToIndexAndMask", __FILE__, __LINE__, 0, "Failed to allocate %d bytes for IP address table", dwSize);
+            OS_ERROR("addressToIndexAndMask", 0, "Failed to allocate %lu bytes for IP address table", dwSize);
             result = os_resultFail;
         }
     } else {
         errNo = os_getErrno();
-        os_report(OS_ERROR, "addressToIndexAndMask", __FILE__, __LINE__, 0, "GetIpAddrTable failed: %d", errNo);
+        OS_ERROR("addressToIndexAndMask", 0, "GetIpAddrTable failed: %d", errNo);
         result = os_resultFail;
     }
 
@@ -665,8 +665,7 @@ os_sockQueryInterfaces(
     do {
         pAddresses = (IP_ADAPTER_ADDRESSES *) os_malloc(outBufLen);
         if (!pAddresses) {
-            os_report(OS_ERROR, "os_sockQueryInterfaces", __FILE__, __LINE__, 0,
-                "Failed to allocate %d bytes for Adapter addresses", outBufLen);
+            OS_ERROR("os_sockQueryInterfaces", 0, "Failed to allocate %lu bytes for Adapter addresses", outBufLen);
             return os_resultFail;
         }
         retVal = GetAdaptersAddresses(AF_INET, filter, NULL, pAddresses, &outBufLen);
@@ -685,8 +684,7 @@ os_sockQueryInterfaces(
             os_free(pAddresses);
             pAddresses = NULL;
         }
-        os_report(OS_ERROR, "os_sockQueryInterfaces", __FILE__, __LINE__, 0,
-                "Failed to GetAdaptersAddresses");
+        OS_ERROR("os_sockQueryInterfaces", 0, "Failed to GetAdaptersAddresses");
         return os_resultFail;
     }
 
@@ -779,8 +777,7 @@ os_sockQueryIPv6Interfaces (
     do {
         pAddresses = (IP_ADAPTER_ADDRESSES *) os_malloc(outBufLen);
         if (!pAddresses) {
-            os_report(OS_ERROR, "os_sockQueryIPv6Interfaces", __FILE__, __LINE__, 0,
-                "Failed to allocate %d bytes for Adapter addresses", outBufLen);
+            OS_ERROR("os_sockQueryIPv6Interfaces", 0, "Failed to allocate %lu bytes for Adapter addresses", outBufLen);
             return os_resultFail;
         }
         retVal = GetAdaptersAddresses(AF_INET6, filter, NULL, pAddresses, &outBufLen);
@@ -799,8 +796,7 @@ os_sockQueryIPv6Interfaces (
             os_free(pAddresses);
             pAddresses = NULL;
         }
-        os_report(OS_ERROR, "os_sockQueryIPv6Interfaces", __FILE__, __LINE__, 0,
-                "Failed to GetAdaptersAddresses");
+        OS_ERROR("os_sockQueryIPv6Interfaces", 0, "Failed to GetAdaptersAddresses");
         return os_resultFail;
     }
 
