@@ -4,5 +4,5 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.prismtech.idt.imports.idl</groupId>
   <artifactId>preprocessor</artifactId>
-  <version>VLITE-01</version>
+  <version>VORTEXDDS-01</version>
 </project>

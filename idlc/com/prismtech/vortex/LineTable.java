@@ -28,7 +28,7 @@ public class LineTable
     this.filename = filename;
     if (forcpp)
     {
-      suffix = "-lite";
+      suffix = "-vortex";
     }
     else
     {
