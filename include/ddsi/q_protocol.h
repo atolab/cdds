@@ -141,7 +141,7 @@ struct cdrstring {
 #define NN_VENDORID_PRISMTECH_CLOUD        {{ 0x01, 0x20 }}
 #define NN_VENDORID_PRISMTECH_VORTEXDDS    {{ 0x01, 0x0d }} // Since VORTEXDDS has no owner yet, it uses the same VENDORID as LITE
 
-#define MY_VENDOR_ID NN_VENDORID_PRISMTECH_LITE
+#define MY_VENDOR_ID NN_VENDORID_PRISMTECH_VORTEXDDS
 
 /* Only one specific version is grokked */
 #define RTPS_MAJOR 2
