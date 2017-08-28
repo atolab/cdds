@@ -612,9 +612,11 @@ extern "C" {
      * - returns normalized filepath conform current platform
      * - return NULL if out of memory.
      */
+    _Ret_z_
+    _Must_inspect_result_
     OSAPI_EXPORT char *
     os_fileNormalize(
-                     const char *filepath);
+                     _In_z_ const char *filepath);
 
     /**
      * \brief Flushes the internal buffers associated with the file handle to disk

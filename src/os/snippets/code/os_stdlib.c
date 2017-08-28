@@ -231,34 +231,32 @@ os_result os_rename (const char *oldpath, const char *newpath)
 }
 
 /* The result of os_fileNormalize should be freed with os_free */
+_Ret_z_
+_Must_inspect_result_
 char *
 os_fileNormalize(
-    const char *filepath)
+        _In_z_ const char *filepath)
 {
     char *norm;
     const char *fpPtr;
     char *normPtr;
 
-    norm = NULL;
-    if ((filepath != NULL) && (*filepath != '\0')) {
-        norm = os_malloc(strlen(filepath) + 1);
-        /* replace any / or \ by OS_FILESEPCHAR */
-        fpPtr = (char *) filepath;
-        normPtr = norm;
-        while (*fpPtr != '\0') {
-            *normPtr = *fpPtr;
-            if ((*fpPtr == '/') || (*fpPtr == '\\')) {
-                *normPtr = OS_FILESEPCHAR;
+    norm = os_malloc(strlen(filepath) + 1);
+    fpPtr = filepath;
+    normPtr = norm;
+    while (*fpPtr != '\0') {
+        *normPtr = *fpPtr;
+        if ((*fpPtr == '/') || (*fpPtr == '\\')) {
+            *normPtr = OS_FILESEPCHAR;
+            normPtr++;
+        } else {
+            if (*fpPtr != '\"') {
                 normPtr++;
-            } else {
-                if (*fpPtr != '\"') {
-                    normPtr++;
-                }
             }
-            fpPtr++;
         }
-        *normPtr = '\0';
+        fpPtr++;
     }
+    *normPtr = '\0';
 
     return norm;
 }
