@@ -58,7 +58,7 @@ static VDDS_INLINE dds_return_t handle_dds_errno(int e, const char * context, co
   } else {
     va_list args;
     va_start(args, msg);
-    OS_REPORT_FROM_FILE(OS_ERROR, context, file, line, e, msg, args);
+    OS_REPORT_FROM_FILE(OS_REPORT_ERROR, context, file, line, e, msg, args);
     va_end(args);
     ret = -(DDS__FILE_ID__ + DDS__LINE__ + (e));
   }
