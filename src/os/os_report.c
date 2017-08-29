@@ -21,15 +21,25 @@
 #include <stdio.h>
 #include <string.h>
 
+#define OS_REPORT_TYPE_DEBUG     (1u)
 #define OS_REPORT_TYPE_WARNING   (1u<<OS_REPORT_WARNING)
 #define OS_REPORT_TYPE_ERROR     (1u<<OS_REPORT_ERROR)
 #define OS_REPORT_TYPE_CRITICAL  (1u<<OS_REPORT_CRITICAL)
 #define OS_REPORT_TYPE_FATAL     (1u<<OS_REPORT_FATAL)
+#define OS_REPORT_TYPE_INFO      (1u<<OS_REPORT_INFO)
 
 #define OS_REPORT_TYPE_FLAG(x)   (1u<<(x))
 #define OS_REPORT_IS_ALWAYS(x)   ((x) & (OS_REPORT_TYPE_CRITICAL | OS_REPORT_TYPE_FATAL))
 #define OS_REPORT_IS_WARNING(x)  ((x) & OS_REPORT_TYPE_WARNING)
 #define OS_REPORT_IS_ERROR(x)    ((x) & (OS_REPORT_TYPE_ERROR | OS_REPORT_TYPE_CRITICAL | OS_REPORT_TYPE_FATAL))
+
+#define OS_REPORT_FLAG_TYPE(x)   (((x) & OS_REPORT_TYPE_FATAL) ? OS_REPORT_FATAL : \
+                                  ((x) & OS_REPORT_TYPE_CRITICAL) ? OS_REPORT_CRITICAL : \
+                                  ((x) & OS_REPORT_TYPE_ERROR) ? OS_REPORT_ERROR : \
+                                  ((x) & OS_REPORT_TYPE_WARNING) ? OS_REPORT_WARNING : \
+                                  ((x) & OS_REPORT_TYPE_INFO) ? OS_REPORT_INFO : \
+                                  ((x) & OS_REPORT_TYPE_DEBUG) ? OS_REPORT_DEBUG : \
+                                  OS_REPORT_NONE)
 
 #define MAX_FILE_PATH 2048
 
@@ -181,7 +191,7 @@ os__close_file (
     }
 }
 
-_Must_inspect_result_ _Ret_z_
+_Check_return_ _Ret_z_
 static char *os__report_createFileNormalize(
         _In_z_ const char *file_dir,
         _In_z_ const char *file_name)
@@ -210,7 +220,7 @@ static char *os__report_createFileNormalize(
  * this is the filename used.
  */
 _Ret_z_
-_Must_inspect_result_
+_Check_return_
 static char *
 os__report_file_path(
         _In_z_ const char * default_file,
@@ -219,12 +229,10 @@ os__report_file_path(
 {
     const char *file_dir;
     const char *file_name = NULL;
-    const char *override = NULL;
 
     if (override_variable != NULL)
     {
-        override = os_getenv(override_variable);
-        file_name = override;
+        file_name = os_getenv(override_variable);
     }
     if (!file_name)
     {
@@ -326,8 +334,8 @@ void os__set_verbosity(void)
  * @see os_report_file_path
  */
 _Ret_z_
-_Must_inspect_result_
-char *
+_Check_return_
+static char *
 os__get_info_file_name(void)
 {
     char * file_name;
@@ -347,8 +355,8 @@ os__get_info_file_name(void)
  * @see os_report_file_path
  */
 _Ret_z_
-_Must_inspect_result_
-char *
+_Check_return_
+static char *
 os__get_error_file_name(void)
 {
     char * file_name;
@@ -528,9 +536,13 @@ static void os__headerReport(
         _Pre_notnull_ _Post_notnull_ os_reportEventV1 event,
         _In_ bool useErrorLog)
 {
+    os_time ostime;
     char node[64];
     char date_time[128];
     FILE *log = useErrorLog ? os__get_error_file() : os__get_info_file();
+
+    ostime = os_timeGet();
+    os_ctime_r(&ostime, date_time, sizeof(date_time));
 
     if (os_gethostname(node, sizeof(node)-1) == os_resultSuccess)
     {
@@ -774,11 +786,14 @@ os__report_stack_unwind(
     os_reportEventV1 report;
     char *file;
     bool useErrorLog;
+    os_reportType reportType = OS_REPORT_ERROR;
 
     if (!valid) {
         if (OS_REPORT_IS_ALWAYS(_this->typeset)) {
             valid = true;
         }
+    } else {
+        reportType = OS_REPORT_FLAG_TYPE(_this->typeset);
     }
 
     useErrorLog = OS_REPORT_IS_ERROR(_this->typeset);
@@ -804,7 +819,7 @@ os__report_stack_unwind(
         os_threadFigureIdentity (thrid, sizeof (thrid));
         os_threadGetThreadName (thr, sizeof (thr));
 
-        header.reportType = OS_REPORT_ERROR;
+        header.reportType = reportType;
         header.description = (char *)context;
         header.processDesc = procid;
         header.threadDesc = thrid;

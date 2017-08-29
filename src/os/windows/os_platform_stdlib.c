@@ -156,20 +156,20 @@ os_rindex(
         return last;
 }
 
+_Ret_z_
+_Check_return_
 char *
 os_strdup(
-        const char *s1)
+    _In_z_ const char *s1)
 {
-        size_t len;
-        char *dup;
+    size_t len;
+    char *dup;
 
-        len = strlen(s1) + 1;
-        dup = os_malloc(len);
-        if (dup) {
-                strcpy(dup, s1);
-        }
+    len = strlen(s1) + 1;
+    dup = os_malloc(len);
+    memcpy(dup, s1, len);
 
-        return dup;
+    return dup;
 }
 
 char *

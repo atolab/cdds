@@ -76,8 +76,9 @@ if(WIN32 AND NOT UNIX)
   endif()
   mark_as_advanced(__arch)
 
-  set(CPACK_PACKAGE_FILE_NAME
-    "VortexDDS-${CPACK_PACKAGE_VERSION}-${__arch}")
+  set(CPACK_GENERATOR "WIX;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
+
+  set(CPACK_PACKAGE_FILE_NAME "VortexDDS-${CPACK_PACKAGE_VERSION}-${__arch}")
   set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_VENDOR}/DDS")
 
   set(CPACK_WIX_COMPONENT_INSTALL ON)
@@ -106,6 +107,10 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
     else()
       set(__arch "i686")
     endif()
+
+    set(CPACK_GENERATOR "RPM;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
+    #set(CPACK_SOURCE_GENERATOR "RPM;${CPACK_SOURCE_GENERATOR}" CACHE STRING "List of source-package generators")
+
     set(CPACK_RPM_COMPONENT_INSTALL ON)
     # FIXME: The package file name must be updated to include the distribution.
     #        See Fedora and Red Hat packaging guidelines for details.
@@ -121,14 +126,19 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
     else()
       set(__arch "i386")
     endif()
+
+    set(CPACK_GENERATOR "DEB;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
+    #set(CPACK_SOURCE_GENERATOR "DEB;${CPACK_SOURCE_GENERATOR}" CACHE STRING "List of source-package generators")
+
     set(CPACK_DEBIAN_LIB_PACKAGE_NAME "vortex-dds")
     set(CPACK_DEBIAN_LIB_FILE_NAME "${CPACK_DEBIAN_LIB_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${__arch}.deb")
     set(CPACK_DEBIAN_DEV_PACKAGE_DEPENDS "${CPACK_DEBIAN_LIB_PACKAGE_NAME} (= ${CPACK_PACKAGE_VERSION})")
     set(CPACK_DEBIAN_DEV_PACKAGE_NAME "vortex-dds-dev")
     set(CPACK_DEBIAN_DEV_FILE_NAME "${CPACK_DEBIAN_DEV_PACKAGE_NAME}-dev_${CPACK_PACKAGE_VERSION}_${__arch}.deb")
   else()
-    # FIXME: Support for generic GNU/Linux distributions is not implemented.
-    message(STATUS "Packaging for generic Linux distributions is unsupported")
+    # Generic tgz package
+    set(CPACK_GENERATOR "TGZ;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
+    #set(CPACK_SOURCE_GENERATOR "TGZ;${CPACK_GENERATOR}" CACHE STRING "List of source-package generators")
   endif()
 elseif(CMAKE_SYSTEM_NAME MATCHES "VxWorks")
   # FIXME: Support for VxWorks packages must still be implemented (probably
