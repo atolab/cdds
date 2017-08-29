@@ -69,27 +69,6 @@ void ddsi_impl_init (void)
   ddsi_plugin.iidgen_fn = dds_iid_gen;
 }
 
-static void dds_set_report_level (void)
-{
-  os_reportVerbosity = OS_REPORT_NONE;
-  if (config.enabled_logcats & LC_FATAL)
-  {
-    os_reportVerbosity = OS_REPORT_FATAL;
-  }
-  if (config.enabled_logcats & LC_ERROR)
-  {
-    os_reportVerbosity = OS_REPORT_ERROR;
-  }
-  if (config.enabled_logcats & LC_WARNING)
-  {
-    os_reportVerbosity = OS_REPORT_WARNING;
-  }
-  if (config.enabled_logcats != 0)
-  {
-    os_reportVerbosity = OS_REPORT_DEBUG;
-  }
-}
-
 dds_return_t
 dds_init(void)
 {
@@ -128,7 +107,6 @@ dds_init(void)
   {
     return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to open log file %s", config.tracingOutputFileName);
   }
-  dds_set_report_level ();
 
   os_procName(tmp, sizeof(tmp));
   dds_init_exe = dds_string_dup (tmp);
