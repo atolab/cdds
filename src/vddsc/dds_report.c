@@ -33,12 +33,13 @@ dds_report(
         assert (offset <= OS_REPORT_BUFLEN);
         offset = strlen(retcode);
         (void)memcpy(buffer, retcode, offset);
+        buffer[offset] = ' ';
+        offset++;
     }
 
     va_start (args, format);
     (void)os_vsnprintf (buffer + offset, sizeof(buffer) - offset, format, args);
     va_end (args);
-
     os_report (reportType, function, file, line, code, "%s", buffer);
 }
 
