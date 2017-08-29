@@ -234,13 +234,26 @@ Theory((dds_entity_t *ent, dds_qos_t **qos, dds_listener_t **listener), vddsc_re
 /*************************************************************************************************/
 
 /*************************************************************************************************/
-Test(vddsc_reader_create, invalid_qos, .init=reader_init, .fini=reader_fini)
+Test(vddsc_reader_create, invalid_qos_participant, .init=reader_init, .fini=reader_fini)
 {
     dds_entity_t rdr;
     dds_qos_t *qos = dds_qos_create();
     /* Set invalid reader data lifecycle policy */
     dds_qset_reader_data_lifecycle(qos, DDS_SECS(-1), DDS_SECS(-1));
     rdr = dds_create_reader(g_participant, g_topic, qos, NULL);
+    cr_assert_eq(dds_err_nr(rdr), DDS_RETCODE_INCONSISTENT_POLICY, "returned %d", dds_err_nr(rdr));
+    dds_qos_delete(qos);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_reader_create, invalid_qos_subscriber, .init=reader_init, .fini=reader_fini)
+{
+    dds_entity_t rdr;
+    dds_qos_t *qos = dds_qos_create();
+    /* Set invalid reader data lifecycle policy */
+    dds_qset_reader_data_lifecycle(qos, DDS_SECS(-1), DDS_SECS(-1));
+    rdr = dds_create_reader(g_subscriber, g_topic, qos, NULL);
     cr_assert_eq(dds_err_nr(rdr), DDS_RETCODE_INCONSISTENT_POLICY, "returned %d", dds_err_nr(rdr));
     dds_qos_delete(qos);
 }

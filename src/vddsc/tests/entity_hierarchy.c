@@ -745,7 +745,6 @@ Test(vddsc_entity_implicit_publisher, invalid_topic)
 {
     dds_entity_t participant;
     dds_entity_t writer;
-    dds_return_t ret;
 
     participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(participant, 0);
@@ -795,7 +794,6 @@ Test(vddsc_entity_explicit_subscriber, invalid_topic)
     dds_entity_t participant;
     dds_entity_t reader;
     dds_entity_t subscriber;
-    dds_return_t ret;
 
     participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(participant, 0);
