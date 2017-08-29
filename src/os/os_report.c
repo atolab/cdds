@@ -526,9 +526,13 @@ static void os__headerReport(
         _Pre_notnull_ _Post_notnull_ os_reportEventV1 event,
         _In_ bool useErrorLog)
 {
+    os_time ostime;
     char node[64];
     char date_time[128];
     FILE *log = useErrorLog ? os__get_error_file() : os__get_info_file();
+
+    ostime = os_timeGet();
+    os_ctime_r(&ostime, date_time, sizeof(date_time));
 
     if (os_gethostname(node, sizeof(node)-1) == os_resultSuccess)
     {

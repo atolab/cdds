@@ -28,6 +28,11 @@ _Ret_opt_z_ const char *
 os_getenv(
     _In_z_ const char *variable)
 {
+    /*
+     * TODO CHAM-379 : Coverity generates a tainted string.
+     * For now, hide the Coverity warning.
+     */
+    // coverity[ -tainted_string_return_content ]
     return getenv(variable);
 }
 
