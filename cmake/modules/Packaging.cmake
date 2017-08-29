@@ -109,7 +109,6 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
     endif()
 
     set(CPACK_GENERATOR "RPM;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
-    #set(CPACK_SOURCE_GENERATOR "RPM;${CPACK_SOURCE_GENERATOR}" CACHE STRING "List of source-package generators")
 
     set(CPACK_RPM_COMPONENT_INSTALL ON)
     # FIXME: The package file name must be updated to include the distribution.
@@ -128,7 +127,6 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
     endif()
 
     set(CPACK_GENERATOR "DEB;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
-    #set(CPACK_SOURCE_GENERATOR "DEB;${CPACK_SOURCE_GENERATOR}" CACHE STRING "List of source-package generators")
 
     set(CPACK_DEBIAN_LIB_PACKAGE_NAME "vortex-dds")
     set(CPACK_DEBIAN_LIB_FILE_NAME "${CPACK_DEBIAN_LIB_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${__arch}.deb")
@@ -138,7 +136,6 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
   else()
     # Generic tgz package
     set(CPACK_GENERATOR "TGZ;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
-    #set(CPACK_SOURCE_GENERATOR "TGZ;${CPACK_GENERATOR}" CACHE STRING "List of source-package generators")
   endif()
 elseif(CMAKE_SYSTEM_NAME MATCHES "VxWorks")
   # FIXME: Support for VxWorks packages must still be implemented (probably
