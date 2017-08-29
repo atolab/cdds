@@ -13,9 +13,9 @@ endif()
 set(FILE_IDS_INCLUDED true)
 
 
-# Verify syntax for all .fileids files and ensure no source file id is used
+# Verify syntax for all fileids files and ensure no source file id is used
 # more than once.
-file(GLOB_RECURSE fils__ LIST_DIRECTORIES false "${CMAKE_SOURCE_DIR}/.fileids")
+file(GLOB_RECURSE fils__ LIST_DIRECTORIES false "${CMAKE_SOURCE_DIR}/fileids")
 
 set(ids__)
 foreach(fil__ ${fils__})
@@ -46,13 +46,13 @@ function(JOIN lst glue var)
 endfunction()
 
 function(FILE_ID src var) # private
-  # .fileids files may reside in subdirectories to keep them together with the
+  # fileids files may reside in subdirectories to keep them together with the
   # files they assign an identifier to, much like .gitignore files
   set(dir "${CMAKE_SOURCE_DIR}")
   set(parts "${src}")
   string(REGEX REPLACE "[/\\]+" ";" parts "${parts}")
   while(parts)
-    set(map "${dir}/.fileids")
+    set(map "${dir}/fileids")
     join(parts "/" fil)
     list(APPEND maps "${map}^${fil}")
     list(GET parts 0 part)
@@ -98,32 +98,36 @@ function(SET_TARGET_FILE_IDS tgt)
     get_target_property(srcs ${tgt} SOURCES)
     get_target_property(src_dir ${tgt} SOURCE_DIR)
     foreach(src ${srcs})
-      set(id)
-      if(IS_ABSOLUTE "${src}")
-        set(fil "${src}")
-      else()
-        set(fil "${src_dir}/${src}")
-      endif()
-
-      get_filename_component(fil "${fil}" ABSOLUTE)
-
-      string(FIND "${fil}" "${CMAKE_SOURCE_DIR}" pos)
-      if(${pos} EQUAL 0)
-        string(SUBSTRING "${fil}" ${len} -1 rel)
-        file_id("${rel}" id)
-      endif()
-
-      if(id)
-        if(("${source_file_id_${id}}" STREQUAL "") OR
-           ("${source_file_id_${id}}" STREQUAL "${rel}"))
-          set("source_file_id_${id}" "${rel}" CACHE INTERNAL "")
-          set_source_files_properties(
-            "${src}" PROPERTIES COMPILE_DEFINITIONS __FILE_ID__=${id})
+      get_filename_component(ext "${src}" EXT)
+      if("${ext}" STREQUAL ".c")
+        set(id)
+        if(IS_ABSOLUTE "${src}")
+          set(fil "${src}")
         else()
-          message(FATAL_ERROR "Same file id for ${rel} and ${source_file_id_${id}}")
+          set(fil "${src_dir}/${src}")
         endif()
-      else()
-        message(FATAL_ERROR "No source file id for ${rel}")
+  
+        get_filename_component(fil "${fil}" ABSOLUTE)
+  
+        string(FIND "${fil}" "${CMAKE_SOURCE_DIR}" pos)
+        if(${pos} EQUAL 0)
+          string(SUBSTRING "${fil}" ${len} -1 rel)
+          file_id("${rel}" id)
+        endif()
+  
+        if(id)
+          if(("${source_file_id_${id}}" STREQUAL "") OR
+             ("${source_file_id_${id}}" STREQUAL "${rel}"))
+            set("source_file_id_${id}" "${rel}" CACHE INTERNAL "")
+            set_source_files_properties(
+              "${src}" PROPERTIES COMPILE_DEFINITIONS __FILE_ID__=${id})
+            message(STATUS "File id ${id} assigned to file ${src}")
+          else()
+            message(FATAL_ERROR "Same file id for ${rel} and ${source_file_id_${id}}")
+          endif()
+        else()
+          message(FATAL_ERROR "No source file id for ${rel}")
+        endif()
       endif()
     endforeach()
   endif()
