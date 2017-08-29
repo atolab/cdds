@@ -2,6 +2,7 @@
 #include <string.h>
 #include "kernel/dds_listener.h"
 #include "kernel/dds_qos.h"
+#include "kernel/dds_report.h"
 #include "ddsi/q_entity.h"
 
 #define DDS_SUBSCRIBER_STATUS_MASK                               \
@@ -104,6 +105,7 @@ dds_create_subscriber(
     dds_qos_t * new_qos = NULL;
     dds_return_t ret;
     int32_t errnr;
+
 
     errnr = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
     if (errnr != DDS_RETCODE_OK) {
