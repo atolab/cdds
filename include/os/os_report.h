@@ -44,6 +44,10 @@ extern "C" {
 #define OS_CRITICAL(context,code,message,...) OS_REPORT(OS_REPORT_CRITICAL,(context),(code),(message),##__VA_ARGS__)
 #define OS_FATAL(context,code,message,...) OS_REPORT(OS_REPORT_FATAL,(context),(code),(message),##__VA_ARGS__)
 
+#define OS_REPORT_FROM_FILE(type,context,file,line,code,...) \
+(((type) >= os_reportVerbosity) ? os_report((type),(context),(file),(line),(code),__VA_ARGS__) : (void)0)
+
+
 #define OS_REPORT_STACK() \
 os_report_stack()
 

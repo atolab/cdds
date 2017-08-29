@@ -48,7 +48,25 @@ struct rhc;
 #define DDS__FILE_ID__ (((__FILE_ID__ & 0x1ff)) << 22)
 #define DDS__LINE__ ((__LINE__ & 0x3fff) << 8)
 
-#define DDS_ERRNO(e) ((e <= 0) ? e : -(DDS__FILE_ID__ + DDS__LINE__ + (e)))
+#define DDS_ERRNO_DEPRECATED(e) ((e <= 0) ? e : -(DDS__FILE_ID__ + DDS__LINE__ + (e)))
+
+static VDDS_INLINE dds_return_t handle_dds_errno(int e, const char * context, const char * file, int line, const char * msg, ...)
+{
+  dds_return_t ret;
+  if (e <= 0) {
+    ret = e;
+  } else {
+    va_list args;
+    va_start(args, msg);
+    OS_REPORT_FROM_FILE(OS_REPORT_ERROR, context, file, line, e, msg, args);
+    va_end(args);
+    ret = -(DDS__FILE_ID__ + DDS__LINE__ + (e));
+  }
+
+  return ret;
+}
+#define DDS_ERRNO(e,msg,...) (handle_dds_errno(e,OS_FUNCTION,__FILE__,__LINE__,msg,##__VA_ARGS__))
+
 
 /* This can be used when polling for various states.
  * Obviously, it is encouraged to use condition variables and such. But

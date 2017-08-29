@@ -69,27 +69,6 @@ void ddsi_impl_init (void)
   ddsi_plugin.iidgen_fn = dds_iid_gen;
 }
 
-static void dds_set_report_level (void)
-{
-  os_reportVerbosity = OS_REPORT_NONE;
-  if (config.enabled_logcats & LC_FATAL)
-  {
-    os_reportVerbosity = OS_REPORT_FATAL;
-  }
-  if (config.enabled_logcats & LC_ERROR)
-  {
-    os_reportVerbosity = OS_REPORT_ERROR;
-  }
-  if (config.enabled_logcats & LC_WARNING)
-  {
-    os_reportVerbosity = OS_REPORT_WARNING;
-  }
-  if (config.enabled_logcats != 0)
-  {
-    os_reportVerbosity = OS_REPORT_DEBUG;
-  }
-}
-
 dds_return_t
 dds_init(void)
 {
@@ -115,23 +94,19 @@ dds_init(void)
 
   if (ut_handleserver_init() != UT_HANDLE_OK)
   {
-    fprintf (stderr, "Initializing handle server failed\n");
-    return DDS_ERRNO (DDS_RETCODE_ERROR);
+    return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize server");
   }
 
   dds_cfgst = config_init (uri);
   if (dds_cfgst == NULL)
   {
-    fprintf (stderr, "Configuration XML file failed to parse\n");
-    return DDS_ERRNO (DDS_RETCODE_ERROR);
+    return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to parse configuration XML file %s", uri);
   }
 
   if (! rtps_config_open ())
   {
-    fprintf (stderr, "Failed to open log file\n");
-    return DDS_ERRNO (DDS_RETCODE_ERROR);
+    return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to open log file %s", config.tracingOutputFileName);
   }
-  dds_set_report_level ();
 
   os_procName(tmp, sizeof(tmp));
   dds_init_exe = dds_string_dup (tmp);
@@ -152,11 +127,15 @@ dds_init_impl(
 {
   char buff[64];
   uint32_t len;
+  dds_return_t ret;
 
   if (dds_global.m_default_domain != DDS_DOMAIN_DEFAULT)
   {
     if ((dds_global.m_default_domain != domain) && (domain != DDS_DOMAIN_DEFAULT))
     {
+      ret = DDS_ERRNO(DDS_RETCODE_ERROR,
+                      "DDS Init failed: Inconsistent domain configuration detected: default domain %d, domain %d",
+                      dds_global.m_default_domain, domain);
       goto fail;
     }
     return DDS_RETCODE_OK;
@@ -179,6 +158,7 @@ dds_init_impl(
   dds_global.m_default_domain = config.domainId;
   if (rtps_config_prep (dds_cfgst) != 0)
   {
+    ret = DDS_ERRNO(DDS_RETCODE_ERROR, "RTPS configuration failed.");
     goto fail;
   }
   ut_avlInit (&dds_domaintree_def, &dds_global.m_domains);
@@ -225,7 +205,7 @@ dds_init_impl(
 
 fail:
 
-  return DDS_ERRNO (DDS_RETCODE_ERROR);
+  return ret;
 }
 
 extern void dds_fini (void)

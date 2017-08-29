@@ -58,7 +58,7 @@ dds_topic_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_TOPIC_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER) :
+                     DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER) :
                      DDS_RETCODE_OK;
 }
 
@@ -204,7 +204,7 @@ dds_find_topic(
         dds_entity_unlock(p);
     }
     if (rc != DDS_RETCODE_OK) {
-        tp = DDS_ERRNO(rc);
+        tp = DDS_ERRNO_DEPRECATED(rc);
     }
     return tp;
 }
@@ -222,7 +222,7 @@ dds_topic_qos_validate(
         const dds_qos_t *qos,
         bool enabled)
 {
-    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY);
+    dds_return_t ret = DDS_RETCODE_OK;
     bool consistent = true;
     assert(qos);
     /* Check consistency. */
@@ -232,10 +232,11 @@ dds_topic_qos_validate(
     consistent &= (qos->present & QP_LIFESPAN) ? (validate_duration(&qos->lifespan.duration) == 0) : true;
     consistent &= ((qos->present & QP_HISTORY) && (qos->present & QP_RESOURCE_LIMITS)) ? (validate_history_and_resource_limits(&qos->history, &qos->resource_limits) == 0) : true;
     if (consistent) {
-        ret = DDS_RETCODE_OK;
         if (enabled) {
             ret = dds_qos_validate_mutable_common(qos);
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
     }
     return ret;
 }
@@ -251,7 +252,7 @@ dds_topic_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
         }
     }
     return ret;
@@ -285,17 +286,17 @@ dds_create_topic(
 
     rc = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
     if (rc != DDS_RETCODE_OK) {
-        return DDS_ERRNO(rc);
+        return DDS_ERRNO_DEPRECATED(rc);
     }
 
     if ((desc == NULL) || (name == NULL)) {
         dds_entity_unlock(par);
-        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+        return DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
 
     if (!is_valid_name(name)) {
         dds_entity_unlock(par);
-        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+        return DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
 
     /* Validate qos */
@@ -310,7 +311,7 @@ dds_create_topic(
     /* Check if topic already exists with same name */
     if (dds_topic_lookup (par->m_domain, name)) {
         dds_entity_unlock(par);
-        return DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+        return DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
     }
 
     typename = desc->m_typename;
@@ -497,7 +498,7 @@ dds_get_name(
             dds_topic_unlock(t);
         }
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
@@ -517,7 +518,7 @@ dds_get_type_name(
             dds_topic_unlock(t);
         }
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 dds_return_t
@@ -540,5 +541,5 @@ dds_get_inconsistent_topic_status(
       }
       dds_topic_unlock(t);
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }

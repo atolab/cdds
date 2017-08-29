@@ -32,7 +32,7 @@ dds_writer_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_WRITER_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER) :
+                     DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER) :
                      DDS_RETCODE_OK;
 }
 
@@ -196,7 +196,7 @@ dds_writer_close(
     if (asleep) {
         thread_state_asleep(thr);
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 static dds_return_t
@@ -249,7 +249,7 @@ dds_writer_qos_validate(
      || ((qos->present & QP_LIFESPAN) && validate_duration(&qos->lifespan.duration) != 0)
      || ((qos->present & QP_HISTORY) && (qos->present & QP_RESOURCE_LIMITS) && validate_history_and_resource_limits(&qos->history, &qos->resource_limits) != 0))
     {
-        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY);
+        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
     } else if (enabled) {
         ret = dds_qos_validate_mutable_common(qos);
     }
@@ -300,11 +300,11 @@ dds_writer_qos_set(
             }
             else
             {
-                ret = DDS_ERRNO(DDS_RETCODE_ERROR);
+                ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_ERROR);
             }
         } else {
             if (enabled) {
-                ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED);
+                ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
             }
         }
     }
@@ -325,7 +325,7 @@ dds_create_writer(
     dds_retcode_t rc;
     dds_qos_t * wqos;
     dds_writer * wr;
-    dds_entity_t writer = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
+    dds_entity_t writer = (dds_entity_t)DDS_ERRNO_DEPRECATED(DDS_RETCODE_ERROR);
     dds_entity * pub = NULL;
     dds_entity * tp;
     dds_entity_t publisher;
@@ -343,7 +343,7 @@ dds_create_writer(
     rc = dds_entity_lock(publisher, DDS_KIND_PUBLISHER, &pub);
 
     if (rc != DDS_RETCODE_OK) {
-        writer = (dds_entity_t)DDS_ERRNO(rc);
+        writer = (dds_entity_t)DDS_ERRNO_DEPRECATED(rc);
         goto err_pub_lock;
     }
 
@@ -353,7 +353,7 @@ dds_create_writer(
 
     rc = dds_entity_lock(topic, DDS_KIND_TOPIC, &tp);
     if (rc != DDS_RETCODE_OK) {
-        writer = (dds_entity_t)DDS_ERRNO(rc);
+        writer = (dds_entity_t)DDS_ERRNO_DEPRECATED(rc);
         goto err_tp_lock;
     }
     assert(((dds_topic*)tp)->m_stopic);
@@ -441,7 +441,7 @@ dds_get_publisher(
         _In_ dds_entity_t writer)
 {
     dds_entity_t hdl;
-    hdl = DDS_ERRNO(dds_valid_hdl(writer, DDS_KIND_WRITER));
+    hdl = DDS_ERRNO_DEPRECATED(dds_valid_hdl(writer, DDS_KIND_WRITER));
     if (hdl == DDS_RETCODE_OK) {
         hdl = dds_get_parent(writer);
     }
@@ -470,7 +470,7 @@ dds_get_publication_matched_status (
       }
       dds_writer_unlock(wr);
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 _Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
@@ -494,7 +494,7 @@ dds_get_liveliness_lost_status (
       }
       dds_writer_unlock(wr);
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 _Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
@@ -518,7 +518,7 @@ dds_get_offered_deadline_missed_status(
       }
       dds_writer_unlock(wr);
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 _Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
@@ -542,5 +542,5 @@ dds_get_offered_incompatible_qos_status (
       }
       dds_writer_unlock(wr);
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
