@@ -147,3 +147,112 @@ CUnit_Test(os_report, info_file_creation_info)
 
   remove_logs();
 }
+
+CUnit_Test(os_report, verbosity_low)
+{
+  os_reportInit(true);
+  check_existence(os_resultFail, os_resultFail);
+
+  os_reportVerbosity = OS_REPORT_ERROR;
+
+  OS_WARNING(OS_FUNCTION, 0, "os_report-info-test %d", __LINE__);
+
+  check_existence(os_resultFail, os_resultFail);
+
+  os_reportExit();
+
+  remove_logs();
+}
+
+
+CUnit_Test(os_report, verbosity_high)
+{
+  os_reportInit(true);
+  check_existence(os_resultFail, os_resultFail);
+
+  os_reportVerbosity = OS_REPORT_DEBUG;
+
+  OS_WARNING(OS_FUNCTION, 0, "os_report-info-test %d", __LINE__);
+
+  check_existence(os_resultFail, os_resultSuccess);
+
+  os_reportExit();
+
+  remove_logs();
+}
+
+
+
+CUnit_Test(os_report, verbosity_equal)
+{
+  os_reportInit(true);
+  check_existence(os_resultFail, os_resultFail);
+
+  os_reportVerbosity = OS_REPORT_WARNING;
+
+  OS_WARNING(OS_FUNCTION, 0, "os_report-info-test %d", __LINE__);
+
+  check_existence(os_resultFail, os_resultSuccess);
+
+  os_reportExit();
+
+  remove_logs();
+}
+
+
+CUnit_Test(os_report, stack_verbosity_low)
+{
+  os_reportInit(true);
+  check_existence(os_resultFail, os_resultFail);
+
+  os_reportVerbosity = OS_REPORT_ERROR;
+
+  OS_REPORT_STACK();
+  OS_WARNING(OS_FUNCTION, 0, "os_report-info-test %d", __LINE__);
+  OS_REPORT_FLUSH(true);
+
+  check_existence(os_resultFail, os_resultFail);
+
+  os_reportExit();
+
+  remove_logs();
+}
+
+
+CUnit_Test(os_report, stack_verbosity_high)
+{
+  os_reportInit(true);
+  check_existence(os_resultFail, os_resultFail);
+
+  os_reportVerbosity = OS_REPORT_DEBUG;
+
+  OS_REPORT_STACK();
+  OS_WARNING(OS_FUNCTION, 0, "os_report-info-test %d", __LINE__);
+  OS_REPORT_FLUSH(true);
+
+  check_existence(os_resultFail, os_resultSuccess);
+
+  os_reportExit();
+
+  remove_logs();
+}
+
+
+
+CUnit_Test(os_report, stack_verbosity_equal)
+{
+  os_reportInit(true);
+  check_existence(os_resultFail, os_resultFail);
+
+  os_reportVerbosity = OS_REPORT_WARNING;
+
+  OS_REPORT_STACK();
+  OS_WARNING(OS_FUNCTION, 0, "os_report-info-test %d", __LINE__);
+  OS_REPORT_FLUSH(true);
+
+  check_existence(os_resultFail, os_resultSuccess);
+
+  os_reportExit();
+
+  remove_logs();
+}
