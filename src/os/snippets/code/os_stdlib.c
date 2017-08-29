@@ -32,7 +32,7 @@ os_getenv(
      * TODO CHAM-379 : Coverity generates a tainted string.
      * For now, hide the Coverity warning.
      */
-    // coverity[ -tainted_string_return_content ]
+    /* coverity[tainted_string : FALSE] */
     return getenv(variable);
 }
 
