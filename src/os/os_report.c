@@ -101,7 +101,6 @@ static os_mutex reportMutex;
 static os_mutex infologcreateMutex;
 static os_mutex errorlogcreateMutex;
 static bool inited = false;
-static bool doneOnce = false;
 static bool StaleLogsRemoved = false;
 
 /**
@@ -292,7 +291,6 @@ os__determine_verbosity(
     os_result result = os_resultFail;
     verbosityInt = strtol(newVerbosity, NULL, 0);
 
-    os_reportInit(false);
     if (verbosityInt == 0 && strcmp("0", newVerbosity)) {
         /* Conversion from int failed. See if it's one of the string forms. */
         while (verbosityInt < (long) (sizeof(os_reportTypeText) / sizeof(os_reportTypeText[0]))) {
@@ -339,7 +337,6 @@ static char *
 os__get_info_file_name(void)
 {
     char * file_name;
-    os_reportInit(false);
     os_mutexLock(&infologcreateMutex);
     file_name = os__report_file_path (os_report_defaultInfoFileName, os_env_infofile, OS_REPORT_INFO_LOG);
     os_mutexUnlock(&infologcreateMutex);
@@ -360,7 +357,6 @@ static char *
 os__get_error_file_name(void)
 {
     char * file_name;
-    os_reportInit(false);
     os_mutexLock(&errorlogcreateMutex);
     file_name = os__report_file_path (os_report_defaultErrorFileName, os_env_errorfile, OS_REPORT_ERROR_LOG);
     os_mutexUnlock(&errorlogcreateMutex);
@@ -369,8 +365,6 @@ os__get_error_file_name(void)
 
 static void os__remove_stale_logs(void)
 {
-    os_reportInit(false);
-
     if (!StaleLogsRemoved) {
         /* TODO: Only a single process or spliced (as 1st process) is allowed to
          * delete the log files. */
@@ -411,19 +405,14 @@ static void os__check_removal_stale_logs(void)
 void os_reportInit(
         _In_ bool forceReInit)
 {
-    if (!doneOnce || forceReInit)
+    if (!inited || forceReInit)
     {
-        if (!doneOnce)
-        {
-            os_mutexInit(&reportMutex);
-            os_mutexInit(&errorlogcreateMutex);
-            os_mutexInit(&infologcreateMutex);
-        }
-        doneOnce = true;
+        os_mutexInit(&reportMutex);
+        os_mutexInit(&errorlogcreateMutex);
+        os_mutexInit(&infologcreateMutex);
 
         os__set_verbosity();
         os__check_removal_stale_logs();
-
     }
     inited = true;
 }
@@ -539,7 +528,10 @@ static void os__headerReport(
     os_time ostime;
     char node[64];
     char date_time[128];
-    FILE *log = useErrorLog ? os__get_error_file() : os__get_info_file();
+    FILE *log = NULL;
+    if (useErrorLog)
+      log = os__get_error_file();
+    else log = os__get_info_file();
 
     ostime = os_timeGet();
     os_ctime_r(&ostime, date_time, sizeof(date_time));
