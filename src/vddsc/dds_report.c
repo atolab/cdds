@@ -29,13 +29,11 @@ dds_report(
     assert (OS_REPORT_BUFLEN > 0);
 
     retcode = dds_err_str(code);
-    if (retcode != NULL) {
-        assert (offset <= OS_REPORT_BUFLEN);
-        offset = strlen(retcode);
-        (void)memcpy(buffer, retcode, offset);
-        buffer[offset] = ' ';
-        offset++;
-    }
+    offset = strlen(retcode);
+    assert (offset < OS_REPORT_BUFLEN);
+    (void)memcpy(buffer, retcode, offset);
+    buffer[offset] = ' ';
+    offset++;
 
     va_start (args, format);
     (void)os_vsnprintf (buffer + offset, sizeof(buffer) - offset, format, args);

@@ -7,7 +7,7 @@
 #define DDS_REPORT_STACK()          \
     os_report_stack ()
 
-#define DDS_PANIC(...)              \
+#define DDS_CRITICAL(...)           \
     dds_report (                    \
         OS_REPORT_CRITICAL,         \
         __FILE__,                   \
@@ -16,7 +16,7 @@
         DDS_RETCODE_ERROR,          \
         __VA_ARGS__)
 
-#define DDS_REPORT(code,...)        \
+#define DDS_ERROR(code,...)        \
     dds_report (                    \
         OS_REPORT_ERROR,            \
         __FILE__,                   \
@@ -25,7 +25,7 @@
         (code),                     \
         __VA_ARGS__)
 
-#define DDS_REPORT_INFO(...)        \
+#define DDS_INFO(...)        \
     dds_report (                    \
         OS_REPORT_INFO,             \
         __FILE__,                   \
@@ -34,7 +34,7 @@
         DDS_RETCODE_OK,             \
         __VA_ARGS__)
 
-#define DDS_REPORT_WARNING(...)     \
+#define DDS_WARNING(...)     \
     dds_report (                    \
         OS_REPORT_WARNING,          \
         __FILE__,                   \
@@ -43,7 +43,7 @@
         DDS_RETCODE_OK,             \
         __VA_ARGS__)
 
-#define DDS_REPORT_TYPE(type, code,...) \
+#define DDS_REPORT(type, code,...) \
     dds_report (                    \
         type,                       \
         __FILE__,                   \
