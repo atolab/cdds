@@ -54,7 +54,11 @@ extern "C" {
      *     variable is found
      * - returns NULL if
      *     variable is not found
+     *
+     * TODO CHAM-379 : Coverity generates a tainted string.
+     * For now, hide the Coverity warning.
      */
+    // coverity[ -tainted_string_return_content ]
     OSAPI_EXPORT _Ret_opt_z_ const char *
     os_getenv(
               _In_z_ const char *variable);
