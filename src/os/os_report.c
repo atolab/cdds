@@ -21,15 +21,25 @@
 #include <stdio.h>
 #include <string.h>
 
+#define OS_REPORT_TYPE_DEBUG     (1u)
 #define OS_REPORT_TYPE_WARNING   (1u<<OS_REPORT_WARNING)
 #define OS_REPORT_TYPE_ERROR     (1u<<OS_REPORT_ERROR)
 #define OS_REPORT_TYPE_CRITICAL  (1u<<OS_REPORT_CRITICAL)
 #define OS_REPORT_TYPE_FATAL     (1u<<OS_REPORT_FATAL)
+#define OS_REPORT_TYPE_INFO      (1u<<OS_REPORT_INFO)
 
 #define OS_REPORT_TYPE_FLAG(x)   (1u<<(x))
 #define OS_REPORT_IS_ALWAYS(x)   ((x) & (OS_REPORT_TYPE_CRITICAL | OS_REPORT_TYPE_FATAL))
 #define OS_REPORT_IS_WARNING(x)  ((x) & OS_REPORT_TYPE_WARNING)
 #define OS_REPORT_IS_ERROR(x)    ((x) & (OS_REPORT_TYPE_ERROR | OS_REPORT_TYPE_CRITICAL | OS_REPORT_TYPE_FATAL))
+
+#define OS_REPORT_FLAG_TYPE(x)   (((x) & OS_REPORT_TYPE_FATAL) ? OS_REPORT_FATAL : \
+                                  ((x) & OS_REPORT_TYPE_CRITICAL) ? OS_REPORT_CRITICAL : \
+                                  ((x) & OS_REPORT_TYPE_ERROR) ? OS_REPORT_ERROR : \
+                                  ((x) & OS_REPORT_TYPE_WARNING) ? OS_REPORT_WARNING : \
+                                  ((x) & OS_REPORT_TYPE_INFO) ? OS_REPORT_INFO : \
+                                  ((x) & OS_REPORT_TYPE_DEBUG) ? OS_REPORT_DEBUG : \
+                                  OS_REPORT_NONE)
 
 #define MAX_FILE_PATH 2048
 
@@ -91,7 +101,6 @@ static os_mutex reportMutex;
 static os_mutex infologcreateMutex;
 static os_mutex errorlogcreateMutex;
 static bool inited = false;
-static bool doneOnce = false;
 static bool StaleLogsRemoved = false;
 
 /**
@@ -181,7 +190,7 @@ os__close_file (
     }
 }
 
-_Must_inspect_result_ _Ret_z_
+_Check_return_ _Ret_z_
 static char *os__report_createFileNormalize(
         _In_z_ const char *file_dir,
         _In_z_ const char *file_name)
@@ -210,7 +219,7 @@ static char *os__report_createFileNormalize(
  * this is the filename used.
  */
 _Ret_z_
-_Must_inspect_result_
+_Check_return_
 static char *
 os__report_file_path(
         _In_z_ const char * default_file,
@@ -219,12 +228,10 @@ os__report_file_path(
 {
     const char *file_dir;
     const char *file_name = NULL;
-    const char *override = NULL;
 
     if (override_variable != NULL)
     {
-        override = os_getenv(override_variable);
-        file_name = override;
+        file_name = os_getenv(override_variable);
     }
     if (!file_name)
     {
@@ -284,7 +291,6 @@ os__determine_verbosity(
     os_result result = os_resultFail;
     verbosityInt = strtol(newVerbosity, NULL, 0);
 
-    os_reportInit(false);
     if (verbosityInt == 0 && strcmp("0", newVerbosity)) {
         /* Conversion from int failed. See if it's one of the string forms. */
         while (verbosityInt < (long) (sizeof(os_reportTypeText) / sizeof(os_reportTypeText[0]))) {
@@ -326,12 +332,11 @@ void os__set_verbosity(void)
  * @see os_report_file_path
  */
 _Ret_z_
-_Must_inspect_result_
-char *
+_Check_return_
+static char *
 os__get_info_file_name(void)
 {
     char * file_name;
-    os_reportInit(false);
     os_mutexLock(&infologcreateMutex);
     file_name = os__report_file_path (os_report_defaultInfoFileName, os_env_infofile, OS_REPORT_INFO_LOG);
     os_mutexUnlock(&infologcreateMutex);
@@ -347,12 +352,11 @@ os__get_info_file_name(void)
  * @see os_report_file_path
  */
 _Ret_z_
-_Must_inspect_result_
-char *
+_Check_return_
+static char *
 os__get_error_file_name(void)
 {
     char * file_name;
-    os_reportInit(false);
     os_mutexLock(&errorlogcreateMutex);
     file_name = os__report_file_path (os_report_defaultErrorFileName, os_env_errorfile, OS_REPORT_ERROR_LOG);
     os_mutexUnlock(&errorlogcreateMutex);
@@ -361,8 +365,6 @@ os__get_error_file_name(void)
 
 static void os__remove_stale_logs(void)
 {
-    os_reportInit(false);
-
     if (!StaleLogsRemoved) {
         /* TODO: Only a single process or spliced (as 1st process) is allowed to
          * delete the log files. */
@@ -403,19 +405,14 @@ static void os__check_removal_stale_logs(void)
 void os_reportInit(
         _In_ bool forceReInit)
 {
-    if (!doneOnce || forceReInit)
+    if (!inited || forceReInit)
     {
-        if (!doneOnce)
-        {
-            os_mutexInit(&reportMutex);
-            os_mutexInit(&errorlogcreateMutex);
-            os_mutexInit(&infologcreateMutex);
-        }
-        doneOnce = true;
+        os_mutexInit(&reportMutex);
+        os_mutexInit(&errorlogcreateMutex);
+        os_mutexInit(&infologcreateMutex);
 
         os__set_verbosity();
         os__check_removal_stale_logs();
-
     }
     inited = true;
 }
@@ -528,9 +525,16 @@ static void os__headerReport(
         _Pre_notnull_ _Post_notnull_ os_reportEventV1 event,
         _In_ bool useErrorLog)
 {
+    os_time ostime;
     char node[64];
     char date_time[128];
-    FILE *log = useErrorLog ? os__get_error_file() : os__get_info_file();
+    FILE *log = NULL;
+    if (useErrorLog)
+      log = os__get_error_file();
+    else log = os__get_info_file();
+
+    ostime = os_timeGet();
+    os_ctime_r(&ostime, date_time, sizeof(date_time));
 
     if (os_gethostname(node, sizeof(node)-1) == os_resultSuccess)
     {
@@ -774,11 +778,14 @@ os__report_stack_unwind(
     os_reportEventV1 report;
     char *file;
     bool useErrorLog;
+    os_reportType reportType = OS_REPORT_ERROR;
 
     if (!valid) {
         if (OS_REPORT_IS_ALWAYS(_this->typeset)) {
             valid = true;
         }
+    } else {
+        reportType = OS_REPORT_FLAG_TYPE(_this->typeset);
     }
 
     useErrorLog = OS_REPORT_IS_ERROR(_this->typeset);
@@ -804,7 +811,7 @@ os__report_stack_unwind(
         os_threadFigureIdentity (thrid, sizeof (thrid));
         os_threadGetThreadName (thr, sizeof (thr));
 
-        header.reportType = OS_REPORT_ERROR;
+        header.reportType = reportType;
         header.description = (char *)context;
         header.processDesc = procid;
         header.threadDesc = thrid;
