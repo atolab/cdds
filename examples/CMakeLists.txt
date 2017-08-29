@@ -9,7 +9,7 @@ add_subdirectory(throughput)
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
   set(platform_exclude "examples/helloworld/Makefile")
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
-  set(platform_exclude "examples/helloworld/vs")
+  set(platform_exclude "examples/helloworld/vs|examples/helloworld/HelloWorld\.sln")
 else()
   set(platform_exclude "this_is_a_placeholder")
 endif()
@@ -20,4 +20,4 @@ install(
   COMPONENT dev
   PATTERN "CMakeLists.export" EXCLUDE
   PATTERN "examples/CMakeLists.txt" EXCLUDE
-  PATTERN ${platform_exclude} EXCLUDE)
+  REGEX ${platform_exclude} EXCLUDE)
