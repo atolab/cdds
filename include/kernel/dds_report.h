@@ -34,13 +34,13 @@
         DDS_RETCODE_OK,             \
         __VA_ARGS__)
 
-#define DDS_WARNING(...)     \
+#define DDS_WARNING(code,...)       \
     dds_report (                    \
         OS_REPORT_WARNING,          \
         __FILE__,                   \
         __LINE__,                   \
         OS_FUNCTION,                \
-        DDS_RETCODE_OK,             \
+        (code),                     \
         __VA_ARGS__)
 
 #define DDS_REPORT(type, code,...) \
