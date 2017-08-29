@@ -34,7 +34,7 @@
             <groupId>org.antlr</groupId>
             <artifactId>ST4</artifactId>
             <version>4.0.8</version>
-        </dependency>
+        </dependency> 
         <dependency>
             <groupId>com.prismtech.idt.imports.idl</groupId>
             <artifactId>preprocessor</artifactId>
@@ -97,8 +97,8 @@
                             <goal>copy</goal>
                         </goals>
                         <configuration>
-                            <sourceFile>${CMAKE_CURRENT_BINARY_DIR}/com/prismtech/vortex/Version.java</sourceFile>
-                            <destinationFile>target/generated-sources/idlc/com/prismtech/vortex/Version.java</destinationFile>
+                            <sourceFile>${CMAKE_CURRENT_BINARY_DIR}/com/prismtech/vortex/Project.java</sourceFile>
+                            <destinationFile>target/generated-sources/idlc/com/prismtech/vortex/Project.java</destinationFile>
                         </configuration>
                     </execution>
                     <execution>

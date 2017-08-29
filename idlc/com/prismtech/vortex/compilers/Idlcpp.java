@@ -1,7 +1,7 @@
 package com.prismtech.vortex.compilers;
 
 import java.util.*;
-import com.prismtech.vortex.Version;
+import com.prismtech.vortex.Project;
 //import com.prismtech.DDS_Service.idl2smodel;
 
 public class Idlcpp
@@ -25,26 +25,26 @@ public class Idlcpp
     if (opts.version)
     {
       System.out.print ("Vortex DDS ");
-      System.out.println ("IDL to C++ compiler v" + Version.version);
+      System.out.println ("IDL to C++ compiler v" + Project.version);
     }
     else
     {
       String FS = System.getProperty ("file.separator");
-      String litehome = System.getProperty ("LITE_HOME");
-      String litehost = System.getProperty ("LITE_HOST");
+      String vortexhome = System.getProperty ("VORTEXDDS_HOME");
+      String vortexhost = System.getProperty ("VORTEXDDS_HOST");
 
-      opts.includes.add (litehome + FS + "etc" + FS + "idl");
+      opts.includes.add (vortexhome + FS + "etc" + FS + "idl");
 
       IdlcCmdOptions idlcopts = new IdlcCmdOptions (opts);
 
       if (!opts.pponly)
       {
-         idlppcmd.add (litehome + FS + "bin" + FS + litehost + FS + "idlpp");
+         idlppcmd.add (vortexhome + FS + "bin" + FS + vortexhost + FS + "idlpp");
          idlppcmd.add ("-S");
          idlppcmd.add ("-a");
-         idlppcmd.add (litehome + FS + "etc" + FS + "idlpp");
+         idlppcmd.add (vortexhome + FS + "etc" + FS + "idlpp");
          idlppcmd.add ("-x");
-         idlppcmd.add ("lite");
+         idlppcmd.add ("vortex");
 
          idlppcmd.add ("-l");
          if (opts.language == null)

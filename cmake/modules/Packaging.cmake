@@ -7,7 +7,7 @@ include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
 set(PACKAGING_MODULE_DIR "${CMAKE_SOURCE_DIR}/cmake/modules/Packaging")
-set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}")
+set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}")
 
 # Generates <Package>Config.cmake.
 configure_package_config_file(
@@ -76,17 +76,18 @@ if(WIN32 AND NOT UNIX)
   endif()
   mark_as_advanced(__arch)
 
-  set(CPACK_PACKAGE_FILE_NAME
-    "VortexDDS-${CPACK_PACKAGE_VERSION}-${__arch}")
+  set(CPACK_GENERATOR "WIX;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
+
+  set(CPACK_PACKAGE_FILE_NAME "VortexDDS-${CPACK_PACKAGE_VERSION}-${__arch}")
   set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_VENDOR}/DDS")
 
   set(CPACK_WIX_COMPONENT_INSTALL ON)
   set(CPACK_WIX_ROOT_FEATURE_TITLE "Vortex DDS")
-  set(CPACK_WIX_PRODUCT_ICON "${__resource_dir}/vortex.ico")
+  set(CPACK_WIX_PRODUCT_ICON "${PACKAGING_MODULE_DIR}/vortex.ico")
   # Bitmap (.bmp) of size 493x58px
-  set(CPACK_WIX_UI_BANNER "${__resource_dir}/banner.bmp")
+  set(CPACK_WIX_UI_BANNER "${PACKAGING_MODULE_DIR}/banner.bmp")
   # Bitmap (.bmp) of size 493x312px
-  set(CPACK_WIX_UI_DIALOG "${__resource_dir}/dialog.bmp")
+  set(CPACK_WIX_UI_DIALOG "${PACKAGING_MODULE_DIR}/dialog.bmp")
   set(CPACK_WIX_PROGRAM_MENU_FOLDER "${CPACK_PACKAGE_NAME}")
   set(CPACK_WIX_PROPERTY_ARPHELPLINK "http://www.prismtech.com/support")
   set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "http://www.prismtech.com/")
@@ -106,6 +107,10 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
     else()
       set(__arch "i686")
     endif()
+
+    set(CPACK_GENERATOR "RPM;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
+    #set(CPACK_SOURCE_GENERATOR "RPM;${CPACK_SOURCE_GENERATOR}" CACHE STRING "List of source-package generators")
+
     set(CPACK_RPM_COMPONENT_INSTALL ON)
     # FIXME: The package file name must be updated to include the distribution.
     #        See Fedora and Red Hat packaging guidelines for details.
@@ -121,14 +126,19 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
     else()
       set(__arch "i386")
     endif()
+
+    set(CPACK_GENERATOR "DEB;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
+    #set(CPACK_SOURCE_GENERATOR "DEB;${CPACK_SOURCE_GENERATOR}" CACHE STRING "List of source-package generators")
+
     set(CPACK_DEBIAN_LIB_PACKAGE_NAME "vortex-dds")
     set(CPACK_DEBIAN_LIB_FILE_NAME "${CPACK_DEBIAN_LIB_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${__arch}.deb")
     set(CPACK_DEBIAN_DEV_PACKAGE_DEPENDS "${CPACK_DEBIAN_LIB_PACKAGE_NAME} (= ${CPACK_PACKAGE_VERSION})")
     set(CPACK_DEBIAN_DEV_PACKAGE_NAME "vortex-dds-dev")
     set(CPACK_DEBIAN_DEV_FILE_NAME "${CPACK_DEBIAN_DEV_PACKAGE_NAME}-dev_${CPACK_PACKAGE_VERSION}_${__arch}.deb")
   else()
-    # FIXME: Support for generic GNU/Linux distributions is not implemented.
-    message(STATUS "Packaging for generic Linux distributions is unsupported")
+    # Generic tgz package
+    set(CPACK_GENERATOR "TGZ;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
+    #set(CPACK_SOURCE_GENERATOR "TGZ;${CPACK_GENERATOR}" CACHE STRING "List of source-package generators")
   endif()
 elseif(CMAKE_SYSTEM_NAME MATCHES "VxWorks")
   # FIXME: Support for VxWorks packages must still be implemented (probably

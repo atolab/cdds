@@ -28,6 +28,11 @@ _Ret_opt_z_ const char *
 os_getenv(
     _In_z_ const char *variable)
 {
+    /*
+     * TODO CHAM-379 : Coverity generates a tainted string.
+     * For now, hide the Coverity warning.
+     */
+    // coverity[ -tainted_string_return_content ]
     return getenv(variable);
 }
 
@@ -95,16 +100,18 @@ os_rindex(
     return last;
 }
 
+_Ret_z_
+_Check_return_
 char *
 os_strdup(
-    const char *s1)
+    _In_z_ const char *s1)
 {
     size_t len;
     char *dup;
 
-    len = strlen (s1) + 1;
-    dup = os_malloc (len);
-    memcpy (dup, s1, len);
+    len = strlen(s1) + 1;
+    dup = os_malloc(len);
+    memcpy(dup, s1, len);
 
     return dup;
 }

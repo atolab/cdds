@@ -261,7 +261,7 @@ Test(vddsc_entity_get_parent, participant, .init=hierarchy_init, .fini=hierarchy
 {
     dds_entity_t parent;
     parent = dds_get_parent(g_participant);
-    cr_assert_eq(dds_err_nr(parent), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(parent));
+    cr_assert_eq(dds_err_nr(parent), DDS_ENTITY_NIL, "returned %d", dds_err_nr(parent));
 }
 /*************************************************************************************************/
 

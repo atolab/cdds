@@ -19,3 +19,22 @@ target_include_directories(OSAPI PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/i
 if(BUILD_TESTING)
   add_subdirectory(tests)
 endif()
+
+install(
+  FILES "${CMAKE_SOURCE_DIR}/include/os/os_public.h" "${CMAKE_SOURCE_DIR}/include/os/os_decl_attributes.h" "${CMAKE_SOURCE_DIR}/include/os/os_decl_attributes_sal.h"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/os"
+  COMPONENT dev)
+
+# Currently, only windows and posix platforms are supported.
+IF(WIN32 AND NOT UNIX)
+    install(
+      FILES "${CMAKE_SOURCE_DIR}/include/os/windows/os_platform_public.h"
+      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/os"
+      COMPONENT dev)
+ELSE()
+    install(
+      FILES "${CMAKE_SOURCE_DIR}/include/os/posix/os_platform_public.h"
+      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/os"
+      COMPONENT dev)
+ENDIF()
+

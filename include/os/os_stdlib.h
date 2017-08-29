@@ -247,14 +247,14 @@ extern "C" {
      *   The allocated string must be freed using os_free
      *
      * Possible results:
-     * - return NULL if
-     *     all resources are depleted
      * - return duplicate of the string s1 allocated via
      *     os_malloc
      */
+    _Ret_z_
+    _Check_return_
     OSAPI_EXPORT char *
     os_strdup(
-              const char *s1) __nonnull_all__
+              _In_z_ const char *s1) __nonnull_all__
     __attribute_malloc__
     __attribute_returns_nonnull__
     __attribute_warn_unused_result__;
@@ -612,9 +612,11 @@ extern "C" {
      * - returns normalized filepath conform current platform
      * - return NULL if out of memory.
      */
+    _Ret_z_
+    _Must_inspect_result_
     OSAPI_EXPORT char *
     os_fileNormalize(
-                     const char *filepath);
+                     _In_z_ const char *filepath);
 
     /**
      * \brief Flushes the internal buffers associated with the file handle to disk

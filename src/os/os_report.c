@@ -91,7 +91,6 @@ static os_mutex reportMutex;
 static os_mutex infologcreateMutex;
 static os_mutex errorlogcreateMutex;
 static bool inited = false;
-static bool doneOnce = false;
 static bool StaleLogsRemoved = false;
 
 /**
@@ -117,8 +116,8 @@ const char *os_reportTypeText [] = {
 };
 
 enum os_report_logType {
-    OS_REPORT,
-    OS_ERROR
+    OS_REPORT_INFO_LOG,
+    OS_REPORT_ERROR_LOG
 };
 
 static char * os_report_defaultInfoFileName = "vortex-info.log";
@@ -146,7 +145,7 @@ os__open_file (
     os_result res = os_resultSuccess;
 
     if (dir == NULL) {
-        dir = (char *)os_default_logdir;
+        dir = os_default_logdir;
     }
 
     len = strlen (dir) + 2; /* '/' + '\0' */
@@ -182,7 +181,7 @@ os__close_file (
 }
 
 _Check_return_ _Ret_z_
-static const char *os__report_createFileNormalize(
+static char *os__report_createFileNormalize(
         _In_z_ const char *file_dir,
         _In_z_ const char *file_name)
 {
@@ -194,7 +193,7 @@ static const char *os__report_createFileNormalize(
     if ( len < MAX_FILE_PATH && len > -1 ) {
         return (os_fileNormalize(file_path));
     } else {
-        return (file_name);
+        return os_strdup(file_name);
     }
 }
 
@@ -209,7 +208,9 @@ static const char *os__report_createFileNormalize(
  * @param default_file If override_variable is not defined in the environment
  * this is the filename used.
  */
-static _Ret_z_ const char *
+_Ret_z_
+_Check_return_
+static char *
 os__report_file_path(
         _In_z_ const char * default_file,
         _In_opt_z_ const char * override_variable,
@@ -217,14 +218,10 @@ os__report_file_path(
 {
     const char *file_dir;
     const char *file_name = NULL;
-    char *full_file_path = NULL;
-    FILE *logfile = NULL;
-    const char *override = NULL;
 
     if (override_variable != NULL)
     {
-        override = os_getenv(override_variable);
-        file_name = override;
+        file_name = os_getenv(override_variable);
     }
     if (!file_name)
     {
@@ -243,9 +240,12 @@ os__report_file_path(
          * passed in we would create an empty error log (which is bad for testing) and we
          * cannot delete it as we open the file with append
          */
-        if (type == OS_REPORT_INFO)
+        if (type == OS_REPORT_INFO_LOG)
         {
-            full_file_path = (char*) os_malloc(strlen(file_dir) + 1 + strlen(file_name) + 1 );
+            FILE *logfile;
+            char *full_file_path;
+
+            full_file_path = os_malloc(strlen(file_dir) + 1 + strlen(file_name) + 1);
             strcpy(full_file_path, file_dir);
             strcat(full_file_path, "/");
             strcat(full_file_path, file_name);
@@ -254,8 +254,8 @@ os__report_file_path(
             {
                 fclose(logfile);
             }
+            os_free (full_file_path);
         }
-        os_free (full_file_path);
     }
     if (strcmp(file_name, "<stderr>") != 0 && strcmp(file_name, "<stdout>") != 0)
     {
@@ -281,7 +281,6 @@ os__determine_verbosity(
     os_result result = os_resultFail;
     verbosityInt = strtol(newVerbosity, NULL, 0);
 
-    os_reportInit(false);
     if (verbosityInt == 0 && strcmp("0", newVerbosity)) {
         /* Conversion from int failed. See if it's one of the string forms. */
         while (verbosityInt < (long) (sizeof(os_reportTypeText) / sizeof(os_reportTypeText[0]))) {
@@ -322,12 +321,14 @@ void os__set_verbosity(void)
  * use standard out.
  * @see os_report_file_path
  */
-_Ret_z_ const char * os__get_info_file_name(void)
+_Ret_z_
+_Check_return_
+static char *
+os__get_info_file_name(void)
 {
-    const char * file_name;
-    os_reportInit(false);
+    char * file_name;
     os_mutexLock(&infologcreateMutex);
-    file_name = os__report_file_path (os_report_defaultInfoFileName, (char *)os_env_infofile, OS_REPORT);
+    file_name = os__report_file_path (os_report_defaultInfoFileName, os_env_infofile, OS_REPORT_INFO_LOG);
     os_mutexUnlock(&infologcreateMutex);
     return file_name;
 }
@@ -340,42 +341,41 @@ _Ret_z_ const char * os__get_info_file_name(void)
  * use standard error.
  * @see os_report_file_path
  */
-_Ret_z_ const char * os__get_error_file_name(void)
+_Ret_z_
+_Check_return_
+static char *
+os__get_error_file_name(void)
 {
-    const char * file_name;
-    os_reportInit(false);
+    char * file_name;
     os_mutexLock(&errorlogcreateMutex);
-    file_name = os__report_file_path (os_report_defaultErrorFileName, (char *)os_env_errorfile, OS_ERROR);
+    file_name = os__report_file_path (os_report_defaultErrorFileName, os_env_errorfile, OS_REPORT_ERROR_LOG);
     os_mutexUnlock(&errorlogcreateMutex);
     return file_name;
 }
 
-void os__remove_stale_logs(void)
+static void os__remove_stale_logs(void)
 {
-    const char * name;
-
-    os_reportInit(false);
-
     if (!StaleLogsRemoved) {
         /* TODO: Only a single process or spliced (as 1st process) is allowed to
-          * delete the log files. */
-          /* Remove ospl-info.log and ospl-error.log.
-          * Ignore the result because it is possible that they don't exist yet. */
+         * delete the log files. */
+        /* Remove ospl-info.log and ospl-error.log.
+         * Ignore the result because it is possible that they don't exist yet. */
+        char * log_file_name;
 
-        name = os__get_error_file_name();
-        (void)os_remove(name);
-        os_free((char *)name);
+        log_file_name = os__get_error_file_name();
+        (void)os_remove(log_file_name);
+        os_free(log_file_name);
 
-        name = os__get_info_file_name();
-        (void)os_remove(name);
-        os_free((char *)name);
+        log_file_name = os__get_info_file_name();
+        (void)os_remove(log_file_name);
+        os_free(log_file_name);
 
         StaleLogsRemoved = true;
     }
 }
 
 
-void os__check_removal_stale_logs(void)
+static void os__check_removal_stale_logs(void)
 {
     const char * envValue = os_getenv(os_env_append);
     if (envValue != NULL)
@@ -395,26 +395,21 @@ void os__check_removal_stale_logs(void)
 void os_reportInit(
         _In_ bool forceReInit)
 {
-    if (!doneOnce || forceReInit)
+    if (!inited || forceReInit)
     {
-        if (!doneOnce)
-        {
-            os_mutexInit(&reportMutex);
-            os_mutexInit(&errorlogcreateMutex);
-            os_mutexInit(&infologcreateMutex);
-        }
-        doneOnce = true;
+        os_mutexInit(&reportMutex);
+        os_mutexInit(&errorlogcreateMutex);
+        os_mutexInit(&infologcreateMutex);
 
         os__set_verbosity();
         os__check_removal_stale_logs();
-
     }
     inited = true;
 }
 
 void os_reportExit(void)
 {
-    const char *name;
+    char *name;
     os_reportStack reports;
 
     reports = os_threadMemGet(OS_THREAD_REPORT_STACK);
@@ -430,7 +425,7 @@ void os_reportExit(void)
     {
         name = os__get_error_file_name();
         os__close_file(name, error_log);
-        os_free ((char *)name);
+        os_free (name);
         error_log = NULL;
     }
 
@@ -438,7 +433,7 @@ void os_reportExit(void)
     {
         name = os__get_info_file_name();
         os__close_file(name, info_log);
-        os_free ((char *)name);
+        os_free (name);
         info_log = NULL;
     }
     os_mutexDestroy(&errorlogcreateMutex);
@@ -466,32 +461,28 @@ static void os__report_fprintf(
 
 static _Ret_notnull_ FILE* os__get_info_file (void)
 {
-    const char * name;
-
     if (info_log == NULL) {
-      name = os__get_info_file_name();
+      char * name = os__get_info_file_name();
       info_log = os__open_file(name);
       if (!info_log)
       {
           info_log = stdout;
       }
-      os_free ((char *)name);
+      os_free (name);
     }
     return info_log;
 }
 
 static _Ret_notnull_ FILE* os__get_error_file (void)
 {
-    const char * name;
-
     if (error_log == NULL) {
-      name = os__get_error_file_name();
+      char * name = os__get_error_file_name();
       error_log = os__open_file(name);
       if (!error_log)
       {
           error_log = stderr;
       }
-      os_free ((char *)name);
+      os_free (name);
     }
     return error_log;
 }
@@ -527,7 +518,10 @@ static void os__headerReport(
     os_time ostime;
     char node[64];
     char date_time[128];
-    FILE *log = useErrorLog ? os__get_error_file() : os__get_info_file();
+    FILE *log = NULL;
+    if (useErrorLog)
+      log = os__get_error_file();
+    else log = os__get_info_file();
 
     ostime = os_timeGet();
     os_ctime_r(&ostime, date_time, sizeof(date_time));
@@ -593,12 +587,13 @@ static void os__defaultReport(
 
     ostime = os_timeGet();
     os_ctime_r(&ostime, date_time, sizeof(date_time));
-    os_gethostname(node, sizeof(node)-1);
-    node[sizeof(node)-1] = '\0';
 
-    if (os_gethostname(node, sizeof(node)-1) == os_resultSuccess) {
+    if (os_gethostname(node, sizeof(node)-1) == os_resultSuccess)
+    {
         node[sizeof(node)-1] = '\0';
-    } else {
+    }
+    else
+    {
         strcpy(node, "UnkownNode");
     }
 
