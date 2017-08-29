@@ -790,9 +790,8 @@ os__report_stack_unwind(
 
     useErrorLog = OS_REPORT_IS_ERROR(_this->typeset);
 
-    _this->typeset = 0;
-
-    if (valid) {
+    /* Typeset will be set when a report was appended. */
+    if (valid && (_this->typeset != 0)) {
         char proc[256], procid[256];
         char thr[64], thrid[64];
         os_procId pid;
@@ -827,6 +826,8 @@ os__report_stack_unwind(
         }
         os__report_free(report);
     }
+
+    _this->typeset = 0;
 }
 
 static void
