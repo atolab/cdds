@@ -21,15 +21,25 @@
 #include <stdio.h>
 #include <string.h>
 
+#define OS_REPORT_TYPE_DEBUG     (1u)
 #define OS_REPORT_TYPE_WARNING   (1u<<OS_REPORT_WARNING)
 #define OS_REPORT_TYPE_ERROR     (1u<<OS_REPORT_ERROR)
 #define OS_REPORT_TYPE_CRITICAL  (1u<<OS_REPORT_CRITICAL)
 #define OS_REPORT_TYPE_FATAL     (1u<<OS_REPORT_FATAL)
+#define OS_REPORT_TYPE_INFO      (1u<<OS_REPORT_INFO)
 
 #define OS_REPORT_TYPE_FLAG(x)   (1u<<(x))
 #define OS_REPORT_IS_ALWAYS(x)   ((x) & (OS_REPORT_TYPE_CRITICAL | OS_REPORT_TYPE_FATAL))
 #define OS_REPORT_IS_WARNING(x)  ((x) & OS_REPORT_TYPE_WARNING)
 #define OS_REPORT_IS_ERROR(x)    ((x) & (OS_REPORT_TYPE_ERROR | OS_REPORT_TYPE_CRITICAL | OS_REPORT_TYPE_FATAL))
+
+#define OS_REPORT_FLAG_TYPE(x)   (((x) & OS_REPORT_TYPE_FATAL) ? OS_REPORT_FATAL : \
+                                  ((x) & OS_REPORT_TYPE_CRITICAL) ? OS_REPORT_CRITICAL : \
+                                  ((x) & OS_REPORT_TYPE_ERROR) ? OS_REPORT_ERROR : \
+                                  ((x) & OS_REPORT_TYPE_WARNING) ? OS_REPORT_WARNING : \
+                                  ((x) & OS_REPORT_TYPE_INFO) ? OS_REPORT_INFO : \
+                                  ((x) & OS_REPORT_TYPE_DEBUG) ? OS_REPORT_DEBUG : \
+                                  OS_REPORT_NONE)
 
 #define MAX_FILE_PATH 2048
 
@@ -776,11 +786,14 @@ os__report_stack_unwind(
     os_reportEventV1 report;
     char *file;
     bool useErrorLog;
+    os_reportType reportType = OS_REPORT_ERROR;
 
     if (!valid) {
         if (OS_REPORT_IS_ALWAYS(_this->typeset)) {
             valid = true;
         }
+    } else {
+        reportType = OS_REPORT_FLAG_TYPE(_this->typeset);
     }
 
     useErrorLog = OS_REPORT_IS_ERROR(_this->typeset);
@@ -806,7 +819,7 @@ os__report_stack_unwind(
         os_threadFigureIdentity (thrid, sizeof (thrid));
         os_threadGetThreadName (thr, sizeof (thr));
 
-        header.reportType = OS_REPORT_ERROR;
+        header.reportType = reportType;
         header.description = (char *)context;
         header.processDesc = procid;
         header.threadDesc = thrid;
