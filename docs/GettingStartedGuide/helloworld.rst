@@ -25,17 +25,15 @@ to the latter.
 Running Hello World
 *******************
 
-The Hello World example is packaged with pre-build executables
+The Hello World example is packaged with pre-built executables
 that can normally be found in:
 
-:Windows: :code:`%TODO_CHAM-332%/share/VortexDDS/examples/helloworld/bin`
+:Windows: :code:`C:\Program Files\PrismTech\DDS\share\VortexDDS\examples\helloworld\bin`
 :Linux: :code:`/usr/share/VortexDDS/examples/helloworld/bin`
 
 .. note::
-    The root directories (:code:`%TODO_CHAM-332%/` and
-    :code:`/usr/`) can be different if VortexDDS was
-    not :ref:`installed <Installation>` in the system
-    default locations.
+    The installation prefix (:code:`C:\Program Files\PrismTech\DDS` and
+    :code:`/usr/`) are determined by the plaform and may be changed during :ref:`installation <Installation>` of the product.
 
 These two executables are called HelloworldPublisher and
 HelloworldSubscriber.
