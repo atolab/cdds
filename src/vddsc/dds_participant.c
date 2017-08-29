@@ -19,7 +19,7 @@ dds_participant_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_PARTICIPANT_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER) :
+                     DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER) :
                      DDS_RETCODE_OK;
 }
 
@@ -88,21 +88,20 @@ dds_participant_qos_validate(
         const dds_qos_t *qos,
         bool enabled)
 {
-    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY);
+    dds_return_t ret = DDS_RETCODE_OK;
     bool consistent = true;
     assert(qos);
 
     /* Check consistency. */
     consistent &= (qos->present & QP_USER_DATA) ? validate_octetseq(&qos->user_data) : true;
-    consistent &= (qos->present & QP_PRISMTECH_ENTITY_FACTORY) ? \
-            validate_entityfactory_qospolicy(&qos->entity_factory) : true;
+    consistent &= (qos->present & QP_PRISMTECH_ENTITY_FACTORY) ? validate_entityfactory_qospolicy(&qos->entity_factory) : true;
     if (consistent) {
         if (enabled) {
             /* A participant has no immutable QoS. Still, we don't support changing it for now. */
-            ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
-        } else {
-            ret = DDS_RETCODE_OK;
+            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
         }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
     }
     return ret;
 }
@@ -118,7 +117,7 @@ dds_participant_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED));
+            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
         }
     }
     return ret;
@@ -132,7 +131,7 @@ dds_create_participant(
 {
     int q_rc;
     dds_return_t ret;
-    dds_entity_t e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
+    dds_entity_t e;
     nn_guid_t guid;
     dds_participant * pp;
     nn_plist_t plist;
@@ -186,7 +185,7 @@ dds_create_participant(
 
     if (q_rc != 0) {
         dds_qos_delete(new_qos);
-        e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
+        e = (dds_entity_t)DDS_ERRNO_DEPRECATED(DDS_RETCODE_ERROR);
         goto fail;
     }
 
@@ -225,13 +224,12 @@ dds_lookup_participant(
         _Out_opt_   dds_entity_t *participants,
         _In_        size_t size)
 {
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret = 0;
     if (((participants != NULL) && (size>0) && (size < INT32_MAX)) || ((participants == NULL) && (size == 0))){
         dds_entity* iter;
         if(participants){
           participants[0] = 0;
         }
-        ret = 0;
         iter = dds_pp_head;
         while(iter){
           if(iter->m_domainid == domain_id){
@@ -242,6 +240,8 @@ dds_lookup_participant(
           }
           iter = iter->m_next;
        }
+    } else {
+      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
     return ret;
 }

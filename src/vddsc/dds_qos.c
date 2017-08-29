@@ -122,19 +122,19 @@ dds_qos_validate_mutable_common (
 
     /* TODO: Check whether immutable QoS are changed should actually incorporate change to current QoS */
     if (qos->present & QP_DEADLINE) {
-        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
+        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
     } else if (qos->present & QP_OWNERSHIP) {
-        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
+        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
     } else if (qos->present & QP_LIVELINESS) {
-        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
+        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
     } else if (qos->present & QP_RELIABILITY) {
-        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
+        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
     } else if (qos->present & QP_DESTINATION_ORDER) {
-        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
+        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
     } else if (qos->present & QP_HISTORY) {
-        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
+        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
     } else if (qos->present & QP_RESOURCE_LIMITS) {
-        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY);
+        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
     } else {
         ret = DDS_RETCODE_OK;
     }

@@ -139,7 +139,7 @@ dds_register_instance(
     }
     dds_entity_unlock(wr);
   }
-  return DDS_ERRNO (ret);
+  return DDS_ERRNO_DEPRECATED(ret);
 }
 
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
@@ -175,10 +175,10 @@ dds_unregister_instance_ts(
 
   ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
   if (ret != DDS_RETCODE_OK) {
-      return DDS_ERRNO (ret);
+      return DDS_ERRNO_DEPRECATED(ret);
   }
   if (data == NULL){
-    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
   }
 
   if (ret == DDS_RETCODE_OK)
@@ -214,7 +214,7 @@ dds_unregister_instance_ih_ts(
 
   ret = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
   if (ret != DDS_RETCODE_OK) {
-      return DDS_ERRNO (ret);
+      return DDS_ERRNO_DEPRECATED(ret);
   }
 
   if (wr->m_qos)
@@ -233,7 +233,7 @@ dds_unregister_instance_ih_ts(
     ret = dds_write_impl ((dds_writer*)wr, sample, timestamp, action);
   }
   else{
-    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
   }
   dds_sample_free (sample, topic->m_descriptor, DDS_FREE_ALL);
 
@@ -258,7 +258,7 @@ dds_writedispose_ts(
         }
         dds_writer_unlock(wr);
     } else {
-        ret = DDS_ERRNO(ret);
+        ret = DDS_ERRNO_DEPRECATED(ret);
     }
     return ret;
 }
@@ -293,7 +293,7 @@ dds_dispose_ts(
         ret = dds_dispose_impl(wr, data, DDS_HANDLE_NIL, timestamp);
         dds_writer_unlock(wr);
     } else {
-        ret = DDS_ERRNO(ret);
+        ret = DDS_ERRNO_DEPRECATED(ret);
     }
     return ret;
 }
@@ -315,12 +315,12 @@ dds_dispose_ih_ts(
         if (dds_tkmap_get_key (map, handle, sample)) {
             ret = dds_dispose_impl(wr, sample, handle, timestamp);
         } else {
-            ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET);
+            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
         }
         dds_free(sample);
         dds_writer_unlock(wr);
     } else {
-        ret = DDS_ERRNO(ret);
+        ret = DDS_ERRNO_DEPRECATED(ret);
     }
     return ret;
 }
@@ -362,5 +362,5 @@ dds_instance_get_key(
   topic = dds_instance_info_by_hdl (entity);
   memset (data, 0, topic->m_descriptor->m_size);
   return (dds_tkmap_get_key (map, inst, data)) ?
-    DDS_RETCODE_OK : DDS_ERRNO (DDS_RETCODE_BAD_PARAMETER);
+    DDS_RETCODE_OK : DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
 }
