@@ -46,7 +46,7 @@ dds_waitset_signal_entity(
 static dds_return_t
 dds_waitset_wait_impl(
         _In_ dds_entity_t waitset,
-        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _Out_writes_to_opt_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
         _In_ size_t nxs,
         _In_ dds_time_t abstimeout,
         _In_ dds_time_t tnow)
@@ -58,8 +58,9 @@ dds_waitset_wait_impl(
     dds_attachment *next;
     dds_attachment *prev;
 
-    if ((xs == NULL) || (nxs == 0)) {
-        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    if (((xs == NULL) && (nxs != 0)) ||
+        ((xs != NULL) && (nxs == 0)) ){
+        return DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
     }
 
     /* Locking the waitset here will delay a possible deletion until it is
@@ -136,12 +137,12 @@ dds_waitset_wait_impl(
         } else if (rc == DDS_RETCODE_TIMEOUT) {
             ret = 0;
         } else {
-            ret = DDS_ERRNO(rc);
+            ret = DDS_ERRNO_DEPRECATED(rc);
         }
 
         dds_waitset_unlock(ws);
     } else {
-        ret = DDS_ERRNO(rc);
+        ret = DDS_ERRNO_DEPRECATED(rc);
     }
 
     return ret;
@@ -221,7 +222,7 @@ dds_create_waitset(
         waitset->triggered = NULL;
         dds_entity_unlock(par);
     } else {
-        hdl = DDS_ERRNO(rc);
+        hdl = DDS_ERRNO_DEPRECATED(rc);
     }
     return hdl;
 }
@@ -260,7 +261,7 @@ dds_waitset_get_entities(
         }
         dds_waitset_unlock(ws);
     } else {
-        ret = DDS_ERRNO(rc);
+        ret = DDS_ERRNO_DEPRECATED(rc);
     }
     return ret;
 }
@@ -368,7 +369,7 @@ dds_waitset_attach(
         }
         dds_waitset_unlock(ws);
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
@@ -394,14 +395,14 @@ dds_waitset_detach(
         }
         dds_waitset_unlock(ws);
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 dds_return_t
 dds_waitset_wait_until(
         _In_ dds_entity_t waitset,
-        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _Out_writes_to_opt_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
         _In_ size_t nxs,
         _In_ dds_time_t abstimeout)
 {
@@ -412,7 +413,7 @@ _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 dds_return_t
 dds_waitset_wait(
         _In_ dds_entity_t waitset,
-        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _Out_writes_to_opt_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
         _In_ size_t nxs,
         _In_ dds_duration_t reltimeout)
 {
@@ -421,7 +422,7 @@ dds_waitset_wait(
         dds_time_t abstimeout = (DDS_INFINITY - reltimeout <= tnow) ? DDS_NEVER : (tnow + reltimeout);
         return dds_waitset_wait_impl(waitset, xs, nxs, abstimeout, tnow);
     }
-    return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
+    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
 }
 
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
@@ -446,6 +447,6 @@ dds_waitset_set_trigger(
         dds_waitset_signal_entity(ws);
         dds_waitset_unlock(ws);
     }
-    return DDS_ERRNO(rc);
+    return DDS_ERRNO_DEPRECATED(rc);
 }
 

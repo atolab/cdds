@@ -11,8 +11,8 @@ extern "C" {
 _Check_return_ dds_entity_t
 dds_entity_init(
         _In_       dds_entity * e,
-        _When_(kind != DDS_KIND_PARTICIPANT, _At_(parent,_NotNull_))
-        _When_(kind == DDS_KIND_PARTICIPANT, _At_(parent,_Null_))
+        _When_(kind != DDS_KIND_PARTICIPANT, _Notnull_)
+        _When_(kind == DDS_KIND_PARTICIPANT, _Null_)
           _In_opt_ dds_entity * parent,
         _In_       dds_entity_kind_t kind,
         _In_opt_   dds_qos_t * qos,
@@ -28,7 +28,7 @@ dds_entity_add_ref_nolock(
 
 _Check_return_ dds_retcode_t
 dds_entity_listener_propagation(
-        _In_ dds_entity *e,
+        _Inout_opt_ dds_entity *e,
         _In_ dds_entity *src,
         _In_ uint32_t status,
         _In_opt_ void *metrics,

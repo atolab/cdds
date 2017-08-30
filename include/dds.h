@@ -760,6 +760,7 @@ dds_create_participant(
  * @param[in]  entity  Entity from which to get its parent.
  *
  * @returns >0 - Success (valid entity handle).
+ * @returns  0 - DDS_ENTITY_NIL (function was called with a participant).
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *
  * @retval DDS_RETCODE_ERROR
@@ -1785,7 +1786,7 @@ dds_create_querycondition(
  * entity that triggered, then the returning array will be populated with
  * these attachment arguments that are related to the triggered entity.
  */
-typedef void * dds_attach_t;
+typedef intptr_t dds_attach_t;
 
 /**
  * @brief Create a waitset and allocate the resources required
@@ -2025,7 +2026,7 @@ _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
 dds_waitset_wait(
         _In_ dds_entity_t waitset,
-        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _Out_writes_to_opt_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
         _In_ size_t nxs,
         _In_ dds_duration_t reltimeout);
 
@@ -2099,7 +2100,7 @@ _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
 dds_waitset_wait_until(
         _In_ dds_entity_t waitset,
-        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _Out_writes_to_opt_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
         _In_ size_t nxs,
         _In_ dds_time_t abstimeout);
 

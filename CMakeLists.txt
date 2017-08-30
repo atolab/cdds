@@ -35,7 +35,7 @@ add_subdirectory(tools)
 
 option(BUILD_DOCS, "Enable generation of docs" OFF)
 if (BUILD_DOCS)
-  add_subdirectory(docs EXCLUDE_FROM_ALL)
+  add_subdirectory(docs)
 endif()
 
 # Pull-in CPack and support for generating <Package>Config.cmake and packages.

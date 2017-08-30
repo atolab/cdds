@@ -261,7 +261,7 @@ Test(vddsc_entity_get_parent, participant, .init=hierarchy_init, .fini=hierarchy
 {
     dds_entity_t parent;
     parent = dds_get_parent(g_participant);
-    cr_assert_eq(dds_err_nr(parent), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(parent));
+    cr_assert_eq(dds_err_nr(parent), DDS_ENTITY_NIL, "returned %d", dds_err_nr(parent));
 }
 /*************************************************************************************************/
 
@@ -741,6 +741,23 @@ Test(vddsc_entity_implicit_publisher, deleted)
 /*************************************************************************************************/
 
 /*************************************************************************************************/
+Test(vddsc_entity_implicit_publisher, invalid_topic)
+{
+    dds_entity_t participant;
+    dds_entity_t writer;
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    writer = dds_create_writer(participant, 0, NULL, NULL);
+    cr_assert_lt(writer, 0);
+
+    dds_delete(writer);
+    dds_delete(participant);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
 Test(vddsc_entity_implicit_subscriber, deleted)
 {
     dds_entity_t participant;
@@ -767,6 +784,25 @@ Test(vddsc_entity_implicit_subscriber, deleted)
     cr_assert_eq(ret, 1);
 
     dds_delete(topic);
+    dds_delete(participant);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_entity_explicit_subscriber, invalid_topic)
+{
+    dds_entity_t participant;
+    dds_entity_t reader;
+    dds_entity_t subscriber;
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    subscriber = dds_create_subscriber(participant, NULL,NULL);
+    reader = dds_create_reader(subscriber, 0, NULL, NULL);
+    cr_assert_lt(reader, 0);
+
+    dds_delete(reader);
     dds_delete(participant);
 }
 /*************************************************************************************************/

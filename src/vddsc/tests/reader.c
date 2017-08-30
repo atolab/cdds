@@ -106,7 +106,7 @@ reader_init(void)
     /* Sync g_reader to g_writer. */
     ret = dds_set_enabled_status(g_reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_reader status");
-    ret = dds_waitset_attach(g_waitset, g_reader, (dds_attach_t)(intptr_t)g_reader);
+    ret = dds_waitset_attach(g_waitset, g_reader, g_reader);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_reader");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_reader r");
@@ -117,7 +117,7 @@ reader_init(void)
     /* Sync g_writer to g_reader. */
     ret = dds_set_enabled_status(g_writer, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_writer status");
-    ret = dds_waitset_attach(g_waitset, g_writer, (dds_attach_t)(intptr_t)g_writer);
+    ret = dds_waitset_attach(g_waitset, g_writer, g_writer);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_writer");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_writer r");
@@ -234,13 +234,26 @@ Theory((dds_entity_t *ent, dds_qos_t **qos, dds_listener_t **listener), vddsc_re
 /*************************************************************************************************/
 
 /*************************************************************************************************/
-Test(vddsc_reader_create, invalid_qos, .init=reader_init, .fini=reader_fini)
+Test(vddsc_reader_create, invalid_qos_participant, .init=reader_init, .fini=reader_fini)
 {
     dds_entity_t rdr;
     dds_qos_t *qos = dds_qos_create();
     /* Set invalid reader data lifecycle policy */
     dds_qset_reader_data_lifecycle(qos, DDS_SECS(-1), DDS_SECS(-1));
     rdr = dds_create_reader(g_participant, g_topic, qos, NULL);
+    cr_assert_eq(dds_err_nr(rdr), DDS_RETCODE_INCONSISTENT_POLICY, "returned %d", dds_err_nr(rdr));
+    dds_qos_delete(qos);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_reader_create, invalid_qos_subscriber, .init=reader_init, .fini=reader_fini)
+{
+    dds_entity_t rdr;
+    dds_qos_t *qos = dds_qos_create();
+    /* Set invalid reader data lifecycle policy */
+    dds_qset_reader_data_lifecycle(qos, DDS_SECS(-1), DDS_SECS(-1));
+    rdr = dds_create_reader(g_subscriber, g_topic, qos, NULL);
     cr_assert_eq(dds_err_nr(rdr), DDS_RETCODE_INCONSISTENT_POLICY, "returned %d", dds_err_nr(rdr));
     dds_qos_delete(qos);
 }
@@ -2528,7 +2541,7 @@ Test(vddsc_take_mask, take_instance_last_sample)
     /* Sync g_reader to g_writer. */
     ret = dds_set_enabled_status(g_reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_reader status");
-    ret = dds_waitset_attach(g_waitset, g_reader, (dds_attach_t)(intptr_t)g_reader);
+    ret = dds_waitset_attach(g_waitset, g_reader, g_reader);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_reader");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_reader r");
@@ -2539,7 +2552,7 @@ Test(vddsc_take_mask, take_instance_last_sample)
     /* Sync g_writer to g_reader. */
     ret = dds_set_enabled_status(g_writer, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_writer status");
-    ret = dds_waitset_attach(g_waitset, g_writer, (dds_attach_t)(intptr_t)g_writer);
+    ret = dds_waitset_attach(g_waitset, g_writer, g_writer);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_writer");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_writer r");

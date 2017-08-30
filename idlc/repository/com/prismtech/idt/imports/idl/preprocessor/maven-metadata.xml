@@ -3,9 +3,9 @@
   <groupId>com.prismtech.idt.imports.idl</groupId>
   <artifactId>preprocessor</artifactId>
   <versioning>
-    <release>VLITE-01</release>
+    <release>VORTEXDDS-01</release>
     <versions>
-      <version>VLITE-01</version>
+      <version>VORTEXDDS-01</version>
     </versions>
     <lastUpdated>20170426081653</lastUpdated>
   </versioning>

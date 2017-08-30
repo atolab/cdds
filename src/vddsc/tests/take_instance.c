@@ -123,7 +123,7 @@ take_instance_init(void)
     /* Sync g_reader to g_writer. */
     ret = dds_set_enabled_status(g_reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_reader status");
-    ret = dds_waitset_attach(g_waitset, g_reader, (dds_attach_t)(intptr_t)g_reader);
+    ret = dds_waitset_attach(g_waitset, g_reader, g_reader);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_reader");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_reader r");
@@ -134,7 +134,7 @@ take_instance_init(void)
     /* Sync g_writer to g_reader. */
     ret = dds_set_enabled_status(g_writer, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_writer status");
-    ret = dds_waitset_attach(g_waitset, g_writer, (dds_attach_t)(intptr_t)g_writer);
+    ret = dds_waitset_attach(g_waitset, g_writer, g_writer);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_writer");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_writer r");
