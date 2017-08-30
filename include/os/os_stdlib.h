@@ -21,7 +21,6 @@
 #define OS_STDLIB_H
 
 #include <stdio.h>
-#include <stdint.h>
 #include <stdarg.h>
 #include "os/os_defs.h"
 
@@ -754,7 +753,7 @@ extern "C" {
 	 */
 	OSAPI_EXPORT int
 	os_getopt(
-			_In_range_(0, MAX_INT) int argc,
+			_In_range_(0, INT_MAX) int argc,
 			_In_reads_z_(argc) char **argv,
 			_In_z_ const char *opts);
 
@@ -773,7 +772,7 @@ extern "C" {
 	 *
 	 */
 	OSAPI_EXPORT void
-	os_set_opterr(_In_range_(0, MAX_INT) int err);
+	os_set_opterr(_In_range_(0, INT_MAX) int err);
 
 	/**
 	 * \brief the os_get_opterr returns the value of the opterr variable.
@@ -803,7 +802,7 @@ extern "C" {
 	 *
 	 */
 	OSAPI_EXPORT void
-	os_set_optind(_In_range_(0, MAX_INT) int index);
+	os_set_optind(_In_range_(0, INT_MAX) int index);
 
 	/**
 	 * \brief the os_get_optind function returns the value of the optind variable.
