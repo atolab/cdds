@@ -405,10 +405,12 @@ static void os__check_removal_stale_logs(void)
 void os_reportInit(
         _In_ bool forceReInit)
 {
-    if (!inited || forceReInit)
-    {
+    if (forceReInit) {
         inited = false;
+    }
 
+    if (!inited)
+    {
         os_mutexInit(&reportMutex);
         os_mutexInit(&errorlogcreateMutex);
         os_mutexInit(&infologcreateMutex);
