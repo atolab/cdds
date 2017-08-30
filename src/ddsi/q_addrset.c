@@ -54,18 +54,18 @@ static int add_addresses_to_addrset_1 (struct addrset *as, const char *ip, int p
 
   if (!os_sockaddrStringToAddress (ip, (os_sockaddr *) &tmpaddr, !config.useIpv6))
   {
-    NN_ERROR2 ("%s: %s: not a valid address\n", msgtag, ip);
+    NN_ERROR ("%s: %s: not a valid address\n", msgtag, ip);
     return -1;
   }
   if ((config.useIpv6 && tmpaddr.ss_family != AF_INET6) || (!config.useIpv6 && tmpaddr.ss_family != AF_INET))
   {
-    NN_ERROR3 ("%s: %s: not a valid IPv%d address\n", msgtag, ip, config.useIpv6 ? 6 : 4);
+    NN_ERROR ("%s: %s: not a valid IPv%d address\n", msgtag, ip, config.useIpv6 ? 6 : 4);
     return -1;
   }
   nn_address_to_loc (&loc, &tmpaddr, kind);
   if (req_mc && !is_mcaddr (&loc))
   {
-    NN_ERROR2 ("%s: %s: not a multicast address\n", msgtag, ip);
+    NN_ERROR ("%s: %s: not a multicast address\n", msgtag, ip);
     return -1;
   }
 
@@ -85,7 +85,7 @@ static int add_addresses_to_addrset_1 (struct addrset *as, const char *ip, int p
   }
   else
   {
-    NN_ERROR5 ("%s: %s,%d,%d,%d: IPv4 multicast address generator invalid or out of place\n",
+    NN_ERROR ("%s: %s,%d,%d,%d: IPv4 multicast address generator invalid or out of place\n",
                msgtag, ip, mcgen_base, mcgen_count, mcgen_idx);
     return -1;
   }
@@ -171,7 +171,7 @@ int add_addresses_to_addrset (struct addrset *as, const char *addrs, int port_mo
       if (add_addresses_to_addrset_1 (as, ip, port, msgtag, req_mc, mcgen_base, mcgen_count, mcgen_idx) < 0)
         goto error;
     } else {
-      NN_ERROR3 ("%s: %s: port %d invalid\n", msgtag, a, port);
+      NN_ERROR ("%s: %s: port %d invalid\n", msgtag, a, port);
     }
   }
   retval = 0;

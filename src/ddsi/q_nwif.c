@@ -203,7 +203,7 @@ void nn_loc_to_address (os_sockaddr_storage *dst, const nn_locator_t *src)
     }
 #endif
     case NN_LOCATOR_KIND_UDPv4MCGEN:
-      NN_ERROR1 ("nn_address_to_loc: kind %x unsupported\n", src->kind);
+      NN_ERROR ("nn_address_to_loc: kind %x unsupported\n", src->kind);
       break;
     default:
       break;
@@ -245,14 +245,14 @@ void nn_address_to_loc (nn_locator_t *dst, const os_sockaddr_storage *src, int32
     }
 #endif
     default:
-      NN_FATAL1 ("nn_address_to_loc: family %d unsupported\n", (int) src->ss_family);
+      NN_FATAL ("nn_address_to_loc: family %d unsupported\n", (int) src->ss_family);
   }
 }
 
 void print_sockerror (const char *msg)
 {
   int err = os_getErrno ();
-  NN_ERROR2 ("SOCKET %s errno %d\n", msg, err);
+  NN_ERROR ("SOCKET %s errno %d\n", msg, err);
 }
 
 unsigned short sockaddr_get_port (const os_sockaddr_storage *addr)
@@ -301,7 +301,7 @@ char *sockaddr_to_string_with_port (char addrbuf[INET6_ADDRSTRLEN_EXTENDED], con
       break;
 #endif
     default:
-      NN_WARNING0 ("sockaddr_to_string_with_port: unknown address family\n");
+      NN_WARNING ("sockaddr_to_string_with_port: unknown address family\n");
       strcpy (addrbuf, "???");
       break;
   }
@@ -363,7 +363,7 @@ unsigned sockaddr_to_hopefully_unique_uint32 (const os_sockaddr_storage *src)
     }
 #endif
     default:
-      NN_FATAL0 ("sockaddr_to_hopefully_unique_uint32: unknown address family\n");
+      NN_FATAL ("sockaddr_to_hopefully_unique_uint32: unknown address family\n");
       return 0;
   }
 }
@@ -457,7 +457,7 @@ static int set_rcvbuf (os_socket socket)
       if (config.socket_min_rcvbuf_size.isdefault)
         nn_log (LC_CONFIG, "failed to increase socket receive buffer size to %u bytes, continuing with %u bytes\n", socket_min_rcvbuf_size, ReceiveBufferSize);
       else
-        NN_ERROR2 ("failed to increase socket receive buffer size to %u bytes, continuing with %u bytes\n", socket_min_rcvbuf_size, ReceiveBufferSize);
+        NN_ERROR ("failed to increase socket receive buffer size to %u bytes, continuing with %u bytes\n", socket_min_rcvbuf_size, ReceiveBufferSize);
     }
     else
     {
@@ -759,7 +759,7 @@ static int joinleave_mcgroup (os_socket socket, int join, const os_sockaddr_stor
   err = joinleave_asm_mcgroup(socket, join, mcip, interf);
 #endif
   if (err)
-    NN_WARNING1 ("%s\n", make_joinleave_msg (buf, sizeof(buf), socket, join, srcip, mcip, interf, err));
+    NN_WARNING ("%s\n", make_joinleave_msg (buf, sizeof(buf), socket, join, srcip, mcip, interf, err));
   return err ? -1 : 0;
 }
 
@@ -959,7 +959,7 @@ int find_own_ip (const char *requested_address)
     res = os_sockQueryInterfaces (ifs, MAX_INTERFACES, &nif);
   if (res != os_resultSuccess)
   {
-    NN_ERROR1 ("os_sockQueryInterfaces: %d\n", (int) res);
+    NN_ERROR ("os_sockQueryInterfaces: %d\n", (int) res);
     os_free (ifs);
     return 0;
   }
@@ -1071,7 +1071,7 @@ int find_own_ip (const char *requested_address)
       p = 0;
       for (i = 0; i < maxq_count && (size_t) p < maxq_strlen; i++)
         p += snprintf (names + p, maxq_strlen - (size_t) p, ", %s", gv.interfaces[maxq_list[i]].name);
-      NN_WARNING3 ("using network interface %s (%s) selected arbitrarily from: %s\n",
+      NN_WARNING ("using network interface %s (%s) selected arbitrarily from: %s\n",
                    gv.interfaces[idx].name, addrbuf, names + 2);
       os_free (names);
     }
@@ -1079,7 +1079,7 @@ int find_own_ip (const char *requested_address)
     if (maxq_count > 0)
       selected_idx = maxq_list[0];
     else
-      NN_ERROR0 ("failed to determine default own IP address\n");
+      NN_ERROR ("failed to determine default own IP address\n");
   }
   else
   {
@@ -1130,7 +1130,7 @@ int find_own_ip (const char *requested_address)
     if (i < gv.n_interfaces)
       selected_idx = i;
     else
-      NN_ERROR1 ("%s: does not match an available interface\n", config.networkAddressString);
+      NN_ERROR ("%s: does not match an available interface\n", config.networkAddressString);
   }
 
   if (selected_idx < 0)
