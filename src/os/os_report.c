@@ -407,12 +407,14 @@ void os_reportInit(
 {
     if (!inited || forceReInit)
     {
+        inited = false;
+
         os_mutexInit(&reportMutex);
         os_mutexInit(&errorlogcreateMutex);
         os_mutexInit(&infologcreateMutex);
 
-        os__set_verbosity();
         os__check_removal_stale_logs();
+        os__set_verbosity();
     }
     inited = true;
 }
