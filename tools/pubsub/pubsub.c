@@ -1811,7 +1811,7 @@ static uint32_t subthread (void *vspec)
   }
 
   ws = dds_create_waitset(dp);
-  if ((result = dds_waitset_attach(ws, termcond, &termcond)) != DDS_RETCODE_OK)
+  if ((result = dds_waitset_attach(ws, termcond, termcond)) != DDS_RETCODE_OK)
     error ("dds_waitset_attach (termcond): %d (%s)\n", (int) result, dds_strerror (result));
   nxs++; //increased because of the waitset_attach
   switch (spec->mode)
@@ -1825,12 +1825,12 @@ static uint32_t subthread (void *vspec)
     	if ((rdcondA = dds_create_readcondition(rd, spec->use_take ? (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
                                                                    : (DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE))) == 0)
     		error ("dds_readcondition_create (rdcondA)\n");
-    	if ((result = dds_waitset_attach (ws, rdcondA, &rdcondA)) != DDS_RETCODE_OK)
+    	if ((result = dds_waitset_attach (ws, rdcondA, rdcondA)) != DDS_RETCODE_OK)
     		error ("dds_waitset_attach (rdcondA): %d (%s)\n", (int) result, dds_strerror (result));
     	nxs++; //increased because of the waitset_attach
     	if ((rdcondD = dds_create_readcondition (rd, (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE))) == 0)
     		error ("dds_readcondition_create (rdcondD)\n");
-    	if ((result = dds_waitset_attach (ws, rdcondD, &rdcondD)) != DDS_RETCODE_OK)
+    	if ((result = dds_waitset_attach (ws, rdcondD, rdcondD)) != DDS_RETCODE_OK)
     		error ("dds_waitset_attach (rdcondD): %d (%s)\n", (int) result, dds_strerror (result));
     	nxs++; //increased because of the waitset_attach
     	break;
@@ -1841,7 +1841,7 @@ static uint32_t subthread (void *vspec)
         /* fastest trigger we have */
     	if ((result = dds_set_enabled_status(rd, DDS_DATA_AVAILABLE_STATUS)) != DDS_RETCODE_OK) //Todo: Changed the method to match ddsi
 		  error ("dds_set_enabled_status (stcond): %d (%s)\n", (int) result, dds_strerror (result));
-		if ((result = dds_waitset_attach (ws, rd, &rd)) != DDS_RETCODE_OK)
+		if ((result = dds_waitset_attach (ws, rd, rd)) != DDS_RETCODE_OK)
 		  error ("dds_waitset_attach (rd): %d (%s)\n", (int) result, dds_strerror (result));
 		nxs++; //increased because of the waitset_attach
       }
@@ -1905,7 +1905,7 @@ static uint32_t subthread (void *vspec)
       tnow = nowll ();
       for (gi = 0; gi < (spec->polling ? 1 : nxs); gi++)
       {
-          dds_entity_t cond = !spec->polling && xs[gi] != NULL ? *((dds_entity_t *)xs[gi]) : 0;
+          dds_entity_t cond = !spec->polling && xs[gi] != 0 ? (dds_entity_t) xs[gi] : 0;
     	  unsigned i;
 
         if (cond == termcond)
@@ -1946,9 +1946,9 @@ static uint32_t subthread (void *vspec)
 //          error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_strerror (result));
 
         if (spec->mode == MODE_CHECK || (spec->mode == MODE_DUMP && spec->use_take) || spec->polling) {
-        	result = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+        	result = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
 		} else if (spec->mode == MODE_DUMP) {
-			result = dds_read_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+			result = dds_read_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
 		} else if (spec->use_take || cond == rdcondD) {
 			result = dds_take(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples);
 		} else {
@@ -2143,7 +2143,7 @@ static uint32_t autotermthread(void *varg __attribute__((unused)))
   tstop = tnow + (unsigned long long) (1e9 * dur);
 
   ws = dds_create_waitset(dp);
-  if ((result = dds_waitset_attach(ws, termcond, &termcond)) != DDS_RETCODE_OK)
+  if ((result = dds_waitset_attach(ws, termcond, termcond)) != DDS_RETCODE_OK)
     error ("dds_waitset_attach (termcomd): %d (%s)\n", (int) result, dds_strerror (result));
 
   tnow = nowll();
