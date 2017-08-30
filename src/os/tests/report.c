@@ -7,6 +7,7 @@ CUnit_Suite_Initialize(os_report)
 {
   os_putenv("VORTEX_ERRORFILE=vdds_test_error");
   os_putenv("VORTEX_INFOFILE=vdds_test_info");
+  os_putenv("VORTEX_LOGAPPEND=TRUE");
 
   return 0;
 }
@@ -36,18 +37,20 @@ CUnit_Suite_Cleanup(os_report)
   return 0;
 }
 
+
 CUnit_Test(os_report, re_init)
 {
   os_reportInit(true);
 
   OS_INFO(OS_FUNCTION, 0, "os_report-info-test %d", __LINE__);
+  OS_ERROR(OS_FUNCTION, 0, "os_report-error-test %d", __LINE__);
 
-  check_existence(os_resultFail, os_resultSuccess);
+  check_existence(os_resultSuccess, os_resultSuccess);
 
   os_reportExit();
 
   os_reportInit(true);
-  check_existence(os_resultFail, os_resultSuccess);
+  check_existence(os_resultSuccess, os_resultSuccess);
 
   OS_INFO(OS_FUNCTION, 0, "os_report-info-test %d", __LINE__);
 
@@ -55,6 +58,7 @@ CUnit_Test(os_report, re_init)
 
   remove_logs();
 }
+
 
 CUnit_Test(os_report, stack_critical)
 {
@@ -76,6 +80,7 @@ CUnit_Test(os_report, stack_critical)
   remove_logs();
 }
 
+
 CUnit_Test(os_report, stack_non_critical)
 {
   os_reportInit(true);
@@ -96,6 +101,7 @@ CUnit_Test(os_report, stack_non_critical)
   remove_logs();
 }
 
+
 CUnit_Test(os_report, error_file_creation_critical)
 {
   os_reportInit(true);
@@ -108,6 +114,7 @@ CUnit_Test(os_report, error_file_creation_critical)
 
   remove_logs();
 }
+
 
 CUnit_Test(os_report, error_file_creation_fatal)
 {
@@ -122,6 +129,7 @@ CUnit_Test(os_report, error_file_creation_fatal)
   remove_logs();
 }
 
+
 CUnit_Test(os_report, info_file_creation_warning)
 {
   os_reportInit(true);
@@ -135,6 +143,7 @@ CUnit_Test(os_report, info_file_creation_warning)
   remove_logs();
 }
 
+
 CUnit_Test(os_report, info_file_creation_info)
 {
   os_reportInit(true);
@@ -147,6 +156,7 @@ CUnit_Test(os_report, info_file_creation_info)
 
   remove_logs();
 }
+
 
 CUnit_Test(os_report, verbosity_low)
 {
@@ -255,4 +265,128 @@ CUnit_Test(os_report, stack_verbosity_equal)
   os_reportExit();
 
   remove_logs();
+}
+
+
+CUnit_Test(os_report, no_log_append)
+{
+  os_reportInit(true);
+  check_existence(os_resultFail, os_resultFail);
+
+  OS_ERROR(OS_FUNCTION, 0, "os_report-error-test %d", __LINE__);
+  OS_INFO(OS_FUNCTION, 0, "os_report-info-test %d", __LINE__);
+
+  check_existence(os_resultSuccess, os_resultSuccess);
+
+  os_reportExit();
+
+  os_putenv("VORTEX_LOGAPPEND=FALSE");
+
+  os_reportInit(true);
+
+  // Both logs should be deleted
+  check_existence(os_resultFail, os_resultFail);
+
+  os_reportExit();
+
+  remove_logs();
+}
+
+
+CUnit_Test(os_report, log_dir)
+{
+  os_putenv("VORTEX_LOGPATH=.");
+
+  os_reportInit(true);
+
+  check_existence(os_resultFail, os_resultFail);
+
+  OS_ERROR(OS_FUNCTION, 0, "os_report-error-test %d", __LINE__);
+  OS_INFO(OS_FUNCTION, 0, "os_report-info-test %d", __LINE__);
+
+  check_existence(os_resultSuccess, os_resultSuccess);
+
+  os_reportExit();
+
+  remove_logs();
+}
+
+
+CUnit_Test(os_report, verbosity_env_value_info)
+{
+  os_putenv("VORTEX_VERBOSITY=0");
+  os_reportInit(true);
+  check_existence(os_resultFail, os_resultFail);
+
+  OS_ERROR(OS_FUNCTION, 0, "os_report-error-test %d", __LINE__);
+  OS_INFO(OS_FUNCTION, 0, "os_report-info-test %d", __LINE__);
+
+  check_existence(os_resultSuccess, os_resultSuccess);
+
+  os_reportExit();
+
+  remove_logs();
+
+  //reset for other tests.
+  os_putenv("VORTEX_VERBOSITY=");
+}
+
+
+CUnit_Test(os_report, verbosity_env_value_error)
+{
+  os_putenv("VORTEX_VERBOSITY=3");
+  os_reportInit(true);
+  check_existence(os_resultFail, os_resultFail);
+
+  OS_ERROR(OS_FUNCTION, 0, "os_report-error-test %d", __LINE__);
+  OS_INFO(OS_FUNCTION, 0, "os_report-info-test %d", __LINE__);
+
+  check_existence(os_resultSuccess, os_resultFail);
+
+  os_reportExit();
+
+  remove_logs();
+
+  //reset for other tests.
+  os_putenv("VORTEX_VERBOSITY=");
+}
+
+
+CUnit_Test(os_report, verbosity_env_value_error_as_string)
+{
+  os_putenv("VORTEX_VERBOSITY=ERROR");
+  os_reportInit(true);
+  check_existence(os_resultFail, os_resultFail);
+
+  OS_ERROR(OS_FUNCTION, 0, "os_report-error-test %d", __LINE__);
+  OS_DEBUG(OS_FUNCTION, 0, "os_report-info-test %d", __LINE__);
+
+  check_existence(os_resultSuccess, os_resultFail);
+
+  os_reportExit();
+
+  remove_logs();
+
+  //reset for other tests.
+  os_putenv("VORTEX_VERBOSITY=");
+}
+
+
+CUnit_Test(os_report, verbosity_wrong_env_value)
+{
+  os_putenv("VORTEX_VERBOSITY=WRONG");
+  os_reportInit(true);
+  check_existence(os_resultFail, os_resultFail);
+
+  OS_ERROR(OS_FUNCTION, 0, "os_report-error-test %d", __LINE__);
+  OS_DEBUG(OS_FUNCTION, 0, "os_report-error-test %d", __LINE__);
+
+  check_existence(os_resultSuccess, os_resultFail);
+
+  os_reportExit();
+
+  remove_logs();
+
+  //reset for other tests.
+  os_putenv("VORTEX_VERBOSITY=");
 }
