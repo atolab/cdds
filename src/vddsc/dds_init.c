@@ -13,6 +13,7 @@
 #include "ddsi/q_servicelease.h"
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
+#include "vddsc/vddsc_project.h"
 
 #ifdef _WRS_KERNEL
 char *os_environ[] = { NULL };
@@ -80,7 +81,7 @@ dds_init(void)
     return DDS_RETCODE_OK;
   }
 
-  uri = os_getenv ("VORTEX_URI");
+  uri = os_getenv (VDDSC_PROJECTNAME_CAPS"_URI");
 
   os_osInit ();
   gv.tstart = now ();
