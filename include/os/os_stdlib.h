@@ -21,6 +21,7 @@
 #define OS_STDLIB_H
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdarg.h>
 #include "os/os_defs.h"
 
