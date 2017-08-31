@@ -2439,7 +2439,7 @@ int main (int argc, char *argv[])
 	spec_sofar = 0;
 	assert(specidx == 0);
 
-  while ((opt = getopt (argc, argv, "!@*:FK:T:D:q:m:M:n:OP:rRs:S:U:W:w:z:")) != EOF)
+  while ((opt = os_getopt (argc, argv, "!@*:FK:T:D:q:m:M:n:OP:rRs:S:U:W:w:z:")) != EOF)
   {
     switch (opt)
     {
@@ -2450,47 +2450,47 @@ int main (int argc, char *argv[])
         spec[specidx].wr.duplicate_writer_flag = 1;
         break;
       case '*':
-        sleep_at_end = (unsigned) os_atoll(optarg);
+        sleep_at_end = (unsigned) os_atoll(os_get_optarg());
         break;
       case 'M':
-        if (sscanf(optarg, "%lf:%n", &wait_for_matching_reader_timeout, &pos) != 1)
+        if (sscanf(os_get_optarg(), "%lf:%n", &wait_for_matching_reader_timeout, &pos) != 1)
         {
-          fprintf (stderr, "-M %s: invalid timeout\n", optarg);
+          fprintf (stderr, "-M %s: invalid timeout\n", os_get_optarg());
           exit (2);
         }
-        wait_for_matching_reader_arg = optarg + pos;
+        wait_for_matching_reader_arg = os_get_optarg() + pos;
         break;
       case 'F':
         setvbuf (stdout, (char *) NULL, _IOLBF, 0);
         break;
       case 'K':
         addspec(SPEC_TOPICSEL, &spec_sofar, &specidx, &spec, want_reader);
-        if (os_strcasecmp (optarg, "KS") == 0)
+        if (os_strcasecmp (os_get_optarg(), "KS") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = KS;
-        else if (os_strcasecmp (optarg, "K32") == 0)
+        else if (os_strcasecmp (os_get_optarg(), "K32") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K32;
-        else if (os_strcasecmp (optarg, "K64") == 0)
+        else if (os_strcasecmp (os_get_optarg(), "K64") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K64;
-        else if (os_strcasecmp (optarg, "K128") == 0)
+        else if (os_strcasecmp (os_get_optarg(), "K128") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K128;
-        else if (os_strcasecmp (optarg, "K256") == 0)
+        else if (os_strcasecmp (os_get_optarg(), "K256") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K256;
-        else if (os_strcasecmp (optarg, "OU") == 0)
+        else if (os_strcasecmp (os_get_optarg(), "OU") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = OU;
-        else if (os_strcasecmp (optarg, "ARB") == 0)
+        else if (os_strcasecmp (os_get_optarg(), "ARB") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = ARB;
-        else if (get_metadata(&spec[specidx].metadata, &spec[specidx].typename, &spec[specidx].keylist, optarg))
+        else if (get_metadata(&spec[specidx].metadata, &spec[specidx].typename, &spec[specidx].keylist, os_get_optarg()))
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = ARB;
         else
         {
-          fprintf (stderr, "-K %s: unknown type\n", optarg);
+          fprintf (stderr, "-K %s: unknown type\n", os_get_optarg());
           exit (2);
         }
         break;
       case 'T': {
         char *p;
         addspec(SPEC_TOPICNAME, &spec_sofar, &specidx, &spec, want_reader);
-        spec[specidx].topicname = (const char *) os_strdup(optarg);
+        spec[specidx].topicname = (const char *) os_strdup(os_get_optarg());
         if ((p = strchr(spec[specidx].topicname, ':')) != NULL) {
           double d;
           int pos, have_to = 0;
@@ -2500,7 +2500,7 @@ int main (int argc, char *argv[])
             set_infinite_dds_duration (&spec[specidx].findtopic_timeout);
           } else if (sscanf (p, "%lf%n", &d, &pos) == 1 && (p[pos] == 0 || p[pos] == ':')) {
             if (double_to_dds_duration (&spec[specidx].findtopic_timeout, d) < 0)
-              error ("-T %s: %s: duration invalid\n", optarg, p);
+              error ("-T %s: %s: duration invalid\n", os_get_optarg(), p);
             have_to = 1;
           } else {
             /* assume content filter */
@@ -2515,17 +2515,17 @@ int main (int argc, char *argv[])
         break;
       }
       case 'q':
-        if (strncmp(optarg, "provider=", 9) == 0) {
-          set_qosprovider (optarg+9);
+        if (strncmp(os_get_optarg(), "provider=", 9) == 0) {
+          set_qosprovider (os_get_optarg()+9);
         } else {
-          unsigned long n = strspn(optarg, "atrwps");
-          const char *colon = strchr(optarg, ':');
-          if (colon == NULL || n == 0 || n != (unsigned long) (colon - optarg)) {
-            fprintf (stderr, "-q %s: flags indicating to which entities QoS's apply must match regex \"[^atrwps]+:\"\n", optarg);
+          unsigned long n = strspn(os_get_optarg(), "atrwps");
+          const char *colon = strchr(os_get_optarg(), ':');
+          if (colon == NULL || n == 0 || n != (unsigned long) (colon - os_get_optarg())) {
+            fprintf (stderr, "-q %s: flags indicating to which entities QoS's apply must match regex \"[^atrwps]+:\"\n", os_get_optarg());
             exit(2);
           } else {
             const char *q = colon+1;
-            for (const char *flag = optarg; flag != colon; flag++)
+            for (const char *flag = os_get_optarg(); flag != colon; flag++)
               switch (*flag) {
                 case 't': qtopic[nqtopic++] = q; break;
                 case 'r': qreader[nqreader++] = q; break;
@@ -2547,33 +2547,33 @@ int main (int argc, char *argv[])
         }
         break;
       case 'D':
-        dur = atof (optarg);
+        dur = atof (os_get_optarg());
         break;
       case 'm':
         spec[specidx].rd.polling = 0;
-        if (strcmp (optarg, "0") == 0)
+        if (strcmp (os_get_optarg(), "0") == 0)
           spec[specidx].rd.mode = MODE_NONE;
-        else if (strcmp (optarg, "p") == 0)
+        else if (strcmp (os_get_optarg(), "p") == 0)
           spec[specidx].rd.mode = MODE_PRINT;
-        else if (strcmp (optarg, "pp") == 0)
+        else if (strcmp (os_get_optarg(), "pp") == 0)
           spec[specidx].rd.mode = MODE_PRINT, spec[specidx].rd.polling = 1;
-        else if (strcmp (optarg, "c") == 0)
+        else if (strcmp (os_get_optarg(), "c") == 0)
           spec[specidx].rd.mode = MODE_CHECK;
-        else if (sscanf (optarg, "c:%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf (os_get_optarg(), "c:%d%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
           spec[specidx].rd.mode = MODE_CHECK;
-        else if (strcmp (optarg, "cp") == 0)
+        else if (strcmp (os_get_optarg(), "cp") == 0)
           spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
-        else if (sscanf (optarg, "cp:%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf (os_get_optarg(), "cp:%d%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
           spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
-        else if (strcmp (optarg, "z") == 0)
+        else if (strcmp (os_get_optarg(), "z") == 0)
           spec[specidx].rd.mode = MODE_ZEROLOAD;
-        else if (strcmp (optarg, "d") == 0)
+        else if (strcmp (os_get_optarg(), "d") == 0)
           spec[specidx].rd.mode = MODE_DUMP;
-        else if (strcmp (optarg, "dp") == 0)
+        else if (strcmp (os_get_optarg(), "dp") == 0)
           spec[specidx].rd.mode = MODE_DUMP, spec[specidx].rd.polling = 1;
         else
         {
-          fprintf (stderr, "-m %s: invalid mode\n", optarg);
+          fprintf (stderr, "-m %s: invalid mode\n", os_get_optarg());
           exit (2);
         }
         break;
@@ -2581,23 +2581,23 @@ int main (int argc, char *argv[])
         int port;
         spec[specidx].wr.writerate = 0.0;
         spec[specidx].wr.burstsize = 1;
-        if (strcmp (optarg, "-") == 0)
+        if (strcmp (os_get_optarg(), "-") == 0)
         {
           spec[specidx].wr.mode = WRM_INPUT;
         }
-        else if (sscanf (optarg, "%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf (os_get_optarg(), "%d%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf (optarg, "%d:%lf*%u%n", &nkeyvals, &spec[specidx].wr.writerate, &spec[specidx].wr.burstsize, &pos) == 3 && optarg[pos] == 0)
+        else if (sscanf (os_get_optarg(), "%d:%lf*%u%n", &nkeyvals, &spec[specidx].wr.writerate, &spec[specidx].wr.burstsize, &pos) == 3 && os_get_optarg()[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf (optarg, "%d:%lf%n", &nkeyvals, &spec[specidx].wr.writerate, &pos) == 2 && optarg[pos] == 0)
+        else if (sscanf (os_get_optarg(), "%d:%lf%n", &nkeyvals, &spec[specidx].wr.writerate, &pos) == 2 && os_get_optarg()[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf (optarg, ":%d%n", &port, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf (os_get_optarg(), ":%d%n", &port, &pos) == 1 && os_get_optarg()[pos] == 0)
         {
         	fprintf(stderr, "listen on TCP port P: not supported\n");
 			exit(1);
@@ -2605,19 +2605,19 @@ int main (int argc, char *argv[])
         else
         {
           spec[specidx].wr.mode = WRM_INPUT;
-          fprintf(stderr, "%s: can't open\n", optarg);
+          fprintf(stderr, "%s: can't open\n", os_get_optarg());
           exit(1);
         }
         break;
       }
       case 'n':
-        spec[specidx].rd.read_maxsamples = atoi (optarg);
+        spec[specidx].rd.read_maxsamples = atoi (os_get_optarg());
         break;
       case 'O':
         once_mode = 1;
         break;
       case 'P':
-        set_print_mode (optarg);
+        set_print_mode (os_get_optarg());
         break;
       case 'R':
         spec[specidx].rd.use_take = 0;
@@ -2626,26 +2626,26 @@ int main (int argc, char *argv[])
         spec[specidx].wr.register_instances = 1;
         break;
       case 's':
-        spec[specidx].rd.sleep_us = 1000u * (unsigned) atoi (optarg);
+        spec[specidx].rd.sleep_us = 1000u * (unsigned) atoi (os_get_optarg());
         break;
       case 'W':
         {
           double t;
           wait_hist_data = 1;
-          if (strcmp (optarg, "inf") == 0)
+          if (strcmp (os_get_optarg(), "inf") == 0)
             set_infinite_dds_duration (&wait_hist_data_timeout);
-          else if (sscanf (optarg, "%lf%n", &t, &pos) == 1 && optarg[pos] == 0 && t >= 0)
+          else if (sscanf (os_get_optarg(), "%lf%n", &t, &pos) == 1 && os_get_optarg()[pos] == 0 && t >= 0)
             double_to_dds_duration (&wait_hist_data_timeout, t);
           else
           {
-            fprintf (stderr, "-W %s: invalid duration\n", optarg);
+            fprintf (stderr, "-W %s: invalid duration\n", os_get_optarg());
             exit (2);
           }
         }
         break;
       case 'S':
         {
-          char *copy = os_strdup (optarg), *tok, *lasts;
+          char *copy = os_strdup (os_get_optarg()), *tok, *lasts;
           if (copy == NULL)
             abort ();
           tok = os_strtok_r (copy, ",", &lasts);
@@ -2686,10 +2686,10 @@ int main (int argc, char *argv[])
       case 'z': {
         /* payload is int32 int32 seq<octet>, which we count as 16+N,
          for a 4 byte sequence length */
-        int tmp = atoi (optarg);
+        int tmp = atoi (os_get_optarg());
         if (tmp != 0 && tmp < 12)
         {
-          fprintf (stderr, "-z %s: minimum is 12\n", optarg);
+          fprintf (stderr, "-z %s: minimum is 12\n", os_get_optarg());
 
           exit (1);
         }
@@ -2704,9 +2704,9 @@ int main (int argc, char *argv[])
     }
   }
 
-  if (argc - optind < 1)
+  if (argc - os_get_optind() < 1)
   {
-	  PRINTD("argc: %d optind: %d\n",argc,optind);
+	  PRINTD("argc: %d optind: %d\n", argc, os_get_optind());
 	  usage (argv[0]);
   }
 
@@ -2786,15 +2786,15 @@ int main (int argc, char *argv[])
   set_systemid_env ();
 
   {
-    char **ps = (char **) os_malloc (sizeof(char *) * (argc - optind)); //variable size array malloc
-    for (i = 0; i < (unsigned) (argc - optind); i++)
-      ps[i] = expand_envvars (argv[(unsigned) optind + i]);
+    char **ps = (char **) os_malloc (sizeof(char *) * (argc - os_get_optind())); //variable size array malloc
+    for (i = 0; i < (unsigned) (argc - os_get_optind()); i++)
+      ps[i] = expand_envvars (argv[(unsigned) os_get_optind() + i]);
     if (want_reader)
     {
     	qos = new_subqos ();
     	PRINTD("Entering setqos for subscriber\n");
 		setqos_from_args (qos, nqsubscriber, qsubscriber);
-		sub = new_subscriber (qos, (unsigned) (argc - optind), (const char **) ps);
+		sub = new_subscriber (qos, (unsigned) (argc - os_get_optind()), (const char **) ps);
     	free_qos (qos);
     }
     if (want_writer)
@@ -2802,10 +2802,10 @@ int main (int argc, char *argv[])
       qos = new_pubqos ();
       PRINTD("Entering setqos for publisher\n");
       setqos_from_args (qos, nqpublisher, qpublisher);
-      pub = new_publisher (qos, (unsigned) (argc - optind), (const char **) ps);
+      pub = new_publisher (qos, (unsigned) (argc - os_get_optind()), (const char **) ps);
       free_qos (qos);
     }
-    for (i = 0; i < (unsigned) (argc - optind); i++)
+    for (i = 0; i < (unsigned) (argc - os_get_optind()); i++)
     	os_free (ps[i]);
     os_free(ps);
   }

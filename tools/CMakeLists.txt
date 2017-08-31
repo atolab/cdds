@@ -1,10 +1,1 @@
-set(CMAKE_INSTALL_TOOLSDIR "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}/tools")
-
 add_subdirectory(pubsub)
-
-install(
-  DIRECTORY "${CMAKE_SOURCE_DIR}/tools/"
-  DESTINATION "${CMAKE_INSTALL_TOOLSDIR}"
-  COMPONENT dev
-  PATTERN "CMakeLists.export" EXCLUDE
-  PATTERN "tools/CMakeLists.txt" EXCLUDE)
