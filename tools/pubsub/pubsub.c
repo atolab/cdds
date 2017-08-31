@@ -982,7 +982,7 @@ static void print_sampleinfo (unsigned long long *tstart, unsigned long long tno
 static void print_K (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *si, int32_t keyval, uint32_t seq, int (*getkeyval) (dds_entity_t rd, int32_t *key, dds_instance_handle_t ih))
 {
   int result;
-  flockfile(stdout);
+  os_flockfile(stdout);
   print_sampleinfo(tstart, tnow, si, tag);
   if (si->valid_data)
     printf ("%u %d\n", seq, keyval);
@@ -1001,7 +1001,7 @@ static void print_K (unsigned long long *tstart, unsigned long long tnow, dds_en
     else
       printf ("get_key_value: error %d (%s)\n", (int) result, dds_strerror (result));
   }
-  funlockfile(stdout);
+  os_funlockfile(stdout);
 }
 
 static void print_seq_KS (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, KeyedSeq **mseq, int count)
@@ -1044,14 +1044,14 @@ static void print_seq_OU (unsigned long long *tstart, unsigned long long tnow, d
   unsigned i;
   for (i = 0; i < count; i++)
   {
-	flockfile(stdout);
+	os_flockfile(stdout);
     print_sampleinfo(tstart, tnow, si, tag);
     if (si->valid_data) {
     	printf ("%u\n", mseq[i]->seq);
     } else {
       printf ("NA\n");
     }
-    funlockfile(stdout);
+    os_funlockfile(stdout);
   }
 }
 
