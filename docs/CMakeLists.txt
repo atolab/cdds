@@ -64,6 +64,10 @@ endif()
 
 # Define custom commands for running sphinx-build for different docs builders
 set(docs_outputs "")
+
+add_custom_target(create_html_tar ALL COMMAND
+    ${CMAKE_COMMAND} -E tar "zcvf" "VortexDDS.tgz" "${CMAKE_CURRENT_BINARY_DIR}/html")
+
 foreach(builder ${docs_builders})
   set(docs_builder_output "docs_${builder}_output")
   # Log stdout (not stderr) to a file instead of messing up build output
@@ -81,6 +85,10 @@ foreach(builder ${docs_builders})
     COMMENT "Running Sphinx for ${builder} output"
     VERBATIM
   )
+
+  if(builder STREQUAL html)
+    add_dependencies(create_html_tar docs)
+  endif()
 
   # Create a pdf from the latex builder output, by appending a latexmk command
   # TODO look into rinohtype as an alternative (don't bother with rst2pdf, it's no good)
@@ -109,7 +117,7 @@ add_custom_target(docs ALL DEPENDS vddsc_docs ${docs_outputs})
 
 if (BUILD_DOCS_HTML)
   install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/VortexDDS.tgz
     DESTINATION "${CMAKE_INSTALL_DOCDIR}"
     COMPONENT dev)
 endif()
