@@ -1,3 +1,11 @@
+cmake_minimum_required(VERSION 3.5)
+
+if (NOT TARGET VortexDDS::vddsc)
+    # Find the VortexDDS package. If it is not in a default location, try
+    # finding it relative to the example where it most likely resides.
+    find_package(VortexDDS REQUIRED PATHS "${CMAKE_SOURCE_DIR}/../../")
+endif()
+
 add_executable(pubsub pubsub.c common.c testtype.c porting.c)
 target_link_libraries(pubsub util VortexDDS::vddsc)
 
