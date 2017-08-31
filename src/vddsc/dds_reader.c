@@ -6,6 +6,7 @@
 #include "kernel/dds_qos.h"
 #include "kernel/dds_init.h"
 #include "kernel/dds_rhc.h"
+#include "kernel/dds_err.h"
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
 

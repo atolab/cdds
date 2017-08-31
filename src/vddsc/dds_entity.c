@@ -5,6 +5,7 @@
 #include "kernel/dds_writer.h"
 #include "kernel/dds_reader.h"
 #include "kernel/dds_listener.h"
+#include "kernel/dds_err.h"
 #include "os/os_report.h"
 
 /* Sanity check. */

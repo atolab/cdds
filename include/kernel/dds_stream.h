@@ -1,7 +1,7 @@
 #ifndef _DDS_STREAM_H_
 #define _DDS_STREAM_H_
 
-#include "kernel/dds_types.h"
+// #include "kernel/dds_types.h"
 #include "ddsi/ddsi_ser.h"
 
 #if defined (__cplusplus)

@@ -4,6 +4,7 @@
 #include "kernel/dds_entity.h"
 #include "kernel/dds_subscriber.h"
 #include "kernel/dds_publisher.h"
+#include "kernel/dds_err.h"
 
 _Pre_satisfies_(((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER    ) || \
                 ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER) || \

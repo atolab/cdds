@@ -7,6 +7,7 @@
 #include "kernel/dds_stream.h"
 #include "kernel/dds_init.h"
 #include "kernel/dds_domain.h"
+#include "kernel/dds_err.h"
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
 #include "kernel/q_osplser.h"

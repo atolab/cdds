@@ -7,6 +7,7 @@
 #include "kernel/dds_writer.h"
 #include "kernel/dds_listener.h"
 #include "kernel/dds_qos.h"
+#include "kernel/dds_err.h"
 #include "kernel/dds_init.h"
 #include "kernel/dds_tkmap.h"
 

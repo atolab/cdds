@@ -3,7 +3,6 @@
 #include "os/os_report.h"
 #include <assert.h>
 #include <string.h>
-#include "kernel/dds_types.h"
 #include "kernel/dds_report.h"
 
 void
