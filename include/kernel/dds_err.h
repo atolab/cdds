@@ -1,8 +1,6 @@
 #ifndef _DDS_ERR_H_
 #define _DDS_ERR_H_
 
-#include "os/os_defs.h"
-
 #if defined (__cplusplus)
 extern "C" {
 #endif
@@ -19,24 +17,13 @@ extern "C" {
 #define DDS__FILE_ID__ (((__FILE_ID__ & 0x1ff)) << 22)
 #define DDS__LINE__ ((__LINE__ & 0x3fff) << 8)
 
-#define DDS_ERRNO_DEPRECATED(e) ((e <= 0) ? e : -(DDS__FILE_ID__ + DDS__LINE__ + (e)))
+#define DDS_ERR_NO(err) -(DDS__FILE_ID__ + DDS__LINE__ + (err))
 
-static VDDS_INLINE dds_return_t handle_dds_errno(int e, const char * context, const char * file, int line, const char * msg, ...)
-{
-  dds_return_t ret;
-  if (e <= 0) {
-    ret = e;
-  } else {
-    va_list args;
-    va_start(args, msg);
-    OS_REPORT_FROM_FILE(OS_REPORT_ERROR, context, file, line, e, msg, args);
-    va_end(args);
-    ret = -(DDS__FILE_ID__ + DDS__LINE__ + (e));
-  }
+#define DDS_ERRNO_DEPRECATED(e) ((e <= 0) ? e : DDS_ERR_NO(e))
 
-  return ret;
-}
-#define DDS_ERRNO(e,msg,...) (handle_dds_errno(e,OS_FUNCTION,__FILE__,__LINE__,msg,##__VA_ARGS__))
+dds_return_t handle_dds_errno(int dds_error, int e, const char * context, const char * file, int line, const char * msg, ...);
+
+#define DDS_ERRNO(e,msg,...) (handle_dds_errno(DDS_ERR_NO(e),e,OS_FUNCTION,__FILE__,__LINE__,msg,##__VA_ARGS__))
 
 #if defined (__cplusplus)
 }

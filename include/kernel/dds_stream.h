@@ -1,7 +1,6 @@
 #ifndef _DDS_STREAM_H_
 #define _DDS_STREAM_H_
 
-// #include "kernel/dds_types.h"
 #include "ddsi/ddsi_ser.h"
 
 #if defined (__cplusplus)
@@ -44,7 +43,7 @@ void dds_stream_read_keyhash
   const dds_topic_descriptor_t * desc,
   const bool just_key
 );
-char * dds_stream_reuse_string 
+char * dds_stream_reuse_string
 (
   dds_stream_t * is,
   char * str,

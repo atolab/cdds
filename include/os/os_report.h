@@ -44,10 +44,6 @@ extern "C" {
 #define OS_CRITICAL(context,code,message,...) OS_REPORT(OS_REPORT_CRITICAL,(context),(code),(message),##__VA_ARGS__)
 #define OS_FATAL(context,code,message,...) OS_REPORT(OS_REPORT_FATAL,(context),(code),(message),##__VA_ARGS__)
 
-#define OS_REPORT_FROM_FILE(type,context,file,line,code,...) \
-(((type) >= os_reportVerbosity) ? os_report((type),(context),(file),(line),(code),__VA_ARGS__) : (void)0)
-
-
 #define OS_REPORT_STACK() \
 os_report_stack()
 
@@ -101,6 +97,15 @@ os_report_flush((condition), OS_FUNCTION, __FILE__, __LINE__)
               _In_ int32_t code,
               _In_z_ _Printf_format_string_ const char *format,
               ...) __attribute_format__((printf,6,7));
+
+    OSAPI_EXPORT void
+    os_report_message(
+              _In_ os_reportType type,
+              _In_z_ const char *context,
+              _In_z_ const char *path,
+              _In_ int32_t line,
+              _In_ int32_t code,
+              _In_z_ const char *message);
 
     /*****************************************
      * Report stack related functions
