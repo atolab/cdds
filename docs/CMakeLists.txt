@@ -64,6 +64,12 @@ endif()
 
 # Define custom commands for running sphinx-build for different docs builders
 set(docs_outputs "")
+
+if (COMPRESS_HTML_DOCS)
+  add_custom_target(create_html_tar ALL COMMAND
+    ${CMAKE_COMMAND} -E tar "zcvf" "VortexDDSHTML.tgz" "${CMAKE_CURRENT_BINARY_DIR}/html")
+endif()
+
 foreach(builder ${docs_builders})
   set(docs_builder_output "docs_${builder}_output")
   # Log stdout (not stderr) to a file instead of messing up build output
@@ -81,6 +87,9 @@ foreach(builder ${docs_builders})
     COMMENT "Running Sphinx for ${builder} output"
     VERBATIM
   )
+  if (COMPRESS_HTML_DOCS)
+    add_dependencies(create_html_tar docs)
+  endif()
 
   # Create a pdf from the latex builder output, by appending a latexmk command
   # TODO look into rinohtype as an alternative (don't bother with rst2pdf, it's no good)
@@ -108,11 +117,19 @@ endforeach()
 add_custom_target(docs ALL DEPENDS vddsc_docs ${docs_outputs})
 
 if (BUILD_DOCS_HTML)
-  install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
-    DESTINATION "${CMAKE_INSTALL_DOCDIR}"
-    COMPONENT dev)
+  if (COMPRESS_HTML_DOCS)
+    install(
+      FILES ${CMAKE_CURRENT_BINARY_DIR}/VortexDDSHTML.tgz
+      DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+      COMPONENT dev)
+  else()
+    install(
+      DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
+      DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+      COMPONENT dev)
+  endif()
 endif()
+
 if (BUILD_DOCS_PDF)
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/latex/${CMAKE_PROJECT_NAME}.pdf
