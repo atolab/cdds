@@ -25,10 +25,11 @@ if (TARGET ${CMAKE_PROJECT_NAME}::vddsc)
   set(doxy_conf_project "${CMAKE_PROJECT_NAME} C API Documentation")
   set(doxy_conf_outputdir "vddsc_api")
   set(doxy_conf_input "${CMAKE_SOURCE_DIR}/include/dds.h ${CMAKE_SOURCE_DIR}/include/dds")
+  set(docs_builder_log "doxygen-build.log")
   configure_file(Doxyfile.in Doxyfile @ONLY)
 
   add_custom_target(vddsc_docs
-    ${DOXYGEN_EXECUTABLE} Doxyfile
+    ${DOXYGEN_EXECUTABLE} Doxyfile > ${docs_builder_log}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Running Doxygen for API docs generation"
     VERBATIM
@@ -66,7 +67,8 @@ endif()
 set(docs_outputs "")
 
 add_custom_target(create_html_tar ALL COMMAND
-    ${CMAKE_COMMAND} -E tar "zcvf" "VortexDDS.tgz" "${CMAKE_CURRENT_BINARY_DIR}/html")
+    ${CMAKE_COMMAND} -E tar "zcvf" "VortexDDSHTML.tgz" "${CMAKE_CURRENT_BINARY_DIR}/html")
+
 
 foreach(builder ${docs_builders})
   set(docs_builder_output "docs_${builder}_output")
@@ -85,8 +87,7 @@ foreach(builder ${docs_builders})
     COMMENT "Running Sphinx for ${builder} output"
     VERBATIM
   )
-
-  if(builder STREQUAL html)
+  if (COMPRESS_HTML_DOCS)
     add_dependencies(create_html_tar docs)
   endif()
 
@@ -116,14 +117,17 @@ endforeach()
 add_custom_target(docs ALL DEPENDS vddsc_docs ${docs_outputs})
 
 if (BUILD_DOCS_HTML)
-  install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
-    DESTINATION "${CMAKE_INSTALL_DOCDIR}"
-    COMPONENT dev)
-  install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/VortexDDS.tgz
-    DESTINATION "${CMAKE_INSTALL_DOCDIR}"
-    COMPONENT dev)
+  if (COMPRESS_HTML_DOCS)
+    install(
+      FILES ${CMAKE_CURRENT_BINARY_DIR}/VortexDDSHTML.tgz
+      DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+      COMPONENT dev)
+  else()
+    install(
+      DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
+      DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+      COMPONENT dev)
+  endif()
 endif()
 
 if (BUILD_DOCS_PDF)
