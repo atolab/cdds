@@ -166,7 +166,7 @@ extern "C" {
      * @param validElements Out param to hold the number of interfaces found
      * whose detauils have been returned.
      * @return os_resultSuccess if 0 or more interfaces were found, os_resultFail if
-     * an error occured.
+     * an error occurred.
      * @see os_sockQueryInterfaces
      */
     OSAPI_EXPORT os_result

@@ -9,6 +9,7 @@
 #include <assert.h>
 #include "dds.h"
 #include "kernel/dds_listener.h"
+#include "kernel/dds_report.h"
 
 
 

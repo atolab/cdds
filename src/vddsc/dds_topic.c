@@ -12,6 +12,7 @@
 #include "kernel/q_osplser.h"
 #include "ddsi/q_ddsi_discovery.h"
 #include "os/os_atomics.h"
+#include "kernel/dds_report.h"
 
 
 #define DDS_TOPIC_STATUS_MASK                                    \
@@ -58,7 +59,7 @@ dds_topic_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_TOPIC_STATUS_MASK)) ?
-                     DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER) :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Bad parameter of mask") :
                      DDS_RETCODE_OK;
 }
 
@@ -109,13 +110,13 @@ dds_topic_status_cb(
             dds_topic_unlock(topic);
         }
     } else if (rc == DDS_RETCODE_NO_DATA) {
-        /* Nobody was interested through a listener (NO_DATA == NO_CALL): set the status. */
-        dds_entity_status_set((dds_entity*)topic, DDS_INCONSISTENT_TOPIC_STATUS);
-        /* Notify possible interested observers. */
-        dds_entity_status_signal((dds_entity*)topic);
+          /* Nobody was interested through a listener (NO_DATA == NO_CALL): set the status. */
+          dds_entity_status_set((dds_entity*)topic, DDS_INCONSISTENT_TOPIC_STATUS);
+          /* Notify possible interested observers. */
+          dds_entity_status_signal((dds_entity*)topic);
     } else {
-        /* Something went wrong up the hierarchy.
-         * Likely, a parent is in the process of being deleted. */
+          /* Something went wrong up the hierarchy.
+           * Likely, a parent is in the process of being deleted. */
     }
 }
 
@@ -149,19 +150,19 @@ dds_topic_free(
         dds_domainid_t domainid,
         struct sertopic *st)
 {
-  dds_domain *domain;
+    dds_domain *domain;
 
-  assert (st);
+    assert (st);
 
-  os_mutexLock (&dds_global.m_mutex);
-  domain = (dds_domain*) ut_avlLookup (&dds_domaintree_def, &dds_global.m_domains, &domainid);
-  if (domain != NULL)
-  {
-    ut_avlDelete (&dds_topictree_def, &domain->m_topics, st);
-  }
-  os_mutexUnlock (&dds_global.m_mutex);
-  st->status_cb_entity = NULL;
-  sertopic_free (st);
+    os_mutexLock (&dds_global.m_mutex);
+    domain = (dds_domain*) ut_avlLookup (&dds_domaintree_def, &dds_global.m_domains, &domainid);
+    if (domain != NULL)
+    {
+        ut_avlDelete (&dds_topictree_def, &domain->m_topics, st);
+    }
+    os_mutexUnlock (&dds_global.m_mutex);
+    st->status_cb_entity = NULL;
+    sertopic_free (st);
 }
 
 static void
@@ -169,12 +170,12 @@ dds_topic_add(
         dds_domainid_t id,
         sertopic_t st)
 {
-  dds_domain * dom;
-  os_mutexLock (&dds_global.m_mutex);
-  dom = dds_domain_find_locked (id);
-  assert (dom);
-  ut_avlInsert (&dds_topictree_def, &dom->m_topics, st);
-  os_mutexUnlock (&dds_global.m_mutex);
+    dds_domain * dom;
+    os_mutexLock (&dds_global.m_mutex);
+    dom = dds_domain_find_locked (id);
+    assert (dom);
+    ut_avlInsert (&dds_topictree_def, &dom->m_topics, st);
+    os_mutexUnlock (&dds_global.m_mutex);
 }
 
 _Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
@@ -188,6 +189,8 @@ dds_find_topic(
     sertopic_t st;
     dds_retcode_t rc;
 
+    DDS_REPORT_STACK();
+
     rc = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &p);
     if (rc == DDS_RETCODE_OK) {
         if (name) {
@@ -196,16 +199,17 @@ dds_find_topic(
                 dds_entity_add_ref (&st->status_cb_entity->m_entity);
                 tp = st->status_cb_entity->m_entity.m_hdl;
             } else {
-                rc = DDS_RETCODE_PRECONDITION_NOT_MET;
+                  tp = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Topic is not created yet");
             }
         } else {
-            rc = DDS_RETCODE_BAD_PARAMETER;
+              tp = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Name is not valid");
         }
         dds_entity_unlock(p);
     }
-    if (rc != DDS_RETCODE_OK) {
-        tp = DDS_ERRNO_DEPRECATED(rc);
+    else {
+        tp = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
+    DDS_REPORT_FLUSH(tp != DDS_RETCODE_OK);
     return tp;
 }
 
@@ -236,7 +240,7 @@ dds_topic_qos_validate(
             ret = dds_qos_validate_mutable_common(qos);
         }
     } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
+          ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Inconsistent policy");
     }
     return ret;
 }
@@ -252,7 +256,7 @@ dds_topic_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Changing QoS policies does not being supported");
         }
     }
     return ret;
@@ -272,7 +276,6 @@ dds_create_topic(
     char *key = NULL;
     sertopic_t st;
     const char *typename;
-    dds_return_t ret;
     dds_retcode_t rc;
     dds_entity *par;
     dds_topic *top;
@@ -284,34 +287,41 @@ dds_create_topic(
     const bool asleep = !vtime_awake_p (thr->vtime);
     uint32_t index;
 
+    DDS_REPORT_STACK();
+
     rc = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
     if (rc != DDS_RETCODE_OK) {
-        return DDS_ERRNO_DEPRECATED(rc);
+        hdl = DDS_ERRNO(rc, "Error occurred on locking entity");
+        goto lock_err;
     }
 
-    if ((desc == NULL) || (name == NULL)) {
-        dds_entity_unlock(par);
-        return DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    if (desc == NULL){
+        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic description has NULL value");
+        goto next_err;
+    }
+
+    if(name == NULL) {
+        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name has NULL value");
+        goto next_err;
     }
 
     if (!is_valid_name(name)) {
-        dds_entity_unlock(par);
-        return DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name is not valid");
+        goto next_err;
     }
 
     /* Validate qos */
     if (qos) {
-        ret = dds_topic_qos_validate (qos, false);
-        if (ret != DDS_RETCODE_OK) {
-          dds_entity_unlock(par);
-          return ret;
+        hdl = dds_topic_qos_validate (qos, false);
+        if (hdl != DDS_RETCODE_OK) {
+            goto next_err;
         }
     }
 
     /* Check if topic already exists with same name */
     if (dds_topic_lookup (par->m_domain, name)) {
-        dds_entity_unlock(par);
-        return DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
+        hdl = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Precondition not met");
+        goto next_err;
     }
 
     typename = desc->m_typename;
@@ -400,7 +410,10 @@ dds_create_topic(
     }
     nn_plist_fini (&plist);
 
+next_err:
     dds_entity_unlock(par);
+lock_err:
+    DDS_REPORT_FLUSH(hdl != DDS_RETCODE_OK);
     return hdl;
 }
 
@@ -409,8 +422,8 @@ dds_topic_chaining_filter(
         const void *sample,
         void *ctx)
 {
-  dds_topic_filter_fn realf = (dds_topic_filter_fn)ctx;
-  return realf (sample);
+    dds_topic_filter_fn realf = (dds_topic_filter_fn)ctx;
+    return realf (sample);
 }
 
 static void
@@ -420,23 +433,23 @@ dds_topic_mod_filter(
         void **ctx,
         bool set)
 {
-  dds_topic *t;
-  if (dds_topic_lock(topic, &t) == DDS_RETCODE_OK) {
-      if (set) {
-        t->m_stopic->filter_fn = *filter;
-        t->m_stopic->filter_ctx = *ctx;
+    dds_topic *t;
+    if (dds_topic_lock(topic, &t) == DDS_RETCODE_OK) {
+        if (set) {
+            t->m_stopic->filter_fn = *filter;
+            t->m_stopic->filter_ctx = *ctx;
 
-        /* Create sample for read filtering */
+            /* Create sample for read filtering */
 
-        if (t->m_stopic->filter_sample == NULL) {
-          t->m_stopic->filter_sample = dds_alloc (t->m_descriptor->m_size);
+            if (t->m_stopic->filter_sample == NULL) {
+                t->m_stopic->filter_sample = dds_alloc (t->m_descriptor->m_size);
+            }
+        } else {
+              *filter = t->m_stopic->filter_fn;
+              *ctx = t->m_stopic->filter_ctx;
         }
-      } else {
-        *filter = t->m_stopic->filter_fn;
-        *ctx = t->m_stopic->filter_ctx;
-      }
-      dds_topic_unlock(t);
-  }
+        dds_topic_unlock(t);
+    }
 }
 
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
@@ -445,9 +458,9 @@ dds_topic_set_filter(
         dds_entity_t topic,
         dds_topic_filter_fn filter)
 {
-  dds_topic_intern_filter_fn chaining = dds_topic_chaining_filter;
-  void *realf = (void *)filter;
-  dds_topic_mod_filter (topic, &chaining, &realf, true);
+    dds_topic_intern_filter_fn chaining = dds_topic_chaining_filter;
+    void *realf = (void *)filter;
+    dds_topic_mod_filter (topic, &chaining, &realf, true);
 }
 
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
@@ -455,11 +468,11 @@ dds_topic_filter_fn
 dds_topic_get_filter(
         dds_entity_t topic)
 {
-  dds_topic_intern_filter_fn filter;
-  void *ctx;
-  dds_topic_mod_filter (topic, &filter, &ctx, false);
-  return
-    (filter == dds_topic_chaining_filter) ? (dds_topic_filter_fn)ctx : NULL;
+    dds_topic_intern_filter_fn filter;
+    void *ctx;
+    dds_topic_mod_filter (topic, &filter, &ctx, false);
+    return
+      (filter == dds_topic_chaining_filter) ? (dds_topic_filter_fn)ctx : NULL;
 }
 
 void
@@ -498,7 +511,7 @@ dds_get_name(
             dds_topic_unlock(t);
         }
     }
-    return DDS_ERRNO_DEPRECATED(rc);
+    return DDS_ERRNO(rc, "Topic does not have a name");
 }
 
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
@@ -518,7 +531,7 @@ dds_get_type_name(
             dds_topic_unlock(t);
         }
     }
-    return DDS_ERRNO_DEPRECATED(rc);
+    return DDS_ERRNO(rc, "Topic does not have a type name");
 }
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 dds_return_t
@@ -541,5 +554,5 @@ dds_get_inconsistent_topic_status(
       }
       dds_topic_unlock(t);
     }
-    return DDS_ERRNO_DEPRECATED(rc);
+    return DDS_ERRNO(rc, "Topic does not have an inconsistent topic status");
 }
