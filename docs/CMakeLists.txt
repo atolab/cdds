@@ -117,6 +117,7 @@ add_custom_target(docs ALL DEPENDS vddsc_docs ${docs_outputs})
 
 if (BUILD_DOCS_HTML)
   install(
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
     FILES ${CMAKE_CURRENT_BINARY_DIR}/VortexDDS.tgz
     DESTINATION "${CMAKE_INSTALL_DOCDIR}"
     COMPONENT dev)
