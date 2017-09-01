@@ -66,9 +66,10 @@ endif()
 # Define custom commands for running sphinx-build for different docs builders
 set(docs_outputs "")
 
-add_custom_target(create_html_tar ALL COMMAND
+if (COMPRESS_HTML_DOCS)
+  add_custom_target(create_html_tar ALL COMMAND
     ${CMAKE_COMMAND} -E tar "zcvf" "VortexDDSHTML.tgz" "${CMAKE_CURRENT_BINARY_DIR}/html")
-
+endif()
 
 foreach(builder ${docs_builders})
   set(docs_builder_output "docs_${builder}_output")
