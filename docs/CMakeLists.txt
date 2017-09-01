@@ -118,10 +118,14 @@ add_custom_target(docs ALL DEPENDS vddsc_docs ${docs_outputs})
 if (BUILD_DOCS_HTML)
   install(
     DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
+    DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+    COMPONENT dev)
+  install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/VortexDDS.tgz
     DESTINATION "${CMAKE_INSTALL_DOCDIR}"
     COMPONENT dev)
 endif()
+
 if (BUILD_DOCS_PDF)
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/latex/${CMAKE_PROJECT_NAME}.pdf
