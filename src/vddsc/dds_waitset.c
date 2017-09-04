@@ -448,9 +448,10 @@ dds_waitset_wait(
     if (reltimeout >= 0) {
         dds_time_t tnow = dds_time();
         dds_time_t abstimeout = (DDS_INFINITY - reltimeout <= tnow) ? DDS_NEVER : (tnow + reltimeout);
-        return dds_waitset_wait_impl(waitset, xs, nxs, abstimeout, tnow);
+        ret = dds_waitset_wait_impl(waitset, xs, nxs, abstimeout, tnow);
+    } else{
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Timed out");
     }
-    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Timed out");
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
