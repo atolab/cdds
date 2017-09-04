@@ -80,13 +80,12 @@ dds_create_publisher(
     dds_entity_t hdl;
     dds_qos_t * new_qos = NULL;
     dds_return_t ret;
-    dds_retcode_t rc;
 
     DDS_REPORT_STACK();
 
-    rc = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
-    if (rc != DDS_RETCODE_OK) {
-        return DDS_ERRNO(rc, "Error occurred on locking participant");
+    ret = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
+    if (ret != DDS_RETCODE_OK) {
+        return DDS_ERRNO(ret, "Error occurred on locking participant");
     }
 
     /* Validate qos */
