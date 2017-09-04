@@ -858,7 +858,7 @@ static int handle_AckNack (struct receiver_state *rst, nn_etime_t tnow, const Ac
       rn->seq = wr->seq;
     }
     ut_avlAugmentUpdate (&wr_readers_treedef, rn);
-    NN_WARNING2 ("writer %x:%x:%x:%x considering reader %x:%x:%x:%x responsive again\n", PGUID (wr->e.guid), PGUID (rn->prd_guid));
+    NN_WARNING ("writer %x:%x:%x:%x considering reader %x:%x:%x:%x responsive again\n", PGUID (wr->e.guid), PGUID (rn->prd_guid));
   }
 
   /* Second, the NACK bits (literally, that is). To do so, attempt to
@@ -1891,7 +1891,7 @@ static serdata_t extract_sample_from_data
     /* No message => error out */
     const struct proxy_writer *pwr = sampleinfo->pwr;
     nn_guid_t guid = pwr ? pwr->e.guid : null_guid; /* can't be null _yet_, but that might change some day */
-    NN_WARNING7
+    NN_WARNING
     (
       "data(application, vendor %u.%u): %x:%x:%x:%x #%"PRId64": deserialization %s/%s failed (%s)\n",
       sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
@@ -2004,7 +2004,7 @@ static int deliver_user_data (const struct nn_rsample_info *sampleinfo, const st
     src.bufsz = NN_RDATA_PAYLOAD_OFF (fragchain) - qos_offset;
     if (nn_plist_init_frommsg (&qos, NULL, PP_STATUSINFO | PP_KEYHASH | PP_COHERENT_SET | PP_PRISMTECH_EOTINFO, 0, &src) < 0)
     {
-      NN_WARNING4 ("data(application, vendor %u.%u): %x:%x:%x:%x #%"PRId64": invalid inline qos\n",
+      NN_WARNING ("data(application, vendor %u.%u): %x:%x:%x:%x #%"PRId64": invalid inline qos\n",
                    src.vendorid.id[0], src.vendorid.id[1], PGUID (pwr->e.guid), sampleinfo->seq);
       return 0;
     }
@@ -2344,7 +2344,7 @@ static void drop_oversize (struct receiver_state *rst, struct nn_rmsg *rmsg, con
        cause periodic warnings. */
     if (msg->writerId.u == NN_ENTITYID_SPDP_BUILTIN_PARTICIPANT_WRITER)
     {
-      NN_WARNING5 ("dropping oversize (%u > %u) SPDP sample %"PRId64" from remote writer %x:%x:%x:%x\n",
+      NN_WARNING ("dropping oversize (%u > %u) SPDP sample %"PRId64" from remote writer %x:%x:%x:%x\n",
                    sampleinfo->size, config.max_sample_size, sampleinfo->seq,
                    PGUIDPREFIX (rst->src_guid_prefix), msg->writerId.u);
     }
@@ -2374,7 +2374,7 @@ static void drop_oversize (struct receiver_state *rst, struct nn_rmsg *rmsg, con
     {
       const char *tname = pwr->c.topic ? pwr->c.topic->name : "(null)";
       const char *ttname = pwr->c.topic ? pwr->c.topic->typename : "(null)";
-      NN_WARNING7 ("dropping oversize (%u > %u) sample %"PRId64" from remote writer %x:%x:%x:%x %s/%s\n",
+      NN_WARNING ("dropping oversize (%u > %u) sample %"PRId64" from remote writer %x:%x:%x:%x %s/%s\n",
                    sampleinfo->size, config.max_sample_size, sampleinfo->seq,
                    PGUIDPREFIX (rst->src_guid_prefix), msg->writerId.u,
                    tname, ttname);
@@ -2448,7 +2448,7 @@ static int handle_DataFrag (struct receiver_state *rst, nn_etime_t tnow, struct 
     uint32_t begin, endp1;
     if (msg->x.writerId.u == NN_ENTITYID_SPDP_BUILTIN_PARTICIPANT_WRITER)
     {
-      NN_WARNING5 ("DATAFRAG(%x:%x:%x:%x #%"PRId64" -> %x:%x:%x:%x) - fragmented builtin data not yet supported\n",
+      NN_WARNING ("DATAFRAG(%x:%x:%x:%x #%"PRId64" -> %x:%x:%x:%x) - fragmented builtin data not yet supported\n",
                    PGUIDPREFIX (rst->src_guid_prefix), msg->x.writerId.u, fromSN (msg->x.writerSN),
                    PGUIDPREFIX (rst->dst_guid_prefix), msg->x.readerId.u);
       return 1;
@@ -2533,7 +2533,7 @@ static void malformed_packet_received_nosubmsg
   if (pos < sizeof (tmp))
     pos += (size_t) snprintf (tmp + pos, sizeof (tmp) - pos, "> (note: maybe partially bswap'd)");
   assert (pos < sizeof (tmp));
-  NN_WARNING1 ("%s\n", tmp);
+  NN_WARNING ("%s\n", tmp);
 }
 
 static void malformed_packet_received
@@ -2640,7 +2640,7 @@ static void malformed_packet_received
       break;
   }
 
-  NN_WARNING1 ("%s\n", tmp);
+  NN_WARNING ("%s\n", tmp);
 }
 
 static struct receiver_state *rst_cow_if_needed (int *rst_live, struct nn_rmsg *rmsg, struct receiver_state *rst)

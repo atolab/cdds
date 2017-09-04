@@ -83,7 +83,7 @@ static int make_uc_sockets (uint32_t * pdisc, uint32_t * pdata, int ppid)
   }
   else
   {
-    NN_FATAL1 ("make_uc_sockets: invalid participant index %d\n", ppid);
+    NN_FATAL ("make_uc_sockets: invalid participant index %d\n", ppid);
     return -1;
   }
 
@@ -136,7 +136,7 @@ static int set_recvips (void)
 #if OS_SOCKET_HAS_IPV6
       if (gv.ipv6_link_local)
       {
-        NN_WARNING0 ("DDSI2EService/General/MulticastRecvNetworkInterfaceAddresses: using 'preferred' instead of 'all' because of IPv6 link-local address\n");
+        NN_WARNING ("DDSI2EService/General/MulticastRecvNetworkInterfaceAddresses: using 'preferred' instead of 'all' because of IPv6 link-local address\n");
         gv.recvips_mode = RECVIPS_MODE_PREFERRED;
       }
       else
@@ -150,7 +150,7 @@ static int set_recvips (void)
 #if OS_SOCKET_HAS_IPV6
       if (gv.ipv6_link_local)
       {
-        NN_ERROR0 ("DDSI2EService/General/MulticastRecvNetworkInterfaceAddresses: 'any' is unsupported in combination with an IPv6 link-local address\n");
+        NN_ERROR ("DDSI2EService/General/MulticastRecvNetworkInterfaceAddresses: 'any' is unsupported in combination with an IPv6 link-local address\n");
         return -1;
       }
 #endif
@@ -176,7 +176,7 @@ static int set_recvips (void)
         os_sockaddr_storage parsedaddr;
         if (!os_sockaddrStringToAddress (config.networkRecvAddressStrings[i], (os_sockaddr *) &parsedaddr, !config.useIpv6))
         {
-          NN_ERROR1 ("%s: not a valid IP address\n", config.networkRecvAddressStrings[i]);
+          NN_ERROR ("%s: not a valid IP address\n", config.networkRecvAddressStrings[i]);
           return -1;
         }
         if (os_sockaddrIPAddressEqual ((os_sockaddr *) &gv.interfaces[gv.selected_interface].addr, (os_sockaddr *) &parsedaddr))
@@ -187,7 +187,7 @@ static int set_recvips (void)
       gv.recvips_mode = have_selected ? RECVIPS_MODE_PREFERRED : RECVIPS_MODE_NONE;
       if (have_others)
       {
-        NN_WARNING0 ("DDSI2EService/General/MulticastRecvNetworkInterfaceAddresses: using 'preferred' because of IPv6 local address\n");
+        NN_WARNING ("DDSI2EService/General/MulticastRecvNetworkInterfaceAddresses: using 'preferred' because of IPv6 local address\n");
       }
     }
 #endif
@@ -201,7 +201,7 @@ static int set_recvips (void)
         os_sockaddr_storage parsedaddr;
         if (!os_sockaddrStringToAddress (config.networkRecvAddressStrings[i], (os_sockaddr *) &parsedaddr, !config.useIpv6))
         {
-          NN_ERROR1 ("%s: not a valid IP address\n", config.networkRecvAddressStrings[i]);
+          NN_ERROR ("%s: not a valid IP address\n", config.networkRecvAddressStrings[i]);
           return -1;
         }
         for (j = 0; j < gv.n_interfaces; j++)
@@ -211,7 +211,7 @@ static int set_recvips (void)
         }
         if (j == gv.n_interfaces)
         {
-          NN_ERROR1 ("No interface bound to requested address '%s'\n",
+          NN_ERROR ("No interface bound to requested address '%s'\n",
                      config.networkRecvAddressStrings[i]);
           return -1;
         }
@@ -241,18 +241,18 @@ static int string_to_default_locator (nn_locator_t *loc, const char *string, uin
   }
   else if (!os_sockaddrStringToAddress (string, (os_sockaddr *) &addr, !config.useIpv6))
   {
-    NN_ERROR2 ("%s: not a valid IP address (%s)\n", string, tag);
+    NN_ERROR ("%s: not a valid IP address (%s)\n", string, tag);
     return -1;
   }
   else if (!config.useIpv6 && addr.ss_family != AF_INET)
   {
-    NN_ERROR2 ("%s: not a valid IPv4 address (%s)\n", string, tag);
+    NN_ERROR ("%s: not a valid IPv4 address (%s)\n", string, tag);
     return -1;
   }
 #if OS_SOCKET_HAS_IPV6
   else if (config.useIpv6 && addr.ss_family != AF_INET6)
   {
-    NN_ERROR2 ("%s: not a valid IPv6 address (%s)\n", string, tag);
+    NN_ERROR ("%s: not a valid IPv6 address (%s)\n", string, tag);
     return -1;
   }
 #endif
@@ -269,7 +269,7 @@ static int string_to_default_locator (nn_locator_t *loc, const char *string, uin
       const int ismc = is_unspec_locator (loc) || is_mcaddr (loc);
       if (mc != ismc)
       {
-        NN_ERROR4 ("%s: %s %s be %s or a multicast address\n", string, tag, rel, unspecstr);
+        NN_ERROR ("%s: %s %s be %s or a multicast address\n", string, tag, rel, unspecstr);
         return -1;
       }
     }
@@ -302,7 +302,7 @@ static int set_spdp_address (void)
 #ifdef DDSI_INCLUDE_SSM
   if (is_ssm_mcaddr (&gv.loc_spdp_mc))
   {
-    NN_ERROR1 ("%s: SPDP address may not be an SSM address\n", config.spdpMulticastAddressString);
+    NN_ERROR ("%s: SPDP address may not be an SSM address\n", config.spdpMulticastAddressString);
     return -1;
   }
 #endif
@@ -343,7 +343,7 @@ static int set_ext_address_and_mask (void)
   else if ((rc = string_to_default_locator (&loc, config.externalAddressString, 0, 0, "external address")) < 0)
     return rc;
   else if (rc == 0) {
-    NN_WARNING1 ("Ignoring ExternalNetworkAddress %s\n", config.externalAddressString);
+    NN_WARNING ("Ignoring ExternalNetworkAddress %s\n", config.externalAddressString);
     gv.extip = gv.ownip;
   } else {
     nn_loc_to_address (&gv.extip, &loc);
@@ -353,7 +353,7 @@ static int set_ext_address_and_mask (void)
     gv.extmask.s_addr = 0;
   else if (config.useIpv6)
   {
-    NN_ERROR0 ("external network masks only supported in IPv4 mode\n");
+    NN_ERROR ("external network masks only supported in IPv4 mode\n");
     return -1;
   }
   else
@@ -407,11 +407,11 @@ static int check_thread_properties (void)
       }
       if (chanprefix[i] == NULL)
       {
-        NN_ERROR1 ("config: DDSI2Service/Threads/Thread[@name=\"%s\"]: unknown thread\n", e->name);
+        NN_ERROR ("config: DDSI2Service/Threads/Thread[@name=\"%s\"]: unknown thread\n", e->name);
         ok = 0;
       }
 #else
-      NN_ERROR1 ("config: DDSI2Service/Threads/Thread[@name=\"%s\"]: unknown thread\n", e->name);
+      NN_ERROR ("config: DDSI2Service/Threads/Thread[@name=\"%s\"]: unknown thread\n", e->name);
       ok = 0;
 #endif /* DDSI_INCLUDE_NETWORK_CHANNELS */
     }
@@ -443,7 +443,7 @@ int rtps_config_open (void)
     }
     else if ((config.tracingOutputFile = fopen (config.tracingOutputFileName, config.tracingAppendToFile ? "a" : "w")) == NULL)
     {
-      NN_ERROR1 ("%s: cannot open for writing\n", config.tracingOutputFileName);
+      NN_ERROR ("%s: cannot open for writing\n", config.tracingOutputFileName);
       status = 0;
     }
     else
@@ -476,7 +476,7 @@ int rtps_config_prep (struct cfgst *cfgst)
       config.whc_init_highwater_mark.value < config.whc_lowwater_mark ||
       config.whc_init_highwater_mark.value > config.whc_highwater_mark)
   {
-    NN_ERROR0 ("Invalid watermark settings\n");
+    NN_ERROR ("Invalid watermark settings\n");
     goto err_config_late_error;
   }
 
@@ -488,7 +488,7 @@ int rtps_config_prep (struct cfgst *cfgst)
        inherited by readers/writers), but in many sockets mode each
        participant has its own socket, and therefore unique address
        set */
-    NN_ERROR0 ("Minimal built-in endpoint set mode and ManySocketsMode are incompatible\n");
+    NN_ERROR ("Minimal built-in endpoint set mode and ManySocketsMode are incompatible\n");
     goto err_config_late_error;
   }
 
@@ -514,7 +514,7 @@ int rtps_config_prep (struct cfgst *cfgst)
     {
       double max = (double) config.auxiliary_bandwidth_limit * ((double) config.nack_delay / 1e9);
       if (max < 0)
-        NN_FATAL1 ("AuxiliaryBandwidthLimit * NackDelay = %g bytes is insane\n", max);
+        NN_FATAL ("AuxiliaryBandwidthLimit * NackDelay = %g bytes is insane\n", max);
       if (max > 2147483647.0)
         config.max_queued_rexmit_bytes = 2147483647u;
       else
@@ -528,7 +528,7 @@ int rtps_config_prep (struct cfgst *cfgst)
   /* Verify thread properties refer to defined threads */
   if (!check_thread_properties ())
   {
-    NN_ERROR0 ("Could not initialise configuration\n");
+    NN_ERROR ("Could not initialise configuration\n");
     goto err_config_late_error;
   }
 
@@ -539,7 +539,7 @@ int rtps_config_prep (struct cfgst *cfgst)
    have chosen the latter. */
   if (config.useIpv6)
   {
-    NN_ERROR0 ("IPv6 addressing requested but not supported on this platform\n");
+    NN_ERROR ("IPv6 addressing requested but not supported on this platform\n");
     goto err_config_late_error;
   }
 #endif
@@ -564,7 +564,7 @@ int rtps_config_prep (struct cfgst *cfgst)
 
       if (config.useIpv6 && chptr->diffserv_field != 0)
       {
-        NN_ERROR1 ("channel %s specifies IPv4 DiffServ settings which is incompatible with IPv6 use\n",
+        NN_ERROR ("channel %s specifies IPv4 DiffServ settings which is incompatible with IPv6 use\n",
                    chptr->name);
         error = 1;
       }
@@ -588,7 +588,7 @@ int rtps_config_prep (struct cfgst *cfgst)
    printed */
   if (! rtps_config_open ())
   {
-    NN_ERROR0 ("Could not initialise configuration\n");
+    NN_ERROR ("Could not initialise configuration\n");
     goto err_config_late_error;
   }
 
@@ -681,7 +681,7 @@ static int joinleave_spdp_defmcip (int dojoin)
   unref_addrset (as);
   if (arg.errcount)
   {
-    NN_ERROR2 ("rtps_init: failed to join multicast groups for domain %d participant %d\n", config.domainId, config.participantIndex);
+    NN_ERROR ("rtps_init: failed to join multicast groups for domain %d participant %d\n", config.domainId, config.participantIndex);
     return -1;
   }
   return 0;
@@ -752,7 +752,7 @@ int rtps_init (void)
 
   if (!find_own_ip (config.networkAddressString))
   {
-    NN_ERROR0 ("No network interface selected\n");
+    NN_ERROR ("No network interface selected\n");
     goto err_find_own_ip;
   }
   if (config.allowMulticast)
@@ -765,7 +765,7 @@ int rtps_init (void)
     }
     if (i == gv.n_interfaces)
     {
-      NN_WARNING0 ("No multicast capable interfaces: disabling multicast\n");
+      NN_WARNING ("No multicast capable interfaces: disabling multicast\n");
       config.suppress_spdp_multicast = 1;
       config.allowMulticast = AMC_FALSE;
     }
@@ -794,7 +794,7 @@ int rtps_init (void)
   }
 
   if (gv.ownip.ss_family != gv.extip.ss_family)
-    NN_FATAL0 ("mismatch between network address kinds\n");
+    NN_FATAL ("mismatch between network address kinds\n");
 
   gv.startup_mode = (config.startup_mode_duration > 0) ? 1 : 0;
   nn_log (LC_CONFIG, "startup-mode: %s\n", gv.startup_mode ? "enabled" : "disabled");
@@ -852,7 +852,7 @@ int rtps_init (void)
     {
       if (make_uc_sockets (&port_disc_uc, &port_data_uc, config.participantIndex) < 0)
       {
-        NN_ERROR2 ("rtps_init: failed to create unicast sockets for domain %d participant %d\n", config.domainId, config.participantIndex);
+        NN_ERROR ("rtps_init: failed to create unicast sockets for domain %d participant %d\n", config.domainId, config.participantIndex);
         goto err_unicast_sockets;
       }
     }
@@ -870,13 +870,13 @@ int rtps_init (void)
           continue;
         else /* Oops! */
         {
-          NN_ERROR2 ("rtps_init: failed to create unicast sockets for domain %d participant %d\n", config.domainId, ppid);
+          NN_ERROR ("rtps_init: failed to create unicast sockets for domain %d participant %d\n", config.domainId, ppid);
           goto err_unicast_sockets;
         }
       }
       if (ppid > config.maxAutoParticipantIndex)
       {
-        NN_ERROR1 ("rtps_init: failed to find a free participant index for domain %d\n", config.domainId);
+        NN_ERROR ("rtps_init: failed to find a free participant index for domain %d\n", config.domainId);
         goto err_unicast_sockets;
       }
       config.participantIndex = ppid;
@@ -953,7 +953,7 @@ int rtps_init (void)
       gv.listener = ddsi_factory_create_listener (gv.m_factory, config.tcp_port, NULL);
       if (gv.listener == NULL || ddsi_listener_listen (gv.listener) != 0)
       {
-        NN_ERROR1 ("Failed to create %s listener\n", gv.m_factory->m_typename);
+        NN_ERROR ("Failed to create %s listener\n", gv.m_factory->m_typename);
         if (gv.listener)
           ddsi_listener_free(gv.listener);
         goto err_mc_conn;
@@ -993,7 +993,7 @@ int rtps_init (void)
         ddsi_tran_free_qos (qos);
         if (chptr->transmit_conn == NULL)
         {
-          NN_FATAL1 ("failed to create transmit connection for channel %s\n", chptr->name);
+          NN_FATAL ("failed to create transmit connection for channel %s\n", chptr->name);
         }
       }
       else
@@ -1066,7 +1066,7 @@ int rtps_init (void)
      it before it does anything with it. */
   if ((gv.rbufpool = nn_rbufpool_new (config.rbuf_size, config.rmsg_chunk_size)) == NULL)
   {
-    NN_FATAL0 ("rtps_init: can't allocate receive buffer pool\n");
+    NN_FATAL ("rtps_init: can't allocate receive buffer pool\n");
   }
 
   gv.rtps_keepgoing = 1;
@@ -1077,7 +1077,7 @@ int rtps_init (void)
     gv.builtins_dqueue = nn_dqueue_new ("builtins", config.delivery_queue_maxsamples, builtins_dqueue_handler, NULL);
     if ((r = xeventq_start (gv.xevents, NULL)) < 0)
     {
-      NN_FATAL1 ("failed to start global event processing thread (%d)\n", r);
+      NN_FATAL ("failed to start global event processing thread (%d)\n", r);
     }
   }
 
@@ -1095,7 +1095,7 @@ int rtps_init (void)
       {
         int r;
         if ((r = xeventq_start (chptr->evq, chptr->name)) < 0)
-          NN_FATAL2 ("failed to start event processing thread for channel '%s' (%d)\n", chptr->name, r);
+          NN_FATAL ("failed to start event processing thread for channel '%s' (%d)\n", chptr->name, r);
       }
       chptr = chptr->next;
     }

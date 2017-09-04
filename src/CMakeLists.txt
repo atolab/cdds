@@ -50,7 +50,8 @@ target_include_directories(vddsc PUBLIC
 target_include_directories(vddsc PRIVATE
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/>")
 
-configure_file("${CMAKE_SOURCE_DIR}/include/vddsc/vddsc_version.h.in" "include/vddsc/vddsc_version.h")
+string(TOUPPER ${CMAKE_PROJECT_NAME} VortexDDS_PROJECTNAME_CAPS)
+configure_file("${CMAKE_SOURCE_DIR}/include/vddsc/vddsc_project.h.in" "include/vddsc/vddsc_project.h")
 
 # Create a pseudo-target that other targets (i.e. examples, tests) can depend
 # on and can also be provided as import-target by a package-file when building

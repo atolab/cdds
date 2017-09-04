@@ -2051,7 +2051,7 @@ static uint32_t rhc_get_cond_trigger (struct rhc_instance * const inst, const dd
       m = m && !INST_IS_EMPTY (inst);
       break;
     default:
-      NN_FATAL1 ("update_readconditions: sample_states invalid: %x\n", c->m_sample_states);
+      NN_FATAL ("update_readconditions: sample_states invalid: %x\n", c->m_sample_states);
   }
   return m ? 1 : 0;
 }
@@ -2169,7 +2169,7 @@ static bool update_conditions_locked
         m_post = m_post && (post->has_read + post->has_not_read);
         break;
       default:
-        NN_FATAL1 ("update_readconditions: sample_states invalid: %x\n", iter->m_sample_states);
+        NN_FATAL ("update_readconditions: sample_states invalid: %x\n", iter->m_sample_states);
     }
 
     TRACE (("  cond %p: ", (void *) iter));
