@@ -9,6 +9,10 @@
 #include "ddsi/q_ephash.h"
 #include "ddsi/q_config.h"
 #include "ddsi/q_entity.h"
+#include "kernel/dds_report.h"
+#include "ddsi/q_radmin.h"
+#include <string.h>
+
 
 #if OS_ATOMIC64_SUPPORT
 typedef os_atomic_uint64_t fake_seq_t;
@@ -28,18 +32,20 @@ dds_write(
     dds_retcode_t rc;
     dds_writer *wr;
 
+    DDS_REPORT_STACK();
+
     if (data != NULL) {
         rc = dds_writer_lock(writer, &wr);
         if (rc == DDS_RETCODE_OK) {
             ret = dds_write_impl(wr, data, dds_time(), 0);
             dds_writer_unlock(wr);
         } else {
-            ret = DDS_ERRNO_DEPRECATED(rc);
+            ret = DDS_ERRNO(rc, "Error occurred on locking entity");
         }
     } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+      ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided data is not properly given");
     }
-
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -50,7 +56,7 @@ dds_writecdr(
         const void *cdr,
         size_t size)
 {
-    int ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    dds_return_t ret;
     dds_retcode_t rc;
     dds_writer *wr;
     if (cdr != NULL) {
@@ -59,8 +65,10 @@ dds_writecdr(
             ret = dds_writecdr_impl (wr, cdr, size, dds_time (), 0);
             dds_writer_unlock(wr);
         } else {
-            ret = DDS_ERRNO_DEPRECATED(rc);
+            ret = DDS_ERRNO(rc, "Error occurred on locking writer");
         }
+    } else{
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Given cdr has NULL value");
     }
     return ret;
 }
@@ -76,23 +84,22 @@ dds_write_ts(
     dds_retcode_t rc;
     dds_writer *wr;
 
+    DDS_REPORT_STACK();
+
     if ((data != NULL) && (timestamp >= 0)) {
         rc = dds_writer_lock(writer, &wr);
         if (rc == DDS_RETCODE_OK) {
             ret = dds_write_impl(wr, data, timestamp, 0);
             dds_writer_unlock(wr);
         } else {
-            ret = DDS_ERRNO_DEPRECATED(rc);
+            ret = DDS_ERRNO(rc, "Error occurred on locking writer");
         }
     } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+      ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Either data has NULL value or provided timestamp is smaller than zero");
     }
-
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
-
-#include "ddsi/q_radmin.h"
-#include <string.h>
 
 static void
 init_sampleinfo(
@@ -137,7 +144,7 @@ deliver_locally(
                     stored = (ddsi_plugin.rhc_store_fn) (rdary[i]->rhc, &sampleinfo, payload, tk);
                     if (!stored) {
                         if (max_block_ms <= 0) {
-                            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_TIMEOUT);
+                            ret = DDS_ERRNO(DDS_RETCODE_TIMEOUT, "Timed out");
                         } else {
                             dds_sleepfor(DDS_MSECS(DDS_HEADBANG_TIMEOUT_MS));
                         }
@@ -201,7 +208,7 @@ dds_write_impl(
     serdata_t d;
 
     if (data == NULL) {
-        return DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided data has given with NULL value");
     }
 
     /* Check for topic filter */
@@ -238,9 +245,9 @@ dds_write_impl(
         }
         ret = DDS_RETCODE_OK;
     } else if (w_rc == ERR_TIMEOUT) {
-        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_TIMEOUT);
+        ret = DDS_ERRNO(DDS_RETCODE_TIMEOUT, "Timed out");
     } else {
-        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_ERROR);
+        ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Write action has a value that is smaller than zero");
     }
     os_mutexUnlock (&writer->m_call_lock);
 
@@ -319,9 +326,9 @@ dds_writecdr_impl(
         }
         ret = DDS_RETCODE_OK;
     } else if (w_rc == ERR_TIMEOUT) {
-        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_TIMEOUT);
+        ret = DDS_ERRNO(DDS_RETCODE_TIMEOUT, "Timed out");
     } else {
-        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_ERROR);
+        ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Timed out");
     }
     os_mutexUnlock (&wr->m_call_lock);
 

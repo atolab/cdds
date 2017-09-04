@@ -393,7 +393,7 @@ Theory((dds_instance_handle_t handle), vddsc_unregister_instance_ih, invalid_han
 {
     dds_return_t ret;
     ret = dds_unregister_instance_ih(g_writer, handle);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
 
@@ -496,7 +496,7 @@ Theory((dds_instance_handle_t handle), vddsc_unregister_instance_ih_ts, invalid_
 {
     dds_return_t ret;
     ret = dds_unregister_instance_ih_ts(g_writer, handle, g_present);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
 
