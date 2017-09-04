@@ -76,7 +76,7 @@ if(WIN32 AND NOT UNIX)
   endif()
   mark_as_advanced(__arch)
 
-  set(CPACK_GENERATOR "WIX;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
+  set(CPACK_GENERATOR "WIX;ZIP;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
 
   set(CPACK_PACKAGE_FILE_NAME "VortexDDS-${CPACK_PACKAGE_VERSION}-${__arch}")
   set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_VENDOR}/DDS")
@@ -108,7 +108,7 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
       set(__arch "i686")
     endif()
 
-    set(CPACK_GENERATOR "RPM;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
+    set(CPACK_GENERATOR "RPM;TGZ;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
 
     set(CPACK_RPM_COMPONENT_INSTALL ON)
     # FIXME: The package file name must be updated to include the distribution.
@@ -126,7 +126,7 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
       set(__arch "i386")
     endif()
 
-    set(CPACK_GENERATOR "DEB;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
+    set(CPACK_GENERATOR "DEB;TGZ;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
 
     set(CPACK_DEBIAN_LIB_PACKAGE_NAME "vortex-dds")
     set(CPACK_DEBIAN_LIB_FILE_NAME "${CPACK_DEBIAN_LIB_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${__arch}.deb")
