@@ -102,7 +102,7 @@ dds_participant_qos_validate(
             ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Participant has no immutable QoS");
         }
     } else {
-          ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Inconsistent policy");
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Inconsistent policy");
     }
     return ret;
 }

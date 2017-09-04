@@ -357,7 +357,7 @@ dds_waitset_attach(
                 e = NULL;
             }
         } else {
-              e = (dds_entity*)ws;
+            e = (dds_entity*)ws;
         }
 
         /* This will fail if given entity is already attached (or deleted). */

@@ -115,8 +115,8 @@ dds_topic_status_cb(
           /* Notify possible interested observers. */
           dds_entity_status_signal((dds_entity*)topic);
     } else {
-          /* Something went wrong up the hierarchy.
-           * Likely, a parent is in the process of being deleted. */
+        /* Something went wrong up the hierarchy.
+         * Likely, a parent is in the process of being deleted. */
     }
 }
 
@@ -199,15 +199,15 @@ dds_find_topic(
                 dds_entity_add_ref (&st->status_cb_entity->m_entity);
                 tp = st->status_cb_entity->m_entity.m_hdl;
             } else {
-                  tp = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Topic is not created yet");
+                tp = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Topic is not created yet");
             }
         } else {
-              tp = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Name is not valid");
+            tp = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Name is not valid");
         }
         dds_entity_unlock(p);
     }
     else {
-        tp = DDS_ERRNO(rc, "Error occurred on locking entity");
+      tp = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
     DDS_REPORT_FLUSH(tp != DDS_RETCODE_OK);
     return tp;
@@ -240,7 +240,7 @@ dds_topic_qos_validate(
             ret = dds_qos_validate_mutable_common(qos);
         }
     } else {
-          ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Inconsistent policy");
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Inconsistent policy");
     }
     return ret;
 }
@@ -445,8 +445,8 @@ dds_topic_mod_filter(
                 t->m_stopic->filter_sample = dds_alloc (t->m_descriptor->m_size);
             }
         } else {
-              *filter = t->m_stopic->filter_fn;
-              *ctx = t->m_stopic->filter_ctx;
+            *filter = t->m_stopic->filter_fn;
+            *ctx = t->m_stopic->filter_ctx;
         }
         dds_topic_unlock(t);
     }
