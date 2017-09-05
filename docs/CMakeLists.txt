@@ -7,9 +7,8 @@ set(BUILD_DOCS ON CACHE BOOL "Build docs of prerequisite can be met; otherwise d
 
 set(JENKINS_BASE_URI "http://jenkins.prismtech.com:8080/")
 set(JENKINS_DOCS_JOB_NAME "marcels-ChameleonDocumentationLinux64bitTemp")
-set(VORTEXDDS_PDF_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/_CPack_Packages/Linux/TGZ/${CMAKE_PROJECT_NAME}-${PROJECT_VERSION}-Linux/share/doc/${CMAKE_PROJECT_NAME}/${CMAKE_PROJECT_NAME}.pdf")
-set(VORTEXDDS_HTML_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/_CPack_Packages/Linux/TGZ/${CMAKE_PROJECT_NAME}-${PROJECT_VERSION}-Linux/share/doc/${CMAKE_PROJECT_NAME}/${CMAKE_PROJECT_NAME}HTML.tgz")
-
+set(VORTEXDDS_PDF_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}.pdf")
+set(VORTEXDDS_HTML_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}HTML.tar.gz")
 
 find_program(SPHINX_EXECUTABLE NAMES sphinx-build DOC "Sphinx documentation builder")
 if (NOT SPHINX_EXECUTABLE)
@@ -74,7 +73,7 @@ if (BUILD_DOCS)
   set(docs_outputs "")
 
   add_custom_target(create_html_tar ALL COMMAND
-    ${CMAKE_COMMAND} -E tar "zcf" "${CMAKE_PROJECT_NAME}HTML.tgz" "${CMAKE_CURRENT_BINARY_DIR}/html")
+    ${CMAKE_COMMAND} -E tar "zcf" "${CMAKE_PROJECT_NAME}HTML.tar.gz" "${CMAKE_CURRENT_BINARY_DIR}/html")
 
   foreach(builder ${docs_builders})
     set(docs_builder_output "docs_${builder}_output")
@@ -137,21 +136,21 @@ else()
     # Just try to download the docs straight away.
     file(DOWNLOAD
       ${VORTEXDDS_HTML_URI}
-      ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}HTML.tgz)
+      ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz)
     file(DOWNLOAD
       ${VORTEXDDS_PDF_URI}
       ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.pdf)
   endif()
 
   add_custom_target(unzip_html_tar ALL COMMAND
-    ${CMAKE_COMMAND} -E tar "zxf" "${CMAKE_PROJECT_NAME}HTML.tgz" .)
+    ${CMAKE_COMMAND} -E tar "zxf" "${CMAKE_PROJECT_NAME}HTML.tar.gz" .)
 
   if (WGET_EXECUTABLE)
     add_custom_target(downloader ALL COMMAND
         ${WGET_EXECUTABLE}
         ${VORTEXDDS_HTML_URI}
         ${VORTEXDDS_PDF_URI}
-      COMMENT "Downloading ${CMAKE_PROJECT_NAME}HTML.tgz from download location Jenkins"
+      COMMENT "Downloading ${CMAKE_PROJECT_NAME}HTML.tar.gz from download location Jenkins"
       VERBATIM
     )
     add_dependencies(unzip_html_tar downloader)
@@ -161,19 +160,22 @@ else()
 endif()
 
 # Installation
-if (BUILD_DOCS)
+if(BUILD_DOCS)
   install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}HTML.tgz
-    DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../"
     COMPONENT dev)
-else()
   install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
-    DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.pdf
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../"
     COMPONENT dev)
 endif()
 
 install(
+  DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
+  DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+  COMPONENT dev)
+install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.pdf
   DESTINATION "${CMAKE_INSTALL_DOCDIR}"
-    COMPONENT dev)
+  COMPONENT dev)
