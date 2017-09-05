@@ -4,6 +4,7 @@
 #include "kernel/dds_qos.h"
 #include "kernel/dds_report.h"
 #include "ddsi/q_entity.h"
+#include "kernel/dds_report.h"
 
 #define DDS_SUBSCRIBER_STATUS_MASK                               \
                         DDS_DATA_ON_READERS_STATUS
@@ -16,7 +17,7 @@ dds_subscriber_instance_hdl(
     assert(e);
     assert(i);
     /* TODO: Get/generate proper handle. */
-    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Generating proper handle is not supported yet");
 }
 
 static dds_return_t
@@ -37,10 +38,10 @@ dds_subscriber_qos_validate(
     if (consistent) {
         if (enabled && (qos->present & QP_PRESENTATION)) {
             /* TODO: Improve/check immutable check. */
-            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
+            ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Immutable check on QoS policy is not supported yet");
         }
     } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
+      ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Provided QoS has an inconsistent policy");
     }
     return ret;
 }
@@ -55,7 +56,7 @@ dds_subscriber_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "DDSI does not support changing QoS policies yet");
         }
     }
     return ret;
@@ -66,7 +67,7 @@ dds_subscriber_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_SUBSCRIBER_STATUS_MASK)) ?
-                     DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER) :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided mask is not given properly") :
                      DDS_RETCODE_OK;
 }
 
@@ -104,12 +105,14 @@ dds_create_subscriber(
     dds_entity_t hdl;
     dds_qos_t * new_qos = NULL;
     dds_return_t ret;
-    int32_t errnr;
+    dds_retcode_t errnr;
 
+    DDS_REPORT_STACK();
 
     errnr = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
     if (errnr != DDS_RETCODE_OK) {
-        return DDS_ERRNO_DEPRECATED(errnr);
+        hdl = DDS_ERRNO(errnr, "Error occurred on locking participant");
+        return hdl;
     }
 
     /* Validate qos */
@@ -117,7 +120,8 @@ dds_create_subscriber(
         ret = dds_subscriber_qos_validate(qos, false);
         if (ret != DDS_RETCODE_OK) {
             dds_entity_unlock(par);
-            return ret;
+            hdl = DDS_ERRNO(ret, "Subscriber Qos is not valid");
+            return hdl;
         }
         new_qos = dds_qos_create();
         /* Only returns failure when one of the qos args is NULL, which
@@ -134,6 +138,7 @@ dds_create_subscriber(
     sub->m_entity.m_deriver.get_instance_hdl = dds_subscriber_instance_hdl;
     dds_entity_unlock(par);
 
+    DDS_REPORT_FLUSH(hdl != DDS_RETCODE_OK);
     return hdl;
 }
 
@@ -144,7 +149,10 @@ dds_notify_readers(
 {
     dds_entity *iter;
     dds_entity *sub;
-    int32_t errnr;
+    dds_retcode_t errnr;
+    dds_return_t ret;
+
+    DDS_REPORT_STACK();
 
     errnr = dds_entity_lock(subscriber, DDS_KIND_SUBSCRIBER, &sub);
     if (errnr == DDS_RETCODE_OK) {
@@ -158,8 +166,9 @@ dds_notify_readers(
         }
         dds_entity_unlock(sub);
     }
-
-    return DDS_ERRNO_DEPRECATED(errnr);
+    ret = DDS_ERRNO(errnr, "Error occurred on locking subscriber");
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK );
+    return ret;
 }
 
 dds_return_t
@@ -167,7 +176,7 @@ dds_subscriber_begin_coherent(
         _In_ dds_entity_t e)
 {
     /* TODO: CHAM-124 Currently unsupported. */
-    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Using coherency to get a coherent data set is not currently being supported");
 }
 
 dds_return_t
@@ -175,5 +184,5 @@ dds_subscriber_end_coherent(
         _In_ dds_entity_t e)
 {
     /* TODO: CHAM-124 Currently unsupported. */
-    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
+	return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Using coherency to get a coherent data set is not currently being supported");
 }

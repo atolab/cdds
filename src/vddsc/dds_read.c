@@ -7,6 +7,7 @@
 #include "ddsi/q_thread.h"
 #include "ddsi/q_ephash.h"
 #include "ddsi/q_entity.h"
+#include "kernel/dds_report.h"
 
 
 static _Check_return_ dds_retcode_t
@@ -85,19 +86,19 @@ dds_read_impl(
     thread_state_awake (thr);
   }
   if(buf == NULL){
-    rc = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The provided buffer has NULL value");
   }
   if(si == NULL){
-    rc = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided pointer to an array of dds_sample_info_t has NULL value");
   }
   if(maxs == 0){
-    rc = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The maximum number of samples to read is zero");
   }
   if(bufsz == 0){
-    rc = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The size of buffer provided is zero");
   }
   if(bufsz < maxs){
-    rc = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The provided size of buffer is smaller than the maximum number of samples to read");
   }
   if (rc == DDS_RETCODE_OK) {
     rc = dds_read_lock(reader_or_condition, &rd, &cond, only_reader);
@@ -168,7 +169,7 @@ dds_read_impl(
       }
       dds_read_unlock(rd, cond);
   } else {
-      ret = DDS_ERRNO_DEPRECATED(rc);
+      ret = DDS_ERRNO(rc, "Error occurred");
   }
 
   if (asleep)
@@ -229,7 +230,7 @@ dds_readcdr_impl(
       }
       dds_read_unlock(rd, cond);
   } else {
-      ret = DDS_ERRNO_DEPRECATED(rc);
+      ret = DDS_ERRNO(rc, "Error occurred on locking entity");
   }
 
   if (asleep)
@@ -337,6 +338,9 @@ dds_read_instance(
         _In_ dds_instance_handle_t handle)
 {
     dds_return_t ret;
+
+    DDS_REPORT_STACK();
+
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -347,8 +351,9 @@ dds_read_instance(
         }
         ret = dds_read_impl(false, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
     } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
+      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
     }
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -364,6 +369,9 @@ dds_read_instance_wl(
         _In_ dds_instance_handle_t handle)
 {
     dds_return_t ret;
+
+    DDS_REPORT_STACK();
+
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -374,8 +382,9 @@ dds_read_instance_wl(
         }
         ret = dds_read_impl(false, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
     } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
+      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
     }
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -394,6 +403,9 @@ dds_read_instance_mask(
         _In_ uint32_t mask)
 {
     dds_return_t ret;
+
+    DDS_REPORT_STACK();
+
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -404,8 +416,9 @@ dds_read_instance_mask(
         }
         ret = dds_read_impl(false, rd_or_cnd, buf, bufsz, maxs, si, mask, handle, lock, false);
     } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
+      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
     }
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -423,6 +436,9 @@ dds_read_instance_mask_wl(
         _In_ uint32_t mask)
 {
     dds_return_t ret;
+
+    DDS_REPORT_STACK();
+
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -433,8 +449,9 @@ dds_read_instance_mask_wl(
         }
         ret = dds_read_impl(false, rd_or_cnd, buf, maxs, maxs, si, mask, handle, lock, false);
     } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
+      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
     }
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -576,6 +593,9 @@ dds_take_instance(
         _In_ dds_instance_handle_t handle)
 {
     dds_return_t ret;
+
+    DDS_REPORT_STACK();
+
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -586,8 +606,9 @@ dds_take_instance(
         }
         ret = dds_read_impl(true, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
     } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
+      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
     }
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -603,6 +624,9 @@ dds_take_instance_wl(
         _In_ dds_instance_handle_t handle)
 {
     dds_return_t ret;
+
+    DDS_REPORT_STACK();
+
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -613,8 +637,9 @@ dds_take_instance_wl(
         }
         ret = dds_read_impl(true, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
     } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
+        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
     }
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -633,6 +658,9 @@ dds_take_instance_mask(
         _In_ uint32_t mask)
 {
     dds_return_t ret;
+
+    DDS_REPORT_STACK();
+
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -643,8 +671,9 @@ dds_take_instance_mask(
         }
         ret = dds_read_impl(true, rd_or_cnd, buf, bufsz, maxs, si, mask, handle, lock, false);
     } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
+        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
     }
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -662,6 +691,9 @@ dds_take_instance_mask_wl(
         _In_ uint32_t mask)
 {
     dds_return_t ret;
+
+    DDS_REPORT_STACK();
+
     if (handle != DDS_HANDLE_NIL) {
         bool lock = true;
         if (maxs == DDS_READ_WITHOUT_LOCK) {
@@ -672,8 +704,9 @@ dds_take_instance_mask_wl(
         }
         ret = dds_read_impl(true, rd_or_cnd, buf, maxs, maxs, si, mask, handle, lock, false);
     } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_PRECONDITION_NOT_MET);
+        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
     }
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -712,9 +745,17 @@ dds_return_loan(
     const dds_topic_descriptor_t * desc;
     dds_reader *rd;
     dds_readcond *cond;
+    dds_return_t ret = DDS_RETCODE_OK;
 
-    if (!buf || (*buf == NULL && bufsz > 0)) {
-        return DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+    DDS_REPORT_STACK();
+
+    if (!buf ) {
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided buffer array is not given properly");
+        return ret;
+    }
+    if(*buf == NULL && bufsz > 0){
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provider buffer array has NULL size");
+        return ret;
     }
 
     rc = dds_read_lock(reader_or_condition, &rd, &cond, false);
@@ -738,6 +779,7 @@ dds_return_loan(
 
         dds_read_unlock(rd, cond);
     }
-
-    return DDS_ERRNO_DEPRECATED(rc);
+    ret = DDS_ERRNO(rc, "Error occurred");
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    return ret;
 }
