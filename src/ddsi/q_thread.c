@@ -186,7 +186,7 @@ static int find_free_slot (_In_z_ const char *name)
       break;
   }
   if (cand == -1)
-    NN_FATAL1 ("create_thread: %s: no free slot\n", name ? name : "(anon)");
+    NN_FATAL ("create_thread: %s: no free slot\n", name ? name : "(anon)");
   return cand;
 }
 
@@ -269,7 +269,7 @@ struct thread_state1 *create_thread (_In_z_ const char *name, _In_ uint32_t (*f)
   if (os_threadCreate (&tid, name, &tattr, (os_threadRoutine)&create_thread_wrapper, ctxt) != os_resultSuccess)
   {
     ts1->state = THREAD_STATE_ZERO;
-    NN_FATAL1 ("create_thread: %s: os_threadCreate failed\n", name);
+    NN_FATAL ("create_thread: %s: os_threadCreate failed\n", name);
     goto fatal;
   }
   nn_log (LC_INFO, "started new thread 0x%"PRIxMAX" : %s\n", os_threadIdToInteger (tid), name);

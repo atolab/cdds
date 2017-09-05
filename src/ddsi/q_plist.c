@@ -1342,7 +1342,7 @@ static int do_guid (nn_guid_t *dst, uint64_t *present, uint64_t fl, int (*valid)
     if (fl == PP_PARTICIPANT_GUID && vendor_is_twinoaks (dd->vendorid) &&
         dst->entityid.u == 0 && ! NN_STRICT_P)
     {
-      NN_WARNING6 ("plist(vendor %u.%u): rewriting invalid participant guid %x:%x:%x:%x\n",
+      NN_WARNING ("plist(vendor %u.%u): rewriting invalid participant guid %x:%x:%x:%x\n",
                    dd->vendorid.id[0], dd->vendorid.id[1],
                    dst->prefix.u[0], dst->prefix.u[1], dst->prefix.u[2], dst->entityid.u);
       dst->entityid.u = NN_ENTITYID_PARTICIPANT;
@@ -2357,7 +2357,7 @@ int nn_plist_init_frommsg
 #endif
       break;
     default:
-      NN_WARNING3 ("plist(vendor %u.%u): unknown encoding (%d)\n",
+      NN_WARNING ("plist(vendor %u.%u): unknown encoding (%d)\n",
                    src->vendorid.id[0], src->vendorid.id[1], src->encoding);
       return ERR_INVALID;
   }
@@ -2399,14 +2399,14 @@ int nn_plist_init_frommsg
     }
     if (length > src->bufsz - sizeof (*par) - (unsigned) (pl - src->buf))
     {
-      NN_WARNING3 ("plist(vendor %u.%u): parameter length %u out of bounds\n",
+      NN_WARNING ("plist(vendor %u.%u): parameter length %u out of bounds\n",
                    src->vendorid.id[0], src->vendorid.id[1], length);
       nn_plist_fini (dest);
       return ERR_INVALID;
     }
     if ((length % 4) != 0) /* DDSI 9.4.2.11 */
     {
-      NN_WARNING3 ("plist(vendor %u.%u): parameter length %u mod 4 != 0\n",
+      NN_WARNING ("plist(vendor %u.%u): parameter length %u mod 4 != 0\n",
                    src->vendorid.id[0], src->vendorid.id[1], length);
       nn_plist_fini (dest);
       return ERR_INVALID;
@@ -2432,7 +2432,7 @@ int nn_plist_init_frommsg
   }
   /* If we get here, that means we reached the end of the message
      without encountering a sentinel. That is an error */
-  NN_WARNING2 ("plist(vendor %u.%u): invalid parameter list: sentinel missing\n",
+  NN_WARNING ("plist(vendor %u.%u): invalid parameter list: sentinel missing\n",
                src->vendorid.id[0], src->vendorid.id[1]);
   nn_plist_fini (dest);
   return ERR_INVALID;
@@ -2465,7 +2465,7 @@ unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn
 #endif
       break;
     default:
-      NN_WARNING3 ("plist(vendor %u.%u): quickscan: unknown encoding (%d)\n",
+      NN_WARNING ("plist(vendor %u.%u): quickscan: unknown encoding (%d)\n",
                    src->vendorid.id[0], src->vendorid.id[1], src->encoding);
       return NULL;
   }
@@ -2483,13 +2483,13 @@ unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn
       return (unsigned char *) pl;
     if (length > src->bufsz - (size_t)(pl - src->buf))
     {
-      NN_WARNING3 ("plist(vendor %u.%u): quickscan: parameter length %u out of bounds\n",
+      NN_WARNING ("plist(vendor %u.%u): quickscan: parameter length %u out of bounds\n",
                   src->vendorid.id[0], src->vendorid.id[1], length);
       return NULL;
     }
     if ((length % 4) != 0) /* DDSI 9.4.2.11 */
     {
-      NN_WARNING3 ("plist(vendor %u.%u): quickscan: parameter length %u mod 4 != 0\n",
+      NN_WARNING ("plist(vendor %u.%u): quickscan: parameter length %u mod 4 != 0\n",
                    src->vendorid.id[0], src->vendorid.id[1], length);
       return NULL;
     }
@@ -2535,7 +2535,7 @@ unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn
   }
   /* If we get here, that means we reached the end of the message
      without encountering a sentinel. That is an error */
-  NN_WARNING2 ("plist(vendor %u.%u): quickscan: invalid parameter list: sentinel missing\n",
+  NN_WARNING ("plist(vendor %u.%u): quickscan: invalid parameter list: sentinel missing\n",
                src->vendorid.id[0], src->vendorid.id[1]);
   return NULL;
 }

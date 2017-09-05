@@ -395,7 +395,7 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
     else
     {
       os_mutexUnlock (&gv.participant_set_lock);
-      NN_ERROR2 ("new_participant(%x:%x:%x:%x, %x) failed: max participants reached\n", PGUID (*ppguid), flags);
+      NN_ERROR ("new_participant(%x:%x:%x:%x, %x) failed: max participants reached\n", PGUID (*ppguid), flags);
       return ERR_OUT_OF_IDS;
     }
   }
@@ -849,7 +849,7 @@ struct writer *get_builtin_writer (const struct participant *pp, unsigned entity
       bes_mask = NN_DISC_BUILTIN_ENDPOINT_TOPIC_ANNOUNCER;
       break;
     default:
-      NN_FATAL1 ("get_builtin_writer called with entityid %x\n", entityid);
+      NN_FATAL ("get_builtin_writer called with entityid %x\n", entityid);
       return NULL;
   }
 
@@ -3861,7 +3861,7 @@ int new_proxy_group (const struct nn_guid *guid, const struct v_gid_s *gid, cons
         is_sub = 1;
         break;
       default:
-        NN_WARNING1 ("new_proxy_group: unrecognised entityid: %x\n", guid->entityid.u);
+        NN_WARNING ("new_proxy_group: unrecognised entityid: %x\n", guid->entityid.u);
         return ERR_INVALID_DATA;
     }
     os_mutexLock (&proxypp->e.lock);
@@ -3992,7 +3992,7 @@ int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, 
 
   if ((proxypp = ephash_lookup_proxy_participant_guid (ppguid)) == NULL)
   {
-    NN_WARNING1 ("new_proxy_writer(%x:%x:%x:%x): proxy participant unknown\n", PGUID (*guid));
+    NN_WARNING ("new_proxy_writer(%x:%x:%x:%x): proxy participant unknown\n", PGUID (*guid));
     return ERR_UNKNOWN_ENTITY;
   }
 
@@ -4215,7 +4215,7 @@ int new_proxy_reader (const struct nn_guid *ppguid, const struct nn_guid *guid, 
 
   if ((proxypp = ephash_lookup_proxy_participant_guid (ppguid)) == NULL)
   {
-    NN_WARNING1 ("new_proxy_reader(%x:%x:%x:%x): proxy participant unknown\n", PGUID (*guid));
+    NN_WARNING ("new_proxy_reader(%x:%x:%x:%x): proxy participant unknown\n", PGUID (*guid));
     return ERR_UNKNOWN_ENTITY;
   }
 
