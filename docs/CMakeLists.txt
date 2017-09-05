@@ -3,17 +3,22 @@
 # Perhaps we should also consider options for building subset of all docs.
 # When a certain doc is related to a target, no option is needed; you can simply check if the target exists
 # (i.e. if a target 'vddsc' exists, build vddsc api docs). And possibly make the target definition dependent on an option.
-set(BUILD_DOCS ON CACHE BOOL "Build docs of prerequisite can be met; otherwise download them.")
+
+option(BUILD_DOCS, "Enable generation of docs." OFF)
+# Above option should only be set when building master on a designated Jenkins job; every other
+# Jenkins job/development machine can download them from there.
 
 set(JENKINS_BASE_URI "http://jenkins.prismtech.com:8080/")
 set(JENKINS_DOCS_JOB_NAME "marcels-ChameleonDocumentationLinux64bitTemp")
 set(VORTEXDDS_PDF_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}.pdf")
 set(VORTEXDDS_HTML_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}HTML.tar.gz")
 
-find_program(SPHINX_EXECUTABLE NAMES sphinx-build DOC "Sphinx documentation builder")
-if (NOT SPHINX_EXECUTABLE)
-  set(BUILD_DOCS off)
-  message("-- Unable to find sphinx-build executable -> download documentation")
+if (BUILD_DOCS)
+  find_program(SPHINX_EXECUTABLE NAMES sphinx-build DOC "Sphinx documentation builder")
+  if (NOT SPHINX_EXECUTABLE)
+    set(BUILD_DOCS off)
+    message("-- Unable to find sphinx-build executable -> download documentation")
+  endif()
 endif()
 
 if (BUILD_DOCS)
