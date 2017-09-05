@@ -91,6 +91,10 @@ dds_delete_impl(
         _In_ dds_entity_t entity,
         _In_ bool keep_if_explicit);
 
+const char *
+dds__entity_kind_str(
+        _In_ dds_entity_t e);
+
 #if defined (__cplusplus)
 }
 #endif

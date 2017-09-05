@@ -13,6 +13,8 @@
 #error "DDS_ENTITY_KIND_MASK != UT_HANDLE_KIND_MASK"
 #endif
 
+
+
 static void
 dds_entity_observers_delete(
         _In_ dds_entity *observed);
@@ -249,7 +251,13 @@ dds_entity_init(
         e->m_hdllink = ut_handle_get_link(e->m_hdl);
         assert(e->m_hdllink);
     } else{
-        DDS_ERROR(e->m_hdl, "Error occurred on handling entity");
+        if (e->m_hdl == UT_HANDLE_OUT_OF_RESOURCES) {
+            e->m_hdl = DDS_ERRNO(DDS_RETCODE_OUT_OF_RESOURCES, "Can not create new entity; too many where created previously.");
+        } else if (e->m_hdl == UT_HANDLE_NOT_INITALIZED) {
+            e->m_hdl = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "VortexDDS is not yet initialized. Please create a participant before executing an other method.");
+        } else {
+            e->m_hdl = DDS_ERRNO(DDS_RETCODE_ERROR, "An internal error has occurred.");
+        }
     }
 
     /* An ut_handle_t is directly used as dds_entity_t. */
@@ -336,7 +344,7 @@ dds_delete_impl(
          * is released. It is possible that this last release will be done by a thread
          * that was kicked during the close(). */
         if (ut_handle_delete(e->m_hdl, e->m_hdllink, timeout) != UT_HANDLE_OK) {
-            ret =  DDS_ERRNO(DDS_RETCODE_TIMEOUT, "Time out");
+            ret =  DDS_ERRNO(DDS_RETCODE_TIMEOUT, "Entity deletion did not release resources.");
         }
     }
 
@@ -448,6 +456,7 @@ dds_get_children(
     dds_entity *e;
     dds_retcode_t rc;
     dds_return_t ret;
+    dds_entity* iter;
 
     DDS_REPORT_STACK();
 
@@ -462,30 +471,28 @@ dds_get_children(
     }
 
     rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-    if (rc == DDS_RETCODE_OK) {
-        dds_entity* iter;
-        /* Initialize first child to satisfy SAL. */
-        if (children) {
-            children[0] = 0;
-        }
-        ret = 0;
-        iter = e->m_children;
-        while (iter) {
-            if ((size_t)ret < size) { /*To fix the warning of signed/unsigned mismatch, type casting is done for the variable 'ret'*/
-                children[ret] = iter->m_hdl;
-                dds_set_explicit(iter->m_hdl);
-            }
-            ret++;
-            iter = iter->m_next;
-        }
-        dds_entity_unlock(e);
-    } else {
+    if (rc != DDS_RETCODE_OK) {
         ret = DDS_ERRNO(rc, "Error on locking entity");
         goto err;
     }
+    /* Initialize first child to satisfy SAL. */
+    if (children) {
+        children[0] = 0;
+    }
+    ret = 0;
+    iter = e->m_children;
+    while (iter) {
+        if ((size_t)ret < size) { /*To fix the warning of signed/unsigned mismatch, type casting is done for the variable 'ret'*/
+            children[ret] = iter->m_hdl;
+            dds_set_explicit(iter->m_hdl);
+        }
+        ret++;
+        iter = iter->m_next;
+    }
+    dds_entity_unlock(e);
 
 err:
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -559,7 +566,7 @@ dds_set_qos(
             ret = DDS_ERRNO(rc, "Error occurred on locking entity");
         }
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Qos provided with NULL value");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
     }
     DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
     return ret;
@@ -676,14 +683,14 @@ dds_get_status_changes(
                 *status = e->m_trigger;
                 ret =  DDS_RETCODE_OK;
             } else {
-                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, "Entity status is not valid");
+                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, "This entity does not maintain a status.");
             }
             dds_entity_unlock(e);
         } else {
             ret = DDS_ERRNO(rc, "Error on locking entity");
         }
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Entity status is NULL");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument status is NULL");
     }
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
@@ -710,14 +717,14 @@ dds_get_enabled_status(
                 *status = (e->m_status_enable & ~DDS_INTERNAL_STATUS_MASK);
                 ret = DDS_RETCODE_OK;
             } else {
-                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, "Entity status is not valid");
+                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, "This entity does not maintain a status.");
             }
             dds_entity_unlock(e);
         } else {
             ret = DDS_ERRNO(rc, "Error on locking entity");
         }
     } else{
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Entity status is NULL");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument status is NULL");
     }
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
@@ -751,7 +758,7 @@ dds_set_enabled_status(
                 }
             }
         } else {
-            ret = DDS_ERRNO (DDS_RETCODE_ILLEGAL_OPERATION, "Entity status is not valid");
+            ret = DDS_ERRNO (DDS_RETCODE_ILLEGAL_OPERATION, "This entity does not maintain a status.");
         }
         dds_entity_unlock(e);
     } else {
@@ -787,14 +794,14 @@ dds_read_status(
                     *status = e->m_trigger & mask;
                 }
             } else {
-                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, "Entity is not valid");
+                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, "This entity does not maintain a status.");
             }
             dds_entity_unlock(e);
         } else {
             ret = DDS_ERRNO(rc, "Error on locking entity");
         }
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Entity status is NULL");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument status is NULL");
     }
     DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
     return ret;
@@ -829,14 +836,14 @@ dds_take_status(
                     e->m_trigger &= ~mask;
                 }
             } else {
-                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, "Entity status is not valid");
+                ret = DDS_ERRNO(DDS_RETCODE_ILLEGAL_OPERATION, "This entity does not maintain a status.");
             }
             dds_entity_unlock(e);
         } else {
             ret = DDS_ERRNO(rc, "Error occurred on locking entity");
         }
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Entity status has NULL value");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument status is NUL");
     }
     DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
     return ret;
@@ -913,7 +920,7 @@ dds_get_instance_handle(
             ret = DDS_ERRNO(rc, "Error on locking entity");
         }
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Instance handle is given null");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Instance handle argument is NULL");
     }
     DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
     return ret;
@@ -939,26 +946,26 @@ dds_valid_hdl(
         }
         else if(utr == UT_HANDLE_UNEQUAL_KIND){
             rc = DDS_RETCODE_ILLEGAL_OPERATION;
-            DDS_ERROR(rc, "Illegal operation");
+            DDS_ERROR(-(rc), "Given entity type (%s) can not perform this operation.", dds__entity_kind_str(hdl));
         }
         else if(utr == UT_HANDLE_INVALID){
             rc = DDS_RETCODE_BAD_PARAMETER;
-            DDS_ERROR(rc, "Invalid handle");
+            DDS_ERROR(rc, "Given entity is invalid.");
         }
         else if(utr == UT_HANDLE_DELETED){
             rc = DDS_RETCODE_ALREADY_DELETED;
-            DDS_ERROR(rc , "Given handle is already deleted");
+            DDS_ERROR(rc, "Given entity is already deleted.");
         }
         else if(utr == UT_HANDLE_CLOSED){
             rc = DDS_RETCODE_ALREADY_DELETED;
-            DDS_ERROR(rc, "Given handle is already deleted");
+            DDS_ERROR(rc, "Given entity is already deleted.");
         }
         else {
-          rc = DDS_RETCODE_ERROR;
-          DDS_ERROR(rc, "An error occurred");
+            rc = DDS_RETCODE_ERROR;
+            DDS_ERROR(rc, "An internal error occurred.");
         }
     } else{
-        DDS_ERROR(hdl, "Given handle has a negative value");
+        DDS_ERROR(hdl, "Given entity was not properly created.");
     }
     DDS_REPORT_FLUSH( rc != DDS_RETCODE_OK);
     return rc;
@@ -990,23 +997,23 @@ dds_entity_lock(
         }
         else if(utr == UT_HANDLE_UNEQUAL_KIND){
             rc = DDS_RETCODE_ILLEGAL_OPERATION;
-            DDS_ERROR(rc, "Illegal operation");
+            DDS_ERROR(rc, "Given entity type (%s) can not perform this operation.", dds__entity_kind_str(hdl));
         }
         else if(utr == UT_HANDLE_INVALID){
             rc = DDS_RETCODE_BAD_PARAMETER;
-            DDS_ERROR(rc, "Invalid handle");
+            DDS_ERROR(rc, "Given entity is invalid");
         }
         else if(utr == UT_HANDLE_DELETED){
             rc = DDS_RETCODE_ALREADY_DELETED;
-            DDS_ERROR(rc , "Given handle is already deleted");
+            DDS_ERROR(rc , "Given entity is already deleted");
         }
         else if(utr == UT_HANDLE_CLOSED){
             rc = DDS_RETCODE_ALREADY_DELETED;
-            DDS_ERROR(rc, "Given handle is already deleted");
+            DDS_ERROR(rc, "Given entity is already deleted");
         }
         else {
-          rc = DDS_RETCODE_ERROR;
-          DDS_ERROR(rc, "An error occurred");
+            rc = DDS_RETCODE_ERROR;
+            DDS_ERROR(rc, "An internal error occurred");
         }
     }
     DDS_REPORT_FLUSH( rc != DDS_RETCODE_OK);
@@ -1230,5 +1237,25 @@ dds_set_explicit(
         dds_entity_unlock(e);
     } else {
         DDS_ERRNO(rc, "Error occurred on locking entity");
+    }
+}
+
+const char *
+dds__entity_kind_str(_In_ dds_entity_t e)
+{
+    if(e <= 0) {
+        return "(ERROR)";
+    }
+    switch(e & DDS_ENTITY_KIND_MASK) {
+        case DDS_KIND_TOPIC:        return "Topic";
+        case DDS_KIND_PARTICIPANT:  return "Participant";
+        case DDS_KIND_READER:       return "Reader";
+        case DDS_KIND_WRITER:       return "Writer";
+        case DDS_KIND_SUBSCRIBER:   return "Subscriber";
+        case DDS_KIND_PUBLISHER:    return "Publisher";
+        case DDS_KIND_COND_READ:    return "ReadCondition";
+        case DDS_KIND_COND_QUERY:   return "QueryCondition";
+        case DDS_KIND_WAITSET:      return "WaitSet";
+        default:                    return "(INVALID_ENTITY)";
     }
 }

@@ -59,7 +59,7 @@ dds_topic_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_TOPIC_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Bad parameter of mask") :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Invalid status mask") :
                      DDS_RETCODE_OK;
 }
 
@@ -110,10 +110,10 @@ dds_topic_status_cb(
             dds_topic_unlock(topic);
         }
     } else if (rc == DDS_RETCODE_NO_DATA) {
-          /* Nobody was interested through a listener (NO_DATA == NO_CALL): set the status. */
-          dds_entity_status_set((dds_entity*)topic, DDS_INCONSISTENT_TOPIC_STATUS);
-          /* Notify possible interested observers. */
-          dds_entity_status_signal((dds_entity*)topic);
+        /* Nobody was interested through a listener (NO_DATA == NO_CALL): set the status. */
+        dds_entity_status_set((dds_entity*)topic, DDS_INCONSISTENT_TOPIC_STATUS);
+        /* Notify possible interested observers. */
+        dds_entity_status_signal((dds_entity*)topic);
     } else {
         /* Something went wrong up the hierarchy.
          * Likely, a parent is in the process of being deleted. */
@@ -125,24 +125,22 @@ dds_topic_lookup(
         dds_domain *domain,
         const char *name)
 {
-  sertopic_t st = NULL;
-  ut_avlIter_t iter;
+    sertopic_t st = NULL;
+    ut_avlIter_t iter;
 
-  assert (domain);
-  assert (name);
+    assert (domain);
+    assert (name);
 
-  os_mutexLock (&dds_global.m_mutex);
-  st = ut_avlIterFirst (&dds_topictree_def, &domain->m_topics, &iter);
-  while (st)
-  {
-    if (strcmp (st->name, name) == 0)
-    {
-      break;
+    os_mutexLock (&dds_global.m_mutex);
+    st = ut_avlIterFirst (&dds_topictree_def, &domain->m_topics, &iter);
+    while (st) {
+        if (strcmp (st->name, name) == 0) {
+            break;
+        }
+        st = ut_avlIterNext (&iter);
     }
-    st = ut_avlIterNext (&iter);
-  }
-  os_mutexUnlock (&dds_global.m_mutex);
-  return st;
+    os_mutexUnlock (&dds_global.m_mutex);
+    return st;
 }
 
 void
@@ -156,8 +154,7 @@ dds_topic_free(
 
     os_mutexLock (&dds_global.m_mutex);
     domain = (dds_domain*) ut_avlLookup (&dds_domaintree_def, &dds_global.m_domains, &domainid);
-    if (domain != NULL)
-    {
+    if (domain != NULL) {
         ut_avlDelete (&dds_topictree_def, &domain->m_topics, st);
     }
     os_mutexUnlock (&dds_global.m_mutex);
@@ -205,9 +202,8 @@ dds_find_topic(
             tp = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Name is not valid");
         }
         dds_entity_unlock(p);
-    }
-    else {
-      tp = DDS_ERRNO(rc, "Error occurred on locking entity");
+    } else {
+        tp = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
     DDS_REPORT_FLUSH(tp != DDS_RETCODE_OK);
     return tp;
@@ -256,7 +252,7 @@ dds_topic_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Changing QoS policies does not being supported");
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Changing the topic QoS is not supported.");
         }
     }
     return ret;
@@ -300,13 +296,13 @@ dds_create_topic(
         goto next_err;
     }
 
-    if(name == NULL) {
+    if (name == NULL) {
         hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name has NULL value");
         goto next_err;
     }
 
     if (!is_valid_name(name)) {
-        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name is not valid");
+        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name contains characters that are not allowed.");
         goto next_err;
     }
 
@@ -544,15 +540,15 @@ dds_get_inconsistent_topic_status(
 
     rc = dds_topic_lock(topic, &t);
     if (rc == DDS_RETCODE_OK) {
-      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-      if (status) {
-        *status = t->m_inconsistent_topic_status;
-      }
-      if (((dds_entity*)t)->m_status_enable & DDS_INCONSISTENT_TOPIC_STATUS) {
-        t->m_inconsistent_topic_status.total_count_change = 0;
-        dds_entity_status_reset(t, DDS_INCONSISTENT_TOPIC_STATUS);
-      }
-      dds_topic_unlock(t);
+        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+        if (status) {
+            *status = t->m_inconsistent_topic_status;
+        }
+        if (((dds_entity*)t)->m_status_enable & DDS_INCONSISTENT_TOPIC_STATUS) {
+            t->m_inconsistent_topic_status.total_count_change = 0;
+            dds_entity_status_reset(t, DDS_INCONSISTENT_TOPIC_STATUS);
+        }
+        dds_topic_unlock(t);
     }
-    return DDS_ERRNO(rc, "Topic does not have an inconsistent topic status");
+    return DDS_ERRNO(rc, "Error occurred on locking entity");
 }

@@ -95,7 +95,7 @@ dds_init(void)
 
   if (ut_handleserver_init() != UT_HANDLE_OK)
   {
-      return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize server");
+      return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize internal handle server");
   }
 
   uri = os_getenv (VDDSC_PROJECTNAME_CAPS"_URI");

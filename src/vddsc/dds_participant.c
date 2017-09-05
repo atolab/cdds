@@ -20,7 +20,7 @@ dds_participant_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_PARTICIPANT_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Bad parameter of mask") :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Invalid status mask") :
                      DDS_RETCODE_OK;
 }
 
@@ -96,12 +96,7 @@ dds_participant_qos_validate(
     /* Check consistency. */
     consistent &= (qos->present & QP_USER_DATA) ? validate_octetseq(&qos->user_data) : true;
     consistent &= (qos->present & QP_PRISMTECH_ENTITY_FACTORY) ? validate_entityfactory_qospolicy(&qos->entity_factory) : true;
-    if (consistent) {
-        if (enabled) {
-            /* A participant has no immutable QoS. Still, we don't support changing it for now. */
-            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Participant has no immutable QoS");
-        }
-    } else {
+    if (!consistent) {
         ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Inconsistent policy");
     }
     return ret;
@@ -118,7 +113,7 @@ dds_participant_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Changing QoS policy does not supported");
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Changing the participant QoS is not supported.");
         }
     }
     return ret;
@@ -170,8 +165,8 @@ dds_create_participant(
         (void)dds_qos_copy(new_qos, qos);
         dds_qos_merge (&plist.qos, new_qos);
     } else {
-          /* Use default qos. */
-          new_qos = dds_qos_create ();
+        /* Use default qos. */
+        new_qos = dds_qos_create ();
     }
 
     thr = lookup_thread_state ();
@@ -243,14 +238,14 @@ dds_lookup_participant(
         participants[0] = 0;
     }
     iter = dds_pp_head;
-    while(iter){
-        if(iter->m_domainid == domain_id){
-            if((size_t)ret < size){
+    while (iter) {
+        if(iter->m_domainid == domain_id) {
+            if((size_t)ret < size) {
                 participants[ret] = iter->m_hdl;
+            }
+            ret ++;
         }
-        ret ++;
-        }
-    iter = iter->m_next;
+        iter = iter->m_next;
     }
 
 err:

@@ -60,7 +60,7 @@ dds_waitset_wait_impl(
     dds_attachment *prev;
 
     if ((xs == NULL) && (nxs != 0)){
-        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Array is given with an invalid size");
+        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "A size was given, but no array.");
     }
     if ((xs != NULL) && (nxs == 0)){
         return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Array is given with an invalid size");
@@ -104,16 +104,16 @@ dds_waitset_wait_impl(
             if (abstimeout == DDS_NEVER) {
                 os_condWait(&ws->m_entity.m_cond, &ws->m_entity.m_mutex);
             } else if (abstimeout <= tnow) {
-                  rc = DDS_RETCODE_TIMEOUT;
+                rc = DDS_RETCODE_TIMEOUT;
             } else {
-                  dds_duration_t dt = abstimeout - tnow;
-                  os_time to;
-                  if ((dt / (dds_duration_t)DDS_NSECS_IN_SEC) >= (dds_duration_t)OS_TIME_INFINITE_SEC) {
-                      to.tv_sec = OS_TIME_INFINITE_SEC;
-                      to.tv_nsec = DDS_NSECS_IN_SEC - 1;
+                dds_duration_t dt = abstimeout - tnow;
+                os_time to;
+                if ((dt / (dds_duration_t)DDS_NSECS_IN_SEC) >= (dds_duration_t)OS_TIME_INFINITE_SEC) {
+                    to.tv_sec = OS_TIME_INFINITE_SEC;
+                    to.tv_nsec = DDS_NSECS_IN_SEC - 1;
                 } else {
-                      to.tv_sec = (os_timeSec) (dt / DDS_NSECS_IN_SEC);
-                      to.tv_nsec = (uint32_t) (dt % DDS_NSECS_IN_SEC);
+                    to.tv_sec = (os_timeSec) (dt / DDS_NSECS_IN_SEC);
+                    to.tv_nsec = (uint32_t) (dt % DDS_NSECS_IN_SEC);
                 }
                 (void)os_condTimedWait(&ws->m_entity.m_cond, &ws->m_entity.m_mutex, &to);
                 tnow = dds_time();
@@ -138,14 +138,14 @@ dds_waitset_wait_impl(
                 idx = next;
             }
         } else if (rc == DDS_RETCODE_TIMEOUT) {
-              ret = 0;
+            ret = 0;
         } else {
-              ret = DDS_ERRNO(rc, "Error");
+            ret = DDS_ERRNO(rc, "Internal error");
         }
 
         dds_waitset_unlock(ws);
     } else {
-        ret = DDS_ERRNO(rc, "Error");
+        ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
     }
 
     return ret;
@@ -376,16 +376,20 @@ dds_waitset_attach(
                 a->next = ws->observed;
                 ws->observed = a;
             }
+            ret = DDS_RETCODE_OK;
         } else if (rc != DDS_RETCODE_PRECONDITION_NOT_MET) {
-              rc = DDS_RETCODE_BAD_PARAMETER;
-              ret = DDS_ERRNO(rc, "Entity is not valid");
+            rc = DDS_RETCODE_BAD_PARAMETER;
+            ret = DDS_ERRNO(rc, "Entity is not valid");
+        } else {
+            ret = DDS_ERRNO(rc, "Entity is already attached.");
         }
         if ((e != NULL) && (waitset != entity)) {
             dds_entity_unlock(e);
         }
         dds_waitset_unlock(ws);
+    } else {
+        ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
@@ -412,13 +416,17 @@ dds_waitset_detach(
         }
         if (rc == DDS_RETCODE_OK) {
             dds_waitset_remove(ws, entity);
+            ret = DDS_RETCODE_OK;
         } else if (rc != DDS_RETCODE_PRECONDITION_NOT_MET) {
             rc = DDS_RETCODE_BAD_PARAMETER;
-            ret = DDS_ERRNO(rc, "Waitset is not found to be removed");
+            ret = DDS_ERRNO(rc, "The given entity to detach is invalid.");
+        } else {
+            ret = DDS_ERRNO(rc, "The given entity to detach was not attached previously.");
         }
         dds_waitset_unlock(ws);
+    } else {
+        ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
