@@ -321,7 +321,7 @@ static char *expand_env (const char *name, char op, const char *alt)
       else
       {
         char *altx = expand_envvars (alt);
-        error ("%s: %s\n", name, altx);
+        error_exit("%s: %s\n", name, altx);
         os_free (altx);
         return NULL;
       }
@@ -393,7 +393,7 @@ static char *expand_envbrace (const char **src)
     return x;
   }
  err:
-  error ("%*.*s: invalid expansion\n", (int) (*src - start), (int) (*src - start), start);
+ error_exit("%*.*s: invalid expansion\n", (int) (*src - start), (int) (*src - start), start);
   return NULL;
 }
 
@@ -434,7 +434,7 @@ static char *expand_envvars (const char *src0)
     {
       src++;
       if (*src == 0)
-        error ("%s: incomplete escape at end of string\n", src0);
+          error_exit("%s: incomplete escape at end of string\n", src0);
       expand_append (&dst, &sz, &pos, *src++);
     }
     else if (*src == '$')
@@ -443,7 +443,7 @@ static char *expand_envvars (const char *src0)
       src++;
       if (*src == 0)
       {
-        error ("%s: incomplete variable expansion at end of string\n", src0);
+          error_exit("%s: incomplete variable expansion at end of string\n", src0);
         return NULL;
       }
       else if (*src == '{')
@@ -494,9 +494,8 @@ static int set_pub_partition (dds_entity_t pub, const char *buf)
   const char **ps;
   char *bufcopy;
   unsigned nps = split_partitions(&ps, &bufcopy, buf);
-  int rc;
-  if ((rc = change_publisher_partitions (pub, nps, ps)) != DDS_RETCODE_OK)
-    fprintf (stderr, "set_pub_partition failed: %s (%d)\n", dds_strerror (rc), (int) rc);
+  dds_return_t rc = change_publisher_partitions (pub, nps, ps);
+  error_report(rc, "set_pub_partition failed: ");
   os_free (bufcopy);
   os_free (ps);
   return 0;
@@ -508,9 +507,8 @@ static int set_sub_partition (dds_entity_t sub, const char *buf)
   const char **ps;
   char *bufcopy;
   unsigned nps = split_partitions(&ps, &bufcopy, buf);
-  int rc;
-  if ((rc = change_subscriber_partitions (sub, nps, ps)) != DDS_RETCODE_OK)
-    fprintf (stderr, "set_partition failed: %s (%d)\n", dds_strerror (rc), (int) rc);
+  dds_return_t rc = change_subscriber_partitions (sub, nps, ps);
+  error_report(rc, "set_partition failed: %s (%d)\n");
   os_free (bufcopy);
   os_free (ps);
   return 0;
@@ -536,9 +534,9 @@ static void make_persistent_snapshot(const char *args)
 //	printf ("failed to lookup domain\n");
 //	} else {
 //	if ((ret = DDS_Domain_create_persistent_snapshot(dom, px, tx, uri)) != DDS_RETCODE_OK)
-//	  printf ("failed to create persistent snapshot, error %d (%s)\n", (int) ret, dds_strerror(ret));
+//	  printf ("failed to create persistent snapshot, error %d (%s)\n", (int) ret, dds_err_str(ret));
 //	if ((ret = DDS_DomainParticipantFactory_delete_domain(dpf, dom)) != DDS_RETCODE_OK)
-//	  error ("failed to delete domain objet, error %d (%s)\n", (int) ret, dds_strerror(ret));
+//	  error ("failed to delete domain objet, error %d (%s)\n", (int) ret, dds_err_str(ret));
 //	}
 //	free(px);
 //	return;
@@ -999,7 +997,7 @@ static void print_K (unsigned long long *tstart, unsigned long long tnow, dds_en
     if ((result = getkeyval (rd, &d_key, si->instance_handle)) == DDS_RETCODE_OK)
       printf ("NA %u\n", d_key);
     else
-      printf ("get_key_value: error %d (%s)\n", (int) result, dds_strerror (result));
+      printf ("get_key_value: error %d (%s)\n", (int) result, dds_err_str(result));
   }
   os_funlockfile(stdout);
 }
@@ -1234,7 +1232,7 @@ static const char *get_write_operstr(char command)
 
 static void non_data_operation(char command, dds_entity_t wr)
 {
-	dds_return_t result = 0;
+	dds_return_t rc = 0;
   switch (command)
   {
     case 'Y':
@@ -1243,17 +1241,17 @@ static void non_data_operation(char command, dds_entity_t wr)
 //        error ("DDS_Topic_dispose_all: error %d\n", (int) result);
       break;
     case 'B':
-    	if((result = dds_begin_coherent(wr)) != DDS_SUCCESS)
-    		error ("dds_begin_coherent: error %d\n", (int) result);
+        rc = dds_begin_coherent(wr);
+    	error_report(rc, "dds_begin_coherent:");
       break;
     case 'E':
-    	if ((result = dds_end_coherent(wr)) != DDS_SUCCESS)
-    		error ("dds_end_coherent: error %d\n", (int) result);
+        rc = dds_end_coherent(wr);
+        error_report(rc, "dds_end_coherent:");
       break;
     case 'W': {
     	dds_duration_t inf = DDS_INFINITY;
-    	if ((result = dds_wait_for_acks(wr, inf)) != DDS_RETCODE_OK)
-			error ("dds_wait_for_acks: error %d\n", (int) result);
+    	rc = dds_wait_for_acks(wr, inf);
+    	error_report(rc, "dds_wait_for_acks:");
 		break;
     }
     default:
@@ -1357,7 +1355,7 @@ static void pub_do_auto (const struct writerspec *spec)
 //    	usleep(1);
       if ((result = dds_write(spec->wr, &d)) != DDS_RETCODE_OK)
       {
-    	printf ("write: error %d (%s)\n", (int) result, dds_strerror (result));
+    	printf ("write: error %d (%s)\n", (int) result, dds_err_str(result));
         if (result != DDS_RETCODE_TIMEOUT)
           break;
       }
@@ -1391,7 +1389,7 @@ static void pub_do_auto (const struct writerspec *spec)
     {
     	if ((result = dds_write(spec->wr, &d)) != DDS_RETCODE_OK)
       {
-        printf ("write: error %d (%s)\n", (int) result, dds_strerror (result));
+        printf ("write: error %d (%s)\n", (int) result, dds_err_str(result));
         if (result != DDS_RETCODE_TIMEOUT)
           break;
       }
@@ -1487,13 +1485,13 @@ static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq)
 
         if ((result = fn (spec->wr, &d, tstamp)) != DDS_RETCODE_OK)
         {
-          printf ("%s %d: error %d (%s)\n", get_write_operstr(command), k, (int) result, dds_strerror(result));
+          printf ("%s %d: error %d (%s)\n", get_write_operstr(command), k, (int) result, dds_err_str(result));
           if (!accept_error (command, result))
             exit(1);
         }
         if (spec->dupwr && (result = fn (spec->dupwr, &d, tstamp)) != DDS_RETCODE_OK)
         {
-          printf ("%s %d(dup): error %d (%s)\n", get_write_operstr(command), k, (int) result, dds_strerror(result));
+          printf ("%s %d(dup): error %d (%s)\n", get_write_operstr(command), k, (int) result, dds_err_str(result));
           if (!accept_error (command, result))
             exit(1);
         }
@@ -1597,7 +1595,7 @@ static char *pub_do_arb_line(const struct writerspec *spec, const char *line)
 //          tgfreedata(spec->tgtp, arb);
 //          if (result != DDS_RETCODE_OK)
 //          {
-//            printf ("%s%s: error %d (%s)\n", get_write_operstr(command), diddodup ? "(dup)" : "", (int) result, dds_strerror(result));
+//            printf ("%s%s: error %d (%s)\n", get_write_operstr(command), diddodup ? "(dup)" : "", (int) result, dds_err_str(result));
 //            if (!accept_error (command, result))
 //            {
 //              line = NULL;
@@ -1796,8 +1794,7 @@ static uint32_t subthread (void *vspec)
   dds_entity_t ws;
   dds_entity_t rdcondA = 0, rdcondD = 0;
   dds_entity_t stcond = 0;
-  int result = DDS_RETCODE_OK;
-  int ret = DDS_RETCODE_OK;
+  dds_return_t rc;
   uintptr_t exitcode = 0;
   char tag[256];
   size_t nxs = 0;
@@ -1806,13 +1803,13 @@ static uint32_t subthread (void *vspec)
 
   if (wait_hist_data)
   {
-    if ((result = dds_reader_wait_for_historical_data(rd, wait_hist_data_timeout)) != DDS_RETCODE_OK)
-      error ("dds_reader_wait_for_historical_data: %d (%s)\n", (int) result, dds_strerror (result));
+    rc = dds_reader_wait_for_historical_data(rd, wait_hist_data_timeout);
+    error_report(rc, "dds_reader_wait_for_historical_data");
   }
 
   ws = dds_create_waitset(dp);
-  if ((result = dds_waitset_attach(ws, termcond, termcond)) != DDS_RETCODE_OK)
-    error ("dds_waitset_attach (termcond): %d (%s)\n", (int) result, dds_strerror (result));
+  rc = dds_waitset_attach(ws, termcond, termcond);
+  error_abort(rc, "dds_waitset_attach (termcond)");
   nxs++; //increased because of the waitset_attach
   switch (spec->mode)
   {
@@ -1821,29 +1818,32 @@ static uint32_t subthread (void *vspec)
       /* no triggers */
       break;
     case MODE_PRINT:
-      /* complicated triggers */
-    	if ((rdcondA = dds_create_readcondition(rd, spec->use_take ? (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
-                                                                   : (DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE))) == 0)
-    		error ("dds_readcondition_create (rdcondA)\n");
-    	if ((result = dds_waitset_attach (ws, rdcondA, rdcondA)) != DDS_RETCODE_OK)
-    		error ("dds_waitset_attach (rdcondA): %d (%s)\n", (int) result, dds_strerror (result));
-    	nxs++; //increased because of the waitset_attach
-    	if ((rdcondD = dds_create_readcondition (rd, (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE))) == 0)
-    		error ("dds_readcondition_create (rdcondD)\n");
-    	if ((result = dds_waitset_attach (ws, rdcondD, rdcondD)) != DDS_RETCODE_OK)
-    		error ("dds_waitset_attach (rdcondD): %d (%s)\n", (int) result, dds_strerror (result));
-    	nxs++; //increased because of the waitset_attach
-    	break;
+        /* complicated triggers */
+        rdcondA = dds_create_readcondition(rd, spec->use_take ? (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
+                                                              : (DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE));
+        error_abort(rdcondA, "dds_readcondition_create (rdcondA)");
+
+        rc = dds_waitset_attach (ws, rdcondA, rdcondA);
+        error_abort(rc, "dds_waitset_attach (rdcondA)");
+        nxs++; //increased because of the waitset_attach
+
+        rdcondD = dds_create_readcondition (rd, (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE));
+        error_abort(rdcondD, "dds_readcondition_create (rdcondD)");
+
+        rc = dds_waitset_attach (ws, rdcondD, rdcondD);
+        error_abort(rc, "dds_waitset_attach (rdcondD)");
+        nxs++; //increased because of the waitset_attach
+        break;
     case MODE_CHECK:
     case MODE_DUMP:
       if (!spec->polling)
       {
-        /* fastest trigger we have */
-    	if ((result = dds_set_enabled_status(rd, DDS_DATA_AVAILABLE_STATUS)) != DDS_RETCODE_OK) //Todo: Changed the method to match ddsi
-		  error ("dds_set_enabled_status (stcond): %d (%s)\n", (int) result, dds_strerror (result));
-		if ((result = dds_waitset_attach (ws, rd, rd)) != DDS_RETCODE_OK)
-		  error ("dds_waitset_attach (rd): %d (%s)\n", (int) result, dds_strerror (result));
-		nxs++; //increased because of the waitset_attach
+          /* fastest trigger we have */
+          rc = dds_set_enabled_status(rd, DDS_DATA_AVAILABLE_STATUS);
+          error_abort(rc, "dds_set_enabled_status (stcond)");
+          rc = dds_waitset_attach (ws, rd, rd);
+          error_abort(rc, "dds_waitset_attach (rd)");
+          nxs++; //increased because of the waitset_attach
       }
       break;
   }
@@ -1890,11 +1890,11 @@ static uint32_t subthread (void *vspec)
       }
       else
       {
-    	  result = dds_waitset_wait(ws, xs, nxs, timeout);
-    	  if (result < DDS_RETCODE_OK) {
-			  printf ("wait: error %d\n", (int) result);
+    	  rc = dds_waitset_wait(ws, xs, nxs, timeout);
+    	  if (rc < DDS_RETCODE_OK) {
+			  printf ("wait: error %d\n", (int) rc);
 			  break;
-    	  } else if (result == DDS_RETCODE_OK) {
+    	  } else if (rc == DDS_RETCODE_OK) {
     		  continue;
     	  }
       }
@@ -1917,7 +1917,7 @@ static uint32_t subthread (void *vspec)
         if (spec->print_match_pre_read)
 		{
 			dds_subscription_matched_status_t status;
-			result = dds_get_subscription_matched_status(rd, &status);
+			rc = dds_get_subscription_matched_status(rd, &status);
 			printf ("[pre-read: subscription-matched: total=(%d change %d) current=(%d change %d) handle=%"PRIu64"]\n",
 				  status.total_count, status.total_count_change,
 				  status.current_count, status.current_count_change,
@@ -1943,31 +1943,31 @@ static uint32_t subthread (void *vspec)
          without triggering CONTINUOUSLY?
          */
 //        if (need_access && (result = DDS_Subscriber_begin_access (sub)) != DDS_RETCODE_OK)
-//          error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_strerror (result));
+//          error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_err_str (result));
 
         if (spec->mode == MODE_CHECK || (spec->mode == MODE_DUMP && spec->use_take) || spec->polling) {
-        	result = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
+        	rc = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
 		} else if (spec->mode == MODE_DUMP) {
-			result = dds_read_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
+			rc = dds_read_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
 		} else if (spec->use_take || cond == rdcondD) {
-			result = dds_take(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples);
+			rc = dds_take(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples);
 		} else {
-		  result = dds_read(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples);
+		  rc = dds_read(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples);
 		}
 
-        if (result < 1)
+        if (rc < 1)
         {
-          if (spec->polling && result == 0)
+          if (spec->polling && rc == 0)
             ; /* expected */
           else if (spec->mode == MODE_CHECK || spec->mode == MODE_DUMP || spec->polling)
-            printf ("%s: %d (%s) on %s\n", (!spec->use_take && spec->mode == MODE_DUMP) ? "read" : "take", (int) result, dds_strerror (result), spec->polling ? "poll" : "stcond");
+            printf ("%s: %d (%s) on %s\n", (!spec->use_take && spec->mode == MODE_DUMP) ? "read" : "take", (int) rc, dds_err_str (rc), spec->polling ? "poll" : "stcond");
           else
-            printf ("%s: %d (%s) on rdcond%s\n", spec->use_take ? "take" : "read", (int) result, dds_strerror (result), (cond == rdcondA) ? "A" : (cond == rdcondD) ? "D" : "?");
+            printf ("%s: %d (%s) on rdcond%s\n", spec->use_take ? "take" : "read", (int) rc, dds_err_str (rc), (cond == rdcondA) ? "A" : (cond == rdcondD) ? "D" : "?");
           continue;
         }
 
 //        if (need_access && (result = DDS_Subscriber_end_access (sub)) != DDS_RETCODE_OK)
-//          error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_strerror (result));
+//          error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_err_str (result));
 
         switch (spec->mode)
         {
@@ -1975,18 +1975,18 @@ static uint32_t subthread (void *vspec)
           case MODE_DUMP:
             switch (spec->topicsel) {
               case UNSPEC: assert(0);
-              case KS:   print_seq_KS (&tstart, tnow, rd, tag, iseq, (KeyedSeq **)mseq, result); break;
-              case K32:  print_seq_K32 (&tstart, tnow, rd, tag, iseq, (Keyed32 **)mseq, result); break;
-              case K64:  print_seq_K64 (&tstart, tnow, rd, tag, iseq, (Keyed64 **)mseq, result); break;
-              case K128: print_seq_K128 (&tstart, tnow, rd, tag, iseq, (Keyed128 **)mseq, result); break;
-              case K256: print_seq_K256 (&tstart, tnow, rd, tag, iseq, (Keyed256 **)mseq, result); break;
-              case OU:   print_seq_OU (&tstart, tnow, rd, tag, iseq, (const OneULong **)mseq, result); break;
+              case KS:   print_seq_KS (&tstart, tnow, rd, tag, iseq, (KeyedSeq **)mseq, rc); break;
+              case K32:  print_seq_K32 (&tstart, tnow, rd, tag, iseq, (Keyed32 **)mseq, rc); break;
+              case K64:  print_seq_K64 (&tstart, tnow, rd, tag, iseq, (Keyed64 **)mseq, rc); break;
+              case K128: print_seq_K128 (&tstart, tnow, rd, tag, iseq, (Keyed128 **)mseq, rc); break;
+              case K256: print_seq_K256 (&tstart, tnow, rd, tag, iseq, (Keyed256 **)mseq, rc); break;
+              case OU:   print_seq_OU (&tstart, tnow, rd, tag, iseq, (const OneULong **)mseq, rc); break;
               case ARB:  print_seq_ARB (&tstart, tnow, rd, tag, iseq, (const void **)mseq, spec->tgtp); break;
             }
             break;
 
           case MODE_CHECK:
-            for (i = 0; i < result; i++)
+            for (i = 0; i < rc; i++)
             {
               int keyval = 0;
               unsigned seq = 0;
@@ -2048,22 +2048,24 @@ static uint32_t subthread (void *vspec)
     if (spec->mode == MODE_PRINT || spec->mode == MODE_DUMP || once_mode)
     {
 //      if (need_access && (result = DDS_Subscriber_begin_access (sub)) != DDS_RETCODE_OK)
-//        error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_strerror (result));
+//        error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_err_str (result));
 
-      result = dds_take(rd, mseq, iseq, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
-      if (result == 0)
+        /* This is the final Read/Take */
+      rc = dds_take(rd, mseq, iseq, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+      if (rc == 0)
       {
         if (!once_mode)
           printf ("-- final take: data reader empty --\n");
         else
           exitcode = 1;
       }
-      else if (result < DDS_RETCODE_OK)
+      else if (rc < DDS_SUCCESS)
       {
-        if (!once_mode)
-          printf ("-- final take: %d (%s) --\n", (int) result, dds_strerror (result));
-        else
-          error ("read/take: %d (%s)\n", (int) result, dds_strerror (result));
+        if (!once_mode) {
+            error_report (rc, "-- final take --\n");
+        } else {
+            error_report (rc, "read/take");
+        }
       }
       else
       {
@@ -2074,18 +2076,18 @@ static uint32_t subthread (void *vspec)
           switch (spec->topicsel)
           {
             case UNSPEC: assert(0);
-            case KS:   print_seq_KS (&tstart, nowll (), rd, tag, iseq, (KeyedSeq **) mseq, result); break;
-            case K32:  print_seq_K32 (&tstart, nowll (), rd, tag, iseq, (Keyed32 **) mseq, result); break;
-            case K64:  print_seq_K64 (&tstart, nowll (), rd, tag, iseq, (Keyed64 **) mseq, result); break;
-            case K128: print_seq_K128 (&tstart, nowll (), rd, tag, iseq, (Keyed128 **) mseq, result); break;
-            case K256: print_seq_K256 (&tstart, nowll (), rd, tag, iseq, (Keyed256 **) mseq, result); break;
-            case OU:   print_seq_OU (&tstart, nowll (), rd, tag, iseq, (const OneULong **) mseq, result); break;
+            case KS:   print_seq_KS (&tstart, nowll (), rd, tag, iseq, (KeyedSeq **) mseq, rc); break;
+            case K32:  print_seq_K32 (&tstart, nowll (), rd, tag, iseq, (Keyed32 **) mseq, rc); break;
+            case K64:  print_seq_K64 (&tstart, nowll (), rd, tag, iseq, (Keyed64 **) mseq, rc); break;
+            case K128: print_seq_K128 (&tstart, nowll (), rd, tag, iseq, (Keyed128 **) mseq, rc); break;
+            case K256: print_seq_K256 (&tstart, nowll (), rd, tag, iseq, (Keyed256 **) mseq, rc); break;
+            case OU:   print_seq_OU (&tstart, nowll (), rd, tag, iseq, (const OneULong **) mseq, rc); break;
             case ARB:  print_seq_ARB (&tstart, nowll (), rd, tag, iseq, (const void **) mseq, spec->tgtp); break;
           }
         }
       }
 //      if (need_access && (result = DDS_Subscriber_end_access (sub)) != DDS_RETCODE_OK)
-//        error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_strerror (result));
+//        error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_err_str (result));
       int returnVal = dds_return_loan(rd, mseq, spec->read_maxsamples);
     }
     os_free(iseq);
@@ -2102,9 +2104,9 @@ static uint32_t subthread (void *vspec)
     case MODE_ZEROLOAD:
       break;
     case MODE_PRINT:
-    	ret = dds_waitset_detach(ws, rdcondA);
+    	rc = dds_waitset_detach(ws, rdcondA);
     	dds_delete(rdcondA);
-    	ret = dds_waitset_detach(ws, rdcondD);
+    	rc = dds_waitset_detach(ws, rdcondD);
 		dds_delete(rdcondD);
       break;
     case MODE_CHECK:
@@ -2130,8 +2132,7 @@ static uint32_t subthread (void *vspec)
 static uint32_t autotermthread(void *varg __attribute__((unused)))
 {
   unsigned long long tstop, tnow;
-  int result;
-  int ret = 0;
+  dds_return_t rc;
   dds_entity_t ws;
 
   dds_attach_t wsresults[1];
@@ -2143,8 +2144,8 @@ static uint32_t autotermthread(void *varg __attribute__((unused)))
   tstop = tnow + (unsigned long long) (1e9 * dur);
 
   ws = dds_create_waitset(dp);
-  if ((result = dds_waitset_attach(ws, termcond, termcond)) != DDS_RETCODE_OK)
-    error ("dds_waitset_attach (termcomd): %d (%s)\n", (int) result, dds_strerror (result));
+  rc = dds_waitset_attach(ws, termcond, termcond);
+  error_abort(rc, "dds_waitset_attach (termcomd)");
 
   tnow = nowll();
   while (!termflag && tnow < tstop)
@@ -2155,17 +2156,17 @@ static uint32_t autotermthread(void *varg __attribute__((unused)))
     uint64_t xnanosec = (uint64_t) (dt % 1000000000);
     timeout = DDS_SECS(xsec)+xnanosec;
 
-    if ((result = dds_waitset_wait (ws, wsresults, wsresultsize, timeout)) < DDS_RETCODE_OK)
+    if ((rc = dds_waitset_wait (ws, wsresults, wsresultsize, timeout)) < DDS_RETCODE_OK)
     {
-      printf ("wait: error %d\n", (int) result);
+      printf ("wait: error %s\n", dds_err_str(rc));
       break;
     }
     tnow = nowll();
   }
 
-  ret = dds_waitset_detach(ws, termcond);
+  rc = dds_waitset_detach(ws, termcond);
   PRINTD("Autotermthread: dds_waitset_detach: ret: %d\n", ret);
-  ret = dds_delete(ws);
+  rc = dds_delete(ws);
   PRINTD("Autotermthread: dds_waitset_delete: ret: %d\n", ret);
 
   return 0;
@@ -2195,7 +2196,7 @@ static char *read_line_from_textfile(FILE *fp)
     if (n == sz) str = os_realloc(str, sz += 1);
     str[n] = 0;
   } else if (ferror(fp)) {
-    error("error reading file, errno = %d (%s)\n", os_getErrno(), os_strerror(os_getErrno()));
+    error_exit("error reading file, errno = %d (%s)\n", os_getErrno(), os_strerror(os_getErrno()));
   }
   return str;
 }
@@ -2204,19 +2205,19 @@ static int get_metadata (char **metadata, char **typename, char **keylist, const
 {
   FILE *fp;
   if ((fp = fopen(file, "r")) == NULL)
-    error("%s: can't open for reading metadata\n", file);
+      error_exit("%s: can't open for reading metadata\n", file);
   *typename = read_line_from_textfile(fp);
   *keylist = read_line_from_textfile(fp);
   *metadata = read_line_from_textfile(fp);
   if (*typename == NULL || *keylist == NULL || *typename == NULL)
-    error("%s: invalid metadata file\n", file);
+      error_exit("%s: invalid metadata file\n", file);
   fclose(fp);
   return 1;
 }
 
 static dds_entity_t find_topic(dds_entity_t dpFindTopic, const char *name, const dds_duration_t *timeout)
 {
-  dds_entity_t tp = 0;
+  dds_entity_t tp;
 //  int isbuiltin = 0;
 
   /* A historical accident has caused subtle issues with a generic reader for the built-in topics included in the DDS spec. */
@@ -2228,7 +2229,7 @@ static dds_entity_t find_topic(dds_entity_t dpFindTopic, const char *name, const
 //    if (DDS_Subscriber_lookup_datareader(sub, name) == NULL)
 //      error("DDS_Subscriber_lookup_datareader failed\n");
 //    if ((result = DDS_Subscriber_delete_contained_entities(sub)) != DDS_RETCODE_OK)
-//      error("DDS_Subscriber_delete_contained_entities failed: error %d (%s)\n", (int) result, dds_strerror(result));
+//      error("DDS_Subscriber_delete_contained_entities failed: error %d (%s)\n", (int) result, dds_err_str(result));
 //    isbuiltin = 1;
 //  }
 
@@ -2245,7 +2246,7 @@ static dds_entity_t find_topic(dds_entity_t dpFindTopic, const char *name, const
 //    if ((ts = DDS_TypeSupport__alloc(tn, kl ? kl : "", md)) == NULL)
 //      error("DDS_TypeSupport__alloc(%s) failed\n", tn);
 //    if ((result = DDS_TypeSupport_register_type(ts, dp, tn)) != DDS_RETCODE_OK)
-//      error("DDS_TypeSupport_register_type(%s) failed: %d (%s)\n", tn, (int) result, dds_strerror(result));
+//      error("DDS_TypeSupport_register_type(%s) failed: %d (%s)\n", tn, (int) result, dds_err_str(result));
 //    DDS_free(md);
 //    DDS_free(kl);
 //    DDS_free(tn);
@@ -2254,7 +2255,7 @@ static dds_entity_t find_topic(dds_entity_t dpFindTopic, const char *name, const
 //    /* Work around a double-free-at-shutdown issue caused by a find_topic
 //       without a type support having been register */
 //    if ((result = DDS_DomainParticipant_delete_topic(dp, tp)) != DDS_RETCODE_OK) {
-//      error("DDS_DomainParticipant_find_topic failed: %d (%s)\n", (int) result, dds_strerror(result));
+//      error("DDS_DomainParticipant_find_topic failed: %d (%s)\n", (int) result, dds_err_str(result));
 //    }
 //    if ((tp = DDS_DomainParticipant_find_topic(dp, name, timeout)) == NULL) {
 //      error("DDS_DomainParticipant_find_topic(2) failed\n");
@@ -2500,7 +2501,7 @@ int main (int argc, char *argv[])
             set_infinite_dds_duration (&spec[specidx].findtopic_timeout);
           } else if (sscanf (p, "%lf%n", &d, &pos) == 1 && (p[pos] == 0 || p[pos] == ':')) {
             if (double_to_dds_duration (&spec[specidx].findtopic_timeout, d) < 0)
-              error ("-T %s: %s: duration invalid\n", os_get_optarg(), p);
+              error_exit("-T %s: %s: duration invalid\n", os_get_optarg(), p);
             have_to = 1;
           } else {
             /* assume content filter */
@@ -2731,7 +2732,7 @@ int main (int argc, char *argv[])
         case K128: spec[i].topicname = os_strdup("PubSub128"); break;
         case K256: spec[i].topicname = os_strdup("PubSub256"); break;
         case OU: spec[i].topicname = os_strdup("PubSubOU"); break;
-        case ARB: error ("-K ARB requires specifying a topic name\n"); break;
+        case ARB: error_exit("-K ARB requires specifying a topic name\n"); break;
       }
       assert (spec[i].topicname != NULL);
     }
@@ -2753,7 +2754,7 @@ int main (int argc, char *argv[])
         case WRM_AUTO:
           want_writer = 1;
           if (spec[i].wr.topicsel == ARB)
-            error ("auto-write mode requires non-ARB topic\n");
+              error_exit("auto-write mode requires non-ARB topic\n");
           break;
         case WRM_INPUT:
           want_writer = 1;
@@ -2826,15 +2827,15 @@ int main (int argc, char *argv[])
       case K256: spec[i].tp = new_topic (spec[i].topicname, ts_Keyed256, qos); break;
       case OU:   spec[i].tp = new_topic (spec[i].topicname, ts_OneULong, qos); break;
       case ARB:
-    	  error("Currently doesn't support ARB type\n");
+        error_exit("Currently doesn't support ARB type\n");
         if (spec[i].metadata == NULL) {
           if (!(spec[i].tp = find_topic(dp, spec[i].topicname, &spec[i].findtopic_timeout)))
-            error("topic %s not found\n", spec[i].topicname);
+              error_exit("topic %s not found\n", spec[i].topicname);
         } else  {
 //          const dds_topic_descriptor_t* ts = dds_topic_descriptor_create(spec[i].typename, spec[i].keylist, spec[i].metadata); //Todo: Not available in cham dds.h
           const dds_topic_descriptor_t* ts = NULL;
           if(ts == NULL)
-        	  error("dds_topic_descriptor_create(%s) failed\n",spec[i].typename);
+              error_exit("dds_topic_descriptor_create(%s) failed\n",spec[i].typename);
           spec[i].tp = new_topic (spec[i].topicname, ts, qos);
 //          dds_topic_descriptor_delete((dds_topic_descriptor_t*) ts); //Todo: Not available in cham dds.h
         }
@@ -2884,8 +2885,8 @@ int main (int argc, char *argv[])
       spec[i].wr.pub = pub;
       if (spec[i].wr.duplicate_writer_flag)
       {
-    	  if((spec[i].wr.dupwr = dds_create_writer(pub, spec[i].tp, qos_datawriter(qos), NULL)) < DDS_RETCODE_OK)
-    		  error ("dds_writer_create failed with value %d: %s\n",dds_err_nr(spec[i].wr.dupwr),dds_err_str(spec[i].wr.dupwr));
+          spec[i].wr.dupwr = dds_create_writer(pub, spec[i].tp, qos_datawriter(qos), NULL);
+          error_abort(spec[i].wr.dupwr, "dds_writer_create failed");
       }
       free_qos (qos);
     }
@@ -2906,7 +2907,7 @@ int main (int argc, char *argv[])
 //    if ((pphandle = DDS_DomainParticipant_get_instance_handle(dp)) == 0)
 //      error("DDS_DomainParticipant_get_instance_handle failed\n");
 //    if ((ret = DDS_DomainParticipant_get_discovered_participant_data(dp, ppdata, pphandle)) != DDS_RETCODE_OK)
-//      error("DDS_DomainParticipant_get_discovered_participant_data failed: %d (%s)\n", (int) ret, dds_strerror(ret));
+//      error("DDS_DomainParticipant_get_discovered_participant_data failed: %d (%s)\n", (int) ret, dds_err_str(ret));
 //    q = new_wrqos(pub, spec[0].tp);
 //    qos_user_data(q, wait_for_matching_reader_arg);
 //    udqos = &qos_datawriter(q)->user_data;
@@ -2916,7 +2917,7 @@ int main (int argc, char *argv[])
 //        if (spec[i].wr.mode == WM_NONE)
 //          --m;
 //        else if ((ret = DDS_DataWriter_get_matched_subscriptions(spec[i].wr.wr, sh)) != DDS_RETCODE_OK)
-//          error("DDS_DataWriter_get_matched_subscriptions failed: %d (%s)\n", (int) ret, dds_strerror(ret));
+//          error("DDS_DataWriter_get_matched_subscriptions failed: %d (%s)\n", (int) ret, dds_err_str(ret));
 //        else
 //        {
 //          unsigned j;
@@ -2924,7 +2925,7 @@ int main (int argc, char *argv[])
 //          {
 //            DDS_SubscriptionBuiltinTopicData *d = DDS_SubscriptionBuiltinTopicData__alloc();
 //            if ((ret = DDS_DataWriter_get_matched_subscription_data(spec[i].wr.wr, d, sh->_buffer[j])) != DDS_RETCODE_OK)
-//              error("DDS_DataWriter_get_matched_subscription_data(wr %u ih %llx) failed: %d (%s)\n", specidx, sh->_buffer[j], (int) ret, dds_strerror(ret));
+//              error("DDS_DataWriter_get_matched_subscription_data(wr %u ih %llx) failed: %d (%s)\n", specidx, sh->_buffer[j], (int) ret, dds_err_str(ret));
 //            if (memcmp(d->participant_key, ppdata->key, sizeof(ppdata->key)) != 0 &&
 //                d->user_data.value._length == udqos->value._length &&
 //                (d->user_data.value._length == 0 || memcmp(d->user_data.value._buffer, udqos->value._buffer, udqos->value._length) == 0))
@@ -2954,8 +2955,7 @@ int main (int argc, char *argv[])
   }
 
   termcond = dds_create_waitset(dp); // Waitset serves as GuardCondition here.
-  DDS_ERR_CHECK(termcond, DDS_CHECK_FAIL);
-//      error("dds_guardcondition_create failed\n");
+  error_abort(termcond, "dds_create_waitset failed");
 
   os_threadAttr attr;
   os_threadAttrInit(&attr);
