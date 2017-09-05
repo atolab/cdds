@@ -33,7 +33,7 @@ dds_writer_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_WRITER_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided mask is not given properly") :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Invalid status mask") :
                      DDS_RETCODE_OK;
 }
 
@@ -197,7 +197,7 @@ dds_writer_close(
     if (asleep) {
         thread_state_asleep(thr);
     }
-    return DDS_ERRNO(rc, "Error");
+    return DDS_ERRNO(rc, "Internal error");
 }
 
 static dds_return_t
@@ -298,14 +298,12 @@ dds_writer_qos_set(
                 if (asleep) {
                     thread_state_asleep (thr);
                 }
-            }
-            else
-            {
-                ret = DDS_ERRNO(DDS_RETCODE_ERROR, "DDS ownership kind is not exclusive");
+            } else {
+                ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Setting ownership strength doesn't make sense when the ownership is shared.");
             }
         } else {
             if (enabled) {
-                ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "DDSI does not support changing QoS policies yet");
+                ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "VortexDDS does not support changing QoS policies yet");
             }
         }
     }
@@ -333,7 +331,7 @@ dds_create_writer(
     struct thread_state1 * const thr = lookup_thread_state();
     const bool asleep = !vtime_awake_p(thr->vtime);
     ddsi_tran_conn_t conn = gv.data_conn_mc ? gv.data_conn_mc : gv.data_conn_uc;
-    dds_return_t ret = DDS_RETCODE_OK;
+    dds_return_t ret;
 
     DDS_REPORT_STACK();
 
@@ -380,7 +378,7 @@ dds_create_writer(
     }
     nn_xqos_mergein_missing(wqos, &gv.default_xqos_wr);
 
-    ret = (int)dds_writer_qos_validate(wqos, false);
+    ret = dds_writer_qos_validate(wqos, false);
     if (ret != 0) {
         dds_qos_delete(wqos);
         writer = ret;
