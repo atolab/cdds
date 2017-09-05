@@ -83,7 +83,7 @@ void os_sockWaitsetPurge (os_sockWaitset ws, unsigned index)
     ws->ctx.conns[i] = NULL;
     if (!WSACloseEvent (ws->ctx.events[i]))
     {
-      NN_WARNING2 ("os_sockWaitsetPurge: WSACloseEvent (%x failed, error %d", (os_uint32) ws->ctx.events[i], os_getErrno ());
+      NN_WARNING ("os_sockWaitsetPurge: WSACloseEvent (%x failed, error %d", (os_uint32) ws->ctx.events[i], os_getErrno ());
     }
   }
   ws->ctx.n = index + 1;
@@ -116,7 +116,7 @@ void os_sockWaitsetTrigger (os_sockWaitset ws)
 {
   if (! WSASetEvent (ws->ctx.events[0]))
   {
-    NN_WARNING2 ("os_sockWaitsetTrigger: WSASetEvent(%x) failed, error %d", (os_uint32) ws->ctx.events[0], os_getErrno ());
+    NN_WARNING ("os_sockWaitsetTrigger: WSASetEvent(%x) failed, error %d", (os_uint32) ws->ctx.events[0], os_getErrno ());
   }
 }
 
@@ -142,7 +142,7 @@ void os_sockWaitsetAdd (os_sockWaitset ws, ddsi_tran_conn_t conn)
 
     if (WSAEventSelect (sock, ev, FD_READ) == SOCKET_ERROR)
     {
-      NN_WARNING3 ("os_sockWaitsetAdd: WSAEventSelect(%x,%x) failed, error %d", (os_uint32) sock, (os_uint32) ev, os_getErrno ());
+      NN_WARNING ("os_sockWaitsetAdd: WSAEventSelect(%x,%x) failed, error %d", (os_uint32) sock, (os_uint32) ev, os_getErrno ());
       WSACloseEvent (ev);
       assert (0);
     }
@@ -166,7 +166,7 @@ os_sockWaitsetCtx os_sockWaitsetWait (os_sockWaitset ws)
 
   if ((idx = WSAWaitForMultipleEvents (ws->ctx0.n, ws->ctx0.events, FALSE, WSA_INFINITE, FALSE)) == WSA_WAIT_FAILED)
   {
-    NN_WARNING2 ("os_sockWaitsetWait: WSAWaitForMultipleEvents(%d,...,0,0,0) failed, error %d", ws->ctx0.n, os_getErrno ());
+    NN_WARNING ("os_sockWaitsetWait: WSAWaitForMultipleEvents(%d,...,0,0,0) failed, error %d", ws->ctx0.n, os_getErrno ());
     return NULL;
   }
 
@@ -189,11 +189,11 @@ os_sockWaitsetCtx os_sockWaitsetWait (os_sockWaitset ws)
   if (idx == WAIT_IO_COMPLETION)
   {
     /* Presumably can't happen with alertable = FALSE */
-    NN_WARNING1 ("os_sockWaitsetWait: WSAWaitForMultipleEvents(%d,...,0,0,0) returned unexpected WAIT_IO_COMPLETION", ws->ctx0.n);
+    NN_WARNING ("os_sockWaitsetWait: WSAWaitForMultipleEvents(%d,...,0,0,0) returned unexpected WAIT_IO_COMPLETION", ws->ctx0.n);
   }
   else
   {
-    NN_WARNING2 ("os_sockWaitsetWait: WSAWaitForMultipleEvents(%d,...,0,0,0) returned unrecognised %d", ws->ctx0.n, idx);
+    NN_WARNING ("os_sockWaitsetWait: WSAWaitForMultipleEvents(%d,...,0,0,0) returned unrecognised %d", ws->ctx0.n, idx);
   }
 #ifdef TEMP_DEF_WAIT_IO_COMPLETION
 #undef WAIT_IO_COMPLETION
@@ -232,7 +232,7 @@ int os_sockWaitsetNextEvent (os_sockWaitsetCtx ctx, ddsi_tran_conn_t * conn)
       {
         /* May have a wakeup and a close in parallel, so the handle
            need not exist anymore. */
-        NN_ERROR3 ("os_sockWaitsetNextEvent: WSAEnumNetworkEvents(%x,%x,...) failed, error %d", (os_uint32) handle, (os_uint32) ctx->events[idx], err);
+        NN_ERROR ("os_sockWaitsetNextEvent: WSAEnumNetworkEvents(%x,%x,...) failed, error %d", (os_uint32) handle, (os_uint32) ctx->events[idx], err);
       }
       return -1;
     }
@@ -477,7 +477,7 @@ void os_sockWaitsetTrigger (os_sockWaitset ws)
   if (n != 1)
   {
     err = os_getErrno ();
-    NN_WARNING1 ("os_sockWaitsetTrigger: read failed on trigger pipe, errno = %d", err);
+    NN_WARNING ("os_sockWaitsetTrigger: read failed on trigger pipe, errno = %d", err);
   }
 }
 
@@ -605,7 +605,7 @@ os_sockWaitsetCtx os_sockWaitsetWait (os_sockWaitset ws)
       err = os_getErrno ();
       if ((err != os_sockEINTR) && (err != os_sockEAGAIN))
       {
-        NN_WARNING1 ("os_sockWaitsetWait: select failed, errno = %d", err);
+        NN_WARNING ("os_sockWaitsetWait: select failed, errno = %d", err);
         break;
       }
     }
@@ -628,7 +628,7 @@ os_sockWaitsetCtx os_sockWaitsetWait (os_sockWaitset ws)
       if (n1 != 1)
       {
         err = os_getErrno ();
-        NN_WARNING1 ("os_sockWaitsetWait: read failed on trigger pipe, errno = %d", err);
+        NN_WARNING ("os_sockWaitsetWait: read failed on trigger pipe, errno = %d", err);
         assert (0);
       }
     }

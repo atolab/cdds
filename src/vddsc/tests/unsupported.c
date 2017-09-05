@@ -17,11 +17,11 @@ static dds_entity_t e[8];
 #define RCD (6) /* ReadCondition */
 #define BAD (7) /* Bad (non-entity) */
 
-static const char *entity_kind_str(dds_entity_t e) {
-    if(e <= 0) {
+static const char *entity_kind_str(dds_entity_t ent) {
+    if(ent <= 0) {
         return "(ERROR)";
     }
-    switch(e & DDS_ENTITY_KIND_MASK) {
+    switch(ent & DDS_ENTITY_KIND_MASK) {
         case DDS_KIND_TOPIC:        return "Topic";
         case DDS_KIND_PARTICIPANT:  return "Participant";
         case DDS_KIND_READER:       return "Reader";

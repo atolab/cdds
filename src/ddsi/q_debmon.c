@@ -362,7 +362,7 @@ struct debug_monitor *new_debug_monitor (int port)
   dm->servsock = ddsi_factory_create_listener (dm->tran_factory, port, NULL);
   if (dm->servsock == NULL)
   {
-    NN_WARNING0 ("debmon: can't create socket\n");
+    NN_WARNING ("debmon: can't create socket\n");
     goto err_servsock;
   }
 
