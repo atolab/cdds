@@ -34,7 +34,6 @@ add_subdirectory(examples)
 
 option(BUILD_DOCS, "Enable generation of docs" OFF)
 if (BUILD_DOCS)
-  option(COMPRESS_HTML_DOCS, "Zip the HTML documentation for faster download" OFF)
   add_subdirectory(docs)
 endif()
 
