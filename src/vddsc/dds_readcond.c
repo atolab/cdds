@@ -75,7 +75,7 @@ dds_get_datareader(
     } else if (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) {
         hdl = dds_get_parent(condition);
     } else {
-        hdl = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ), "Condition does not have a valid handle which expected as condition read kind");
+        hdl = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ), "Provided entity is not a valid condition.");
     }
     DDS_REPORT_FLUSH(hdl != DDS_RETCODE_OK);
     return hdl;
@@ -97,7 +97,8 @@ dds_get_mask(
 
     if (mask != NULL) {
         *mask = 0;
-        if ((dds_entity_kind(condition) == DDS_KIND_COND_READ) || (dds_entity_kind(condition) == DDS_KIND_COND_QUERY)){
+        if ((dds_entity_kind(condition) == DDS_KIND_COND_READ ) ||
+            (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) ){
             rc = dds_entity_lock(condition, DDS_KIND_DONTCARE, (dds_entity**)&cond);
             if (rc == DDS_RETCODE_OK) {
                 *mask = (cond->m_sample_states | cond->m_view_states | cond->m_instance_states);
@@ -106,9 +107,8 @@ dds_get_mask(
             } else{
                 ret = DDS_ERRNO(rc, "Error occurred on locking condition");
             }
-        }
-        else {
-            ret = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ), "Provided entity is not a condition");
+        } else {
+            ret = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ), "Provided entity is not a valid condition");
         }
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided mask has NULL value");

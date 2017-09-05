@@ -25,19 +25,28 @@ dds_read_lock(
 
     rc = dds_entity_lock(hdl, DDS_KIND_READER, (dds_entity**)reader);
     if (rc == DDS_RETCODE_ILLEGAL_OPERATION) {
-      if (!only_reader) {
-        if ((dds_entity_kind(hdl) == DDS_KIND_COND_READ ) || (dds_entity_kind(hdl) == DDS_KIND_COND_QUERY) ){
-          rc = dds_entity_lock(hdl, DDS_KIND_DONTCARE, (dds_entity**)condition);
-          if (rc == DDS_RETCODE_OK) {
-            dds_entity *parent = ((dds_entity*)*condition)->m_parent;
-            assert(parent);
-            rc = dds_entity_lock(parent->m_hdl, DDS_KIND_READER, (dds_entity**)reader);
-            if (rc != DDS_RETCODE_OK) {
-              dds_entity_unlock((dds_entity*)*condition);
+        if (!only_reader) {
+            if ((dds_entity_kind(hdl) == DDS_KIND_COND_READ ) || (dds_entity_kind(hdl) == DDS_KIND_COND_QUERY) ){
+                rc = dds_entity_lock(hdl, DDS_KIND_DONTCARE, (dds_entity**)condition);
+                if (rc == DDS_RETCODE_OK) {
+                    dds_entity *parent = ((dds_entity*)*condition)->m_parent;
+                    assert(parent);
+                    rc = dds_entity_lock(parent->m_hdl, DDS_KIND_READER, (dds_entity**)reader);
+                    if (rc != DDS_RETCODE_OK) {
+                        dds_entity_unlock((dds_entity*)*condition);
+                        DDS_ERROR(rc, "Failed to lock condition reader.");
+                    }
+                } else {
+                    DDS_ERROR(rc, "Failed to lock condition.");
+                }
+            } else {
+                DDS_ERROR(rc, "Given entity is not a reader nor a condition.");
             }
-          }
+        } else {
+            DDS_ERROR(rc, "Given entity is not a reader.");
         }
-      }
+    } else if (rc != DDS_RETCODE_OK) {
+        DDS_ERROR(rc, "Failed to lock reader.");
     }
     return rc;
 }
@@ -351,7 +360,7 @@ dds_read_instance(
         }
         ret = dds_read_impl(false, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
     } else {
-      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
+      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
     }
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
@@ -382,7 +391,7 @@ dds_read_instance_wl(
         }
         ret = dds_read_impl(false, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
     } else {
-      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
+      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
     }
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
@@ -416,7 +425,7 @@ dds_read_instance_mask(
         }
         ret = dds_read_impl(false, rd_or_cnd, buf, bufsz, maxs, si, mask, handle, lock, false);
     } else {
-      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
+      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
     }
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
@@ -449,7 +458,7 @@ dds_read_instance_mask_wl(
         }
         ret = dds_read_impl(false, rd_or_cnd, buf, maxs, maxs, si, mask, handle, lock, false);
     } else {
-      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
+      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
     }
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
@@ -606,7 +615,7 @@ dds_take_instance(
         }
         ret = dds_read_impl(true, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
     } else {
-      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
+        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
     }
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
@@ -637,7 +646,7 @@ dds_take_instance_wl(
         }
         ret = dds_read_impl(true, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
+        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
     }
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
@@ -671,7 +680,7 @@ dds_take_instance_mask(
         }
         ret = dds_read_impl(true, rd_or_cnd, buf, bufsz, maxs, si, mask, handle, lock, false);
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
+        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
     }
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
@@ -704,7 +713,7 @@ dds_take_instance_mask_wl(
         }
         ret = dds_read_impl(true, rd_or_cnd, buf, maxs, maxs, si, mask, handle, lock, false);
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Provided handle has NULL value");
+        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
     }
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
@@ -779,7 +788,7 @@ dds_return_loan(
 
         dds_read_unlock(rd, cond);
     }
-    ret = DDS_ERRNO(rc, "Error occurred");
+    ret = DDS_ERRNO(rc, "Unable to lock the entity");
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }

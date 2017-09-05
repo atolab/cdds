@@ -54,7 +54,7 @@ dds_reader_close(
     if (asleep) {
       thread_state_asleep(thr);
     }
-    return DDS_ERRNO(rc, "Error");
+    return DDS_ERRNO(rc, "Internal error");
 }
 
 static dds_return_t
@@ -111,7 +111,7 @@ dds_reader_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Changing QoS policies does not being supported by DDSI");
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "VortexDDS does not support changing QoS policies");
         }
     }
     return ret;
@@ -122,7 +122,7 @@ dds_reader_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_READER_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided mask is not given properly") :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Invalid status mask") :
                      DDS_RETCODE_OK;
 }
 
@@ -515,7 +515,7 @@ dds_reader_wait_for_historical_data(
         if (((dds_entity*)rd)->m_qos->durability.kind > NN_TRANSIENT_LOCAL_DURABILITY_QOS) {
             ret = (dds_global.m_dur_wait) (rd, max_wait);
         } else {
-            ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Error");
+            ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Can not wait for historical data on a reader with volatile durability");
         }
         dds_reader_unlock(rd);
     } else {
@@ -543,7 +543,7 @@ dds_get_subscriber(
     } else if (dds_entity_kind(entity) == DDS_KIND_COND_QUERY) {
         hdl = dds_get_subscriber(dds_get_parent(entity));
     } else {
-        hdl = DDS_ERRNO(dds_valid_hdl(entity, DDS_KIND_READER), "Provided entity is not valid");
+        hdl = DDS_ERRNO(dds_valid_hdl(entity, DDS_KIND_READER), "Provided entity is not a reader nor a condition");
     }
     DDS_REPORT_FLUSH(hdl != DDS_RETCODE_OK);
     return hdl;
@@ -563,18 +563,18 @@ dds_get_subscription_matched_status (
 
     rc = dds_reader_lock(reader, &rd);
     if (rc == DDS_RETCODE_OK) {
-      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-      if (status) {
-          *status = rd->m_subscription_matched_status;
-      }
-      if (((dds_entity*)rd)->m_status_enable & DDS_SUBSCRIPTION_MATCHED_STATUS) {
-          rd->m_subscription_matched_status.total_count_change = 0;
-          rd->m_subscription_matched_status.current_count_change = 0;
-          dds_entity_status_reset(rd, DDS_SUBSCRIPTION_MATCHED_STATUS);
-      } else{
-          ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided reader does not have subscription matched status");
-      }
-      dds_reader_unlock(rd);
+        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+        if (status) {
+            *status = rd->m_subscription_matched_status;
+        }
+        if (((dds_entity*)rd)->m_status_enable & DDS_SUBSCRIPTION_MATCHED_STATUS) {
+            rd->m_subscription_matched_status.total_count_change = 0;
+            rd->m_subscription_matched_status.current_count_change = 0;
+            dds_entity_status_reset(rd, DDS_SUBSCRIPTION_MATCHED_STATUS);
+        } else{
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided reader does not have subscription matched status");
+        }
+        dds_reader_unlock(rd);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking reader");
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
@@ -595,18 +595,18 @@ dds_get_liveliness_changed_status (
 
     rc = dds_reader_lock(reader, &rd);
     if (rc == DDS_RETCODE_OK) {
-      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-      if (status) {
-        *status = rd->m_liveliness_changed_status;
-      }
-      if (((dds_entity*)rd)->m_status_enable & DDS_LIVELINESS_CHANGED_STATUS) {
-        rd->m_liveliness_changed_status.alive_count_change = 0;
-        rd->m_liveliness_changed_status.not_alive_count_change = 0;
-        dds_entity_status_reset(rd, DDS_LIVELINESS_CHANGED_STATUS);
-      } else{
-          ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided reader does not have liveliness changed status");
-      }
-      dds_reader_unlock(rd);
+        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+        if (status) {
+            *status = rd->m_liveliness_changed_status;
+        }
+        if (((dds_entity*)rd)->m_status_enable & DDS_LIVELINESS_CHANGED_STATUS) {
+            rd->m_liveliness_changed_status.alive_count_change = 0;
+            rd->m_liveliness_changed_status.not_alive_count_change = 0;
+            dds_entity_status_reset(rd, DDS_LIVELINESS_CHANGED_STATUS);
+        } else{
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided reader does not have liveliness changed status");
+        }
+        dds_reader_unlock(rd);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking reader");
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
@@ -624,18 +624,18 @@ dds_return_t dds_get_sample_rejected_status (
 
     rc = dds_reader_lock(reader, &rd);
     if (rc == DDS_RETCODE_OK) {
-      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-      if (status) {
-        *status = rd->m_sample_rejected_status;
-      }
-      if (((dds_entity*)rd)->m_status_enable & DDS_SAMPLE_REJECTED_STATUS) {
-        rd->m_sample_rejected_status.total_count_change = 0;
-        rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
-        dds_entity_status_reset(rd, DDS_SAMPLE_REJECTED_STATUS);
-      } else{
-          ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided reader does not have sample rejected status");
-      }
-      dds_reader_unlock(rd);
+        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+        if (status) {
+            *status = rd->m_sample_rejected_status;
+        }
+        if (((dds_entity*)rd)->m_status_enable & DDS_SAMPLE_REJECTED_STATUS) {
+            rd->m_sample_rejected_status.total_count_change = 0;
+            rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
+            dds_entity_status_reset(rd, DDS_SAMPLE_REJECTED_STATUS);
+        } else{
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided reader does not have sample rejected status");
+        }
+        dds_reader_unlock(rd);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking reader");
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
@@ -655,17 +655,17 @@ dds_return_t dds_get_sample_lost_status (
 
     rc = dds_reader_lock(reader, &rd);
     if (rc == DDS_RETCODE_OK) {
-      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-      if (status) {
-        *status = rd->m_sample_lost_status;
-      }
-      if (((dds_entity*)rd)->m_status_enable & DDS_SAMPLE_LOST_STATUS) {
-        rd->m_sample_lost_status.total_count_change = 0;
-        dds_entity_status_reset(rd, DDS_SAMPLE_LOST_STATUS);
-      } else{
-          ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided reader does not have sample lost status");
-      }
-      dds_reader_unlock(rd);
+        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+        if (status) {
+            *status = rd->m_sample_lost_status;
+        }
+        if (((dds_entity*)rd)->m_status_enable & DDS_SAMPLE_LOST_STATUS) {
+            rd->m_sample_lost_status.total_count_change = 0;
+            dds_entity_status_reset(rd, DDS_SAMPLE_LOST_STATUS);
+        } else{
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided reader does not have sample lost status");
+        }
+        dds_reader_unlock(rd);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking reader");
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
@@ -683,17 +683,17 @@ dds_return_t dds_get_requested_deadline_missed_status (
 
     rc = dds_reader_lock(reader, &rd);
     if (rc == DDS_RETCODE_OK) {
-      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-      if (status) {
-        *status = rd->m_requested_deadline_missed_status;
-      }
-      if (((dds_entity*)rd)->m_status_enable & DDS_REQUESTED_DEADLINE_MISSED_STATUS) {
-        rd->m_requested_deadline_missed_status.total_count_change = 0;
-        dds_entity_status_reset(rd, DDS_REQUESTED_DEADLINE_MISSED_STATUS);
-      } else{
-          ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided reader does not have requested deadline missed status");
-      }
-      dds_reader_unlock(rd);
+        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+        if (status) {
+            *status = rd->m_requested_deadline_missed_status;
+        }
+        if (((dds_entity*)rd)->m_status_enable & DDS_REQUESTED_DEADLINE_MISSED_STATUS) {
+            rd->m_requested_deadline_missed_status.total_count_change = 0;
+            dds_entity_status_reset(rd, DDS_REQUESTED_DEADLINE_MISSED_STATUS);
+        } else{
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided reader does not have requested deadline missed status");
+        }
+        dds_reader_unlock(rd);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking reader");
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
@@ -713,17 +713,17 @@ dds_return_t dds_get_requested_incompatible_qos_status (
 
     rc = dds_reader_lock(reader, &rd);
     if (rc == DDS_RETCODE_OK) {
-      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-      if (status) {
-        *status = rd->m_requested_incompatible_qos_status;
-      }
-      if (((dds_entity*)rd)->m_status_enable & DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS) {
-        rd->m_requested_incompatible_qos_status.total_count_change = 0;
-        dds_entity_status_reset(rd, DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
-      } else{
-          ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided reader does not have requested incompatible qos status");
-      }
-      dds_reader_unlock(rd);
+        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+        if (status) {
+            *status = rd->m_requested_incompatible_qos_status;
+        }
+        if (((dds_entity*)rd)->m_status_enable & DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS) {
+            rd->m_requested_incompatible_qos_status.total_count_change = 0;
+            dds_entity_status_reset(rd, DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
+        } else{
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided reader does not have requested incompatible qos status");
+        }
+        dds_reader_unlock(rd);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking reader");
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);

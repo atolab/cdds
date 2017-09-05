@@ -17,7 +17,7 @@ dds_subscriber_instance_hdl(
     assert(e);
     assert(i);
     /* TODO: Get/generate proper handle. */
-    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Generating proper handle is not supported yet");
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Generating subscriber instance handle is not supported");
 }
 
 static dds_return_t
@@ -38,10 +38,10 @@ dds_subscriber_qos_validate(
     if (consistent) {
         if (enabled && (qos->present & QP_PRESENTATION)) {
             /* TODO: Improve/check immutable check. */
-            ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Immutable check on QoS policy is not supported yet");
+            ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Presentation QoS policy is immutable");
         }
     } else {
-      ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Provided QoS has an inconsistent policy");
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Provided QoS has an inconsistent policy");
     }
     return ret;
 }
@@ -56,7 +56,7 @@ dds_subscriber_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "DDSI does not support changing QoS policies yet");
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "VortexDDS does not support changing QoS policies yet");
         }
     }
     return ret;
@@ -67,7 +67,7 @@ dds_subscriber_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_SUBSCRIBER_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided mask is not given properly") :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Invalid status mask") :
                      DDS_RETCODE_OK;
 }
 
@@ -184,5 +184,5 @@ dds_subscriber_end_coherent(
         _In_ dds_entity_t e)
 {
     /* TODO: CHAM-124 Currently unsupported. */
-	return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Using coherency to get a coherent data set is not currently being supported");
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Using coherency to get a coherent data set is not currently being supported");
 }
