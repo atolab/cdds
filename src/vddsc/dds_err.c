@@ -24,23 +24,6 @@ static const char * dds_err_code_array[DDS_ERR_CODE_NUM] =
   "Illegal Operation"
 };
 
-dds_return_t handle_dds_errno(int dds_error, int e, const char * context, const char * file, int line, const char * msg, ...)
-{
-  dds_return_t ret = e;
-  char buf[OS_REPORT_BUFLEN];
-  va_list args;
-
-  if (e > 0) {
-    va_start (args, msg);
-    (void)os_vsnprintf (buf, sizeof(buf), msg, args);
-    va_end (args);
-    os_report_message(OS_REPORT_ERROR, context, file, line, e, buf);
-    ret = dds_error;
-  }
-
-  return ret;
-}
-
 const char * dds_err_str (dds_return_t err)
 {
   unsigned index = DDS_ERR_NR_INDEX (err);

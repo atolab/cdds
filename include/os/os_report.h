@@ -98,15 +98,6 @@ os_report_flush((condition), OS_FUNCTION, __FILE__, __LINE__)
               _In_z_ _Printf_format_string_ const char *format,
               ...) __attribute_format__((printf,6,7));
 
-    OSAPI_EXPORT void
-    os_report_message(
-              _In_ os_reportType type,
-              _In_z_ const char *context,
-              _In_z_ const char *path,
-              _In_ int32_t line,
-              _In_ int32_t code,
-              _In_z_ const char *message);
-
     /*****************************************
      * Report stack related functions
      *****************************************/

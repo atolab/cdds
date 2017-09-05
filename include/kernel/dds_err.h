@@ -11,7 +11,7 @@ extern "C" {
  * complains a lot about "A successful path through the function
  * does not set the named _Out_ parameter." */
 #if !defined(__FILE_ID__)
-#define __FILE_ID__ (0)
+#error "__FILE_ID__ not defined"
 #endif
 
 #define DDS__FILE_ID__ (((__FILE_ID__ & 0x1ff)) << 22)
@@ -21,9 +21,7 @@ extern "C" {
 
 #define DDS_ERRNO_DEPRECATED(e) ((e <= 0) ? e : DDS_ERR_NO(e))
 
-dds_return_t handle_dds_errno(int dds_error, int e, const char * context, const char * file, int line, const char * msg, ...);
-
-#define DDS_ERRNO(e,msg,...) (handle_dds_errno(DDS_ERR_NO(e),e,OS_FUNCTION,__FILE__,__LINE__,msg,##__VA_ARGS__))
+#define DDS_ERRNO(e,msg,...) (assert(e > DDS_RETCODE_OK), os_report(OS_REPORT_ERROR, OS_FUNCTION, __FILE__, __LINE__, DDS_ERR_NO(e), (msg), ##__VA_ARGS__), DDS_ERR_NO(e))
 
 #if defined (__cplusplus)
 }
