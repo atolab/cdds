@@ -92,6 +92,8 @@ if(WIN32 AND NOT UNIX)
   set(CPACK_WIX_PROPERTY_ARPHELPLINK "http://www.prismtech.com/support")
   set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "http://www.prismtech.com/")
   set(CPACK_WIX_PROPERTY_ARPURLUPDATEINFO "http://www.prismtech.com/vortex/software-downloads")
+  # A constant GUID allows installers to replace existing installations that use the same GUID.
+  set(CPACK_WIX_UPGRADE_GUID "1351F59A-972B-4624-A7F1-439381BFA41D")
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
   if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "Install path prefix prepended on to install directories." FORCE)
