@@ -142,7 +142,7 @@ dds_return_t
 dds_resume(
         _In_ dds_entity_t publisher)
 {
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 

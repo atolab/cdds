@@ -149,17 +149,17 @@ dds_register_instance(
     }
     rc = dds_entity_lock(writer, DDS_KIND_WRITER, &wr);
     if (rc != DDS_RETCODE_OK) {
-    	ret = DDS_ERRNO(rc, "Error occurred on locking writer");
-    	goto err;
+        ret = DDS_ERRNO(rc, "Error occurred on locking writer");
+        goto err;
     }
-        inst = dds_instance_find (((dds_writer*) wr)->m_topic, data, true);
-        if(inst != NULL){
-            *handle = inst->m_iid;
-            ret = DDS_RETCODE_OK;
-        } else{
-            ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Instance handle has NULL value");
-            goto err;
-        }
+    inst = dds_instance_find (((dds_writer*) wr)->m_topic, data, true);
+    if(inst != NULL){
+        *handle = inst->m_iid;
+        ret = DDS_RETCODE_OK;
+    } else{
+        ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Instance handle has NULL value");
+        goto err;
+    }
     dds_entity_unlock(wr);
 err:
     DDS_REPORT_FLUSH(ret < 0);

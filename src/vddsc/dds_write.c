@@ -366,7 +366,7 @@ void
 dds_write_flush(
         dds_entity_t writer)
 {
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
     DDS_REPORT_STACK();
 
     struct thread_state1 * const thr = lookup_thread_state ();
