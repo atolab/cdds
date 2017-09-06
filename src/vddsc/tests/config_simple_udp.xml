@@ -1,0 +1,19 @@
+<VortexDDS>
+  <Domain>
+    <Id>3</Id>
+  </Domain>
+  <DDSI2E>
+    <General>
+      <NetworkInterfaceAddress>127.0.0.1</NetworkInterfaceAddress>
+      <AllowMulticast>true</AllowMulticast>
+      <EnableMulticastLoopback>true</EnableMulticastLoopback>
+      <EnableLoopback>true</EnableLoopback>
+    </General>
+    <Compatibility>
+      <StandardsConformance>lax</StandardsConformance>
+    </Compatibility>
+    <Tracing>
+      <Verbosity>warning</Verbosity>
+    </Tracing>
+  </DDSI2E>
+</VortexDDS>
