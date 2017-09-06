@@ -20,7 +20,7 @@
     </Compatibility>
     <Tracing>
       <Verbosity>warning</Verbosity>
-      <OutputFile>&#118;&#x6F;rtexdds-trace.log </OutputFile>
+      <OutputFile>&#118;&#x6F;rtexdds-<![CDATA[trace]]>.log </OutputFile>
     </Tracing>
     <Internal>
       <MaxParticipants>0</MaxParticipants>
