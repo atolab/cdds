@@ -26,23 +26,27 @@ dds_subscriber_qos_validate(
         bool enabled)
 {
     dds_return_t ret = DDS_RETCODE_OK;
-    bool consistent = true;
 
     assert(qos);
-    consistent &= (qos->present & QP_GROUP_DATA) ? validate_octetseq(&qos->group_data) : true;
-    consistent &= (qos->present & QP_PARTITION) ? validate_stringseq(&qos->partition) : true;
-    consistent &= (qos->present & QP_PRESENTATION) ? !validate_presentation_qospolicy(&qos->presentation) : true;
-    consistent &= (qos->present & QP_PRISMTECH_ENTITY_FACTORY) ? \
-        validate_entityfactory_qospolicy(&qos->entity_factory) : true;
 
-    if (consistent) {
-        if (enabled && (qos->present & QP_PRESENTATION)) {
-            /* TODO: Improve/check immutable check. */
-            ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Presentation QoS policy is immutable");
-        }
-    } else {
-        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Provided QoS has an inconsistent policy");
+    if((qos->present & QP_GROUP_DATA) && !validate_octetseq(&qos->group_data)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Group data policy is inconsistent and caused an error");
     }
+    if((qos->present & QP_PARTITION) && !validate_stringseq(&qos->partition)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Partition policy is inconsistent and caused an error");
+    }
+    if((qos->present & QP_PRESENTATION) && validate_presentation_qospolicy(&qos->presentation)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Presentation policy is inconsistent and caused an error");
+    }
+    if((qos->present & QP_PRISMTECH_ENTITY_FACTORY) && !validate_entityfactory_qospolicy(&qos->entity_factory)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Prismtech entity factory policy is inconsistent and caused an error");
+    }
+    if(ret == DDS_RETCODE_OK && enabled && (qos->present & QP_PRESENTATION)) {
+        /* TODO: Improve/check immutable check. */
+        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Presentation QoS policy is immutable");
+    }
+err:
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -120,8 +124,7 @@ dds_create_subscriber(
         ret = dds_subscriber_qos_validate(qos, false);
         if (ret != DDS_RETCODE_OK) {
             dds_entity_unlock(par);
-            hdl = DDS_ERRNO(ret, "Subscriber Qos is not valid");
-            return hdl;
+            return ret;
         }
         new_qos = dds_qos_create();
         /* Only returns failure when one of the qos args is NULL, which
@@ -138,7 +141,7 @@ dds_create_subscriber(
     sub->m_entity.m_deriver.get_instance_hdl = dds_subscriber_instance_hdl;
     dds_entity_unlock(par);
 
-    DDS_REPORT_FLUSH(hdl != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
 
@@ -157,6 +160,7 @@ dds_notify_readers(
     errnr = dds_entity_lock(subscriber, DDS_KIND_SUBSCRIBER, &sub);
     if (errnr == DDS_RETCODE_OK) {
         errnr = DDS_RETCODE_UNSUPPORTED;
+        ret = DDS_ERRNO(errnr, "Unsupported operation");
         iter = sub->m_children;
         while (iter) {
             os_mutexLock(&iter->m_mutex);
@@ -165,9 +169,11 @@ dds_notify_readers(
             iter = iter->m_next;
         }
         dds_entity_unlock(sub);
+    } else {
+        ret = DDS_ERRNO(errnr, "Error occurred on locking subscriber");
     }
-    ret = DDS_ERRNO(errnr, "Error occurred on locking subscriber");
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK );
+
+    DDS_REPORT_FLUSH(ret < 0 );
     return ret;
 }
 

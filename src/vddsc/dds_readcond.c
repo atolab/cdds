@@ -57,7 +57,7 @@ dds_create_readcondition(
     } else {
         hdl = DDS_ERRNO(rc, "Error occurred on locking reader");
     }
-    DDS_REPORT_FLUSH(hdl != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
 
@@ -77,7 +77,7 @@ dds_get_datareader(
     } else {
         hdl = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ), "Provided entity is not a valid condition.");
     }
-    DDS_REPORT_FLUSH(hdl != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
 
@@ -113,6 +113,6 @@ dds_get_mask(
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided mask has NULL value");
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }

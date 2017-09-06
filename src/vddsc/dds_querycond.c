@@ -44,6 +44,6 @@ dds_create_querycondition(
     } else {
         hdl = DDS_ERRNO(rc, "Error occurred on locking reader");
     }
-    DDS_REPORT_FLUSH(hdl != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
