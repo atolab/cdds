@@ -45,7 +45,7 @@ dds_write(
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "No data buffer provided");
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -86,18 +86,23 @@ dds_write_ts(
 
     DDS_REPORT_STACK();
 
-    if ((data != NULL) && (timestamp >= 0)) {
-        rc = dds_writer_lock(writer, &wr);
-        if (rc == DDS_RETCODE_OK) {
-            ret = dds_write_impl(wr, data, timestamp, 0);
-            dds_writer_unlock(wr);
-        } else {
-            ret = DDS_ERRNO(rc, "Error occurred on locking writer");
-        }
-    } else {
-      ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Either data has NULL value or provided timestamp is smaller than zero");
+    if(data == NULL){
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument data has NULL value");
+        goto err;
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    if(timestamp < 0){
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument timestamp has negative value");
+        goto err;
+    }
+    rc = dds_writer_lock(writer, &wr);
+    if (rc == DDS_RETCODE_OK) {
+        ret = dds_write_impl(wr, data, timestamp, 0);
+        dds_writer_unlock(wr);
+    } else {
+        ret = DDS_ERRNO(rc, "Error occurred on locking writer");
+    }
+err:
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -361,6 +366,9 @@ void
 dds_write_flush(
         dds_entity_t writer)
 {
+    dds_return_t ret;
+    DDS_REPORT_STACK();
+
     struct thread_state1 * const thr = lookup_thread_state ();
     const bool asleep = !vtime_awake_p (thr->vtime);
     dds_writer *wr;
@@ -372,9 +380,12 @@ dds_write_flush(
     if (dds_writer_lock(writer, &wr) != DDS_RETCODE_OK) {
         nn_xpack_send (wr->m_xp, true);
         dds_writer_unlock(wr);
+        ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Error occurred on locking writer");
     }
 
     if (asleep) {
         thread_state_asleep (thr);
     }
+    DDS_REPORT_FLUSH(ret < 0);
+    return ;
 }

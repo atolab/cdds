@@ -24,23 +24,24 @@ dds_publisher_qos_validate(
         _In_ bool enabled)
 {
     dds_return_t ret;
-    bool consistent = true;
     assert(qos);
+
     /* Check consistency. */
-    consistent &= (qos->present & QP_GROUP_DATA) ? validate_octetseq(&qos->group_data) : true;
-    consistent &= (qos->present & QP_PRESENTATION) ? (validate_presentation_qospolicy(&qos->presentation) == 0) : true;
-    consistent &= (qos->present & QP_PARTITION) ? validate_stringseq(&qos->partition) : true;
-    consistent &= (qos->present & QP_PRISMTECH_ENTITY_FACTORY) ? \
-            validate_entityfactory_qospolicy(&qos->entity_factory) : true;
-    if (consistent) {
-        if (enabled && (qos->present & QP_PRESENTATION)) {
-            /* TODO: Improve/check immutable check. */
-            ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Presentation policy is immutable");
-        } else {
-            ret = DDS_RETCODE_OK;
-        }
-    } else {
-        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Provided QoS policy is not consistent");
+    if((qos->present & QP_GROUP_DATA) && !validate_octetseq(&qos->group_data)){
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Group data policy is inconsistent and caused an error");
+    }
+    if((qos->present & QP_PRESENTATION) && (validate_presentation_qospolicy(&qos->presentation) != 0)){
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Presentation policy is inconsistent and caused an error");
+    }
+    if((qos->present & QP_PARTITION) && !validate_stringseq(&qos->partition)){
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Partition policy is inconsistent and caused an error");
+    }
+    if((qos->present & QP_PRISMTECH_ENTITY_FACTORY) && !validate_entityfactory_qospolicy(&qos->entity_factory)){
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Prismtech entity factory policy is inconsistent and caused an error");
+    }
+    if(ret == DDS_RETCODE_OK && enabled && (qos->present & QP_PRESENTATION)){
+        /* TODO: Improve/check immutable check. */
+        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Presentation policy is immutable");
     }
     return ret;
 }
@@ -125,11 +126,13 @@ dds_suspend(
     DDS_REPORT_STACK();
 
     if(dds_entity_kind(publisher) != DDS_KIND_PUBLISHER) {
-        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided entity is not a publisher kind");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided entity is not a publisher kind");
+        goto err;
     }
     /* TODO: CHAM-123 Currently unsupported. */
     ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Suspend publication operation does not being supported yet");
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
+err:
     return ret;
 }
 
@@ -144,11 +147,13 @@ dds_resume(
     DDS_REPORT_STACK();
 
     if(dds_entity_kind(publisher) != DDS_KIND_PUBLISHER) {
-        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER,"Provided entity is not a publisher kind");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER,"Provided entity is not a publisher kind");
+        goto err;
     }
     /* TODO: CHAM-123 Currently unsupported. */
     ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Suspend publication operation does not being supported yet");
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
+err:
     return ret;
 }
 
@@ -177,7 +182,7 @@ dds_wait_for_acks(
             ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided entity is not a publisher nor a writer");
             break;
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 

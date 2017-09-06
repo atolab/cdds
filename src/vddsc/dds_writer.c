@@ -244,17 +244,24 @@ dds_writer_qos_validate(
     assert(qos);
 
     /* Check consistency. */
-    if (dds_qos_validate_common(qos) != true
-     || ((qos->present & QP_USER_DATA) && validate_octetseq(&qos->user_data) != true)
-     || ((qos->present & QP_DURABILITY_SERVICE) && validate_durability_service_qospolicy(&qos->durability_service) != 0)
-     || ((qos->present & QP_LIFESPAN) && validate_duration(&qos->lifespan.duration) != 0)
-     || ((qos->present & QP_HISTORY) && (qos->present & QP_RESOURCE_LIMITS) && validate_history_and_resource_limits(&qos->history, &qos->resource_limits) != 0))
-    {
-        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Provided QoS policy is not consistent");
-    } else if (enabled) {
+    if(dds_qos_validate_common(qos) != true){
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Provided inconsistent QoS policy");
+    }
+    if((qos->present & QP_USER_DATA) && validate_octetseq(&qos->user_data) != true){
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "User Data QoS policy is inconsistent and caused an error");
+    }
+    if ((qos->present & QP_DURABILITY_SERVICE) && validate_durability_service_qospolicy(&qos->durability_service) != 0){
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Durability service QoS policy is inconsistent and caused an error");
+    }
+    if ((qos->present & QP_LIFESPAN) && validate_duration(&qos->lifespan.duration) != 0){
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Lifespan QoS policy is inconsistent and caused an error");
+    }
+    if ((qos->present & QP_HISTORY) && (qos->present & QP_RESOURCE_LIMITS) && (validate_history_and_resource_limits(&qos->history, &qos->resource_limits) != 0)){
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Resource limits QoS policy is inconsistent and caused an error");
+    }
+    if(ret != DDS_RETCODE_OK && enabled) {
         ret = dds_qos_validate_mutable_common(qos);
     }
-
     return ret;
 }
 
@@ -431,7 +438,7 @@ err_tp_lock:
         (void)dds_delete(publisher);
     }
 err_pub_lock:
-    DDS_REPORT_FLUSH(writer != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(writer <= 0);
     return writer;
 
 
@@ -454,7 +461,7 @@ dds_get_publisher(
     } else{
         hdl = dds_get_parent(writer);
     }
-    DDS_REPORT_FLUSH(hdl != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
 
@@ -484,7 +491,7 @@ dds_get_publication_matched_status (
       dds_writer_unlock(wr);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking writer");
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -513,7 +520,7 @@ dds_get_liveliness_lost_status (
       dds_writer_unlock(wr);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking writer");
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -542,7 +549,7 @@ dds_get_offered_deadline_missed_status(
       dds_writer_unlock(wr);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking writer");
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -571,6 +578,6 @@ dds_get_offered_incompatible_qos_status (
       dds_writer_unlock(wr);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking writer");
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
