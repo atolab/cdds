@@ -140,7 +140,7 @@ dds_create_participant(
         ret = dds_init();
         DDS_REPORT_STACK();
         if (ret != DDS_RETCODE_OK) {
-            e = (dds_entity_t)DDS_ERRNO(ret, "Initialization of DDS layer is failed");
+            e = DDS_ERRNO(ret, "Initialization of DDS layer is failed");
             goto fail;
         }
     }
@@ -183,7 +183,7 @@ dds_create_participant(
 
     if (q_rc != 0) {
         dds_qos_delete(new_qos);
-        e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR, "Error");
+        e = DDS_ERRNO(DDS_RETCODE_ERROR, "Error");
         goto fail;
     }
 
