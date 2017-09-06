@@ -2,6 +2,7 @@
 #include <string.h>
 #include "kernel/dds_listener.h"
 #include "kernel/dds_qos.h"
+#include "kernel/dds_err.h"
 #include "ddsi/q_entity.h"
 
 #define DDS_PUBLISHER_STATUS_MASK   0

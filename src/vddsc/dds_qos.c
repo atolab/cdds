@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 #include "kernel/dds_qos.h"
+#include "kernel/dds_err.h"
 #include "ddsi/q_config.h"
 
 /* TODO: dd_duration_t is converted to nn_ddsi_time_t declared in q_time.h

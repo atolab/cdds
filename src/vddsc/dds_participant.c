@@ -7,6 +7,7 @@
 #include "kernel/dds_qos.h"
 #include "kernel/dds_domain.h"
 #include "kernel/dds_participant.h"
+#include "kernel/dds_err.h"
 
 #define DDS_PARTICIPANT_STATUS_MASK    0
 

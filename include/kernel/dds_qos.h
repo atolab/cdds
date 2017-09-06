@@ -1,7 +1,6 @@
 #ifndef _DDS_QOS_H_
 #define _DDS_QOS_H_
 
-#include "kernel/dds_types.h"
 #include "kernel/dds_entity.h"
 #include "ddsi/q_xqos.h"
 #include "ddsi/q_time.h"

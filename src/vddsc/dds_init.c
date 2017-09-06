@@ -6,6 +6,7 @@
 #include "kernel/dds_tkmap.h"
 #include "kernel/dds_iid.h"
 #include "kernel/dds_domain.h"
+#include "kernel/dds_err.h"
 #include "ddsi/ddsi_ser.h"
 #include "os/os.h"
 #include "ddsi/q_config.h"

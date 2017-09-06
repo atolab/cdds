@@ -3,6 +3,7 @@
 #include "kernel/dds_listener.h"
 #include "kernel/dds_qos.h"
 #include "kernel/dds_report.h"
+#include "kernel/dds_err.h"
 #include "ddsi/q_entity.h"
 
 #define DDS_SUBSCRIBER_STATUS_MASK                               \

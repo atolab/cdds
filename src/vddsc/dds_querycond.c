@@ -1,10 +1,10 @@
 #include <assert.h>
-#include "kernel/dds_types.h"
 #include "kernel/dds_entity.h"
 #include "kernel/dds_reader.h"
 #include "kernel/dds_topic.h"
 #include "kernel/dds_querycond.h"
 #include "kernel/dds_readcond.h"
+#include "kernel/dds_err.h"
 #include "ddsi/ddsi_ser.h"
 
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)

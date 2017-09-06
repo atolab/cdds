@@ -4,6 +4,7 @@
 #include "kernel/dds_reader.h"
 #include "kernel/dds_tkmap.h"
 #include "kernel/dds_rhc.h"
+#include "kernel/dds_err.h"
 #include "ddsi/q_thread.h"
 #include "ddsi/q_ephash.h"
 #include "ddsi/q_entity.h"

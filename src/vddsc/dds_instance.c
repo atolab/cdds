@@ -6,6 +6,7 @@
 #include "kernel/dds_writer.h"
 #include "kernel/dds_rhc.h"
 #include "kernel/dds_tkmap.h"
+#include "kernel/dds_err.h"
 #include "ddsi/ddsi_ser.h"
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"

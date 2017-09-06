@@ -5,6 +5,7 @@
 #include "ddsi/q_error.h"
 #include "ddsi/q_thread.h"
 #include "kernel/q_osplser.h"
+#include "kernel/dds_err.h"
 #include "ddsi/q_transmit.h"
 #include "ddsi/q_ephash.h"
 #include "ddsi/q_config.h"

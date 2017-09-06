@@ -1,7 +1,6 @@
 #ifndef _DDS_WRITER_H_
 #define _DDS_WRITER_H_
 
-#include "kernel/dds_types.h"
 #include "kernel/dds_entity.h"
 
 #if defined (__cplusplus)
