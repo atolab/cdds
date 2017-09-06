@@ -1,7 +1,12 @@
 <VortexDDS>
+  <!-- Simple config-file for testing whether a config-file can be picked up
+       correctly. -->
   <Domain>
     <Id>3</Id>
   </Domain>
+  <Lease>
+    <ExpiryTime update_factor="0.2">10.0</ExpiryTime>
+  </Lease>
   <DDSI2E>
     <General>
       <NetworkInterfaceAddress>127.0.0.1</NetworkInterfaceAddress>
