@@ -23,7 +23,7 @@ dds_publisher_qos_validate(
         _In_ const dds_qos_t *qos,
         _In_ bool enabled)
 {
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
     assert(qos);
 
     /* Check consistency. */
