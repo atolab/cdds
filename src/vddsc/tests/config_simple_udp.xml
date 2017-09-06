@@ -25,6 +25,7 @@
     <Internal>
       <MaxParticipants>${MAX_PARTICIPANTS}</MaxParticipants>
       <HeartbeatInterval max="10 s"> 100 ms </HeartbeatInterval>
+      <RediscoveryBlacklistDuration></RediscoveryBlacklistDuration>
     </Internal>
   </DDSI2E>
 </VortexDDS>
