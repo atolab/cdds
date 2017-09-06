@@ -155,6 +155,7 @@ else()
     add_custom_command(
       TARGET docs
       COMMAND ${WGET_EXECUTABLE}
+        -q
         ${VORTEXDDS_HTML_URI}
         ${VORTEXDDS_PDF_URI}
       COMMENT "Downloading documentation from target."
