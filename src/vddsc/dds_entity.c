@@ -299,13 +299,11 @@ dds_delete_impl(
 
     if(keep_if_explicit == true && ((e->m_flags & DDS_ENTITY_IMPLICIT) == 0)){
         dds_entity_unlock(e);
-        //return DDS_RETCODE_OK;
         goto err;
     }
 
     if (--e->m_refc != 0) {
         dds_entity_unlock(e);
-        //return DDS_RETCODE_OK;
         goto err;
     }
 
