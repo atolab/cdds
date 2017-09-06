@@ -4,6 +4,7 @@
 #include "config_env.h"
 
 #define URI_VARIABLE "VORTEXDDS_URI"
+#define MAX_PARTICIPANTS_VARIABLE "MAX_PARTICIPANTS"
 
 static void config__check_env(
     _In_z_ const char * env_variable,
@@ -19,6 +20,7 @@ Test(vddsc_config, simple_udp, .init = os_osInit, .fini = os_osExit) {
     dds_entity_t participant;
 
     config__check_env(URI_VARIABLE, CONFIG_ENV_SIMPLE_UDP);
+    config__check_env(MAX_PARTICIPANTS_VARIABLE, CONFIG_ENV_MAX_PARTICIPANTS);
 
     participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
 

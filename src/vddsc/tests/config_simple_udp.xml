@@ -23,7 +23,7 @@
       <OutputFile>&#118;&#x6F;rtexdds-<![CDATA[trace]]>.log </OutputFile>
     </Tracing>
     <Internal>
-      <MaxParticipants>0</MaxParticipants>
+      <MaxParticipants>${MAX_PARTICIPANTS}</MaxParticipants>
       <HeartbeatInterval max="10 s"> 100 ms </HeartbeatInterval>
     </Internal>
   </DDSI2E>
