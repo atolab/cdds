@@ -191,7 +191,6 @@ else()
 
 endif()
 
-# Installation
 install(
   DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
   DESTINATION ${CMAKE_INSTALL_DOCDIR}
