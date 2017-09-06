@@ -12,6 +12,7 @@ set(JENKINS_BASE_URI "http://jenkins.prismtech.com:8080/")
 set(JENKINS_DOCS_JOB_NAME "marcels-ChameleonDocumentationLinux64bitTemp")
 set(VORTEXDDS_PDF_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}.pdf")
 set(VORTEXDDS_HTML_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}HTML.tar.gz")
+set(DOCS_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/..")
 
 if (BUILD_DOCS)
   find_program(SPHINX_EXECUTABLE NAMES sphinx-build DOC "Sphinx documentation builder")
@@ -76,10 +77,6 @@ if (BUILD_DOCS)
 
   # Define custom commands for running sphinx-build for different docs builders
   set(docs_outputs "")
-
-  add_custom_target(create_html_tar ALL COMMAND
-    ${CMAKE_COMMAND} -E tar "zcf" "${CMAKE_PROJECT_NAME}HTML.tar.gz" "${CMAKE_CURRENT_BINARY_DIR}/html")
-
   foreach(builder ${docs_builders})
     set(docs_builder_output "docs_${builder}_output")
     # Log stdout (not stderr) to a file instead of messing up build output
@@ -97,7 +94,16 @@ if (BUILD_DOCS)
       COMMENT "Running Sphinx for ${builder} output"
       VERBATIM
     )
-    add_dependencies(create_html_tar docs)
+
+    add_custom_command(
+      OUTPUT ${docs_builder_output}
+      COMMAND ${CMAKE_COMMAND}
+        -E tar "zcf"
+        "${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz"
+        "${CMAKE_CURRENT_BINARY_DIR}/html"
+      APPEND
+      VERBATIM
+    )
 
     # Create a pdf from the latex builder output, by appending a latexmk command
     # TODO look into rinohtype as an alternative (don't bother with rst2pdf, it's no good)
@@ -112,13 +118,12 @@ if (BUILD_DOCS)
         APPEND
         VERBATIM
       )
-      # To make downloading and packaging easier.
       add_custom_command(
         OUTPUT ${docs_builder_output}
         COMMAND ${CMAKE_COMMAND}
           -E rename
             ${CMAKE_CURRENT_BINARY_DIR}/latex/${CMAKE_PROJECT_NAME}.pdf
-            ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.pdf
+            ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf
         APPEND
         VERBATIM
       )
@@ -132,11 +137,39 @@ if (BUILD_DOCS)
     list(APPEND docs_outputs ${docs_builder_output})
   endforeach()
 
+  # Remove generated files when cleaning the build tree
+  set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf)
+
   add_custom_target(docs ALL DEPENDS vddsc_docs ${docs_outputs})
 else()
-  # first check wget-executable
+  add_custom_target(docs ALL)
   find_program(WGET_EXECUTABLE NAMES wget DOC "wget")
-  if (NOT WGET_EXECUTABLE)
+  if (WGET_EXECUTABLE)
+    # prevent wget to create numbered downloads.
+    add_custom_command(
+      TARGET docs
+      COMMAND ${CMAKE_COMMAND}
+        -E remove -f "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz"
+      VERBATIM
+    )
+    add_custom_command(
+      TARGET docs
+      COMMAND ${WGET_EXECUTABLE}
+        ${VORTEXDDS_HTML_URI}
+        ${VORTEXDDS_PDF_URI}
+      COMMENT "Downloading documentation from target."
+      VERBATIM
+    )
+    # To make downloading and packaging easier.
+    add_custom_command(
+      TARGET docs
+      COMMAND ${CMAKE_COMMAND}
+        -E rename
+          ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.pdf
+          ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf
+      VERBATIM
+    )
+  else()
     message("-- Unable to find wget. Download docs now.")
     # Just try to download the docs straight away.
     file(DOWNLOAD
@@ -144,43 +177,26 @@ else()
       ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz)
     file(DOWNLOAD
       ${VORTEXDDS_PDF_URI}
-      ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.pdf)
+      ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf)
   endif()
 
-  add_custom_target(unzip_html_tar ALL COMMAND
-    ${CMAKE_COMMAND} -E tar "zxf" "${CMAKE_PROJECT_NAME}HTML.tar.gz" .)
+  add_custom_command(
+    TARGET docs
+    COMMAND ${CMAKE_COMMAND}
+      -E tar "zxf" "${CMAKE_PROJECT_NAME}HTML.tar.gz" .
+    VERBATIM
+  )
+  # Remove generated files when cleaning the build tree
+  set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES html ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf)
 
-  if (WGET_EXECUTABLE)
-    add_custom_target(downloader ALL COMMAND
-        ${WGET_EXECUTABLE}
-        ${VORTEXDDS_HTML_URI}
-        ${VORTEXDDS_PDF_URI}
-      COMMENT "Downloading ${CMAKE_PROJECT_NAME}HTML.tar.gz from download location Jenkins"
-      VERBATIM
-    )
-    add_dependencies(unzip_html_tar downloader)
-  endif()
-
-  add_custom_target(docs ALL DEPENDS unzip_html_tar)
 endif()
 
 # Installation
-if(BUILD_DOCS)
-  install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../
-    COMPONENT dev)
-  install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.pdf
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../
-    COMPONENT dev)
-endif()
-
 install(
   DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
   DESTINATION ${CMAKE_INSTALL_DOCDIR}
   COMPONENT dev)
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.pdf
+  FILES ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf
   DESTINATION ${CMAKE_INSTALL_DOCDIR}
   COMPONENT dev)
