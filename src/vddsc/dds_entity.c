@@ -299,12 +299,14 @@ dds_delete_impl(
 
     if(keep_if_explicit == true && ((e->m_flags & DDS_ENTITY_IMPLICIT) == 0)){
         dds_entity_unlock(e);
-        return DDS_RETCODE_OK;
+        //return DDS_RETCODE_OK;
+        goto err;
     }
 
     if (--e->m_refc != 0) {
         dds_entity_unlock(e);
-        return DDS_RETCODE_OK;
+        //return DDS_RETCODE_OK;
+        goto err;
     }
 
     dds_entity_cb_wait(e);
@@ -345,6 +347,7 @@ dds_delete_impl(
          * that was kicked during the close(). */
         if (ut_handle_delete(e->m_hdl, e->m_hdllink, timeout) != UT_HANDLE_OK) {
             ret =  DDS_ERRNO(DDS_RETCODE_TIMEOUT, "Entity deletion did not release resources.");
+            goto err;
         }
     }
 
@@ -461,12 +464,12 @@ dds_get_children(
     DDS_REPORT_STACK();
 
     if ((children != NULL) && ((size <= 0) || (size >= INT32_MAX))) {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Array was given, but with invalid size");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Array is given, but with invalid size");
         goto err;
     }
 
     if ((children == NULL) && (size != 0)) {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Size was given but no array");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Size is given but no array");
         goto err;
     }
 
@@ -566,9 +569,9 @@ dds_set_qos(
             ret = DDS_ERRNO(rc, "Error occurred on locking entity");
         }
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
-    DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH( ret < 0);
     return ret;
 }
 
@@ -597,11 +600,11 @@ dds_get_listener(
               goto err;
         }
     } else {
-          ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Listener provided with NULL value");
+          ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument listener is NULL");
           goto err;
     }
 err:
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -886,7 +889,7 @@ dds_get_domainid(
             ret = DDS_ERRNO(rc, "Error on locking entity");
         }
     } else{
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Domain id has NULL value");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Domain id is NULL");
     }
 
     DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
@@ -1051,7 +1054,7 @@ dds_triggered(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -1107,8 +1110,7 @@ dds_entity_observer_register(
         rc = dds_entity_observer_register_nl(e, observer, cb);
         dds_entity_unlock(e);
     } else{
-        rc = DDS_RETCODE_ERROR;
-        ret = DDS_ERRNO(rc, "Error occurred on locking observer");
+        DDS_ERROR(rc, "Error occurred on locking observer");
     }
     return rc;
 }
@@ -1221,7 +1223,7 @@ dds_get_topic(
     if (rc != DDS_RETCODE_OK) {
         hdl = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
-    DDS_REPORT_FLUSH(hdl != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(hdl < 0);
     return hdl;
 }
 
@@ -1235,8 +1237,6 @@ dds_set_explicit(
     if( rc == DDS_RETCODE_OK){
         e->m_flags &= ~DDS_ENTITY_IMPLICIT;
         dds_entity_unlock(e);
-    } else {
-        DDS_ERRNO(rc, "Error occurred on locking entity");
     }
 }
 

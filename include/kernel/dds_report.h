@@ -60,7 +60,7 @@ dds_report(
     const char *file,
     int32_t line,
     const char *function,
-    int32_t code,
+    dds_retcode_t code,
     const char *format,
     ...);
 

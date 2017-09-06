@@ -90,14 +90,14 @@ dds_participant_qos_validate(
         bool enabled)
 {
     dds_return_t ret = DDS_RETCODE_OK;
-    bool consistent = true;
     assert(qos);
 
     /* Check consistency. */
-    consistent &= (qos->present & QP_USER_DATA) ? validate_octetseq(&qos->user_data) : true;
-    consistent &= (qos->present & QP_PRISMTECH_ENTITY_FACTORY) ? validate_entityfactory_qospolicy(&qos->entity_factory) : true;
-    if (!consistent) {
-        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Inconsistent policy");
+    if ((qos->present & QP_USER_DATA) && !validate_octetseq(&qos->user_data)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "User data QoS policy is inconsistent and caused an error");
+    }
+    if ((qos->present & QP_PRISMTECH_ENTITY_FACTORY) && !validate_entityfactory_qospolicy(&qos->entity_factory)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Prismtech entity factory QoS policy is inconsistent and caused an error");
     }
     return ret;
 }
@@ -138,8 +138,10 @@ dds_create_participant(
     /* Initialize the dds layer when this is the first participant. */
     if (dds_pp_head == NULL) {
         ret = dds_init();
+        DDS_REPORT_STACK();
         if (ret != DDS_RETCODE_OK) {
-            return (dds_entity_t)ret;
+            e = (dds_entity_t)DDS_ERRNO(ret, "Initialization of DDS layer is failed");
+            goto fail;
         }
     }
 
@@ -211,6 +213,7 @@ fail:
     if (dds_pp_head == NULL) {
         dds_fini();
     }
+    DDS_REPORT_FLUSH( e <= 0);
     return e;
 }
 
@@ -225,11 +228,11 @@ dds_lookup_participant(
     DDS_REPORT_STACK();
 
     if ((participants != NULL) && ((size <= 0) || (size >= INT32_MAX))) {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Array was given, but with invalid size");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Array is given, but with invalid size");
         goto err;
     }
     if ((participants == NULL) && (size != 0)) {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Size was given but no array");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Size is given but no array");
         goto err;
     }
 
@@ -249,6 +252,6 @@ dds_lookup_participant(
     }
 
 err:
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }

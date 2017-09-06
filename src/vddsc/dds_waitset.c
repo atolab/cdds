@@ -230,7 +230,7 @@ dds_create_waitset(
     } else {
         hdl = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
-    DDS_REPORT_FLUSH(hdl != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
 
@@ -273,7 +273,7 @@ dds_waitset_get_entities(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -378,8 +378,7 @@ dds_waitset_attach(
             }
             ret = DDS_RETCODE_OK;
         } else if (rc != DDS_RETCODE_PRECONDITION_NOT_MET) {
-            rc = DDS_RETCODE_BAD_PARAMETER;
-            ret = DDS_ERRNO(rc, "Entity is not valid");
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Entity is not valid");
         } else {
             ret = DDS_ERRNO(rc, "Entity is already attached.");
         }
@@ -390,7 +389,7 @@ dds_waitset_attach(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0 );
     return ret;
 }
 
@@ -418,8 +417,7 @@ dds_waitset_detach(
             dds_waitset_remove(ws, entity);
             ret = DDS_RETCODE_OK;
         } else if (rc != DDS_RETCODE_PRECONDITION_NOT_MET) {
-            rc = DDS_RETCODE_BAD_PARAMETER;
-            ret = DDS_ERRNO(rc, "The given entity to detach is invalid.");
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The given entity to detach is invalid.");
         } else {
             ret = DDS_ERRNO(rc, "The given entity to detach was not attached previously.");
         }
@@ -427,7 +425,7 @@ dds_waitset_detach(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -439,7 +437,11 @@ dds_waitset_wait_until(
         _In_ size_t nxs,
         _In_ dds_time_t abstimeout)
 {
-  return dds_waitset_wait_impl(waitset, xs, nxs, abstimeout, dds_time());
+    dds_return_t ret;
+    DDS_REPORT_STACK();
+    ret = dds_waitset_wait_impl(waitset, xs, nxs, abstimeout, dds_time());
+    DDS_REPORT_FLUSH(ret < 0);
+    return ret;
 }
 
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
@@ -460,7 +462,7 @@ dds_waitset_wait(
     } else{
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Timed out");
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -490,7 +492,7 @@ dds_waitset_set_trigger(
         dds_waitset_unlock(ws);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
-    DDS_REPORT_FLUSH(ret!= DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
