@@ -104,11 +104,6 @@ dds_init(void)
     return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to parse configuration XML file %s", uri);
   }
 
-  if (! rtps_config_open ())
-  {
-    return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to open log file %s", config.tracingOutputFileName);
-  }
-
   os_procName(tmp, sizeof(tmp));
   dds_init_exe = dds_string_dup (tmp);
 
