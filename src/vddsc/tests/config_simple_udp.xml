@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
 <VortexDDS>
   <!-- Simple config-file for testing whether a config-file can be picked up
        correctly. -->
@@ -5,7 +6,7 @@
     <Id>3</Id>
   </Domain>
   <Lease>
-    <ExpiryTime update_factor="0.2">10.0</ExpiryTime>
+    <ExpiryTime update_factor="2e-1"/>
   </Lease>
   <DDSI2E>
     <General>
@@ -21,5 +22,9 @@
       <Verbosity>warning</Verbosity>
       <OutputFile>&#118;&#x6F;rtexdds-trace.log </OutputFile>
     </Tracing>
+    <Internal>
+      <MaxParticipants>0</MaxParticipants>
+      <HeartbeatInterval max="10 s"> 100 ms </HeartbeatInterval>
+    </Internal>
   </DDSI2E>
 </VortexDDS>
