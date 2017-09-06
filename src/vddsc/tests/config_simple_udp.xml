@@ -19,6 +19,7 @@
     </Compatibility>
     <Tracing>
       <Verbosity>warning</Verbosity>
+      <OutputFile>&#118;&#x6F;rtexdds-trace.log </OutputFile>
     </Tracing>
   </DDSI2E>
 </VortexDDS>
