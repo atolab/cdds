@@ -388,7 +388,7 @@ dds_delete_impl(
         dds_free (e);
     }
 err:
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -530,7 +530,7 @@ dds_get_qos(
     } else{
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER,"QoS has NULL value");
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -633,7 +633,7 @@ dds_set_listener(
         dds_entity_unlock(e);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking entity");
-    DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH( ret < 0);
     return ret;
 }
 
@@ -661,7 +661,7 @@ dds_enable(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -695,7 +695,7 @@ dds_get_status_changes(
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument status is NULL");
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -729,7 +729,7 @@ dds_get_enabled_status(
     } else{
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument status is NULL");
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -767,7 +767,7 @@ dds_set_enabled_status(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -806,7 +806,7 @@ dds_read_status(
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument status is NULL");
     }
-    DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH( ret < 0);
     return ret;
 }
 
@@ -848,7 +848,7 @@ dds_take_status(
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument status is NUL");
     }
-    DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH( ret < 0);
     return ret;
 }
 
@@ -892,7 +892,7 @@ dds_get_domainid(
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Domain id is NULL");
     }
 
-    DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH( ret < 0);
     return ret;
 }
 
@@ -925,7 +925,7 @@ dds_get_instance_handle(
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Instance handle argument is NULL");
     }
-    DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH( ret < 0);
     return ret;
 }
 
@@ -1102,7 +1102,6 @@ dds_entity_observer_register(
         _In_ dds_entity_callback cb)
 {
     dds_retcode_t rc;
-    dds_return_t ret;
     dds_entity *e;
     assert(cb);
     rc = dds_entity_lock(observed, DDS_KIND_DONTCARE, &e);
