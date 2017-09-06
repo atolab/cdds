@@ -45,7 +45,7 @@ dds_subscriber_qos_validate(
         /* TODO: Improve/check immutable check. */
         ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Presentation QoS policy is immutable");
     }
-err:
+
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
