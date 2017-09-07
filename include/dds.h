@@ -1185,7 +1185,8 @@ dds_wait_for_acks(
  */
 _Pre_satisfies_(((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER ) ||\
                 ((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
-_Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
+_Pre_satisfies_(((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC   ) ||\
+                ((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_INTERNAL) )
 DDS_EXPORT dds_entity_t
 dds_create_reader(
         _In_ dds_entity_t participant_or_subscriber,
