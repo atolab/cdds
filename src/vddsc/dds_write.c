@@ -45,7 +45,7 @@ dds_write(
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "No data buffer provided");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -102,7 +102,7 @@ dds_write_ts(
         ret = DDS_ERRNO(rc, "Error occurred on locking writer");
     }
 err:
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -367,6 +367,7 @@ dds_write_flush(
         dds_entity_t writer)
 {
     dds_return_t ret = DDS_RETCODE_OK;
+    dds_retcode_t rc;
     DDS_REPORT_STACK();
 
     struct thread_state1 * const thr = lookup_thread_state ();
@@ -376,11 +377,13 @@ dds_write_flush(
     if (asleep) {
         thread_state_awake (thr);
     }
-
-    if (dds_writer_lock(writer, &wr) != DDS_RETCODE_OK) {
+    rc = dds_writer_lock(writer, &wr);
+    if (rc == DDS_RETCODE_OK) {
         nn_xpack_send (wr->m_xp, true);
         dds_writer_unlock(wr);
         ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Error occurred on locking writer");
+    } else{
+        ret = DDS_ERRNO(rc, "Error occurred on locking writer");
     }
 
     if (asleep) {

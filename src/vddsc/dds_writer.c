@@ -440,8 +440,6 @@ err_tp_lock:
 err_pub_lock:
     DDS_REPORT_FLUSH(writer <= 0);
     return writer;
-
-
 }
 
 

@@ -131,8 +131,8 @@ dds_suspend(
     }
     /* TODO: CHAM-123 Currently unsupported. */
     ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Suspend publication operation does not being supported yet");
-    DDS_REPORT_FLUSH(ret < 0);
 err:
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -152,8 +152,8 @@ dds_resume(
     }
     /* TODO: CHAM-123 Currently unsupported. */
     ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Suspend publication operation does not being supported yet");
-    DDS_REPORT_FLUSH(ret < 0);
 err:
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -182,7 +182,7 @@ dds_wait_for_acks(
             ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided entity is not a publisher nor a writer");
             break;
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
