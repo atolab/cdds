@@ -11,7 +11,6 @@
  */
 package org.opensplice.config.swing;
 
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -21,13 +20,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 
 import org.opensplice.common.util.Report;
-import org.opensplice.common.view.entity.EntityInfoPane;
 import org.opensplice.config.data.DataAttribute;
 import org.opensplice.config.data.DataElement;
 import org.opensplice.config.data.DataException;
@@ -84,37 +81,10 @@ public class DataNodePopup implements MouseListener, ActionListener {
         return occurrences;
     }
 
-    private void showHelp(DataNode node){
-        String doc = node.getMetadata().getDoc();
-
-        if(doc == null){
-            doc = "No help available for this item.";
-        } else if(doc.length() == 0){
-            doc = "No help available for this item.";
-        }
-        EntityInfoPane helpPane = new EntityInfoPane("text/html");
-        helpPane.setPreferredSize(new Dimension(200, 200));
-        helpPane.setMinimumSize(new Dimension(200, 200));
-        helpPane.setMaximumSize(new Dimension(200, 200));
-        helpPane.setSelection(doc);
-
-        JFrame helpFrame = new JFrame("Help");
-
-        if(node instanceof DataElement){
-            helpFrame.setTitle("Help on " + ((MetaElement)node.getMetadata()).getName());
-        } else if(node instanceof DataAttribute){
-            helpFrame.setTitle("Help on " + ((MetaAttribute)node.getMetadata()).getName());
-        }
-        helpFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        helpFrame.setContentPane(helpPane);
-        helpFrame.setSize(300, 200);
-        helpFrame.setVisible(true);
-    }
-
     private JPopupMenu getPopup(DataNodePopupSupport source, DataNode dn){
         DataNode parent;
         DataElement parentParent;
-        DataNodeMenuItem reset, help, remove, add;
+        DataNodeMenuItem reset, remove, add;
         MetaNode metaParent, meta;
         JMenu addMenu;
         int min, max, current;
@@ -262,11 +232,6 @@ public class DataNodePopup implements MouseListener, ActionListener {
         } else {
             //result.addSeparator();
         }
-        help = new DataNodeMenuItem("What's this?", dn, null, source);
-        help.setActionCommand("help");
-        help.addActionListener(this);
-        //result.add(help);
-
         return result;
     }
     @Override
@@ -362,8 +327,6 @@ public class DataNodePopup implements MouseListener, ActionListener {
                 } else if("reset".equals(command)){
                     dataNode = item.getData();
                     dataNode.getOwner().setValue((DataValue)dataNode, ((MetaValue)dataNode.getMetadata()).getDefaultValue());
-                } else if("help".equals(command)){
-                    this.showHelp(item.getData());
                 } else {
                     this.notifyStatus("Warning: Action for command '" + command + "' not implemented.", false, false);
                 }
