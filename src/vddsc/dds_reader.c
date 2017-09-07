@@ -306,7 +306,8 @@ dds_reader_status_cb(
 
 _Pre_satisfies_(((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER ) ||\
                 ((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
-_Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
+_Pre_satisfies_(((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC   ) ||\
+                ((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_INTERNAL) )
 dds_entity_t
 dds_create_reader(
         _In_ dds_entity_t participant_or_subscriber,
@@ -327,7 +328,6 @@ dds_create_reader(
     int ret = DDS_RETCODE_OK;
 
     /* Try claiming a participant. If that's not working, then it could be a subscriber. */
-
     if(dds_entity_kind(participant_or_subscriber) == DDS_KIND_PARTICIPANT){
         subscriber = dds_create_subscriber(participant_or_subscriber, qos, NULL);
     } else{

@@ -28,6 +28,7 @@ typedef _Return_type_success_(return >  0) int32_t dds_entity_t;
 #include "dds/dds_public_status.h"
 #include "dds/dds_public_listener.h"
 #include "dds/dds_public_log.h"
+#include "dds_dcps_builtintopics.h"
 
 #if defined (__cplusplus)
 extern "C" {
@@ -42,6 +43,26 @@ extern "C" {
  *   -# Returns the default domain id
  */
 DDS_EXPORT dds_domainid_t dds_domain_default (void);
+
+/* @defgroup builtintopic_constants Convenience constants for referring to builtin topics
+ *
+ * These constants can be used in place of an actual dds_topic_t, when creating
+ * readers or writers for builtin-topics.
+ *
+ * @{
+ */
+#define DDS_BUILTIN_TOPIC_DCPSPARTICIPANT   (DDS_KIND_INTERNAL + 1)
+#define DDS_BUILTIN_TOPIC_CMPARTICIPANT     (DDS_KIND_INTERNAL + 2)
+#define DDS_BUILTIN_TOPIC_DCPSTYPE          (DDS_KIND_INTERNAL + 3)
+#define DDS_BUILTIN_TOPIC_DCPSTOPIC         (DDS_KIND_INTERNAL + 4)
+#define DDS_BUILTIN_TOPIC_CMTOPIC           (DDS_KIND_INTERNAL + 5)
+#define DDS_BUILTIN_TOPIC_DCPSPUBLICATION   (DDS_KIND_INTERNAL + 6)
+#define DDS_BUILTIN_TOPIC_CMPUBLISHER       (DDS_KIND_INTERNAL + 7)
+#define DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION  (DDS_KIND_INTERNAL + 8)
+#define DDS_BUILTIN_TOPIC_CMSUBSCRIBER      (DDS_KIND_INTERNAL + 9)
+#define DDS_BUILTIN_TOPIC_CMDATAWRITER      (DDS_KIND_INTERNAL + 10)
+#define DDS_BUILTIN_TOPIC_CMDATAREADER      (DDS_KIND_INTERNAL + 11)
+/** @}*/
 
 /** @name Communication Status definitions
   @{**/
