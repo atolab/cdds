@@ -113,6 +113,6 @@ dds_get_mask(
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument mask is NULL");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
