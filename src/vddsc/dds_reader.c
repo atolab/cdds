@@ -87,7 +87,6 @@ dds_reader_qos_validate(
     /* Check consistency. */
     if(!dds_qos_validate_common(qos)) {
         ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Argument Qos is not valid");
-        goto err;
     }
     if((qos->present & QP_USER_DATA) && !(validate_octetseq (&qos->user_data))) {
         ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "User data policy is inconsistent and caused an error");
@@ -107,8 +106,7 @@ dds_reader_qos_validate(
     if(ret == DDS_RETCODE_OK && enabled) {
         ret = dds_qos_validate_mutable_common(qos);
     }
-err:
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -432,7 +430,7 @@ dds_create_reader(
     }
     dds_entity_unlock(tp);
     dds_entity_unlock(sub);
-    DDS_REPORT_FLUSH(reader<=0);
+    DDS_REPORT_FLUSH(reader <= 0);
     return reader;
 
 err_bad_qos:
@@ -443,7 +441,7 @@ err_tp_lock:
         (void)dds_delete(subscriber);
     }
 err_sub_lock:
-    DDS_REPORT_FLUSH(reader<=0);
+    DDS_REPORT_FLUSH(reader <= 0);
     return reader;
 }
 
@@ -536,7 +534,7 @@ dds_reader_wait_for_historical_data(
     } else {
         ret = DDS_ERRNO(ret, "Error occurred on locking reader");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -590,7 +588,7 @@ dds_get_subscription_matched_status (
         dds_reader_unlock(rd);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking reader");
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -620,7 +618,7 @@ dds_get_liveliness_changed_status (
         dds_reader_unlock(rd);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking reader");
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -649,7 +647,7 @@ dds_return_t dds_get_sample_rejected_status (
         dds_reader_unlock(rd);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking reader");
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -704,7 +702,7 @@ dds_return_t dds_get_requested_deadline_missed_status (
         dds_reader_unlock(rd);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking reader");
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -732,6 +730,6 @@ dds_return_t dds_get_requested_incompatible_qos_status (
         dds_reader_unlock(rd);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking reader");
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }

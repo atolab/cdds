@@ -94,16 +94,16 @@ dds_read_impl(
     thread_state_awake (thr);
   }
   if(buf == NULL){
-    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The provided buffer has NULL value");
+    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The provided buffer is NULL");
   }
   if(si == NULL){
-    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided pointer to an array of dds_sample_info_t has NULL value");
+    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided pointer to an array of dds_sample_info_t is NULL");
   }
   if(maxs == 0){
     ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The maximum number of samples to read is zero");
   }
   if(bufsz == 0){
-    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The size of buffer provided is zero");
+    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The size of buffer is zero");
   }
   if(bufsz < maxs){
     ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The provided size of buffer is smaller than the maximum number of samples to read");
@@ -382,7 +382,7 @@ dds_read_instance(
         }
         ret = dds_read_impl(false, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
     } else {
-      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Argument handle is NULL");
     }
     DDS_REPORT_FLUSH(ret < 0 );
     return ret;
@@ -413,7 +413,7 @@ dds_read_instance_wl(
         }
         ret = dds_read_impl(false, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
     } else {
-      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Argument handle is NULL");
     }
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
@@ -447,7 +447,7 @@ dds_read_instance_mask(
         }
         ret = dds_read_impl(false, rd_or_cnd, buf, bufsz, maxs, si, mask, handle, lock, false);
     } else {
-      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Argument handle is NULL");
     }
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
@@ -480,7 +480,7 @@ dds_read_instance_mask_wl(
         }
         ret = dds_read_impl(false, rd_or_cnd, buf, maxs, maxs, si, mask, handle, lock, false);
     } else {
-      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+      ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Argument handle is NULL");
     }
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
@@ -499,7 +499,7 @@ dds_read_next(
     DDS_REPORT_STACK();
 
     ret = dds_read_impl (false, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true, true);
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -515,7 +515,7 @@ dds_read_next_wl(
 
     DDS_REPORT_STACK();
     ret = dds_read_impl (false, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true, true);
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -672,7 +672,7 @@ dds_take_instance(
         }
         ret = dds_read_impl(true, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Argument handle is NULL");
     }
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
@@ -703,7 +703,7 @@ dds_take_instance_wl(
         }
         ret = dds_read_impl(true, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Argument handle is NULL");
     }
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
@@ -737,7 +737,7 @@ dds_take_instance_mask(
         }
         ret = dds_read_impl(true, rd_or_cnd, buf, bufsz, maxs, si, mask, handle, lock, false);
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Argument handle is NULL");
     }
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
@@ -770,7 +770,7 @@ dds_take_instance_mask_wl(
         }
         ret = dds_read_impl(true, rd_or_cnd, buf, maxs, maxs, si, mask, handle, lock, false);
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+        ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Argument handle is NULL");
     }
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
@@ -787,7 +787,7 @@ dds_take_next(
     dds_return_t ret;
     DDS_REPORT_STACK();
     ret = dds_read_impl (true, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true, true);
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -802,7 +802,7 @@ dds_take_next_wl(
     dds_return_t ret;
     DDS_REPORT_STACK();
     ret = dds_read_impl (true, reader, buf, 1u, 1u, si, mask, DDS_HANDLE_NIL, true, true);
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -824,11 +824,11 @@ dds_return_loan(
     DDS_REPORT_STACK();
 
     if (!buf ) {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided buffer array is not given properly");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument buf is NULL");
         return ret;
     }
     if(*buf == NULL && bufsz > 0){
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provider buffer array has NULL size");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument buf is NULL");
         return ret;
     }
 
@@ -854,5 +854,6 @@ dds_return_loan(
         dds_read_unlock(rd, cond);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking entity");
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }

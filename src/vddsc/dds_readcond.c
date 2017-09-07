@@ -75,7 +75,7 @@ dds_get_datareader(
     } else if (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) {
         hdl = dds_get_parent(condition);
     } else {
-        hdl = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ), "Provided entity is not a valid condition.");
+        hdl = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ), "Argument condition is not valid");
     }
     DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
@@ -108,10 +108,10 @@ dds_get_mask(
                 ret = DDS_ERRNO(rc, "Error occurred on locking condition");
             }
         } else {
-            ret = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ), "Provided entity is not a valid condition");
+            ret = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ), "Argument condition is not valid");
         }
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided mask has NULL value");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument mask is NULL");
     }
     DDS_REPORT_FLUSH(ret < 0);
     return ret;

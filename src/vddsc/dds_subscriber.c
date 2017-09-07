@@ -46,7 +46,7 @@ dds_subscriber_qos_validate(
         ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Presentation QoS policy is immutable");
     }
 
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -173,7 +173,7 @@ dds_notify_readers(
         ret = DDS_ERRNO(errnr, "Error occurred on locking subscriber");
     }
 
-    DDS_REPORT_FLUSH(ret < 0 );
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
