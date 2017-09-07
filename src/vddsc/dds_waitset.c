@@ -389,7 +389,7 @@ dds_waitset_attach(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
     }
-    DDS_REPORT_FLUSH(ret < 0 );
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK );
     return ret;
 }
 
@@ -425,7 +425,7 @@ dds_waitset_detach(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -440,7 +440,7 @@ dds_waitset_wait_until(
     dds_return_t ret;
     DDS_REPORT_STACK();
     ret = dds_waitset_wait_impl(waitset, xs, nxs, abstimeout, dds_time());
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -462,7 +462,7 @@ dds_waitset_wait(
     } else{
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Timed out");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 

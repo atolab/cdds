@@ -416,7 +416,7 @@ dds_get_parent(
     } else {
         hdl = DDS_ERRNO(rc, "Error on locking handle entity");
     }
-    DDS_REPORT_FLUSH(hdl < 0);
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
 
@@ -441,7 +441,7 @@ dds_get_participant (
     } else {
         hdl = DDS_ERRNO(rc, "Error on locking handle entity");
     }
-    DDS_REPORT_FLUSH( hdl < 0);
+    DDS_REPORT_FLUSH( hdl <= 0);
     return hdl;
 }
 
@@ -493,7 +493,7 @@ dds_get_children(
     dds_entity_unlock(e);
 
 err:
-    DDS_REPORT_FLUSH(ret < 0 );
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK );
     return ret;
 }
 
@@ -528,7 +528,7 @@ dds_get_qos(
     } else{
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER,"Argument qos is NULL");
     }
-    DDS_REPORT_FLUSH(ret <0 );
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK );
     return ret;
 }
 
@@ -569,7 +569,7 @@ dds_set_qos(
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
-    DDS_REPORT_FLUSH( ret < 0);
+    DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -595,14 +595,11 @@ dds_get_listener(
             dds_entity_unlock(e);
         } else {
               ret = DDS_ERRNO(rc, "Error occurred on locking entity");
-              goto err;
         }
     } else {
           ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument listener is NULL");
-          goto err;
     }
-err:
-    DDS_REPORT_FLUSH(ret <0 );
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK );
     return ret;
 }
 
@@ -890,7 +887,7 @@ dds_get_domainid(
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument domain id is NULL");
     }
 
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -1220,7 +1217,7 @@ dds_get_topic(
     if (rc != DDS_RETCODE_OK) {
         hdl = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
-    DDS_REPORT_FLUSH(hdl < 0);
+    DDS_REPORT_FLUSH(hdl != DDS_RETCODE_OK);
     return hdl;
 }
 

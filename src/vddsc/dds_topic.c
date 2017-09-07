@@ -557,14 +557,13 @@ dds_get_type_name(
     }
     name[0] = '\0';
     rc = dds_topic_lock(topic, &t);
-    if (rc == DDS_RETCODE_OK) {
-        (void)snprintf(name, size, "%s", t->m_stopic->typename);
-        dds_topic_unlock(t);
-        ret = DDS_RETCODE_OK;
-    } else{
+    if (rc != DDS_RETCODE_OK) {
         ret = DDS_ERRNO(rc, "Error occurred on locking topic");
         goto fail;
     }
+    (void)snprintf(name, size, "%s", t->m_stopic->typename);
+    dds_topic_unlock(t);
+    ret = DDS_RETCODE_OK;
 fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;

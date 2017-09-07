@@ -252,6 +252,6 @@ dds_lookup_participant(
     }
 
 err:
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
