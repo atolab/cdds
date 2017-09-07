@@ -113,7 +113,6 @@ static const dds_topic * dds_instance_info_by_hdl (dds_entity_t e)
 {
     const dds_topic * topic = NULL;
     dds_retcode_t rc;
-    dds_return_t ret;
     dds_entity *w_or_r;
 
     rc = dds_entity_lock(e, DDS_KIND_WRITER, &w_or_r);
