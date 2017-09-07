@@ -22,7 +22,7 @@ dds_writedispose(
     dds_return_t ret;
     DDS_REPORT_STACK();
     ret =  dds_writedispose_ts(writer, data, dds_time());
-    DDS_REPORT_FLUSH(ret < 0 );
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK );
     return ret;
 }
 
@@ -35,7 +35,7 @@ dds_dispose(
     dds_return_t ret;
     DDS_REPORT_STACK();
     ret =  dds_dispose_ts(writer, data, dds_time());
-    DDS_REPORT_FLUSH(ret < 0 );
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK );
     return ret;
 }
 
@@ -48,7 +48,7 @@ dds_dispose_ih(
     dds_return_t ret;
     DDS_REPORT_STACK();
     ret = dds_dispose_ih_ts(writer, handle, dds_time());
-    DDS_REPORT_FLUSH(ret < 0 );
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK );
     return ret;
 }
 
@@ -116,8 +116,6 @@ static const dds_topic * dds_instance_info_by_hdl (dds_entity_t e)
     dds_return_t ret;
     dds_entity *w_or_r;
 
-    DDS_REPORT_STACK();
-
     rc = dds_entity_lock(e, DDS_KIND_WRITER, &w_or_r);
     if (rc == DDS_RETCODE_ILLEGAL_OPERATION) {
         rc = dds_entity_lock(e, DDS_KIND_READER, &w_or_r);
@@ -126,8 +124,9 @@ static const dds_topic * dds_instance_info_by_hdl (dds_entity_t e)
         topic = dds_instance_info(w_or_r);
         dds_entity_unlock(w_or_r);
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking entity");
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    else {
+        DDS_ERROR(rc, "Error occurred on locking entity");
+    }
     return topic;
 }
 
@@ -237,7 +236,7 @@ dds_unregister_instance_ts(
     ret = dds_write_impl ((dds_writer*)wr, sample, timestamp, action);
     dds_entity_unlock(wr);
 err:
-    DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -309,7 +308,7 @@ dds_writedispose_ts(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking writer");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -349,7 +348,7 @@ dds_dispose_ts(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking writer");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -381,7 +380,7 @@ dds_dispose_ih_ts(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking writer");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -438,7 +437,7 @@ dds_instance_get_key(
 
     topic = dds_instance_info_by_hdl (entity);
     if(topic == NULL){
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Acquired topic is NULL");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Could not find topic related to the given entity");
         goto err;
     }
     memset (data, 0, topic->m_descriptor->m_size);
@@ -450,6 +449,6 @@ dds_instance_get_key(
     }
 
 err:
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }

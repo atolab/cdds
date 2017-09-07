@@ -381,7 +381,7 @@ dds_write_flush(
     if (rc == DDS_RETCODE_OK) {
         nn_xpack_send (wr->m_xp, true);
         dds_writer_unlock(wr);
-        ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Error occurred on locking writer");
+        ret = DDS_RETCODE_OK;
     } else{
         ret = DDS_ERRNO(rc, "Error occurred on locking writer");
     }

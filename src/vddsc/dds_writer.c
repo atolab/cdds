@@ -489,7 +489,7 @@ dds_get_publication_matched_status (
       dds_writer_unlock(wr);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking writer");
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -518,7 +518,7 @@ dds_get_liveliness_lost_status (
       dds_writer_unlock(wr);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking writer");
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -547,7 +547,7 @@ dds_get_offered_deadline_missed_status(
       dds_writer_unlock(wr);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking writer");
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -576,6 +576,6 @@ dds_get_offered_incompatible_qos_status (
       dds_writer_unlock(wr);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking writer");
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
