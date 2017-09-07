@@ -20,7 +20,7 @@ dds_participant_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_PARTICIPANT_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Invalid status mask") :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument mask is invalid") :
                      DDS_RETCODE_OK;
 }
 
@@ -232,7 +232,7 @@ dds_lookup_participant(
         goto err;
     }
     if ((participants == NULL) && (size != 0)) {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Size is given but no array");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Size is given, but no array");
         goto err;
     }
 

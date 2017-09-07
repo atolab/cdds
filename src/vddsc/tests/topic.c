@@ -320,7 +320,8 @@ Test(vddsc_topic_get_type_name, valid, .init=vddsc_topic_init, .fini=vddsc_topic
     dds_return_t ret;
 
     ret = dds_get_type_name(g_topicRtmDataType, name, MAX_NAME_SIZE);
-    cr_assert_eq(ret, DDS_RETCODE_OK);
+    //cr_assert_eq(ret, DDS_RETCODE_OK);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %s", dds_err_str(ret));
     cr_assert_str_eq(name, rtmDataTypeType);
 
     ret = dds_get_type_name(g_topicRtmAddress, name, MAX_NAME_SIZE);
@@ -337,7 +338,8 @@ Test(vddsc_topic_get_type_name, too_small, .init=vddsc_topic_init, .fini=vddsc_t
     dds_return_t ret;
 
     ret = dds_get_type_name(g_topicRtmDataType, name, 10);
-    cr_assert_eq(ret, DDS_RETCODE_OK);
+    cr_assert_eq(ret, 0);
+    //cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %s", dds_err_str(ret));
     cr_assert_str_eq(name, rtmDataTypeType);
 }
 /*************************************************************************************************/

@@ -492,7 +492,7 @@ dds_waitset_set_trigger(
         dds_waitset_unlock(ws);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 

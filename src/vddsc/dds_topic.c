@@ -59,7 +59,7 @@ dds_topic_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_TOPIC_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Invalid status mask") :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument mask is invalid") :
                      DDS_RETCODE_OK;
 }
 
@@ -196,14 +196,14 @@ dds_find_topic(
                 dds_entity_add_ref (&st->status_cb_entity->m_entity);
                 tp = st->status_cb_entity->m_entity.m_hdl;
             } else {
-                tp = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Topic is not created yet");
+                tp = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Topic is not being created yet");
             }
         dds_entity_unlock(p);
     } else {
         tp = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
     } else {
-        tp = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Name is not valid");
+        tp = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument name is not valid");
     }
     DDS_REPORT_FLUSH(tp <= 0);
     return tp;
@@ -228,7 +228,7 @@ dds_topic_qos_validate(
 
     /* Check consistency. */
     if (!dds_qos_validate_common(qos)) {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided QoS is not valid");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is not valid");
     }
     if ((qos->present & QP_GROUP_DATA) && !validate_octetseq (&qos->group_data)) {
         ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Group data QoS policy is inconsistent and caused an error");
@@ -293,12 +293,12 @@ dds_create_topic(
     DDS_REPORT_STACK();
 
     if (desc == NULL){
-        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic description has NULL value");
+        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic description is NULL");
         goto bad_param_err;
     }
 
     if (name == NULL) {
-        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name has NULL value");
+        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name is NULL");
         goto bad_param_err;
     }
 
@@ -506,16 +506,32 @@ dds_get_name(
         _In_ size_t size)
 {
     dds_topic *t;
-    dds_retcode_t rc = DDS_RETCODE_BAD_PARAMETER;
-    if ((size > 0) && (name != NULL)) {
-        name[0] = '\0';
-        rc = dds_topic_lock(topic, &t);
-        if (rc == DDS_RETCODE_OK) {
-            (void)snprintf(name, size, "%s", t->m_stopic->name);
-            dds_topic_unlock(t);
-        }
+    dds_return_t ret;
+    dds_retcode_t rc;
+
+    DDS_REPORT_STACK();
+
+    if(size <= 0){
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument size is smaller than 0");
+        goto fail;
     }
-    return DDS_ERRNO(rc, "Topic does not have a name");
+    if(name == NULL){
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument name is NULL");
+        goto fail;
+    }
+    name[0] = '\0';
+    rc = dds_topic_lock(topic, &t);
+    if (rc == DDS_RETCODE_OK) {
+        (void)snprintf(name, size, "%s", t->m_stopic->name);
+        dds_topic_unlock(t);
+        ret = DDS_RETCODE_OK;
+    } else {
+        ret = DDS_ERRNO(rc, "Error occurred on locking topic");
+        goto fail;
+    }
+fail:
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    return ret;
 }
 
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
@@ -527,13 +543,16 @@ dds_get_type_name(
 {
     dds_topic *t;
     dds_retcode_t rc;
+    dds_return_t ret;
+
+    DDS_REPORT_STACK();
 
     if(size <= 0){
-        rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument size is provided with negative value");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument size is smaller than 0");
         goto fail;
     }
     if(name == NULL){
-        rc = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument name is provided with NULL value");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument name is NULL");
         goto fail;
     }
     name[0] = '\0';
@@ -541,12 +560,14 @@ dds_get_type_name(
     if (rc == DDS_RETCODE_OK) {
         (void)snprintf(name, size, "%s", t->m_stopic->typename);
         dds_topic_unlock(t);
+        ret = DDS_RETCODE_OK;
     } else{
-        rc = DDS_ERRNO(rc, "Error occurred on locking topic");
+        ret = DDS_ERRNO(rc, "Error occurred on locking topic");
         goto fail;
     }
 fail:
-    return rc;
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    return ret;
 }
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 dds_return_t
@@ -556,6 +577,9 @@ dds_get_inconsistent_topic_status(
 {
     dds_retcode_t rc;
     dds_topic *t;
+    dds_return_t ret;
+
+    DDS_REPORT_STACK();
 
     rc = dds_topic_lock(topic, &t);
     if (rc == DDS_RETCODE_OK) {
@@ -568,6 +592,9 @@ dds_get_inconsistent_topic_status(
             dds_entity_status_reset(t, DDS_INCONSISTENT_TOPIC_STATUS);
         }
         dds_topic_unlock(t);
+        ret = DDS_RETCODE_OK;
     }
-    return DDS_ERRNO(rc, "Error occurred on locking entity");
+    ret = DDS_ERRNO(rc, "Error occurred on locking topic");
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    return ret;
 }

@@ -467,13 +467,13 @@ dds_get_children(
     }
 
     if ((children == NULL) && (size != 0)) {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Size is given but no array");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Size is given, but no array");
         goto err;
     }
 
     rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
     if (rc != DDS_RETCODE_OK) {
-        ret = DDS_ERRNO(rc, "Error on locking entity");
+        ret = DDS_ERRNO(rc, "Error occurred on locking entity");
         goto err;
     }
     /* Initialize first child to satisfy SAL. */
@@ -493,7 +493,7 @@ dds_get_children(
     dds_entity_unlock(e);
 
 err:
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret < 0 );
     return ret;
 }
 
@@ -516,7 +516,7 @@ dds_get_qos(
         if (rc == DDS_RETCODE_OK) {
             if (e->m_deriver.set_qos) {
                 rc = dds_qos_copy(qos, e->m_qos);
-                ret = DDS_ERRNO(rc, "QoS cannot copied");
+                ret = DDS_ERRNO(rc, "QoS cannot be copied");
             } else {
                 rc = DDS_RETCODE_ILLEGAL_OPERATION;
                 ret = DDS_ERRNO(rc, "QoS cannot be set on this entity");
@@ -526,9 +526,9 @@ dds_get_qos(
             ret = DDS_ERRNO(rc, "Error occurred on locking entity");
         }
     } else{
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER,"QoS has NULL value");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER,"Argument qos is NULL");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret <0 );
     return ret;
 }
 
@@ -560,7 +560,7 @@ dds_set_qos(
                     e->m_qos = dds_qos_create();
                 }
                 rc = dds_qos_copy(e->m_qos, qos);
-                ret = DDS_ERRNO(rc, "Error occurred");
+                ret = DDS_ERRNO(rc, "QoS cannot be set on this entity");
             }
             dds_entity_unlock(e);
         } else {
@@ -594,7 +594,7 @@ dds_get_listener(
             dds_listener_copy (listener, &e->m_listener);
             dds_entity_unlock(e);
         } else {
-              ret = DDS_ERRNO(rc, "Error on locking entity");
+              ret = DDS_ERRNO(rc, "Error occurred on locking entity");
               goto err;
         }
     } else {
@@ -602,7 +602,7 @@ dds_get_listener(
           goto err;
     }
 err:
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret <0 );
     return ret;
 }
 
@@ -631,7 +631,7 @@ dds_set_listener(
         dds_entity_unlock(e);
     }
     ret = DDS_ERRNO(rc, "Error occurred on locking entity");
-    DDS_REPORT_FLUSH( ret < 0);
+    DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -659,7 +659,7 @@ dds_enable(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -688,12 +688,12 @@ dds_get_status_changes(
             }
             dds_entity_unlock(e);
         } else {
-            ret = DDS_ERRNO(rc, "Error on locking entity");
+            ret = DDS_ERRNO(rc, "Error occurred on locking entity");
         }
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument status is NULL");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -722,12 +722,12 @@ dds_get_enabled_status(
             }
             dds_entity_unlock(e);
         } else {
-            ret = DDS_ERRNO(rc, "Error on locking entity");
+            ret = DDS_ERRNO(rc, "Error occurred on locking entity");
         }
     } else{
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument status is NULL");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -765,7 +765,7 @@ dds_set_enabled_status(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -799,12 +799,12 @@ dds_read_status(
             }
             dds_entity_unlock(e);
         } else {
-            ret = DDS_ERRNO(rc, "Error on locking entity");
+            ret = DDS_ERRNO(rc, "Error occurred on locking entity");
         }
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument status is NULL");
     }
-    DDS_REPORT_FLUSH( ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -846,7 +846,7 @@ dds_take_status(
     } else {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument status is NUL");
     }
-    DDS_REPORT_FLUSH( ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -884,13 +884,13 @@ dds_get_domainid(
             *id = e->m_domainid;
             dds_entity_unlock(e);
         } else{
-            ret = DDS_ERRNO(rc, "Error on locking entity");
+            ret = DDS_ERRNO(rc, "Error occurred on locking entity");
         }
     } else{
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Domain id is NULL");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument domain id is NULL");
     }
 
-    DDS_REPORT_FLUSH( ret < 0);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -918,12 +918,12 @@ dds_get_instance_handle(
             }
             dds_entity_unlock(e);
         } else {
-            ret = DDS_ERRNO(rc, "Error on locking entity");
+            ret = DDS_ERRNO(rc, "Error occurred on locking entity");
         }
     } else {
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Instance handle argument is NULL");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument instance handle is NULL");
     }
-    DDS_REPORT_FLUSH( ret < 0);
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -968,7 +968,7 @@ dds_valid_hdl(
     } else{
         DDS_ERROR(hdl, "Given entity was not properly created.");
     }
-    DDS_REPORT_FLUSH( rc != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(rc != DDS_RETCODE_OK);
     return rc;
 }
 
@@ -1017,7 +1017,7 @@ dds_entity_lock(
             DDS_ERROR(rc, "An internal error occurred");
         }
     }
-    DDS_REPORT_FLUSH( rc != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(rc != DDS_RETCODE_OK);
     return rc;
 }
 
@@ -1052,7 +1052,7 @@ dds_triggered(
     } else {
         ret = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
-    DDS_REPORT_FLUSH(ret < 0);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
