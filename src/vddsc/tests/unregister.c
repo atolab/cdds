@@ -139,7 +139,7 @@ Test(vddsc_unregister_instance, deleted, .init=unregistering_init, .fini=unregis
     dds_return_t ret;
     dds_delete(g_writer);
 
-    ret = dds_unregister_instance(g_writer, NULL);
+    ret = dds_unregister_instance(g_writer, g_data);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -167,7 +167,7 @@ Theory((dds_entity_t writer), vddsc_unregister_instance, invalid_writers, .init=
         exp = writer;
     }
 
-    ret = dds_unregister_instance(writer, NULL);
+    ret = dds_unregister_instance(writer, g_data);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 /*************************************************************************************************/
@@ -179,7 +179,7 @@ TheoryDataPoints(vddsc_unregister_instance, non_writers) = {
 Theory((dds_entity_t *writer), vddsc_unregister_instance, non_writers, .init=unregistering_init, .fini=unregistering_fini)
 {
     dds_return_t ret;
-    ret = dds_unregister_instance(*writer, NULL);
+    ret = dds_unregister_instance(*writer, g_data);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -238,7 +238,7 @@ Test(vddsc_unregister_instance_ts, deleted, .init=unregistering_init, .fini=unre
 {
     dds_return_t ret;
     dds_delete(g_writer);
-    ret = dds_unregister_instance_ts(g_writer, NULL, g_present);
+    ret = dds_unregister_instance_ts(g_writer, g_data, g_present);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -266,7 +266,7 @@ Theory((dds_entity_t writer), vddsc_unregister_instance_ts, invalid_writers, .in
         exp = writer;
     }
 
-    ret = dds_unregister_instance_ts(writer, NULL, g_present);
+    ret = dds_unregister_instance_ts(writer, g_data, g_present);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 /*************************************************************************************************/
@@ -278,7 +278,7 @@ TheoryDataPoints(vddsc_unregister_instance_ts, non_writers) = {
 Theory((dds_entity_t *writer), vddsc_unregister_instance_ts, non_writers, .init=unregistering_init, .fini=unregistering_fini)
 {
     dds_return_t ret;
-    ret = dds_unregister_instance_ts(*writer, NULL, g_present);
+    ret = dds_unregister_instance_ts(*writer, g_data, g_present);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -393,7 +393,7 @@ Theory((dds_instance_handle_t handle), vddsc_unregister_instance_ih, invalid_han
 {
     dds_return_t ret;
     ret = dds_unregister_instance_ih(g_writer, handle);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
 
@@ -496,7 +496,7 @@ Theory((dds_instance_handle_t handle), vddsc_unregister_instance_ih_ts, invalid_
 {
     dds_return_t ret;
     ret = dds_unregister_instance_ih_ts(g_writer, handle, g_present);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
 
