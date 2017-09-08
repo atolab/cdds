@@ -31,7 +31,7 @@ dds_begin_coherent(
             ret = dds_subscriber_begin_coherent(entity);
             break;
         default:
-            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument entity is not an entity kind");
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Given entity can not control coherency");
             break;
     }
     return ret;
@@ -61,7 +61,7 @@ dds_end_coherent(
             ret = dds_subscriber_end_coherent(entity);
             break;
         default:
-            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument entity is not an entity kind");
+            ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Given entity can not control coherency");
             break;
     }
     return ret;

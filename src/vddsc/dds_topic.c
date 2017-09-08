@@ -595,7 +595,6 @@ dds_get_inconsistent_topic_status(
         dds_entity_status_reset(t, DDS_INCONSISTENT_TOPIC_STATUS);
     }
     dds_topic_unlock(t);
-    ret = DDS_RETCODE_OK;
 fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;

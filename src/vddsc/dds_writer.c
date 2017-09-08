@@ -179,7 +179,8 @@ static dds_return_t
 dds_writer_close(
         dds_entity *e)
 {
-    dds_retcode_t rc = DDS_RETCODE_OK;
+    dds_retcode_t rc;
+    dds_return_t ret = DDS_RETCODE_OK;
     dds_writer *wr = (dds_writer*)e;
     struct thread_state1 * const thr = lookup_thread_state();
     const bool asleep = thr ? !vtime_awake_p(thr->vtime) : false;
@@ -193,12 +194,13 @@ dds_writer_close(
         nn_xpack_send (wr->m_xp, false);
     }
     if (delete_writer (&e->m_guid) != 0) {
-        rc = DDS_ERRNO(rc, "Internal error");
+        rc = DDS_RETCODE_ERROR;
+        ret = DDS_ERRNO(rc, "Internal error");
     }
     if (asleep) {
         thread_state_asleep(thr);
     }
-    return rc;
+    return ret;
 }
 
 static dds_return_t

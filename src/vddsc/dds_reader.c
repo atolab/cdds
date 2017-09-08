@@ -39,7 +39,8 @@ static dds_return_t
 dds_reader_close(
         dds_entity *e)
 {
-    dds_retcode_t rc = DDS_RETCODE_OK;
+    dds_retcode_t rc;
+    dds_return_t ret = DDS_RETCODE_OK;
     struct thread_state1 * const thr = lookup_thread_state();
     const bool asleep = !vtime_awake_p(thr->vtime);
 
@@ -50,12 +51,13 @@ dds_reader_close(
       thread_state_awake(thr);
     }
     if (delete_reader(&e->m_guid) != 0) {
-        rc = DDS_ERRNO(rc, "Internal error");
+        rc = DDS_RETCODE_ERROR;
+        ret = DDS_ERRNO(rc, "Internal error");
     }
     if (asleep) {
       thread_state_asleep(thr);
     }
-    return rc;
+    return ret;
 }
 
 static dds_return_t
