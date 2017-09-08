@@ -15,6 +15,7 @@
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
 #include "vddsc/vddsc_project.h"
+#include "kernel/dds_report.h"
 
 #ifdef _WRS_KERNEL
 char *os_environ[] = { NULL };
@@ -95,7 +96,7 @@ dds_init(void)
 
   if (ut_handleserver_init() != UT_HANDLE_OK)
   {
-    return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize server");
+      return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize internal handle server");
   }
 
   uri = os_getenv (VDDSC_PROJECTNAME_CAPS"_URI");
