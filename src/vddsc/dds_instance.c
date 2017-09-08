@@ -252,6 +252,9 @@ dds_unregister_instance_ih_ts(
     bool autodispose = true;
     dds_write_action action = DDS_WR_ACTION_UNREGISTER;
     dds_entity *wr;
+    struct tkmap *map;
+    const dds_topic *topic;
+    void *sample;
 
     DDS_REPORT_STACK();
 
@@ -269,9 +272,9 @@ dds_unregister_instance_ih_ts(
         action |= DDS_WR_DISPOSE_BIT;
     }
 
-    struct tkmap *map = gv.m_tkmap;
-    const dds_topic *topic = dds_instance_info((dds_entity*)wr);
-    void *sample = dds_alloc (topic->m_descriptor->m_size);
+    map = gv.m_tkmap;
+    topic = dds_instance_info((dds_entity*)wr);
+    sample = dds_alloc (topic->m_descriptor->m_size);
     if (dds_tkmap_get_key (map, handle, sample)) {
         ret = dds_write_impl ((dds_writer*)wr, sample, timestamp, action);
     } else{

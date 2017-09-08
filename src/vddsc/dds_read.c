@@ -354,14 +354,14 @@ dds_read_instance(
         _In_ dds_instance_handle_t handle)
 {
     dds_return_t ret = DDS_RETCODE_OK;
-
+    bool lock = true;
     DDS_REPORT_STACK();
 
     if (handle == DDS_HANDLE_NIL) {
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
         goto fail;
     }
-    bool lock = true;
+
     if (maxs == DDS_READ_WITHOUT_LOCK) {
         lock = false;
         /* Use a more sensible maxs. Just an arbitrarily number.
@@ -386,14 +386,14 @@ dds_read_instance_wl(
         _In_ dds_instance_handle_t handle)
 {
     dds_return_t ret = DDS_RETCODE_OK;
-
+    bool lock = true;
     DDS_REPORT_STACK();
 
     if (handle == DDS_HANDLE_NIL) {
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
         goto fail;
     }
-    bool lock = true;
+
     if (maxs == DDS_READ_WITHOUT_LOCK) {
         lock = false;
         /* Use a more sensible maxs. Just an arbitrarily number.
@@ -421,14 +421,14 @@ dds_read_instance_mask(
         _In_ uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_OK;
-
+    bool lock = true;
     DDS_REPORT_STACK();
 
     if (handle == DDS_HANDLE_NIL) {
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
         goto fail;
     }
-    bool lock = true;
+
     if (maxs == DDS_READ_WITHOUT_LOCK) {
         lock = false;
         /* Use a more sensible maxs. Just an arbitrarily number.
@@ -455,14 +455,13 @@ dds_read_instance_mask_wl(
         _In_ uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_OK;
-
+    bool lock = true;
     DDS_REPORT_STACK();
 
     if (handle == DDS_HANDLE_NIL) {
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
         goto fail;
     }
-    bool lock = true;
     if (maxs == DDS_READ_WITHOUT_LOCK) {
         lock = false;
         /* Use a more sensible maxs. Just an arbitrarily number.
@@ -648,6 +647,7 @@ dds_take_instance(
         _In_ dds_instance_handle_t handle)
 {
     dds_return_t ret = DDS_RETCODE_OK;
+    bool lock = true;
 
     DDS_REPORT_STACK();
 
@@ -655,7 +655,7 @@ dds_take_instance(
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
         goto fail;
     }
-    bool lock = true;
+
     if (maxs == DDS_READ_WITHOUT_LOCK) {
         lock = false;
         /* Use a more sensible maxs. Just an arbitrarily number.
@@ -679,7 +679,8 @@ dds_take_instance_wl(
         _In_ uint32_t maxs,
         _In_ dds_instance_handle_t handle)
 {
-    dds_return_t ret /*= DDS_RETCODE_OK*/;
+    dds_return_t ret = DDS_RETCODE_OK;
+    bool lock = true;
 
     DDS_REPORT_STACK();
 
@@ -687,7 +688,6 @@ dds_take_instance_wl(
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
         goto fail;
     }
-    bool lock = true;
     if (maxs == DDS_READ_WITHOUT_LOCK) {
         lock = false;
         /* Use a more sensible maxs. Just an arbitrarily number.
@@ -715,6 +715,7 @@ dds_take_instance_mask(
         _In_ uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_OK;
+    bool lock = true;
 
     DDS_REPORT_STACK();
 
@@ -722,7 +723,6 @@ dds_take_instance_mask(
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
         goto fail;
     }
-    bool lock = true;
     if (maxs == DDS_READ_WITHOUT_LOCK) {
         lock = false;
         /* Use a more sensible maxs. Just an arbitrarily number.
@@ -749,6 +749,7 @@ dds_take_instance_mask_wl(
         _In_ uint32_t mask)
 {
     dds_return_t ret = DDS_RETCODE_OK;
+    bool lock = true;
 
     DDS_REPORT_STACK();
 
@@ -756,7 +757,6 @@ dds_take_instance_mask_wl(
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
         goto fail;
     }
-    bool lock = true;
     if (maxs == DDS_READ_WITHOUT_LOCK) {
         lock = false;
         /* Use a more sensible maxs. Just an arbitrarily number.
