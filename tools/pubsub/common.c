@@ -180,10 +180,8 @@ static void xsnprintf (char *buf, size_t bufsz, size_t *p, const char *fmt, ...)
 
 void hist_print (struct hist *h, uint64_t dt, int reset)
 {
-//  char l[h->nbins + 200];
-  char *l = (char *) os_malloc(sizeof(char) * (h->nbins + 200));  //variable size array malloc
-  char *hist = (char *) os_malloc(sizeof(char) * (h->nbins + 1)); //variable size array malloc
-//  char hist[h->nbins+1];
+  char *l = (char *) os_malloc(sizeof(char) * (h->nbins + 200));
+  char *hist = (char *) os_malloc(sizeof(char) * (h->nbins + 1));
   double dt_s = dt / 1e9, avg;
   uint64_t peak = 0, cnt = h->under + h->over;
   size_t p = 0;
@@ -278,7 +276,6 @@ void error (const char *fmt, ...)
   vfprintf (stderr, fmt, ap);
   va_end (ap);
   fprintf (stderr, "\n");
-  exit(2);
 }
 
 void save_argv0 (const char *argv0)
@@ -289,11 +286,8 @@ void save_argv0 (const char *argv0)
 int common_init (const char *argv0)
 {
 	save_argv0 (argv0);
-	PRINTD("common_init: Before creating domain participant=%p\n",dp);
 	dp = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
 	error_abort(dp, "dds_create_participant failed");
-
-	PRINTD("common_init: Domain participant=%p created\n",dp);
 
 	ts_KeyedSeq = &KeyedSeq_desc;
 	ts_Keyed32 = &Keyed32_desc;
@@ -306,10 +300,12 @@ int common_init (const char *argv0)
 
 void common_fini (void)
 {
-	dds_delete(qosprov);
-	PRINTD("common_fini: Deleting domain participant=%p\n",dp);
-	dds_delete(dp);
-	PRINTD("common_fini: Domain participant=%p deleted\n",dp);
+	dds_return_t rc;
+	if(qosprov != 0)
+		rc = dds_delete(qosprov);
+	error_report(rc, "dds_delete qosprov failed");
+	rc = dds_delete(dp);
+	error_report(rc, "dds_delete participant failed");
 }
 
 int change_publisher_partitions (dds_entity_t pub, unsigned npartitions, const char *partitions[])
@@ -584,21 +580,6 @@ void qos_durability (struct qos *a, const char *arg)
 		error_exit("durability qos: %s: invalid\n", arg);
 }
 
-char* enumValue(const struct qos *a) {
-    // TODO Replace this and those that use this with an ERR check with NOT_SUPPORTED rc
-	if(a->qt==QT_SUBSCRIBER)
-		return "SUBSCRIBER";
-	else if(a->qt==QT_PUBLISHER)
-		return "PUBLISHER";
-	else if(a->qt==QT_TOPIC)
-		return "TOPIC";
-	else if(a->qt==QT_READER)
-		return "READER";
-	else if(a->qt==QT_WRITER)
-		return "WRITER";
-	else return "DEFAULT";
-}
-
 void qos_history (struct qos *a, const char *arg)
 {
 	dds_qos_t *qp = get_qos_TRW(a, "history");
@@ -608,7 +589,6 @@ void qos_history (struct qos *a, const char *arg)
 	if (strcmp (arg, "all") == 0)
 	{
 		dds_qset_history(qp, DDS_HISTORY_KEEP_ALL, DDS_LENGTH_UNLIMITED);
-		PRINTD("%s: qos: History keep all\n\n",enumValue(a));
 	}
 	else if (sscanf (arg, "%d%n", &hist_depth, &pos) == 1 && arg[pos] == 0 && hist_depth > 0)
 	{
@@ -629,7 +609,6 @@ void qos_destination_order (struct qos *a, const char *arg)
 		dds_qset_destination_order(qp, DDS_DESTINATIONORDER_BY_RECEPTION_TIMESTAMP);
 	else if (strcmp (arg, "s") == 0){
 		dds_qset_destination_order(qp, DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP);
-		PRINTD("%s: dds_qset_dest_order\n\n",enumValue(a));
 	}
 	else
 	    error_exit("destination order qos: %s: invalid\n", arg);
@@ -668,7 +647,6 @@ void qos_transport_priority (struct qos *a, const char *arg)
 	if (sscanf (arg, "%d%n", &value, &pos) != 1 || arg[pos] != 0)
 	    error_exit("transport_priority qos: %s invalid\n", arg);
 	dds_qset_transport_priority(qp, value);
-	PRINTD("%s: %d: dds_qset_transport_priority\n\n",enumValue(a),value);
 }
 
 static unsigned char gethexchar (const char **str)
@@ -815,10 +793,12 @@ void qos_reliability (struct qos *a, const char *arg)
 
 	switch (*argp++)
 	{
+		case 'b':
 		case 'n':
 			dds_qset_reliability(qp, DDS_RELIABILITY_BEST_EFFORT, max_block_t);
 			PRINTD("max_block_t: %"PRId64 " case: n \n\n", max_block_t);
 			break;
+		case 'r':
 		case 'y':
 			if(*argp == ':') {
 				double max_blocking_time;
@@ -841,10 +821,6 @@ void qos_reliability (struct qos *a, const char *arg)
 			}
 			dds_qset_reliability(qp, DDS_RELIABILITY_RELIABLE, max_block_t);
 			PRINTD("max_block_t: %"PRId64 " case: y \n\n", max_block_t);
-			break;
-		case 's':
-			fprintf(stderr, "warning: %s entity ignoring inapplicable QoS \"synchronous reliability\"\n", enumValue(a));
-//		  	qp->synchronous = 1;
 			break;
 		default:
 		    error_exit("reliability qos: %s: invalid\n", arg);
@@ -980,7 +956,6 @@ void qos_resource_limits (struct qos *a, const char *arg)
 		goto err;
 
 	dds_qset_resource_limits(qp, max_samples, max_instances, max_samples_per_instance);
-	PRINTD("%s: max_samples: %"PRId32" max_ins: %"PRId32" max_s_ps:%"PRId32" \n\n",enumValue(a),max_samples,max_instances,max_samples_per_instance);
 
 	if (*argp != 0)
 		goto err;
@@ -1050,7 +1025,6 @@ void qos_durability_service (struct qos *a, const char *arg)
 		goto err;
 
 	dds_qset_durability_service(qp, service_cleanup_delay, history_kind, history_depth, max_samples, max_instances, max_samples_per_instance);
-	PRINTD("%s: cleanUpdelay: %" PRId64" depth: %" PRId32" max_samples: %"PRId32" max_ins: %"PRId32" max_s_ps: %"PRId32" \n\n",enumValue(a),service_cleanup_delay,history_depth,max_samples,max_instances,max_samples_per_instance);
 
 	if (*argp != 0)
 		goto err;
@@ -1071,7 +1045,6 @@ void qos_presentation (struct qos *a, const char *arg)
 		dds_qset_presentation(qp, DDS_PRESENTATION_TOPIC, 1, 0);
 	} else if (strcmp (arg, "g") == 0) {
 		dds_qset_presentation(qp, DDS_PRESENTATION_GROUP, 1, 0);
-		PRINTD("%s : dds_qset_presentation_group\n\n",enumValue(a));
 	} else {
 	    error_exit("presentation qos: %s: invalid\n", arg);
 	}
@@ -1088,7 +1061,6 @@ void qos_autodispose_unregistered_instances (struct qos *a, const char *arg)
 	  dds_qset_writer_data_lifecycle(qp, true);
 	else
 	    error_exit("autodispose_unregistered_instances qos: %s: invalid\n", arg);
-	PRINTD("%s: %s : qos_autodispose_unregistered_instances\n\n",enumValue(a),arg);
 }
 
 //static unsigned split_string (char ***xs, const char *in, const char *sep)
@@ -1104,12 +1076,6 @@ void qos_autodispose_unregistered_instances (struct qos *a, const char *arg)
 //  return n;
 //}
 
-void qos_subscription_keys (struct qos *a, const char *arg)
-{
-	fprintf(stderr, "warning: %s entity ignoring inapplicable QoS \"Subscription Key\"\n", enumValue(a));
-	return;
-}
-
 const char *qos_arg_usagestr = "\
 QOS (not all are universally applicable):\n\
   A={a|p:S|w:S}   liveliness (automatic, participant or writer, S in seconds)\n\
@@ -1122,13 +1088,12 @@ QOS (not all are universally applicable):\n\
   O=[s|x[:S]]     ownership: shared or exclusive, strength S (default: s)\n\
   p=PRIO          transport priority (default: 0)\n\
   P={i|t|g}       instance, or {topic|group} + coherent updates\n\
-  r={y[:T]|s[:T]|n}  reliability, T is max blocking time in seconds,\n\
-                  s is reliable+synchronous (default: y:1)\n\
+  r={r[:T]|b}     reliability, T is max blocking time in seconds,\n\
+                  (default: r:1)\n\
   R=S/I/SpI       resource limits (samples, insts, S/I; default: inf/inf/inf)\n\
   S=C[/H[/S/I/SpI]] durability_service (cleanup delay, history, resource limits)\n\
   u={y|n}         autodispose unregistered instances (default: n)\n\
   U=TEXT          set user_data to TEXT\n\
-  V=K0:K1:K2      set subscription keys\n\
 ";
 
 void set_qosprovider (const char *arg)
@@ -1183,7 +1148,6 @@ void setqos_from_args (struct qos *q, int n, const char *args[])
           case 'S': qos_durability_service (q, a); break;
           case 'u': qos_autodispose_unregistered_instances (q, a); break;
           case 'U': qos_user_data (q, a); break;
-          case 'V': qos_subscription_keys (q, a); break;
           default:
               error_exit("%s: unknown QoS\n", arg);
         }

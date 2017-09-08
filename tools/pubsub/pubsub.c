@@ -72,7 +72,6 @@ struct readerspec {
   dds_entity_t rd;
   dds_entity_t sub;
   enum topicsel topicsel;
-  char *tpname;
   struct tgtopic *tgtp;
   enum readermode mode;
   int use_take;
@@ -108,7 +107,6 @@ static const struct readerspec def_readerspec = {
   .rd = 0,
   .sub = 0,
   .topicsel = UNSPEC,
-  .tpname = NULL,
   .tgtp = NULL,
   .mode = MODE_PRINT,
   .use_take = 1,
@@ -152,52 +150,26 @@ static void usage (const char *argv0)
 usage: %s [OPTIONS] PARTITION...\n\
 \n\
 OPTIONS:\n\
-  -T TOPIC[:TO][:EXPR]  set topic name to TOPIC, TO is an optional timeout in\n\
-                  seconds (default 10, use inf to wait indefinitely) for\n\
-                  find_topic in ARB mode; EXPR can be used to create a content\n\
-                  filtered topic \"cftN\" with filter expression EXPR based on\n\
-                  the topic. Environment variables in EXPR are expanded in the\n\
-                  usual manner and with:\n\
-                    $SYSTEMID set to the current system id (in decimal)\n\
-                    $NODE_BUILTIN_PARTITION set to the node-specific built-in\n\
-                        partition\n\
+  -T TOPIC        set topic name to TOPIC\n\
                   specifying a topic name when one has already been given\n\
                   introduces a new reader/writer pair\n\
-  -K TYPE         select type (ARB is default if topic specified, KS if not),\n\
+  -K TYPE         select type (KS is default),\n\
                   (default topic name in parenthesis):\n\
                     KS                - key, seq, octet sequence (PubSub)\n\
                     K32,K64,K128,K256 - key, seq, octet array (PubSub<N>)\n\
                     OU                - one ulong, keyless (PubSubOU)\n\
-                    ARB               - use find_topic - no topic QoS override\n\
-                                        possible)\n\
-                    <FILE>            - read typename, keylist, metadata from\n\
-                                        FILE, then define topic named T with\n\
-                                        specified QoS\n\
                   specifying a type when one has already been given introduces\n\
                   a new reader/writer pair\n\
   -q FS:QOS       set QoS for entities indicated by FS, which must be one or\n\
                   more of: t (topic), p (publisher), s (subscriber),\n\
                   w (writer), r (reader), or a (all of them). For QoS syntax,\n\
                   see below. Inapplicable QoS's are ignored.\n\
-  -q provider=[PROFILE,]URI  use URI, profile as QoS provider, in which case\n\
-                  any QoS specification not of the LETTER=SETTING form gets\n\
-                  passed as-is to the QoS provider (with the exception of the\n\
-                  empty string, which is then translated to a null pointer to\n\
-                  get the default value). Note that later specifications\n\
-                  override earlier ones, so a QoS provider can be combined\n\
-                  with the previous form as well. Also note that the default\n\
-                  QoS's used by this program are slightly different from\n\
-                  those of the DCPS API (topics default to by-source ordering\n\
-                  and reliability, and readers and writers to the topic QoS),\n\
-                  which may cause surprises :)\n\
   -m [0|p[p]|c[p][:N]|z|d[p]]  no reader, print values, check sequence numbers\n\
                   (expecting N keys), \"zero-load\" mode or \"dump\" mode (which\n\
                   is differs from \"print\" primarily because it uses a data-\n\
                   available trigger and reads all samples in read-mode(default:\n\
                   p; pp, cp, dp are polling modes); set per-reader\n\
   -D DUR          run for DUR seconds\n\
-  -M TO:U         wait for matching reader with timeout TO and user_data U and not\n\
-	         	  owned by this instance of pubsub\n\
   -n N            limit take/read to N samples\n\
   -O              take/read once then exit 0 if samples present, or 1 if not\n\
   -P MODES        printing control (prefixing with \"no\" disables):\n\
@@ -214,24 +186,21 @@ OPTIONS:\n\
                     nwgen          no-writers generation count\n\
                     ranks          sample, generation, absolute generation ranks\n\
                     state          instance/sample/view states\n\
-                  additionally, for ARB types the following have effect:\n\
-                    type           print type definition at start up\n\
+		  additionally, the following have effect for sample data values:\n\
                     dense          no additional white space, no field names\n\
                     fields         field names, some white space\n\
                     multiline      field names, one field per line\n\
                   default is \"nometa,state,fields\".\n\
+		  	  	  For K* types, the .baggage field is omitted from the data output\n\
   -r              register instances (-wN mode only)\n\
   -R              use 'read' instead of 'take'\n\
   -s MS           sleep MS ms after each read/take (default: 0)\n\
-  -W TO           wait_for_historical_data TO (TO in seconds or inf)\n\
   -w F            writer mode/input selection, F:\n\
                     -     stdin (default)\n\
                     N     cycle through N keys as fast as possible\n\
                     N:R*B cycle through N keys at R bursts/second, each burst\n\
                           consisting of B samples\n\
                     N:R   as above, B=1\n\
-                    :P    listen on TCP port P\n\
-                    H:P   connect to TCP host H, port P\n\
                   no writer is created if -w0 and no writer listener\n\
                   automatic specifications can be given per writer; final\n\
                   interactive specification determines input used for non-\n\
@@ -253,7 +222,6 @@ OPTIONS:\n\
   -z N            topic size (affects KeyedSeq only)\n\
   -@              echo everything on duplicate writer (only for interactive)\n\
   -* N            sleep for N seconds just before returning from main()\n\
-  -!              disable signal handlers\n\
 \n\
 %s\n\
 Note: defaults above are overridden as follows:\n\
@@ -271,24 +239,14 @@ uN    unregister, key value N; u@T N as above\n\
 rN    register, key value N; u@T N as above\n\
 sN    sleep for N seconds\n\
 zN    set topic size to N (affects KeyedSeq only)\n\
-pX    set publisher partition to comma-separated list X\n\
-Y     dispose_all\n\
-B     begin coherent changes\n\
-E     end coherent changes\n\
-SP;T;U  make persistent snapshot with given partition and topic\n\
-      expressions and URI\n\
-:X    switch to writer X:\n\
-        +N, -N   next, previous Nth writer of all non-automatic writers\n\
-                 N defaults to 1\n\
-        N        Nth writer of all non-automatic writers\n\
-        NAME     unique writer of which topic name starts with NAME\n\
 Note: for K*, OU types, in the above N is always a decimal\n\
 integer (possibly negative); because the OneULong type has no key\n\
 the actual key value is irrelevant. For ARB types, N must be a\n\
 valid initializer. X must always be a list of names.\n\
 \n\
-When invoked as \"sub\", default is -w0 (no writer)\n\
-When invoked as \"pub\", default is -m0 (no reader)\n",
+PARTITION:\n\
+If partition name contains spaces, then wrap it inside quotation marks.\n\
+Use \"\" for default partition.\n",
            argv0, qos_arg_usagestr);
   exit (1);
 }
@@ -514,36 +472,6 @@ static int set_sub_partition (dds_entity_t sub, const char *buf)
   return 0;
 }
 #endif
-
-static void make_persistent_snapshot(const char *args)
-{
-	printf("Make persistent snapshot: not supported\n");
-	return;
-//	DDS_DomainId_t id = DDS_DomainParticipant_get_domain_id(dp);
-//	DDS_Domain dom;
-//	DDS_ReturnCode_t ret;
-//	char *p, *px = NULL, *tx = NULL, *uri = NULL;
-//	px = os_strdup(args);
-//	if ((p = strchr(px, ';')) == NULL) goto err;
-//	*p++ = 0;
-//	tx = p;
-//	if ((p = strchr(tx, ';')) == NULL) goto err;
-//	*p++ = 0;
-//	uri = p;
-//	if ((dom = DDS_DomainParticipantFactory_lookup_domain(dpf, id)) == NULL) {
-//	printf ("failed to lookup domain\n");
-//	} else {
-//	if ((ret = DDS_Domain_create_persistent_snapshot(dom, px, tx, uri)) != DDS_RETCODE_OK)
-//	  printf ("failed to create persistent snapshot, error %d (%s)\n", (int) ret, dds_err_str(ret));
-//	if ((ret = DDS_DomainParticipantFactory_delete_domain(dpf, dom)) != DDS_RETCODE_OK)
-//	  error ("failed to delete domain objet, error %d (%s)\n", (int) ret, dds_err_str(ret));
-//	}
-//	free(px);
-//	return;
-//	err:
-//	printf ("%s: expected PART_EXPR;TOPIC_EXPR;URI\n", args);
-//	free(px);
-}
 
 static int read_int (char *buf, int bufsize, int pos, int accept_minus)
 {
@@ -982,8 +910,15 @@ static void print_K (unsigned long long *tstart, unsigned long long tnow, dds_en
   int result;
   os_flockfile(stdout);
   print_sampleinfo(tstart, tnow, si, tag);
-  if (si->valid_data)
-    printf ("%u %d\n", seq, keyval);
+  if (si->valid_data) {
+	  if(printmode == TGPM_MULTILINE) {
+		  printf("{\n%*.*s.seq = %u,\n%*.*s.keyval = %d }\n", 4, 4, "", seq, 4, 4, "", keyval);
+	  } else if(printmode == TGPM_DENSE) {
+		  printf("{%u,%d}\n", seq, keyval);
+	  } else {
+		  printf("{ .seq = %u, .keyval = %d }\n", seq, keyval);
+	  }
+  }
   else
   {
     /* May not look at mseq->_buffer[i] but want the key value
@@ -994,8 +929,15 @@ static void print_K (unsigned long long *tstart, unsigned long long tnow, dds_en
        the blanket statement "may not look at value" if valid_data
        is not set means you can't really use take ...  */
     int32_t d_key;
-    if ((result = getkeyval (rd, &d_key, si->instance_handle)) == DDS_RETCODE_OK)
-      printf ("NA %u\n", d_key);
+    if ((result = getkeyval (rd, &d_key, si->instance_handle)) == DDS_RETCODE_OK) {
+    	if(printmode == TGPM_MULTILINE) {
+    		printf("{\n%*.*s.seq = NA,\n%*.*s.keyval = %d }\n", 4, 4, "", 4, 4, "", keyval);
+    	} else if(printmode == TGPM_DENSE) {
+    		printf("{NA,%d}\n", keyval);
+    	} else {
+    		printf("{ .seq = NA, .keyval = %d }\n", keyval);
+		}
+    }
     else
       printf ("get_key_value: error %d (%s)\n", (int) result, dds_err_str(result));
   }
@@ -1045,7 +987,13 @@ static void print_seq_OU (unsigned long long *tstart, unsigned long long tnow, d
 	os_flockfile(stdout);
     print_sampleinfo(tstart, tnow, si, tag);
     if (si->valid_data) {
-    	printf ("%u\n", mseq[i]->seq);
+    	if(printmode == TGPM_MULTILINE) {
+			printf("{\n%*.*s.seq = %u }\n", 4, 4, "", mseq[i]->seq);
+		} else if(printmode == TGPM_DENSE) {
+			printf("{%u}\n", mseq[i]->seq);
+		} else {
+			printf("{ .seq = %u }\n", mseq[i]->seq);
+		}
     } else {
       printf ("NA\n");
     }
@@ -1528,9 +1476,6 @@ static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq)
       case 'Y': case 'B': case 'E': case 'W':
         non_data_operation(command, spec->wr);
         break;
-      case 'S':
-        make_persistent_snapshot(arg);
-        break;
       case ':':
         break;
       default:
@@ -1797,9 +1742,12 @@ static uint32_t subthread (void *vspec)
   dds_return_t rc;
   uintptr_t exitcode = 0;
   char tag[256];
+  char tn[256];
   size_t nxs = 0;
 
-  snprintf(tag, sizeof(tag), "[%u:%s]", spec->idx, spec->tpname);
+  rc = dds_get_name(dds_get_topic(rd), tn, sizeof(tn));
+  error_report(rc, "dds_get_name failed");
+  snprintf(tag, sizeof(tag), "[%u:%s]", spec->idx, tn);
 
   if (wait_hist_data)
   {
@@ -1849,22 +1797,11 @@ static uint32_t subthread (void *vspec)
   }
 
   {
-//    union {
-////      void *any[spec->read_maxsamples];
-//      void **any;
-//      KeyedSeq *ks;
-//      Keyed32 *k32;
-//      Keyed64 *k64;
-//      Keyed128 *k128;
-//      Keyed256 *k256;
-//      OneULong *ou;
-//    } mseq;
-    void **mseq = (void **) os_malloc(sizeof(void*) * (spec->read_maxsamples)); //variable size array malloc
+    void **mseq = (void **) os_malloc(sizeof(void*) * (spec->read_maxsamples));
 
-    dds_sample_info_t *iseq = (dds_sample_info_t *) os_malloc (sizeof(dds_sample_info_t) * spec->read_maxsamples); //variable size array malloc
-//    dds_condition_seq *glist = os_malloc(sizeof(*glist));
+    dds_sample_info_t *iseq = (dds_sample_info_t *) os_malloc (sizeof(dds_sample_info_t) * spec->read_maxsamples);
     dds_duration_t timeout = (uint64_t)100000000;
-    dds_attach_t *xs = os_malloc(sizeof(dds_attach_t) * nxs); //variable size array malloc
+    dds_attach_t *xs = os_malloc(sizeof(dds_attach_t) * nxs);
 
     unsigned long long tstart = 0, tfirst = 0, tprint = 0;
     long long out_of_seq = 0, nreceived = 0, last_nreceived = 0;
@@ -1886,7 +1823,6 @@ static uint32_t subthread (void *vspec)
       {
         os_time d = { 0, 1000000 }; /* 1ms sleep interval, so a bit less than 1kHz poll freq */
         os_nanoSleep(d);
-//        nanosleep (&d, NULL);
       }
       else
       {
@@ -1910,7 +1846,7 @@ static uint32_t subthread (void *vspec)
 
         if (cond == termcond)
           continue;
-        if (cond == 0) {
+        if (cond == 0 && !spec->polling) {
         	break;
         }
 
@@ -2040,10 +1976,8 @@ static uint32_t subthread (void *vspec)
 //          usleep (spec->sleep_us);
         }
       }
-//      dds_free(glist->_buffer);
     }
     os_free(xs);
-//    os_free (glist);
 
     if (spec->mode == MODE_PRINT || spec->mode == MODE_DUMP || once_mode)
     {
@@ -2385,16 +2319,11 @@ int main (int argc, char *argv[])
 	dds_listener_t *wrlistener = dds_listener_create(NULL); // TODO free these
 
 	struct qos *qos;
-//	const char *qtopic[argc];
-	const char **qtopic = (const char **) os_malloc (sizeof(char *) * argc); //variable size array malloc
-//	const char *qreader[2+argc];
-	const char **qreader = (const char **) os_malloc (sizeof(char *) * (2+argc)); //variable size array malloc
-//	const char *qwriter[2+argc];
-	const char **qwriter = (const char **) os_malloc (sizeof(char *) * (2+argc)); //variable size array malloc
-//	const char *qpublisher[2+argc];
-	const char **qpublisher = (const char **) os_malloc (sizeof(char *) * (2+argc)); //variable size array malloc
-//	const char *qsubscriber[2+argc];
-	const char **qsubscriber = (const char **) os_malloc (sizeof(char *) * (2+argc)); //variable size array malloc
+	const char **qtopic = (const char **) os_malloc (sizeof(char *) * argc);
+	const char **qreader = (const char **) os_malloc (sizeof(char *) * (2+argc));
+	const char **qwriter = (const char **) os_malloc (sizeof(char *) * (2+argc));
+	const char **qpublisher = (const char **) os_malloc (sizeof(char *) * (2+argc));
+	const char **qsubscriber = (const char **) os_malloc (sizeof(char *) * (2+argc));
 	int nqtopic = 0, nqreader = 0, nqwriter = 0;
 	int nqpublisher = 0, nqsubscriber = 0;
 	int opt, pos;
@@ -2426,13 +2355,13 @@ int main (int argc, char *argv[])
 	save_argv0 (argv[0]);
 	pid = (int) os_procIdSelf();
 
-//	qreader[0] = "k=all";
-//	qreader[1] = "R=10000/inf/inf";
-//	nqreader = 2;
-//
-//	qwriter[0] = "k=all";
-//	qwriter[1] = "R=100/inf/inf";
-//	nqwriter = 2;
+	qreader[0] = "k=all";
+	qreader[1] = "R=10000/inf/inf";
+	nqreader = 2;
+
+	qwriter[0] = "k=all";
+	qwriter[1] = "R=100/inf/inf";
+	nqwriter = 2;
 
 	spec_sofar = SPEC_TOPICSEL;
 	specidx--;
@@ -2714,15 +2643,12 @@ int main (int argc, char *argv[])
   for (i = 0; i <= specidx; i++)
   {
     assert (spec[i].rd.topicsel == spec[i].wr.topicsel);
-    if (spec[i].topicname != NULL)
-    {
-      if (spec[i].rd.topicsel == UNSPEC)
-        spec[i].rd.topicsel = spec[i].wr.topicsel = ARB;
-    }
-    else
-    {
-      if (spec[i].rd.topicsel == UNSPEC)
+
+    if (spec[i].rd.topicsel == UNSPEC)
         spec[i].rd.topicsel = spec[i].wr.topicsel = KS;
+
+    if (spec[i].topicname == NULL)
+    {
       switch (spec[i].rd.topicsel)
       {
         case UNSPEC: assert(0);
@@ -2869,7 +2795,6 @@ int main (int argc, char *argv[])
       PRINTD("Entering setqos for Reader\n");
       setqos_from_args (qos, nqreader, qreader);
       spec[i].rd.rd = new_datareader_listener (qos, rdlistener);
-//      ret = dds_get_name(spec[i].tp, spec[i].rd.tpname, sizeof(char*)); //Todo: now working properly.
       spec[i].rd.sub = sub;
       free_qos (qos);
     }
@@ -2881,7 +2806,6 @@ int main (int argc, char *argv[])
       PRINTD("Entering setqos for Writer\n");
       setqos_from_args (qos, nqwriter, qwriter);
       spec[i].wr.wr = new_datawriter_listener (qos, wrlistener);
-//      ret = dds_get_name(spec[i].tp, spec[i].wr.tpname, sizeof(char*));
       spec[i].wr.pub = pub;
       if (spec[i].wr.duplicate_writer_flag)
       {
@@ -2974,6 +2898,7 @@ int main (int argc, char *argv[])
           break;
         case WRM_INPUT:
           wsl = os_malloc(sizeof(*wsl));
+          spec[i].wr.tpname = os_strdup(spec[i].topicname);
           wsl->spec = &spec[i].wr;
           if (wrspecs) {
             wsl->next = wrspecs->next;
@@ -3066,8 +2991,6 @@ int main (int argc, char *argv[])
 //		tgfree(spec[i].rd.tgtp);
 //	if (spec[i].wr.tgtp)
 //		tgfree(spec[i].wr.tgtp);
-	if(spec[i].rd.tpname)
-		dds_string_free(spec[i].rd.tpname);
 	if (spec[i].wr.tpname)
 		dds_string_free(spec[i].wr.tpname);
   }

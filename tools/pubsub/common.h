@@ -117,6 +117,5 @@ void qos_subscription_keys (struct qos *a, const char *arg);
 void set_qosprovider (const char *arg);
 void setqos_from_args (struct qos *q, int n, const char *args[]);
 void setqos_from_argsNew (dds_qos_t *q, int n, const char *args[]);
-char* enumValue(const struct qos *a);
 
 #endif
