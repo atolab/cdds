@@ -2,6 +2,7 @@
 #include "HelloWorldData.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 /*
   The helloinstanceworld example is an extension of the helloquickworld
@@ -13,19 +14,17 @@
 /* An array of one message (aka sample in dds terms) will be used. */
 #define MAX_SAMPLES 10
 
-void print_msg(HelloWorldData_Msg *msg, dds_sample_info_t *info);
+static void print_msg(HelloWorldData_Msg *msg, dds_sample_info_t *info);
+static bool process_samples(void *samples[MAX_SAMPLES], dds_entity_t participant, dds_entity_t reader);
+static int wait_for_subscription(dds_entity_t participant, dds_entity_t reader);
 
 int main (int argc, char ** argv)
 {
     dds_entity_t participant;
     dds_entity_t topic;
     dds_entity_t reader;
-    dds_entity_t waitset;
-    HelloWorldData_Msg *msg;
-    void *samples[MAX_SAMPLES];
-    dds_sample_info_t infos[MAX_SAMPLES];
-    dds_sample_info_t *info;
     dds_return_t ret;
+    void *samples[MAX_SAMPLES];
     dds_qos_t *qos;
     bool terminate = false;
 
@@ -44,55 +43,22 @@ int main (int argc, char ** argv)
     DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     dds_qos_delete(qos);
 
+    /* Wait for a datawriter to start */
+    if (wait_for_subscription(participant, reader) == EXIT_FAILURE) {
+      dds_delete (participant);
+      return EXIT_FAILURE;
+    }
+
     /* Prepare array of samples. */
     for (int i = 0; i < MAX_SAMPLES; i++)
     {
         samples[i] = HelloWorldData_Msg__alloc ();
     }
 
-    /* Prepare to wait for data. */
-    ret = dds_set_enabled_status(reader, DDS_DATA_AVAILABLE_STATUS);
-    DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-    waitset = dds_create_waitset(participant);
-    DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-    ret = dds_waitset_attach(waitset, reader, (dds_attach_t)NULL);
-    DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     while (!terminate)
     {
-        printf ("\n=== [Subscriber] Waiting for message(s) ...\n");
-        ret = dds_waitset_wait(waitset, NULL, 0, DDS_SECS(30));
-        DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-        if (ret > 0)
-        {
-            /* Do the actual read.
-             * The return value contains the number of read samples. */
-            ret = dds_read (reader, samples, infos, MAX_SAMPLES, MAX_SAMPLES);
-            DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-            for (int i = 0; i < ret; i++)
-            {
-                msg  = (HelloWorldData_Msg*) samples[i];
-                info = &(infos[i]);
-
-                /* Print Message. */
-                printf ("=== [Subscriber] Received : ");
-                print_msg(msg, info);
-
-                if (info->instance_state != DDS_IST_ALIVE)
-                {
-                    /* Not alive indicates that the publisher quit. */
-                    printf ("=== [Subscriber] Received : Not alive message -> terminate\n");
-                    terminate = true;
-                }
-            }
-        }
-        else
-        {
-            printf ("=== [Subscriber] Wait timeout.\n");
-            terminate = true;
-        }
+        terminate = process_samples(samples, participant, reader);
     }
 
     /* Clear array of samples. */
@@ -105,10 +71,85 @@ int main (int argc, char ** argv)
     ret = dds_delete (participant);
     DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
-void print_msg(HelloWorldData_Msg *msg, dds_sample_info_t *info)
+static int wait_for_subscription(dds_entity_t participant, dds_entity_t reader)
+{
+  dds_return_t ret;
+  dds_entity_t waitset;
+
+  /* Wait for subscription */
+  printf("\n=== [Subscriber] Waiting for a writer ...\n");
+  ret = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
+  DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  waitset = dds_create_waitset(participant);
+  DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  ret = dds_waitset_attach(waitset, reader, (dds_attach_t)NULL);
+  DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  ret = dds_waitset_wait(waitset, NULL, 0, DDS_SECS(30));
+  DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+  if (ret == 0) {
+      printf("=== [Subscriber] Did not discover a writer. Exiting\n");
+      return EXIT_FAILURE;
+  }
+  return EXIT_SUCCESS;
+}
+
+static bool process_samples(void *samples[MAX_SAMPLES], dds_entity_t participant, dds_entity_t reader)
+{
+    HelloWorldData_Msg *msg;
+    dds_sample_info_t infos[MAX_SAMPLES];
+    dds_sample_info_t *info;
+    dds_return_t ret;
+    dds_entity_t waitset;
+    bool terminate = false;
+
+    /* Prepare to wait for data */
+    ret = dds_set_enabled_status(reader, DDS_DATA_AVAILABLE_STATUS);
+    waitset = dds_create_waitset(participant);
+    DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+    ret = dds_waitset_attach(waitset, reader, (dds_attach_t)NULL);
+    DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+    printf ("\n=== [Subscriber] Waiting for message(s) ...\n");
+    ret = dds_waitset_wait(waitset, NULL, 0, DDS_SECS(30));
+    DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+    if (ret > 0)
+    {
+      /* Do the actual read.
+        * The return value contains the number of read samples. */
+      dds_return_t ret = dds_read (reader, samples, infos, MAX_SAMPLES, MAX_SAMPLES);
+      DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+      for (int i = 0; i < ret; i++)
+      {
+          msg  = (HelloWorldData_Msg*) samples[i];
+          info = &(infos[i]);
+
+          /* Print Message. */
+          printf ("=== [Subscriber] Received : ");
+          print_msg(msg, info);
+
+          if (info->instance_state != DDS_IST_ALIVE)
+          {
+              /* Not alive indicates that the publisher quit. */
+              printf ("=== [Subscriber] Received : Not alive message -> terminate\n");
+              terminate = true;
+          }
+      }
+    }
+    else
+    {
+        printf ("=== [Subscriber] Wait timeout.\n");
+        terminate = true;
+    }
+    return terminate;
+}
+
+static void print_msg(HelloWorldData_Msg *msg, dds_sample_info_t *info)
 {
     char *sst = "sample read";
     char *vst = "instance new";
@@ -142,3 +183,4 @@ void print_msg(HelloWorldData_Msg *msg, dds_sample_info_t *info)
     printf ("Message (%d, %s) [ %15s, %s, %18s ]\n",
              msg->userID, str, sst, vst, ist);
 }
+

@@ -2,6 +2,7 @@
 #include "HelloWorldData.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 /*
   The helloquickworld example is an extension of the helloworld
@@ -41,11 +42,31 @@ int main (int argc, char ** argv)
     DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     dds_qos_delete(qos);
 
+    /* Wait for a matching data writer */
+    ret = dds_set_enabled_status(reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+    waitset = dds_create_waitset(participant);
+    DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+    ret = dds_waitset_attach(waitset, reader, (dds_attach_t)NULL);
+    DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+    printf ("\n=== [Subscriber] Waiting for a writer ...\n");
+    ret = dds_waitset_wait(waitset, NULL, 0, DDS_SECS(30));
+    DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+    if (ret == 0)
+    {
+      printf ("=== [Subscriber] Did not discover a writer. Exiting.\n");
+      dds_delete (participant);
+      return EXIT_FAILURE;
+    }
+
     /*
-     * The writer waited for a reader to be discovered before starting
-     * to write. This isn't really needed for the reader. The reader
-     * can just wait for data to arrive.
-     * For that to happen, we need to:
+     * Although not necessary, the above code example is about
+     * how to wait until a writer is located. Since the writer waited
+     * for a reader to be discovered before starting to write,
+     * one can start waiting for data. For that to happen, we need to:
      *   - Indicate our interest for that on the reader.
      *   - Create a waitset.
      *   - Attach the reader to the waitset.
@@ -113,5 +134,5 @@ int main (int argc, char ** argv)
     ret = dds_delete (participant);
     DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    return 0;
+    return EXIT_SUCCESS;
 }

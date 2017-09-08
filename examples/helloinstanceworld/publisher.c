@@ -43,7 +43,7 @@ int main (int argc, char ** argv)
     DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     /* Wait for subscriber. */
-    printf ("\n=== [Publisher] Waiting for a reader ...\n");
+    printf ("\n=== [Publisher]  Waiting for a reader ...\n");
     ret = dds_waitset_wait(waitset, NULL, 0, DDS_SECS(30));
     DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     if (ret > 0)
@@ -51,7 +51,7 @@ int main (int argc, char ** argv)
         /* Write first message of first user. */
         msg.userID = 1;
         msg.message = "{id1|msg1}";
-        printf ("=== [Publisher] Writing : Message (%d, %s)\n", msg.userID, msg.message);
+        printf ("=== [Publisher]  Writing : Message (%d, %s)\n", msg.userID, msg.message);
         ret = dds_write (writer, &msg);
         DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
@@ -63,7 +63,7 @@ int main (int argc, char ** argv)
         /* Write first message of second user. */
         msg.userID = 2;
         msg.message = "{id2|msg1}";
-        printf ("=== [Publisher] Writing : Message (%d, %s)\n", msg.userID, msg.message);
+        printf ("=== [Publisher]  Writing : Message (%d, %s)\n", msg.userID, msg.message);
         ret = dds_write (writer, &msg);
         DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
@@ -72,7 +72,7 @@ int main (int argc, char ** argv)
         /* Write second message of first user. */
         msg.userID = 1;
         msg.message = "{id1|msg2}";
-        printf ("=== [Publisher] Writing : Message (%d, %s)\n", msg.userID, msg.message);
+        printf ("=== [Publisher]  Writing : Message (%d, %s)\n", msg.userID, msg.message);
         ret = dds_write (writer, &msg);
         DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
@@ -82,7 +82,7 @@ int main (int argc, char ** argv)
          * This'll indicate to the subscriber that the publisher has finished. */
         msg.userID = 2;
         msg.message = "don't care";
-        printf ("=== [Publisher] Dispose : Message (%d, %s)\n", msg.userID, msg.message);
+        printf ("=== [Publisher]  Dispose : Message (%d, %s)\n", msg.userID, msg.message);
         ret = dds_dispose (writer, &msg);
         DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
@@ -90,7 +90,7 @@ int main (int argc, char ** argv)
     }
     else
     {
-        printf ("=== [Publisher] Did not discover a reader.\n");
+        printf ("=== [Publisher]  Did not discover a reader. Exiting\n");
     }
 
     /* Deleting the participant will delete all its children recursively as well. */

@@ -58,7 +58,7 @@ int main (int argc, char ** argv)
      * which can only be '1' because only 1 was attached. Returning
      * 0 means that within the timeout, no entities were triggered.
      * Returning a negative value indicates an error. */
-    printf ("\n=== [Publisher] Waiting for a reader ...\n");
+    printf ("\n=== [Publisher]  Waiting for a reader ...\n");
     ret = dds_waitset_wait(waitset, NULL, 0, DDS_SECS(30));
     DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
     if (ret > 0)
@@ -67,7 +67,7 @@ int main (int argc, char ** argv)
         msg.userID = 1;
         msg.message = "Hello Quick World";
 
-        printf ("=== [Publisher] Writing : ");
+        printf ("=== [Publisher]  Writing : ");
         printf ("Message (%d, %s)\n", msg.userID, msg.message);
 
         ret = dds_write (writer, &msg);
@@ -75,7 +75,7 @@ int main (int argc, char ** argv)
     }
     else
     {
-        printf ("=== [Publisher] Did not discover a reader.\n");
+        printf ("=== [Publisher]  Did not discover a reader. Exiting\n");
     }
 
     /* Deleting the participant will delete all its children recursively as well. */
