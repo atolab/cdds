@@ -1,6 +1,5 @@
 #include "CUnit/Runner.h"
 #include "os/os.h"
-#include "os/os_process.h"
 
 #ifdef __VXWORKS__
 #   ifdef _WRS_KERNEL
@@ -149,40 +148,104 @@ uint32_t concurrent_trylock_thread (_In_opt_ void *arg)
 
 CUnit_Suite_Initialize(os_mutex)
 {
-    int result = 0;
-    os_osInit();
-    printf("Run os_mutex_Initialize\n");
-  #ifdef OS_LINUX_MUTEX_H149C
-    supported_resultBusy = 1;
-  #else
-    supported_resultBusy = 0;
-  #endif
+    printf ( "Run os_mutex_Initialize\n" );
 
-    return result;
+    os_osInit();
+
+    return 0;
 }
 
 CUnit_Suite_Cleanup(os_mutex)
 {
-    int result = 0;
-
     printf("Run os_mutex_Cleanup\n");
-    os_free (sd);
+
     os_osExit();
-    return result;
+
+    return 0;
 }
 
-CUnit_Test(os_mutex, init)
+/* This test only checks a single-threaded use-case; just API availability.*/
+CUnit_Test(os_mutex, basic)
 {
-    /* Initialize mutex with PRIVATE scope and Success result  */
-    printf ("Starting os_mutex_init_001\n");
-    sd = os_malloc (sizeof (*sd));
-    os_mutexInit (&sd->global_mutex);
+    os_mutex m;
+    os_result r;
 
-    /* Initialize mutex with PRIVATE scope and Fail result  */
-    printf ("Starting os_mutex_init_002\n");
-    printf ("N.A - Failure cannot be forced.\n");
+    printf("Starting os_mutex_basic\n");
 
-    printf ("Ending os_mutex_init\n");
+    os_mutexInit(&m);
+    os_mutexLock(&m);
+    os_mutexUnlock(&m);
+    r = os_mutexLock_s(&m);
+    CU_ASSERT_EQUAL(r, os_resultSuccess);  /* Failure can't be forced */
+    os_mutexUnlock(&m);
+    os_mutexDestroy(&m);
+    printf("Ending os_mutex_basic\n");
+}
+
+#define RUNTIME_SEC         (4)
+#define NUM_THREADS         (8)
+#define OS_STRESS_STOP      (0)
+#define OS_STRESS_GO        (1)
+#define THREAD_NAME_LEN     (8)
+
+struct os_mutex_stress {
+    os_threadId tid;
+    os_mutex m;
+    os_atomic_uint32_t * flag;
+    char name[THREAD_NAME_LEN];
+};
+
+static uint32_t
+os_mutex_init_thr(
+    void *args)
+{
+    struct os_mutex_stress *state = (struct os_mutex_stress *)args;
+    os_result r;
+    uint32_t iterations = 0;
+
+    do {
+        os_mutexInit(&state->m);
+        r = os_mutexLock_s(&state->m); /* Use the mutex to check that all is OK. */
+        CU_ASSERT_EQUAL(r, os_resultSuccess);  /* Failure can't be forced. */
+        os_mutexUnlock(&state->m);
+        os_mutexDestroy(&state->m);
+        iterations++;
+    } while ( os_atomic_ld32(state->flag) != OS_STRESS_STOP && r == os_resultSuccess);
+
+    printf("%s <%"PRIxMAX">: Performed %u iterations. Stopping now.\n", state->name, os_threadIdToInteger(os_threadIdSelf()), iterations);
+    return r != os_resultSuccess; /* Return true on faulure */
+}
+
+CUnit_Test(os_mutex, init_stress)
+{
+    struct os_mutex_stress threads[NUM_THREADS];
+    os_threadAttr tattr;
+    unsigned i;
+    os_atomic_uint32_t flag = OS_ATOMIC_UINT32_INIT(OS_STRESS_GO);
+    os_time runtime = { .tv_sec = RUNTIME_SEC, .tv_nsec = 0 };
+
+    printf("Starting os_mutex_init_stress\n");
+
+    os_threadAttrInit(&tattr);
+    for ( i = 0; i < NUM_THREADS; i++ ) {
+        (void) snprintf(&threads[i].name[0], THREAD_NAME_LEN, "thr%u", i);
+        threads[i].flag = &flag;
+        os_threadCreate(&threads[i].tid, threads[i].name, &tattr, &os_mutex_init_thr, &threads[i]);
+        printf("main <%"PRIxMAX">: Started thread '%s' with thread-id %" PRIxMAX "\n", os_threadIdToInteger(os_threadIdSelf()), threads[i].name, os_threadIdToInteger(threads[i].tid));
+    }
+
+    printf("main <%"PRIxMAX">: Test will run for ~%ds with %d threads\n", os_threadIdToInteger(os_threadIdSelf()), RUNTIME_SEC, NUM_THREADS);
+    os_nanoSleep(runtime);
+    os_atomic_st32(&flag, OS_STRESS_STOP);
+
+    for ( ; i != 0; i-- ) {
+        uint32_t thread_failed;
+        os_threadWaitExit(threads[i - 1].tid, &thread_failed);
+        printf("main <%"PRIxMAX">: Thread %s <%" PRIxMAX "> stopped with result %s.\n", os_threadIdToInteger(os_threadIdSelf()), threads[i - 1].name, os_threadIdToInteger(threads[i - 1].tid), thread_failed ? "FAILED" : "PASS");
+
+        CU_ASSERT_FALSE(thread_failed);
+    }
+    printf("Ending os_mutex_init_stress\n");
 }
 
 CUnit_Test(os_mutex, lock, false)
@@ -279,19 +342,6 @@ CUnit_Test(os_mutex, trylock, false)
     CU_ASSERT (result == os_resultBusy);
 
     printf ("Ending os_mutex_trylock\n");
-}
-
-CUnit_Test(os_mutex, unlock, false)
-{
-    /* Unlock mutex with PRIVATE scope and Success result */
-    printf ("Starting os_mutex_unlock_001\n");
-    os_mutexUnlock (&sd->global_mutex); // Cannot be checked directly - Success is assumed
-
-    /* Unlock mutex with PRIVATE scope and Fail result */
-    printf ("Starting os_mutex_unlock_002\n");
-    printf ("N.A - Failure cannot be forced\n");
-
-    printf ("Ending os_mutex_unlock\n");
 }
 
 CUnit_Test(os_mutex, destroy, false)

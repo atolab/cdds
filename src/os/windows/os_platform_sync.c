@@ -255,6 +255,12 @@ os__onceWrapper(
 {
     struct os__onceWrapper *wrap = (struct os__onceWrapper *) Parameter;
 
+    /* Only to be invoked from os_once, so assume inputs to be as
+     * expected instead of implementing checks officially needed to
+     * fulfill SAL. */
+    _Analysis_assume_(wrap);
+    _Analysis_assume_(Context == NULL);
+
     wrap->init_fn();
 
     return TRUE;

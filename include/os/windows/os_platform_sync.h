@@ -36,7 +36,6 @@ extern "C" {
         int state; /* -1: exclusive, 0: free, 1: shared */
     } os_rwlock;
 
-    
     typedef INIT_ONCE os_once_t;
     #define OS_ONCE_T_STATIC_INIT INIT_ONCE_STATIC_INIT
 
