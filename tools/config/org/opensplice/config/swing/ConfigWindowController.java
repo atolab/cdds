@@ -627,7 +627,7 @@ public class ConfigWindowController implements ActionListener {
 
         public ConfigChooseFilter(){
             if (ConfigModeIntializer.CONFIGURATOR_MODE == ConfigModeIntializer.LITE_MODE) {
-                ConfigChooseFilter.description = "Vortex Lite config files (*" +
+                ConfigChooseFilter.description = "Vortex DDS config files (*" +
                         ConfigChooseFilter.CONFIG_SUFFIX + ")";
             } else {
                 ConfigChooseFilter.description = "OpenSplice config files (*" +

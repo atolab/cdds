@@ -38,7 +38,7 @@ public class HelpWindow extends JFrame implements TreeSelectionListener {
     private MetaNodeDocPane docPane = null;
 
     public static final String    OSPL_HELP_WINDOW_TITLE      = "Vortex OpenSplice Configurator | Help";
-    public static final String    LITE_HELP_WINDOW_TITLE      = "Vortex Lite Configurator | Help";
+    public static final String    LITE_HELP_WINDOW_TITLE      = "Vortex DDS Configurator | Help";
 
     /**
      * This is the default constructor

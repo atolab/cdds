@@ -73,7 +73,7 @@ public class ConfigWindow extends MainWindow implements DataConfigurationListene
 
     private String windowTitle = "Configurator";
     public static final String    OSPL_WINDOW_TITLE      = "Vortex OpenSplice Configurator";
-    public static final String    LITE_WINDOW_TITLE      = "Vortex Lite Configurator";
+    public static final String    LITE_WINDOW_TITLE      = "Vortex DDS Configurator";
 
     public static final String    OSPL_SERVICE_LABEL = "Service";
     public static final String    LITE_SERVICE_LABEL = "Component";
