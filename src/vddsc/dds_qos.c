@@ -3,6 +3,7 @@
 #include "kernel/dds_qos.h"
 #include "kernel/dds_err.h"
 #include "ddsi/q_config.h"
+#include "kernel/dds_report.h"
 
 /* TODO: dd_duration_t is converted to nn_ddsi_time_t declared in q_time.h
    This structure contain seconds and fractions.
@@ -119,25 +120,29 @@ dds_return_t
 dds_qos_validate_mutable_common (
     _In_ const dds_qos_t *qos)
 {
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     /* TODO: Check whether immutable QoS are changed should actually incorporate change to current QoS */
     if (qos->present & QP_DEADLINE) {
-        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
-    } else if (qos->present & QP_OWNERSHIP) {
-        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
-    } else if (qos->present & QP_LIVELINESS) {
-        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
-    } else if (qos->present & QP_RELIABILITY) {
-        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
-    } else if (qos->present & QP_DESTINATION_ORDER) {
-        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
-    } else if (qos->present & QP_HISTORY) {
-        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
-    } else if (qos->present & QP_RESOURCE_LIMITS) {
-        ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
-    } else {
-        ret = DDS_RETCODE_OK;
+        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Deadline QoS policy caused immutable error");
+    }
+    if (qos->present & QP_OWNERSHIP) {
+        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Ownership QoS policy caused immutable error");
+    }
+    if (qos->present & QP_LIVELINESS) {
+        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Liveliness QoS policy caused immutable error");
+    }
+    if (qos->present & QP_RELIABILITY) {
+        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Reliability QoS policy caused immutable error");
+    }
+    if (qos->present & QP_DESTINATION_ORDER) {
+        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Destination order QoS policy caused immutable error");
+    }
+    if (qos->present & QP_HISTORY) {
+        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "History QoS policy caused immutable error");
+    }
+    if (qos->present & QP_RESOURCE_LIMITS) {
+        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Resource limits QoS policy caused immutable error");
     }
 
     return ret;
@@ -192,6 +197,8 @@ dds_qos_reset(
     if (qos) {
         nn_xqos_fini (qos);
         dds_qos_init_defaults (qos);
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -202,6 +209,8 @@ dds_qos_delete(
     if (qos) {
         dds_qos_reset(qos);
         dds_free(qos);
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -210,22 +219,30 @@ dds_qos_copy (
     _Out_ dds_qos_t * __restrict dst,
     _In_ const dds_qos_t * __restrict src)
 {
-    if (src && dst) {
-        nn_xqos_copy (dst, src);
-        return DDS_RETCODE_OK;
-    } else {
-        return DDS_RETCODE_BAD_PARAMETER;
+    if(!src){
+        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument source(src) is NULL");
     }
+    if(!dst){
+        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument destination(dst) is NULL");
+    }
+    nn_xqos_copy (dst, src);
+    return DDS_RETCODE_OK;
 }
 
 void dds_qos_merge (
     _Inout_ dds_qos_t * __restrict dst,
     _In_ const dds_qos_t * __restrict src)
 {
-    if (src && dst) {
-        /* Copy qos from source to destination unless already set */
-        nn_xqos_mergein_missing (dst, src);
+    if(!src){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument source(src) is NULL");
+        return ;
     }
+    if(!dst){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument destination(dst) is NULL");
+        return ;
+    }
+    /* Copy qos from source to destination unless already set */
+    nn_xqos_mergein_missing (dst, src);
 }
 
 void dds_qset_userdata(
@@ -234,8 +251,8 @@ void dds_qset_userdata(
     _In_ size_t sz)
 {
     if (!qos) {
-        /* TODO report improper api usage */
-        return;
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        return ;
     }
     dds_qos_data_copy_in(&qos->user_data, value, sz);
     qos->present |= QP_USER_DATA;
@@ -247,8 +264,8 @@ void dds_qset_topicdata(
     _In_ size_t sz)
 {
     if (!qos) {
-        /* TODO report improper api usage */
-        return;
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        return ;
     }
     dds_qos_data_copy_in (&qos->topic_data, value, sz);
     qos->present |= QP_TOPIC_DATA;
@@ -260,8 +277,8 @@ void dds_qset_groupdata(
     _In_ size_t sz)
 {
     if (!qos) {
-        /* TODO report improper api usage */
-        return;
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        return ;
     }
     dds_qos_data_copy_in (&qos->group_data, value, sz);
     qos->present |= QP_GROUP_DATA;
@@ -276,6 +293,8 @@ void dds_qset_durability
     if (qos) {
         qos->durability.kind = (nn_durability_kind_t) kind;
         qos->present |= QP_DURABILITY;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -290,6 +309,8 @@ void dds_qset_history
         qos->history.kind = (nn_history_kind_t) kind;
         qos->history.depth = depth;
         qos->present |= QP_HISTORY;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -306,6 +327,8 @@ void dds_qset_resource_limits
         qos->resource_limits.max_instances = max_instances;
         qos->resource_limits.max_samples_per_instance = max_samples_per_instance;
         qos->present |= QP_RESOURCE_LIMITS;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -322,6 +345,8 @@ void dds_qset_presentation
         qos->presentation.coherent_access = coherent_access;
         qos->presentation.ordered_access = ordered_access;
         qos->present |= QP_PRESENTATION;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -334,6 +359,8 @@ void dds_qset_lifespan
     if (qos) {
         qos->lifespan.duration = nn_to_ddsi_duration (lifespan);
         qos->present |= QP_LIFESPAN;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -346,6 +373,8 @@ void dds_qset_deadline
     if (qos) {
         qos->deadline.deadline = nn_to_ddsi_duration (deadline);
         qos->present |= QP_DEADLINE;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -358,6 +387,8 @@ void dds_qset_latency_budget
     if (qos) {
         qos->latency_budget.duration = nn_to_ddsi_duration (duration);
         qos->present |= QP_LATENCY_BUDGET;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -370,6 +401,8 @@ void dds_qset_ownership
     if (qos) {
         qos->ownership.kind = (nn_ownership_kind_t) kind;
         qos->present |= QP_OWNERSHIP;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -382,6 +415,8 @@ void dds_qset_ownership_strength
     if (qos) {
         qos->ownership_strength.value = value;
         qos->present |= QP_OWNERSHIP_STRENGTH;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -396,6 +431,8 @@ void dds_qset_liveliness
         qos->liveliness.kind = (nn_liveliness_kind_t) kind;
         qos->liveliness.lease_duration = nn_to_ddsi_duration (lease_duration);
         qos->present |= QP_LIVELINESS;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -408,6 +445,8 @@ void dds_qset_time_based_filter
     if (qos) {
         qos->time_based_filter.minimum_separation = nn_to_ddsi_duration (minimum_separation);
         qos->present |= QP_TIME_BASED_FILTER;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -418,28 +457,39 @@ void dds_qset_partition
     _In_count_(n) _Deref_pre_z_ const char ** __restrict ps
 )
 {
-    if (qos && n && ps) {
-        uint32_t i;
-        size_t len;
+    uint32_t i;
+    size_t len;
 
-        if (qos->partition.strs != NULL){
-          for (i = 0; i < qos->partition.n; i++) {
-              dds_free(qos->partition.strs[i]);
-          }
-          dds_free(qos->partition.strs);
-          qos->partition.strs = NULL;
-        }
-
-        qos->partition.n = n;
-        qos->partition.strs = dds_alloc (sizeof (char*) * n);
-
-        for (i = 0; i < n; i++) {
-            len = strlen (ps[i]) + 1;
-            qos->partition.strs[i] = dds_alloc (len);
-            strncpy (qos->partition.strs[i], ps[i], len);
-        }
-        qos->present |= QP_PARTITION;
+    if(!qos) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
+        return ;
     }
+    if(!n) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument n is NULL");
+        return ;
+    }
+    if(!ps) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument ps is NULL");
+        return ;
+    }
+
+    if (qos->partition.strs != NULL){
+      for (i = 0; i < qos->partition.n; i++) {
+          dds_free(qos->partition.strs[i]);
+      }
+      dds_free(qos->partition.strs);
+      qos->partition.strs = NULL;
+    }
+
+    qos->partition.n = n;
+    qos->partition.strs = dds_alloc (sizeof (char*) * n);
+
+    for (i = 0; i < n; i++) {
+        len = strlen (ps[i]) + 1;
+        qos->partition.strs[i] = dds_alloc (len);
+        strncpy (qos->partition.strs[i], ps[i], len);
+    }
+    qos->present |= QP_PARTITION;
 }
 
 void dds_qset_reliability
@@ -453,6 +503,8 @@ void dds_qset_reliability
         qos->reliability.kind = (nn_reliability_kind_t) kind;
         qos->reliability.max_blocking_time = nn_to_ddsi_duration (max_blocking_time);
         qos->present |= QP_RELIABILITY;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -465,6 +517,8 @@ void dds_qset_transport_priority
     if (qos) {
         qos->transport_priority.value = value;
         qos->present |= QP_TRANSPORT_PRIORITY;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -478,6 +532,8 @@ void dds_qset_destination_order
     if (qos) {
         qos->destination_order.kind = (nn_destination_order_kind_t) kind;
         qos->present |= QP_DESTINATION_ORDER;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -490,6 +546,8 @@ void dds_qset_writer_data_lifecycle
     if(qos) {
         qos->writer_data_lifecycle.autodispose_unregistered_instances = autodispose;
         qos->present |= QP_PRISMTECH_WRITER_DATA_LIFECYCLE;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -506,6 +564,8 @@ void dds_qset_reader_data_lifecycle
         qos->reader_data_lifecycle.autopurge_disposed_samples_delay = \
           nn_to_ddsi_duration (autopurge_disposed_samples_delay);
         qos->present |= QP_PRISMTECH_READER_DATA_LIFECYCLE;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -528,6 +588,8 @@ void dds_qset_durability_service
         qos->durability_service.resource_limits.max_instances = max_instances;
         qos->durability_service.resource_limits.max_samples_per_instance = max_samples_per_instance;
         qos->present |= QP_DURABILITY_SERVICE;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -538,9 +600,19 @@ void dds_qget_userdata
     _Out_ size_t * sz
 )
 {
-    if (qos && value && sz) {
-        dds_qos_data_copy_out (&qos->user_data, value, sz);
+    if(!qos) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
+        return ;
     }
+    if(!value) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument value is NULL");
+        return ;
+    }
+    if(!sz) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument sz is NULL");
+        return ;
+    }
+    dds_qos_data_copy_out (&qos->user_data, value, sz);
 }
 
 void dds_qget_topicdata
@@ -550,9 +622,19 @@ void dds_qget_topicdata
     _Out_ size_t * sz
 )
 {
-    if (qos && value && sz) {
-        dds_qos_data_copy_out (&qos->topic_data, value, sz);
+    if(!qos) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
+        return ;
     }
+    if(!value) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument value is NULL");
+        return ;
+    }
+    if(!sz) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument sz is NULL");
+        return ;
+    }
+    dds_qos_data_copy_out (&qos->topic_data, value, sz);
 }
 
 void dds_qget_groupdata
@@ -562,9 +644,19 @@ void dds_qget_groupdata
     _Out_ size_t * sz
 )
 {
-    if (qos && value && sz) {
-        dds_qos_data_copy_out (&qos->group_data, value, sz);
+    if(!qos) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
+        return ;
     }
+    if(!value) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument value is NULL");
+        return ;
+    }
+    if(!sz) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument sz is NULL");
+        return ;
+    }
+    dds_qos_data_copy_out (&qos->group_data, value, sz);
 }
 
 void dds_qget_durability
@@ -573,9 +665,15 @@ void dds_qget_durability
     _Out_ dds_durability_kind_t *kind
 )
 {
-    if (qos && kind) {
-        *kind = (dds_durability_kind_t) qos->durability.kind;
+    if(!qos) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
+        return ;
     }
+    if(!kind) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument kind is NULL");
+        return ;
+    }
+    *kind = (dds_durability_kind_t) qos->durability.kind;
 }
 
 void dds_qget_history
@@ -588,6 +686,8 @@ void dds_qget_history
     if (qos) {
         if (kind) *kind = (dds_history_kind_t) qos->history.kind;
         if (depth) *depth = qos->history.depth;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
     }
 }
 
@@ -605,6 +705,8 @@ void dds_qget_resource_limits
         if (max_samples_per_instance) {
             *max_samples_per_instance = qos->resource_limits.max_samples_per_instance;
         }
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
     }
 }
 
@@ -620,6 +722,8 @@ void dds_qget_presentation
         if (access_scope) *access_scope = (dds_presentation_access_scope_kind_t) qos->presentation.access_scope;
         if (coherent_access) *coherent_access = qos->presentation.coherent_access;
         if (ordered_access) *ordered_access = qos->presentation.ordered_access;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
     }
 }
 
@@ -629,9 +733,15 @@ void dds_qget_lifespan
     _Out_ dds_duration_t * lifespan
 )
 {
-    if (qos && lifespan) {
-        *lifespan = nn_from_ddsi_duration (qos->lifespan.duration);
+    if(!qos){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        return ;
     }
+    if(!lifespan){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument lifespan is NULL");
+        return ;
+    }
+    *lifespan = nn_from_ddsi_duration (qos->lifespan.duration);
 }
 
 void dds_qget_deadline
@@ -640,9 +750,15 @@ void dds_qget_deadline
     _Out_ dds_duration_t * deadline
 )
 {
-    if (qos && deadline) {
-        *deadline = nn_from_ddsi_duration (qos->deadline.deadline);
+    if(!qos){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        return ;
     }
+    if(!deadline){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument deadline is NULL");
+        return ;
+    }
+    *deadline = nn_from_ddsi_duration (qos->deadline.deadline);
 }
 
 void dds_qget_latency_budget
@@ -651,9 +767,15 @@ void dds_qget_latency_budget
     _Out_ dds_duration_t *duration
 )
 {
-    if (qos && duration) {
-        *duration = nn_from_ddsi_duration (qos->latency_budget.duration);
+    if(!qos){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        return ;
     }
+    if(!duration){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument duration is NULL");
+        return ;
+    }
+    *duration = nn_from_ddsi_duration (qos->latency_budget.duration);
 }
 
 void dds_qget_ownership
@@ -662,9 +784,15 @@ void dds_qget_ownership
     _Out_ dds_ownership_kind_t *kind
 )
 {
-    if (qos && kind) {
-        *kind = (dds_ownership_kind_t) qos->ownership.kind;
+    if(!qos){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        return ;
     }
+    if(!kind){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument kind is NULL");
+        return ;
+    }
+    *kind = (dds_ownership_kind_t) qos->ownership.kind;
 }
 
 void dds_qget_ownership_strength
@@ -673,9 +801,15 @@ void dds_qget_ownership_strength
     _Out_ int32_t *value
 )
 {
-    if (qos && value) {
-        *value = qos->ownership_strength.value;
+    if(!qos){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        return ;
     }
+    if(!value){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument value is NULL");
+        return ;
+    }
+    *value = qos->ownership_strength.value;
 }
 
 void dds_qget_liveliness
@@ -688,6 +822,8 @@ void dds_qget_liveliness
     if (qos) {
         if (kind) *kind = (dds_liveliness_kind_t) qos->liveliness.kind;
         if (lease_duration) *lease_duration = nn_from_ddsi_duration (qos->liveliness.lease_duration);
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
     }
 }
 
@@ -697,9 +833,15 @@ void dds_qget_time_based_filter
     _Out_ dds_duration_t *minimum_separation
 )
 {
-    if (qos && minimum_separation) {
-        *minimum_separation = nn_from_ddsi_duration (qos->time_based_filter.minimum_separation);
+    if(!qos){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        return ;
     }
+    if(!minimum_separation){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument minimum_separation is NULL");
+        return ;
+    }
+    *minimum_separation = nn_from_ddsi_duration (qos->time_based_filter.minimum_separation);
 }
 
 void dds_qget_partition
@@ -709,20 +851,32 @@ void dds_qget_partition
     _Outptr_result_maybenull_ char *** ps
 )
 {
-    if (qos && n && ps) {
-        size_t len;
-        uint32_t i;
-        *n = qos->partition.n;
-        if (qos->partition.n != 0) {
-            *ps = dds_alloc(sizeof(char*) * qos->partition.n);
-            for (i = 0; i < qos->partition.n; i++) {
-                len = strlen(qos->partition.strs[i]) + 1;
-                (*ps)[i] = dds_alloc(len);
-                strncpy((*ps)[i], qos->partition.strs[i], len);
-            }
-        } else {
-            *ps = NULL;
+    size_t len;
+    uint32_t i;
+
+    if(!qos){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        return ;
+    }
+    if(!n){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument n is NULL");
+        return ;
+    }
+    if(!ps){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument ps is NULL");
+        return ;
+    }
+
+    *n = qos->partition.n;
+    if (qos->partition.n != 0) {
+        *ps = dds_alloc(sizeof(char*) * qos->partition.n);
+        for (i = 0; i < qos->partition.n; i++) {
+            len = strlen(qos->partition.strs[i]) + 1;
+            (*ps)[i] = dds_alloc(len);
+            strncpy((*ps)[i], qos->partition.strs[i], len);
         }
+    } else {
+        *ps = NULL;
     }
 }
 
@@ -736,6 +890,8 @@ void dds_qget_reliability
     if (qos) {
         if (kind) *kind = (dds_reliability_kind_t) qos->reliability.kind;
         if (max_blocking_time) *max_blocking_time = nn_from_ddsi_duration (qos->reliability.max_blocking_time);
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
     }
 }
 
@@ -745,9 +901,15 @@ void dds_qget_transport_priority
     _Out_ int32_t *value
 )
 {
-    if (qos && value) {
-        *value = qos->transport_priority.value;
+    if(!qos){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        return ;
     }
+    if(!value){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument value is NULL");
+        return ;
+    }
+    *value = qos->transport_priority.value;
 }
 
 void dds_qget_destination_order
@@ -756,9 +918,15 @@ void dds_qget_destination_order
     _Out_ dds_destination_order_kind_t *kind
 )
 {
-    if (qos && kind) {
-        *kind = (dds_destination_order_kind_t) qos->destination_order.kind;
+    if(!qos){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        return ;
     }
+    if(!kind){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument kind is NULL");
+        return ;
+    }
+    *kind = (dds_destination_order_kind_t) qos->destination_order.kind;
 }
 
 void dds_qget_writer_data_lifecycle
@@ -767,9 +935,15 @@ void dds_qget_writer_data_lifecycle
     _Out_ bool * autodispose
 )
 {
-    if (qos && autodispose) {
-        *autodispose = qos->writer_data_lifecycle.autodispose_unregistered_instances;
+    if(!qos){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
+        return ;
     }
+    if(!autodispose){
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument autodispose is NULL");
+        return ;
+    }
+    *autodispose = qos->writer_data_lifecycle.autodispose_unregistered_instances;
 }
 
 void dds_qget_reader_data_lifecycle
@@ -788,6 +962,8 @@ void dds_qget_reader_data_lifecycle
             *autopurge_disposed_samples_delay = \
             nn_from_ddsi_duration (qos->reader_data_lifecycle.autopurge_disposed_samples_delay);
         }
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
     }
 }
 
@@ -809,5 +985,7 @@ void dds_qget_durability_service
         if (max_samples) *max_samples = qos->durability_service.resource_limits.max_samples;
         if (max_instances) *max_instances = qos->durability_service.resource_limits.max_instances;
         if (max_samples_per_instance) *max_samples_per_instance = qos->durability_service.resource_limits.max_samples_per_instance;
+    } else {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos is NULL");
     }
 }
