@@ -83,110 +83,94 @@ dds_read_impl(
         _In_  bool lock,
         _In_ bool only_reader)
 {
-  uint32_t i;
-  dds_return_t ret = DDS_RETCODE_OK;
-  struct dds_reader * rd;
-  struct dds_readcond * cond;
-  struct thread_state1 * const thr = lookup_thread_state ();
-  const bool asleep = !vtime_awake_p (thr->vtime);
+    uint32_t i;
+    dds_return_t ret = DDS_RETCODE_OK;
+    dds_retcode_t rc;
+    struct dds_reader * rd;
+    struct dds_readcond * cond;
+    struct thread_state1 * const thr = lookup_thread_state ();
+    const bool asleep = !vtime_awake_p (thr->vtime);
 
-  if (asleep)
-  {
-    thread_state_awake (thr);
-  }
-  if(buf == NULL){
-    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The provided buffer is NULL");
-  }
-  if(si == NULL){
-    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided pointer to an array of dds_sample_info_t is NULL");
-  }
-  if(maxs == 0){
-    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The maximum number of samples to read is zero");
-  }
-  if(bufsz == 0){
-    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The size of buffer is zero");
-  }
-  if(bufsz < maxs){
-    ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The provided size of buffer is smaller than the maximum number of samples to read");
-  }
-  if (ret == DDS_RETCODE_OK) {
-    ret = dds_read_lock(reader_or_condition, &rd, &cond, only_reader);
-  }
-  if (ret == DDS_RETCODE_OK) {
-   if (hand != DDS_HANDLE_NIL) {
-     if (dds_tkmap_find_by_id(gv.m_tkmap, hand) == NULL) {
-       ret = DDS_RETCODE_PRECONDITION_NOT_MET;
-       dds_read_unlock(rd, cond);
-     }
-   }
-  }
+    if (asleep) {
+        thread_state_awake (thr);
+    }
+    if (buf == NULL) {
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The provided buffer is NULL");
+        goto fail;
+    }
+    if (si == NULL) {
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Provided pointer to an array of dds_sample_info_t is NULL");
+        goto fail;
+    }
+    if (maxs == 0) {
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The maximum number of samples to read is zero");
+        goto fail;
+    }
+    if (bufsz == 0) {
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The size of buffer is zero");
+        goto fail;
+    }
+    if (bufsz < maxs) {
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The provided size of buffer is smaller than the maximum number of samples to read");
+        goto fail;
+    }
 
-  if (ret == DDS_RETCODE_OK) {
-      /* Allocate samples if not provided (assuming all or none provided) */
-
-      if (buf[0] == NULL)
-      {
+    rc = dds_read_lock(reader_or_condition, &rd, &cond, only_reader);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking entity");
+        goto fail;
+    }
+    if (hand != DDS_HANDLE_NIL) {
+        if (dds_tkmap_find_by_id(gv.m_tkmap, hand) == NULL) {
+            ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Could not find instance");
+            dds_read_unlock(rd, cond);
+            goto fail;
+        }
+    }
+    /* Allocate samples if not provided (assuming all or none provided) */
+    if (buf[0] == NULL) {
         char * loan;
         const size_t sz = rd->m_topic->m_descriptor->m_size;
         const uint32_t loan_size = (uint32_t) (sz * maxs);
-
         /* Allocate, use or reallocate loan cached on reader */
-
-        if (rd->m_loan_out)
-        {
-          loan = dds_alloc (loan_size);
+        if (rd->m_loan_out) {
+            loan = dds_alloc (loan_size);
+        } else {
+            if (rd->m_loan) {
+                if (rd->m_loan_size < loan_size) {
+                    rd->m_loan = dds_realloc_zero (rd->m_loan, loan_size);
+                    rd->m_loan_size = loan_size;
+                }
+             } else {
+                 rd->m_loan = dds_alloc (loan_size);
+                 rd->m_loan_size = loan_size;
+             }
+                 loan = rd->m_loan;
+                 rd->m_loan_out = true;
         }
-        else
-        {
-          if (rd->m_loan)
-          {
-            if (rd->m_loan_size < loan_size)
-            {
-              rd->m_loan = dds_realloc_zero (rd->m_loan, loan_size);
-              rd->m_loan_size = loan_size;
-            }
-          }
-          else
-          {
-            rd->m_loan = dds_alloc (loan_size);
-            rd->m_loan_size = loan_size;
-          }
-          loan = rd->m_loan;
-          rd->m_loan_out = true;
+        for (i = 0; i < maxs; i++) {
+            buf[i] = loan;
+            loan += sz;
         }
-        for (i = 0; i < maxs; i++)
-        {
-          buf[i] = loan;
-          loan += sz;
-        }
-      }
-
-      if (take) {
+    }
+    if (take) {
         ret = (dds_return_t)dds_rhc_take(rd->m_rd->rhc, lock, buf, si, maxs, mask, hand, cond);
-      } else {
+    } else {
         ret = (dds_return_t)dds_rhc_read(rd->m_rd->rhc, lock, buf, si, maxs, mask, hand, cond);
-      }
-
-      /* read/take resets data available status */
-      dds_entity_status_reset(rd, DDS_DATA_AVAILABLE_STATUS);
-
-      /* reset DATA_ON_READERS status on subscriber after successful read/take */
-
-      if (dds_entity_kind(((dds_entity*)rd)->m_parent->m_hdl) == DDS_KIND_SUBSCRIBER)
-      {
+    }
+    /* read/take resets data available status */
+    dds_entity_status_reset(rd, DDS_DATA_AVAILABLE_STATUS);
+    /* reset DATA_ON_READERS status on subscriber after successful read/take */
+    if (dds_entity_kind(((dds_entity*)rd)->m_parent->m_hdl) == DDS_KIND_SUBSCRIBER) {
         dds_entity_status_reset(((dds_entity*)rd)->m_parent, DDS_DATA_ON_READERS_STATUS);
-      }
-      dds_read_unlock(rd, cond);
-  } else {
-      ret = DDS_ERRNO(ret, "Error occurred");
-  }
+    }
+    dds_read_unlock(rd, cond);
 
-  if (asleep)
-  {
-    thread_state_asleep (thr);
-  }
-
-  return ret;
+fail:
+    if (asleep) {
+        thread_state_asleep (thr);
+    }
+    return ret;
 }
 
 static dds_return_t
@@ -369,22 +353,23 @@ dds_read_instance(
         _In_ uint32_t maxs,
         _In_ dds_instance_handle_t handle)
 {
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
-    if (handle != DDS_HANDLE_NIL) {
-        bool lock = true;
-        if (maxs == DDS_READ_WITHOUT_LOCK) {
-            lock = false;
-            /* Use a more sensible maxs. Just an arbitrarily number.
-             * CHAM-306 will remove this ugly piece of code. */
-            maxs = 100;
-        }
-        ret = dds_read_impl(false, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
-    } else {
+    if (handle == DDS_HANDLE_NIL) {
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+        goto fail;
     }
+    bool lock = true;
+    if (maxs == DDS_READ_WITHOUT_LOCK) {
+        lock = false;
+        /* Use a more sensible maxs. Just an arbitrarily number.
+         * CHAM-306 will remove this ugly piece of code. */
+        maxs = 100;
+    }
+    ret = dds_read_impl(false, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
+fail:
     DDS_REPORT_FLUSH(ret < 0 );
     return ret;
 }
@@ -400,22 +385,23 @@ dds_read_instance_wl(
         _In_ uint32_t maxs,
         _In_ dds_instance_handle_t handle)
 {
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
-    if (handle != DDS_HANDLE_NIL) {
-        bool lock = true;
-        if (maxs == DDS_READ_WITHOUT_LOCK) {
-            lock = false;
-            /* Use a more sensible maxs. Just an arbitrarily number.
-             * CHAM-306 will remove this ugly piece of code. */
-            maxs = 100;
-        }
-        ret = dds_read_impl(false, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
-    } else {
+    if (handle == DDS_HANDLE_NIL) {
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+        goto fail;
     }
+    bool lock = true;
+    if (maxs == DDS_READ_WITHOUT_LOCK) {
+        lock = false;
+        /* Use a more sensible maxs. Just an arbitrarily number.
+         * CHAM-306 will remove this ugly piece of code. */
+        maxs = 100;
+    }
+    ret = dds_read_impl(false, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
+fail:
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
@@ -434,22 +420,23 @@ dds_read_instance_mask(
         _In_ dds_instance_handle_t handle,
         _In_ uint32_t mask)
 {
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
-    if (handle != DDS_HANDLE_NIL) {
-        bool lock = true;
-        if (maxs == DDS_READ_WITHOUT_LOCK) {
-            lock = false;
-            /* Use a more sensible maxs. Just an arbitrarily number.
-             * CHAM-306 will remove this ugly piece of code. */
-            maxs = 100;
-        }
-        ret = dds_read_impl(false, rd_or_cnd, buf, bufsz, maxs, si, mask, handle, lock, false);
-    } else {
+    if (handle == DDS_HANDLE_NIL) {
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+        goto fail;
     }
+    bool lock = true;
+    if (maxs == DDS_READ_WITHOUT_LOCK) {
+        lock = false;
+        /* Use a more sensible maxs. Just an arbitrarily number.
+         * CHAM-306 will remove this ugly piece of code. */
+        maxs = 100;
+    }
+    ret = dds_read_impl(false, rd_or_cnd, buf, bufsz, maxs, si, mask, handle, lock, false);
+fail:
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
@@ -467,22 +454,23 @@ dds_read_instance_mask_wl(
         _In_ dds_instance_handle_t handle,
         _In_ uint32_t mask)
 {
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
-    if (handle != DDS_HANDLE_NIL) {
-        bool lock = true;
-        if (maxs == DDS_READ_WITHOUT_LOCK) {
-            lock = false;
-            /* Use a more sensible maxs. Just an arbitrarily number.
-             * CHAM-306 will remove this ugly piece of code. */
-            maxs = 100;
-        }
-        ret = dds_read_impl(false, rd_or_cnd, buf, maxs, maxs, si, mask, handle, lock, false);
-    } else {
+    if (handle == DDS_HANDLE_NIL) {
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+        goto fail;
     }
+    bool lock = true;
+    if (maxs == DDS_READ_WITHOUT_LOCK) {
+        lock = false;
+        /* Use a more sensible maxs. Just an arbitrarily number.
+         * CHAM-306 will remove this ugly piece of code. */
+        maxs = 100;
+    }
+    ret = dds_read_impl(false, rd_or_cnd, buf, maxs, maxs, si, mask, handle, lock, false);
+fail:
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
@@ -659,22 +647,23 @@ dds_take_instance(
         _In_ uint32_t maxs,
         _In_ dds_instance_handle_t handle)
 {
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
-    if (handle != DDS_HANDLE_NIL) {
-        bool lock = true;
-        if (maxs == DDS_READ_WITHOUT_LOCK) {
-            lock = false;
-            /* Use a more sensible maxs. Just an arbitrarily number.
-             * CHAM-306 will remove this ugly piece of code. */
-            maxs = 100;
-        }
-        ret = dds_read_impl(true, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
-    } else {
+    if (handle == DDS_HANDLE_NIL) {
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+        goto fail;
     }
+    bool lock = true;
+    if (maxs == DDS_READ_WITHOUT_LOCK) {
+        lock = false;
+        /* Use a more sensible maxs. Just an arbitrarily number.
+         * CHAM-306 will remove this ugly piece of code. */
+        maxs = 100;
+    }
+    ret = dds_read_impl(true, rd_or_cnd, buf, bufsz, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
+fail:
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
@@ -690,22 +679,23 @@ dds_take_instance_wl(
         _In_ uint32_t maxs,
         _In_ dds_instance_handle_t handle)
 {
-    dds_return_t ret;
+    dds_return_t ret /*= DDS_RETCODE_OK*/;
 
     DDS_REPORT_STACK();
 
-    if (handle != DDS_HANDLE_NIL) {
-        bool lock = true;
-        if (maxs == DDS_READ_WITHOUT_LOCK) {
-            lock = false;
-            /* Use a more sensible maxs. Just an arbitrarily number.
-             * CHAM-306 will remove this ugly piece of code. */
-            maxs = 100;
-        }
-        ret = dds_read_impl(true, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
-    } else {
+    if (handle == DDS_HANDLE_NIL) {
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+        goto fail;
     }
+    bool lock = true;
+    if (maxs == DDS_READ_WITHOUT_LOCK) {
+        lock = false;
+        /* Use a more sensible maxs. Just an arbitrarily number.
+         * CHAM-306 will remove this ugly piece of code. */
+        maxs = 100;
+    }
+    ret = dds_read_impl(true, rd_or_cnd, buf, maxs, maxs, si, NO_STATE_MASK_SET, handle, lock, false);
+fail:
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
@@ -724,22 +714,23 @@ dds_take_instance_mask(
         _In_ dds_instance_handle_t handle,
         _In_ uint32_t mask)
 {
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
-    if (handle != DDS_HANDLE_NIL) {
-        bool lock = true;
-        if (maxs == DDS_READ_WITHOUT_LOCK) {
-            lock = false;
-            /* Use a more sensible maxs. Just an arbitrarily number.
-             * CHAM-306 will remove this ugly piece of code. */
-            maxs = 100;
-        }
-        ret = dds_read_impl(true, rd_or_cnd, buf, bufsz, maxs, si, mask, handle, lock, false);
-    } else {
+    if (handle == DDS_HANDLE_NIL) {
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+        goto fail;
     }
+    bool lock = true;
+    if (maxs == DDS_READ_WITHOUT_LOCK) {
+        lock = false;
+        /* Use a more sensible maxs. Just an arbitrarily number.
+         * CHAM-306 will remove this ugly piece of code. */
+        maxs = 100;
+    }
+    ret = dds_read_impl(true, rd_or_cnd, buf, bufsz, maxs, si, mask, handle, lock, false);
+fail:
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
@@ -757,22 +748,23 @@ dds_take_instance_mask_wl(
         _In_ dds_instance_handle_t handle,
         _In_ uint32_t mask)
 {
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
-    if (handle != DDS_HANDLE_NIL) {
-        bool lock = true;
-        if (maxs == DDS_READ_WITHOUT_LOCK) {
-            lock = false;
-            /* Use a more sensible maxs. Just an arbitrarily number.
-             * CHAM-306 will remove this ugly piece of code. */
-            maxs = 100;
-        }
-        ret = dds_read_impl(true, rd_or_cnd, buf, maxs, maxs, si, mask, handle, lock, false);
-    } else {
+    if (handle == DDS_HANDLE_NIL) {
         ret = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "DDS_HANDLE_NIL was provided");
+        goto fail;
     }
+    bool lock = true;
+    if (maxs == DDS_READ_WITHOUT_LOCK) {
+        lock = false;
+        /* Use a more sensible maxs. Just an arbitrarily number.
+         * CHAM-306 will remove this ugly piece of code. */
+        maxs = 100;
+    }
+    ret = dds_read_impl(true, rd_or_cnd, buf, maxs, maxs, si, mask, handle, lock, false);
+fail:
     DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
@@ -834,27 +826,28 @@ dds_return_loan(
     }
 
     rc = dds_read_lock(reader_or_condition, &rd, &cond, false);
-    if (rc == DDS_RETCODE_OK) {
-        desc = rd->m_topic->m_descriptor;
-
-        /* Only free sample contents if they have been allocated */
-        if (desc->m_flagset & DDS_TOPIC_NO_OPTIMIZE) {
-            size_t i = 0;
-            for (i = 0; i < bufsz; i++) {
-                dds_sample_free(buf[i], desc, DDS_FREE_CONTENTS);
-            }
-        }
-
-        /* If possible return loan buffer to reader */
-        if (rd->m_loan != 0 && (buf[0] == rd->m_loan)) {
-            rd->m_loan_out = false;
-            memset (rd->m_loan, 0, rd->m_loan_size);
-            buf[0] = NULL;
-        }
-
-        dds_read_unlock(rd, cond);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking entity");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking entity");
+    desc = rd->m_topic->m_descriptor;
+
+    /* Only free sample contents if they have been allocated */
+    if (desc->m_flagset & DDS_TOPIC_NO_OPTIMIZE) {
+        size_t i = 0;
+        for (i = 0; i < bufsz; i++) {
+            dds_sample_free(buf[i], desc, DDS_FREE_CONTENTS);
+        }
+    }
+
+    /* If possible return loan buffer to reader */
+    if (rd->m_loan != 0 && (buf[0] == rd->m_loan)) {
+        rd->m_loan_out = false;
+        memset (rd->m_loan, 0, rd->m_loan_size);
+        buf[0] = NULL;
+    }
+
+    dds_read_unlock(rd, cond);
 fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;

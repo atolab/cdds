@@ -494,7 +494,7 @@ dds_get_children(
     dds_entity_unlock(e);
 
 err:
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK );
+    DDS_REPORT_FLUSH(ret <0 );
     return ret;
 }
 
@@ -508,27 +508,27 @@ dds_get_qos(
 {
     dds_entity *e;
     dds_retcode_t rc;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
-    if (qos != NULL) {
-        rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-        if (rc == DDS_RETCODE_OK) {
-            if (e->m_deriver.set_qos) {
-                rc = dds_qos_copy(qos, e->m_qos);
-                ret = DDS_ERRNO(rc, "QoS cannot be copied");
-            } else {
-                rc = DDS_RETCODE_ILLEGAL_OPERATION;
-                ret = DDS_ERRNO(rc, "QoS cannot be set on this entity");
-            }
-            dds_entity_unlock(e);
-        } else{
-            ret = DDS_ERRNO(rc, "Error occurred on locking entity");
-        }
-    } else{
+    if (qos == NULL) {
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER,"Argument qos is NULL");
+        goto fail;
     }
+    rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking entity");
+        goto fail;
+    }
+    if (e->m_deriver.set_qos) {
+        rc = dds_qos_copy(qos, e->m_qos);
+    } else {
+        rc = DDS_RETCODE_ILLEGAL_OPERATION;
+        ret = DDS_ERRNO(rc, "QoS cannot be set on this entity");
+    }
+    dds_entity_unlock(e);
+fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK );
     return ret;
 }
@@ -619,16 +619,18 @@ dds_set_listener(
     DDS_REPORT_STACK();
 
     rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
-    if (rc == DDS_RETCODE_OK) {
-        dds_entity_cb_wait(e);
-        if (listener) {
-            dds_listener_copy(&e->m_listener, listener);
-        } else {
-            dds_listener_reset(&e->m_listener);
-        }
-        dds_entity_unlock(e);
+    if(rc != DDS_RETCODE_OK){
+        ret = DDS_ERRNO(rc, "Error occurred on locking entity");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking entity");
+    dds_entity_cb_wait(e);
+    if (listener) {
+        dds_listener_copy(&e->m_listener, listener);
+    } else {
+        dds_listener_reset(&e->m_listener);
+    }
+    dds_entity_unlock(e);
+fail:
     DDS_REPORT_FLUSH( ret != DDS_RETCODE_OK);
     return ret;
 }
@@ -963,8 +965,9 @@ dds_valid_hdl(
             rc = DDS_RETCODE_ERROR;
             DDS_ERROR(rc, "An internal error occurred.");
         }
-    } else{
-        DDS_ERROR(hdl, "Given entity was not properly created.");
+    } else {
+        rc = DDS_RETCODE_BAD_PARAMETER;
+        DDS_ERROR(rc, "Given entity (0x%08lx) was not properly created.", hdl);
     }
     DDS_REPORT_FLUSH(rc != DDS_RETCODE_OK);
     return rc;
@@ -1014,6 +1017,9 @@ dds_entity_lock(
             rc = DDS_RETCODE_ERROR;
             DDS_ERROR(rc, "An internal error occurred");
         }
+    } else {
+        rc = DDS_RETCODE_BAD_PARAMETER;
+        DDS_ERROR(rc, "Given entity (0x%08lx) was not properly created.", hdl);
     }
     DDS_REPORT_FLUSH(rc != DDS_RETCODE_OK);
     return rc;
@@ -1218,7 +1224,7 @@ dds_get_topic(
     if (rc != DDS_RETCODE_OK) {
         hdl = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
-    DDS_REPORT_FLUSH(hdl != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
 

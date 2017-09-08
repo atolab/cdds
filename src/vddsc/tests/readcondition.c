@@ -246,11 +246,6 @@ Theory((dds_entity_t rdr), vddsc_readcondition_create, invalid_readers, .init=re
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t cond;
 
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
-
     cond = dds_create_readcondition(rdr, mask);
     cr_assert_eq(dds_err_nr(cond), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(cond), dds_err_nr(exp));
 }
@@ -316,11 +311,6 @@ Theory((dds_entity_t cond), vddsc_readcondition_get_mask, invalid_conditions, .i
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
     uint32_t mask;
-
-    if (cond < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = cond;
-    }
 
     ret = dds_get_mask(cond, &mask);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));

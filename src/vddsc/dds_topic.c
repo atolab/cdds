@@ -577,24 +577,26 @@ dds_get_inconsistent_topic_status(
 {
     dds_retcode_t rc;
     dds_topic *t;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
     rc = dds_topic_lock(topic, &t);
-    if (rc == DDS_RETCODE_OK) {
-        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-        if (status) {
-            *status = t->m_inconsistent_topic_status;
-        }
-        if (((dds_entity*)t)->m_status_enable & DDS_INCONSISTENT_TOPIC_STATUS) {
-            t->m_inconsistent_topic_status.total_count_change = 0;
-            dds_entity_status_reset(t, DDS_INCONSISTENT_TOPIC_STATUS);
-        }
-        dds_topic_unlock(t);
-        ret = DDS_RETCODE_OK;
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking topic");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking topic");
+    /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+    if (status) {
+        *status = t->m_inconsistent_topic_status;
+    }
+    if (((dds_entity*)t)->m_status_enable & DDS_INCONSISTENT_TOPIC_STATUS) {
+        t->m_inconsistent_topic_status.total_count_change = 0;
+        dds_entity_status_reset(t, DDS_INCONSISTENT_TOPIC_STATUS);
+    }
+    dds_topic_unlock(t);
+    ret = DDS_RETCODE_OK;
+fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }

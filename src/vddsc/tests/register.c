@@ -171,11 +171,6 @@ Theory((dds_entity_t writer), vddsc_register_instance, invalid_writers, .init=re
     dds_return_t ret;
     dds_instance_handle_t handle;
 
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
-
     ret = dds_register_instance(writer, &handle, g_data);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }

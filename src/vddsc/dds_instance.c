@@ -22,7 +22,7 @@ dds_writedispose(
 {
     dds_return_t ret;
     DDS_REPORT_STACK();
-    ret =  dds_writedispose_ts(writer, data, dds_time());
+    ret = dds_writedispose_ts(writer, data, dds_time());
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK );
     return ret;
 }

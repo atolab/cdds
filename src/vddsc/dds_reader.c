@@ -50,12 +50,12 @@ dds_reader_close(
       thread_state_awake(thr);
     }
     if (delete_reader(&e->m_guid) != 0) {
-        rc = DDS_RETCODE_ERROR;
+        rc = DDS_ERRNO(rc, "Internal error");
     }
     if (asleep) {
       thread_state_asleep(thr);
     }
-    return DDS_ERRNO(rc, "Internal error");
+    return rc;
 }
 
 static dds_return_t
@@ -552,10 +552,13 @@ dds_get_subscriber(
 
     if (dds_entity_kind(entity) == DDS_KIND_READER) {
         hdl = dds_get_parent(entity);
-    } else if (dds_entity_kind(entity) == DDS_KIND_COND_READ) {
-        hdl = dds_get_subscriber(dds_get_parent(entity));
-    } else if (dds_entity_kind(entity) == DDS_KIND_COND_QUERY) {
-        hdl = dds_get_subscriber(dds_get_parent(entity));
+    } else if (dds_entity_kind(entity) == DDS_KIND_COND_READ || dds_entity_kind(entity) == DDS_KIND_COND_QUERY) {
+        hdl = dds_get_parent(entity);
+        if(hdl > 0){
+            hdl = dds_get_subscriber(hdl);
+        } else {
+            DDS_ERROR(hdl, "Reader of this condition is already deleted");
+        }
     } else {
         hdl = DDS_ERRNO(dds_valid_hdl(entity, DDS_KIND_READER), "Provided entity is not a reader nor a condition");
     }
@@ -571,24 +574,26 @@ dds_get_subscription_matched_status (
 {
     dds_retcode_t rc;
     dds_reader *rd;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
     rc = dds_reader_lock(reader, &rd);
-    if (rc == DDS_RETCODE_OK) {
-        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-        if (status) {
-            *status = rd->m_subscription_matched_status;
-        }
-        if (((dds_entity*)rd)->m_status_enable & DDS_SUBSCRIPTION_MATCHED_STATUS) {
-            rd->m_subscription_matched_status.total_count_change = 0;
-            rd->m_subscription_matched_status.current_count_change = 0;
-            dds_entity_status_reset(rd, DDS_SUBSCRIPTION_MATCHED_STATUS);
-        }
-        dds_reader_unlock(rd);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking reader");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking reader");
+    /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+    if (status) {
+        *status = rd->m_subscription_matched_status;
+    }
+    if (((dds_entity*)rd)->m_status_enable & DDS_SUBSCRIPTION_MATCHED_STATUS) {
+        rd->m_subscription_matched_status.total_count_change = 0;
+        rd->m_subscription_matched_status.current_count_change = 0;
+        dds_entity_status_reset(rd, DDS_SUBSCRIPTION_MATCHED_STATUS);
+    }
+    dds_reader_unlock(rd);
+fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
@@ -601,24 +606,26 @@ dds_get_liveliness_changed_status (
 {
     dds_retcode_t rc;
     dds_reader *rd;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
     rc = dds_reader_lock(reader, &rd);
-    if (rc == DDS_RETCODE_OK) {
-        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-        if (status) {
-            *status = rd->m_liveliness_changed_status;
-        }
-        if (((dds_entity*)rd)->m_status_enable & DDS_LIVELINESS_CHANGED_STATUS) {
-            rd->m_liveliness_changed_status.alive_count_change = 0;
-            rd->m_liveliness_changed_status.not_alive_count_change = 0;
-            dds_entity_status_reset(rd, DDS_LIVELINESS_CHANGED_STATUS);
-        }
-        dds_reader_unlock(rd);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking reader");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking reader");
+    /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+    if (status) {
+        *status = rd->m_liveliness_changed_status;
+    }
+    if (((dds_entity*)rd)->m_status_enable & DDS_LIVELINESS_CHANGED_STATUS) {
+        rd->m_liveliness_changed_status.alive_count_change = 0;
+        rd->m_liveliness_changed_status.not_alive_count_change = 0;
+        dds_entity_status_reset(rd, DDS_LIVELINESS_CHANGED_STATUS);
+    }
+    dds_reader_unlock(rd);
+fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
@@ -630,24 +637,26 @@ dds_return_t dds_get_sample_rejected_status (
 {
     dds_retcode_t rc;
     dds_reader *rd;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
     rc = dds_reader_lock(reader, &rd);
-    if (rc == DDS_RETCODE_OK) {
-        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-        if (status) {
-            *status = rd->m_sample_rejected_status;
-        }
-        if (((dds_entity*)rd)->m_status_enable & DDS_SAMPLE_REJECTED_STATUS) {
-            rd->m_sample_rejected_status.total_count_change = 0;
-            rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
-            dds_entity_status_reset(rd, DDS_SAMPLE_REJECTED_STATUS);
-        }
-        dds_reader_unlock(rd);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking reader");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking reader");
+    /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+    if (status) {
+        *status = rd->m_sample_rejected_status;
+    }
+    if (((dds_entity*)rd)->m_status_enable & DDS_SAMPLE_REJECTED_STATUS) {
+        rd->m_sample_rejected_status.total_count_change = 0;
+        rd->m_sample_rejected_status.last_reason = DDS_NOT_REJECTED;
+        dds_entity_status_reset(rd, DDS_SAMPLE_REJECTED_STATUS);
+    }
+    dds_reader_unlock(rd);
+fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
@@ -659,23 +668,25 @@ dds_return_t dds_get_sample_lost_status (
 {
     dds_retcode_t rc;
     dds_reader *rd;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
     rc = dds_reader_lock(reader, &rd);
-    if (rc == DDS_RETCODE_OK) {
-        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-        if (status) {
-            *status = rd->m_sample_lost_status;
-        }
-        if (((dds_entity*)rd)->m_status_enable & DDS_SAMPLE_LOST_STATUS) {
-            rd->m_sample_lost_status.total_count_change = 0;
-            dds_entity_status_reset(rd, DDS_SAMPLE_LOST_STATUS);
-        }
-        dds_reader_unlock(rd);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking reader");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking reader");
+    /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+    if (status) {
+        *status = rd->m_sample_lost_status;
+    }
+    if (((dds_entity*)rd)->m_status_enable & DDS_SAMPLE_LOST_STATUS) {
+        rd->m_sample_lost_status.total_count_change = 0;
+        dds_entity_status_reset(rd, DDS_SAMPLE_LOST_STATUS);
+    }
+    dds_reader_unlock(rd);
+fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
@@ -687,22 +698,24 @@ dds_return_t dds_get_requested_deadline_missed_status (
 {
     dds_retcode_t rc;
     dds_reader *rd;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
     rc = dds_reader_lock(reader, &rd);
-    if (rc == DDS_RETCODE_OK) {
-        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-        if (status) {
-            *status = rd->m_requested_deadline_missed_status;
-        }
-        if (((dds_entity*)rd)->m_status_enable & DDS_REQUESTED_DEADLINE_MISSED_STATUS) {
-            rd->m_requested_deadline_missed_status.total_count_change = 0;
-            dds_entity_status_reset(rd, DDS_REQUESTED_DEADLINE_MISSED_STATUS);
-        }
-        dds_reader_unlock(rd);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking reader");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking reader");
+    /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+    if (status) {
+        *status = rd->m_requested_deadline_missed_status;
+    }
+    if (((dds_entity*)rd)->m_status_enable & DDS_REQUESTED_DEADLINE_MISSED_STATUS) {
+        rd->m_requested_deadline_missed_status.total_count_change = 0;
+        dds_entity_status_reset(rd, DDS_REQUESTED_DEADLINE_MISSED_STATUS);
+    }
+    dds_reader_unlock(rd);
+fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
@@ -714,23 +727,25 @@ dds_return_t dds_get_requested_incompatible_qos_status (
 {
     dds_retcode_t rc;
     dds_reader *rd;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
     rc = dds_reader_lock(reader, &rd);
-    if (rc == DDS_RETCODE_OK) {
-        /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-        if (status) {
-            *status = rd->m_requested_incompatible_qos_status;
-        }
-        if (((dds_entity*)rd)->m_status_enable & DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS) {
-            rd->m_requested_incompatible_qos_status.total_count_change = 0;
-            dds_entity_status_reset(rd, DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
-        }
-        dds_reader_unlock(rd);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking reader");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking reader");
+    /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+    if (status) {
+        *status = rd->m_requested_incompatible_qos_status;
+    }
+    if (((dds_entity*)rd)->m_status_enable & DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS) {
+        rd->m_requested_incompatible_qos_status.total_count_change = 0;
+        dds_entity_status_reset(rd, DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS);
+    }
+    dds_reader_unlock(rd);
+fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }

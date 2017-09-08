@@ -441,7 +441,7 @@ dds_waitset_wait_until(
     dds_return_t ret;
     DDS_REPORT_STACK();
     ret = dds_waitset_wait_impl(waitset, xs, nxs, abstimeout, dds_time());
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret <0 );
     return ret;
 }
 
@@ -463,7 +463,7 @@ dds_waitset_wait(
     } else{
         ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Timed out");
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    DDS_REPORT_FLUSH(ret <0 );
     return ret;
 }
 
@@ -475,7 +475,7 @@ dds_waitset_set_trigger(
 {
     dds_waitset *ws;
     dds_retcode_t rc;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
@@ -483,16 +483,18 @@ dds_waitset_set_trigger(
      * unlocked. Even when the related mutex is unlocked when we want to send
      * a signal. */
     rc = dds_waitset_lock(waitset, &ws);
-    if (rc == DDS_RETCODE_OK) {
-        if (trigger) {
-            dds_entity_status_set(ws, DDS_WAITSET_TRIGGER_STATUS);
-        } else {
-            dds_entity_status_reset(ws, DDS_WAITSET_TRIGGER_STATUS);
-        }
-        dds_waitset_signal_entity(ws);
-        dds_waitset_unlock(ws);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking waitset");
+    if (trigger) {
+        dds_entity_status_set(ws, DDS_WAITSET_TRIGGER_STATUS);
+    } else {
+        dds_entity_status_reset(ws, DDS_WAITSET_TRIGGER_STATUS);
+    }
+    dds_waitset_signal_entity(ws);
+    dds_waitset_unlock(ws);
+fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }

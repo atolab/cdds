@@ -162,11 +162,6 @@ Theory((dds_entity_t writer), vddsc_unregister_instance, invalid_writers, .init=
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
-
     ret = dds_unregister_instance(writer, g_data);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -260,11 +255,6 @@ Theory((dds_entity_t writer), vddsc_unregister_instance_ts, invalid_writers, .in
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
 
     ret = dds_unregister_instance_ts(writer, g_data, g_present);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -406,11 +396,6 @@ Theory((dds_entity_t writer), vddsc_unregister_instance_ih, invalid_writers, .in
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
-
     ret = dds_unregister_instance_ih(writer, DDS_HANDLE_NIL);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -508,11 +493,6 @@ Theory((dds_entity_t writer), vddsc_unregister_instance_ih_ts, invalid_writers, 
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
 
     ret = dds_unregister_instance_ih_ts(writer, DDS_HANDLE_NIL, g_present);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));

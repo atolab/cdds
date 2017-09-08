@@ -193,12 +193,12 @@ dds_writer_close(
         nn_xpack_send (wr->m_xp, false);
     }
     if (delete_writer (&e->m_guid) != 0) {
-        rc = DDS_RETCODE_ERROR;
+        rc = DDS_ERRNO(rc, "Internal error");
     }
     if (asleep) {
         thread_state_asleep(thr);
     }
-    return DDS_ERRNO(rc, "Internal error");
+    return rc;
 }
 
 static dds_return_t
@@ -472,24 +472,26 @@ dds_get_publication_matched_status (
 {
     dds_retcode_t rc;
     dds_writer *wr;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
     rc = dds_writer_lock(writer, &wr);
-    if (rc == DDS_RETCODE_OK) {
-      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-      if (status) {
-          *status = wr->m_publication_matched_status;
-      }
-      if (((dds_entity*)wr)->m_status_enable & DDS_PUBLICATION_MATCHED_STATUS) {
-          wr->m_publication_matched_status.total_count_change = 0;
-          wr->m_publication_matched_status.current_count_change = 0;
-          dds_entity_status_reset(wr, DDS_PUBLICATION_MATCHED_STATUS);
-      }
-      dds_writer_unlock(wr);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking writer");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking writer");
+    /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+    if (status) {
+        *status = wr->m_publication_matched_status;
+    }
+    if (((dds_entity*)wr)->m_status_enable & DDS_PUBLICATION_MATCHED_STATUS) {
+        wr->m_publication_matched_status.total_count_change = 0;
+        wr->m_publication_matched_status.current_count_change = 0;
+        dds_entity_status_reset(wr, DDS_PUBLICATION_MATCHED_STATUS);
+    }
+    dds_writer_unlock(wr);
+fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
@@ -502,23 +504,25 @@ dds_get_liveliness_lost_status (
 {
     dds_retcode_t rc;
     dds_writer *wr;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
     rc = dds_writer_lock(writer, &wr);
-    if (rc == DDS_RETCODE_OK) {
-      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-      if (status) {
-        *status = wr->m_liveliness_lost_status;
-      }
-      if (((dds_entity*)wr)->m_status_enable & DDS_LIVELINESS_LOST_STATUS) {
-        wr->m_liveliness_lost_status.total_count_change = 0;
-        dds_entity_status_reset(wr, DDS_LIVELINESS_LOST_STATUS);
-      }
-      dds_writer_unlock(wr);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking writer");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking writer");
+    /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+    if (status) {
+      *status = wr->m_liveliness_lost_status;
+    }
+    if (((dds_entity*)wr)->m_status_enable & DDS_LIVELINESS_LOST_STATUS) {
+      wr->m_liveliness_lost_status.total_count_change = 0;
+      dds_entity_status_reset(wr, DDS_LIVELINESS_LOST_STATUS);
+    }
+    dds_writer_unlock(wr);
+fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
@@ -531,23 +535,25 @@ dds_get_offered_deadline_missed_status(
 {
     dds_retcode_t rc;
     dds_writer *wr;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
     rc = dds_writer_lock(writer, &wr);
-    if (rc == DDS_RETCODE_OK) {
-      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-      if (status) {
-        *status = wr->m_offered_deadline_missed_status;
-      }
-      if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_DEADLINE_MISSED_STATUS) {
-        wr->m_offered_deadline_missed_status.total_count_change = 0;
-        dds_entity_status_reset(wr, DDS_OFFERED_DEADLINE_MISSED_STATUS);
-      }
-      dds_writer_unlock(wr);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking writer");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking writer");
+    /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+    if (status) {
+      *status = wr->m_offered_deadline_missed_status;
+    }
+    if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_DEADLINE_MISSED_STATUS) {
+      wr->m_offered_deadline_missed_status.total_count_change = 0;
+      dds_entity_status_reset(wr, DDS_OFFERED_DEADLINE_MISSED_STATUS);
+    }
+    dds_writer_unlock(wr);
+fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
@@ -560,23 +566,25 @@ dds_get_offered_incompatible_qos_status (
 {
     dds_retcode_t rc;
     dds_writer *wr;
-    dds_return_t ret;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
     rc = dds_writer_lock(writer, &wr);
-    if (rc == DDS_RETCODE_OK) {
-      /* status = NULL, application do not need the status, but reset the counter & triggered bit */
-      if (status) {
-        *status = wr->m_offered_incompatible_qos_status;
-      }
-      if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_INCOMPATIBLE_QOS_STATUS) {
-        wr->m_offered_incompatible_qos_status.total_count_change = 0;
-        dds_entity_status_reset(wr, DDS_OFFERED_INCOMPATIBLE_QOS_STATUS);
-      }
-      dds_writer_unlock(wr);
+    if (rc != DDS_RETCODE_OK) {
+        ret = DDS_ERRNO(rc, "Error occurred on locking writer");
+        goto fail;
     }
-    ret = DDS_ERRNO(rc, "Error occurred on locking writer");
+    /* status = NULL, application do not need the status, but reset the counter & triggered bit */
+    if (status) {
+      *status = wr->m_offered_incompatible_qos_status;
+    }
+    if (((dds_entity*)wr)->m_status_enable & DDS_OFFERED_INCOMPATIBLE_QOS_STATUS) {
+      wr->m_offered_incompatible_qos_status.total_count_change = 0;
+      dds_entity_status_reset(wr, DDS_OFFERED_INCOMPATIBLE_QOS_STATUS);
+    }
+    dds_writer_unlock(wr);
+fail:
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
