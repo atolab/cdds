@@ -170,11 +170,6 @@ Theory((dds_entity_t writer), vddsc_writedispose, invalid_writers, .init=disposi
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
-
     ret = dds_writedispose(writer, NULL);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -337,11 +332,6 @@ Theory((dds_entity_t writer), vddsc_writedispose_ts, invalid_writers, .init=disp
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
 
     ret = dds_writedispose_ts(writer, NULL, g_present);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -535,11 +525,6 @@ Theory((dds_entity_t writer), vddsc_dispose, invalid_writers, .init=disposing_in
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
-
     ret = dds_dispose(writer, NULL);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -686,11 +671,6 @@ Theory((dds_entity_t writer), vddsc_dispose_ts, invalid_writers, .init=disposing
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
 
     ret = dds_dispose_ts(writer, NULL, g_present);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -871,11 +851,6 @@ Theory((dds_entity_t writer), vddsc_dispose_ih, invalid_writers, .init=disposing
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
-
     ret = dds_dispose_ih(writer, DDS_HANDLE_NIL);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -973,11 +948,6 @@ Theory((dds_entity_t writer), vddsc_dispose_ih_ts, invalid_writers, .init=dispos
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
 
     ret = dds_dispose_ih_ts(writer, DDS_HANDLE_NIL, g_present);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));

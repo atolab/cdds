@@ -7,6 +7,7 @@
 #include "ddsi/q_ephash.h"
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
+#include "kernel/dds_report.h"
 
 static dds_return_t
 dds_readcond_delete(
@@ -45,6 +46,8 @@ dds_create_readcondition(
     dds_reader * rd;
     dds_retcode_t rc;
 
+    DDS_REPORT_STACK();
+
     rc = dds_reader_lock(reader, &rd);
     if (rc == DDS_RETCODE_OK) {
         dds_readcond *cond = dds_create_readcond(rd, DDS_KIND_COND_READ, mask);
@@ -52,9 +55,9 @@ dds_create_readcondition(
         hdl = cond->m_entity.m_hdl;
         dds_reader_unlock(rd);
     } else {
-        hdl = DDS_ERRNO_DEPRECATED(rc);
+        hdl = DDS_ERRNO(rc, "Error occurred on locking reader");
     }
-
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
 
@@ -65,13 +68,16 @@ dds_get_datareader(
         _In_ dds_entity_t condition)
 {
     dds_entity_t hdl;
+
+    DDS_REPORT_STACK();
     if (dds_entity_kind(condition) == DDS_KIND_COND_READ) {
         hdl = dds_get_parent(condition);
     } else if (dds_entity_kind(condition) == DDS_KIND_COND_QUERY) {
         hdl = dds_get_parent(condition);
     } else {
-        hdl = DDS_ERRNO_DEPRECATED(dds_valid_hdl(condition, DDS_KIND_COND_READ));
+        hdl = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ), "Argument condition is not valid");
     }
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
 
@@ -86,6 +92,9 @@ dds_get_mask(
     dds_return_t ret;
     dds_readcond *cond;
     dds_retcode_t rc;
+
+    DDS_REPORT_STACK();
+
     if (mask != NULL) {
         *mask = 0;
         if ((dds_entity_kind(condition) == DDS_KIND_COND_READ ) ||
@@ -94,13 +103,16 @@ dds_get_mask(
             if (rc == DDS_RETCODE_OK) {
                 *mask = (cond->m_sample_states | cond->m_view_states | cond->m_instance_states);
                 dds_entity_unlock((dds_entity*)cond);
+                ret = DDS_RETCODE_OK;
+            } else{
+                ret = DDS_ERRNO(rc, "Error occurred on locking condition");
             }
-            ret = DDS_ERRNO_DEPRECATED(rc);
         } else {
-            ret = DDS_ERRNO_DEPRECATED(dds_valid_hdl(condition, DDS_KIND_COND_READ));
+            ret = DDS_ERRNO(dds_valid_hdl(condition, DDS_KIND_COND_READ), "Argument condition is not valid");
         }
     } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER);
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument mask is NULL");
     }
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }

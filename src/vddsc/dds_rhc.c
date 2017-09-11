@@ -26,6 +26,7 @@
 #include "ddsi/q_radmin.h" /* sampleinfo */
 #include "ddsi/q_entity.h" /* proxy_writer_info */
 #include "ddsi/sysdeps.h"
+#include "kernel/dds_report.h"
 
 /* INSTANCE MANAGEMENT
    ===================

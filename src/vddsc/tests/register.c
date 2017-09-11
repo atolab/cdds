@@ -16,6 +16,7 @@
 #define MAX_SAMPLES                 7
 #define INITIAL_SAMPLES             2
 
+
 static dds_entity_t g_participant = 0;
 static dds_entity_t g_topic       = 0;
 static dds_entity_t g_reader      = 0;
@@ -137,12 +138,11 @@ registering_fini(void)
 Test(vddsc_register_instance, deleted_entity, .init=registering_init, .fini=registering_fini)
 {
     dds_return_t ret;
+    dds_instance_handle_t handle;
     dds_delete(g_writer);
-    ret = dds_register_instance(g_writer, NULL, NULL);
+    ret = dds_register_instance(g_writer, &handle, g_data);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
-
 }
-
 
 static dds_instance_handle_t hndle = 0;
 static Space_Type1           data;
@@ -169,13 +169,9 @@ Theory((dds_entity_t writer), vddsc_register_instance, invalid_writers, .init=re
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
+    dds_instance_handle_t handle;
 
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
-
-    ret = dds_register_instance(writer, NULL, NULL);
+    ret = dds_register_instance(writer, &handle, g_data);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 
@@ -185,7 +181,8 @@ TheoryDataPoints(vddsc_register_instance, non_writers) = {
 Theory((dds_entity_t *writer), vddsc_register_instance, non_writers, .init=registering_init, .fini=registering_fini)
 {
     dds_return_t ret;
-    ret = dds_register_instance(*writer, NULL, NULL);
+    dds_instance_handle_t handle;
+    ret = dds_register_instance(*writer, &handle, g_data);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 

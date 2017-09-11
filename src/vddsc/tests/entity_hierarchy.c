@@ -195,11 +195,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_participant, invalid_entities, .i
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t participant;
 
-    if (entity < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = entity;
-    }
-
     participant = dds_get_participant(entity);
     cr_assert_eq(dds_err_nr(participant), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(participant), dds_err_nr(exp));
 }
@@ -286,11 +281,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_parent, invalid_entities, .init=h
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t parent;
-
-    if (entity < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = entity;
-    }
 
     parent = dds_get_parent(entity);
     cr_assert_eq(dds_err_nr(parent), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(parent), dds_err_nr(exp));
@@ -444,11 +434,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_children, invalid_entities, .init
     dds_entity_t children[4];
     dds_return_t ret;
 
-    if (entity < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = entity;
-    }
-
     ret = dds_get_children(entity, children, 4);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -496,11 +481,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_topic, invalid_entities, .init=hi
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t topic;
-
-    if (entity < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = entity;
-    }
 
     topic = dds_get_topic(entity);
     cr_assert_eq(dds_err_nr(topic), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(topic), dds_err_nr(exp));
@@ -555,11 +535,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_publisher, invalid_writers, .init
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t publisher;
-
-    if (entity < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = entity;
-    }
 
     publisher = dds_get_publisher(entity);
     cr_assert_eq(dds_err_nr(publisher), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(publisher), dds_err_nr(exp));
@@ -619,11 +594,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_subscriber, invalid_readers, .ini
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t subscriber;
-
-    if (entity < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = entity;
-    }
 
     subscriber = dds_get_subscriber(entity);
     cr_assert_eq(dds_err_nr(subscriber), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(subscriber), dds_err_nr(exp));
@@ -685,11 +655,6 @@ Theory((dds_entity_t cond), vddsc_entity_get_datareader, invalid_conds, .init=hi
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t reader;
-
-    if (cond < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = cond;
-    }
 
     reader = dds_get_datareader(cond);
     cr_assert_eq(dds_err_nr(reader), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(reader), dds_err_nr(exp));

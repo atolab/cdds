@@ -226,11 +226,6 @@ Theory((dds_entity_t par), vddsc_waitset_create, invalid_params, .init=vddsc_wai
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t ws;
 
-    if (par < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = par;
-    }
-
     ws = dds_create_waitset(par);
     cr_assert_eq(dds_err_nr(ws), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ws), dds_err_nr(exp));
 }
@@ -281,11 +276,6 @@ Theory((dds_entity_t ws, dds_attach_t a), vddsc_waitset_attach, invalid_waitsets
 {
     dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (ws < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = ws;
-    }
 
     ret = dds_waitset_attach(ws, participant, a);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -408,11 +398,6 @@ Theory((dds_entity_t ws), vddsc_waitset_detach, invalid_waitsets, .init=vddsc_wa
 {
     dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (ws < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = ws;
-    }
 
     ret = dds_waitset_detach(ws, participant);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -595,11 +580,6 @@ Theory((dds_entity_t ws), vddsc_waitset_set_trigger, invalid_params, .init=vddsc
     dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (ws < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = ws;
-    }
-
     ret = dds_waitset_set_trigger(ws, true);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -645,11 +625,6 @@ Theory((dds_entity_t ws), vddsc_waitset_wait, invalid_waitsets, .init=vddsc_wait
     dds_attach_t triggered;
     dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (ws < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = ws;
-    }
 
     ret = dds_waitset_wait(ws, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -709,11 +684,6 @@ Theory((dds_entity_t ws), vddsc_waitset_wait_until, invalid_waitsets, .init=vdds
     dds_attach_t triggered;
     dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (ws < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = ws;
-    }
 
     ret = dds_waitset_wait_until(ws, &triggered, 1, dds_time());
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -875,11 +845,6 @@ Theory((dds_entity_t ws), vddsc_waitset_get_entities, invalid_params, .init=vdds
     dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t entities[MAX_ENTITIES_CNT];
     dds_return_t ret;
-
-    if (ws < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = ws;
-    }
 
     ret = dds_waitset_get_entities(ws, entities, MAX_ENTITIES_CNT);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
