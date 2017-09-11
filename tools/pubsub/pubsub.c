@@ -939,7 +939,7 @@ static void print_K (unsigned long long *tstart, unsigned long long tnow, dds_en
 		}
     }
     else
-      printf ("get_key_value: error %d (%s)\n", (int) result, dds_err_str(result));
+      printf ("get_key_value: error (%s)\n", dds_err_str(result));
   }
   os_funlockfile(stdout);
 }
@@ -1430,7 +1430,7 @@ static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq)
         	tstamp = dds_time();
         	tstamp_spec.t += tstamp;
         }
-
+        tstamp = (tstamp_spec.t % T_SECOND) + ((int) (tstamp_spec.t / T_SECOND) * DDS_NSECS_IN_SEC);
         if ((result = fn (spec->wr, &d, tstamp)) != DDS_RETCODE_OK)
         {
           printf ("%s %d: error %d (%s)\n", get_write_operstr(command), k, (int) result, dds_err_str(result));

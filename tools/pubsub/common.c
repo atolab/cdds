@@ -481,7 +481,7 @@ dds_entity_t new_publisher (const struct qos *a, unsigned npartitions, const cha
 		    error_exit("new_topic called with non-publisher qos\n");
 		pQos = a->u.pub.q;
 	}
-
+	dds_qset_partition(pQos, npartitions, partitions);
     dds_entity_t p = dds_create_publisher(dp, pQos, NULL);
     error_abort(p, "new_publisher: dds_create_publisher");
     if (a == NULL)
