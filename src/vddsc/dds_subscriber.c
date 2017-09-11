@@ -3,7 +3,9 @@
 #include "kernel/dds_listener.h"
 #include "kernel/dds_qos.h"
 #include "kernel/dds_report.h"
+#include "kernel/dds_err.h"
 #include "ddsi/q_entity.h"
+#include "kernel/dds_report.h"
 
 #define DDS_SUBSCRIBER_STATUS_MASK                               \
                         DDS_DATA_ON_READERS_STATUS
@@ -16,7 +18,7 @@ dds_subscriber_instance_hdl(
     assert(e);
     assert(i);
     /* TODO: Get/generate proper handle. */
-    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Generating subscriber instance handle is not supported");
 }
 
 static dds_return_t
@@ -25,23 +27,27 @@ dds_subscriber_qos_validate(
         bool enabled)
 {
     dds_return_t ret = DDS_RETCODE_OK;
-    bool consistent = true;
 
     assert(qos);
-    consistent &= (qos->present & QP_GROUP_DATA) ? validate_octetseq(&qos->group_data) : true;
-    consistent &= (qos->present & QP_PARTITION) ? validate_stringseq(&qos->partition) : true;
-    consistent &= (qos->present & QP_PRESENTATION) ? !validate_presentation_qospolicy(&qos->presentation) : true;
-    consistent &= (qos->present & QP_PRISMTECH_ENTITY_FACTORY) ? \
-        validate_entityfactory_qospolicy(&qos->entity_factory) : true;
 
-    if (consistent) {
-        if (enabled && (qos->present & QP_PRESENTATION)) {
-            /* TODO: Improve/check immutable check. */
-            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_IMMUTABLE_POLICY);
-        }
-    } else {
-      ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_INCONSISTENT_POLICY);
+    if((qos->present & QP_GROUP_DATA) && !validate_octetseq(&qos->group_data)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Group data policy is inconsistent and caused an error");
     }
+    if((qos->present & QP_PARTITION) && !validate_stringseq(&qos->partition)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Partition policy is inconsistent and caused an error");
+    }
+    if((qos->present & QP_PRESENTATION) && validate_presentation_qospolicy(&qos->presentation)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Presentation policy is inconsistent and caused an error");
+    }
+    if((qos->present & QP_PRISMTECH_ENTITY_FACTORY) && !validate_entityfactory_qospolicy(&qos->entity_factory)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Prismtech entity factory policy is inconsistent and caused an error");
+    }
+    if(ret == DDS_RETCODE_OK && enabled && (qos->present & QP_PRESENTATION)) {
+        /* TODO: Improve/check immutable check. */
+        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Presentation QoS policy is immutable");
+    }
+
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -55,7 +61,7 @@ dds_subscriber_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "VortexDDS does not support changing QoS policies yet");
         }
     }
     return ret;
@@ -66,7 +72,7 @@ dds_subscriber_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_SUBSCRIBER_STATUS_MASK)) ?
-                     DDS_ERRNO_DEPRECATED(DDS_RETCODE_BAD_PARAMETER) :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Invalid status mask") :
                      DDS_RETCODE_OK;
 }
 
@@ -104,12 +110,14 @@ dds_create_subscriber(
     dds_entity_t hdl;
     dds_qos_t * new_qos = NULL;
     dds_return_t ret;
-    int32_t errnr;
+    dds_retcode_t errnr;
 
+    DDS_REPORT_STACK();
 
     errnr = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
     if (errnr != DDS_RETCODE_OK) {
-        return DDS_ERRNO_DEPRECATED(errnr);
+        hdl = DDS_ERRNO(errnr, "Error occurred on locking participant");
+        return hdl;
     }
 
     /* Validate qos */
@@ -134,6 +142,7 @@ dds_create_subscriber(
     sub->m_entity.m_deriver.get_instance_hdl = dds_subscriber_instance_hdl;
     dds_entity_unlock(par);
 
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
 
@@ -144,11 +153,15 @@ dds_notify_readers(
 {
     dds_entity *iter;
     dds_entity *sub;
-    int32_t errnr;
+    dds_retcode_t errnr;
+    dds_return_t ret;
+
+    DDS_REPORT_STACK();
 
     errnr = dds_entity_lock(subscriber, DDS_KIND_SUBSCRIBER, &sub);
     if (errnr == DDS_RETCODE_OK) {
         errnr = DDS_RETCODE_UNSUPPORTED;
+        ret = DDS_ERRNO(errnr, "Unsupported operation");
         iter = sub->m_children;
         while (iter) {
             os_mutexLock(&iter->m_mutex);
@@ -157,9 +170,12 @@ dds_notify_readers(
             iter = iter->m_next;
         }
         dds_entity_unlock(sub);
+    } else {
+        ret = DDS_ERRNO(errnr, "Error occurred on locking subscriber");
     }
 
-    return DDS_ERRNO_DEPRECATED(errnr);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    return ret;
 }
 
 dds_return_t
@@ -167,7 +183,7 @@ dds_subscriber_begin_coherent(
         _In_ dds_entity_t e)
 {
     /* TODO: CHAM-124 Currently unsupported. */
-    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Using coherency to get a coherent data set is not currently being supported");
 }
 
 dds_return_t
@@ -175,5 +191,5 @@ dds_subscriber_end_coherent(
         _In_ dds_entity_t e)
 {
     /* TODO: CHAM-124 Currently unsupported. */
-    return DDS_ERRNO_DEPRECATED(DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Using coherency to get a coherent data set is not currently being supported");
 }

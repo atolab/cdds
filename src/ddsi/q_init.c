@@ -421,37 +421,35 @@ static int check_thread_properties (void)
 
 int rtps_config_open (void)
 {
-  int status = -1;
+    int status;
 
-  if (status == -1)
-  {
     if (config.tracingOutputFileName == NULL || *config.tracingOutputFileName == 0 || config.enabled_logcats == 0)
     {
-      config.enabled_logcats = 0;
-      config.tracingOutputFile = NULL;
-      status = 1;
+        config.enabled_logcats = 0;
+        config.tracingOutputFile = NULL;
+        status = 1;
     }
     else if (os_strcasecmp (config.tracingOutputFileName, "stdout") == 0)
     {
-      config.tracingOutputFile = stdout;
-      status = 1;
+        config.tracingOutputFile = stdout;
+        status = 1;
     }
     else if (os_strcasecmp (config.tracingOutputFileName, "stderr") == 0)
     {
-      config.tracingOutputFile = stderr;
-      status = 1;
+        config.tracingOutputFile = stderr;
+        status = 1;
     }
     else if ((config.tracingOutputFile = fopen (config.tracingOutputFileName, config.tracingAppendToFile ? "a" : "w")) == NULL)
     {
-      NN_ERROR ("%s: cannot open for writing\n", config.tracingOutputFileName);
-      status = 0;
+        NN_ERROR ("%s: cannot open for writing\n", config.tracingOutputFileName);
+        status = 0;
     }
     else
     {
-      status = 1;
+        status = 1;
     }
-  }
-  return status;
+
+    return status;
 }
 
 int rtps_config_prep (struct cfgst *cfgst)

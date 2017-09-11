@@ -6,6 +6,7 @@
 #include "kernel/dds_tkmap.h"
 #include "kernel/dds_iid.h"
 #include "kernel/dds_domain.h"
+#include "kernel/dds_err.h"
 #include "ddsi/ddsi_ser.h"
 #include "os/os.h"
 #include "ddsi/q_config.h"
@@ -14,6 +15,7 @@
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
 #include "vddsc/vddsc_project.h"
+#include "kernel/dds_report.h"
 
 #ifdef _WRS_KERNEL
 char *os_environ[] = { NULL };
@@ -94,7 +96,7 @@ dds_init(void)
 
   if (ut_handleserver_init() != UT_HANDLE_OK)
   {
-    return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize server");
+      return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize internal handle server");
   }
 
   uri = os_getenv (VDDSC_PROJECTNAME_CAPS"_URI");
@@ -102,11 +104,6 @@ dds_init(void)
   if (dds_cfgst == NULL)
   {
     return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to parse configuration XML file %s", uri);
-  }
-
-  if (! rtps_config_open ())
-  {
-    return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to open log file %s", config.tracingOutputFileName);
   }
 
   os_procName(tmp, sizeof(tmp));

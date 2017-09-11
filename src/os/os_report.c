@@ -75,9 +75,9 @@ struct os_reportEventV1_s
     int32_t code;
     /** A description of the reported event */
     char *description;
-    /** A string identifying the thread the event occured in */
+    /** A string identifying the thread the event occurred in */
     char* threadDesc;
-    /** A string identifying the process the event occured in */
+    /** A string identifying the process the event occurred in */
     char* processDesc;
 };
 
@@ -464,7 +464,7 @@ static void os__report_fprintf(
     BytesWritten = os_vfprintfnosigpipe(file, format, args);
     va_end(args);
     if (BytesWritten == -1) {
-        /* error occured ?, try to write to stdout. (also with no sigpipe,
+        /* error occurred ?, try to write to stdout. (also with no sigpipe,
          * stdout can also give broken pipe)
          */
         va_start(args, format);

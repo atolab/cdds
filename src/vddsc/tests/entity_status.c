@@ -579,11 +579,6 @@ Theory((dds_entity_t e), vddsc_get_enabled_status, bad_param)
     dds_return_t ret;
     dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
-    if (e < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = e;
-    }
-
     ret = dds_get_enabled_status(e, &s);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -626,11 +621,6 @@ Theory((dds_entity_t e), vddsc_set_enabled_status, bad_param)
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
-    if (e < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = e;
-    }
-
     ret = dds_set_enabled_status(e, 0 /*mask*/);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -670,11 +660,6 @@ Theory((dds_entity_t e), vddsc_read_status, bad_param)
     uint32_t status = 0;
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
-
-    if (e < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = e;
-    }
 
     ret = dds_read_status(e, &status, 0 /*mask*/);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -733,11 +718,6 @@ Theory((dds_entity_t e), vddsc_take_status, bad_param)
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
-    if (e < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = e;
-    }
-
     ret = dds_take_status(e, &status, 0 /*mask*/);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -781,11 +761,6 @@ Theory((dds_entity_t e), vddsc_get_status_changes, bad_param)
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
-    if (e < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = e;
-    }
-
     ret = dds_get_status_changes(e, &s);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -827,11 +802,6 @@ Theory((dds_entity_t e), vddsc_triggered, bad_param)
 {
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
-
-    if (e < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = e;
-    }
 
     ret = dds_triggered(e);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "dds_triggered(): returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -877,11 +847,6 @@ Theory((dds_entity_t topic), vddsc_get_inconsistent_topic_status, bad_params)
     dds_inconsistent_topic_status_t topic_status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
-
-    if (topic < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = topic;
-    }
 
     ret = dds_get_inconsistent_topic_status(topic, &topic_status);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -929,11 +894,6 @@ Theory((dds_entity_t writer), vddsc_get_publication_matched_status, bad_params)
     dds_publication_matched_status_t status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
-
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
 
     ret = dds_get_publication_matched_status(writer, &status);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -993,11 +953,6 @@ Theory((dds_entity_t writer), vddsc_get_liveliness_lost_status, bad_params)
     dds_liveliness_lost_status_t status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
-
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
 
     ret = dds_get_liveliness_lost_status(writer, &status);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -1059,11 +1014,6 @@ Theory((dds_entity_t writer), vddsc_get_offered_deadline_missed_status, bad_para
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
-
     ret = dds_get_offered_deadline_missed_status(writer, &status);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -1110,11 +1060,6 @@ Theory((dds_entity_t writer), vddsc_get_offered_incompatible_qos_status, bad_par
     dds_offered_incompatible_qos_status_t status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
-
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
 
     ret = dds_get_offered_incompatible_qos_status(writer, &status);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -1163,11 +1108,6 @@ Theory((dds_entity_t reader), vddsc_get_subscription_matched_status, bad_params)
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
-    if (reader < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = reader;
-    }
-
     ret = dds_get_subscription_matched_status(reader, &status);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -1214,11 +1154,6 @@ Theory((dds_entity_t reader), vddsc_get_liveliness_changed_status, bad_params)
     dds_liveliness_changed_status_t status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
-
-    if (reader < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = reader;
-    }
 
     ret = dds_get_liveliness_changed_status(reader, &status);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -1267,11 +1202,6 @@ Theory((dds_entity_t reader), vddsc_get_sample_rejected_status, bad_params)
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
-    if (reader < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = reader;
-    }
-
     ret = dds_get_sample_rejected_status(reader, &status);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -1318,11 +1248,6 @@ Theory((dds_entity_t reader), vddsc_get_sample_lost_status, bad_params)
     dds_sample_lost_status_t status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
-
-    if (reader < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = reader;
-    }
 
     ret = dds_get_sample_lost_status(reader, &status);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -1384,11 +1309,6 @@ Theory((dds_entity_t reader), vddsc_get_requested_deadline_missed_status, bad_pa
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
 
-    if (reader < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = reader;
-    }
-
     ret = dds_get_requested_deadline_missed_status(reader, &status);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -1435,11 +1355,6 @@ Theory((dds_entity_t reader), vddsc_get_requested_incompatible_qos_status, bad_p
     dds_requested_incompatible_qos_status_t status = {0};
     dds_return_t ret;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
-
-    if (reader < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = reader;
-    }
 
     ret = dds_get_requested_incompatible_qos_status(reader, &status);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));

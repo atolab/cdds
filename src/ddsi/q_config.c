@@ -750,7 +750,7 @@ static const struct cfgelem tracing_cfgelems[] = {
 <li><i>finest</i>: <i>finer</i> + trace</li></ul>\n\
 <p>While <i>none</i> prevents any message from being written to a DDSI2 log file.</p>\n\
 <p>The categorisation of tracing output is incomplete and hence most of the verbosity levels and categories are not of much use in the current release. This is an ongoing process and here we describe the target situation rather than the current situation. Currently, the most useful verbosity levels are <i>config</i>, <i>fine</i> and <i>finest</i>.</p>" },
-  { LEAF ("OutputFile"), 1, "vortex-trace.log", ABSOFF (tracingOutputFileName), 0, uf_tracingOutputFileName, ff_free, pf_string,
+  { LEAF ("OutputFile"), 1, VDDSC_PROJECTNAME_SMALL"-trace.log", ABSOFF (tracingOutputFileName), 0, uf_tracingOutputFileName, ff_free, pf_string,
     "<p>This option specifies where the logging is printed to. Note that <i>stdout</i> and <i>stderr</i> are treated as special values, representing \"standard out\" and \"standard error\" respectively. No file is created unless logging categories are enabled using the Tracing/Verbosity or Tracing/EnabledCategory settings.</p>" },
   { LEAF_W_ATTRS ("Timestamps", timestamp_cfgattrs), 1, "true", ABSOFF (tracingTimestamps), 0, uf_boolean, 0, pf_boolean,
     "<p>This option has no effect.</p>" },
