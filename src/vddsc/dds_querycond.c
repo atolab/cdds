@@ -1,11 +1,12 @@
 #include <assert.h>
-#include "kernel/dds_types.h"
 #include "kernel/dds_entity.h"
 #include "kernel/dds_reader.h"
 #include "kernel/dds_topic.h"
 #include "kernel/dds_querycond.h"
 #include "kernel/dds_readcond.h"
+#include "kernel/dds_err.h"
 #include "ddsi/ddsi_ser.h"
+#include "kernel/dds_report.h"
 
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT dds_entity_t
@@ -19,6 +20,8 @@ dds_create_querycondition(
     dds_retcode_t rc;
     dds_reader *r;
     dds_topic  *t;
+
+    DDS_REPORT_STACK();
 
     rc = dds_reader_lock(reader, &r);
     if (rc == DDS_RETCODE_OK) {
@@ -36,11 +39,11 @@ dds_create_querycondition(
             dds_topic_unlock(t);
         } else {
             (void)dds_delete(hdl);
-            hdl = DDS_ERRNO_DEPRECATED(rc);
+            hdl = DDS_ERRNO(rc, "Error occurred on locking topic");
         }
     } else {
-        hdl = DDS_ERRNO_DEPRECATED(rc);
+        hdl = DDS_ERRNO(rc, "Error occurred on locking reader");
     }
-
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }

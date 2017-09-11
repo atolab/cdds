@@ -1,8 +1,6 @@
 #ifndef _DDS_WRITE_H_
 #define _DDS_WRITE_H_
 
-#include "kernel/dds_types.h"
-
 #if defined (__cplusplus)
 extern "C" {
 #endif

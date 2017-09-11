@@ -24,7 +24,7 @@ write_basic_package_version_file(
 install(
   FILES "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake"
         "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}Version.cmake"
-  DESTINATION "${CMAKE_INSTALL_CMAKEDIR}")
+  DESTINATION "${CMAKE_INSTALL_CMAKEDIR}" COMPONENT dev)
 
 if(VDDSC_SHARED AND ((NOT DEFINED BUILD_SHARED_LIBS) OR BUILD_SHARED_LIBS))
   # Generates <Package>Targets.cmake file included by <Package>Config.cmake.
@@ -33,7 +33,7 @@ if(VDDSC_SHARED AND ((NOT DEFINED BUILD_SHARED_LIBS) OR BUILD_SHARED_LIBS))
     EXPORT "${CMAKE_PROJECT_NAME}"
     FILE "${CMAKE_PROJECT_NAME}Targets.cmake"
     NAMESPACE "${CMAKE_PROJECT_NAME}::"
-    DESTINATION "${CMAKE_INSTALL_CMAKEDIR}")
+    DESTINATION "${CMAKE_INSTALL_CMAKEDIR}" COMPONENT dev)
 endif()
 
 
@@ -76,7 +76,7 @@ if(WIN32 AND NOT UNIX)
   endif()
   mark_as_advanced(__arch)
 
-  set(CPACK_GENERATOR "WIX;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
+  set(CPACK_GENERATOR "WIX;ZIP;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
 
   set(CPACK_PACKAGE_FILE_NAME "VortexDDS-${CPACK_PACKAGE_VERSION}-${__arch}")
   set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_VENDOR}/DDS")
@@ -92,6 +92,8 @@ if(WIN32 AND NOT UNIX)
   set(CPACK_WIX_PROPERTY_ARPHELPLINK "http://www.prismtech.com/support")
   set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "http://www.prismtech.com/")
   set(CPACK_WIX_PROPERTY_ARPURLUPDATEINFO "http://www.prismtech.com/vortex/software-downloads")
+  # A constant GUID allows installers to replace existing installations that use the same GUID.
+  set(CPACK_WIX_UPGRADE_GUID "1351F59A-972B-4624-A7F1-439381BFA41D")
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
   if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "Install path prefix prepended on to install directories." FORCE)
@@ -108,8 +110,7 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
       set(__arch "i686")
     endif()
 
-    set(CPACK_GENERATOR "RPM;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
-    #set(CPACK_SOURCE_GENERATOR "RPM;${CPACK_SOURCE_GENERATOR}" CACHE STRING "List of source-package generators")
+    set(CPACK_GENERATOR "RPM;TGZ;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
 
     set(CPACK_RPM_COMPONENT_INSTALL ON)
     # FIXME: The package file name must be updated to include the distribution.
@@ -127,8 +128,7 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
       set(__arch "i386")
     endif()
 
-    set(CPACK_GENERATOR "DEB;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
-    #set(CPACK_SOURCE_GENERATOR "DEB;${CPACK_SOURCE_GENERATOR}" CACHE STRING "List of source-package generators")
+    set(CPACK_GENERATOR "DEB;TGZ;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
 
     set(CPACK_DEBIAN_LIB_PACKAGE_NAME "vortex-dds")
     set(CPACK_DEBIAN_LIB_FILE_NAME "${CPACK_DEBIAN_LIB_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${__arch}.deb")
@@ -138,7 +138,6 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
   else()
     # Generic tgz package
     set(CPACK_GENERATOR "TGZ;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
-    #set(CPACK_SOURCE_GENERATOR "TGZ;${CPACK_GENERATOR}" CACHE STRING "List of source-package generators")
   endif()
 elseif(CMAKE_SYSTEM_NAME MATCHES "VxWorks")
   # FIXME: Support for VxWorks packages must still be implemented (probably

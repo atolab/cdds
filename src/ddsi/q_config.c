@@ -32,6 +32,8 @@
 #include "util/ut_xmlparser.h"
 #include "util/ut_expand_envvars.h"
 
+#include "vddsc/vddsc_project.h"
+
 #define WARN_DEPRECATED_ALIAS 1
 #define WARN_DEPRECATED_UNIT 1
 #define MAX_PATH_DEPTH 10 /* max nesting level of configuration elements */
@@ -748,7 +750,7 @@ static const struct cfgelem tracing_cfgelems[] = {
 <li><i>finest</i>: <i>finer</i> + trace</li></ul>\n\
 <p>While <i>none</i> prevents any message from being written to a DDSI2 log file.</p>\n\
 <p>The categorisation of tracing output is incomplete and hence most of the verbosity levels and categories are not of much use in the current release. This is an ongoing process and here we describe the target situation rather than the current situation. Currently, the most useful verbosity levels are <i>config</i>, <i>fine</i> and <i>finest</i>.</p>" },
-  { LEAF ("OutputFile"), 1, "vortex-trace.log", ABSOFF (tracingOutputFileName), 0, uf_tracingOutputFileName, ff_free, pf_string,
+  { LEAF ("OutputFile"), 1, VDDSC_PROJECTNAME_SMALL"-trace.log", ABSOFF (tracingOutputFileName), 0, uf_tracingOutputFileName, ff_free, pf_string,
     "<p>This option specifies where the logging is printed to. Note that <i>stdout</i> and <i>stderr</i> are treated as special values, representing \"standard out\" and \"standard error\" respectively. No file is created unless logging categories are enabled using the Tracing/Verbosity or Tracing/EnabledCategory settings.</p>" },
   { LEAF_W_ATTRS ("Timestamps", timestamp_cfgattrs), 1, "true", ABSOFF (tracingTimestamps), 0, uf_boolean, 0, pf_boolean,
     "<p>This option has no effect.</p>" },
@@ -854,7 +856,7 @@ static const struct cfgelem root_cfgelems[] = {
 
 static const struct cfgelem vortex_root_cfgelems[] =
 {
-  { "Vortex", root_cfgelems, NULL, NODATA, NULL },
+  { VDDSC_PROJECTNAME, root_cfgelems, NULL, NODATA, NULL },
   END_MARKER
 };
 
@@ -978,7 +980,7 @@ static size_t cfg_note_vsnprintf (struct cfg_note_buf *bb, const char *fmt, va_l
     return nbufsize;
   }
   if (x < 0)
-    NN_FATAL0 ("cfg_note_vsnprintf: os_vsnprintf failed\n");
+    NN_FATAL ("cfg_note_vsnprintf: os_vsnprintf failed\n");
   else
     bb->bufpos += (size_t)x;
   return 0;
@@ -1000,7 +1002,7 @@ static void cfg_note_snprintf (struct cfg_note_buf *bb, const char *fmt, ...)
     va_start (ap, fmt);
     s = os_vsnprintf (bb->buf + bb->bufpos, bb->bufsize - bb->bufpos, fmt, ap);
     if (s < 0 || (size_t)s >= bb->bufsize - bb->bufpos)
-      NN_FATAL0 ("cfg_note_snprintf: os_vsnprintf failed\n");
+      NN_FATAL ("cfg_note_snprintf: os_vsnprintf failed\n");
     va_end (ap);
     bb->bufpos += (size_t)s;
   }
@@ -1020,7 +1022,7 @@ static size_t cfg_note (struct cfgst *cfgst, logcat_t cat, size_t bsz, const cha
   bb.bufpos = 0;
   bb.bufsize = (bsz == 0) ? 1024 : bsz;
   if ((bb.buf = os_malloc (bb.bufsize)) == NULL)
-    NN_FATAL0 ("cfg_note: out of memory\n");
+    NN_FATAL ("cfg_note: out of memory\n");
 
   cfg_note_snprintf (&bb, "config: ");
 
@@ -1065,13 +1067,13 @@ static size_t cfg_note (struct cfgst *cfgst, logcat_t cat, size_t bsz, const cha
       nn_log (cat, "%s\n", bb.buf);
       break;
     case LC_WARNING:
-      NN_WARNING1 ("%s\n", bb.buf);
+      NN_WARNING ("%s\n", bb.buf);
       break;
     case LC_ERROR:
-      NN_ERROR1 ("%s\n", bb.buf);
+      NN_ERROR ("%s\n", bb.buf);
       break;
     default:
-      NN_FATAL2 ("cfg_note unhandled category %u for message %s\n", (unsigned) cat, bb.buf);
+      NN_FATAL ("cfg_note unhandled category %u for message %s\n", (unsigned) cat, bb.buf);
       break;
   }
 
@@ -2647,7 +2649,7 @@ static int sort_channels_check_nodups (struct config *cfg)
   {
     if (ary[i]->priority == ary[i+1]->priority)
     {
-      NN_ERROR3 ("config: duplicate channel definition for priority %u: channels %s and %s\n",
+      NN_ERROR ("config: duplicate channel definition for priority %u: channels %s and %s\n",
                  ary[i]->priority, ary[i]->name, ary[i+1]->name);
       result = ERR_ENTITY_EXISTS;
     }
@@ -2700,7 +2702,7 @@ struct cfgst * config_init
       {
         if (strncmp (tok, "file://", 7) != 0 || (fp = fopen (tok + 7, "r")) == NULL)
         {
-          NN_ERROR1 ("can't open configuration file %s\n", tok);
+          NN_ERROR ("can't open configuration file %s\n", tok);
           os_free (copy);
           os_free (cfgst);
           return NULL;
@@ -2766,17 +2768,17 @@ struct cfgst * config_init
         case Q_CIPHER_NULL:
           /* nop */
           if (s->key && strlen (s->key) > 0) {
-            NN_ERROR1 ("config: DDSI2Service/Security/SecurityProfile[@cipherkey]: %s: cipher key not required\n",s->key);
+            NN_ERROR ("config: DDSI2Service/Security/SecurityProfile[@cipherkey]: %s: cipher key not required\n",s->key);
           }
           break;
 
         default:
           /* read the cipherkey if present */
           if (!s->key || strlen (s->key) == 0) {
-            NN_ERROR0 ("config: DDSI2Service/Security/SecurityProfile[@cipherkey]: cipher key missing\n");
+            NN_ERROR ("config: DDSI2Service/Security/SecurityProfile[@cipherkey]: cipher key missing\n");
             ok = 0;
           } else if (q_security_plugin.valid_uri && ! (q_security_plugin.valid_uri) (s->cipher,s->key)) {
-            NN_ERROR1 ("config: DDSI2Service/Security/SecurityProfile[@cipherkey]: %s : incorrect key\n", s->key);
+            NN_ERROR ("config: DDSI2Service/Security/SecurityProfile[@cipherkey]: %s : incorrect key\n", s->key);
             ok = 0;
           }
       }
@@ -2808,7 +2810,7 @@ struct cfgst * config_init
           p->securityProfile = s;
         else
         {
-          NN_ERROR1 ("config: DDSI2Service/Partitioning/NetworkPartitions/NetworkPartition[@securityprofile]: %s: unknown securityprofile\n", p->profileName);
+          NN_ERROR ("config: DDSI2Service/Partitioning/NetworkPartitions/NetworkPartition[@securityprofile]: %s: unknown securityprofile\n", p->profileName);
           ok = 0;
         }
       }
@@ -2836,7 +2838,7 @@ struct cfgst * config_init
       if (p) {
         m->partition = p;
       } else {
-        NN_ERROR1 ("config: DDSI2Service/Partitioning/PartitionMappings/PartitionMapping[@networkpartition]: %s: unknown partition\n", m->networkPartition);
+        NN_ERROR ("config: DDSI2Service/Partitioning/PartitionMappings/PartitionMapping[@networkpartition]: %s: unknown partition\n", m->networkPartition);
         ok = 0;
       }
       m = m->next;

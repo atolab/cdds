@@ -79,12 +79,12 @@ static ssize_t ddsi_udp_conn_read (ddsi_tran_conn_t conn, unsigned char * buf, s
     {
       char addrbuf[INET6_ADDRSTRLEN_EXTENDED];
       sockaddr_to_string_with_port (addrbuf, &src);
-      NN_WARNING3 ("%s => %d truncated to %d\n", addrbuf, (int)ret, (int)len);
+      NN_WARNING ("%s => %d truncated to %d\n", addrbuf, (int)ret, (int)len);
     }
   }
   else if (err != os_sockENOTSOCK && err != os_sockECONNRESET)
   {
-    NN_ERROR3 ("UDP recvmsg sock %d: ret %d errno %d\n", (int) ((ddsi_udp_conn_t) conn)->m_sock, (int) ret, err);
+    NN_ERROR ("UDP recvmsg sock %d: ret %d errno %d\n", (int) ((ddsi_udp_conn_t) conn)->m_sock, (int) ret, err);
   }
   return ret;
 }
@@ -134,7 +134,7 @@ static ssize_t ddsi_udp_conn_write (ddsi_tran_conn_t conn, const struct msghdr *
 #endif
         break;
       default:
-        NN_ERROR1("ddsi_udp_conn_write failed with error code %d", err);
+        NN_ERROR("ddsi_udp_conn_write failed with error code %d", err);
     }
   }
   return ret;
@@ -243,7 +243,7 @@ static ddsi_tran_conn_t ddsi_udp_create_conn
   {
     if (config.participantIndex != PARTICIPANT_INDEX_AUTO)
     {
-      NN_ERROR2
+      NN_ERROR
       (
         "UDP make_socket failed for %s port %u\n",
         mcast ? "multicast" : "unicast",

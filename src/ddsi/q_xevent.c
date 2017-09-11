@@ -548,7 +548,7 @@ void xeventq_free (struct xeventq *evq)
       {
         union { void *v; void (*f) (struct xevent *ev, void *arg, nn_mtime_t tnow); } fp;
         fp.f = ev->u.callback.cb;
-        NN_WARNING1("xeventq_free: callback %p did not schedule deletion as required, deleting event anyway\n", fp.v);
+        NN_WARNING("xeventq_free: callback %p did not schedule deletion as required, deleting event anyway\n", fp.v);
         delete_xevent (ev);
       }
     }

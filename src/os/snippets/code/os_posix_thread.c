@@ -177,6 +177,8 @@ os_startRoutineWrapper (
     /* Call the user routine */
     resultValue = context->startRoutine (context->arguments);
 
+    os_report_stack_free();
+
     /* Free the thread context resources, arguments is responsibility */
     /* for the caller of os_procCreate                                */
     os_free (context->threadName);

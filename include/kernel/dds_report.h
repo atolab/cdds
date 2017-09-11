@@ -34,13 +34,13 @@
         DDS_RETCODE_OK,             \
         __VA_ARGS__)
 
-#define DDS_WARNING(...)     \
+#define DDS_WARNING(code,...)       \
     dds_report (                    \
         OS_REPORT_WARNING,          \
         __FILE__,                   \
         __LINE__,                   \
         OS_FUNCTION,                \
-        DDS_RETCODE_OK,             \
+        (code),                     \
         __VA_ARGS__)
 
 #define DDS_REPORT(type, code,...) \
@@ -60,7 +60,7 @@ dds_report(
     const char *file,
     int32_t line,
     const char *function,
-    int32_t code,
+    dds_retcode_t code,
     const char *format,
     ...);
 

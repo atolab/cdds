@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "os/os.h"
 #include "kernel/dds_types.h"
+#include "kernel/dds_err.h"
 
 #define DDS_ERR_CODE_NUM 12
 #define DDS_ERR_MSG_MAX 128

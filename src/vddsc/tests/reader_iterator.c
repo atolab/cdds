@@ -383,11 +383,6 @@ Theory((dds_entity_t rdr), vddsc_read_next, invalid_readers, .init=reader_iterat
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
-
     ret = dds_read_next(rdr, g_samples, g_info);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_str(ret), dds_err_nr(exp));
 }
@@ -500,11 +495,6 @@ Theory((dds_entity_t rdr), vddsc_read_next_wl, invalid_readers, .init=reader_ite
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
-
     ret = dds_read_next_wl(rdr, g_loans, g_info);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -610,11 +600,6 @@ Theory((dds_entity_t rdr), vddsc_take_next, invalid_readers, .init=reader_iterat
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
 
     ret = dds_take_next(rdr, g_samples, g_info);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -725,11 +710,6 @@ Theory((dds_entity_t rdr), vddsc_take_next_wl, invalid_readers, .init=reader_ite
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
 
     ret = dds_take_next_wl(rdr, g_loans, g_info);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));

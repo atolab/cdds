@@ -15,18 +15,15 @@ Installation
 Linux
 *****
 
-Debian
+Ubuntu
 ======
 
-| TODO: (CHAM-322)
-| The contents of the Debian packages are not correct yet. So, it's a bit
-  hard to write this chapter, but it would probably involve
+On Ubuntu and other debian-derived platforms, the product can be installed using a native package.
 
 ::
 
-    sudo apt-get install VortexDDS.deb
-
-and such.
+    sudo dpkg -i VortexDDS-<version>-Linux-lib.deb
+    sudo dpkg -i VortexDDS-<version>-Linux-dev.deb
 
 
 Red Hat
@@ -96,9 +93,10 @@ Windows
 MSI
 ===
 
-| TODO: (CHAM-332)
-| It's not possible to create the MSI packages on win10-64-ospl-1 yet.
-  So, it's a bit   hard to write this chapter.
+The default deployment method on Windows is to install the product using the MSI installer.
+
+The installation process is self-explanatory. Two components are available: one for the runtime libraries,
+and a seperate component containing files to support development (headers, IDL preprocessor, examples etc.).
 
 
 ZIP
