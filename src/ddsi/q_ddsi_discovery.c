@@ -36,6 +36,7 @@
 #include "ddsi/q_xmsg.h"
 #include "ddsi/q_bswap.h"
 #include "ddsi/q_transmit.h"
+#include "ddsi/q_receive.h"
 #include "ddsi/q_lease.h"
 #include "ddsi/q_error.h"
 #include "ddsi/q_builtin_topic.h"
@@ -1766,7 +1767,7 @@ static int defragment (unsigned char **datap, const struct nn_rdata *fragchain, 
   }
 }
 
-int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const struct nn_rdata *fragchain, UNUSED_ARG (const nn_guid_t *rdguid), UNUSED_ARG (void *qarg))
+int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const struct nn_rdata *fragchain, const nn_guid_t *rdguid, void *qarg)
 {
   struct proxy_writer *pwr;
   struct {
@@ -1849,9 +1850,6 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
     goto done_upd_deliv;
   }
 
-  /* Built-ins still do their own deserialization (SPDP <=> pwr ==
-     NULL)). */
-  assert (pwr == NULL || pwr->c.topic == NULL);
   if (statusinfo == 0)
   {
     if (datasz == 0 || !(data_smhdr_flags & DATA_FLAG_DATAFLAG))
@@ -1964,6 +1962,11 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
   }
 
  done_upd_deliv:
+  /* Deliver the sample to user readers as well, when there are interested ones. */
+  if (pwr && pwr->c.topic) {
+    user_dqueue_handler (sampleinfo, fragchain, rdguid, qarg);
+  }
+
   if (needs_free)
     os_free (datap);
   if (pwr)

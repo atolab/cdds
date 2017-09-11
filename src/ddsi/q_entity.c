@@ -1936,18 +1936,60 @@ static void connect_writer_with_proxy_reader (struct writer *wr, struct proxy_re
   writer_add_connection (wr, prd);
 }
 
+static unsigned int reader_related_builtin_id(struct reader *rd)
+{
+    static struct { const char *name; unsigned int id; } readers[] = {
+            { NN_BUILTIN_DCPSTOPIC,        NN_ENTITYID_SEDP_BUILTIN_TOPIC_READER          },
+            { NN_BUILTIN_DCPSPUBLICATION,  NN_ENTITYID_SEDP_BUILTIN_PUBLICATIONS_READER   },
+            { NN_BUILTIN_DCPSSUBSCRIPTION, NN_ENTITYID_SEDP_BUILTIN_SUBSCRIPTIONS_READER  },
+            { NN_BUILTIN_CMPUBLISHER,      NN_ENTITYID_SEDP_BUILTIN_CM_PUBLISHER_READER   },
+            { NN_BUILTIN_CMSUBSCRIBER,     NN_ENTITYID_SEDP_BUILTIN_CM_SUBSCRIBER_READER  },
+            { NN_BUILTIN_CMPARTICIPANT,    NN_ENTITYID_SEDP_BUILTIN_CM_PARTICIPANT_READER }
+    };
+
+    if (rd->xqos && rd->xqos->topic_name) {
+        const char *topic_name = rd->xqos->topic_name;
+        size_t i;
+        for (i = 0; i < sizeof(readers) / sizeof(*readers); i++) {
+            if (strcmp(topic_name, readers[i].name) == 0) {
+                return readers[i].id;
+            }
+        }
+    }
+    return NN_ENTITYID_UNKNOWN;
+}
+
 static void connect_proxy_writer_with_reader (struct proxy_writer *pwr, struct reader *rd, nn_mtime_t tnow)
 {
   const int isb0 = (is_builtin_entityid (pwr->e.guid.entityid, pwr->c.vendor) != 0);
   const int isb1 = (is_builtin_entityid (rd->e.guid.entityid, ownvendorid) != 0);
   int32_t reason;
   nn_count_t init_count;
-  if (isb0 != isb1)
-    return;
-  if (!isb0 && (reason = qos_match_p (rd->xqos, pwr->c.xqos)) >= 0)
-  {
-    reader_qos_mismatch (rd, reason);
-    return;
+
+  if (!isb0) {
+      if (isb1) {
+          return;
+      }
+      reason = qos_match_p (rd->xqos, pwr->c.xqos);
+      if (reason >= 0) {
+          reader_qos_mismatch (rd, reason);
+          return;
+      }
+  } else {
+      nn_entityid_t match;
+      unsigned int rid;
+      if (!isb1) {
+          rid = reader_related_builtin_id(rd);
+          if (rid == NN_ENTITYID_UNKNOWN) {
+              return;
+          }
+      } else {
+          rid = rd->e.guid.entityid.u;
+      }
+      match = builtin_entityid_match(pwr->e.guid.entityid);
+      if (match.u != rid) {
+          return;
+      }
   }
   reader_add_connection (rd, pwr, &init_count);
   proxy_writer_add_connection (pwr, rd, tnow, init_count);
@@ -2124,6 +2166,28 @@ static void generic_do_match (struct entity_common *e, nn_mtime_t tnow)
   struct ephash_enum est;
   struct entity_common *em;
   enum entity_kind mkind = generic_do_match_mkind(e->kind);
+
+#if 1
+  int builtin = is_builtin_entityid (e->guid.entityid, ownvendorid);
+
+  nn_log(LC_DISCOVERY, "match_%s_with_%ss(%s %x:%x:%x:%x) -%d- scanning all %ss\n",
+          generic_do_match_kindstr_us (e->kind), generic_do_match_kindstr_us (mkind),
+          generic_do_match_kindabbrev (e->kind), PGUID (e->guid),
+          builtin,
+          generic_do_match_kindstr(mkind));
+  /* Note: we visit at least all proxies that existed when we called
+   init (with the -- possible -- exception of ones that were
+   deleted between our calling init and our reaching it while
+   enumerating), but we may visit a single proxy reader multiple
+   times. */
+  ephash_enum_init (&est, mkind);
+  os_rwlockRead (&gv.qoslock);
+  while ((em = ephash_enum_next (&est)) != NULL) {
+      generic_do_match_connect(e, em, tnow);
+  }
+  os_rwlockUnlock (&gv.qoslock);
+  ephash_enum_fini (&est);
+#else
   if (!is_builtin_entityid (e->guid.entityid, ownvendorid))
   {
     nn_log(LC_DISCOVERY, "match_%s_with_%ss(%s %x:%x:%x:%x) scanning all %ss\n",
@@ -2167,6 +2231,7 @@ static void generic_do_match (struct entity_common *e, nn_mtime_t tnow)
       ephash_enum_fini (&est);
     }
   }
+#endif
 }
 
 static void generic_do_local_match (struct entity_common *e, nn_mtime_t tnow)
@@ -2231,7 +2296,7 @@ static void new_reader_writer_common (const struct nn_guid *guid, const struct s
 {
   const char *partition = "(default)";
   const char *partition_suffix = "";
-  assert (is_builtin_entityid (guid->entityid, ownvendorid) ? (topic == NULL) : (topic != NULL));
+  assert (is_builtin_entityid (guid->entityid, ownvendorid) || (topic != NULL));
   if (is_builtin_entityid (guid->entityid, ownvendorid))
   {
     /* continue printing it as not being in a partition, the actual
@@ -2575,7 +2640,8 @@ static struct writer * new_writer_guid
   wr->handle_as_transient_local = (wr->xqos->durability.kind == NN_TRANSIENT_LOCAL_DURABILITY_QOS);
   wr->include_keyhash =
     config.generate_keyhash &&
-    ((wr->e.guid.entityid.u & NN_ENTITYID_KIND_MASK) == NN_ENTITYID_KIND_WRITER_WITH_KEY);
+    ((wr->e.guid.entityid.u & NN_ENTITYID_KIND_MASK) == NN_ENTITYID_KIND_WRITER_WITH_KEY) &&
+    !is_builtin_entityid (wr->e.guid.entityid, ownvendorid);
   /* Startup mode causes the writer to treat data in its WHC as if
      transient-local, for the first few seconds after startup of the
      DDSI service. It is done for volatile reliable writers only

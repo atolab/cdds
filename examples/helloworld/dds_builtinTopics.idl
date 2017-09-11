@@ -1,0 +1,39 @@
+#ifndef OSPL_DDS_BUILTINTOPICS_IDL
+#define OSPL_DDS_BUILTINTOPICS_IDL
+
+/*
+This file was the one orginally in ./src/api/dcps/saj/code/.
+(and therefore by implication ./src/api/dcps/cj/java/code).
+*/
+
+#define BUILTIN_TOPIC_KEY_TYPE_NATIVE   long
+
+module DDS {
+
+    typedef BUILTIN_TOPIC_KEY_TYPE_NATIVE BuiltinTopicKey_t[3];
+    typedef sequence<octet> octSeq;
+
+    struct UserDataQosPolicy {
+        octSeq value;
+        // replaced deprecated anonymous sequence<octet> value;
+    };
+
+    struct ParticipantBuiltinTopicData {
+        BuiltinTopicKey_t key;
+        UserDataQosPolicy user_data;
+    };
+#pragma keylist ParticipantBuiltinTopicData key
+
+    struct ProductDataQosPolicy {
+        string value;
+    };
+
+    struct CMParticipantBuiltinTopicData {
+        BuiltinTopicKey_t key;
+        ProductDataQosPolicy product;
+    };
+#pragma keylist CMParticipantBuiltinTopicData key
+
+};
+
+#endif /* OSPL_DDS_BUILTINTOPICS_IDL */

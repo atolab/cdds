@@ -50,6 +50,9 @@
 #include "ddsi/q_static_assert.h"
 
 #include "ddsi/sysdeps.h"
+static const nn_vendorid_t ownvendorid = MY_VENDOR_ID;
+
+
 
 /*
 Notes:
@@ -1964,7 +1967,6 @@ static int deliver_user_data (const struct nn_rsample_info *sampleinfo, const st
      freshly malloced memory (see defragment()) ... that'll have to
      change eventually */
   assert (fragchain->min == 0);
-  assert (!is_builtin_entityid (pwr->e.guid.entityid, pwr->c.vendor));
   /* Can only get here if at some point readers existed => topic can't
      still be NULL, even if there are no readers at the moment */
   assert (topic != NULL);
@@ -2067,14 +2069,16 @@ retry:
           unsigned i;
           for (i = 0; rdary[i]; i++)
           {
-            TRACE (("reader %x:%x:%x:%x\n", PGUID (rdary[i]->e.guid)));
-            if (! (ddsi_plugin.rhc_store_fn) (rdary[i]->rhc, sampleinfo, payload, tk))
-            {
-              if (pwr_locked) os_mutexUnlock (&pwr->e.lock);
-              os_mutexUnlock (&pwr->rdary.rdary_lock);
-              dds_sleepfor (DDS_MSECS (10));
-              if (pwr_locked) os_mutexLock (&pwr->e.lock);
-              goto retry;
+            if (!is_builtin_entityid (rdary[i]->e.guid.entityid, ownvendorid)) {
+                TRACE (("reader %x:%x:%x:%x\n", PGUID (rdary[i]->e.guid)));
+                if (! (ddsi_plugin.rhc_store_fn) (rdary[i]->rhc, sampleinfo, payload, tk))
+                {
+                  if (pwr_locked) os_mutexUnlock (&pwr->e.lock);
+                  os_mutexUnlock (&pwr->rdary.rdary_lock);
+                  dds_sleepfor (DDS_MSECS (10));
+                  if (pwr_locked) os_mutexLock (&pwr->e.lock);
+                  goto retry;
+                }
             }
           }
           os_mutexUnlock (&pwr->rdary.rdary_lock);
@@ -2098,8 +2102,10 @@ retry:
             struct reader *rd;
             if ((rd = ephash_lookup_reader_guid (&m->rd_guid)) != NULL)
             {
-              TRACE (("reader-via-guid %x:%x:%x:%x\n", PGUID (rd->e.guid)));
-              (void) (ddsi_plugin.rhc_store_fn) (rd->rhc, sampleinfo, payload, tk);
+              if (!is_builtin_entityid (m->rd_guid.entityid, ownvendorid)) {
+                TRACE (("reader-via-guid %x:%x:%x:%x\n", PGUID (rd->e.guid)));
+                (void) (ddsi_plugin.rhc_store_fn) (rd->rhc, sampleinfo, payload, tk);
+              }
             }
           }
           if (!pwr_locked) os_mutexUnlock (&pwr->e.lock);
@@ -2107,9 +2113,9 @@ retry:
 
         os_atomic_st32 (&pwr->next_deliv_seq_lowword, (uint32_t) (sampleinfo->seq + 1));
       }
-      else
+      else if (!is_builtin_entityid (rdguid->entityid, ownvendorid))
       {
-        struct reader *rd = ephash_lookup_reader_guid (rdguid);;
+        struct reader *rd = ephash_lookup_reader_guid (rdguid);
         TRACE ((" %"PRId64"=>%x:%x:%x:%x%s\n", sampleinfo->seq, PGUID (*rdguid), rd ? "" : "?"));
         while (rd && ! (ddsi_plugin.rhc_store_fn) (rd->rhc, sampleinfo, payload, tk) && ephash_lookup_proxy_writer_guid (&pwr->e.guid))
         {
