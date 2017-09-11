@@ -3,7 +3,6 @@
 #include "os/os_report.h"
 #include <assert.h>
 #include <string.h>
-#include "kernel/dds_types.h"
 #include "kernel/dds_report.h"
 
 void
@@ -12,7 +11,7 @@ dds_report(
     const char *function,
     int32_t line,
     const char *file,
-    int32_t code,
+    dds_retcode_t code,
     const char *format,
     ...)
 {
@@ -28,7 +27,7 @@ dds_report(
     /* probably never happens, but you can never be to sure */
     assert (OS_REPORT_BUFLEN > 0);
 
-    retcode = dds_err_str(code);
+    retcode = dds_err_str(code*-1);
     offset = strlen(retcode);
     assert (offset < OS_REPORT_BUFLEN);
     (void)memcpy(buffer, retcode, offset);

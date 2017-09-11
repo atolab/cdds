@@ -1,7 +1,6 @@
 #ifndef DDS_OSPLSER_H
 #define DDS_OSPLSER_H
 
-#include "kernel/dds_types.h"
 #include "ddsi/ddsi_ser.h"
 #include "ddsi/q_xmsg.h"
 

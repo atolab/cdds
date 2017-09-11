@@ -311,7 +311,7 @@ extern "C" {
      * - return
      *   Upon successful completion will return the number of
      *   bytes written to file
-     *   or a negative value if an error occured.
+     *   or a negative value if an error occurred.
      *   errno will be set in such case
      * - Writes formatted output to file.
      */

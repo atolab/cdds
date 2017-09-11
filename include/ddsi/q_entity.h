@@ -13,9 +13,6 @@
 #define Q_ENTITY_H
 
 #include "os/os.h"
-
-#include "kernel/dds_types.h"
-
 #include "util/ut_avl.h"
 #include "ddsi/q_rtps.h"
 #include "ddsi/q_protocol.h"

@@ -1011,7 +1011,7 @@ static int write_sample_eot (struct nn_xpack *xp, struct writer *wr, struct nn_p
     const char *ttname = wr->topic ? wr->topic->typename : "(null)";
     ppbuf[0] = '\0';
     tmp = sizeof (ppbuf) - 1;
-    NN_WARNING7 ("dropping oversize (%u > %u) sample from local writer %x:%x:%x:%x %s/%s:%s%s\n",
+    NN_WARNING ("dropping oversize (%u > %u) sample from local writer %x:%x:%x:%x %s/%s:%s%s\n",
                  ddsi_serdata_size (serdata), config.max_sample_size,
                  PGUID (wr->e.guid), tname, ttname, ppbuf,
                  tmp < (int) sizeof (ppbuf) ? "" : " (trunc)");

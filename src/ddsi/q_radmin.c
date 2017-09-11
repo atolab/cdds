@@ -697,7 +697,7 @@ void *nn_rmsg_alloc (struct nn_rmsg *rmsg, uint32_t size)
     newchunk = nn_rbuf_alloc (rbufpool);
     if (newchunk == NULL)
     {
-      NN_WARNING1 ("nn_rmsg_alloc: can't allocate more memory (%u bytes) ... giving up\n", size);
+      NN_WARNING ("nn_rmsg_alloc: can't allocate more memory (%u bytes) ... giving up\n", size);
       return NULL;
     }
     init_rmsg_chunk (newchunk, rbufpool->current);
@@ -2325,13 +2325,13 @@ unsigned nn_reorder_nackmap (struct nn_reorder *reorder, seqno_t base, seqno_t m
 #else
   if (base > reorder->next_seq)
   {
-    NN_ERROR2 ("nn_reorder_nackmap: incorrect base sequence number supplied (%"PRId64" > %"PRId64")\n", base, reorder->next_seq);
+    NN_ERROR ("nn_reorder_nackmap: incorrect base sequence number supplied (%"PRId64" > %"PRId64")\n", base, reorder->next_seq);
     base = reorder->next_seq;
   }
 #endif
   if (maxseq + 1 < base)
   {
-    NN_ERROR2 ("nn_reorder_nackmap: incorrect max sequence number supplied (maxseq %"PRId64" base %"PRId64")\n", maxseq, base);
+    NN_ERROR ("nn_reorder_nackmap: incorrect max sequence number supplied (maxseq %"PRId64" base %"PRId64")\n", maxseq, base);
     maxseq = base - 1;
   }
 
