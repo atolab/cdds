@@ -70,6 +70,7 @@ void error (const char *fmt, ...);
 #define error_report(rc, fmt, ...) if (rc < DDS_SUCCESS) { error(fmt); DDS_ERR_CHECK(rc, DDS_CHECK_REPORT); }
 #define error_return(rc, fmt, ...) if (rc < DDS_SUCCESS) { error_report(rc, fmt); return; }
 #define error_exit(fmt, ...) { error(fmt); exit(2); }
+#define os_error_exit(osres, fmt, ...) if (osres != os_resultSuccess) { error(fmt); exit(2); }
 
 void save_argv0 (const char *argv0);
 int common_init (const char *argv0);

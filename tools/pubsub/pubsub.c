@@ -23,13 +23,6 @@
 #include "porting.h"
 #include "os/os.h"
 
-//#define DEBUG
-#ifdef DEBUG
-#define PRINTD printf
-#else
-#define PRINTD(...)
-#endif
-
 //#define NUMSTR "0123456789"
 //#define HOSTNAMESTR "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-." NUMSTR
 
@@ -894,10 +887,10 @@ static void print_sampleinfo (unsigned long long *tstart, unsigned long long tno
   if (print_metadata & PM_DGEN)
     n += printf ("%s%d", n > 0 ? sep : "", si->disposed_generation_count), sep = " ";
   if (print_metadata & PM_NWGEN)
-    n += printf ("%s%d", n > 0 ? sep : "", si->no_writers_generation_count), sep = " ";
+    n += printf ("%s%d", n > 0 ? sep : "", si->no_writers_generation_count);
   sep = " : ";
   if (print_metadata & PM_RANKS)
-    n += printf ("%s%d %d %d", n > 0 ? sep : "", si->sample_rank, si->generation_rank, si->absolute_generation_rank), sep = " ";
+    n += printf ("%s%d %d %d", n > 0 ? sep : "", si->sample_rank, si->generation_rank, si->absolute_generation_rank);
   sep = " : ";
   if (print_metadata & PM_STATE)
     n += printf ("%s%c%c%c", n > 0 ? sep : "", isc, ssc, vsc), sep = " ";
@@ -1236,7 +1229,6 @@ union data {
 
 static void pub_do_auto (const struct writerspec *spec)
 {
-	PRINTD("starting of pub_do_auto\n");
 	int result;
 //	dds_instance_handle_t handle[nkeyvals];
 	dds_instance_handle_t *handle = (dds_instance_handle_t*) os_malloc(sizeof(dds_instance_handle_t)*nkeyvals); //variable size array malloc
@@ -1747,7 +1739,7 @@ static uint32_t subthread (void *vspec)
 
   rc = dds_get_name(dds_get_topic(rd), tn, sizeof(tn));
   error_report(rc, "dds_get_name failed");
-  snprintf(tag, sizeof(tag), "[%u:%s]", spec->idx, tn);
+  (void)snprintf(tag, sizeof(tag), "[%u:%s]", spec->idx, tn);
 
   if (wait_hist_data)
   {
@@ -1854,10 +1846,14 @@ static uint32_t subthread (void *vspec)
 		{
 			dds_subscription_matched_status_t status;
 			rc = dds_get_subscription_matched_status(rd, &status);
-			printf ("[pre-read: subscription-matched: total=(%d change %d) current=(%d change %d) handle=%"PRIu64"]\n",
-				  status.total_count, status.total_count_change,
-				  status.current_count, status.current_count_change,
-				  status.last_publication_handle);
+            error_report(rc, "dds_get_subscription_matched_status failed");
+            if (rc == DDS_SUCCESS) {
+                printf("[pre-read: subscription-matched: total=(%d change %d) current=(%d change %d) handle=%"PRIu64"]\n",
+                    status.total_count, status.total_count_change,
+                    status.current_count,
+                    status.current_count_change,
+	                status.last_publication_handle);
+			}
 		}
 
         /* Always take NOT_ALIVE_DISPOSED data because it means the
@@ -2051,9 +2047,7 @@ static uint32_t subthread (void *vspec)
   }
 
 //  ret = dds_waitset_detach(ws, termcond);
-//  PRINTD("Subthread: dds_waitset_detach: ret: %d\n",ret);
 //  ret = dds_delete(ws);
-//  PRINTD("Subthread: dds_waitset_delete: ret: %d\n",ret);
 
   if (once_mode)
   {
@@ -2099,9 +2093,7 @@ static uint32_t autotermthread(void *varg __attribute__((unused)))
   }
 
   rc = dds_waitset_detach(ws, termcond);
-  PRINTD("Autotermthread: dds_waitset_detach: ret: %d\n", ret);
   rc = dds_delete(ws);
-  PRINTD("Autotermthread: dds_waitset_delete: ret: %d\n", ret);
 
   return 0;
 }
@@ -2636,7 +2628,6 @@ int main (int argc, char *argv[])
 
   if (argc - os_get_optind() < 1)
   {
-	  PRINTD("argc: %d optind: %d\n", argc, os_get_optind());
 	  usage (argv[0]);
   }
 
@@ -2719,7 +2710,6 @@ int main (int argc, char *argv[])
     if (want_reader)
     {
     	qos = new_subqos ();
-    	PRINTD("Entering setqos for subscriber\n");
 		setqos_from_args (qos, nqsubscriber, qsubscriber);
 		sub = new_subscriber (qos, (unsigned) (argc - os_get_optind()), (const char **) ps);
     	free_qos (qos);
@@ -2727,7 +2717,6 @@ int main (int argc, char *argv[])
     if (want_writer)
     {
       qos = new_pubqos ();
-      PRINTD("Entering setqos for publisher\n");
       setqos_from_args (qos, nqpublisher, qpublisher);
       pub = new_publisher (qos, (unsigned) (argc - os_get_optind()), (const char **) ps);
       free_qos (qos);
@@ -2741,7 +2730,6 @@ int main (int argc, char *argv[])
   for (i = 0; i <= specidx; i++)
   {
     qos = new_tqos ();
-    PRINTD("Entering setqos for Topic\n");
     setqos_from_args (qos, nqtopic, qtopic);
     switch (spec[i].rd.topicsel)
     {
@@ -2792,7 +2780,6 @@ int main (int argc, char *argv[])
     {
 	  int ret = 0;
       qos = new_rdqos (sub, spec[i].cftp);
-      PRINTD("Entering setqos for Reader\n");
       setqos_from_args (qos, nqreader, qreader);
       spec[i].rd.rd = new_datareader_listener (qos, rdlistener);
       spec[i].rd.sub = sub;
@@ -2803,7 +2790,6 @@ int main (int argc, char *argv[])
     {
       int ret = 0;
       qos = new_wrqos (pub, spec[i].tp);
-      PRINTD("Entering setqos for Writer\n");
       setqos_from_args (qos, nqwriter, qwriter);
       spec[i].wr.wr = new_datawriter_listener (qos, wrlistener);
       spec[i].wr.pub = pub;
@@ -2883,6 +2869,7 @@ int main (int argc, char *argv[])
 
   os_threadAttr attr;
   os_threadAttrInit(&attr);
+  os_result osres;
 
   if (want_writer)
   {
@@ -2894,7 +2881,8 @@ int main (int argc, char *argv[])
         case WRM_NONE:
           break;
         case WRM_AUTO:
-          os_threadCreate(&spec[i].wrtid, "pubthread_auto", &attr, pubthread_auto, &spec[i].wr);
+          osres = os_threadCreate(&spec[i].wrtid, "pubthread_auto", &attr, pubthread_auto, &spec[i].wr);
+          os_error_exit(osres, "Error: cannot create thread pubthread_auto");
           break;
         case WRM_INPUT:
           wsl = os_malloc(sizeof(*wsl));
@@ -2913,19 +2901,22 @@ int main (int argc, char *argv[])
     if (wrspecs) /* start with first wrspec */
     {
       wrspecs = wrspecs->next;
-      os_threadCreate(&inptid, "pubthread", &attr, pubthread, wrspecs);
+      osres = os_threadCreate(&inptid, "pubthread", &attr, pubthread, wrspecs);
+      os_error_exit(osres, "Error: cannot create thread pubthread");
     }
   }
   else if (dur > 0) /* note: abusing inptid */
   {
-	os_threadCreate(&inptid, "autotermthread", &attr, autotermthread, NULL);
+      osres = os_threadCreate(&inptid, "autotermthread", &attr, autotermthread, NULL);
+      os_error_exit(osres, "Error: cannot create thread autotermthread");
   }
   for (i = 0; i <= specidx; i++)
   {
     if (spec[i].rd.mode != MODE_NONE)
     {
       spec[i].rd.idx = i;
-      os_threadCreate(&spec[i].rdtid, "subthread", &attr, subthread, &spec[i].rd);
+      osres = os_threadCreate(&spec[i].rdtid, "subthread", &attr, subthread, &spec[i].rd);
+      os_error_exit(osres, "Error: cannot create thread subthread");
     }
   }
   if (want_writer || dur > 0)
@@ -2933,14 +2924,14 @@ int main (int argc, char *argv[])
     int term_called = 0;
     if (!want_writer || wrspecs)
     {
-      os_threadWaitExit(inptid, NULL);
+      (void)os_threadWaitExit(inptid, NULL);
       term_called = 1;
       terminate ();
     }
     for (i = 0; i <= specidx; i++)
     {
       if (spec[i].wr.mode == WRM_AUTO)
-    	os_threadWaitExit(spec[i].wrtid, NULL);
+        (void)os_threadWaitExit(spec[i].wrtid, NULL);
     }
     if (!term_called)
       terminate ();
@@ -2953,7 +2944,7 @@ int main (int argc, char *argv[])
     {
       if (spec[i].rd.mode != MODE_NONE)
       {
-    	os_threadWaitExit(spec[i].rdtid, &ret);
+        (void)os_threadWaitExit(spec[i].rdtid, &ret);
         if ((uintptr_t) ret > exitcode)
           exitcode = (uintptr_t) ret;
       }
@@ -2999,11 +2990,9 @@ int main (int argc, char *argv[])
 //  dds_delete(termcond);
   common_fini ();
   if (sleep_at_end) {
-	  PRINTD("Sleep at the end of main\n");
 	  os_time delay = { sleep_at_end, 0 };
 	  os_nanoSleep(delay);
 //    sleep (sleep_at_end);
   }
-  PRINTD("End of main\n\n");
   return (int) exitcode;
 }

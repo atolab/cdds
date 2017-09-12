@@ -10,15 +10,7 @@
 
 #include "testtype.h"
 #include "common.h"
-//#include "porting.h"
 #include "os/os.h"
-
-//#define DEBUG
-#ifdef DEBUG
-#define PRINTD printf
-#else
-#define PRINTD(...)
-#endif
 
 enum qostype {
   QT_TOPIC,
@@ -180,8 +172,10 @@ static void xsnprintf (char *buf, size_t bufsz, size_t *p, const char *fmt, ...)
 
 void hist_print (struct hist *h, uint64_t dt, int reset)
 {
-  char *l = (char *) os_malloc(sizeof(char) * (h->nbins + 200));
-  char *hist = (char *) os_malloc(sizeof(char) * (h->nbins + 1));
+  const size_t l_size = sizeof(char) * h->nbins + 200;
+  const size_t hist_size = sizeof(char) * h->nbins + 1;
+  char *l = (char *) os_malloc(l_size);
+  char *hist = (char *) os_malloc(hist_size);
   double dt_s = dt / 1e9, avg;
   uint64_t peak = 0, cnt = h->under + h->over;
   size_t p = 0;
@@ -213,52 +207,52 @@ void hist_print (struct hist *h, uint64_t dt, int reset)
 
   avg = cnt / dt_s;
   if (avg < 999.5)
-    xsnprintf (l, sizeof(l), &p, "%5.3g", avg);
+    xsnprintf (l, l_size, &p, "%5.3g", avg);
   else if (avg < 1e6)
-    xsnprintf (l, sizeof(l), &p, "%4.3gk", avg / 1e3);
+    xsnprintf (l, l_size, &p, "%4.3gk", avg / 1e3);
   else
-    xsnprintf (l, sizeof(l), &p, "%4.3gM", avg / 1e6);
-  xsnprintf (l, sizeof(l), &p, "/s (");
+    xsnprintf (l, l_size, &p, "%4.3gM", avg / 1e6);
+  xsnprintf (l, l_size, &p, "/s (");
 
   if (cnt < (uint64_t) 10e3)
-    xsnprintf (l, sizeof(l), &p, "%5"PRIu64" ", cnt);
+    xsnprintf (l, l_size, &p, "%5"PRIu64" ", cnt);
   else if (cnt < (uint64_t) 1e6)
-    xsnprintf (l, sizeof(l), &p, "%5.1fk", cnt / 1e3);
+    xsnprintf (l, l_size, &p, "%5.1fk", cnt / 1e3);
   else
-    xsnprintf (l, sizeof(l), &p, "%5.1fM", cnt / 1e6);
+    xsnprintf (l, l_size, &p, "%5.1fM", cnt / 1e6);
 
-  xsnprintf (l, sizeof(l), &p, " in %.1fs) ", dt_s);
+  xsnprintf (l, l_size, &p, " in %.1fs) ", dt_s);
 
   if (h->min == UINT64_MAX)
-    xsnprintf (l, sizeof(l), &p, " inf ");
+    xsnprintf (l, l_size, &p, " inf ");
   else if (h->min < 1000)
-    xsnprintf (l, sizeof(l), &p, "%3"PRIu64"n ", h->min);
+    xsnprintf (l, l_size, &p, "%3"PRIu64"n ", h->min);
   else if (h->min + 500 < 1000000)
-    xsnprintf (l, sizeof(l), &p, "%3"PRIu64"u ", (h->min + 500) / 1000);
+    xsnprintf (l, l_size, &p, "%3"PRIu64"u ", (h->min + 500) / 1000);
   else if (h->min + 500000 < 1000000000)
-    xsnprintf (l, sizeof(l), &p, "%3"PRIu64"m ", (h->min + 500000) / 1000000);
+    xsnprintf (l, l_size, &p, "%3"PRIu64"m ", (h->min + 500000) / 1000000);
   else
-    xsnprintf (l, sizeof(l), &p, "%3"PRIu64"s ", (h->min + 500000000) / 1000000000);
+    xsnprintf (l, l_size, &p, "%3"PRIu64"s ", (h->min + 500000000) / 1000000000);
 
   if (h->bin0 > 0)
   {
     int pct = (cnt == 0) ? 0 : 100 * (int) ((h->under + cnt/2) / cnt);
-    xsnprintf (l, sizeof(l), &p, "%3d%% ", pct);
+    xsnprintf (l, l_size, &p, "%3d%% ", pct);
   }
 
   {
     int pct = (cnt == 0) ? 0 : 100 * (int) ((h->over + cnt/2) / cnt);
-    xsnprintf (l, sizeof(l), &p, "|%s| %3d%%", hist, pct);
+    xsnprintf (l, l_size, &p, "|%s| %3d%%", hist, pct);
   }
 
   if (h->max < 1000)
-    xsnprintf (l, sizeof(l), &p, " %3"PRIu64"n", h->max);
+    xsnprintf (l, l_size, &p, " %3"PRIu64"n", h->max);
   else if (h->max + 500 < 1000000)
-    xsnprintf (l, sizeof(l), &p, " %3"PRIu64"u", (h->max + 500) / 1000);
+    xsnprintf (l, l_size, &p, " %3"PRIu64"u", (h->max + 500) / 1000);
   else if (h->max + 500000 < 1000000000)
-    xsnprintf (l, sizeof(l), &p, " %3"PRIu64"m", (h->max + 500000) / 1000000);
+    xsnprintf (l, l_size, &p, " %3"PRIu64"m", (h->max + 500000) / 1000000);
   else
-    xsnprintf (l, sizeof(l), &p, " %3"PRIu64"s", (h->max + 500000000) / 1000000000);
+    xsnprintf (l, l_size, &p, " %3"PRIu64"s", (h->max + 500000000) / 1000000000);
 
   (void) p;
   puts (l);
@@ -301,9 +295,10 @@ int common_init (const char *argv0)
 void common_fini (void)
 {
 	dds_return_t rc;
-	if(qosprov != 0)
+	if(qosprov != 0) {
 		rc = dds_delete(qosprov);
-	error_report(rc, "dds_delete qosprov failed");
+		error_report(rc, "dds_delete qosprov failed");
+	}
 	rc = dds_delete(dp);
 	error_report(rc, "dds_delete participant failed");
 }
@@ -491,13 +486,14 @@ dds_entity_t new_publisher (const struct qos *a, unsigned npartitions, const cha
 
 dds_entity_t new_subscriber (const struct qos *a, unsigned npartitions, const char **partitions)
 {
-	dds_qos_t *sQos = dds_qos_create();
+	dds_qos_t *sQos;
 
 	if (a == NULL) {
 	    sQos = dds_qos_create();
 	} else {
 		if (a->qt != QT_SUBSCRIBER)
 		    error_exit("new_topic called with non-subscriber qos\n");
+        sQos = a->u.sub.q;
 	}
 	dds_qset_partition(sQos, npartitions, partitions);
 	dds_entity_t s = dds_create_subscriber(dp, sQos, NULL);
@@ -786,7 +782,6 @@ void qos_reliability (struct qos *a, const char *arg)
 	dds_qos_t *qp = get_qos_TRW(a, "reliability");
 	const char *argp = arg;
 	dds_duration_t max_block_t = DDS_MSECS(100);
-	PRINTD("duration: %"PRId64 " \n\n", max_block_t);
 
 	if (qp == NULL)
 		return;
@@ -796,7 +791,6 @@ void qos_reliability (struct qos *a, const char *arg)
 		case 'b':
 		case 'n':
 			dds_qset_reliability(qp, DDS_RELIABILITY_BEST_EFFORT, max_block_t);
-			PRINTD("max_block_t: %"PRId64 " case: n \n\n", max_block_t);
 			break;
 		case 'r':
 		case 'y':
@@ -820,7 +814,6 @@ void qos_reliability (struct qos *a, const char *arg)
 				}
 			}
 			dds_qset_reliability(qp, DDS_RELIABILITY_RELIABLE, max_block_t);
-			PRINTD("max_block_t: %"PRId64 " case: y \n\n", max_block_t);
 			break;
 		default:
 		    error_exit("reliability qos: %s: invalid\n", arg);
@@ -843,7 +836,6 @@ void qos_liveliness (struct qos *a, const char *arg)
 
 	if (strcmp (arg, "a") == 0)
 	{
-		PRINTD("Inside qos_liveliness_automatic\n\n");
 		dds_qset_liveliness(qp, DDS_LIVELINESS_AUTOMATIC, DDS_INFINITY);
 	}
 	else if (sscanf (arg, "p:%lf%n", &lease_duration, &pos) == 1 && arg[pos] == 0)
@@ -888,7 +880,6 @@ void qos_latency_budget (struct qos *a, const char *arg)
 	if (qp == NULL)
 		return;
 	qos_simple_duration (&duration, "latency_budget", arg);
-	PRINTD("Duration: %" PRId64 " \n\n",duration);
 	dds_qset_latency_budget(qp, duration);
 }
 
@@ -899,7 +890,6 @@ void qos_deadline (struct qos *a, const char *arg)
   if (qp == NULL)
     return;
   qos_simple_duration (&deadline, "deadline", arg);
-  PRINTD("Deadline: %"PRId64"\n\n",deadline);
   dds_qset_deadline(qp, deadline);
 }
 
@@ -910,7 +900,6 @@ void qos_lifespan (struct qos *a, const char *arg)
 	if (qp == NULL)
 		return;
 	qos_simple_duration (&duration, "lifespan", arg);
-	PRINTD("Duration: %" PRId64 " \n\n",duration);
 	dds_qset_lifespan(qp, duration);
 }
 
@@ -1110,14 +1099,9 @@ void set_qosprovider (const char *arg)
     profile = os_strdup(arg);
     profile[p-arg] = 0;
   }
-  PRINTD("set_qosprovider:: uri: %s, profile: %s\n",uri,profile);
 
-//  if((result = dds_qosprovider_create(&qosprov, uri, profile)) != DDS_RETCODE_OK)	//Todo: There is no qosprovider_create in ddsi
+//  if((result = dds_qosprovider_create(&qosprov, uri, profile)) != DDS_RETCODE_OK)	//Todo: There is no qosprovider_create in dds.h, yet
 //	  error("dds_qosprovider_create(%s,%s) failed\n", uri, profile ? profile : "(null)");
-  dds_string_free((char *) arg);
-  dds_string_free((char *) p);
-  dds_string_free((char *) xs);
-  dds_string_free((char *) uri);
   os_free(profile);
 }
 
