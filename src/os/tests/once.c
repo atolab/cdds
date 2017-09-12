@@ -78,14 +78,16 @@ static uint32_t
 os_once_parallel_thr(
     void *args)
 {
-    os_time sched_delay = { .tv_sec = 0,.tv_nsec = 250000 };
+    const os_time sched_delay = { .tv_sec = 0,.tv_nsec = 25000000 }; /* 25ms */
+    const os_time poll_delay = { .tv_sec = 0,.tv_nsec = 5000000 }; /* 5ms */
     struct os_once_parallel *state = (struct os_once_parallel *)args;
     bool done = false;
+    bool started = false;
 
     while (!done) {
         switch (os_atomic_ld32(&state->flag)) {
         case OS_ONCE_STATE_STARTUP:
-            if (os_atomic_inc32_nv(&state->started) == OS_ONCE_NUM_THREADS) {
+            if (!started && (os_atomic_inc32_nv(&state->started) == OS_ONCE_NUM_THREADS)) {
                 printf("%"PRIxMAX": Started. Signalling GO.\n", os_threadIdToInteger(os_threadIdSelf()));
                 os_atomic_st32(&state->flag, OS_ONCE_STATE_GO);
                 os_mutexLock(&state->m);
@@ -94,11 +96,12 @@ os_once_parallel_thr(
                 os_nanoSleep(sched_delay);
             }
             else {
-                printf("%"PRIxMAX": Started. Awaiting GO.\n", os_threadIdToInteger(os_threadIdSelf()));
+                if(!started ) printf("%"PRIxMAX": Started. Awaiting GO.\n", os_threadIdToInteger(os_threadIdSelf()));
                 os_mutexLock(&state->m);
-                os_condWait(&state->c, &state->m);
+                (void) os_condTimedWait(&state->c, &state->m, &poll_delay);
                 os_mutexUnlock(&state->m);
             }
+            started = true;
             break;
         case OS_ONCE_STATE_GO:
             os_once(&state->init1, &once1_func);
