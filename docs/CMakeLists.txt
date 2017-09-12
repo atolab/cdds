@@ -9,7 +9,7 @@ option(BUILD_DOCS, "Enable generation of docs." OFF)
 # Jenkins job/development machine can download them from there.
 
 set(JENKINS_BASE_URI "http://jenkins.prismtech.com:8080/")
-set(JENKINS_DOCS_JOB_NAME "marcels-ChameleonDocumentationLinux64bitTemp")
+set(JENKINS_DOCS_JOB_NAME "BuildChameleonLinux64bit")
 set(VORTEXDDS_PDF_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}.pdf")
 set(VORTEXDDS_HTML_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}HTML.tar.gz")
 set(DOCS_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/..")
