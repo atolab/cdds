@@ -35,6 +35,9 @@ extern "C" {
         os_mutex mutex;
     } os_rwlock;
 
+    typedef pthread_once_t os_once_t;
+    #define OS_ONCE_T_STATIC_INIT PTHREAD_ONCE_INIT
+
     void os_syncModuleInit(void);
     void os_syncModuleExit(void);
 
