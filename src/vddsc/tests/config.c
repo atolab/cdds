@@ -1,5 +1,6 @@
 #include "dds.h"
 #include <criterion/criterion.h>
+#include <criterion/logging.h>
 #include "os/os.h"
 #include "config_env.h"
 
