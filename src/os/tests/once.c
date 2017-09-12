@@ -47,7 +47,7 @@ CUnit_Test(os_once, basic)
 static os_atomic_uint32_t counter1 = OS_ATOMIC_UINT32_INIT(0);
 static void once1_func(void)
 {
-    os_time delay = { .tv_sec = 0,.tv_nsec = 250000 };
+    os_time delay = { .tv_sec = 0,.tv_nsec = 250000000 }; /* 250ms */
     os_nanoSleep(delay);
     printf("%"PRIxMAX": Counter 1 increased to %u\n", os_threadIdToInteger(os_threadIdSelf()), os_atomic_inc32_nv(&counter1));
 }
@@ -56,7 +56,7 @@ static void once1_func(void)
 static os_atomic_uint32_t counter2 = OS_ATOMIC_UINT32_INIT(0);
 static void once2_func(void)
 {
-    os_time delay = { .tv_sec = 0, .tv_nsec = 500000 };
+    os_time delay = { .tv_sec = 0, .tv_nsec = 500000000 }; /* 500ms */
     os_nanoSleep(delay);
     printf("%"PRIxMAX": Counter 2 increased to %u\n", os_threadIdToInteger(os_threadIdSelf()), os_atomic_inc32_nv(&counter2));
 }
