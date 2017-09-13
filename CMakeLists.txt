@@ -32,10 +32,7 @@ add_subdirectory(idlc)
 add_subdirectory(src)
 add_subdirectory(examples)
 
-option(BUILD_DOCS, "Enable generation of docs" OFF)
-if (BUILD_DOCS)
-  add_subdirectory(docs)
-endif()
+add_subdirectory(docs)
 
 # Pull-in CPack and support for generating <Package>Config.cmake and packages.
 include(Packaging)
