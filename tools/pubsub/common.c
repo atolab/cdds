@@ -842,13 +842,13 @@ void qos_liveliness (struct qos *a, const char *arg)
 	{
 		if (lease_duration <= 0 || double_to_dds_duration (&dd, lease_duration) < 0)
 		    error_exit("liveliness qos: %s: lease duration out of range\n", arg);
-		dds_qset_liveliness(qp, DDS_LIVELINESS_MANUAL_BY_PARTICIPANT, lease_duration);
+		dds_qset_liveliness(qp, DDS_LIVELINESS_MANUAL_BY_PARTICIPANT, dd);
 	}
 	else if (sscanf (arg, "w:%lf%n", &lease_duration, &pos) == 1 && arg[pos] == 0)
 	{
 		if (lease_duration <= 0 || double_to_dds_duration (&dd, lease_duration) < 0)
 		    error_exit("liveliness qos: %s: lease duration out of range\n", arg);
-		dds_qset_liveliness(qp, DDS_LIVELINESS_MANUAL_BY_TOPIC, lease_duration);
+		dds_qset_liveliness(qp, DDS_LIVELINESS_MANUAL_BY_TOPIC, dd);
 	}
 	else
 	{

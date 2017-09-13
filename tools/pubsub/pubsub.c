@@ -448,7 +448,7 @@ static int set_pub_partition (dds_entity_t pub, const char *buf)
   dds_return_t rc = change_publisher_partitions (pub, nps, ps);
   error_report(rc, "set_pub_partition failed: ");
   os_free (bufcopy);
-  os_free (ps);
+  os_free ((char **)ps);
   return 0;
 }
 
@@ -939,42 +939,42 @@ static void print_K (unsigned long long *tstart, unsigned long long tnow, dds_en
 
 static void print_seq_KS (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, KeyedSeq **mseq, int count)
 {
-  unsigned i;
+  int i;
   for (i = 0; i < count; i++)
     print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_KS);
 }
 
 static void print_seq_K32 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed32 **mseq, int count)
 {
-  unsigned i;
+  int i;
   for (i = 0; i < count; i++)
     print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K32);
 }
 
 static void print_seq_K64 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed64 **mseq, int count)
 {
-  unsigned i;
+  int i;
   for (i = 0; i < count; i++)
     print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K64);
 }
 
 static void print_seq_K128 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed128 **mseq, int count)
 {
-  unsigned i;
+  int i;
   for (i = 0; i < count; i++)
     print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K128);
 }
 
 static void print_seq_K256 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed256 **mseq, int count)
 {
-  unsigned i;
+  int i;
   for (i = 0; i < count; i++)
     print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K256);
 }
 
 static void print_seq_OU (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd __attribute__ ((unused)), const char *tag, const dds_sample_info_t *si, const OneULong **mseq, int count)
 {
-  unsigned i;
+  int i;
   for (i = 0; i < count; i++)
   {
 	os_flockfile(stdout);
@@ -1802,7 +1802,7 @@ static uint32_t subthread (void *vspec)
     init_eseq_admin(&eseq_admin, nkeyvals);
 
     int ii = 0;
-    for(ii=0; ii<spec->read_maxsamples; ii++) {
+    for(ii = 0; ii < (int32_t) spec->read_maxsamples; ii++) {
     	mseq[ii] = NULL;
     }
 
@@ -1834,7 +1834,7 @@ static uint32_t subthread (void *vspec)
       for (gi = 0; gi < (spec->polling ? 1 : nxs); gi++)
       {
           dds_entity_t cond = !spec->polling && xs[gi] != 0 ? (dds_entity_t) xs[gi] : 0;
-    	  unsigned i;
+          int32_t i;
 
         if (cond == termcond)
           continue;
@@ -2054,7 +2054,7 @@ static uint32_t subthread (void *vspec)
     /* trigger EOF for writer side, so we actually do terminate */
     terminate();
   }
-  return exitcode;
+  return (uint32_t)exitcode;
 }
 
 static uint32_t autotermthread(void *varg __attribute__((unused)))
@@ -2440,9 +2440,9 @@ int main (int argc, char *argv[])
         if (strncmp(os_get_optarg(), "provider=", 9) == 0) {
           set_qosprovider (os_get_optarg()+9);
         } else {
-          unsigned long n = strspn(os_get_optarg(), "atrwps");
+          size_t n = strspn(os_get_optarg(), "atrwps");
           const char *colon = strchr(os_get_optarg(), ':');
-          if (colon == NULL || n == 0 || n != (unsigned long) (colon - os_get_optarg())) {
+          if (colon == NULL || n == 0 || n != (size_t) (colon - os_get_optarg())) {
             fprintf (stderr, "-q %s: flags indicating to which entities QoS's apply must match regex \"[^atrwps]+:\"\n", os_get_optarg());
             exit(2);
           } else {
@@ -2964,11 +2964,11 @@ int main (int argc, char *argv[])
     }
   }
 
-  os_free(qtopic);
-  os_free(qpublisher);
-  os_free(qsubscriber);
-  os_free(qreader);
-  os_free(qwriter);
+  os_free((char **) qtopic);
+  os_free((char **) qpublisher);
+  os_free((char **) qsubscriber);
+  os_free((char **) qreader);
+  os_free((char **) qwriter);
 
   for (i = 0; i <= specidx; i++)
   {
