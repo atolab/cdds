@@ -1,0 +1,55 @@
+module TypesArrayKey {
+    struct long_arraytypekey {
+        long key[20]; //@Key
+    };
+#pragma keylist long_arraytypekey key
+
+    typedef long long longlong;
+    struct longlong_arraytypekey {
+        longlong key[20]; //@Key
+    };
+#pragma keylist longlong_arraytypekey key
+
+    typedef unsigned short unsignedshort;
+    struct unsignedshort_arraytypekey {
+        unsignedshort key[20]; //@Key
+    };
+#pragma keylist unsignedshort_arraytypekey key
+
+    typedef unsigned long unsignedlong;
+    struct unsignedlong_arraytypekey {
+        unsignedlong key[20]; //@Key
+    };
+#pragma keylist unsignedlong_arraytypekey key
+
+    typedef unsigned long long unsignedlonglong;
+    struct unsignedlonglong_arraytypekey {
+        unsignedlonglong key[20]; //@Key
+    };
+#pragma keylist unsignedlonglong_arraytypekey key
+
+    struct float_arraytypekey {
+        float key[20]; //@Key
+    };
+#pragma keylist float_arraytypekey key
+
+    struct double_arraytypekey {
+        double key[20]; //@Key
+    };
+#pragma keylist double_arraytypekey key
+
+    struct char_arraytypekey {
+        char key[128]; //@Key
+    };
+#pragma keylist char_arraytypekey key
+
+    struct boolean_arraytypekey {
+        boolean key[128]; //@Key
+    };
+#pragma keylist boolean_arraytypekey key
+
+    struct octet_arraytypekey {
+        octet key[128]; //@Key
+    };
+#pragma keylist octet_arraytypekey key
+};
