@@ -1,8 +1,8 @@
 #include "qos.h"
+#include "RoundTrip.h"
 #include <criterion/logging.h>
 
 static dds_entity_t g_participant = 0;
-static dds_entity_t g_subscriber = 0;
 
 static void
 setup(void)
@@ -88,13 +88,13 @@ Test(vddsc_builtin_topics, availability_builtin_topics, .init = setup, .fini = t
   dds_entity_t topic;
 
   topic = dds_find_topic(g_participant, "DCPSParticipant");
-  cr_assert_eq(topic, 0);
+  cr_assert_lt(topic, 0);
   topic = dds_find_topic(g_participant, "DCPSTopic");
-  cr_assert_eq(topic, 0);
+  cr_assert_lt(topic, 0);
   topic = dds_find_topic(g_participant, "DCPSSubscription");
-  cr_assert_eq(topic, 0);
+  cr_assert_lt(topic, 0);
   topic = dds_find_topic(g_participant, "DCSPPublication");
-  cr_assert_eq(topic, 0);
+  cr_assert_lt(topic, 0);
 }
 
 Test(vddsc_builtin_topics, create_datareader, .init = setup, .fini = teardown)
@@ -103,13 +103,13 @@ Test(vddsc_builtin_topics, create_datareader, .init = setup, .fini = teardown)
   dds_entity_t topic;
 
   rdr = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION, NULL, NULL);
-  cr_assert(rdr, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION.");
+  cr_assert_gt(rdr, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION.");
 
   topic = dds_find_topic(g_participant, "DCPSSubscription");
-  cr_assert(topic, 0, "Could not find a builtin topic for DCPSSubscription");
+  cr_assert_gt(topic, 0, "Could not find a builtin topic for DCPSSubscription");
 
   topic = dds_find_topic(g_participant, "DCSPPublication");
-  cr_assert(topic, 0, "Could not find a builtin topic for DCPSPublication");
+  cr_assert_eq(topic, 0, "Found builtin topic for DCPSPublication");
 }
 
 Test(vddsc_builtin_topics, create_datawriter, .init = setup, .fini = teardown)
@@ -117,36 +117,59 @@ Test(vddsc_builtin_topics, create_datawriter, .init = setup, .fini = teardown)
   dds_entity_t rdr;
   dds_entity_t wrt;
   dds_entity_t topic;
+  dds_entity_t dds_builtin_topic;
+  dds_entity_t dds_sub_topic;
+  dds_entity_t dds_pub_topic;
 
-  wrt = dds_create_writer(g_participant, DDS_BUILTIN_TOPIC_DCPSPUBLICATION, NULL, NULL);
+  // Create a topic and a writer to trigger the DCPSPublication topic
+  topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
+  wrt = dds_create_writer(g_participant, topic, NULL, NULL);
 
   rdr = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSPUBLICATION, NULL, NULL);
-  cr_assert(rdr, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSPUBLICATION.");
+  cr_assert_gt(rdr, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSPUBLICATION.");
 
-  topic = dds_find_topic(g_participant, "DCPSSubscription");
-  cr_assert(topic, 0, "Could not find a builtin topic for DCPSSubscription-reader");
+  dds_builtin_topic = dds_find_topic(g_participant, "DCPSTopic");
+  cr_assert_gt(dds_builtin_topic, 0, "Could not find a builtin topic for DCPSTopic-reader");
 
-  topic = dds_find_topic(g_participant, "DCSPPublication");
-  cr_assert(topic, 0, "Could not find a builtin topic for DCPSPublication-reader");
+  dds_sub_topic = dds_find_topic(g_participant, "DCPSSubscription");
+  cr_assert_gt(dds_sub_topic, 0, "Could not find a builtin topic for DCPSSubscription");
+
+  dds_pub_topic = dds_find_topic(g_participant, "DCSPPublication");
+  cr_assert_gt(dds_pub_topic, 0, "Could not find a builtin topic for DCPSPublication");
 }
 
 Test(vddsc_builtin_topics, same_subscriber, .init = setup, .fini = teardown)
 {
-  dds_entity_t rdr;
+  dds_entity_t dds_pub_rdr;
+  dds_entity_t dds_sub_rdr;
   dds_entity_t dds_sub_subscriber;
   dds_entity_t dds_pub_subscriber;
 
-  rdr = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION, NULL, NULL);
-  cr_assert(topic, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION.");
+  dds_sub_rdr = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION, NULL, NULL);
+  cr_assert_gt(dds_sub_rdr, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION.");
 
-  dds_sub_subscriber = dds_get_parent(rdr);
-  cr_assert(dds_sub_subscriber, 0, "Could nog find builtin subscriber for DSCPSSubscription-reader.");
+  dds_sub_subscriber = dds_get_parent(dds_sub_rdr);
+  cr_assert_gt(dds_sub_subscriber, 0, "Could nog find builtin subscriber for DSCPSSubscription-reader.");
 
-  rdr = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSPUBLICATION, NULL, NULL);
-  cr_assert(topic, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSPUBLICATION.");
+  dds_pub_rdr = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSPUBLICATION, NULL, NULL);
+  cr_assert_gt(dds_pub_rdr, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSPUBLICATION.");
 
-  dds_pub_subscriber = dds_get_parent(rdr);
-  cr_assert(dds_pub_subscriber, 0, "Could nog find builtin subscriber for DSCPPublication-reader.");
+  dds_pub_subscriber = dds_get_parent(dds_pub_rdr);
+  cr_assert_gt(dds_pub_subscriber, 0, "Could nog find builtin subscriber for DSCPPublication-reader.");
 
   cr_assert_eq(dds_pub_subscriber, dds_sub_subscriber);
+}
+
+Test(vddsc_builtin_topics, qos, .init = setup, .fini = teardown)
+{
+  dds_entity_t dds_sub_rdr;
+  dds_entity_t dds_sub_subscriber;
+
+  dds_sub_rdr = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION, NULL, NULL);
+  cr_assert_gt(dds_sub_rdr, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION.");
+  check_default_qos_of_builtin_entity(dds_sub_rdr);
+
+  dds_sub_subscriber = dds_get_parent(dds_sub_rdr);
+  cr_assert_gt(dds_sub_subscriber, 0, "Could nog find builtin subscriber for DSCPSSubscription-reader.");
+  check_default_qos_of_builtin_entity(dds_sub_subscriber);
 }
