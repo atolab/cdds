@@ -17,4 +17,9 @@ if(WIN32)
   # on static detection of misuse instead of runtime detection, so all
   # these warnings can be disabled on Windows.
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
- endif()
+endif()
+
+# TODO: improve test inclusion.
+if((BUILD_TESTING) AND ((NOT DEFINED MSVC_VERSION) OR (MSVC_VERSION GREATER "1800")))
+  add_subdirectory(tests)
+endif()

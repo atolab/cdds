@@ -1,3 +1,7 @@
+#ifndef MAIN
+#define MAIN main
+#endif
+
 #ifdef __APPLE__
 #define USE_EDITLINE 1
 #endif
@@ -2303,7 +2307,7 @@ static void set_print_mode (const char *optarg)
   os_free (copy);
 }
 
-int main (int argc, char *argv[])
+int MAIN (int argc, char *argv[])
 {
 	dds_entity_t sub = 0;
 	dds_entity_t pub = 0;
