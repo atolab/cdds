@@ -28,7 +28,7 @@
         status = dds_write(wri, datap); \
         cr_assert_eq(dds_err_nr(status), DDS_RETCODE_OK); \
         \
-        if(doalloc) { TypesArrayKey_##type##_arraytypekey_free(datap, DDS_FREE_ALL_BIT); } \
+        if(doalloc) { TypesArrayKey_##type##_arraytypekey_free(datap, DDS_FREE_ALL); } \
         dds_delete(wri); \
         dds_delete(top); \
         dds_delete(par); \
@@ -186,7 +186,7 @@ Test(vddsc_types, alltypeskey_alloc)
     status = dds_write(wri, atk_data);
     cr_assert_eq(dds_err_nr(status), DDS_RETCODE_OK);
 
-    TypesArrayKey_alltypeskey_free(atk_data, DDS_FREE_ALL_BIT);
+    TypesArrayKey_alltypeskey_free(atk_data, DDS_FREE_ALL);
     dds_delete(wri);
     dds_delete(top);
     dds_delete(par);
