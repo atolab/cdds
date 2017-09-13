@@ -27,4 +27,10 @@ module Space {
     };
 #pragma keylist simpletypes s
 
+    struct arraytypekey {
+        long                l;
+        long long           a[20]; //@Key
+    };
+#pragma keylist arraytypekey a
+
 };
