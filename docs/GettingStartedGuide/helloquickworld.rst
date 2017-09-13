@@ -152,13 +152,13 @@ in this chapter with the  Hello Quick World code.
 
 Publisher:
 
-.. literalinclude:: ../../examples/helloquickworld/publisher.c
+.. literalinclude:: ../../examples/helloworld/publisher.c
     :linenos:
     :language: c
 
 Subscriber:
 
-.. literalinclude:: ../../examples/helloquickworld/subscriber.c
+.. literalinclude:: ../../examples/helloworld/subscriber.c
     :linenos:
     :language: c
 

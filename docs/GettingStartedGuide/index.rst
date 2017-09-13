@@ -11,11 +11,7 @@ then continues with the :ref:`installation <Installation>` of VortexDDS.
 
 The following chapters are examples of increasing complexity.
 
-The :ref:`Hello World <HelloWorld>` example is the simplest one and mainly
-concerns with writing and reading data and the data type. However, it also
-explains how examples and other applications can be build and run.
-
-The :ref:`Hello Quick World <HelloQuickWorld>` handles events (like
+The :ref:`Hello World <HelloWorld>` handles events (like
 detecting new data) and the difference between reliable and best effort
 communication.
 
@@ -31,6 +27,3 @@ these samples and instances.
     installation.rst
     helloworld.rst
     helloquickworld.rst
-    helloinstanceworld.rst
-
-

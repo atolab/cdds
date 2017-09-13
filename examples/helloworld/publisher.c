@@ -2,23 +2,14 @@
 #include "HelloWorldData.h"
 #include <stdio.h>
 
-/*
-  The helloworld example sends a HelloWorldData_Msg from a publisher
-  to a subscriber. For the example to work, the subscriber should
-  already be running when executing the publisher application.
-
-  The publisher creates a HelloWorldData_Msg sample with an UserId
-  and a string message and publishes it.
-
-  The subscriber picks up that sample and displays it.
-*/
-
 int main (int argc, char ** argv)
 {
     dds_entity_t participant;
     dds_entity_t topic;
     dds_entity_t writer;
+    dds_entity_t waitset;
     dds_return_t ret;
+    dds_qos_t *qos;
     HelloWorldData_Msg msg;
 
     /* Create a Participant. */
@@ -29,24 +20,59 @@ int main (int argc, char ** argv)
     topic = dds_create_topic (participant, &HelloWorldData_Msg_desc, "HelloWorldData_Msg", NULL, NULL);
     DDS_ERR_CHECK (topic, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    /* Create a Writer. */
+    /* Create a reliable Writer. */
+    qos = dds_qos_create ();
+    dds_qset_reliability (qos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
     writer = dds_create_writer (participant, topic, NULL, NULL);
     DDS_ERR_CHECK (writer, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+    dds_qos_delete(qos);
 
-    /* Sleep to allow discovery of reader by writer and vice versa. */
-    dds_sleepfor (DDS_SECS (2));
-    /* Sleeping isn't really recommended but is just added for simplicity.
-     * See the documentation or other examples for alternatives. */
-
-    /* Create a message to write. */
-    msg.userID = 1;
-    msg.message = "Hello World";
-
-    printf ("\n=== [Publisher] Writing : ");
-    printf ("Message (%d, %s)\n", msg.userID, msg.message);
-
-    ret = dds_write (writer, &msg);
+    /*
+     * Before writing, the writer should have discovered the reader.
+     * This can be done by waiting for the publication matched event.
+     * For that to happen, we need to:
+     *   - Indicate our interest for that on the writer.
+     *   - Create a waitset.
+     *   - Attach the writer to the waitset.
+     *   - The waitset.wait will unblock when the publication is matched,
+     *     indicating that a reader has been discovered.
+     */
+    ret = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
     DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+    waitset = dds_create_waitset(participant);
+    DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+    ret = dds_waitset_attach(waitset, writer, (dds_attach_t)NULL);
+    DDS_ERR_CHECK (waitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+    /* The dds_waitset_wait returns the number of triggered entities,
+     * which can only be '1' because only 1 was attached. Returning
+     * 0 means that within the timeout, no entities were triggered.
+     * Returning a negative value indicates an error. */
+    printf ("\n=== [Publisher]  Waiting for a reader ...\n");
+    ret = dds_waitset_wait(waitset, NULL, 0, DDS_SECS(30));
+    DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+    if (ret > 0)
+    {
+        /* Create a message to write. */
+        msg.userID = 1;
+        msg.message = "Hello World";
+
+        printf ("=== [Publisher]  Writing : ");
+        printf ("Message (%d, %s)\n", msg.userID, msg.message);
+
+        ret = dds_write (writer, &msg);
+        DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+    }
+    else if (ret == 0)
+    {
+        printf ("=== [Publisher]  Did not discover a reader. Exiting\n");
+    }
+    else
+    {
+        printf ("=== [Publisher]  An error occured while waiting for a reader : %s\n", dds_err_str(dds_err_nr(ret)));
+    }
 
     /* Deleting the participant will delete all its children recursively as well. */
     ret = dds_delete (participant);

@@ -55,13 +55,18 @@ in a different terminal.
 The HelloworldPublisher will display the following:
 ::
 
-    === [Publisher] Writing : Message (1, Hello World)
+    === [Publisher]  Waiting for a reader ...
+    === [Publisher]  Writing : Message (1, Hello World)
 
 While the HelloworldSubscriber will print this:
 ::
 
-    === [Reader] waiting for a message ...
+
+    === [Subscriber] Waiting for a writer ...
+
+    === [Subscriber] Waiting for a message ...
     === [Subscriber] Received : Message (1, Hello World)
+
 
 This shows that the message was sent from the publisher to the
 waiting subscriber.
