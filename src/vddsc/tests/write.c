@@ -148,27 +148,3 @@ Test(vddsc_write, simpletypes)
     dds_delete(top);
     dds_delete(par);
 }
-
-Test(vddsc_write, arraytypekey)
-{
-    dds_return_t status;
-    dds_entity_t par, top, wri;
-    const Space_arraytypekey atk_data = {
-        .l = -1,
-        .a = {1, 2, 3, 4, 5, 6, 7}
-    };
-
-    par = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_gt(par, 0);
-    top = dds_create_topic(par, &Space_arraytypekey_desc, "ArrayTypeKey", NULL, NULL);
-    cr_assert_gt(top, 0);
-    wri = dds_create_writer(par, top, NULL, NULL);
-    cr_assert_gt(wri, 0);
-
-    status = dds_write(wri, &atk_data);
-    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_OK);
-
-    dds_delete(wri);
-    dds_delete(top);
-    dds_delete(par);
-}
