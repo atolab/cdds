@@ -157,7 +157,6 @@ Test(vddsc_types, alltypeskey)
     dds_delete(top);
     dds_delete(par);
 }
-
 Test(vddsc_types, alltypeskey_alloc)
 {
     dds_return_t status;
@@ -187,6 +186,54 @@ Test(vddsc_types, alltypeskey_alloc)
     cr_assert_eq(dds_err_nr(status), DDS_RETCODE_OK);
 
     TypesArrayKey_alltypeskey_free(atk_data, DDS_FREE_ALL);
+    dds_delete(wri);
+    dds_delete(top);
+    dds_delete(par);
+}
+
+Test(vddsc_types, stringkey)
+{
+    dds_return_t status;
+    dds_entity_t par, top, wri;
+    const TypesArrayKey_stringkey sk_data = {
+        .payload = "Not so long payload",
+        .key = "Not so long key"
+    };
+
+    par = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(par, 0);
+    top = dds_create_topic(par, &TypesArrayKey_stringkey_desc, "StringKey", NULL, NULL);
+    cr_assert_gt(top, 0);
+    wri = dds_create_writer(par, top, NULL, NULL);
+    cr_assert_gt(wri, 0);
+
+    status = dds_write(wri, &sk_data);
+    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_OK);
+
+    dds_delete(wri);
+    dds_delete(top);
+    dds_delete(par);
+}
+Test(vddsc_types, stringkey_alloc)
+{
+    dds_return_t status;
+    dds_entity_t par, top, wri;
+    TypesArrayKey_stringkey *sk_data = TypesArrayKey_stringkey__alloc();
+
+    sk_data->payload = dds_string_dup("Not so long payload");
+    sk_data->key = dds_string_dup("Not so long key");
+
+    par = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(par, 0);
+    top = dds_create_topic(par, &TypesArrayKey_stringkey_desc, "StringKey_alloc", NULL, NULL);
+    cr_assert_gt(top, 0);
+    wri = dds_create_writer(par, top, NULL, NULL);
+    cr_assert_gt(wri, 0);
+
+    status = dds_write(wri, sk_data);
+    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_OK);
+
+    TypesArrayKey_stringkey_free(sk_data, DDS_FREE_ALL);
     dds_delete(wri);
     dds_delete(top);
     dds_delete(par);

@@ -67,4 +67,10 @@ module TypesArrayKey {
         string              s; //@Key
     };
 #pragma keylist alltypeskey l ll us ul ull f d c b o s
+
+    struct stringkey {
+        string payload;
+        string key; //@Key
+    };
+#pragma keylist stringkey key
 };
