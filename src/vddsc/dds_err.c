@@ -57,7 +57,7 @@ bool dds_err_check (dds_return_t err, unsigned flags, const char * where)
     }
     if (flags & DDS_CHECK_EXIT)
     {
-      exit (-1);
+      exit (1);
     }
   }
   return (err >= 0);

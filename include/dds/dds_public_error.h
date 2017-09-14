@@ -149,7 +149,7 @@ DDS_EXPORT dds_fail_fn dds_fail_get (void);
  *   -# msg The pointer to the failure message
  *   -# where The pointer to the file and location
  */
-DDS_EXPORT void dds_fail (const char * msg, const char * where);
+DDS_EXPORT void dds_fail (_In_z_ const char * msg_str, _In_z_ const char * where_str);
 
 
 #if defined (__cplusplus)
