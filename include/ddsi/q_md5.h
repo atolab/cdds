@@ -63,6 +63,7 @@
 #  define md5_INCLUDED
 
 #include <stddef.h>
+#include "os/os_decl_attributes.h"
 
 /*
  * This package supports both compile-time and run-time determination of CPU
