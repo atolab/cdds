@@ -198,7 +198,7 @@ dds_qos_reset(
         nn_xqos_fini (qos);
         dds_qos_init_defaults (qos);
     } else {
-        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
+        DDS_WARNING(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -210,7 +210,7 @@ dds_qos_delete(
         dds_qos_reset(qos);
         dds_free(qos);
     } else {
-        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
+        DDS_WARNING(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 

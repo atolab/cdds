@@ -461,7 +461,7 @@ dds_waitset_wait(
         dds_time_t abstimeout = (DDS_INFINITY - reltimeout <= tnow) ? DDS_NEVER : (tnow + reltimeout);
         ret = dds_waitset_wait_impl(waitset, xs, nxs, abstimeout, tnow);
     } else{
-        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Timed out");
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Negative timeout");
     }
     DDS_REPORT_FLUSH(ret <0 );
     return ret;
