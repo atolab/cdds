@@ -199,10 +199,10 @@ dds_find_topic(
             } else {
                 tp = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Topic is not being created yet");
             }
-        dds_entity_unlock(p);
-    } else {
-        tp = DDS_ERRNO(rc, "Error occurred on locking entity");
-    }
+            dds_entity_unlock(p);
+        } else {
+            tp = DDS_ERRNO(rc, "Error occurred on locking entity");
+        }
     } else {
         tp = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument name is not valid");
     }
@@ -417,8 +417,8 @@ dds_create_topic(
 qos_err:
     dds_entity_unlock(par);
 lock_err:
-    DDS_REPORT_FLUSH(hdl <= 0);
 bad_param_err:
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
 

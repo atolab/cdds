@@ -109,7 +109,7 @@ dds_reader_qos_validate(
     if(ret == DDS_RETCODE_OK && enabled) {
         ret = dds_qos_validate_mutable_common(qos);
     }
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+
     return ret;
 }
 

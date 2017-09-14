@@ -47,7 +47,6 @@ dds_subscriber_qos_validate(
         ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Presentation QoS policy is immutable");
     }
 
-    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }
 
@@ -110,22 +109,22 @@ dds_create_subscriber(
     dds_entity_t hdl;
     dds_qos_t * new_qos = NULL;
     dds_return_t ret;
-    dds_retcode_t errnr;
+    dds_retcode_t rc;
 
     DDS_REPORT_STACK();
 
-    errnr = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
-    if (errnr != DDS_RETCODE_OK) {
-        hdl = DDS_ERRNO(errnr, "Error occurred on locking participant");
-        return hdl;
+    rc = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
+    if (rc != DDS_RETCODE_OK) {
+        hdl = DDS_ERRNO(rc, "Error occurred on locking participant");
+        goto lock_err;
     }
 
     /* Validate qos */
     if (qos) {
         ret = dds_subscriber_qos_validate(qos, false);
         if (ret != DDS_RETCODE_OK) {
-            dds_entity_unlock(par);
-            return ret;
+            hdl = ret;
+            goto qos_err;
         }
         new_qos = dds_qos_create();
         /* Only returns failure when one of the qos args is NULL, which
@@ -140,8 +139,11 @@ dds_create_subscriber(
     sub->m_entity.m_deriver.validate_status = dds_subscriber_status_validate;
     sub->m_entity.m_deriver.propagate_status = dds_subscriber_status_propagate;
     sub->m_entity.m_deriver.get_instance_hdl = dds_subscriber_instance_hdl;
-    dds_entity_unlock(par);
 
+
+qos_err:
+    dds_entity_unlock(par);
+lock_err:
     DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
