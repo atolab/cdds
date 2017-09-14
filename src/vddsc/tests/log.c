@@ -47,4 +47,11 @@ Test(vddsc_log, basic_fatal, .init = setup, .fini = putes)
     cr_expect_eq(old, &vddsc_log__test_fail_fn, "The new failure handler should be set");
     dds_log_fatal("Test dds_log_fatal after having created participant %d\n", participant);
     cr_expect(handlerCalled, "The installed handler should be called after dds_log_fatal");
+    old = dds_fail_set(NULL);
+    cr_expect_eq(old, &vddsc_log__test_fail_fn, "The old failure handler should be vddsc_log__test_fail_fn");
+    handlerCalled = false;
+    old = dds_fail_get();
+    cr_expect_null(old, "The new failure handler should be NULL");
+    dds_log_fatal("Test dds_log_fatal after having created participant %d\n", participant);
+    cr_expect_not(handlerCalled, "The old handler should not be called after dds_log_fatal");
 }
