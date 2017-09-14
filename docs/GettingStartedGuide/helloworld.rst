@@ -325,7 +325,7 @@ clean up.
 
 All the entities that are created using the participant are also
 deleted. This means that deleting the participant will
-automatically the topic and reader as well.
+automatically delete the topic and reader as well.
 
 
 .. _`HelloWorldPublisherSource`:

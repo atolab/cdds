@@ -268,12 +268,12 @@ int main (int argc, char *argv[])
           fprintf (stdout, "%s%d%s", "ERROR: Ping received ", status,
                   " samples but was expecting 1. Are multiple pong applications running?\n");
 
-          return (0);
+          goto done;
         }
         else if (!info[0].valid_data)
         {
           printf ("ERROR: Ping received an invalid sample. Has pong terminated already?\n");
-          return (0);
+          goto done;
         }
       }
 

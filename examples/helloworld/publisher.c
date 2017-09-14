@@ -1,6 +1,7 @@
 #include "dds.h"
 #include "HelloWorldData.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 int main (int argc, char ** argv)
 {
@@ -52,5 +53,5 @@ int main (int argc, char ** argv)
     ret = dds_delete (participant);
     DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
