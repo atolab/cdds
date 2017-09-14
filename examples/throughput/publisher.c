@@ -147,7 +147,7 @@ static int parse_args(
     *partitionName = argv[5]; /* The name of the partition */
   }
 
-  printf ("payloadSize: %u bytes burstInterval: %u ms burstSize: %d timeOut: %u seconds partitionName: %s\n",
+  printf ("payloadSize: %u bytes burstInterval: %u ms burstSize: %u timeOut: %u seconds partitionName: %s\n",
     *payloadSize, *burstInterval, *burstSize, *timeOut, *partitionName);
 
   return result;
