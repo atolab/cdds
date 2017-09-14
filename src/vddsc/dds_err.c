@@ -64,28 +64,35 @@ bool dds_err_check (dds_return_t err, unsigned flags, const char * where)
 }
 
 
-static void dds_fail_default (const char * msg, const char * where)
+static void dds_fail_default (_In_z_ const char * msg_str, _In_z_ const char * where_str)
 {
-  fprintf (stderr, "Aborting Failure: %s %s\n", where, msg);
+  fprintf (stderr, "Aborting Failure: %s %s\n", where_str, msg_str);
   abort ();
 }
 
-static dds_fail_fn dds_fail_func = dds_fail_default;
+static os_atomic_voidp_t dds_fail_func = OS_ATOMIC_VOIDP_INIT(&dds_fail_default);
 
-void dds_fail_set (dds_fail_fn fn)
+_Ret_maybenull_
+dds_fail_fn dds_fail_set (_In_opt_ dds_fail_fn fn)
 {
-  dds_fail_func = fn;
+    dds_fail_fn old;
+    do {
+        old = os_atomic_ldvoidp(&dds_fail_func);
+    } while ( !os_atomic_casvoidp(&dds_fail_func, old, fn) );
+
+    return old;
 }
 
+_Ret_maybenull_
 dds_fail_fn dds_fail_get (void)
 {
-  return dds_fail_func;
+  return os_atomic_ldvoidp(&dds_fail_func);
 }
 
-void dds_fail (const char * msg, const char * where)
+void dds_fail (_In_z_ const char * msg_str, _In_z_ const char * where_str)
 {
-  if (dds_fail_func)
-  {
-    (dds_fail_func) (msg, where);
-  }
+    dds_fail_fn fn = os_atomic_ldvoidp(&dds_fail_func);
+    if (fn) {
+        fn(msg_str, where_str);
+    }
 }

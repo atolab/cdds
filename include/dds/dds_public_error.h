@@ -116,7 +116,7 @@ DDS_EXPORT bool dds_err_check (dds_return_t err, unsigned flags, const char * wh
 /**
  * Failure handler
  */
-typedef void (*dds_fail_fn) (const char *, const char *);
+typedef void (*dds_fail_fn) (_In_z_ const char *msg_str, _In_z_ const char *where_str);
 
 /**
  * Macro that defines dds_fail function
@@ -128,8 +128,10 @@ typedef void (*dds_fail_fn) (const char *, const char *);
  *
  * Arguments :
  *   -# fn The pointer to the failure function
+ *    # Returns the previously set failure function
  */
-DDS_EXPORT void dds_fail_set (dds_fail_fn fn);
+_Ret_maybenull_
+DDS_EXPORT dds_fail_fn dds_fail_set (_In_opt_ dds_fail_fn fn);
 
 /**
  * Description : Get the failure function
@@ -137,6 +139,7 @@ DDS_EXPORT void dds_fail_set (dds_fail_fn fn);
  * Arguments :
  *   -# Returns the failure function set
  */
+_Ret_maybenull_
 DDS_EXPORT dds_fail_fn dds_fail_get (void);
 
 /**

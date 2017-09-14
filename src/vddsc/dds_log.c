@@ -6,7 +6,7 @@
 
 #define DDS_FMT_MAX 128
 
-void dds_log_info (const char * fmt, ...)
+void dds_log_info (_In_z_ _Printf_format_string_ const char * fmt, ...)
 {
   va_list args;
 
@@ -15,7 +15,7 @@ void dds_log_info (const char * fmt, ...)
   va_end (args);
 }
 
-void dds_log_warn (const char * fmt, ...)
+void dds_log_warn (_In_z_ _Printf_format_string_ const char * fmt, ...)
 {
   va_list args;
   char fmt2 [DDS_FMT_MAX];
@@ -30,7 +30,7 @@ void dds_log_warn (const char * fmt, ...)
   va_end (args);
 }
 
-void dds_log_error (const char * fmt, ...)
+void dds_log_error (_In_z_ _Printf_format_string_ const char * fmt, ...)
 {
   va_list args;
   char fmt2 [DDS_FMT_MAX];
@@ -45,7 +45,7 @@ void dds_log_error (const char * fmt, ...)
   va_end (args);
 }
 
-void dds_log_fatal (const char * fmt, ...)
+void dds_log_fatal (_In_z_ _Printf_format_string_ const char * fmt, ...)
 {
   va_list args;
   char fmt2 [DDS_FMT_MAX];

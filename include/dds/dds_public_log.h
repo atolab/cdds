@@ -18,10 +18,10 @@
 extern "C" {
 #endif
 
-DDS_EXPORT void dds_log_info (const char * fmt, ...);
-DDS_EXPORT void dds_log_warn (const char * fmt, ...);
-DDS_EXPORT void dds_log_error (const char * fmt, ...);
-DDS_EXPORT void dds_log_fatal (const char * fmt, ...);
+DDS_EXPORT void dds_log_info (_In_z_ _Printf_format_string_ const char * fmt, ...);
+DDS_EXPORT void dds_log_warn (_In_z_ _Printf_format_string_ const char * fmt, ...);
+DDS_EXPORT void dds_log_error (_In_z_ _Printf_format_string_ const char * fmt, ...);
+DDS_EXPORT void dds_log_fatal (_In_z_ _Printf_format_string_ const char * fmt, ...);
 
 #if defined (__cplusplus)
 }
