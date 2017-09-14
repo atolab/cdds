@@ -72,7 +72,7 @@ struct readerspec {
   struct tgtopic *tgtp;
   enum readermode mode;
   int use_take;
-  unsigned sleep_us;
+  dds_duration_t sleep_ns;
   int polling;
   uint32_t read_maxsamples;
   int print_match_pre_read;
@@ -107,7 +107,7 @@ static const struct readerspec def_readerspec = {
   .tgtp = NULL,
   .mode = MODE_PRINT,
   .use_take = 1,
-  .sleep_us = 0,
+  .sleep_ns = 0,
   .polling = 0,
   .read_maxsamples = INT16_MAX,
   .print_match_pre_read = 0
@@ -1276,7 +1276,6 @@ static void pub_do_auto (const struct writerspec *spec)
   }
   os_time sDelay = { 1, 0 };
   os_nanoSleep(sDelay);
-//  sleep (1);
   d.seq_keyval.keyval = 0;
   tfirst0 = tfirst = tprev = nowll ();
   if (dur != 0.0)
@@ -1289,7 +1288,6 @@ static void pub_do_auto (const struct writerspec *spec)
     {
       os_time delay = { 0 , 100 * 1000 * 1000 };
       os_nanoSleep(delay);
-//      nanosleep (&delay, NULL);
     }
   }
   else if (spec->writerate <= 0)
@@ -1357,7 +1355,6 @@ static void pub_do_auto (const struct writerspec *spec)
           {
             os_time delay = { 0 , 10 * 1000 * 1000 };
             os_nanoSleep(delay);
-//            nanosleep (&delay, NULL);
             t = nowll ();
           }
           bi = 0;
@@ -1466,7 +1463,6 @@ static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq)
         else {
         	os_time delay = { k, 0 };
         	os_nanoSleep(delay);
-//          sleep ((unsigned) k);
         }
         break;
       case 'Y': case 'B': case 'E': case 'W':
@@ -1970,10 +1966,8 @@ static uint32_t subthread (void *vspec)
             break;
         }
         int returnVal = dds_return_loan(rd, mseq, spec->read_maxsamples);
-        if (spec->sleep_us) {
-        	os_time delay = { 0, (spec->sleep_us) * 1000 };
-        	os_nanoSleep(delay);
-//          usleep (spec->sleep_us);
+        if (spec->sleep_ns) {
+        	dds_sleepfor(spec->sleep_ns);
         }
       }
     }
@@ -2552,7 +2546,7 @@ int MAIN (int argc, char *argv[])
         spec[specidx].wr.register_instances = 1;
         break;
       case 's':
-        spec[specidx].rd.sleep_us = 1000u * (unsigned) atoi (os_get_optarg());
+        spec[specidx].rd.sleep_ns = DDS_MSECS((int64_t) atoi (os_get_optarg()));
         break;
       case 'W':
         {
@@ -2996,7 +2990,6 @@ int MAIN (int argc, char *argv[])
   if (sleep_at_end) {
 	  os_time delay = { sleep_at_end, 0 };
 	  os_nanoSleep(delay);
-//    sleep (sleep_at_end);
   }
   return (int) exitcode;
 }
