@@ -20,15 +20,14 @@ struct tkmap_instance
   os_atomic_uint32_t m_refc;
 };
 
-
-struct tkmap * dds_tkmap_new (void);
-void dds_tkmap_free (_Inout_ _Post_invalid_ struct tkmap *tkmap);
+_Ret_valid_ struct tkmap * dds_tkmap_new (void);
+void dds_tkmap_free (_In_ _Post_ptr_invalid_ struct tkmap *tkmap);
 void dds_tkmap_instance_ref (_In_ struct tkmap_instance *tk);
 uint64_t dds_tkmap_lookup (_In_ struct tkmap *tkmap, _In_ const struct serdata *serdata);
 _Check_return_ bool dds_tkmap_get_key (_In_ struct tkmap * map, _In_ uint64_t iid, _Out_ void * sample);
 _Check_return_ struct tkmap_instance * dds_tkmap_find(
         _In_opt_ const struct dds_topic * topic,
-        _In_ struct serdata * sd,
+        _Inout_ struct serdata * sd,
         _In_ const bool rd,
         _In_ const bool create);
 _Check_return_ struct tkmap_instance * dds_tkmap_find_by_id (_In_ struct tkmap * map, _In_ uint64_t iid);

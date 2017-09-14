@@ -130,6 +130,7 @@ static int dds_tk_equals_void (const void *a, const void *b)
   return dds_tk_equals (a, b);
 }
 
+_Ret_valid_
 struct tkmap * dds_tkmap_new (void)
 {
   struct tkmap *tkmap = dds_alloc (sizeof (*tkmap));
@@ -146,7 +147,7 @@ static void free_tkmap_instance (void *vtk, UNUSED_ARG(void *f_arg))
   os_free (tk);
 }
 
-void dds_tkmap_free (_Inout_ _Post_invalid_ struct tkmap * map)
+void dds_tkmap_free (_In_ _Post_ptr_invalid_ struct tkmap * map)
 {
   ut_chhEnumUnsafe (map->m_hh, free_tkmap_instance, NULL);
   ut_chhFree (map->m_hh);
@@ -233,7 +234,7 @@ struct tkmap_instance * dds_tkmap_find_by_id (_In_ struct tkmap * map, _In_ uint
 _Check_return_
 struct tkmap_instance * dds_tkmap_find(
         _In_opt_ const struct dds_topic * topic,
-        _In_ struct serdata * sd,
+        _Inout_ struct serdata * sd,
         _In_ const bool rd,
         _In_ const bool create)
 {

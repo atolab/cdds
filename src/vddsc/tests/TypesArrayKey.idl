@@ -1,4 +1,14 @@
 module TypesArrayKey {
+    typedef enum enumkey {
+        ENUMKEY_1,
+        ENUMKEY_2
+    } enum_enumkey;
+
+    struct enum_enumkey_arraytypekey {
+        enum_enumkey key[20]; //@Key
+    };
+    #pragma keylist enum_enumkey_arraytypekey key
+
     struct long_arraytypekey {
         long key[20]; //@Key
     };
@@ -54,16 +64,16 @@ module TypesArrayKey {
 #pragma keylist octet_arraytypekey key
 
     struct alltypeskey {
-        long                l;
-        long long           ll;
-        unsigned short      us;
-        unsigned long       ul;
-        unsigned long long  ull;
-        float               f;
-        double              d;
-        char                c;
-        boolean             b;
-        octet               o;
+        long                l; //@Key
+        long long           ll; //@Key
+        unsigned short      us; //@Key
+        unsigned long       ul; //@Key
+        unsigned long long  ull; //@Key
+        float               f; //@Key
+        double              d; //@Key
+        char                c; //@Key
+        boolean             b; //@Key
+        octet               o; //@Key
         string              s; //@Key
     };
 #pragma keylist alltypeskey l ll us ul ull f d c b o s
@@ -71,6 +81,7 @@ module TypesArrayKey {
     struct stringkey {
         string payload;
         string key; //@Key
+        sequence<string> seq_payload; // Swapping field key and seq_payload trigger an assert.
     };
 #pragma keylist stringkey key
 };

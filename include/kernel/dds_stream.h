@@ -21,7 +21,7 @@ void dds_stream_read_sample
 );
 
 size_t dds_stream_check_optimize (const dds_topic_descriptor_t * desc);
-void dds_stream_from_serstate (dds_stream_t * s, const serstate_t st);
+void dds_stream_from_serstate (_Out_ dds_stream_t * s, _In_ const serstate_t st);
 void dds_stream_add_to_serstate (dds_stream_t * s, serstate_t st);
 
 void dds_stream_write_key
@@ -43,11 +43,14 @@ void dds_stream_read_keyhash
   const dds_topic_descriptor_t * desc,
   const bool just_key
 );
+
+_When_(bound == 0, _Ret_opt_z_ _Check_return_)
+_When_(bound > 0, _Ret_writes_(bound) _Post_maybez_)
 char * dds_stream_reuse_string
 (
-  dds_stream_t * is,
-  char * str,
-  const uint32_t bound
+  _Inout_ dds_stream_t * is,
+  _When_(bound, _Out_writes_(bound) _Post_maybez_) _When_(bound == 0, _In_opt_z_ _Post_invalid_) char * str,
+  _In_ const uint32_t bound
 );
 DDS_EXPORT void dds_stream_swap (void * buff, uint32_t size, uint32_t num);
 

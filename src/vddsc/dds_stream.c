@@ -269,8 +269,10 @@ double dds_stream_read_double (dds_stream_t * is)
   return val;
 }
 
+_When_(bound == 0, _Ret_opt_z_ _Check_return_)
+_When_(bound > 0, _Ret_writes_(bound) _Post_maybez_)
 char * dds_stream_reuse_string 
-  (dds_stream_t * is, char * str, const uint32_t bound)
+  (_Inout_ dds_stream_t * is, _When_(bound, _Out_writes_(bound) _Post_maybez_) _When_(bound == 0, _In_opt_z_ _Post_invalid_) char * str, _In_ const uint32_t bound)
 {
   uint32_t length;
   void * src;
@@ -1161,7 +1163,7 @@ void dds_stream_write_sample (dds_stream_t * os, const void * data, const struct
   }
 }
 
-void dds_stream_from_serstate (dds_stream_t * s, const serstate_t st)
+void dds_stream_from_serstate (_Out_ dds_stream_t * s, _In_ const serstate_t st)
 {
   s->m_failed = false;
   s->m_buffer.p8 = (uint8_t*) st->data;
@@ -1235,7 +1237,7 @@ void dds_stream_write_key
   dds_stream_get_keyhash: Extract key values from a stream and generate
   keyhash used for instance identification. Non key fields are skipped.
   Key hash data is big endian CDR encoded with no padding. Returns length
-  of key hash. Input stream may contain full sample of just key data.
+  of key hash. Input stream may contain full sample or just key data.
 */
 
 static uint32_t dds_stream_get_keyhash 

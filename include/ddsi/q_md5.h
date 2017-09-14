@@ -90,13 +90,13 @@ extern "C"
 #endif
 
 /* Initialize the algorithm. */
-void md5_init(md5_state_t *pms);
+void md5_init(_Out_ md5_state_t *pms);
 
 /* Append a string to the message. */
-void md5_append(md5_state_t *pms, const md5_byte_t *data, unsigned nbytes);
+void md5_append(_Inout_ md5_state_t *pms, _In_reads_bytes_(nbytes) const md5_byte_t *data, _In_ unsigned nbytes);
 
 /* Finish the message and return the digest. */
-void md5_finish(md5_state_t *pms, md5_byte_t digest[16]);
+void md5_finish(_Inout_ md5_state_t *pms, _Out_writes_all_(16) md5_byte_t digest[16]);
 
 #ifdef __cplusplus
 }  /* end extern "C" */

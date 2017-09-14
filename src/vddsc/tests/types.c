@@ -35,6 +35,15 @@
     } while (0)
 
 
+Test(vddsc_types, enum_enumkey_arraytypekey)
+{
+    VDDSC_ARRAYTYPEKEY_TEST(enum_enumkey, 1, false);
+}
+Test(vddsc_types, enum_enumkey_arraytypekey_alloc)
+{
+    VDDSC_ARRAYTYPEKEY_TEST(enum_enumkey, 1, true);
+}
+
 Test(vddsc_types, long_arraytypekey)
 {
     VDDSC_ARRAYTYPEKEY_TEST(long, 1, false);
@@ -191,29 +200,6 @@ Test(vddsc_types, alltypeskey_alloc)
     dds_delete(par);
 }
 
-Test(vddsc_types, stringkey)
-{
-    dds_return_t status;
-    dds_entity_t par, top, wri;
-    const TypesArrayKey_stringkey sk_data = {
-        .payload = "Not so long payload",
-        .key = "Not so long key"
-    };
-
-    par = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-    cr_assert_gt(par, 0);
-    top = dds_create_topic(par, &TypesArrayKey_stringkey_desc, "StringKey", NULL, NULL);
-    cr_assert_gt(top, 0);
-    wri = dds_create_writer(par, top, NULL, NULL);
-    cr_assert_gt(wri, 0);
-
-    status = dds_write(wri, &sk_data);
-    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_OK);
-
-    dds_delete(wri);
-    dds_delete(top);
-    dds_delete(par);
-}
 Test(vddsc_types, stringkey_alloc)
 {
     dds_return_t status;
@@ -221,6 +207,12 @@ Test(vddsc_types, stringkey_alloc)
     TypesArrayKey_stringkey *sk_data = TypesArrayKey_stringkey__alloc();
 
     sk_data->payload = dds_string_dup("Not so long payload");
+    sk_data->seq_payload._maximum = 20;
+    sk_data->seq_payload._buffer = dds_alloc(sk_data->seq_payload._maximum * sizeof(char *));
+    for ( sk_data->seq_payload._length = 0; sk_data->seq_payload._length < sk_data->seq_payload._maximum; sk_data->seq_payload._length++ ) {
+        ((char **)sk_data->seq_payload._buffer)[sk_data->seq_payload._length] = dds_string_dup("Not so long sequence payload");
+    }
+    sk_data->seq_payload._release = true;
     sk_data->key = dds_string_dup("Not so long key");
 
     par = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
