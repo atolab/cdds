@@ -4,7 +4,7 @@ idlc_generate(RoundTrip RoundTrip.idl)
 idlc_generate(Space Space.idl)
 idlc_generate(TypesArrayKey TypesArrayKey.idl)
 add_criterion_executable(criterion_vddsc .)
-target_link_libraries(criterion_vddsc RoundTrip Space TypesArrayKey vddsc OSAPI)
+target_link_libraries(criterion_vddsc RoundTrip Space TypesArrayKey vddsc OSAPI BuiltinTypesLib)
 
 # Setup environment for config-tests
 set(Criterion_vddsc_config_simple_udp_file "${CMAKE_CURRENT_LIST_DIR}/config_simple_udp.xml")
