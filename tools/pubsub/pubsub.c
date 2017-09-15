@@ -79,7 +79,7 @@ struct readerspec {
   unsigned idx;
 };
 
-enum writermode { //Todo: changed prefix to WRM from WM. Because it is giving error in windows.
+enum writermode {
   WRM_NONE,
   WRM_AUTO,
   WRM_INPUT
@@ -779,13 +779,9 @@ static int getkeyval_KS (dds_entity_t rd, int32_t *key, dds_instance_handle_t ih
   int result;
   KeyedSeq d_key;
   if ((result = dds_instance_get_key(rd, ih, &d_key)) == DDS_RETCODE_OK)
-		  *key = d_key.keyval;
+	  *key = d_key.keyval;
   else
 	  *key = 0;
-//  if ((result = KeyedSeqDataReader_get_key_value (rd, &d_key, ih)) == DDS_RETCODE_OK) //TODO: Because it is giving error. Need to fix it.
-//    *key = d_key.keyval;
-//  else
-//    *key = 0;
   return result;
 }
 
@@ -794,13 +790,9 @@ static int getkeyval_K32 (dds_entity_t rd, int32_t *key, dds_instance_handle_t i
   int result = 0;
   Keyed32 d_key;
   if ((result = dds_instance_get_key(rd, ih, &d_key)) == DDS_RETCODE_OK)
-  		  *key = d_key.keyval;
-    else
+	  *key = d_key.keyval;
+  else
   	  *key = 0;
-//  if ((result = Keyed32DataReader_get_key_value (rd, &d_key, ih)) == DDS_RETCODE_OK)
-//    *key = d_key.keyval;
-//  else
-//    *key = 0;
   return result;
 }
 
@@ -809,13 +801,9 @@ static int getkeyval_K64 (dds_entity_t rd, int32_t *key, dds_instance_handle_t i
   int result = 0;
   Keyed64 d_key;
   if ((result = dds_instance_get_key(rd, ih, &d_key)) == DDS_RETCODE_OK)
-  		  *key = d_key.keyval;
-    else
+	  *key = d_key.keyval;
+  else
   	  *key = 0;
-//  if ((result = Keyed64DataReader_get_key_value (rd, &d_key, ih)) == DDS_RETCODE_OK)
-//    *key = d_key.keyval;
-//  else
-//    *key = 0;
   return result;
 }
 
@@ -824,13 +812,9 @@ static int getkeyval_K128 (dds_entity_t rd, int32_t *key, dds_instance_handle_t 
   int result = 0;
   Keyed128 d_key;
   if ((result = dds_instance_get_key(rd, ih, &d_key)) == DDS_RETCODE_OK)
-  		  *key = d_key.keyval;
-    else
+	  *key = d_key.keyval;
+  else
   	  *key = 0;
-//  if ((result = Keyed128DataReader_get_key_value (rd, &d_key, ih)) == DDS_RETCODE_OK)
-//    *key = d_key.keyval;
-//  else
-//    *key = 0;
   return result;
 }
 
@@ -839,13 +823,9 @@ static int getkeyval_K256 (dds_entity_t rd, int32_t *key, dds_instance_handle_t 
   int result = 0;
   Keyed256 d_key;
   if ((result = dds_instance_get_key(rd, ih, &d_key)) == DDS_RETCODE_OK)
-  		  *key = d_key.keyval;
-    else
+	  *key = d_key.keyval;
+  else
   	  *key = 0;
-//  if ((result = Keyed256DataReader_get_key_value (rd, &d_key, ih)) == DDS_RETCODE_OK)
-//    *key = d_key.keyval;
-//  else
-//    *key = 0;
   return result;
 }
 
@@ -1138,11 +1118,6 @@ static void wr_on_publication_matched (dds_entity_t wr __attribute__((unused)), 
           status.last_subscription_handle);
 }
 
-//static int unregister_instance_wrapper (dds_entity_t wr, const void *d, const dds_time_t tstamp)
-//{
-// return dds_unregister_instance_ts(wr, d, tstamp);
-//}
-
 static int register_instance_wrapper (dds_entity_t wr, const void *d, const dds_time_t tstamp)
 {
 	dds_instance_handle_t handle;
@@ -1234,8 +1209,7 @@ union data {
 static void pub_do_auto (const struct writerspec *spec)
 {
 	int result;
-//	dds_instance_handle_t handle[nkeyvals];
-	dds_instance_handle_t *handle = (dds_instance_handle_t*) os_malloc(sizeof(dds_instance_handle_t)*nkeyvals); //variable size array malloc
+	dds_instance_handle_t *handle = (dds_instance_handle_t*) os_malloc(sizeof(dds_instance_handle_t)*nkeyvals);
   uint64_t ntot = 0, tfirst, tlast, tprev, tfirst0, tstop;
   struct hist *hist = hist_new (30, 1000, 0);
   int k = 0;
@@ -1274,8 +1248,7 @@ static void pub_do_auto (const struct writerspec *spec)
     	dds_register_instance(spec->wr, handle, &d);
     }
   }
-  os_time sDelay = { 1, 0 };
-  os_nanoSleep(sDelay);
+  dds_sleepfor(DDS_SECS(1));
   d.seq_keyval.keyval = 0;
   tfirst0 = tfirst = tprev = nowll ();
   if (dur != 0.0)
@@ -1286,15 +1259,13 @@ static void pub_do_auto (const struct writerspec *spec)
   {
 	  while (!termflag && tprev < tstop)
     {
-      os_time delay = { 0 , 100 * 1000 * 1000 };
-      os_nanoSleep(delay);
+      dds_sleepfor(DDS_MSECS(100));
     }
   }
   else if (spec->writerate <= 0)
   {
     while (!termflag && tprev < tstop)
     {
-//    	usleep(1);
       if ((result = dds_write(spec->wr, &d)) != DDS_RETCODE_OK)
       {
     	printf ("write: error %d (%s)\n", (int) result, dds_err_str(result));
@@ -1353,8 +1324,7 @@ static void pub_do_auto (const struct writerspec *spec)
         {
           while (((ntot / spec->burstsize) / ((t - tfirst0) / 1e9 + 5e-3)) > spec->writerate && !termflag)
           {
-            os_time delay = { 0 , 10 * 1000 * 1000 };
-            os_nanoSleep(delay);
+            dds_sleepfor(DDS_MSECS(10));
             t = nowll ();
           }
           bi = 0;
@@ -1461,8 +1431,7 @@ static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq)
         if (k < 0)
           printf ("invalid sleep duration: %ds\n", k);
         else {
-        	os_time delay = { k, 0 };
-        	os_nanoSleep(delay);
+        	dds_sleepfor(DDS_SECS(k));
         }
         break;
       case 'Y': case 'B': case 'E': case 'W':
@@ -1750,7 +1719,7 @@ static uint32_t subthread (void *vspec)
   ws = dds_create_waitset(dp);
   rc = dds_waitset_attach(ws, termcond, termcond);
   error_abort(rc, "dds_waitset_attach (termcond)");
-  nxs++; //increased because of the waitset_attach
+  nxs++;
   switch (spec->mode)
   {
     case MODE_NONE:
@@ -1765,14 +1734,14 @@ static uint32_t subthread (void *vspec)
 
         rc = dds_waitset_attach (ws, rdcondA, rdcondA);
         error_abort(rc, "dds_waitset_attach (rdcondA)");
-        nxs++; //increased because of the waitset_attach
+        nxs++;
 
         rdcondD = dds_create_readcondition (rd, (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE));
         error_abort(rdcondD, "dds_readcondition_create (rdcondD)");
 
         rc = dds_waitset_attach (ws, rdcondD, rdcondD);
         error_abort(rc, "dds_waitset_attach (rdcondD)");
-        nxs++; //increased because of the waitset_attach
+        nxs++;
         break;
     case MODE_CHECK:
     case MODE_DUMP:
@@ -1783,7 +1752,7 @@ static uint32_t subthread (void *vspec)
           error_abort(rc, "dds_set_enabled_status (stcond)");
           rc = dds_waitset_attach (ws, rd, rd);
           error_abort(rc, "dds_waitset_attach (rd)");
-          nxs++; //increased because of the waitset_attach
+          nxs++;
       }
       break;
   }
@@ -1813,8 +1782,7 @@ static uint32_t subthread (void *vspec)
 
       if (spec->polling)
       {
-        os_time d = { 0, 1000000 }; /* 1ms sleep interval, so a bit less than 1kHz poll freq */
-        os_nanoSleep(d);
+        dds_sleepfor(DDS_MSECS(1)); /* 1ms sleep interval, so a bit less than 1kHz poll freq */
       }
       else
       {
@@ -1826,9 +1794,6 @@ static uint32_t subthread (void *vspec)
     		  continue;
     	  }
       }
-
-      /* Examine the reader's status to decide what to do. */
-//      dds_waitset_get_conditions(ws, glist);
 
       tnow = nowll ();
       for (gi = 0; gi < (spec->polling ? 1 : nxs); gi++)
@@ -2702,7 +2667,7 @@ int MAIN (int argc, char *argv[])
   set_systemid_env ();
 
   {
-    char **ps = (char **) os_malloc (sizeof(char *) * (argc - os_get_optind())); //variable size array malloc
+    char **ps = (char **) os_malloc (sizeof(char *) * (argc - os_get_optind()));
     for (i = 0; i < (unsigned) (argc - os_get_optind()); i++)
       ps[i] = expand_envvars (argv[(unsigned) os_get_optind() + i]);
     if (want_reader)
@@ -2988,8 +2953,7 @@ int MAIN (int argc, char *argv[])
 //  dds_delete(termcond);
   common_fini ();
   if (sleep_at_end) {
-	  os_time delay = { sleep_at_end, 0 };
-	  os_nanoSleep(delay);
+	  dds_sleepfor(DDS_SECS(sleep_at_end));
   }
   return (int) exitcode;
 }

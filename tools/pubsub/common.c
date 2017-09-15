@@ -1052,19 +1052,6 @@ void qos_autodispose_unregistered_instances (struct qos *a, const char *arg)
 	    error_exit("autodispose_unregistered_instances qos: %s: invalid\n", arg);
 }
 
-//static unsigned split_string (char ***xs, const char *in, const char *sep)
-//{
-//  char *incopy = os_strdup (in), *cursor = incopy, *tok;
-//  unsigned n = 0;
-//  *xs = NULL;
-//  while ((tok = os_strsep (&cursor, sep)) != NULL)
-//  {
-//    *xs = realloc (*xs, (n+1) * sizeof (**xs));
-//    (*xs)[n++] = tok;
-//  }
-//  return n;
-//}
-
 const char *qos_arg_usagestr = "\
 QOS (not all are universally applicable):\n\
   A={a|p:S|w:S}   liveliness (automatic, participant or writer, S in seconds)\n\
