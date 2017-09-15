@@ -475,7 +475,7 @@ dds_take_status(
  *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
-DDS_EXPORT _Check_return_ dds_return_t
+DDS_EXPORT _Must_inspect_result_ dds_return_t
 dds_get_status_changes(
         _In_  dds_entity_t entity,
         _Out_ uint32_t *status);

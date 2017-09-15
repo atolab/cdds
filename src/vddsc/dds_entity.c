@@ -665,7 +665,7 @@ dds_enable(
 
 
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
-_Check_return_ dds_return_t
+_Must_inspect_result_ dds_return_t
 dds_get_status_changes(
         _In_    dds_entity_t entity,
         _Out_   uint32_t *status)

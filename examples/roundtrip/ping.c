@@ -202,6 +202,7 @@ int main (int argc, char *argv[])
       dds_sleepfor (DDS_SECS (1));
       goto done;
     }
+    return EXIT_FAILURE;
   }
 
   pub_data.payload._length = payloadSize;

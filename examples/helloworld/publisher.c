@@ -32,6 +32,8 @@ int main (int argc, char ** argv)
     {
       uint32_t status;
       ret = dds_get_status_changes (writer, &status);
+      DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
       if (status == DDS_PUBLICATION_MATCHED_STATUS) {
         break;
       }
