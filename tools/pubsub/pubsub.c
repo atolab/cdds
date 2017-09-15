@@ -1893,12 +1893,12 @@ static uint32_t subthread (void *vspec)
               switch (spec->topicsel)
               {
                 case UNSPEC: assert(0);
-                case KS:   { KeyedSeq *d = (KeyedSeq *) &mseq;   keyval = d->keyval; seq = d->seq; size = 12 + d->baggage._length; } break;
-                case K32:  { Keyed32 *d  = (Keyed32 *) &mseq;  keyval = d->keyval; seq = d->seq; size = 32; } break;
-                case K64:  { Keyed64 *d  = (Keyed64 *) &mseq;  keyval = d->keyval; seq = d->seq; size = 64; } break;
-                case K128: { Keyed128 *d = (Keyed128 *) &mseq; keyval = d->keyval; seq = d->seq; size = 128; } break;
-                case K256: { Keyed256 *d = (Keyed256 *) &mseq; keyval = d->keyval; seq = d->seq; size = 256; } break;
-                case OU:   { OneULong *d = (OneULong *) &mseq;   keyval = 0;         seq = d->seq; size = 4; } break;
+                case KS:   { KeyedSeq *d = (KeyedSeq *) mseq[i];  keyval = d->keyval; seq = d->seq; size = 12 + d->baggage._length; } break;
+                case K32:  { Keyed32 *d  = (Keyed32 *)  mseq[i];  keyval = d->keyval; seq = d->seq; size = 32; } break;
+                case K64:  { Keyed64 *d  = (Keyed64 *)  mseq[i];  keyval = d->keyval; seq = d->seq; size = 64; } break;
+                case K128: { Keyed128 *d = (Keyed128 *) mseq[i];  keyval = d->keyval; seq = d->seq; size = 128; } break;
+                case K256: { Keyed256 *d = (Keyed256 *) mseq[i];  keyval = d->keyval; seq = d->seq; size = 256; } break;
+                case OU:   { OneULong *d = (OneULong *) mseq[i];  keyval = 0;         seq = d->seq; size = 4; } break;
                 case ARB:  assert(0); break; /* can't check what we don't know */
               }
               if (!check_eseq (&eseq_admin, seq, (unsigned)keyval, iseq[i].publication_handle))
