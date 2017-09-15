@@ -12,7 +12,6 @@
 
 /* Forward declaration */
 
-static int parse_args(int argc, char **argv, unsigned long *payloadSize, unsigned long long *numSamples, dds_time_t *timeOut, bool *quit);
 static dds_entity_t prepare_dds(dds_entity_t *writer, dds_entity_t *reader, dds_entity_t *readCond);
 static void finalize_dds(dds_entity_t participant, dds_entity_t reader, dds_entity_t readCond);
 
@@ -134,6 +133,7 @@ int main (int argc, char *argv[])
 
   unsigned long payloadSize = 0;
   unsigned long long numSamples = 0;
+  bool invalidargs = false;
   dds_time_t timeOut = 0;
   dds_time_t startTime;
   dds_time_t time;
@@ -155,7 +155,6 @@ int main (int argc, char *argv[])
   unsigned long i;
   int status;
   bool warmUp = true;
-  bool quit = false;
 
   /* Register handler for Ctrl-C */
 #ifdef _WIN32
@@ -187,23 +186,53 @@ int main (int argc, char *argv[])
 
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  if (parse_args(argc, argv, &payloadSize, &numSamples, &timeOut, &quit) == EXIT_FAILURE) {
-    if (quit) {
-      printf ("Sending termination request.\n");
-      /* pong uses a waitset which is triggered by instance disposal, and
-        quits when it fires. */
-      dds_sleepfor (DDS_SECS (1));
-      pub_data.payload._length = 0;
-      pub_data.payload._buffer = NULL;
-      pub_data.payload._release = true;
-      pub_data.payload._maximum = 0;
-      status = dds_writedispose (writer, &pub_data);
-      DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-      dds_sleepfor (DDS_SECS (1));
-      goto done;
+  if (argc == 2 && strcmp (argv[1], "quit") == 0)
+  {
+    printf ("Sending termination request.\n");
+    /* pong uses a waitset which is triggered by instance disposal, and
+      quits when it fires. */
+    dds_sleepfor (DDS_SECS (1));
+    pub_data.payload._length = 0;
+    pub_data.payload._buffer = NULL;
+    pub_data.payload._release = true;
+    pub_data.payload._maximum = 0;
+    status = dds_writedispose (writer, &pub_data);
+    DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+    dds_sleepfor (DDS_SECS (1));
+    goto done;
+  }
+
+  if (argc == 1)
+  {
+    invalidargs = true;
+  }
+  if (argc >= 2)
+  {
+    payloadSize = atol (argv[1]);
+
+    if (payloadSize > 65536)
+    {
+      invalidargs = true;
     }
+  }
+  if (argc >= 3)
+  {
+    numSamples = atol (argv[2]);
+  }
+  if (argc >= 4)
+  {
+    timeOut = atol (argv[3]);
+  }
+  if (invalidargs || (argc == 2 && (strcmp (argv[1], "-h") == 0 || strcmp (argv[1], "--help") == 0)))
+  {
+    printf ("Usage (parameters must be supplied in order):\n"
+            "./ping [payloadSize (bytes, 0 - 65536)] [numSamples (0 = infinite)] [timeOut (seconds, 0 = infinite)]\n"
+            "./ping quit - ping sends a quit signal to pong.\n"
+            "Defaults:\n"
+            "./ping 0 0 0\n");
     return EXIT_FAILURE;
   }
+  printf ("# payloadSize: %lu | numSamples: %llu | timeOut: %" PRIi64 "\n\n", payloadSize, numSamples, timeOut);
 
   pub_data.payload._length = payloadSize;
   pub_data.payload._buffer = payloadSize ? dds_alloc (payloadSize) : NULL;
@@ -368,51 +397,6 @@ done:
     RoundTripModule_DataType_free (&sub_data[i], DDS_FREE_CONTENTS);
   }
   RoundTripModule_DataType_free (&pub_data, DDS_FREE_CONTENTS);
-
-  return EXIT_SUCCESS;
-}
-
-static int parse_args(int argc, char **argv, unsigned long *payloadSize, unsigned long long *numSamples, dds_time_t *timeOut, bool *quit)
-{
-  bool invalid = false;
-
-  if (argc == 2 && strcmp (argv[1], "quit") == 0)
-  {
-    *quit = true;
-    return EXIT_FAILURE;
-  }
-
-  if (argc == 1)
-  {
-    invalid = true;
-  }
-  if (argc >= 2)
-  {
-    *payloadSize = atol (argv[1]);
-
-    if (*payloadSize > 65536)
-    {
-      invalid = true;
-    }
-  }
-  if (argc >= 3)
-  {
-    *numSamples = atol (argv[2]);
-  }
-  if (argc >= 4)
-  {
-    *timeOut = atol (argv[3]);
-  }
-  if (invalid || (argc == 2 && (strcmp (argv[1], "-h") == 0 || strcmp (argv[1], "--help") == 0)))
-  {
-    printf ("Usage (parameters must be supplied in order):\n"
-            "./ping [payloadSize (bytes, 0 - 65536)] [numSamples (0 = infinite)] [timeOut (seconds, 0 = infinite)]\n"
-            "./ping quit - ping sends a quit signal to pong.\n"
-            "Defaults:\n"
-            "./ping 0 0 0\n");
-    return EXIT_FAILURE;
-  }
-  printf ("# payloadSize: %lu | numSamples: %llu | timeOut: %" PRIi64 "\n\n", *payloadSize, *numSamples, *timeOut);
 
   return EXIT_SUCCESS;
 }
