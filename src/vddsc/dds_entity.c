@@ -1015,16 +1015,16 @@ dds_entity_lock(
             rc = DDS_RETCODE_OK;
         } else if(utr == UT_HANDLE_UNEQUAL_KIND){
             rc = DDS_RETCODE_ILLEGAL_OPERATION;
-            DDS_WARNING(rc, "Given (%s) [0x%08lx] entity type can not perform this operation.", dds__entity_kind_str(hdl));
+            DDS_WARNING(rc, "Given (%s) [0x%08lx] entity type can not perform this operation.", dds__entity_kind_str(hdl), hdl);
         } else if(utr == UT_HANDLE_INVALID){
             rc = DDS_RETCODE_BAD_PARAMETER;
             DDS_WARNING(rc, "Given (%s) [0x%08lx] entity is invalid", dds__entity_kind_str(hdl), hdl);
         } else if(utr == UT_HANDLE_DELETED){
             rc = DDS_RETCODE_ALREADY_DELETED;
-            DDS_WARNING(rc , "Given (%s) [0x%08lx] entity is already deleted", dds__entity_kind_str(hdl));
+            DDS_WARNING(rc , "Given (%s) [0x%08lx] entity is already deleted", dds__entity_kind_str(hdl), hdl);
         } else if(utr == UT_HANDLE_CLOSED){
             rc = DDS_RETCODE_ALREADY_DELETED;
-            DDS_WARNING(rc, "Given (%s) [0x%08lx] entity is already deleted", dds__entity_kind_str(hdl));
+            DDS_WARNING(rc, "Given (%s) [0x%08lx] entity is already deleted", dds__entity_kind_str(hdl), hdl);
         } else {
             rc = DDS_RETCODE_ERROR;
             DDS_WARNING(rc, "An internal error occurred");
