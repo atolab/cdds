@@ -11,12 +11,8 @@
  */
 package org.opensplice.common.view;
 
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-
-import javax.swing.*;
-
-import org.opensplice.common.util.Config;
+import javax.swing.JFrame;
+import javax.swing.ToolTipManager;
 
 /**  
  * Abstract class that is typically extended from by main windows of an
@@ -29,6 +25,7 @@ import org.opensplice.common.util.Config;
  * @date Sep 1, 2004
  */
 public abstract class MainWindow extends JFrame {
+    private static final long serialVersionUID = 5540350112074790669L;
     protected StatusPanel statusPanel    = null;
     
 	/**

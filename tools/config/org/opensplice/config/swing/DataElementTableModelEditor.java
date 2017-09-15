@@ -106,12 +106,12 @@ public class DataElementTableModelEditor extends AbstractCellEditor implements T
             
         if(editType instanceof MetaValueBoolean){
             String[] values = { "true", "false" };
-            JComboBox combo = new JComboBox(values);
+            JComboBox<String> combo = new JComboBox<String>(values);
             result = combo;
             combo.setSelectedItem(curValue);
             combo.addActionListener(this);
         } else if(editType instanceof MetaValueEnum){
-            JComboBox combo = new JComboBox();
+            JComboBox<String> combo = new JComboBox<String>();
             result = combo;
             
             for(String posValue: ((MetaValueEnum)editType).getPosValues()){
@@ -187,6 +187,7 @@ public class DataElementTableModelEditor extends AbstractCellEditor implements T
         return result;
     }
     
+    @SuppressWarnings("rawtypes")
     private AssignmentResult assign(){
         Object value = null;
         AssignmentResult test = this.testAssignment();

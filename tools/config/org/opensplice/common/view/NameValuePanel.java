@@ -25,6 +25,8 @@ import java.awt.FlowLayout;
  * - comboboxes.
  */
 public abstract class NameValuePanel extends JPanel {
+    private static final long serialVersionUID = 8693880375019883969L;
+
     /**
      * Creates an input panel with a label and a textfield.
      * @param _fieldName The name of the field that is also used as label.

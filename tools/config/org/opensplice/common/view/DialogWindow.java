@@ -33,6 +33,8 @@ import java.util.*;
  * fill the dialog window with as many fields as he wishes. 
  */
 public class DialogWindow extends JFrame {    
+    private static final long serialVersionUID = -4875672779193998620L;
+
     /**
      * The constructor of this object. It initializes the window.
      * 

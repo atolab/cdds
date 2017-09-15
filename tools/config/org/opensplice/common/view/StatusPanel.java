@@ -29,6 +29,8 @@ import org.opensplice.common.util.Config;
  */
 public class StatusPanel extends JPanel {
 
+    private static final long serialVersionUID = -6861447244439379176L;
+
     /**
      * Creates a new StatusPanel that can be used to provide information about
      * the status of the application of a certain action. The StatusPanel

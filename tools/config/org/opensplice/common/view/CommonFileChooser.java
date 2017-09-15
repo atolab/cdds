@@ -27,6 +27,7 @@ import javax.swing.JFrame;
  * @date Apr 14, 2005 
  */
 public class CommonFileChooser extends JFileChooser {
+    private static final long serialVersionUID = -1440579455652851165L;
     private int returnCode;
     private JDialog dialog = null;
     
