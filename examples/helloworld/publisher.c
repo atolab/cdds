@@ -1,17 +1,7 @@
 #include "dds.h"
 #include "HelloWorldData.h"
 #include <stdio.h>
-
-/*
-  The helloworld example sends a HelloWorldData_Msg from a publisher
-  to a subscriber. For the example to work, the subscriber should
-  already be running when executing the publisher application.
-
-  The publisher creates a HelloWorldData_Msg sample with an UserId
-  and a string message and publishes it.
-
-  The subscriber picks up that sample and displays it.
-*/
+#include <stdlib.h>
 
 int main (int argc, char ** argv)
 {
@@ -26,23 +16,36 @@ int main (int argc, char ** argv)
     DDS_ERR_CHECK (participant, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     /* Create a Topic. */
-    topic = dds_create_topic (participant, &HelloWorldData_Msg_desc, "HelloWorldData_Msg", NULL, NULL);
+    topic = dds_create_topic (participant, &HelloWorldData_Msg_desc,
+                              "HelloWorldData_Msg", NULL, NULL);
     DDS_ERR_CHECK (topic, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     /* Create a Writer. */
     writer = dds_create_writer (participant, topic, NULL, NULL);
-    DDS_ERR_CHECK (writer, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    /* Sleep to allow discovery of reader by writer and vice versa. */
-    dds_sleepfor (DDS_SECS (2));
-    /* Sleeping isn't really recommended but is just added for simplicity.
-     * See the documentation or other examples for alternatives. */
+    printf("=== [Publisher]  Waiting for a reader to be discovered ...\n");
+
+    ret = dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
+    DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+    while(true)
+    {
+      uint32_t status;
+      ret = dds_get_status_changes (writer, &status);
+      DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+      if (status == DDS_PUBLICATION_MATCHED_STATUS) {
+        break;
+      }
+      /* Polling sleep. */
+      dds_sleepfor (DDS_MSECS (20));
+    }
 
     /* Create a message to write. */
     msg.userID = 1;
     msg.message = "Hello World";
 
-    printf ("\n=== [Publisher] Writing : ");
+    printf ("=== [Publisher]  Writing : ");
     printf ("Message (%d, %s)\n", msg.userID, msg.message);
 
     ret = dds_write (writer, &msg);
@@ -52,5 +55,5 @@ int main (int argc, char ** argv)
     ret = dds_delete (participant);
     DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
