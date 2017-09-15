@@ -28,8 +28,6 @@ dds_listener_delete(_In_ _Post_invalid_ dds_listener_t * __restrict listener)
 {
     if (listener) {
         dds_free(listener);
-    } else {
-        DDS_WARNING(DDS_RETCODE_BAD_PARAMETER, "Argument listener is NULL");
     }
 }
 

@@ -321,10 +321,36 @@ dds_delete_impl(
     /* Signal observers that this entity will be deleted. */
     dds_entity_status_signal(e);
 
-    /* Recursively delete children */
+    /*
+     * Recursively delete children.
+     *
+     * It is possible that a writer/reader has the last reference
+     * to a topic. This will mean that when deleting a writer could
+     * cause a topic to be deleted.
+     * This can cause issues when deleting the children of a participant:
+     * when a topic is the next child in line to be deleted, while at the
+     * same time it is already being deleted due to the recursive deletion
+     * of a publisher->writer.
+     *
+     * To circumvent the problem. We ignore topics in the first loop when
+     * it is the next entity to be deleted.
+     */
     child = e->m_children;
     while ((child != NULL) && (ret == DDS_RETCODE_OK)) {
         next = child->m_next;
+        while ((next != NULL) && (dds_entity_kind(next->m_hdl) == DDS_KIND_TOPIC)) {
+            next = next->m_next;
+        }
+        /* This will probably delete the child entry from
+         * the current childrens list */
+        ret = dds_delete(child->m_hdl);
+        /* Next child. */
+        child = next;
+    }
+    child = e->m_children;
+    while ((child != NULL) && (ret == DDS_RETCODE_OK)) {
+        next = child->m_next;
+        assert(dds_entity_kind(child->m_hdl) == DDS_KIND_TOPIC);
         /* This will probably delete the child entry from
          * the current childrens list */
         ret = dds_delete(child->m_hdl);
@@ -941,30 +967,25 @@ dds_valid_hdl(
         utr = ut_handle_status(hdl, NULL, kind);
         if(utr == UT_HANDLE_OK){
             rc = DDS_RETCODE_OK;
-        }
-        else if(utr == UT_HANDLE_UNEQUAL_KIND){
+        } else if(utr == UT_HANDLE_UNEQUAL_KIND){
             rc = DDS_RETCODE_ILLEGAL_OPERATION;
-            DDS_ERROR(-(rc), "Given entity type (%s) can not perform this operation.", dds__entity_kind_str(hdl));
-        }
-        else if(utr == UT_HANDLE_INVALID){
+            DDS_WARNING(rc, "Given (%s) [0x%08lx] entity type can not perform this operation.", dds__entity_kind_str(hdl), hdl);
+        } else if(utr == UT_HANDLE_INVALID){
             rc = DDS_RETCODE_BAD_PARAMETER;
-            DDS_ERROR(rc, "Given entity is invalid.");
-        }
-        else if(utr == UT_HANDLE_DELETED){
+            DDS_WARNING(rc, "Given (%s) [0x%08lx] entity is invalid", dds__entity_kind_str(hdl), hdl);
+        } else if(utr == UT_HANDLE_DELETED){
             rc = DDS_RETCODE_ALREADY_DELETED;
-            DDS_ERROR(rc, "Given entity is already deleted.");
-        }
-        else if(utr == UT_HANDLE_CLOSED){
+            DDS_WARNING(rc, "Given (%s) [0x%08lx] entity is already deleted.", dds__entity_kind_str(hdl), hdl);
+        } else if(utr == UT_HANDLE_CLOSED){
             rc = DDS_RETCODE_ALREADY_DELETED;
-            DDS_ERROR(rc, "Given entity is already deleted.");
-        }
-        else {
+            DDS_WARNING(rc, "Given (%s) [0x%08lx] entity is already deleted.", dds__entity_kind_str(hdl), hdl);
+        } else {
             rc = DDS_RETCODE_ERROR;
-            DDS_ERROR(rc, "An internal error occurred.");
+            DDS_WARNING(rc, "An internal error occurred.");
         }
     } else {
         rc = DDS_RETCODE_BAD_PARAMETER;
-        DDS_ERROR(rc, "Given entity (0x%08lx) was not properly created.", hdl);
+        DDS_WARNING(rc, "Given entity (0x%08lx) was not properly created.", hdl);
     }
     return rc;
 }
@@ -992,30 +1013,25 @@ dds_entity_lock(
         }
         if(utr == UT_HANDLE_OK){
             rc = DDS_RETCODE_OK;
-        }
-        else if(utr == UT_HANDLE_UNEQUAL_KIND){
+        } else if(utr == UT_HANDLE_UNEQUAL_KIND){
             rc = DDS_RETCODE_ILLEGAL_OPERATION;
-            DDS_ERROR(rc, "Given entity type (%s) can not perform this operation.", dds__entity_kind_str(hdl));
-        }
-        else if(utr == UT_HANDLE_INVALID){
+            DDS_WARNING(rc, "Given (%s) [0x%08lx] entity type can not perform this operation.", dds__entity_kind_str(hdl));
+        } else if(utr == UT_HANDLE_INVALID){
             rc = DDS_RETCODE_BAD_PARAMETER;
-            DDS_ERROR(rc, "Given entity is invalid");
-        }
-        else if(utr == UT_HANDLE_DELETED){
+            DDS_WARNING(rc, "Given (%s) [0x%08lx] entity is invalid", dds__entity_kind_str(hdl), hdl);
+        } else if(utr == UT_HANDLE_DELETED){
             rc = DDS_RETCODE_ALREADY_DELETED;
-            DDS_ERROR(rc , "Given entity is already deleted");
-        }
-        else if(utr == UT_HANDLE_CLOSED){
+            DDS_WARNING(rc , "Given (%s) [0x%08lx] entity is already deleted", dds__entity_kind_str(hdl));
+        } else if(utr == UT_HANDLE_CLOSED){
             rc = DDS_RETCODE_ALREADY_DELETED;
-            DDS_ERROR(rc, "Given entity is already deleted");
-        }
-        else {
+            DDS_WARNING(rc, "Given (%s) [0x%08lx] entity is already deleted", dds__entity_kind_str(hdl));
+        } else {
             rc = DDS_RETCODE_ERROR;
-            DDS_ERROR(rc, "An internal error occurred");
+            DDS_WARNING(rc, "An internal error occurred");
         }
     } else {
         rc = DDS_RETCODE_BAD_PARAMETER;
-        DDS_ERROR(rc, "Given entity (0x%08lx) was not properly created.", hdl);
+        DDS_WARNING(rc, "Given entity (0x%08lx) was not properly created.", hdl);
     }
     return rc;
 }
