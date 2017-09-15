@@ -271,7 +271,11 @@ dds_return_t
 dds_delete(
         _In_ dds_entity_t entity)
 {
-    return dds_delete_impl(entity, false);
+    dds_return_t ret;
+    DDS_REPORT_STACK();
+    ret = dds_delete_impl(entity, false);
+    DDS_REPORT_FLUSH(ret < 0);
+    return ret;
 }
 
 
@@ -290,22 +294,19 @@ dds_delete_impl(
     dds_return_t ret = DDS_RETCODE_OK;
     dds_retcode_t rc;
 
-    DDS_REPORT_STACK();
-
     rc = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
     if (rc != DDS_RETCODE_OK) {
-        ret = DDS_ERRNO(rc, "Error on locking entity");
-        goto err;
+        return DDS_ERRNO(rc, "Error on locking entity");
     }
 
     if(keep_if_explicit == true && ((e->m_flags & DDS_ENTITY_IMPLICIT) == 0)){
         dds_entity_unlock(e);
-        goto err;
+        return DDS_RETCODE_OK;
     }
 
     if (--e->m_refc != 0) {
         dds_entity_unlock(e);
-        goto err;
+        return DDS_RETCODE_OK;
     }
 
     dds_entity_cb_wait(e);
@@ -345,8 +346,7 @@ dds_delete_impl(
          * is released. It is possible that this last release will be done by a thread
          * that was kicked during the close(). */
         if (ut_handle_delete(e->m_hdl, e->m_hdllink, timeout) != UT_HANDLE_OK) {
-            ret =  DDS_ERRNO(DDS_RETCODE_TIMEOUT, "Entity deletion did not release resources.");
-            goto err;
+            return DDS_ERRNO(DDS_RETCODE_TIMEOUT, "Entity deletion did not release resources.");
         }
     }
 
@@ -386,8 +386,7 @@ dds_delete_impl(
         os_mutexDestroy (&e->m_mutex);
         dds_free (e);
     }
-err:
-    DDS_REPORT_FLUSH(ret < 0);
+
     return ret;
 }
 
@@ -494,7 +493,7 @@ dds_get_children(
     dds_entity_unlock(e);
 
 err:
-    DDS_REPORT_FLUSH(ret <0 );
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -936,8 +935,6 @@ dds_valid_hdl(
     dds_retcode_t rc = hdl;
     ut_handle_t utr;
 
-    DDS_REPORT_STACK();
-
     /* When the given handle already contains an error, then return that
      * same error to retain the original information. */
     if (hdl >= 0) {
@@ -969,7 +966,6 @@ dds_valid_hdl(
         rc = DDS_RETCODE_BAD_PARAMETER;
         DDS_ERROR(rc, "Given entity (0x%08lx) was not properly created.", hdl);
     }
-    DDS_REPORT_FLUSH(rc != DDS_RETCODE_OK);
     return rc;
 }
 
@@ -1021,7 +1017,6 @@ dds_entity_lock(
         rc = DDS_RETCODE_BAD_PARAMETER;
         DDS_ERROR(rc, "Given entity (0x%08lx) was not properly created.", hdl);
     }
-    DDS_REPORT_FLUSH(rc != DDS_RETCODE_OK);
     return rc;
 }
 
@@ -1159,7 +1154,6 @@ dds_entity_observer_unregister(
         rc = dds_entity_observer_unregister_nl(e, observer);
         dds_entity_unlock(e);
     } else{
-        rc = DDS_RETCODE_ERROR;
         ret = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
     return rc;
