@@ -5,7 +5,7 @@ include(UseJava)
 
 project (chamconf)
 
-set(CMAKE_JAVA_COMPILE_FLAGS "-source" "1.8" "-target" "1.8")
+set(CMAKE_JAVA_COMPILE_FLAGS "-source" "1.7" "-target" "1.7")
 
 file(GLOB_RECURSE JAVA_SOURCES LIST_DIRECTORIES true *.java)
 set(RESOURCES metaconfig.xml metaconfig.xsd resources/ptlogoc16.png resources/ptlogoc24.png resources/ptlogoc32.png resources/ptlogoc48.png)
