@@ -20,10 +20,6 @@
 #endif
 #include <string.h>
 #include <ctype.h>
-#include <stdio.h>
-#ifdef __VXWORKS__
-#include <vxWorks.h>
-#endif
 
 
 #include "os_stdlib_strsep.c"
