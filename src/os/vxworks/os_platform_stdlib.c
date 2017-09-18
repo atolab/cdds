@@ -48,3 +48,13 @@ os_stdlibInitialize(
 #include "../snippets/code/os_stdlib_strtod.c"
 #include "../snippets/code/os_stdlib_strtol.c"
 #include "../snippets/code/os_stdlib_strtok_r.c"
+
+void os_flockfile(FILE *file)
+{
+	_lock_file (file);
+}
+
+void os_funlockfile(FILE *file)
+{
+	_unlock_file (file);
+}

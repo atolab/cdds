@@ -300,6 +300,7 @@ ssize_t os_write(int fd, const void *buf, size_t count)
     return write(fd, buf, count);
 }
 
+#ifndef __VXWORKS__
 void os_flockfile(FILE *file)
 {
 	flockfile (file);
@@ -309,6 +310,7 @@ void os_funlockfile(FILE *file)
 {
 	funlockfile (file);
 }
+#endif
 
 int os_getopt(int argc, char **argv, const char *opts)
 {
