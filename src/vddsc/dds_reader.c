@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 #include "dds.h"
+#include "kernel/dds_subscriber.h"
 #include "kernel/dds_reader.h"
 #include "kernel/dds_listener.h"
 #include "kernel/dds_qos.h"
@@ -39,7 +40,7 @@ static dds_return_t
 dds_reader_close(
         dds_entity *e)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret = DDS_RETCODE_OK;
     struct thread_state1 * const thr = lookup_thread_state();
     const bool asleep = !vtime_awake_p(thr->vtime);
@@ -144,7 +145,7 @@ dds_reader_status_cb(
         const status_cb_data_t *data)
 {
     dds_reader *rd;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     void *metrics = NULL;
 
 
@@ -328,37 +329,47 @@ dds_create_reader(
         _In_opt_ const dds_listener_t *listener)
 {
     dds_qos_t * rqos;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_entity * sub = NULL;
     dds_entity_t subscriber;
     dds_reader * rd;
     struct rhc * rhc;
     dds_entity * tp;
     dds_entity_t reader;
+    dds_entity_t t;
     struct thread_state1 * const thr = lookup_thread_state ();
     const bool asleep = !vtime_awake_p (thr->vtime);
     dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
 
-    /* Try claiming a participant. If that's not working, then it could be a subscriber. */
-    if(dds_entity_kind(participant_or_subscriber) == DDS_KIND_PARTICIPANT){
-        subscriber = dds_create_subscriber(participant_or_subscriber, qos, NULL);
-    } else{
-        subscriber = participant_or_subscriber;
+    if (dds_entity_kind(topic) != DDS_KIND_INTERNAL) {
+        /* Try claiming a participant. If that's not working, then it could be a subscriber. */
+        if (dds_entity_kind(participant_or_subscriber) == DDS_KIND_PARTICIPANT) {
+            subscriber = dds_create_subscriber(participant_or_subscriber, qos, NULL);
+        } else {
+            subscriber = participant_or_subscriber;
+        }
+        t = topic;
+    } else {
+        /* todo, if qos is provided, we need to compare with writer qos to determine compatibility */
+        subscriber = dds__get_builtin_subscriber(participant_or_subscriber);
+        t = dds__get_builtin_topic(subscriber, topic);
     }
-    rc = dds_entity_lock(subscriber, DDS_KIND_SUBSCRIBER, &sub);
 
+    rc = dds_entity_lock(subscriber, DDS_KIND_SUBSCRIBER, &sub);
     if (rc != DDS_RETCODE_OK) {
         reader = DDS_ERRNO(rc, "Error occurred on locking subscriber");
         goto err_sub_lock;
     }
 
-    if (subscriber != participant_or_subscriber) {
+    if ((subscriber != participant_or_subscriber) &&
+        (dds_entity_kind(topic) != DDS_KIND_INTERNAL)) {
+        /* Delete implicit subscriber if reader creation fails */
         sub->m_flags |= DDS_ENTITY_IMPLICIT;
     }
 
-    rc = dds_entity_lock(topic, DDS_KIND_TOPIC, &tp);
+    rc = dds_entity_lock(t, DDS_KIND_TOPIC, &tp);
     if (rc != DDS_RETCODE_OK) {
         reader = DDS_ERRNO(rc, "Error occurred on locking topic");
         goto err_tp_lock;
@@ -574,7 +585,7 @@ dds_get_subscription_matched_status (
         _In_ dds_entity_t reader,
         _Out_opt_ dds_subscription_matched_status_t * status)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_reader *rd;
     dds_return_t ret = DDS_RETCODE_OK;
 
@@ -606,7 +617,7 @@ dds_get_liveliness_changed_status (
         _In_ dds_entity_t reader,
         _Out_opt_ dds_liveliness_changed_status_t * status)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_reader *rd;
     dds_return_t ret = DDS_RETCODE_OK;
 
@@ -637,7 +648,7 @@ dds_return_t dds_get_sample_rejected_status (
         _In_ dds_entity_t reader,
         _Out_opt_ dds_sample_rejected_status_t * status)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_reader *rd;
     dds_return_t ret = DDS_RETCODE_OK;
 
@@ -668,7 +679,7 @@ dds_return_t dds_get_sample_lost_status (
         _In_ dds_entity_t reader,
         _Out_opt_ dds_sample_lost_status_t * status)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_reader *rd;
     dds_return_t ret = DDS_RETCODE_OK;
 
@@ -698,7 +709,7 @@ dds_return_t dds_get_requested_deadline_missed_status (
         _In_ dds_entity_t reader,
         _Out_opt_ dds_requested_deadline_missed_status_t * status)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_reader *rd;
     dds_return_t ret = DDS_RETCODE_OK;
 
@@ -727,7 +738,7 @@ dds_return_t dds_get_requested_incompatible_qos_status (
         _In_ dds_entity_t reader,
         _Out_opt_ dds_requested_incompatible_qos_status_t * status)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_reader *rd;
     dds_return_t ret = DDS_RETCODE_OK;
 

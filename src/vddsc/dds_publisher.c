@@ -82,7 +82,7 @@ dds_create_publisher(
     dds_entity_t hdl;
     dds_qos_t * new_qos = NULL;
     dds_return_t ret;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
 
     DDS_REPORT_STACK();
 

@@ -13,6 +13,7 @@
 extern "C" {
 #endif
 
+typedef _Return_type_success_(return == DDS_RETCODE_OK) int32_t dds__retcode_t;
 
 struct dds_domain;
 struct dds_entity;
@@ -127,11 +128,24 @@ dds_entity;
 
 extern const ut_avlTreedef_t dds_topictree_def;
 
+typedef struct dds_subscriber
+{
+  struct dds_entity m_entity;
+}
+dds_subscriber;
+
+typedef struct dds_publisher
+{
+  struct dds_entity m_entity;
+}
+dds_publisher;
+
 typedef struct dds_participant
 {
   struct dds_entity m_entity;
   struct dds_entity * m_dur_reader;
   struct dds_entity * m_dur_writer;
+  dds_entity_t m_builtin_subscriber;
 }
 dds_participant;
 
@@ -172,18 +186,6 @@ typedef struct dds_writer
   dds_publication_matched_status_t m_publication_matched_status;
 }
 dds_writer;
-
-typedef struct dds_subscriber
-{
-  struct dds_entity m_entity;
-}
-dds_subscriber;
-
-typedef struct dds_publisher
-{
-  struct dds_entity m_entity;
-}
-dds_publisher;
 
 typedef struct dds_topic
 {

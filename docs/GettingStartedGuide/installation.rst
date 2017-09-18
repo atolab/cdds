@@ -18,7 +18,7 @@ Linux
 Ubuntu
 ======
 
-On Ubuntu and other debian-derived platforms, the product can be installed using a native package.
+On Ubuntu and other Debian-derived distros, the product can be installed using a native package.
 
 ::
 

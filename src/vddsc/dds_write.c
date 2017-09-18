@@ -30,7 +30,7 @@ dds_write(
         _In_ const void *data)
 {
     dds_return_t ret;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_writer *wr;
 
     DDS_REPORT_STACK();
@@ -58,7 +58,7 @@ dds_writecdr(
         size_t size)
 {
     dds_return_t ret;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_writer *wr;
     if (cdr != NULL) {
         rc = dds_writer_lock(writer, &wr);
@@ -82,7 +82,7 @@ dds_write_ts(
         _In_ dds_time_t timestamp)
 {
     dds_return_t ret;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_writer *wr;
 
     DDS_REPORT_STACK();
@@ -368,7 +368,7 @@ dds_write_flush(
         dds_entity_t writer)
 {
     dds_return_t ret = DDS_RETCODE_OK;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     DDS_REPORT_STACK();
 
     struct thread_state1 * const thr = lookup_thread_state ();

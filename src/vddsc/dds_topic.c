@@ -27,6 +27,17 @@ const ut_avlTreedef_t dds_topictree_def = UT_AVL_TREEDEF_INITIALIZER_INDKEY
   0
 );
 
+/* builtin-topic handles */
+const dds_entity_t DDS_BUILTIN_TOPIC_DCPSPARTICIPANT = (DDS_KIND_INTERNAL + 1);
+const dds_entity_t DDS_BUILTIN_TOPIC_CMPARTICIPANT = (DDS_KIND_INTERNAL + 2);
+const dds_entity_t DDS_BUILTIN_TOPIC_DCPSTYPE = (DDS_KIND_INTERNAL + 3);
+const dds_entity_t DDS_BUILTIN_TOPIC_DCPSTOPIC = (DDS_KIND_INTERNAL + 4);
+const dds_entity_t DDS_BUILTIN_TOPIC_DCPSPUBLICATION = (DDS_KIND_INTERNAL + 5);
+const dds_entity_t DDS_BUILTIN_TOPIC_CMPUBLISHER = (DDS_KIND_INTERNAL + 6);
+const dds_entity_t DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION = (DDS_KIND_INTERNAL + 7);
+const dds_entity_t DDS_BUILTIN_TOPIC_CMSUBSCRIBER = (DDS_KIND_INTERNAL + 8);
+const dds_entity_t DDS_BUILTIN_TOPIC_CMDATAWRITER = (DDS_KIND_INTERNAL + 9);
+const dds_entity_t DDS_BUILTIN_TOPIC_CMDATAREADER = (DDS_KIND_INTERNAL + 10);
 
 static bool
 is_valid_name(
@@ -74,7 +85,7 @@ dds_topic_status_cb(
         struct dds_topic *cb_t)
 {
     dds_topic *topic;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     void *metrics = NULL;
 
     if (dds_topic_lock(((dds_entity*)cb_t)->m_hdl, &topic) != DDS_RETCODE_OK) {
@@ -185,7 +196,7 @@ dds_find_topic(
     dds_entity_t tp;
     dds_entity *p = NULL;
     sertopic_t st;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
 
     DDS_REPORT_STACK();
 
@@ -280,7 +291,7 @@ dds_create_topic(
     char *key = NULL;
     sertopic_t st;
     const char *typename;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_entity *par;
     dds_topic *top;
     dds_qos_t *new_qos = NULL;
@@ -508,7 +519,7 @@ dds_get_name(
 {
     dds_topic *t;
     dds_return_t ret;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
 
     DDS_REPORT_STACK();
 
@@ -543,7 +554,7 @@ dds_get_type_name(
         _In_ size_t size)
 {
     dds_topic *t;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret;
 
     DDS_REPORT_STACK();
@@ -575,7 +586,7 @@ dds_get_inconsistent_topic_status(
         _In_ dds_entity_t topic,
         _Out_opt_ dds_inconsistent_topic_status_t *status)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_topic *t;
     dds_return_t ret = DDS_RETCODE_OK;
 
