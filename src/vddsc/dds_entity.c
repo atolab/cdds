@@ -332,10 +332,16 @@ dds_delete_impl(
      * same time it is already being deleted due to the recursive deletion
      * of a publisher->writer.
      *
-     * To circumvent the problem. We ignore topics in the first loop when
-     * it is the next entity to be deleted.
+     * Another problem is that when the topic was already deleted, and
+     * we'd delete it here for the second time before the writer/reader
+     * is deleted, they will have dangling pointers.
+     *
+     * To circumvent the problem. We ignore topics in the first loop.
      */
     child = e->m_children;
+    while ((child != NULL) && (dds_entity_kind(child->m_hdl) == DDS_KIND_TOPIC)) {
+        child = child->m_next;
+    }
     while ((child != NULL) && (ret == DDS_RETCODE_OK)) {
         next = child->m_next;
         while ((next != NULL) && (dds_entity_kind(next->m_hdl) == DDS_KIND_TOPIC)) {
