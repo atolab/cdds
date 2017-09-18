@@ -1074,22 +1074,23 @@ QOS (not all are universally applicable):\n\
 
 void set_qosprovider (const char *arg)
 {
+    //Todo: There is no qosprovider_create in dds.h, yet
 //  int result = DDS_RETCODE_OK;
-  const char *p = strchr (arg, ',');
-  const char *xs = strstr (arg, "://");
-  char *profile = NULL;
-  const char *uri;
-  if (p == NULL || xs == NULL || p >= xs)
-    uri = arg;
-  else {
-    uri = p+1;
-    profile = os_strdup(arg);
-    profile[p-arg] = 0;
-  }
-
-//  if((result = dds_qosprovider_create(&qosprov, uri, profile)) != DDS_RETCODE_OK)	//Todo: There is no qosprovider_create in dds.h, yet
+//  const char *p = strchr (arg, ',');
+//  const char *xs = strstr (arg, "://");
+//  char *profile = NULL;
+//  const char *uri;
+//  if (p == NULL || xs == NULL || p >= xs)
+//    uri = arg;
+//  else {
+//    uri = p+1;
+//    profile = os_strdup(arg);
+//    profile[p-arg] = 0;
+//  }
+//
+//  if((result = dds_qosprovider_create(&qosprov, uri, profile)) != DDS_RETCODE_OK)
 //	  error("dds_qosprovider_create(%s,%s) failed\n", uri, profile ? profile : "(null)");
-  os_free(profile);
+//  os_free(profile);
 }
 
 void setqos_from_args (struct qos *q, int n, const char *args[])
