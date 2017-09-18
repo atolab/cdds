@@ -55,6 +55,9 @@ static int once_mode = 0;
 static int wait_hist_data = 0;
 static dds_duration_t wait_hist_data_timeout = 0;
 static double dur = 0.0;
+//static int sigpipe[2]; // TODO signal handling support
+//static int termpipe[2];
+//static int fdin = 0; // TODO ARB type support
 static enum tgprint_mode printmode = TGPM_FIELDS;
 static unsigned print_metadata = PM_STATE;
 static int printtype = 0;
@@ -135,9 +138,9 @@ struct wrspeclist {
 
 static void terminate (void)
 {
-  const char c = 0;
+//  const char c = 0;
   termflag = 1;
-//  os_write(termpipe[1], &c, 1); //Todo: for abstraction layer
+//  os_write(termpipe[1], &c, 1); // TODO: signal handling support; for abstraction layer
   dds_waitset_set_trigger(termcond, true);
 }
 
@@ -283,7 +286,7 @@ static char *expand_env (const char *name, char op, const char *alt)
     case '+':
       return env ? expand_envvars (alt) : os_strdup ("");
     default:
-      abort ();
+      exit(2);
   }
 }
 
@@ -609,53 +612,54 @@ static int read_value (char *command, int *key, struct tstamp_t *tstamp, char **
   return 0;
 }
 
-static char *getl_simple (int fd, int *count)
-{
-  size_t sz = 0, n = 0;
-  char *line;
-  int c;
-
-  if ((c = getc(stdin)) == EOF)
-  {
-    *count = 0;
-    return NULL;
-  }
-
-  line = NULL;
-  do {
-    if (n == sz) line = os_realloc(line, sz += 256);
-    line[n++] = (char) c;
-  } while ((c = getc (stdin)) != EOF && c != '\n');
-  if (n == sz) line = os_realloc(line, sz += 256);
-  line[n++] = 0;
-  *count = (int) (n-1);
-  return line;
-}
-
-struct getl_arg {
-  int use_editline;
-  union {
-#if USE_EDITLINE
-    struct {
-      FILE *el_fp;
-      EditLine *el;
-      History *hist;
-      HistEvent ev;
-    } el;
-#endif
-    struct {
-      int fd;
-      char *lastline;
-    } s;
-  } u;
-};
-
-static void getl_init_simple (struct getl_arg *arg, int fd)
-{
-  arg->use_editline = 0;
-  arg->u.s.fd = fd;
-  arg->u.s.lastline = NULL;
-}
+// TODO Upon support for ARB types, resolve the declaration of fdin
+//static void getl_init_simple (struct getl_arg *arg, int fd)
+//{
+//  arg->use_editline = 0;
+//  arg->u.s.fd = fd;
+//  arg->u.s.lastline = NULL;
+//}
+//
+//static char *getl_simple (int fd, int *count)
+//{
+//  size_t sz = 0, n = 0;
+//  char *line;
+//  int c;
+//
+//  if ((c = getc(stdin)) == EOF)
+//  {
+//    *count = 0;
+//    return NULL;
+//  }
+//
+//  line = NULL;
+//  do {
+//    if (n == sz) line = os_realloc(line, sz += 256);
+//    line[n++] = (char) c;
+//  } while ((c = getc (stdin)) != EOF && c != '\n');
+//  if (n == sz) line = os_realloc(line, sz += 256);
+//  line[n++] = 0;
+//  *count = (int) (n-1);
+//  return line;
+//}
+//
+//struct getl_arg {
+//  int use_editline;
+//  union {
+//#if USE_EDITLINE
+//    struct {
+//      FILE *el_fp;
+//      EditLine *el;
+//      History *hist;
+//      HistEvent ev;
+//    } el;
+//#endif
+//    struct {
+//      int fd;
+//      char *lastline;
+//    } s;
+//  } u;
+//};
 
 #if USE_EDITLINE
 static int el_getc_wrapper (EditLine *el, char *c)
@@ -701,47 +705,55 @@ static void getl_init_editline (struct getl_arg *arg, int fd)
 }
 #endif
 
-static void getl_fini (struct getl_arg *arg)
-{
-  if (arg->use_editline)
-  {
-#if USE_EDITLINE
-    el_end(arg->u.el.el);
-    history_end(arg->u.el.hist);
-    fclose(arg->u.el.el_fp);
-#endif
-  }
-  else
-  {
-	  os_free(arg->u.s.lastline);
-  }
-}
-
-static const char *getl (struct getl_arg *arg, int *count)
-{
-  if (arg->use_editline)
-  {
-#if USE_EDITLINE
-    return el_gets(arg->u.el.el, count);
-#else
-    abort();
-    return NULL;
-#endif
-  }
-  else
-  {
-	  os_free (arg->u.s.lastline);
-    return arg->u.s.lastline = getl_simple (arg->u.s.fd, count);
-  }
-}
-
-static void getl_enter_hist(struct getl_arg *arg, const char *line)
-{
-#if USE_EDITLINE
-  if (arg->use_editline)
-    history(arg->u.el.hist, &arg->u.el.ev, H_ENTER, line);
-#endif
-}
+// TODO ARB type support
+//static void getl_fini (struct getl_arg *arg)
+//{
+//  if (arg->use_editline)
+//  {
+//#if USE_EDITLINE
+//    el_end(arg->u.el.el);
+//    history_end(arg->u.el.hist);
+//    fclose(arg->u.el.el_fp);
+//#endif
+//  }
+//  else
+//  {
+//	  os_free(arg->u.s.lastline);
+//  }
+//}
+//
+//static const char *getl (struct getl_arg *arg, int *count)
+//{
+//  if (arg->use_editline)
+//  {
+//#if USE_EDITLINE
+//    return el_gets(arg->u.el.el, count);
+//#else
+//    abort();
+//    return NULL;
+//#endif
+//  }
+//  else
+//  {
+//	  os_free (arg->u.s.lastline);
+//    return arg->u.s.lastline = getl_simple (arg->u.s.fd, count);
+//  }
+//}
+//
+//static void getl_enter_hist(struct getl_arg *arg, const char *line)
+//{
+//#if USE_EDITLINE
+//  if (arg->use_editline)
+//    history(arg->u.el.hist, &arg->u.el.ev, H_ENTER, line);
+//#endif
+//}
+//
+//static char *skipspaces (const char *s)
+//{
+//  while (*s && isspace((unsigned char) *s))
+//    s++;
+//  return (char *) s;
+//}
 
 static char si2isc (const dds_sample_info_t *si)
 {
@@ -829,6 +841,7 @@ static int getkeyval_K256 (dds_entity_t rd, int32_t *key, dds_instance_handle_t 
   return result;
 }
 
+// TODO Determine encoding of dds_instance_handle_t, and see what sort of value can be extracted from it, if any
 //static void instancehandle_to_id (uint32_t *systemId, uint32_t *localId, dds_instance_handle_t h)
 //{
 //  /* Undocumented and unsupported trick */
@@ -980,6 +993,7 @@ static void print_seq_OU (unsigned long long *tstart, unsigned long long tnow, d
 
 static void print_seq_ARB (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd __attribute__ ((unused)), const char *tag, const dds_sample_info_t *iseq, const void **mseq, const struct tgtopic *tgtp)
 {
+    // TODO ARB type support
 //  unsigned i;
 //  for (i = 0; i < mseq->_length; i++)
 //  {
@@ -1074,6 +1088,7 @@ static const char *policystr (uint32_t id)
   }
 }
 
+// TODO Decide on whether to work around the lack of DDS_QosPolicyCount, or get rid of this bit.
 //static void format_policies (char *polstr, size_t polsz, const DDS_QosPolicyCount *xs, unsigned nxs)
 //{
 //  char *ps = polstr;
@@ -1157,6 +1172,7 @@ static void non_data_operation(char command, dds_entity_t wr)
   {
     case 'Y':
     	printf("Dispose all: not supported\n");
+    	// TODO Implement application side tracking of alive instances for use with a 'dispose all' function
 //      if ((result = DDS_Topic_dispose_all_data (DDS_DataWriter_get_topic (wr))) != DDS_RETCODE_OK)
 //        error ("DDS_Topic_dispose_all: error %d\n", (int) result);
       break;
@@ -1177,13 +1193,6 @@ static void non_data_operation(char command, dds_entity_t wr)
     default:
       abort();
   }
-}
-
-static char *skipspaces (const char *s)
-{
-  while (*s && isspace((unsigned char) *s))
-    s++;
-  return (char *) s;
 }
 
 static int accept_error (char command, int retcode)
@@ -1455,11 +1464,12 @@ static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq)
   }
 }
 
-static char *pub_do_arb_line(const struct writerspec *spec, const char *line)
-{
+// TODO ARB type support
+//static char *pub_do_arb_line(const struct writerspec *spec, const char *line)
+//{
 //  int result;
 //  struct tstamp_t tstamp_spec;
-  char *ret = NULL;
+//  char *ret = NULL;
 //  char command;
 //  int k, pos;
 //  while (line && *(line = skipspaces(line)) != 0)
@@ -1543,22 +1553,22 @@ static char *pub_do_arb_line(const struct writerspec *spec, const char *line)
 //        break;
 //    }
 //  }
-  return ret;
-}
-
-static char *pub_do_arb(const struct writerspec *spec, struct getl_arg *getl_arg)
-{
-  const char *orgline;
-  char *ret = NULL;
-  int count;
-  while (ret == NULL && (orgline = getl(getl_arg, &count)) != NULL)
-  {
-    const char *line = skipspaces(orgline);
-    if (*line) getl_enter_hist(getl_arg, orgline);
-    ret = pub_do_arb_line (spec, line);
-  }
-  return ret;
-}
+//  return ret;
+//}
+//
+//static char *pub_do_arb(const struct writerspec *spec, struct getl_arg *getl_arg)
+//{
+//  const char *orgline;
+//  char *ret = NULL;
+//  int count;
+//  while (ret == NULL && (orgline = getl(getl_arg, &count)) != NULL)
+//  {
+//    const char *line = skipspaces(orgline);
+//    if (*line) getl_enter_hist(getl_arg, orgline);
+//    ret = pub_do_arb_line (spec, line);
+//  }
+//  return ret;
+//}
 
 static uint32_t pubthread_auto(void *vspec)
 {
@@ -1572,6 +1582,13 @@ static uint32_t pubthread(void *vwrspecs)
 {
   struct wrspeclist *wrspecs = vwrspecs;
   uint32_t seq = 0;
+  // TODO Upon support for ARB types, resolve the declaration of fdin
+//  struct getl_arg getl_arg;
+//#if USE_EDITLINE
+//  getl_init_editline(&getl_arg, fdin);
+//#else
+//  getl_init_simple(&getl_arg, fdin);
+//#endif
 
     struct wrspeclist *cursor = wrspecs;
     struct writerspec *spec = cursor->spec;
@@ -1672,6 +1689,7 @@ static int check_eseq (struct eseq_admin *ea, unsigned seq, unsigned keyval, con
   return 1;
 }
 
+// TODO coherency - Reintroduce this into application logic where needed. dds.h has this, but returns UNSUPPORTED, so expect that for now
 //static int subscriber_needs_access (dds_entity_t sub)
 //{
 //  dds_qos_t *qos;
@@ -1695,6 +1713,7 @@ static uint32_t subthread (void *vspec)
 {
   const struct readerspec *spec = vspec;
   dds_entity_t rd = spec->rd;
+  // TODO coherency support
 //  dds_entity_t sub = spec->sub;
 //  const int need_access = subscriber_needs_access (sub);
   dds_entity_t ws;
@@ -1839,6 +1858,7 @@ static uint32_t subthread (void *vspec)
          into a NEW one, though.  So HOW AM I TO TRIGGER ON IT
          without triggering CONTINUOUSLY?
          */
+        // TODO coherency support
 //        if (need_access && (result = DDS_Subscriber_begin_access (sub)) != DDS_RETCODE_OK)
 //          error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_err_str (result));
 
@@ -1854,15 +1874,17 @@ static uint32_t subthread (void *vspec)
 
         if (rc < 1)
         {
-          if (spec->polling && rc == 0)
+          if (spec->polling && rc == 0) {
             ; /* expected */
-          else if (spec->mode == MODE_CHECK || spec->mode == MODE_DUMP || spec->polling)
+          } else if (spec->mode == MODE_CHECK || spec->mode == MODE_DUMP || spec->polling) {
             printf ("%s: %d (%s) on %s\n", (!spec->use_take && spec->mode == MODE_DUMP) ? "read" : "take", (int) rc, dds_err_str (rc), spec->polling ? "poll" : "stcond");
-          else
+          } else {
             printf ("%s: %d (%s) on rdcond%s\n", spec->use_take ? "take" : "read", (int) rc, dds_err_str (rc), (cond == rdcondA) ? "A" : (cond == rdcondD) ? "D" : "?");
+          }
           continue;
         }
 
+        // TODO coherency support
 //        if (need_access && (result = DDS_Subscriber_end_access (sub)) != DDS_RETCODE_OK)
 //          error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_err_str (result));
 
@@ -1930,7 +1952,8 @@ static uint32_t subthread (void *vspec)
           case MODE_ZEROLOAD:
             break;
         }
-        int returnVal = dds_return_loan(rd, mseq, spec->read_maxsamples);
+        rc = dds_return_loan(rd, mseq, spec->read_maxsamples);
+        error_report(rc, "dds_return_loan failed");
         if (spec->sleep_ns) {
         	dds_sleepfor(spec->sleep_ns);
         }
@@ -1940,6 +1963,7 @@ static uint32_t subthread (void *vspec)
 
     if (spec->mode == MODE_PRINT || spec->mode == MODE_DUMP || once_mode)
     {
+        // TODO coherency support
 //      if (need_access && (result = DDS_Subscriber_begin_access (sub)) != DDS_RETCODE_OK)
 //        error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_err_str (result));
 
@@ -1979,12 +2003,13 @@ static uint32_t subthread (void *vspec)
           }
         }
       }
+      // TODO coherency support
 //      if (need_access && (result = DDS_Subscriber_end_access (sub)) != DDS_RETCODE_OK)
 //        error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_err_str (result));
-      int returnVal = dds_return_loan(rd, mseq, spec->read_maxsamples);
+      rc = dds_return_loan(rd, mseq, spec->read_maxsamples);
+      error_report(rc, "dds_return_loan failed");
     }
     os_free(iseq);
-    int iter = 0;
     os_free(mseq);
     if (spec->mode == MODE_CHECK)
       printf ("received: %lld, out of seq: %lld\n", nreceived, out_of_seq);
@@ -2009,6 +2034,7 @@ static uint32_t subthread (void *vspec)
       break;
   }
 
+  // TODO Confirm that dds_delete(participant) takes care of this
 //  ret = dds_waitset_detach(ws, termcond);
 //  ret = dds_delete(ws);
 
@@ -2107,6 +2133,7 @@ static int get_metadata (char **metadata, char **typename, char **keylist, const
 static dds_entity_t find_topic(dds_entity_t dpFindTopic, const char *name, const dds_duration_t *timeout)
 {
   dds_entity_t tp;
+  // TODO ARB type support
 //  int isbuiltin = 0;
 
   /* A historical accident has caused subtle issues with a generic reader for the built-in topics included in the DDS spec. */
@@ -2156,6 +2183,7 @@ static dds_entity_t find_topic(dds_entity_t dpFindTopic, const char *name, const
 
 static void set_systemid_env (void)
 {
+    // TODO Determine encoding of dds_instance_handle_t, and see what sort of value can be extracted from it, if any
 	//Unsupported
 
 	/*uint32_t systemId, localId;
@@ -2200,6 +2228,8 @@ static void addspec(unsigned whatfor, unsigned *specsofar, unsigned *specidx, st
     s->findtopic_timeout = 10;
     s->rd = def_readerspec;
     s->wr = def_writerspec;
+
+    // TODO Upon support for ARB types, resolve the declaration of fdin
 //    if (fdin == -1 && fdservsock == -1)
 //      s->wr.mode = WRM_NONE;
     if (!want_reader)
@@ -2286,7 +2316,7 @@ int MAIN (int argc, char *argv[])
 	int want_reader = 1;
 	int want_writer = 1;
 	bool isWriterListenerSet = false;
-	int disable_signal_handlers = 0;
+//	int disable_signal_handlers = 0;  // TODO signal handler support
 	unsigned sleep_at_end = 0;
 	os_threadId sigtid;
 	os_threadId inptid;
@@ -2329,7 +2359,7 @@ int MAIN (int argc, char *argv[])
     switch (opt)
     {
       case '!':
-        disable_signal_handlers = 1;
+//        disable_signal_handlers = 1; // TODO signal handler support
         break;
       case '@':
         spec[specidx].wr.duplicate_writer_flag = 1;
@@ -2650,6 +2680,7 @@ int MAIN (int argc, char *argv[])
       nkeyvals = 1;
       if (spec[i].rd.topicsel == ARB)
       {
+          // TODO ARB type support
 //        if (((spec[i].rd.mode != MODE_PRINT || spec[i].rd.mode != MODE_DUMP) && spec[i].rd.mode != MODE_NONE) || (fdin == -1 && fdservsock == -1))
 //          error ("-K ARB requires readers in PRINT or DUMP mode and writers in interactive mode\n");
 //        if (nqtopic != 0 && spec[i].metadata == NULL)
@@ -2704,6 +2735,7 @@ int MAIN (int argc, char *argv[])
       case K256: spec[i].tp = new_topic (spec[i].topicname, ts_Keyed256, qos); break;
       case OU:   spec[i].tp = new_topic (spec[i].topicname, ts_OneULong, qos); break;
       case ARB:
+          // TODO ARB type support
         error_exit("Currently doesn't support ARB type\n");
         if (spec[i].metadata == NULL) {
           if (!(spec[i].tp = find_topic(dp, spec[i].topicname, &spec[i].findtopic_timeout)))
@@ -2714,7 +2746,7 @@ int MAIN (int argc, char *argv[])
           if(ts == NULL)
               error_exit("dds_topic_descriptor_create(%s) failed\n",spec[i].typename);
           spec[i].tp = new_topic (spec[i].topicname, ts, qos);
-//          dds_topic_descriptor_delete((dds_topic_descriptor_t*) ts); //Todo: Not available in cham dds.h
+//          dds_topic_descriptor_delete((dds_topic_descriptor_t*) ts);
         }
 //        spec[i].rd.tgtp = spec[i].wr.tgtp = tgnew(spec[i].tp, printtype);
         break;
@@ -2730,6 +2762,7 @@ int MAIN (int argc, char *argv[])
     {
     	fprintf(stderr,"C99 API doesn't support the creation of content filtered topic.\n");
     	spec[i].cftp = spec[i].tp;
+    	// TODO Content Filtered Topic support
 //    	char name[40], *expr = expand_envvars(spec[i].cftp_expr);
 //		DDS_StringSeq *params = DDS_StringSeq__alloc();
 //		snprintf (name, sizeof (name), "cft%u", i);
@@ -2741,7 +2774,6 @@ int MAIN (int argc, char *argv[])
 
     if (spec[i].rd.mode != MODE_NONE)
     {
-	  int ret = 0;
       qos = new_rdqos (sub, spec[i].cftp);
       setqos_from_args (qos, nqreader, qreader);
       spec[i].rd.rd = new_datareader_listener (qos, rdlistener);
@@ -2751,7 +2783,6 @@ int MAIN (int argc, char *argv[])
 
     if (spec[i].wr.mode != WRM_NONE)
     {
-      int ret = 0;
       qos = new_wrqos (pub, spec[i].tp);
       setqos_from_args (qos, nqwriter, qwriter);
       spec[i].wr.wr = new_datawriter_listener (qos, wrlistener);
@@ -2768,6 +2799,7 @@ int MAIN (int argc, char *argv[])
   if (want_writer && wait_for_matching_reader_arg)
   {
 	  printf("Wait for matching reader: unsupported\n");
+	  // TODO Reimplement wait_for_matching_reader functionality via wait on status subscription matched
 //    struct qos *q = NULL;
 //    uint64_t tnow = nowll();
 //    uint64_t tend = tnow + (uint64_t) (wait_for_matching_reader_timeout >= 0 ? (wait_for_matching_reader_timeout * 1e9 + 0.5) : 0);
@@ -2944,6 +2976,7 @@ int MAIN (int argc, char *argv[])
 	if(spec[i].typename) os_free(spec[i].typename);
 	if(spec[i].keylist) os_free(spec[i].keylist);
 	assert(spec[i].wr.tgtp == spec[i].rd.tgtp); /* so no need to free both */
+    // TODO ARB type support
 //	if (spec[i].rd.tgtp)
 //		tgfree(spec[i].rd.tgtp);
 //	if (spec[i].wr.tgtp)
