@@ -804,10 +804,10 @@ CUnit_Test(os_stdlib, flockfile)
 	result = doFlockfileTest(false);
 	CU_ASSERT (result);
 
-//	/* Check writing in a FILE from multiple threads using os_flockfile in the first thread. */
-//	printf ("Starting os_stdlib_flockfile_002\n");
-//	result = doFlockfileTest(true);
-//	CU_ASSERT (result);
+	/* Check writing in a FILE from multiple threads using os_flockfile in the first thread. */
+	printf ("Starting os_stdlib_flockfile_002\n");
+	result = doFlockfileTest(true);
+	CU_ASSERT (result);
 
 	printf ("Ending os_stdlib_flockfile\n");
 
