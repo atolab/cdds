@@ -2270,8 +2270,8 @@ int MAIN (int argc, char *argv[])
 {
 	dds_entity_t sub = 0;
 	dds_entity_t pub = 0;
-	dds_listener_t *rdlistener = dds_listener_create(NULL); // TODO free these
-	dds_listener_t *wrlistener = dds_listener_create(NULL); // TODO free these
+	dds_listener_t *rdlistener = dds_listener_create(NULL);
+	dds_listener_t *wrlistener = dds_listener_create(NULL);
 
 	struct qos *qos;
 	const char **qtopic = (const char **) os_malloc (sizeof(char *) * argc);
@@ -2926,6 +2926,9 @@ int MAIN (int argc, char *argv[])
       os_free(m);
     }
   }
+
+  dds_listener_delete(wrlistener);
+  dds_listener_delete(rdlistener);
 
   os_free((char **) qtopic);
   os_free((char **) qpublisher);
