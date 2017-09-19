@@ -359,7 +359,7 @@ static char *expand_envsimple (const char **src)
 {
   const char *start = *src;
   char *name, *x;
-  while (**src && (isalnum (**src) || **src == '_'))
+  while (**src && (isalnum ((unsigned char)**src) || **src == '_'))
     (*src)++;
   assert (*src > start);
   name = os_malloc ((size_t) (*src - start) + 1);
@@ -406,7 +406,7 @@ static char *expand_envvars (const char *src0)
       }
       else if (*src == '{')
         x = expand_envbrace (&src);
-      else if (isalnum (*src) || *src == '_')
+      else if (isalnum ((unsigned char)*src) || *src == '_')
         x = expand_envsimple (&src);
       else
         x = expand_envchar (&src);
@@ -882,12 +882,12 @@ static void print_sampleinfo (unsigned long long *tstart, unsigned long long tno
     n += printf ("%s%"PRIu32".%09"PRIu32, n > 0 ? sep : "", (uint32_t) (si->reception_timestamp/DDS_NSECS_IN_SEC), (uint32_t) (si->reception_timestamp%DDS_NSECS_IN_SEC));
   sep = " : ";
   if (print_metadata & PM_DGEN)
-    n += printf ("%s%d", n > 0 ? sep : "", si->disposed_generation_count), sep = " ";
+    n += printf ("%s%"PRIu32, n > 0 ? sep : "", si->disposed_generation_count), sep = " ";
   if (print_metadata & PM_NWGEN)
-    n += printf ("%s%d", n > 0 ? sep : "", si->no_writers_generation_count);
+    n += printf ("%s%"PRIu32, n > 0 ? sep : "", si->no_writers_generation_count);
   sep = " : ";
   if (print_metadata & PM_RANKS)
-    n += printf ("%s%d %d %d", n > 0 ? sep : "", si->sample_rank, si->generation_rank, si->absolute_generation_rank);
+    n += printf ("%s%"PRIu32" %"PRIu32" %"PRIu32, n > 0 ? sep : "", si->sample_rank, si->generation_rank, si->absolute_generation_rank);
   sep = " : ";
   if (print_metadata & PM_STATE)
     n += printf ("%s%c%c%c", n > 0 ? sep : "", isc, ssc, vsc), sep = " ";
@@ -1608,7 +1608,7 @@ static uint32_t pubthread(void *vwrspecs)
           *--tmp = 0;
         if ((sscanf (nextspec, "+%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "+") == 0)) {
           while (cnt--) cursor = cursor->next;
-        } else if ((sscanf (nextspec, "-%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "+") == 0)) {
+        } else if ((sscanf (nextspec, "-%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "-") == 0)) {
           while (cnt--) cursor = cursor->prev;
         } else if (sscanf (nextspec, "%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) {
           cursor = wrspecs; while (cnt--) cursor = cursor->next;
@@ -1668,7 +1668,7 @@ static int check_eseq (struct eseq_admin *ea, unsigned seq, unsigned keyval, con
   unsigned *eseq;
   if (keyval >= ea->nkeys)
   {
-    printf ("received key %d >= nkeys %d\n", keyval, ea->nkeys);
+    printf ("received key %u >= nkeys %u\n", keyval, ea->nkeys);
     exit (2);
   }
   for (unsigned i = 0; i < ea->nph; i++)
@@ -1833,7 +1833,7 @@ static uint32_t subthread (void *vspec)
 			rc = dds_get_subscription_matched_status(rd, &status);
             error_report(rc, "dds_get_subscription_matched_status failed");
             if (rc == DDS_SUCCESS) {
-                printf("[pre-read: subscription-matched: total=(%d change %d) current=(%d change %d) handle=%"PRIu64"]\n",
+                printf("[pre-read: subscription-matched: total=(%"PRIu32" change %d) current=(%"PRIu32" change %d) handle=%"PRIu64"]\n",
                     status.total_count, status.total_count_change,
                     status.current_count,
                     status.current_count_change,
@@ -2409,12 +2409,12 @@ int MAIN (int argc, char *argv[])
         spec[specidx].topicname = (const char *) os_strdup(os_get_optarg());
         if ((p = strchr(spec[specidx].topicname, ':')) != NULL) {
           double d;
-          int pos, have_to = 0;
+          int dpos, have_to = 0;
           *p++ = 0;
           if (strcmp (p, "inf") == 0 || strncmp (p, "inf:", 4) == 0) {
             have_to = 1;
             set_infinite_dds_duration (&spec[specidx].findtopic_timeout);
-          } else if (sscanf (p, "%lf%n", &d, &pos) == 1 && (p[pos] == 0 || p[pos] == ':')) {
+          } else if (sscanf (p, "%lf%n", &d, &dpos) == 1 && (p[dpos] == 0 || p[dpos] == ':')) {
             if (double_to_dds_duration (&spec[specidx].findtopic_timeout, d) < 0)
               error_exit("-T %s: %s: duration invalid\n", os_get_optarg(), p);
             have_to = 1;
@@ -2475,11 +2475,11 @@ int MAIN (int argc, char *argv[])
           spec[specidx].rd.mode = MODE_PRINT, spec[specidx].rd.polling = 1;
         else if (strcmp (os_get_optarg(), "c") == 0)
           spec[specidx].rd.mode = MODE_CHECK;
-        else if (sscanf (os_get_optarg(), "c:%d%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
+        else if (sscanf (os_get_optarg(), "c:%u%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
           spec[specidx].rd.mode = MODE_CHECK;
         else if (strcmp (os_get_optarg(), "cp") == 0)
           spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
-        else if (sscanf (os_get_optarg(), "cp:%d%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
+        else if (sscanf (os_get_optarg(), "cp:%u%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
           spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
         else if (strcmp (os_get_optarg(), "z") == 0)
           spec[specidx].rd.mode = MODE_ZEROLOAD;
@@ -2501,15 +2501,15 @@ int MAIN (int argc, char *argv[])
         {
           spec[specidx].wr.mode = WRM_INPUT;
         }
-        else if (sscanf (os_get_optarg(), "%d%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
+        else if (sscanf (os_get_optarg(), "%u%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf (os_get_optarg(), "%d:%lf*%u%n", &nkeyvals, &spec[specidx].wr.writerate, &spec[specidx].wr.burstsize, &pos) == 3 && os_get_optarg()[pos] == 0)
+        else if (sscanf (os_get_optarg(), "%u:%lf*%u%n", &nkeyvals, &spec[specidx].wr.writerate, &spec[specidx].wr.burstsize, &pos) == 3 && os_get_optarg()[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf (os_get_optarg(), "%d:%lf%n", &nkeyvals, &spec[specidx].wr.writerate, &pos) == 2 && os_get_optarg()[pos] == 0)
+        else if (sscanf (os_get_optarg(), "%u:%lf%n", &nkeyvals, &spec[specidx].wr.writerate, &pos) == 2 && os_get_optarg()[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
