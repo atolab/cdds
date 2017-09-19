@@ -1782,6 +1782,7 @@ static uint32_t subthread (void *vspec)
     dds_sample_info_t *iseq = (dds_sample_info_t *) os_malloc (sizeof(dds_sample_info_t) * spec->read_maxsamples);
     dds_duration_t timeout = (uint64_t)100000000;
     dds_attach_t *xs = os_malloc(sizeof(dds_attach_t) * nxs);
+    memset(xs, 0, sizeof(dds_attach_t) * nxs);
 
     unsigned long long tstart = 0, tfirst = 0, tprint = 0;
     long long out_of_seq = 0, nreceived = 0, last_nreceived = 0;
