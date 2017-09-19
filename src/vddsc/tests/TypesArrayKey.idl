@@ -16,35 +16,35 @@ module TypesArrayKey {
 
     typedef long long longlong;
     struct longlong_arraytypekey {
-        longlong key[20]; //@Key
+        longlong key[256]; //@Key
     };
 #pragma keylist longlong_arraytypekey key
 
     typedef unsigned short unsignedshort;
     struct unsignedshort_arraytypekey {
-        unsignedshort key[20]; //@Key
+        unsignedshort key[128]; //@Key
     };
 #pragma keylist unsignedshort_arraytypekey key
 
     typedef unsigned long unsignedlong;
     struct unsignedlong_arraytypekey {
-        unsignedlong key[20]; //@Key
+        unsignedlong key[128]; //@Key
     };
 #pragma keylist unsignedlong_arraytypekey key
 
     typedef unsigned long long unsignedlonglong;
     struct unsignedlonglong_arraytypekey {
-        unsignedlonglong key[20]; //@Key
+        unsignedlonglong key[128]; //@Key
     };
 #pragma keylist unsignedlonglong_arraytypekey key
 
     struct float_arraytypekey {
-        float key[20]; //@Key
+        float key[128]; //@Key
     };
 #pragma keylist float_arraytypekey key
 
     struct double_arraytypekey {
-        double key[20]; //@Key
+        double key[128]; //@Key
     };
 #pragma keylist double_arraytypekey key
 
@@ -80,8 +80,8 @@ module TypesArrayKey {
 
     struct stringkey {
         string payload;
+        sequence<string> seq_payload;
         string key; //@Key
-        sequence<string> seq_payload; // Swapping field key and seq_payload trigger an assert.
     };
 #pragma keylist stringkey key
 };
