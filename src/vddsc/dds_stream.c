@@ -1182,6 +1182,7 @@ void dds_stream_add_to_serstate (dds_stream_t * s, serstate_t st)
 
   st->data = s->m_buffer.pv;
   st->pos += (s->m_index - offsetof (struct serdata, data));
+  st->size = (s->m_size - offsetof(struct serdata, data));
 }
 
 void dds_stream_write_key

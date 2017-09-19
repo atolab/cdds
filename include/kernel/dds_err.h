@@ -19,8 +19,6 @@ extern "C" {
 
 #define DDS_ERR_NO(err) -(DDS__FILE_ID__ + DDS__LINE__ + (err))
 
-#define DDS_ERRNO_DEPRECATED(e) ((e <= 0) ? e : DDS_ERR_NO(e))
-
 #define DDS_ERRNO(e,msg,...) (assert(e > DDS_RETCODE_OK), os_report(OS_REPORT_ERROR, OS_FUNCTION, __FILE__, __LINE__, DDS_ERR_NO(e), (msg), ##__VA_ARGS__), DDS_ERR_NO(e))
 
 #if defined (__cplusplus)
