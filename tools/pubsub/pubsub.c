@@ -1633,7 +1633,7 @@ static uint32_t pubthread(void *vwrspecs)
             cursor = cand;
           }
         }
-        spec = cursor->spec;
+        spec = cursor != NULL ? cursor->spec : NULL;
       }
     } while (spec);
 
