@@ -1257,7 +1257,7 @@ static void pub_do_auto (const struct writerspec *spec)
     	dds_register_instance(spec->wr, handle, &d);
     }
   }
-  dds_sleepfor(DDS_SECS(1));
+  dds_sleepfor(DDS_SECS(1)); // TODO is this sleep necessary?
   d.seq_keyval.keyval = 0;
   tfirst0 = tfirst = tprev = nowll ();
   if (dur != 0.0)

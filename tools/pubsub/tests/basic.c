@@ -5,7 +5,7 @@
 #include "../pubsub.c"
 
 Test(tools_pubsub, main) {
-    char *argv[] = {"pubsub", "-T", "pubsubTestTopic", "-K", "KS", "-w1", "-D", "0.3", "-q", "t:d=t,r=r", "pubsub_partition"};
+    char *argv[] = {"pubsub", "-T", "pubsubTestTopic", "-K", "KS", "-w1:1", "-D", "1", "-q", "t:d=t,r=r", "pubsub_partition"};
     int argc = sizeof(argv) / sizeof(char*);
 
     cr_log_info("Starting pubsub basic test");
