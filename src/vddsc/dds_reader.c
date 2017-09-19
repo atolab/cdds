@@ -149,6 +149,7 @@ dds_reader_status_cb(
     dds__retcode_t rc;
     void *metrics = NULL;
 
+    DDS_REPORT_STACK();
 
     /* When data is NULL, it means that the DDSI reader is deleted. */
     if (data == NULL) {
@@ -160,6 +161,7 @@ dds_reader_status_cb(
 
     if (dds_reader_lock(((dds_entity*)entity)->m_hdl, &rd) != DDS_RETCODE_OK) {
         /* There's a deletion or closing going on. */
+        DDS_REPORT_FLUSH(false);
         return;
     }
     assert(rd == entity);
@@ -311,10 +313,15 @@ dds_reader_status_cb(
         dds_entity_status_set(entity, data->status);
         /* Notify possible interested observers. */
         dds_entity_status_signal(entity);
+        rc = DDS_RETCODE_OK;
+    } else if (rc == DDS_RETCODE_ALREADY_DELETED) {
+        /* An entity up the hierarchy is being deleted. */
+        rc = DDS_RETCODE_OK;
     } else {
-        /* Something went wrong up the hierarchy.
-         * Likely, a parent is in the process of being deleted. */
+        /* Something went wrong up the hierarchy. */
     }
+
+    DDS_REPORT_FLUSH(rc != DDS_RETCODE_OK);
 }
 
 

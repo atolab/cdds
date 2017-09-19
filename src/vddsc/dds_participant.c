@@ -240,19 +240,24 @@ dds_lookup_participant(
         goto err;
     }
 
-    dds_entity* iter;
     if(participants){
         participants[0] = 0;
     }
-    iter = dds_pp_head;
-    while (iter) {
-        if(iter->m_domainid == domain_id) {
-            if((size_t)ret < size) {
-                participants[ret] = iter->m_hdl;
+
+    if (os_atomic_ld32(&dds_global.m_init_count) > 0) {
+        dds_entity* iter;
+        os_mutexLock (&dds_global.m_mutex);
+        iter = dds_pp_head;
+        while (iter) {
+            if(iter->m_domainid == domain_id) {
+                if((size_t)ret < size) {
+                    participants[ret] = iter->m_hdl;
+                }
+                ret ++;
             }
-            ret ++;
+            iter = iter->m_next;
         }
-        iter = iter->m_next;
+        os_mutexUnlock (&dds_global.m_mutex);
     }
 
 err:

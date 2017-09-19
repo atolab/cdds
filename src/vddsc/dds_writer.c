@@ -62,8 +62,11 @@ dds_writer_status_cb(
         return;
     }
 
+    DDS_REPORT_STACK();
+
     if (dds_writer_lock(((dds_entity*)entity)->m_hdl, &wr) != DDS_RETCODE_OK) {
         /* There's a deletion or closing going on. */
+        DDS_REPORT_FLUSH(false);
         return;
     }
     assert(wr == entity);
@@ -157,10 +160,15 @@ dds_writer_status_cb(
         dds_entity_status_set(entity, data->status);
         /* Notify possible interested observers. */
         dds_entity_status_signal(entity);
+        rc = DDS_RETCODE_OK;
+    } else if (rc == DDS_RETCODE_ALREADY_DELETED) {
+        /* An entity up the hierarchy is being deleted. */
+        rc = DDS_RETCODE_OK;
     } else {
-        /* Something went wrong up the hierarchy.
-         * Likely, a parent is in the process of being deleted. */
+        /* Something went wrong up the hierarchy. */
     }
+
+    DDS_REPORT_FLUSH(rc != DDS_RETCODE_OK);
 }
 
 static uint32_t
