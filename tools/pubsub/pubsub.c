@@ -1969,7 +1969,7 @@ static uint32_t subthread (void *vspec)
 //        error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_err_str (result));
 
         /* This is the final Read/Take */
-      rc = dds_take(rd, mseq, iseq, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+      rc = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
       if (rc == 0)
       {
         if (!once_mode)
