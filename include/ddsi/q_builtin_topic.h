@@ -16,7 +16,6 @@ struct proxy_participant;
 struct proxy_writer;
 struct proxy_reader;
 
-struct nn_plist;
 
 /* Functions called at proxy entity creation/deletion time, so they
    can do whatever is necessary to get the builtin topics function
@@ -28,8 +27,10 @@ struct nn_plist;
 
    These may assume the proxy entities are stable, without parallel QoS
    changes. */
-void write_builtin_topic_proxy_participant (const struct proxy_participant *proxypp, nn_wctime_t timestamp);
-void write_builtin_topic_proxy_participant_cm (const struct proxy_participant *proxypp, nn_wctime_t timestamp);
+
+void write_builtin_topic_proxy_participant (_In_ const struct proxy_participant *proxypp, _In_ nn_wctime_t timestamp);
+void write_builtin_topic_proxy_participant_cm (_In_ const struct proxy_participant *proxypp, _In_ nn_wctime_t timestamp);
+#if 0
 void dispose_builtin_topic_proxy_participant (const struct proxy_participant *proxypp, nn_wctime_t timestamp, int isimplicit);
 void write_builtin_topic_proxy_writer (const struct proxy_writer *pwr, nn_wctime_t timestamp);
 void dispose_builtin_topic_proxy_writer (const struct proxy_writer *pwr, nn_wctime_t timestamp, int isimplicit);
@@ -39,5 +40,6 @@ void write_builtin_topic_proxy_group (const struct proxy_group *pgroup, nn_wctim
 void dispose_builtin_topic_proxy_group (const struct proxy_group *pgroup, nn_wctime_t timestamp, int isimplicit);
 
 void write_builtin_topic_proxy_topic (const struct nn_plist *datap, nn_wctime_t timestamp);
+#endif
 
 #endif

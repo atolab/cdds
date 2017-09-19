@@ -134,6 +134,7 @@ struct entity_common {
   char *name;
   uint64_t iid;
   os_mutex lock;
+  bool onlylocal;
 };
 
 struct local_reader_ary {
@@ -287,6 +288,7 @@ struct proxy_participant
   unsigned prismtech_bes; /* prismtech-specific extension of built-in endpoints set */
   nn_guid_t privileged_pp_guid; /* if this PP depends on another PP for its SEDP writing */
   nn_plist_t *plist; /* settings/QoS for this participant */
+  nn_guid_prefix_t gid;
   os_atomic_voidp_t lease; /* lease object for this participant, for automatic leases */
   struct addrset *as_default; /* default address set to use for user data traffic */
   struct addrset *as_meta; /* default address set to use for discovery traffic */
@@ -440,6 +442,8 @@ int pp_allocate_entityid (nn_entityid_t *id, unsigned kind, struct participant *
 #define RTPS_PF_PRIVILEGED_PP 4u
   /* Set this flag to mark the participant as is_ddsi2_pp. */
 #define RTPS_PF_IS_DDSI2_PP 8u
+  /* Set this flag to mark the participant as is_ddsi2_pp. */
+#define RTPS_PF_ONLY_LOCAL 16u
 
 /* To create a DDSI participant given a GUID. May return ERR_OUT_OF_IDS
    (a.o.) */
