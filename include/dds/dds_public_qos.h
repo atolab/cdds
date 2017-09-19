@@ -732,7 +732,7 @@ void dds_qget_partition
 (
     _In_ const dds_qos_t * __restrict qos,
     _Out_ uint32_t *n,
-    _Outptr_result_maybenull_ char *** ps
+    _Outptr_opt_result_buffer_all_maybenull_(*n) char *** ps
 );
 
 /**

@@ -64,7 +64,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -296,7 +296,9 @@ Test(vddsc_readcondition_get_mask, null, .init=readcondition_init, .fini=readcon
     dds_return_t ret;
     condition = dds_create_readcondition(g_reader, mask);
     cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_get_mask(condition, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
     dds_delete(condition);
 }

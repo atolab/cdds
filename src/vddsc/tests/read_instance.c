@@ -71,7 +71,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -99,7 +99,7 @@ read_instance_init(void)
     g_waitset = dds_create_waitset(g_participant);
     cr_assert_gt(g_waitset, 0, "Failed to create g_waitset");
 
-    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_read_instance_test", name, 100), NULL, NULL);
+    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_read_instance_test", name, sizeof name), NULL, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     /* Create a writer that will not automatically dispose unregistered samples. */

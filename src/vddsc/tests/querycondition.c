@@ -71,7 +71,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -90,7 +90,7 @@ querycondition_init(void)
     g_waitset = dds_create_waitset(g_participant);
     cr_assert_gt(g_waitset, 0, "Failed to create g_waitset");
 
-    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_querycondition_test", name, 100), NULL, NULL);
+    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_querycondition_test", name, sizeof name), NULL, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     /* Create a reader that keeps last sample of all instances. */
@@ -303,7 +303,9 @@ Test(vddsc_querycondition_get_mask, null, .init=querycondition_init, .fini=query
     dds_return_t ret;
     condition = dds_create_querycondition(g_reader, mask, filter_mod2);
     cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_get_mask(condition, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
     dds_delete(condition);
 }

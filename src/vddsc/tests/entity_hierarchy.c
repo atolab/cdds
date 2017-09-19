@@ -38,7 +38,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -51,7 +51,7 @@ hierarchy_init(void)
     g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(g_participant, 0, "Failed to create prerequisite g_participant");
 
-    g_topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_hierarchy_test", name, 100), NULL, NULL);
+    g_topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_hierarchy_test", name, sizeof name), NULL, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     g_publisher = dds_create_publisher(g_participant, NULL, NULL);
@@ -714,7 +714,11 @@ Test(vddsc_entity_implicit_publisher, invalid_topic)
     participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(participant, 0);
 
+    /* Disable SAL warning on intentional misuse of the API */
+    OS_WARNING_MSVC_OFF(28020);
     writer = dds_create_writer(participant, 0, NULL, NULL);
+    /* Disable SAL warning on intentional misuse of the API */
+    OS_WARNING_MSVC_ON(28020);
     cr_assert_lt(writer, 0);
 
     dds_delete(writer);
@@ -764,7 +768,10 @@ Test(vddsc_entity_explicit_subscriber, invalid_topic)
     cr_assert_gt(participant, 0);
 
     subscriber = dds_create_subscriber(participant, NULL,NULL);
+    /* Disable SAL warning on intentional misuse of the API */
+    OS_WARNING_MSVC_OFF(28020);
     reader = dds_create_reader(subscriber, 0, NULL, NULL);
+    OS_WARNING_MSVC_ON(28020);
     cr_assert_lt(reader, 0);
 
     dds_delete(reader);
