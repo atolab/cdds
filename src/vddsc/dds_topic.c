@@ -387,11 +387,7 @@ create_topic(
     st->keys = desc->m_keys;
     st->id = next_topicid++;
 
-#ifdef VXWORKS_RTP
-    st->hash = (st->id * UINT64_C (12844332200329132887UL)) >> 32;
-#else
     st->hash = (st->id * UINT64_C (12844332200329132887)) >> 32;
-#endif
 
     /* Check if topic cannot be optimised (memcpy marshal) */
 
