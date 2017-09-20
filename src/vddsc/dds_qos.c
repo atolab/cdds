@@ -209,8 +209,6 @@ dds_qos_delete(
     if (qos) {
         dds_qos_reset(qos);
         dds_free(qos);
-    } else {
-        DDS_WARNING(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
