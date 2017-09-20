@@ -302,12 +302,16 @@ ssize_t os_write(int fd, const void *buf, size_t count)
 
 void os_flockfile(FILE *file)
 {
+#ifndef _WRS_KERNEL
 	flockfile (file);
+#endif
 }
 
 void os_funlockfile(FILE *file)
 {
+#ifndef _WRS_KERNEL
 	funlockfile (file);
+#endif
 }
 
 int os_getopt(int argc, char **argv, const char *opts)

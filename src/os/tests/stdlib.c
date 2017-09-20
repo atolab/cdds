@@ -45,23 +45,23 @@ static FILE *file;
 
 #define timedWaitSignal(signal, mutex, time) \
 		{ \
-			os_time _time = time; \
+			os_time duration = time; \
 			os_time startTime, currentTime; \
 			os_result rc; \
 			os_mutexLock(&mutex); \
 			startTime = os_timeGetElapsed(); \
 			while(!signal##_set) { \
 				/* waiting for signal */ \
-				rc = os_condTimedWait(&signal, &mutex, &_time); \
+				rc = os_condTimedWait(&signal, &mutex, &duration); \
 				/* signal received or timeout */ \
-				if(rc == os_resultSuccess || rc == os_resultTimeout) { \
+				if(rc == os_resultTimeout) { \
 					break; \
 				} else { \
 					currentTime = os_timeGetElapsed(); \
 					if(os_timeCompare(os_timeSub(currentTime, startTime), wait_time_out) >= 0) { \
 						break; \
 					} \
-					_time = os_timeSub(wait_time_out, os_timeSub(currentTime, startTime)); \
+					duration = os_timeSub(wait_time_out, os_timeSub(currentTime, startTime)); \
 				} \
 			} /* else already signal received */ \
 			os_mutexUnlock(&mutex);\
