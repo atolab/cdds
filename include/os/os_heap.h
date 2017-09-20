@@ -131,7 +131,7 @@ extern "C" {
             _Pre_maybenull_ _Post_ptr_invalid_ void *memblk,
             _In_ size_t size)
         __attribute_malloc__
-        __attribute_alloc_size__((1));
+        __attribute_alloc_size__((2));
 
     /** \brief Reallocate memory from heap
      *
@@ -149,7 +149,7 @@ extern "C" {
             _Pre_maybenull_ _Post_ptr_invalid_ void *memblk,
             _In_ size_t size)
         __attribute_malloc__
-        __attribute_alloc_size__((1));
+        __attribute_alloc_size__((2));
 
     /** \brief Free allocated memory and return it to heap
      *
