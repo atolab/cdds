@@ -214,7 +214,7 @@ dds_find_topic(
                 t = (dds_entity *)st->status_cb_entity;
                 os_mutexLock(&t->m_mutex);
                 topic = create_topic(
-                    (dds_participant *)p,
+                    p,
                     ((dds_topic *)t)->m_descriptor,
                     name,
                     ((dds_topic *)t)->m_entity.m_qos,
@@ -243,8 +243,6 @@ dds_lookup_topic(
     sertopic_t st;
     dds_entity_t topic = 0;
     dds_entity *p = 0;
-    ut_avlIter_t iter;
-    ut_handle_t hdl;
     dds_retcode_t rc;
 
     DDS_REPORT_STACK();
