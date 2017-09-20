@@ -36,8 +36,7 @@ Test(vddsc_builtin_topics, types_allocation)
 Test(vddsc_builtin_topics, create_reader)
 {
     dds_entity_t participant;
-    dds_entity_t reader;
-    dds_entity_t t1, t2;
+    dds_entity_t t1;
 
     /* Create a participant */
     participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);

@@ -179,7 +179,6 @@ static dds_return_t
 dds_writer_close(
         dds_entity *e)
 {
-    dds__retcode_t rc;
     dds_return_t ret = DDS_RETCODE_OK;
     dds_writer *wr = (dds_writer*)e;
     struct thread_state1 * const thr = lookup_thread_state();
