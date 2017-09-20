@@ -11,14 +11,14 @@
 #include "kernel/dds_report.h"
 
 
-static _Check_return_ dds_retcode_t
+static _Check_return_ dds__retcode_t
 dds_read_lock(
         _In_ dds_entity_t hdl,
         _Out_ dds_reader   **reader,
         _Out_ dds_readcond **condition,
         _In_  bool only_reader)
 {
-    dds_retcode_t rc = hdl;
+    dds__retcode_t rc = hdl;
     assert(reader);
     assert(condition);
     *reader = NULL;
@@ -85,7 +85,7 @@ dds_read_impl(
 {
     uint32_t i;
     dds_return_t ret = DDS_RETCODE_OK;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     struct dds_reader * rd;
     struct dds_readcond * cond;
     struct thread_state1 * const thr = lookup_thread_state ();
@@ -185,7 +185,7 @@ dds_readcdr_impl(
         _In_  bool lock)
 {
   dds_return_t ret = DDS_RETCODE_OK;
-  dds_retcode_t rc;
+  dds__retcode_t rc;
   struct dds_reader * rd;
   struct dds_readcond * cond;
   struct thread_state1 * const thr = lookup_thread_state ();
@@ -808,7 +808,7 @@ dds_return_loan(
         _Inout_updates_(bufsz) void **buf,
         _In_ size_t bufsz)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     const dds_topic_descriptor_t * desc;
     dds_reader *rd;
     dds_readcond *cond;

@@ -55,7 +55,7 @@ dds_waitset_wait_impl(
 {
     dds_waitset *ws;
     dds_return_t ret;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_attachment *idx;
     dds_attachment *next;
     dds_attachment *prev;
@@ -216,7 +216,7 @@ dds_create_waitset(
 {
     dds_entity_t hdl;
     dds_entity *par;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
 
     DDS_REPORT_STACK();
 
@@ -244,7 +244,7 @@ dds_waitset_get_entities(
         _In_ size_t size)
 {
     dds_return_t ret = 0;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_waitset *ws;
 
     DDS_REPORT_STACK();
@@ -345,7 +345,7 @@ dds_waitset_attach(
 {
     dds_entity  *e = NULL;
     dds_waitset *ws;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret;
 
     DDS_REPORT_STACK();
@@ -401,7 +401,7 @@ dds_waitset_detach(
         _In_ dds_entity_t entity)
 {
     dds_waitset *ws;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret;
 
     DDS_REPORT_STACK();
@@ -474,7 +474,7 @@ dds_waitset_set_trigger(
         _In_ bool trigger)
 {
     dds_waitset *ws;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();

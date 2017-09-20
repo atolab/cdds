@@ -51,7 +51,7 @@ dds_writer_status_cb(
         const status_cb_data_t *data)
 {
     dds_writer *wr;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     void *metrics = NULL;
 
     /* When data is NULL, it means that the writer is deleted. */
@@ -329,7 +329,7 @@ dds_create_writer(
         _In_opt_ const dds_qos_t *qos,
         _In_opt_ const dds_listener_t *listener)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_qos_t * wqos;
     dds_writer * wr;
     dds_entity_t writer;
@@ -471,7 +471,7 @@ dds_get_publication_matched_status (
         _In_ dds_entity_t writer,
         _Out_opt_ dds_publication_matched_status_t * status)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_writer *wr;
     dds_return_t ret = DDS_RETCODE_OK;
 
@@ -503,7 +503,7 @@ dds_get_liveliness_lost_status (
         _In_ dds_entity_t writer,
         _Out_opt_ dds_liveliness_lost_status_t * status)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_writer *wr;
     dds_return_t ret = DDS_RETCODE_OK;
 
@@ -534,7 +534,7 @@ dds_get_offered_deadline_missed_status(
         _In_  dds_entity_t writer,
         _Out_opt_ dds_offered_deadline_missed_status_t *status)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_writer *wr;
     dds_return_t ret = DDS_RETCODE_OK;
 
@@ -565,7 +565,7 @@ dds_get_offered_incompatible_qos_status (
         _In_  dds_entity_t writer,
         _Out_opt_ dds_offered_incompatible_qos_status_t * status)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_writer *wr;
     dds_return_t ret = DDS_RETCODE_OK;
 

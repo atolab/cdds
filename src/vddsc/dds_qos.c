@@ -461,15 +461,11 @@ void dds_qset_partition
     size_t len;
 
     if(!qos) {
-        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos may not be NULL");
         return ;
     }
-    if(!n) {
-        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument n is NULL");
-        return ;
-    }
-    if(!ps) {
-        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument ps is NULL");
+    if(n && !ps) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument ps is NULL, but n (%u) > 0", n);
         return ;
     }
 
@@ -482,7 +478,9 @@ void dds_qset_partition
     }
 
     qos->partition.n = n;
-    qos->partition.strs = dds_alloc (sizeof (char*) * n);
+    if(n){
+        qos->partition.strs = dds_alloc (sizeof (char*) * n);
+    }
 
     for (i = 0; i < n; i++) {
         len = strlen (ps[i]) + 1;
