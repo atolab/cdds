@@ -35,7 +35,6 @@ target_sources(vddsc PRIVATE ${srcs_ddsi} ${srcs_vddsc})
 
 target_link_libraries(vddsc PRIVATE util)
 
-set_target_file_ids(vddsc)
 # SOVERSION should increase on incompatible ABI change
 set_target_properties(vddsc PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 
@@ -46,25 +45,7 @@ generate_export_header(
 
 # Generate builtin-topic sources
 idlc_generate(BuiltinTypes vddsc/dds_dcps_builtintopics.idl vddsc/dds_builtinTopics.idl)
-add_library(BuiltinTypesLib "")
-target_sources(BuiltinTypesLib
-    PRIVATE
-        "${CMAKE_CURRENT_BINARY_DIR}/dds_dcps_builtintopics.c"
-        "${CMAKE_CURRENT_BINARY_DIR}/dds_builtinTopics.c"
-)
-
-target_include_directories(BuiltinTypesLib
-    PRIVATE
-        "${CMAKE_SOURCE_DIR}/include/"
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports/>"
-    PUBLIC
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
-        "$<INSTALL_INTERFACE:include>"
-)
-
-add_dependencies(BuiltinTypesLib BuiltinTypes)
-target_include_directories(BuiltinTypesLib INTERFACE "${CMAKE_CURRENT_BINARY_DIR}")
-target_link_libraries(vddsc PRIVATE BuiltinTypesLib)
+target_link_libraries(vddsc PRIVATE BuiltinTypes)
 
 # Generator expressions are used here to refer to different paths during build
 # and install phases. It is a requirement for creating relocatable packages.
@@ -79,6 +60,8 @@ target_include_directories(vddsc PRIVATE
 string(TOUPPER ${CMAKE_PROJECT_NAME} VortexDDS_PROJECTNAME_CAPS)
 string(TOLOWER ${CMAKE_PROJECT_NAME} VortexDDS_PROJECTNAME_SMALL)
 configure_file("${CMAKE_SOURCE_DIR}/include/vddsc/vddsc_project.h.in" "include/vddsc/vddsc_project.h")
+
+set_target_file_ids(vddsc)
 
 # Create a pseudo-target that other targets (i.e. examples, tests) can depend
 # on and can also be provided as import-target by a package-file when building
@@ -102,6 +85,7 @@ install(
 install(
   FILES "${CMAKE_CURRENT_BINARY_DIR}/exports/dds/dds_export.h"
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/dds"
+
   COMPONENT dev)
 
 install(
