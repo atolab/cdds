@@ -1,10 +1,10 @@
-#include <assert.h>
 #include <string.h>
 #include "kernel/dds_key.h"
 #include "kernel/dds_stream.h"
 #include "ddsi/ddsi_ser.h"
 #include "ddsi/q_bswap.h"
 #include "ddsi/q_md5.h"
+#include "os/os_assert.h"
 
 void dds_key_md5 (dds_key_hash_t * kh)
 {
@@ -32,8 +32,8 @@ void dds_key_gen
   uint32_t len = 0;
   char * dst;
 
-  assert (desc->m_nkeys);
-  assert (kh->m_hash[0] == 0 && kh->m_hash[15] == 0);
+  OS_ASSERT (desc->m_nkeys);
+  OS_ASSERT (kh->m_hash[0] == 0 && kh->m_hash[15] == 0);
 
   kh->m_flags = DDS_KEY_SET | DDS_KEY_HASH_SET;
 
