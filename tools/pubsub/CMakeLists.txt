@@ -23,3 +23,9 @@ endif()
 if((BUILD_TESTING) AND ((NOT DEFINED MSVC_VERSION) OR (MSVC_VERSION GREATER "1800")))
   add_subdirectory(tests)
 endif()
+
+install(
+  TARGETS pubsub
+  DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  COMPONENT dev
+)

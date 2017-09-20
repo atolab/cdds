@@ -14,3 +14,9 @@ set(RESOURCES metaconfig.xml metaconfig.xsd resources/ptlogoc16.png resources/pt
 add_jar(chamconf ${JAVA_SOURCES} ${RESOURCES} ENTRY_POINT org.opensplice.config.SpliceConfig)
 
 #add_test(NAME TestHelloWorld COMMAND ${Java_JAVA_EXECUTABLE} -cp ${_jarFile} HelloWorld)
+
+install(
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/chamconf.jar"
+  DESTINATION "${CMAKE_INSTALL_TOOLSDIR}"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_WRITE GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+  COMPONENT dev)
