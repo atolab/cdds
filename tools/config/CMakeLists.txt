@@ -5,6 +5,7 @@ include(UseJava)
 
 project (chamconf)
 
+# TODO This should specify 1.8, but VS2013 build machine only has jdk 1.7, this should be fixed soon
 set(CMAKE_JAVA_COMPILE_FLAGS "-source" "1.7" "-target" "1.7")
 
 file(GLOB_RECURSE JAVA_SOURCES LIST_DIRECTORIES true *.java)

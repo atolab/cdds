@@ -436,7 +436,10 @@ static unsigned split_partitions (const char ***p_ps, char **p_bufcopy, const ch
   i = 0; bc = bufcopy;
   while (1)
   {
+    // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
+    OS_WARNING_MSVC_OFF(6386);
     ps[i++] = bc;
+    OS_WARNING_MSVC_ON(6386);
     while (*bc && *bc != ',') bc++;
     if (*bc == 0) break;
     *bc++ = 0;
@@ -1254,7 +1257,10 @@ static void pub_do_auto (const struct writerspec *spec)
   {
     d.seq_keyval.keyval = k;
     if(spec->register_instances) {
-    	dds_register_instance(spec->wr, handle, &d);
+        // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
+        OS_WARNING_MSVC_OFF(6386);
+        dds_register_instance(spec->wr, &handle[k], &d);
+        OS_WARNING_MSVC_ON(6386);
     }
   }
   dds_sleepfor(DDS_SECS(1)); // TODO is this sleep necessary?
@@ -1683,8 +1689,11 @@ static int check_eseq (struct eseq_admin *ea, unsigned seq, unsigned keyval, con
   ea->eseq = os_realloc (ea->eseq, (ea->nph + 1) * sizeof (*ea->eseq));
   ea->eseq[ea->nph] = os_malloc (ea->nkeys * sizeof (*ea->eseq[ea->nph]));
   eseq = ea->eseq[ea->nph];
+  // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
+  OS_WARNING_MSVC_OFF(6386);
   for (unsigned i = 0; i < ea->nkeys; i++)
     eseq[i] = seq + (i - keyval) + (i <= keyval ? ea->nkeys : 0);
+  OS_WARNING_MSVC_ON(6386);
   ea->nph++;
   return 1;
 }
@@ -1969,7 +1978,10 @@ static uint32_t subthread (void *vspec)
 //        error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_err_str (result));
 
         /* This is the final Read/Take */
-      rc = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
+        // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
+        OS_WARNING_MSVC_OFF(6386);
+        rc = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
+        OS_WARNING_MSVC_ON(6386);
       if (rc == 0)
       {
         if (!once_mode)
@@ -2341,6 +2353,8 @@ int MAIN (int argc, char *argv[])
 	save_argv0 (argv[0]);
 	pid = (int) os_procIdSelf();
 
+	// TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
+	OS_WARNING_MSVC_OFF(6386);
 	qreader[0] = "k=all";
 	qreader[1] = "R=10000/inf/inf";
 	nqreader = 2;
@@ -2348,6 +2362,7 @@ int MAIN (int argc, char *argv[])
 	qwriter[0] = "k=all";
 	qwriter[1] = "R=100/inf/inf";
 	nqwriter = 2;
+    OS_WARNING_MSVC_OFF(6386);
 
 	spec_sofar = SPEC_TOPICSEL;
 	specidx--;
