@@ -72,7 +72,7 @@ cu_runner_init(
     int argc,
     char* argv[])
 {
-    int c, i;
+    int i;
     CU_ErrorCode e = CUE_SUCCESS;
 
     runner.automated = false;
@@ -84,7 +84,6 @@ cu_runner_init(
     runner.test = "*";
 
     for (i = 1; e == CUE_SUCCESS && i < argc; i++) {
-        c = (argv[i][0] == '-') ? argv[i][1] : -1;
         switch (argv[i][1]) {
             case 'a':
                 runner.automated = true;

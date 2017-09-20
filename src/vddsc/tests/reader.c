@@ -9,7 +9,7 @@
 #include <criterion/theories.h>
 
 
-#if 0
+#if PRINT_SAMPLES
 #define PRINT_SAMPLE(info, sample) cr_log_info("%s (%d, %d, %d)\n", info, sample.long_1, sample.long_2, sample.long_3);
 #else
 #define PRINT_SAMPLE(info, sample)
@@ -160,11 +160,12 @@ reader_init(void)
     /* Read samples to get read&old_view states. */
     ret = dds_read(g_reader, g_samples, g_info, MAX_SAMPLES, SAMPLE_LAST_OLD_VST + 1);
     cr_assert_eq(ret, SAMPLE_LAST_OLD_VST + 1, "Failed prerequisite read");
+#if PRINT_SAMPLES
     for(int i = 0; i < ret; i++) {
         Space_Type1 *s = (Space_Type1*)g_samples[i];
         PRINT_SAMPLE("INIT: Read      ", (*s));
     }
-
+#endif /* PRINT_SAMPLES */
     /* Re-write the samples that should be not_read&old_view. */
     for (int i = SAMPLE_LAST_READ_SST + 1; i <= SAMPLE_LAST_OLD_VST; i++) {
         dds_instance_state_t ist = SAMPLE_IST(i);

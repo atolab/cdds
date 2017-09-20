@@ -8,8 +8,7 @@
 #include <criterion/logging.h>
 #include <criterion/theories.h>
 
-
-#if 0
+#if PRINT_SAMPLES
 #define PRINT_SAMPLE(info, sample) cr_log_info("%s (%d, %d, %d)\n", info, sample.long_1, sample.long_2, sample.long_3);
 #else
 #define PRINT_SAMPLE(info, sample)
@@ -56,7 +55,6 @@ static Space_Type1        g_data[MAX_SAMPLES];
 static dds_sample_info_t  g_info[MAX_SAMPLES];
 
 static dds_instance_handle_t   g_hdl_valid;
-static dds_instance_handle_t   g_hdl_nil = DDS_HANDLE_NIL;
 
 static bool
 filter_mod2(const void * sample)
@@ -166,10 +164,12 @@ read_instance_init(void)
     /* Read sample that will become {sst(read), vst(old), ist(alive)}. */
     ret = dds_read(g_reader, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
     cr_assert_eq(ret, 1, "Failed prerequisite read");
+#if PRINT_SAMPLES
     for(int i = 0; i < ret; i++) {
         Space_Type1 *s = (Space_Type1*)g_samples[i];
         PRINT_SAMPLE("INIT: Read      ", (*s));
     }
+#endif /* PRINT_SAMPLES */
     /*  | long_1 | long_2 | long_3 |    sst   | vst |    ist     |
      *  ----------------------------------------------------------
      *  |    0   |    0   |    0   |     read | old | alive      |

@@ -77,9 +77,6 @@ static void*              g_samples[MAX_SAMPLES];
 static Space_Type1        g_data[MAX_SAMPLES];
 static dds_sample_info_t  g_info[MAX_SAMPLES];
 
-static dds_instance_handle_t   g_hdl_valid;
-static dds_instance_handle_t   g_hdl_nil = DDS_HANDLE_NIL;
-
 static char*
 create_topic_name(const char *prefix, char *name, size_t size)
 {
@@ -346,7 +343,6 @@ Test(vddsc_read_next, reader, .init=reader_iterator_init, .fini=reader_iterator_
         /* Expected states. */
         int                  expected_long_2 = rdr_expected_long_2[cnt];
         int                  expected_long_1 = expected_long_2/3;
-        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
         dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
@@ -455,7 +451,6 @@ Test(vddsc_read_next_wl, reader, .init=reader_iterator_init, .fini=reader_iterat
         /* Expected states. */
         int                  expected_long_2 = rdr_expected_long_2[cnt];
         int                  expected_long_1 = expected_long_2/3;
-        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
         dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
@@ -566,7 +561,6 @@ Test(vddsc_take_next, reader, .init=reader_iterator_init, .fini=reader_iterator_
         /* Expected states. */
         int                  expected_long_2 = rdr_expected_long_2[cnt];
         int                  expected_long_1 = expected_long_2/3;
-        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
         dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);
@@ -673,7 +667,6 @@ Test(vddsc_take_next_wl, reader, .init=reader_iterator_init, .fini=reader_iterat
         /* Expected states. */
         int                  expected_long_2 = rdr_expected_long_2[cnt];
         int                  expected_long_1 = expected_long_2/3;
-        int                  expected_long_3 = expected_long_2*2;
         dds_sample_state_t   expected_sst    = DDS_SST_NOT_READ;
         dds_view_state_t     expected_vst    = SAMPLE_VST(expected_long_2);
         dds_instance_state_t expected_ist    = SAMPLE_IST(expected_long_1);

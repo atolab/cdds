@@ -48,21 +48,13 @@ uint32_t get_threadExit_thread (void *args)
     uint32_t id;
     os_result ret = os_threadWaitExit (*threadId, &id);
 
-    return id;
+    return ret == os_resultSuccess ? id : 1;
 }
 
 uint32_t threadIdentity_thread (_In_ void *args)
 {
     char *identity = args;
     os_threadFigureIdentity (identity, 512);
-    return 0;
-}
-
-static uint32_t threadMain(_In_opt_ void *args)
-{
-    OS_UNUSED_ARG(args);
-    threadCalled = 1;
-    sleepMsec(500);
     return 0;
 }
 

@@ -86,7 +86,6 @@ dds_topic_status_cb(
 {
     dds_topic *topic;
     dds__retcode_t rc;
-    void *metrics = NULL;
 
     if (dds_topic_lock(((dds_entity*)cb_t)->m_hdl, &topic) != DDS_RETCODE_OK) {
         /* There's a deletion or closing going on. */

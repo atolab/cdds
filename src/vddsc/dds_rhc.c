@@ -303,7 +303,6 @@ struct trigger_info
 static unsigned qmask_of_inst (const struct rhc_instance *inst);
 static bool update_conditions_locked
 (struct rhc *rhc, const struct trigger_info *pre, const struct trigger_info *post, const struct serdata *sample);
-static void signal_conditions (struct rhc *rhc);
 #ifndef NDEBUG
 static int rhc_check_counts_locked (struct rhc *rhc, bool check_conds);
 #endif

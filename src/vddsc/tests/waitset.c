@@ -653,7 +653,6 @@ TheoryDataPoints(vddsc_waitset_wait, invalid_params) = {
 };
 Theory((dds_attach_t *a, size_t size, int msec), vddsc_waitset_wait, invalid_params, .init=vddsc_waitset_basic_init, .fini=vddsc_waitset_basic_fini)
 {
-    dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
     /* Only test when the combination of parameters is actually invalid. */
@@ -711,7 +710,6 @@ TheoryDataPoints(vddsc_waitset_wait_until, invalid_params) = {
 };
 Theory((dds_attach_t *a, size_t size), vddsc_waitset_wait_until, invalid_params, .init=vddsc_waitset_basic_init, .fini=vddsc_waitset_basic_fini)
 {
-    dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
     /* Only test when the combination of parameters is actually invalid. */
@@ -828,7 +826,6 @@ Test(vddsc_waitset_get_entities, no_array, .init=vddsc_waitset_attached_init, .f
 /*************************************************************************************************/
 Test(vddsc_waitset_get_entities, deleted_waitset, .init=vddsc_waitset_attached_init, .fini=vddsc_waitset_attached_fini)
 {
-    uint32_t found = 0;
     dds_return_t ret;
     dds_entity_t entities[MAX_ENTITIES_CNT];
     dds_delete(waitset);
@@ -1067,7 +1064,6 @@ static os_result
 thread_reached_state(thread_state_t *actual, thread_state_t expected, int32_t msec)
 {
     /* Convenience function. */
-    bool stopped = false;
     os_time msec10 = { 0, 10000000 };
     while ((msec > 0) && (*actual != expected)) {
         os_nanoSleep(msec10);

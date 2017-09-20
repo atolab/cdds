@@ -1170,14 +1170,12 @@ dds_entity_observer_unregister(
         _In_ dds_entity_t observer)
 {
     dds__retcode_t rc;
-    dds_return_t ret;
     dds_entity *e;
+
     rc = dds_entity_lock(observed, DDS_KIND_DONTCARE, &e);
     if (rc == DDS_RETCODE_OK) {
         rc = dds_entity_observer_unregister_nl(e, observer);
         dds_entity_unlock(e);
-    } else{
-        ret = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
     return rc;
 }

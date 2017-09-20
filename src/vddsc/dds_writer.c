@@ -240,7 +240,6 @@ dds_writer_qos_validate(
         bool enabled)
 {
     dds_return_t ret = DDS_RETCODE_OK;
-    bool consistent = true;
 
     assert(qos);
 

@@ -28,7 +28,6 @@ static dds_time_t   g_present     = 0;
 
 static void*             g_samples[MAX_SAMPLES];
 static Space_Type1       g_data[MAX_SAMPLES];
-static dds_sample_info_t g_info[MAX_SAMPLES];
 
 static char*
 create_topic_name(const char *prefix, char *name, size_t size)
@@ -152,7 +151,6 @@ TheoryDataPoints(vddsc_register_instance, invalid_params) = {
 };
 Theory((dds_instance_handle_t *hndl2, void *datap), vddsc_register_instance, invalid_params/*, .init=registering_init, .fini=registering_fini*/)
 {
-    dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
     /* Only test when the combination of parameters is actually invalid.*/
