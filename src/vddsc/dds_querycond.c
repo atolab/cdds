@@ -17,7 +17,7 @@ dds_create_querycondition(
 {
     dds_entity_t topic;
     dds_entity_t hdl;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_reader *r;
     dds_topic  *t;
 

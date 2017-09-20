@@ -43,7 +43,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -65,7 +65,7 @@ disposing_init(void)
     g_waitset = dds_create_waitset(g_participant);
     cr_assert_gt(g_waitset, 0, "Failed to create g_waitset");
 
-    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_disposing_test", name, 100), qos, NULL);
+    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_disposing_test", name, sizeof name), qos, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     /* Create a reader that keeps one sample on three instances. */
@@ -147,7 +147,9 @@ Test(vddsc_writedispose, deleted, .init=disposing_init, .fini=disposing_fini)
 {
     dds_return_t ret;
     dds_delete(g_writer);
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_writedispose(g_writer, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -156,7 +158,9 @@ Test(vddsc_writedispose, deleted, .init=disposing_init, .fini=disposing_fini)
 Test(vddsc_writedispose, null, .init=disposing_init, .fini=disposing_fini)
 {
     dds_return_t ret;
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_writedispose(g_writer, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -170,7 +174,9 @@ Theory((dds_entity_t writer), vddsc_writedispose, invalid_writers, .init=disposi
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_writedispose(writer, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 /*************************************************************************************************/
@@ -182,7 +188,9 @@ TheoryDataPoints(vddsc_writedispose, non_writers) = {
 Theory((dds_entity_t *writer), vddsc_writedispose, non_writers, .init=disposing_init, .fini=disposing_fini)
 {
     dds_return_t ret;
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_writedispose(*writer, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -296,7 +304,9 @@ Test(vddsc_writedispose_ts, deleted, .init=disposing_init, .fini=disposing_fini)
 {
     dds_return_t ret;
     dds_delete(g_writer);
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_writedispose_ts(g_writer, NULL, g_present);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -305,7 +315,9 @@ Test(vddsc_writedispose_ts, deleted, .init=disposing_init, .fini=disposing_fini)
 Test(vddsc_writedispose_ts, null, .init=disposing_init, .fini=disposing_fini)
 {
     dds_return_t ret;
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_writedispose_ts(g_writer, NULL, g_present);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -333,7 +345,9 @@ Theory((dds_entity_t writer), vddsc_writedispose_ts, invalid_writers, .init=disp
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_writedispose_ts(writer, NULL, g_present);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 /*************************************************************************************************/
@@ -345,7 +359,9 @@ TheoryDataPoints(vddsc_writedispose_ts, non_writers) = {
 Theory((dds_entity_t *writer), vddsc_writedispose_ts, non_writers, .init=disposing_init, .fini=disposing_fini)
 {
     dds_return_t ret;
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_writedispose_ts(*writer, NULL, g_present);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -488,7 +504,9 @@ Test(vddsc_dispose, deleted, .init=disposing_init, .fini=disposing_fini)
 {
     dds_return_t ret;
     dds_delete(g_writer);
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_dispose(g_writer, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -497,7 +515,9 @@ Test(vddsc_dispose, deleted, .init=disposing_init, .fini=disposing_fini)
 Test(vddsc_dispose, null, .init=disposing_init, .fini=disposing_fini)
 {
     dds_return_t ret;
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_dispose(g_writer, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -525,7 +545,9 @@ Theory((dds_entity_t writer), vddsc_dispose, invalid_writers, .init=disposing_in
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_dispose(writer, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 /*************************************************************************************************/
@@ -537,7 +559,9 @@ TheoryDataPoints(vddsc_dispose, non_writers) = {
 Theory((dds_entity_t *writer), vddsc_dispose, non_writers, .init=disposing_init, .fini=disposing_fini)
 {
     dds_return_t ret;
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_dispose(*writer, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -635,7 +659,9 @@ Test(vddsc_dispose_ts, deleted, .init=disposing_init, .fini=disposing_fini)
 {
     dds_return_t ret;
     dds_delete(g_writer);
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_dispose_ts(g_writer, NULL, g_present);
+    OS_WARNING_MSVC_ON(6387); /* Disable SAL warning on intentional misuse of the API */
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -644,7 +670,9 @@ Test(vddsc_dispose_ts, deleted, .init=disposing_init, .fini=disposing_fini)
 Test(vddsc_dispose_ts, null, .init=disposing_init, .fini=disposing_fini)
 {
     dds_return_t ret;
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_dispose_ts(g_writer, NULL, g_present);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -672,7 +700,9 @@ Theory((dds_entity_t writer), vddsc_dispose_ts, invalid_writers, .init=disposing
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_dispose_ts(writer, NULL, g_present);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 /*************************************************************************************************/
@@ -684,7 +714,9 @@ TheoryDataPoints(vddsc_dispose_ts, non_writers) = {
 Theory((dds_entity_t *writer), vddsc_dispose_ts, non_writers, .init=disposing_init, .fini=disposing_fini)
 {
     dds_return_t ret;
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_dispose_ts(*writer, NULL, g_present);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/

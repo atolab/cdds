@@ -53,7 +53,7 @@ dds_entity_add_ref_nolock(_In_ dds_entity *e)
     e->m_refc++;
 }
 
-_Check_return_ dds_retcode_t
+_Check_return_ dds__retcode_t
 dds_entity_listener_propagation(
         _Inout_opt_ dds_entity *e,
         _In_ dds_entity *src,
@@ -61,7 +61,7 @@ dds_entity_listener_propagation(
         _In_opt_ void *metrics,
         _In_ bool propagate)
 {
-    dds_retcode_t rc = DDS_RETCODE_NO_DATA; /* Mis-use NO_DATA as NO_CALL. */
+    dds__retcode_t rc = DDS_RETCODE_NO_DATA; /* Mis-use NO_DATA as NO_CALL. */
     dds_entity *dummy;
     /* e will be NULL when reaching the top of the entity hierarchy. */
     if (e) {
@@ -271,7 +271,11 @@ dds_return_t
 dds_delete(
         _In_ dds_entity_t entity)
 {
-    return dds_delete_impl(entity, false);
+    dds_return_t ret;
+    DDS_REPORT_STACK();
+    ret = dds_delete_impl(entity, false);
+    DDS_REPORT_FLUSH(ret < 0);
+    return ret;
 }
 
 
@@ -288,24 +292,21 @@ dds_delete_impl(
     dds_entity *prev = NULL;
     dds_entity *next = NULL;
     dds_return_t ret = DDS_RETCODE_OK;
-    dds_retcode_t rc;
-
-    DDS_REPORT_STACK();
+    dds__retcode_t rc;
 
     rc = dds_entity_lock(entity, UT_HANDLE_DONTCARE_KIND, &e);
     if (rc != DDS_RETCODE_OK) {
-        ret = DDS_ERRNO(rc, "Error on locking entity");
-        goto err;
+        return DDS_ERRNO(rc, "Error on locking entity");
     }
 
     if(keep_if_explicit == true && ((e->m_flags & DDS_ENTITY_IMPLICIT) == 0)){
         dds_entity_unlock(e);
-        goto err;
+        return DDS_RETCODE_OK;
     }
 
     if (--e->m_refc != 0) {
         dds_entity_unlock(e);
-        goto err;
+        return DDS_RETCODE_OK;
     }
 
     dds_entity_cb_wait(e);
@@ -345,8 +346,7 @@ dds_delete_impl(
          * is released. It is possible that this last release will be done by a thread
          * that was kicked during the close(). */
         if (ut_handle_delete(e->m_hdl, e->m_hdllink, timeout) != UT_HANDLE_OK) {
-            ret =  DDS_ERRNO(DDS_RETCODE_TIMEOUT, "Entity deletion did not release resources.");
-            goto err;
+            return DDS_ERRNO(DDS_RETCODE_TIMEOUT, "Entity deletion did not release resources.");
         }
     }
 
@@ -386,8 +386,7 @@ dds_delete_impl(
         os_mutexDestroy (&e->m_mutex);
         dds_free (e);
     }
-err:
-    DDS_REPORT_FLUSH(ret < 0);
+
     return ret;
 }
 
@@ -399,7 +398,7 @@ dds_get_parent(
         _In_ dds_entity_t entity)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_entity_t hdl;
     dds_entity *parent;
 
@@ -429,7 +428,7 @@ dds_get_participant (
         _In_ dds_entity_t entity)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_entity_t hdl;
 
     DDS_REPORT_STACK();
@@ -456,7 +455,7 @@ dds_get_children(
         _In_        size_t size)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret;
     dds_entity* iter;
 
@@ -494,7 +493,7 @@ dds_get_children(
     dds_entity_unlock(e);
 
 err:
-    DDS_REPORT_FLUSH(ret <0 );
+    DDS_REPORT_FLUSH(ret < 0);
     return ret;
 }
 
@@ -507,7 +506,7 @@ dds_get_qos(
         _Out_ dds_qos_t *qos)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
@@ -542,7 +541,7 @@ dds_set_qos(
         _In_ const dds_qos_t *qos)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret;
 
     DDS_REPORT_STACK();
@@ -584,7 +583,7 @@ dds_get_listener(
 {
     dds_entity *e;
     dds_return_t ret = DDS_RETCODE_OK;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
 
     DDS_REPORT_STACK();
 
@@ -613,7 +612,7 @@ dds_set_listener(
         _In_opt_ const dds_listener_t * listener)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
@@ -643,7 +642,7 @@ dds_enable(
         _In_ dds_entity_t entity)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
@@ -666,13 +665,13 @@ dds_enable(
 
 
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
-_Check_return_ dds_return_t
+_Must_inspect_result_ dds_return_t
 dds_get_status_changes(
         _In_    dds_entity_t entity,
         _Out_   uint32_t *status)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret;
 
     DDS_REPORT_STACK();
@@ -706,7 +705,7 @@ dds_get_enabled_status(
         _Out_   uint32_t *status)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret;
 
     DDS_REPORT_STACK();
@@ -740,7 +739,7 @@ dds_set_enabled_status(
         _In_ uint32_t mask)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret;
 
     DDS_REPORT_STACK();
@@ -780,7 +779,7 @@ dds_read_status(
         _In_    uint32_t mask)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret;
 
     DDS_REPORT_STACK();
@@ -819,7 +818,7 @@ dds_take_status(
         _In_    uint32_t mask)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret;
 
     DDS_REPORT_STACK();
@@ -873,7 +872,7 @@ dds_get_domainid(
         _Out_   dds_domainid_t *id)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret = DDS_RETCODE_OK;
 
     DDS_REPORT_STACK();
@@ -903,7 +902,7 @@ dds_get_instance_handle(
         _Out_   dds_instance_handle_t *ihdl)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret;
 
     DDS_REPORT_STACK();
@@ -928,15 +927,13 @@ dds_get_instance_handle(
 }
 
 
-_Check_return_ dds_retcode_t
+_Check_return_ dds__retcode_t
 dds_valid_hdl(
         _In_ dds_entity_t hdl,
         _In_ dds_entity_kind_t kind)
 {
-    dds_retcode_t rc = hdl;
+    dds__retcode_t rc = hdl;
     ut_handle_t utr;
-
-    DDS_REPORT_STACK();
 
     /* When the given handle already contains an error, then return that
      * same error to retain the original information. */
@@ -969,17 +966,17 @@ dds_valid_hdl(
         rc = DDS_RETCODE_BAD_PARAMETER;
         DDS_ERROR(rc, "Given entity (0x%08lx) was not properly created.", hdl);
     }
-    DDS_REPORT_FLUSH(rc != DDS_RETCODE_OK);
     return rc;
 }
 
-_Check_return_ dds_retcode_t
+_Acquires_exclusive_lock_(*e)
+_Check_return_ dds__retcode_t
 dds_entity_lock(
         _In_ dds_entity_t hdl,
         _In_ dds_entity_kind_t kind,
         _Out_ dds_entity **e)
 {
-    dds_retcode_t rc = hdl;
+    dds__retcode_t rc = hdl;
     ut_handle_t utr;
     assert(e);
     /* When the given handle already contains an error, then return that
@@ -1021,15 +1018,14 @@ dds_entity_lock(
         rc = DDS_RETCODE_BAD_PARAMETER;
         DDS_ERROR(rc, "Given entity (0x%08lx) was not properly created.", hdl);
     }
-    DDS_REPORT_FLUSH(rc != DDS_RETCODE_OK);
     return rc;
 }
 
 
-
+_Releases_exclusive_lock_(e)
 void
 dds_entity_unlock(
-        _In_ dds_entity *e)
+        _Inout_ dds_entity *e)
 {
     assert(e);
     os_mutexUnlock(&e->m_mutex);
@@ -1045,7 +1041,7 @@ dds_triggered(
 {
     dds_entity *e;
     dds_return_t ret;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
 
     DDS_REPORT_STACK();
 
@@ -1062,13 +1058,13 @@ dds_triggered(
 
 
 
-_Check_return_ dds_retcode_t
+_Check_return_ dds__retcode_t
 dds_entity_observer_register_nl(
         _In_ dds_entity*  observed,
         _In_ dds_entity_t observer,
         _In_ dds_entity_callback cb)
 {
-    dds_retcode_t rc = DDS_RETCODE_OK;
+    dds__retcode_t rc = DDS_RETCODE_OK;
     dds_entity_observer *o = os_malloc(sizeof(dds_entity_observer));
     assert(observed);
     o->m_cb = cb;
@@ -1097,13 +1093,13 @@ dds_entity_observer_register_nl(
 
 
 
-_Check_return_ dds_retcode_t
+_Check_return_ dds__retcode_t
 dds_entity_observer_register(
         _In_ dds_entity_t observed,
         _In_ dds_entity_t observer,
         _In_ dds_entity_callback cb)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_entity *e;
     assert(cb);
     rc = dds_entity_lock(observed, DDS_KIND_DONTCARE, &e);
@@ -1118,12 +1114,12 @@ dds_entity_observer_register(
 
 
 
-dds_retcode_t
+dds__retcode_t
 dds_entity_observer_unregister_nl(
         _In_ dds_entity*  observed,
         _In_ dds_entity_t observer)
 {
-    dds_retcode_t rc = DDS_RETCODE_PRECONDITION_NOT_MET;
+    dds__retcode_t rc = DDS_RETCODE_PRECONDITION_NOT_MET;
     dds_entity_observer *prev = NULL;
     dds_entity_observer *idx  = observed->m_observers;
     while (idx != NULL) {
@@ -1146,12 +1142,12 @@ dds_entity_observer_unregister_nl(
 
 
 
-dds_retcode_t
+dds__retcode_t
 dds_entity_observer_unregister(
         _In_ dds_entity_t observed,
         _In_ dds_entity_t observer)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_return_t ret;
     dds_entity *e;
     rc = dds_entity_lock(observed, DDS_KIND_DONTCARE, &e);
@@ -1159,7 +1155,6 @@ dds_entity_observer_unregister(
         rc = dds_entity_observer_unregister_nl(e, observer);
         dds_entity_unlock(e);
     } else{
-        rc = DDS_RETCODE_ERROR;
         ret = DDS_ERRNO(rc, "Error occurred on locking entity");
     }
     return rc;
@@ -1200,7 +1195,7 @@ dds_entity_t
 dds_get_topic(
         _In_ dds_entity_t entity)
 {
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_entity_t hdl = entity;
     dds_reader *rd;
     dds_writer *wr;
@@ -1233,7 +1228,7 @@ dds_set_explicit(
         _In_ dds_entity_t entity)
 {
     dds_entity *e;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     rc = dds_entity_lock(entity, DDS_KIND_DONTCARE, &e);
     if( rc == DDS_RETCODE_OK){
         e->m_flags &= ~DDS_ENTITY_IMPLICIT;
