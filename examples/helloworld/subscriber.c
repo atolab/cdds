@@ -2,17 +2,7 @@
 #include "HelloWorldData.h"
 #include <stdio.h>
 #include <string.h>
-
-/*
-  The helloworld example sends a HelloWorldData_Msg from a publisher
-  to a subscriber. For the example to work, the subscriber should
-  already be running when executing the publisher application.
-
-  The publisher creates a HelloWorldData_Msg sample with an UserId
-  and a string message and publishes it.
-
-  The subscriber picks up that sample and displays it.
-*/
+#include <stdlib.h>
 
 /* An array of one message (aka sample in dds terms) will be used. */
 #define MAX_SAMPLES 1
@@ -26,24 +16,29 @@ int main (int argc, char ** argv)
     void *samples[MAX_SAMPLES];
     dds_sample_info_t infos[MAX_SAMPLES];
     dds_return_t ret;
+    dds_qos_t *qos;
 
     /* Create a Participant. */
     participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
     DDS_ERR_CHECK (participant, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
     /* Create a Topic. */
-    topic = dds_create_topic (participant, &HelloWorldData_Msg_desc, "HelloWorldData_Msg", NULL, NULL);
+    topic = dds_create_topic (participant, &HelloWorldData_Msg_desc,
+                              "HelloWorldData_Msg", NULL, NULL);
     DDS_ERR_CHECK (topic, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    /* Create a Reader. */
-    reader = dds_create_reader (participant, topic, NULL, NULL);
+    /* Create a reliable Reader. */
+    qos = dds_qos_create ();
+    dds_qset_reliability (qos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
+    reader = dds_create_reader (participant, topic, qos, NULL);
     DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+    dds_qos_delete(qos);
+
+    printf ("\n=== [Subscriber] Waiting for a sample ...\n");
 
     /* Initialize sample buffer, by pointing the void pointer within
      * the buffer array to a valid sample memory location. */
     samples[0] = HelloWorldData_Msg__alloc ();
-
-    printf ("\n=== [Reader] Waiting for a message ...\n");
 
     /* Poll until data has been read. */
     while (true)
@@ -76,5 +71,5 @@ int main (int argc, char ** argv)
     ret = dds_delete (participant);
     DDS_ERR_CHECK (ret, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-    return 0;
+    return EXIT_SUCCESS;
 }

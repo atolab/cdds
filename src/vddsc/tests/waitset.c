@@ -55,7 +55,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -95,7 +95,7 @@ vddsc_waitset_init(void)
     subscriber = dds_create_subscriber(participant, NULL, NULL);
     cr_assert_gt(subscriber, 0, "Failed to create prerequisite subscriber");
 
-    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_waitset_test", name, 100), NULL, NULL);
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_waitset_test", name, sizeof name), NULL, NULL);
     cr_assert_gt(topic, 0, "Failed to create prerequisite topic");
 
     reader = dds_create_reader(subscriber, topic, NULL, NULL);
@@ -817,8 +817,9 @@ Theory((size_t size), vddsc_waitset_get_entities, array_sizes, .init=vddsc_waits
 Test(vddsc_waitset_get_entities, no_array, .init=vddsc_waitset_attached_init, .fini=vddsc_waitset_attached_fini)
 {
     dds_return_t ret;
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_waitset_get_entities(waitset, NULL, 1);
-
+    OS_WARNING_MSVC_ON(6387);
     /* vddsc_waitset_attached_init attached 7 entities. */
     cr_assert_eq(ret, 7, "entities cnt %d (err %d)", ret, dds_err_nr(ret));
 }

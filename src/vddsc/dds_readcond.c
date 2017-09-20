@@ -44,7 +44,7 @@ dds_create_readcondition(
 {
     dds_entity_t hdl;
     dds_reader * rd;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
 
     DDS_REPORT_STACK();
 
@@ -91,7 +91,7 @@ dds_get_mask(
 {
     dds_return_t ret;
     dds_readcond *cond;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
 
     DDS_REPORT_STACK();
 

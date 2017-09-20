@@ -11,7 +11,7 @@ dds_report(
     const char *function,
     int32_t line,
     const char *file,
-    dds_retcode_t code,
+    dds_return_t code,
     const char *format,
     ...)
 {

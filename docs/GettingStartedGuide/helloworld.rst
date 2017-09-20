@@ -55,18 +55,21 @@ in a different terminal.
 The HelloworldPublisher will display the following:
 ::
 
-    === [Publisher] Writing : Message (1, Hello World)
+      === [Publisher]  Waiting for a reader to be discovered ...
+      === [Publisher]  Writing : Message (1, Hello World)
 
 While the HelloworldSubscriber will print this:
 ::
 
-    === [Reader] waiting for a message ...
-    === [Subscriber] Received : Message (1, Hello World)
+      === [Subscriber] Waiting for a sample ...
+      === [Subscriber] Received : Message (1, Hello World)
+
 
 This shows that the message was sent from the publisher to the
 waiting subscriber.
 
 .. _`HelloWorldRunningNote`:
+
 
 \* When the executables do not run due to lacking VortexDDS
 libraries, please look at these notes for
@@ -253,13 +256,20 @@ topic named "A" will not interfere with readers/writers created
 with a topic named "B".
 ::
 
-    topic = dds_create_topic (participant, &HelloWorldData_Msg_desc, "HelloWorldData_Msg", NULL, NULL);
+    topic = dds_create_topic (participant, &HelloWorldData_Msg_desc,
+                              "HelloWorldData_Msg", NULL, NULL);
 
 When we have a participant and topic, then we can create
-the reader.
+the reader. Since the order in which the Hello World Publisher and
+Hello World Subscriber are started shouldn't matter, we need to create
+a so called 'reliable' reader. Without going into details, the reader
+will be created like this
 ::
 
-    reader = dds_create_reader (participant, topic, NULL, NULL);
+    dds_qos_t *qos = dds_qos_create ();
+    dds_qset_reliability (qos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
+    reader = dds_create_reader (participant, topic, qos, NULL);
+    dds_qos_delete(qos);
 
 We are almost able to read data. However, the read expects an
 array of pointers to valid memory locations. This means the
@@ -271,14 +281,12 @@ So, we only need to initialize one element.
     samples[0] = HelloWorldData_Msg__alloc ();
 
 Now everything is ready for reading data. But we don't know if
-there is any data. So, we enter a polling loop that will exit
-when data has been read.
+there is any data. To simplify things, we enter a polling loop
+that will exit when data has been read.
 
 Within the polling loop, we do the actual read. We provide the
 initialized array of pointers (:code:`samples`), an array that
-holds
-:ref:`information about the read sample(s) <SampleStatesSummary>`
-(:code:`info`), the
+holds information about the read sample(s) (:code:`info`), the
 size of the arrays and the maximum number of samples to read.
 Every read sample in the samples array has related information
 in the info array at the same index.
@@ -308,7 +316,7 @@ loop is quit as well in this case.
     printf ("Message (%d, %s)\n", msg->userID, msg->message);
     break;
 
-When data is received and the polling loop is quit, we need to
+When data is received and the polling loop is stopped, we need to
 clean up.
 ::
 
@@ -317,7 +325,7 @@ clean up.
 
 All the entities that are created using the participant are also
 deleted. This means that deleting the participant will
-automatically the reader as well.
+automatically delete the topic and reader as well.
 
 
 .. _`HelloWorldPublisherSource`:
@@ -354,7 +362,8 @@ be sent between them.
     dds_entity_t writer;
 
     participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    topic = dds_create_topic (participant, &HelloWorldData_Msg_desc, "HelloWorldData_Msg", NULL, NULL);
+    topic = dds_create_topic (participant, &HelloWorldData_Msg_desc,
+                              "HelloWorldData_Msg", NULL, NULL);
     writer = dds_create_writer (participant, topic, NULL, NULL);
 
 The DDS middleware is a pub/sub implementation. This means that
@@ -363,24 +372,33 @@ that written data can be received by readers, without the
 application having to worry about it. There is a catch though:
 this discovery and coupling takes a small amount of
 time. There are various ways to work around this problem. For
-instance by making the readers and writers
-:ref:`reliable <ReliabilityIntro>` or wait for
-:ref:`publication/subscription matched events <WaitsetIntro>`
-or just don't care if the reader misses a few samples (f.i. when
-the publishing
-frequency is high enough). However, that is out of the scope of
-this example and to keep things simple, we just do a sleep.
+instance by making the readers and writers reliable or wait for
+publication/subscription matched events or just don't care if the
+reader misses a few samples (f.i. when the publishing frequency is
+high enough) or just to sleep (not recommended). In this example we
+use a simplified way of waiting for a matching reader to be started.
+This is done by polling whether a publication matched status has been
+reached. First we need to enable this status on the writer, like
 ::
 
-    /* Sleep to allow discovery of reader by writer and vice versa. */
-    dds_sleepfor (DDS_SECS (1));
+    dds_set_enabled_status(writer, DDS_PUBLICATION_MATCHED_STATUS);
 
-.. note::
-    As mentioned in the previous paragraph, sleeping isn't really
-    recommended. See :ref:`Hello Quick World <HelloQuickWorld>`
-    example for an alternative.
+Now the polling starts:
+::
 
-Now, we need to decide which data to sent.
+    while(true)
+    {
+      uint32_t status;
+      ret = dds_get_status_changes (writer, &status);
+      if (status == DDS_PUBLICATION_MATCHED_STATUS) {
+        break;
+      }
+      /* Polling sleep. */
+      dds_sleepfor (DDS_MSECS (20));
+    }
+
+After this loop, we are sure that a matching reader has been started.
+Now, we commence to writing the data. First the data must be initialized
 ::
 
     HelloWorldData_Msg msg;
@@ -401,7 +419,7 @@ After the sample is written, we need to clean up.
 
 All the entities that are created using the participant are also
 deleted. This means that deleting the participant will
-automatically the writer as well.
+automatically delete the topic and writer as well.
 
 
 
@@ -573,8 +591,6 @@ languages after which the resulting applications can communicate
 without concerns about the (possible different) programming
 languages these application are written in.
 
-A bit more information about the :code:`#pragma keylist` can be
-found :ref:`here <HelloInstanceWorld>`.
 
 .. _`IdlCompiler`:
 

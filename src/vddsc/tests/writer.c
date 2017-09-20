@@ -4,6 +4,7 @@
 
 #include "dds.h"
 #include "RoundTrip.h"
+#include "os/os.h"
 
 static dds_entity_t participant = 0;
 static dds_entity_t topic = 0;
@@ -43,7 +44,9 @@ Test(vddsc_create_writer, basic, .init = setup, .fini = teardown)
 
 Test(vddsc_create_writer, null_parent, .init = setup, .fini = teardown)
 {
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     writer = dds_create_writer(0, topic, NULL, NULL);
+    OS_WARNING_MSVC_ON(28020);
     cr_assert_eq(dds_err_nr(writer), DDS_RETCODE_BAD_PARAMETER);
 }
 
@@ -75,7 +78,9 @@ Test(vddsc_create_writer, deleted_publisher, .init = setup, .fini = teardown)
 
 Test(vddsc_create_writer, null_topic, .init = setup, .fini = teardown)
 {
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     writer = dds_create_writer(publisher, 0, NULL, NULL);
+    OS_WARNING_MSVC_ON(28020);
     cr_assert_eq(dds_err_nr(writer), DDS_RETCODE_BAD_PARAMETER);
 }
 

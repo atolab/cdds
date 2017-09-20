@@ -1,6 +1,9 @@
 #ifndef _DDS_ERR_H_
 #define _DDS_ERR_H_
 
+#include <assert.h>
+#include "os/os.h"
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
@@ -18,8 +21,6 @@ extern "C" {
 #define DDS__LINE__ ((__LINE__ & 0x3fff) << 8)
 
 #define DDS_ERR_NO(err) -(DDS__FILE_ID__ + DDS__LINE__ + (err))
-
-#define DDS_ERRNO_DEPRECATED(e) ((e <= 0) ? e : DDS_ERR_NO(e))
 
 #define DDS_ERRNO(e,msg,...) (assert(e > DDS_RETCODE_OK), os_report(OS_REPORT_ERROR, OS_FUNCTION, __FILE__, __LINE__, DDS_ERR_NO(e), (msg), ##__VA_ARGS__), DDS_ERR_NO(e))
 

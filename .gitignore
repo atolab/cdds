@@ -3,3 +3,4 @@ gen.*
 .cproject
 .project
 .settings/
+.vs/

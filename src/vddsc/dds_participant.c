@@ -139,12 +139,14 @@ dds_create_participant(
     /* Initialize the dds layer when this is the first participant. */
     if (dds_pp_head == NULL) {
         ret = dds_init();
-        DDS_REPORT_STACK();
         if (ret != DDS_RETCODE_OK) {
             e = DDS_ERRNO(ret, "Initialization of DDS layer is failed");
             goto fail;
         }
     }
+
+    /* Report stack is only useful after dds (and thus os) init. */
+    DDS_REPORT_STACK();
 
     nn_plist_init_empty (&plist);
 
@@ -184,7 +186,7 @@ dds_create_participant(
 
     if (q_rc != 0) {
         dds_qos_delete(new_qos);
-        e = DDS_ERRNO(DDS_RETCODE_ERROR, "Error");
+        e = DDS_ERRNO(DDS_RETCODE_ERROR, "Internal error");
         goto fail;
     }
 
@@ -202,6 +204,7 @@ dds_create_participant(
     pp->m_entity.m_deriver.set_qos = dds_participant_qos_set;
     pp->m_entity.m_deriver.get_instance_hdl = dds_participant_instance_hdl;
     pp->m_entity.m_deriver.validate_status = dds_participant_status_validate;
+    pp->m_builtin_subscriber = 0;
 
     /* Add participant to extent */
     os_mutexLock (&dds_global.m_mutex);

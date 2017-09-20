@@ -51,17 +51,16 @@ DDS_EXPORT dds_domainid_t dds_domain_default (void);
  *
  * @{
  */
-#define DDS_BUILTIN_TOPIC_DCPSPARTICIPANT   (DDS_KIND_INTERNAL + 1)
-#define DDS_BUILTIN_TOPIC_CMPARTICIPANT     (DDS_KIND_INTERNAL + 2)
-#define DDS_BUILTIN_TOPIC_DCPSTYPE          (DDS_KIND_INTERNAL + 3)
-#define DDS_BUILTIN_TOPIC_DCPSTOPIC         (DDS_KIND_INTERNAL + 4)
-#define DDS_BUILTIN_TOPIC_CMTOPIC           (DDS_KIND_INTERNAL + 5)
-#define DDS_BUILTIN_TOPIC_DCPSPUBLICATION   (DDS_KIND_INTERNAL + 6)
-#define DDS_BUILTIN_TOPIC_CMPUBLISHER       (DDS_KIND_INTERNAL + 7)
-#define DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION  (DDS_KIND_INTERNAL + 8)
-#define DDS_BUILTIN_TOPIC_CMSUBSCRIBER      (DDS_KIND_INTERNAL + 9)
-#define DDS_BUILTIN_TOPIC_CMDATAWRITER      (DDS_KIND_INTERNAL + 10)
-#define DDS_BUILTIN_TOPIC_CMDATAREADER      (DDS_KIND_INTERNAL + 11)
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_DCPSPARTICIPANT;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_CMPARTICIPANT;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_DCPSTYPE;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_DCPSTOPIC;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_DCPSPUBLICATION;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_CMPUBLISHER;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_CMSUBSCRIBER;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_CMDATAWRITER;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_CMDATAREADER;
 /** @}*/
 
 /** @name Communication Status definitions
@@ -475,7 +474,7 @@ dds_take_status(
  *                  The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
-DDS_EXPORT _Check_return_ dds_return_t
+DDS_EXPORT _Must_inspect_result_ dds_return_t
 dds_get_status_changes(
         _In_  dds_entity_t entity,
         _Out_ uint32_t *status);

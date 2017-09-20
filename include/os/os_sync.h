@@ -329,6 +329,26 @@ extern "C" {
     os_rwlockUnlock(
             os_rwlock *rwlock);
 
+    /* Initialization callback used by os_once */
+    typedef void (*os_once_fn)(void);
+
+    /** \brief Invoke init_fn exactly once for a given control
+     *
+     * The first thread calling os_once(...) with a given control will invoke the
+     * init_fn() with no arguments. Following calls with the same control will not
+     * invoke init_fn().
+     *
+     * Precondition:
+     * - The control parameter is properly initialized with OS_ONCE_T_STATIC_INIT
+     *
+     * Postcondition:
+     * - On return init_fn() has completed exactly once for the given control.
+    */
+    OSAPI_EXPORT void
+    os_once(
+        _Inout_ os_once_t *control,
+        _In_ os_once_fn init_fn);
+
 #if defined (__cplusplus)
 }
 #endif

@@ -3,6 +3,8 @@
 #include <criterion/logging.h>
 #include "dds.h"
 #include "RoundTrip.h"
+#include "Space.h"
+#include "os/os.h"
 
 /* Tests in this file only concern themselves with very basic api tests of
    dds_write and dds_write_ts */
@@ -59,7 +61,10 @@ Test(vddsc_write, null_writer, .init = setup, .fini = teardown)
 {
     dds_return_t status;
 
+    /* Disable warning related to improper API usage by passing incompatible parameter. */
+    OS_WARNING_MSVC_OFF(28020);
     status = dds_write(0, &data);
+    OS_WARNING_MSVC_ON(28020);
     cr_assert_eq(dds_err_nr(status), DDS_RETCODE_BAD_PARAMETER);
 }
 
@@ -86,7 +91,11 @@ Test(vddsc_write, null_sample, .init = setup, .fini = teardown)
 {
     dds_return_t status;
 
+    /* Disable warning related to improper API usage by passing NULL to a non-NULL parameter. */
+    OS_WARNING_MSVC_OFF(6387);
     status = dds_write(writer, NULL);
+    OS_WARNING_MSVC_ON(6387);
+
     cr_assert_eq(dds_err_nr(status), DDS_RETCODE_BAD_PARAMETER);
 }
 
@@ -104,4 +113,37 @@ Test(vddsc_write_ts, bad_timestamp, .init = setup, .fini = teardown)
 
     status = dds_write_ts(writer, &data, -1);
     cr_assert_eq(dds_err_nr(status), DDS_RETCODE_BAD_PARAMETER);
+}
+
+Test(vddsc_write, simpletypes)
+{
+    dds_return_t status;
+    dds_entity_t par, top, wri;
+    const Space_simpletypes st_data = {
+        .l = -1,
+        .ll = -1,
+        .us = 1,
+        .ul = 1,
+        .ull = 1,
+        .f = 1.0f,
+        .d = 1.0f,
+        .c = '1',
+        .b = true,
+        .o = 1,
+        .s = "This string is exactly so long that it would previously trigger CHAM-405. If this string is shortened exactly one character, all is well. Since it is fixed now, there doesn't need to be any further investigation."
+    };
+
+    par = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(par, 0);
+    top = dds_create_topic(par, &Space_simpletypes_desc, "SimpleTypes", NULL, NULL);
+    cr_assert_gt(top, 0);
+    wri = dds_create_writer(par, top, NULL, NULL);
+    cr_assert_gt(wri, 0);
+
+    status = dds_write(wri, &st_data);
+    cr_assert_eq(dds_err_nr(status), DDS_RETCODE_OK);
+
+    dds_delete(wri);
+    dds_delete(top);
+    dds_delete(par);
 }
