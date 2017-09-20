@@ -226,7 +226,7 @@ dds_find_topic(
             }
             dds_entity_unlock(p);
         } else {
-            topic = DDS_ERRNO(rc, "");
+            topic = DDS_ERR_NO(rc);
         }
     }
 
@@ -263,7 +263,7 @@ dds_lookup_topic(
             }
             dds_entity_unlock(p);
         } else {
-            topic = DDS_ERRNO(rc, "");
+            topic = DDS_ERR_NO(rc);
         }
      }
 
