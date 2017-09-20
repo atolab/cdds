@@ -50,17 +50,17 @@ qos_init(void)
     cr_assert_not_null(g_qos);
 
     g_pol_userdata.value._buffer = dds_alloc(strlen(c_userdata) + 1);
-    g_pol_userdata.value._length = strlen(c_userdata) + 1;
+    g_pol_userdata.value._length = (uint32_t)strlen(c_userdata) + 1;
     g_pol_userdata.value._release = true;
     g_pol_userdata.value._maximum = 0;
 
     g_pol_topicdata.value._buffer = dds_alloc(strlen(c_topicdata) + 1);
-    g_pol_topicdata.value._length = strlen(c_topicdata) + 1;
+    g_pol_topicdata.value._length = (uint32_t)strlen(c_topicdata) + 1;
     g_pol_topicdata.value._release = true;
     g_pol_topicdata.value._maximum = 0;
 
     g_pol_groupdata.value._buffer = dds_alloc(strlen(c_groupdata) + 1);
-    g_pol_groupdata.value._length = strlen(c_groupdata) + 1;
+    g_pol_groupdata.value._length = (uint32_t)strlen(c_groupdata) + 1;
     g_pol_groupdata.value._release = true;
     g_pol_groupdata.value._maximum = 0;
 
@@ -163,20 +163,20 @@ static void
 check_default_qos_of_builtin_entity(dds_entity_t entity)
 {
   dds_return_t ret;
-  int64_t deadline = from_ddsi_duration(g_pol_deadline.period);
-  int64_t liveliness_lease_duration = from_ddsi_duration(g_pol_liveliness.lease_duration);
-  int64_t minimum_separation = from_ddsi_duration(g_pol_time_based_filter.minimum_separation);
-  int64_t max_blocking_time = from_ddsi_duration(g_pol_reliability.max_blocking_time);
-  int64_t autopurge_nowriter_samples_delay = from_ddsi_duration(g_pol_reader_data_lifecycle.autopurge_nowriter_samples_delay);
-  int64_t autopurge_disposed_samples_delay = from_ddsi_duration(g_pol_reader_data_lifecycle.autopurge_disposed_samples_delay);
+  int64_t deadline;
+  int64_t liveliness_lease_duration;
+  int64_t minimum_separation;
+  int64_t max_blocking_time;
+  int64_t autopurge_nowriter_samples_delay;
+  int64_t autopurge_disposed_samples_delay;
 
-  dds_durability_kind_t durability_kind = (dds_durability_kind_t)g_pol_durability.kind;
-  dds_presentation_access_scope_kind_t presentation_access_scope_kind = (dds_presentation_access_scope_kind_t)g_pol_presentation.access_scope;
-  dds_ownership_kind_t ownership_kind = (dds_ownership_kind_t)g_pol_ownership.kind;
-  dds_liveliness_kind_t liveliness_kind = (dds_liveliness_kind_t)g_pol_liveliness.kind;
-  dds_reliability_kind_t reliability_kind = (dds_reliability_kind_t)g_pol_reliability.kind;
-  dds_destination_order_kind_t destination_order_kind = (dds_destination_order_kind_t)g_pol_destination_order.kind;
-  dds_history_kind_t history_kind = (dds_history_kind_t)g_pol_history.kind;
+  dds_durability_kind_t durability_kind;
+  dds_presentation_access_scope_kind_t presentation_access_scope_kind;
+  dds_ownership_kind_t ownership_kind;
+  dds_liveliness_kind_t liveliness_kind;
+  dds_reliability_kind_t reliability_kind;
+  dds_destination_order_kind_t destination_order_kind;
+  dds_history_kind_t history_kind;
 
   dds_qos_t *qos = dds_qos_create();
   cr_assert_not_null(qos);
@@ -195,18 +195,18 @@ check_default_qos_of_builtin_entity(dds_entity_t entity)
   dds_qget_resource_limits(qos, &g_pol_resource_limits.max_samples, &g_pol_resource_limits.max_instances, &g_pol_resource_limits.max_samples_per_instance);
   dds_qget_reader_data_lifecycle(qos, &autopurge_nowriter_samples_delay, &autopurge_disposed_samples_delay);
   // no getter for ENTITY_FACTORY
-  cr_assert_eq(durability_kind, DDS_TRANSIENT_LOCAL_DURABILITY_QOS);
-  cr_assert_eq(presentation_access_scope_kind, DDS_TOPIC_PRESENTATION_QOS);
+  cr_assert_eq(durability_kind, DDS_DURABILITY_TRANSIENT_LOCAL);
+  cr_assert_eq(presentation_access_scope_kind, DDS_PRESENTATION_TOPIC);
   cr_assert_eq(g_pol_presentation.coherent_access, false);
   cr_assert_eq(g_pol_presentation.ordered_access, false);
   cr_assert_eq(deadline, DDS_INFINITY);
-  cr_assert_eq(ownership_kind, DDS_SHARED_OWNERSHIP_QOS);
-  cr_assert_eq(liveliness_kind, DDS_AUTOMATIC_LIVELINESS_QOS);
+  cr_assert_eq(ownership_kind, DDS_OWNERSHIP_SHARED);
+  cr_assert_eq(liveliness_kind, DDS_LIVELINESS_AUTOMATIC);
   cr_assert_eq(minimum_separation, 0);
-  cr_assert_eq(reliability_kind, DDS_RELIABLE_RELIABILITY_QOS);
+  cr_assert_eq(reliability_kind, DDS_RELIABILITY_RELIABLE);
   cr_assert_eq(max_blocking_time, DDS_MSECS(100));
-  cr_assert_eq(destination_order_kind, DDS_BY_RECEPTION_TIMESTAMP_DESTINATIONORDER_QOS);
-  cr_assert_eq(history_kind, DDS_KEEP_LAST_HISTORY_QOS);
+  cr_assert_eq(destination_order_kind, DDS_DESTINATIONORDER_BY_RECEPTION_TIMESTAMP);
+  cr_assert_eq(history_kind, DDS_HISTORY_KEEP_LAST);
   cr_assert_eq(g_pol_history.depth, 1);
   cr_assert_eq(g_pol_resource_limits.max_instances, DDS_INFINITY);
   cr_assert_eq(g_pol_resource_limits.max_samples, DDS_INFINITY);
@@ -565,12 +565,17 @@ Test(vddsc_builtin_topics, datareader_qos, .init = setup, .fini = teardown)
   cr_assert_eq(subscription_data->presentation.access_scope, g_pol_presentation.access_scope);
   cr_assert_eq(subscription_data->presentation.coherent_access, g_pol_presentation.coherent_access);
   cr_assert_eq(subscription_data->presentation.ordered_access, g_pol_presentation.ordered_access);
-  cr_assert_str_eq(subscription_data->partition.name._buffer, g_pol_partition.name._buffer);
-  cr_assert_str_eq(subscription_data->partition.name._length, g_pol_partition.name._length);
+
+  cr_assert_eq(subscription_data->partition.name._length, g_pol_partition.name._length);
+  for (uint32_t i = 0; i < subscription_data->partition.name._length; ++i)
+  {
+    cr_assert_str_eq(subscription_data->partition.name._buffer[i], c_partitions[i]);
+  }
+
   cr_assert_str_eq(subscription_data->topic_data.value._buffer, g_pol_topicdata.value._buffer);
-  cr_assert_str_eq(subscription_data->topic_data.value._length, g_pol_topicdata.value._length);
+  cr_assert_eq(subscription_data->topic_data.value._length, g_pol_topicdata.value._length);
   cr_assert_str_eq(subscription_data->group_data.value._buffer, g_pol_groupdata.value._buffer);
-  cr_assert_str_eq(subscription_data->group_data.value._length, g_pol_groupdata.value._length);
+  cr_assert_eq(subscription_data->group_data.value._length, g_pol_groupdata.value._length);
 
   DDS_SubscriptionBuiltinTopicData_free(subscription_samples[0], DDS_FREE_ALL);
 }
@@ -632,12 +637,17 @@ Test(vddsc_builtin_topics, datawriter_qos, .init = setup, .fini = teardown)
   cr_assert_eq(publication_data->presentation.access_scope, g_pol_presentation.access_scope);
   cr_assert_eq(publication_data->presentation.coherent_access, g_pol_presentation.coherent_access);
   cr_assert_eq(publication_data->presentation.ordered_access, g_pol_presentation.ordered_access);
-  cr_assert_str_eq(publication_data->partition.name._buffer, g_pol_partition.name._buffer);
-  cr_assert_str_eq(publication_data->partition.name._length, g_pol_partition.name._length);
+
+  cr_assert_eq(publication_data->partition.name._length, g_pol_partition.name._length);
+  for (uint32_t i = 0; i < publication_data->partition.name._length; ++i)
+  {
+    cr_assert_str_eq(publication_data->partition.name._buffer[i], c_partitions[i]);
+  }
+
   cr_assert_str_eq(publication_data->topic_data.value._buffer, g_pol_topicdata.value._buffer);
-  cr_assert_str_eq(publication_data->topic_data.value._length, g_pol_topicdata.value._length);
+  cr_assert_eq(publication_data->topic_data.value._length, g_pol_topicdata.value._length);
   cr_assert_str_eq(publication_data->group_data.value._buffer, g_pol_groupdata.value._buffer);
-  cr_assert_str_eq(publication_data->group_data.value._length, g_pol_groupdata.value._length);
+  cr_assert_eq(publication_data->group_data.value._length, g_pol_groupdata.value._length);
 
   DDS_PublicationBuiltinTopicData_free(publication_samples[0], DDS_FREE_ALL);
 }
@@ -714,7 +724,7 @@ Test(vddsc_builtin_topics, topic_qos, .init = setup, .fini = teardown)
   cr_assert_eq(topic_data->resource_limits.max_samples_per_instance, g_pol_resource_limits.max_samples_per_instance);
   cr_assert_eq(topic_data->ownership.kind, g_pol_ownership.kind);
   cr_assert_str_eq(topic_data->topic_data.value._buffer, g_pol_topicdata.value._buffer);
-  cr_assert_str_eq(topic_data->topic_data.value._length, g_pol_topicdata.value._length);
+  cr_assert_eq(topic_data->topic_data.value._length, g_pol_topicdata.value._length);
 
   DDS_TopicBuiltinTopicData_free(topic_samples[0], DDS_FREE_ALL);
 }
