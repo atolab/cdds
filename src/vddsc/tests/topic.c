@@ -119,9 +119,9 @@ Test(vddsc_topic_create, non_participants, .init=vddsc_topic_init, .fini=vddsc_t
 Test(vddsc_topic_create, duplicate, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
 {
     dds_entity_t topic;
-    /* Creating the same topic should fail.  */
+    /* Creating the same topic should NOT fail. */
     topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, g_topicRtmDataTypeName, NULL, NULL);
-    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %s", dds_err_str(topic));
+    cr_assert_gt(topic, 0, "returned %s", dds_err_str(topic));
 }
 /*************************************************************************************************/
 
@@ -129,9 +129,9 @@ Test(vddsc_topic_create, duplicate, .init=vddsc_topic_init, .fini=vddsc_topic_fi
 Test(vddsc_topic_create, same_name, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
 {
     dds_entity_t topic;
-    /* Creating the different topic with same name should fail.  */
+    /* Creating the different topic with same name should NOT fail. */
     topic = dds_create_topic(g_participant, &RoundTripModule_Address_desc, g_topicRtmDataTypeName, NULL, NULL);
-    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %s", dds_err_str(topic));
+    cr_assert_gt(topic, 0, "returned %s", dds_err_str(topic));
 }
 /*************************************************************************************************/
 
@@ -183,16 +183,24 @@ Theory((char *name), vddsc_topic_create, invalid_names, .init=vddsc_topic_init, 
  *
  *************************************************************************************************/
 /*************************************************************************************************/
-Test(vddsc_topic_find, valid, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+Test(vddsc_topic_find, unique_handle, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
 {
     dds_entity_t topic;
-    dds_return_t ret;
+    dds_return_t result;
+
+    topic = dds_lookup_topic(g_participant, g_topicRtmDataTypeName);
+    cr_assert_eq(topic, g_topicRtmDataType);
 
     topic = dds_find_topic(g_participant, g_topicRtmDataTypeName);
-    cr_assert_eq(topic, g_topicRtmDataType, "returned %s", dds_err_str(topic));
+    cr_assert_gt(topic, 0);
+    cr_assert_neq(topic, g_topicRtmDataType);
 
-    ret = dds_delete(topic);
-    cr_assert_eq(ret, DDS_RETCODE_OK);
+    result = dds_delete(g_topicRtmDataType);
+    cr_assert_eq(dds_err_nr(result), DDS_RETCODE_OK);
+    result = dds_delete(g_topicRtmDataType);
+    cr_assert_eq(dds_err_nr(result), DDS_RETCODE_ALREADY_DELETED);
+    topic = dds_lookup_topic(g_participant, g_topicRtmDataTypeName);
+    cr_assert_eq(topic, topic);
 }
 /*************************************************************************************************/
 
@@ -233,7 +241,68 @@ Test(vddsc_topic_find, deleted, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
 }
 /*************************************************************************************************/
 
+/**************************************************************************************************
+ *
+ * These will check looking up the topic in various ways.
+ *
+ *************************************************************************************************/
+/*************************************************************************************************/
+Test(vddsc_lookup_topic, existing_topic, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    topic = dds_lookup_topic(g_participant, g_topicRtmDataTypeName);
+    cr_assert_eq(topic, g_topicRtmDataType);
+}
+/*************************************************************************************************/
 
+/*************************************************************************************************/
+Test(vddsc_lookup_topic, deleted_topic, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    dds_delete(g_topicRtmDataType);
+    topic = dds_lookup_topic(g_participant, g_topicRtmDataTypeName);
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_PRECONDITION_NOT_MET);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_lookup_topic, non_existent_topic_name, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    static const char non_existent_topic_name[] = "non_existent_topic";
+    topic = dds_lookup_topic(g_participant, non_existent_topic_name);
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_PRECONDITION_NOT_MET);
+}
+/*************************************************************************************************/
+
+Test(vddsc_lookup_topic, bad_topic_name, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    static const char bad_topic_name[] = "foo-bar";
+    topic = dds_lookup_topic(g_participant, bad_topic_name);
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_BAD_PARAMETER);
+}
+
+/*************************************************************************************************/
+Test(vddsc_lookup_topic, null_participant, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t topic;
+    topic = dds_lookup_topic(0, g_topicRtmDataTypeName);
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_BAD_PARAMETER);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_lookup_topic, non_participant, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
+{
+    dds_entity_t publisher = 0, topic = 0;
+    publisher = dds_create_publisher(g_participant, NULL, NULL);
+    cr_assert_gt(publisher, 0);
+    topic = dds_lookup_topic(publisher, g_topicRtmDataTypeName);
+    cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_ILLEGAL_OPERATION);
+    dds_delete(publisher);
+}
+/*************************************************************************************************/
 
 /**************************************************************************************************
  *

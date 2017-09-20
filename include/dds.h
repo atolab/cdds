@@ -968,7 +968,7 @@ dds_create_topic(
         _In_opt_ const dds_listener_t *listener);
 
 /**
- * Description : Finds a named topic. Returns NULL if does not exist.
+ * Description : Finds a named topic. Returns an error handle if it does not exist.
  * The returned topic should be released with dds_delete.
  *
  * Arguments :
@@ -979,6 +979,21 @@ dds_create_topic(
 _Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
 DDS_EXPORT dds_entity_t
 dds_find_topic(
+        _In_ dds_entity_t participant,
+        _In_z_ const char *name);
+
+/**
+ * Description : Looks up an existing topic with the given name. Returns an error handle if it does not exist.
+ * The returned topic handle is an existing handle and does not have to be released with dds_delete.
+ *
+ * Arguments :
+ *   -# participant The participant on which to find the topic
+ *   -# name The name of the topic to find
+ *   -# Returns a topic or a dds_return_t
+ */
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+DDS_EXPORT dds_entity_t
+dds_lookup_topic(
         _In_ dds_entity_t participant,
         _In_z_ const char *name);
 

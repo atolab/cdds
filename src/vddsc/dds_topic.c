@@ -19,13 +19,26 @@
 #define DDS_TOPIC_STATUS_MASK                                    \
                         DDS_INCONSISTENT_TOPIC_STATUS
 
-const ut_avlTreedef_t dds_topictree_def = UT_AVL_TREEDEF_INITIALIZER_INDKEY
+const ut_avlTreedef_t dds_topictree_def = UT_AVL_TREEDEF_INITIALIZER_INDKEY_ALLOWDUPS
 (
   offsetof (struct sertopic, avlnode),
   offsetof (struct sertopic, name_typename),
   (int (*) (const void *, const void *)) strcmp,
   0
 );
+
+static sertopic_t
+lookup_topic(
+        _In_ dds_domain *domain,
+        _In_z_ const char *name);
+
+static dds_entity_t
+create_topic(
+        _In_ dds_entity *par,
+        _In_ const dds_topic_descriptor_t *desc,
+        _In_z_ const char *name,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener);
 
 
 static bool
@@ -121,10 +134,10 @@ dds_topic_status_cb(
     }
 }
 
-sertopic_t
-dds_topic_lookup(
-        dds_domain *domain,
-        const char *name)
+static sertopic_t
+lookup_topic(
+        _In_ dds_domain *domain,
+        _In_z_ const char *name)
 {
     sertopic_t st = NULL;
     ut_avlIter_t iter;
@@ -182,33 +195,83 @@ dds_find_topic(
         _In_ dds_entity_t participant,
         _In_z_ const char *name)
 {
-    dds_entity_t tp;
-    dds_entity *p = NULL;
+    dds_entity_t topic;
+    dds_entity *p = NULL, *t = NULL;
     sertopic_t st;
     dds_retcode_t rc;
 
     DDS_REPORT_STACK();
 
-    if (name) {
+    if (!name) {
+        topic = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name is NULL");
+    } else if (!is_valid_name(name)) {
+        topic = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name is invalid");
+    } else {
         rc = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &p);
         if (rc == DDS_RETCODE_OK) {
-            st = dds_topic_lookup (p->m_domain, name);
-            if (st) {
-                dds_entity_add_ref (&st->status_cb_entity->m_entity);
-                tp = st->status_cb_entity->m_entity.m_hdl;
+            st = lookup_topic(p->m_domain, name);
+            if (st != NULL) {
+                t = (dds_entity *)st->status_cb_entity;
+                os_mutexLock(&t->m_mutex);
+                topic = create_topic(
+                    (dds_participant *)p,
+                    ((dds_topic *)t)->m_descriptor,
+                    name,
+                    ((dds_topic *)t)->m_entity.m_qos,
+                    NULL);
+                os_mutexUnlock(&t->m_mutex);
             } else {
-                tp = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Topic is not being created yet");
+                topic = DDS_ERRNO(
+                    DDS_RETCODE_PRECONDITION_NOT_MET, "Topic does not exist");
             }
             dds_entity_unlock(p);
         } else {
-            tp = DDS_ERRNO(rc, "Error occurred on locking entity");
+            topic = DDS_ERRNO(rc, "");
         }
-    } else {
-        tp = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument name is not valid");
     }
-    DDS_REPORT_FLUSH(tp <= 0);
-    return tp;
+
+    DDS_REPORT_FLUSH(topic <= 0);
+    return topic;
 }
+
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+dds_entity_t
+dds_lookup_topic(
+        _In_ dds_entity_t participant,
+        _In_z_ const char *name)
+{
+    sertopic_t st;
+    dds_entity_t topic = 0;
+    dds_entity *p = 0;
+    ut_avlIter_t iter;
+    ut_handle_t hdl;
+    dds_retcode_t rc;
+
+    DDS_REPORT_STACK();
+
+    if (!name) {
+        topic = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name is NULL");
+    } else if (!is_valid_name(name)) {
+        topic = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name is invalid");
+    } else {
+        rc = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &p);
+        if (rc == DDS_RETCODE_OK) {
+            st = lookup_topic(p->m_domain, name);
+            if (st != NULL) {
+                topic = ((dds_entity *)st->status_cb_entity)->m_hdl;
+            } else {
+                topic = DDS_ERRNO(
+                    DDS_RETCODE_PRECONDITION_NOT_MET, "Topic does not exist");
+            }
+            dds_entity_unlock(p);
+        } else {
+            topic = DDS_ERRNO(rc, "");
+        }
+     }
+
+    DDS_REPORT_FLUSH(topic <= 0);
+    return topic;
+ }
 
 static dds_return_t
 dds_topic_delete(
@@ -266,10 +329,9 @@ dds_topic_qos_set(
     return ret;
 }
 
-_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
-DDS_EXPORT dds_entity_t
-dds_create_topic(
-        _In_ dds_entity_t participant,
+static dds_entity_t
+create_topic(
+        _In_ dds_entity *par,
         _In_ const dds_topic_descriptor_t *desc,
         _In_z_ const char *name,
         _In_opt_ const dds_qos_t *qos,
@@ -280,8 +342,6 @@ dds_create_topic(
     char *key = NULL;
     sertopic_t st;
     const char *typename;
-    dds_retcode_t rc;
-    dds_entity *par;
     dds_topic *top;
     dds_qos_t *new_qos = NULL;
     nn_plist_t plist;
@@ -291,42 +351,6 @@ dds_create_topic(
     const bool asleep = !vtime_awake_p (thr->vtime);
     uint32_t index;
 
-    DDS_REPORT_STACK();
-
-    if (desc == NULL){
-        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic description is NULL");
-        goto bad_param_err;
-    }
-
-    if (name == NULL) {
-        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name is NULL");
-        goto bad_param_err;
-    }
-
-    if (!is_valid_name(name)) {
-        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name contains characters that are not allowed.");
-        goto bad_param_err;
-    }
-
-    rc = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
-    if (rc != DDS_RETCODE_OK) {
-        hdl = DDS_ERRNO(rc, "Error occurred on locking entity");
-        goto lock_err;
-    }
-
-    /* Validate qos */
-    if (qos) {
-        hdl = dds_topic_qos_validate (qos, false);
-        if (hdl != DDS_RETCODE_OK) {
-            goto qos_err;
-        }
-    }
-
-    /* Check if topic already exists with same name */
-    if (dds_topic_lookup (par->m_domain, name)) {
-        hdl = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "Precondition not met");
-        goto qos_err;
-    }
 
     typename = desc->m_typename;
     key = (char*) dds_alloc (strlen (name) + strlen (typename) + 2);
@@ -413,6 +437,50 @@ dds_create_topic(
         thread_state_asleep (thr);
     }
     nn_plist_fini (&plist);
+
+    return hdl;
+}
+
+_Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
+DDS_EXPORT dds_entity_t
+dds_create_topic(
+        _In_ dds_entity_t participant,
+        _In_ const dds_topic_descriptor_t *desc,
+        _In_z_ const char *name,
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener)
+{
+    dds_entity *par;
+    dds_entity_t hdl;
+    dds_retcode_t rc;
+
+    DDS_REPORT_STACK();
+
+    if (desc == NULL) {
+        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic description is NULL");
+        goto bad_param_err;
+    }
+
+    if (name == NULL) {
+        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name is NULL");
+        goto bad_param_err;
+    }
+
+    if (!is_valid_name(name)) {
+        hdl = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Topic name contains characters that are not allowed.");
+        goto bad_param_err;
+    }
+
+    if ((rc = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par)) != DDS_RETCODE_OK) {
+        hdl = DDS_ERRNO(rc, "");
+        goto lock_err;
+    }
+
+    if (qos && (hdl = dds_topic_qos_validate (qos, false)) != DDS_RETCODE_OK) {
+        goto qos_err;
+    }
+
+    hdl = create_topic(par, desc, name, qos, listener);
 
 qos_err:
     dds_entity_unlock(par);
