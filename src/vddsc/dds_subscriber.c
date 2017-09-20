@@ -260,7 +260,8 @@ dds__get_builtin_topic(
 
         ret = dds_find_topic(participant, name);
         if (ret < 0 && dds_err_nr(ret) == DDS_RETCODE_PRECONDITION_NOT_MET) {
-            /* TODO pop report from stack? */
+            DDS_REPORT_FLUSH(0);
+            DDS_REPORT_STACK();
             /* TODO get QoS from subscriber */
             ret = dds_create_topic(participant, desc, name, NULL, NULL);
         }

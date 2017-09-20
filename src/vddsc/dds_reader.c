@@ -352,7 +352,7 @@ dds_create_reader(
         }
         t = topic;
     } else {
-        /* todo, if qos is provided, we need to compare with writer qos to determine compatibility */
+        /* TODO If qos is provided, we need to compare with writer qos to determine compatibility */
         subscriber = dds__get_builtin_subscriber(participant_or_subscriber);
         t = dds__get_builtin_topic(subscriber, topic);
     }
@@ -444,6 +444,11 @@ dds_create_reader(
     }
     dds_entity_unlock(tp);
     dds_entity_unlock(sub);
+
+    if (dds_entity_kind(topic) == DDS_KIND_INTERNAL) {
+        /* Delete temporary builtin-topic proxy */
+        dds_delete(t);
+    }
     DDS_REPORT_FLUSH(reader <= 0);
     return reader;
 
