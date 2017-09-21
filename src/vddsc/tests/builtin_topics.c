@@ -2,6 +2,7 @@
 #include "Space.h"
 #include "dds.h"
 #include "os/os.h"
+#include "test-common.h"
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
@@ -178,11 +179,15 @@ check_default_qos_of_builtin_entity(dds_entity_t entity)
   dds_destination_order_kind_t destination_order_kind;
   dds_history_kind_t history_kind;
 
+  char **partitions;
+  uint32_t plen;
+
   dds_qos_t *qos = dds_qos_create();
   cr_assert_not_null(qos);
 
   ret = dds_get_qos(entity, qos);
-  cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to get QOS of builtin Subscriober.");
+  cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to get QOS of builtin entity");
+
   dds_qget_durability(qos, &durability_kind);
   dds_qget_presentation(qos, &presentation_access_scope_kind, &g_pol_presentation.coherent_access, &g_pol_presentation.ordered_access);
   dds_qget_deadline(qos,  &deadline);
@@ -194,25 +199,36 @@ check_default_qos_of_builtin_entity(dds_entity_t entity)
   dds_qget_history(qos, &history_kind, &g_pol_history.depth);
   dds_qget_resource_limits(qos, &g_pol_resource_limits.max_samples, &g_pol_resource_limits.max_instances, &g_pol_resource_limits.max_samples_per_instance);
   dds_qget_reader_data_lifecycle(qos, &autopurge_nowriter_samples_delay, &autopurge_disposed_samples_delay);
+  dds_qget_partition(qos, &plen, &partitions);
   // no getter for ENTITY_FACTORY
-  cr_assert_eq(durability_kind, DDS_DURABILITY_TRANSIENT_LOCAL);
-  cr_assert_eq(presentation_access_scope_kind, DDS_PRESENTATION_TOPIC);
-  cr_assert_eq(g_pol_presentation.coherent_access, false);
-  cr_assert_eq(g_pol_presentation.ordered_access, false);
-  cr_assert_eq(deadline, DDS_INFINITY);
-  cr_assert_eq(ownership_kind, DDS_OWNERSHIP_SHARED);
-  cr_assert_eq(liveliness_kind, DDS_LIVELINESS_AUTOMATIC);
-  cr_assert_eq(minimum_separation, 0);
-  cr_assert_eq(reliability_kind, DDS_RELIABILITY_RELIABLE);
-  cr_assert_eq(max_blocking_time, DDS_MSECS(100));
-  cr_assert_eq(destination_order_kind, DDS_DESTINATIONORDER_BY_RECEPTION_TIMESTAMP);
-  cr_assert_eq(history_kind, DDS_HISTORY_KEEP_LAST);
-  cr_assert_eq(g_pol_history.depth, 1);
-  cr_assert_eq(g_pol_resource_limits.max_instances, DDS_INFINITY);
-  cr_assert_eq(g_pol_resource_limits.max_samples, DDS_INFINITY);
-  cr_assert_eq(g_pol_resource_limits.max_samples_per_instance, DDS_INFINITY);
-  cr_assert_eq(autopurge_nowriter_samples_delay, DDS_INFINITY);
-  cr_assert_eq(autopurge_disposed_samples_delay, DDS_INFINITY);
+
+  if ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER) {
+      cr_expect_eq(plen, 1);
+      if (plen > 0) {
+          cr_expect_str_eq(partitions[0], "__BUILT-IN PARTITION__");
+      }
+  } else if ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER) {
+      cr_expect_eq(durability_kind, DDS_DURABILITY_TRANSIENT_LOCAL);
+      cr_expect_eq(presentation_access_scope_kind, DDS_PRESENTATION_TOPIC);
+      cr_expect_eq(g_pol_presentation.coherent_access, false);
+      cr_expect_eq(g_pol_presentation.ordered_access, false);
+      cr_expect_eq(deadline, DDS_INFINITY);
+      cr_expect_eq(ownership_kind, DDS_OWNERSHIP_SHARED);
+      cr_expect_eq(liveliness_kind, DDS_LIVELINESS_AUTOMATIC);
+      cr_expect_eq(minimum_separation, 0);
+      cr_expect_eq(reliability_kind, DDS_RELIABILITY_RELIABLE);
+      cr_expect_eq(max_blocking_time, DDS_MSECS(100));
+      cr_expect_eq(destination_order_kind, DDS_DESTINATIONORDER_BY_RECEPTION_TIMESTAMP);
+      cr_expect_eq(history_kind, DDS_HISTORY_KEEP_LAST);
+      cr_expect_eq(g_pol_history.depth, 1);
+      cr_expect_eq(g_pol_resource_limits.max_instances, DDS_LENGTH_UNLIMITED);
+      cr_expect_eq(g_pol_resource_limits.max_samples, DDS_LENGTH_UNLIMITED);
+      cr_expect_eq(g_pol_resource_limits.max_samples_per_instance, DDS_LENGTH_UNLIMITED);
+      cr_expect_eq(autopurge_nowriter_samples_delay, DDS_INFINITY);
+      cr_expect_eq(autopurge_disposed_samples_delay, DDS_INFINITY);
+  } else {
+      cr_assert_fail("Unsupported entity kind %s", entity_kind_str(entity));
+  }
 }
 
 static dds_entity_t builtin_topic_handles[10];
@@ -339,7 +355,9 @@ Test(vddsc_builtin_topics, create_reader)
             }
         }
 
-        dds_delete(builtin_subscriber);
+        if (builtin_subscriber > 0) {
+            dds_delete(builtin_subscriber);
+        }
     }
 
 #define TEST_FIND(p, t) do { \

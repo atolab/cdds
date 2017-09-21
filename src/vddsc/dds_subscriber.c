@@ -260,10 +260,17 @@ dds__get_builtin_topic(
 
         ret = dds_find_topic(participant, name);
         if (ret < 0 && dds_err_nr(ret) == DDS_RETCODE_PRECONDITION_NOT_MET) {
+            dds_qos_t *tqos;
+
+            /* drop the precondition-no-met error */
             DDS_REPORT_FLUSH(0);
             DDS_REPORT_STACK();
-            /* TODO get QoS from subscriber */
-            ret = dds_create_topic(participant, desc, name, NULL, NULL);
+
+            tqos = dds_qos_create();
+            dds_qset_durability(tqos, DDS_DURABILITY_TRANSIENT_LOCAL);
+            dds_qset_presentation(tqos, DDS_PRESENTATION_TOPIC, false, false);
+            dds_qset_reliability(tqos, DDS_RELIABILITY_RELIABLE, DDS_MSECS(100));
+            ret = dds_create_topic(participant, desc, name, tqos, NULL);
         }
 
     } else {

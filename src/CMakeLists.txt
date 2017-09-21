@@ -44,7 +44,9 @@ generate_export_header(
   EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/exports/dds/dds_export.h")
 
 # Generate builtin-topic sources
+set(IDLC_ARGS "-dll" "FOO,dds/dds_export.h")
 idlc_generate(BuiltinTypes vddsc/dds_dcps_builtintopics.idl vddsc/dds_builtinTopics.idl)
+set(IDLC_ARGS)
 target_link_libraries(vddsc PRIVATE BuiltinTypes)
 
 # Generator expressions are used here to refer to different paths during build
