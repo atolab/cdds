@@ -35,7 +35,7 @@ public class CommonFileChooser extends JFileChooser {
         super(path);
     }
 
-    private synchronized JDialog getDialog(){
+    private JDialog getDialog(){
         if(this.dialog == null){
             JFrame f = null;
             this.dialog = new JDialog(f, "", true);

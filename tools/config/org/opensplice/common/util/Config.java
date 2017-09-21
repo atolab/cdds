@@ -468,7 +468,7 @@ public class Config {
         return result;
     }
 
-    public synchronized CommonFileChooser getFileChooser(){
+    public CommonFileChooser getFileChooser(){
         if(this.chooser == null){
             this.chooser = new CommonFileChooser(".");
         }
