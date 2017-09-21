@@ -380,7 +380,7 @@ Theory((dds_entity_t rdr), vddsc_read_next, invalid_readers, .init=reader_iterat
     dds_return_t ret;
 
     ret = dds_read_next(rdr, g_samples, g_info);
-    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_str(ret), dds_err_nr(exp));
+    cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %s != expected %d", dds_err_str(ret), dds_err_nr(exp));
 }
 /*************************************************************************************************/
 

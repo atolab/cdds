@@ -573,7 +573,7 @@ Test(vddsc_listener, getters_setters)
  ****************************************************************************/
 Test(vddsc_listener, propagation, .init=init_triggering_base, .fini=fini_triggering_base)
 {
-    RoundTripModule_DataType sample = { 0 };
+    RoundTripModule_DataType sample = { { 0 } };
     dds_listener_t *listener_par = NULL;
     dds_listener_t *listener_pub = NULL;
     dds_listener_t *listener_sub = NULL;
@@ -796,7 +796,7 @@ Test(vddsc_listener, data_available, .init=init_triggering_test, .fini=fini_trig
     dds_return_t ret;
     uint32_t triggered;
     uint32_t status;
-    RoundTripModule_DataType sample = { 0 };
+    RoundTripModule_DataType sample = { { 0 } };
 
     /* We are interested in data available notifications. */
     dds_lset_data_available(g_listener, data_available_cb);
@@ -826,7 +826,7 @@ Test(vddsc_listener, data_on_readers, .init=init_triggering_test, .fini=fini_tri
     dds_return_t ret;
     uint32_t triggered;
     uint32_t status;
-    RoundTripModule_DataType sample = { 0 };
+    RoundTripModule_DataType sample = { { 0 } };
 
     /* We are interested in data available notifications. */
     dds_lset_data_on_readers(g_listener, data_on_readers_cb);
@@ -864,7 +864,7 @@ Test(vddsc_listener, sample_lost, .init=init_triggering_test, .fini=fini_trigger
     uint32_t triggered;
     dds_time_t the_past;
     uint32_t status;
-    RoundTripModule_DataType sample = { 0 };
+    RoundTripModule_DataType sample = { { 0 } };
 
     /* Get a time that should be historic on all platforms.*/
     the_past = dds_time() - 1000000;
@@ -900,7 +900,7 @@ Test(vddsc_listener, sample_rejected, .init=init_triggering_test, .fini=fini_tri
     dds_return_t ret;
     uint32_t triggered;
     uint32_t status;
-    RoundTripModule_DataType sample = { 0 };
+    RoundTripModule_DataType sample = { { 0 } };
 
     /* We are interested in sample rejected notifications. */
     dds_lset_sample_rejected(g_listener, sample_rejected_cb);

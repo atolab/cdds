@@ -851,7 +851,8 @@ Test(vddsc_entity_get_children, implicit_publisher)
     } else if(child[1] == topic){
         publisher = child[0];
     } else{
-       cr_assert(false, "topic was not returned");
+        publisher = 0;
+        cr_assert(false, "topic was not returned");
     }
     cr_assert_neq(publisher, topic);
 
@@ -896,6 +897,7 @@ Test(vddsc_entity_get_children, implicit_subscriber)
     } else if(child[1] == topic){
         subscriber = child[0];
     } else{
+        subscriber = 0;
         cr_assert(false, "topic was not returned");
     }
     cr_assert_neq(subscriber, topic);

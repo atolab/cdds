@@ -293,7 +293,7 @@ Test(vddsc_entity, sample_rejected, .init=init_entity_status, .fini=fini_entity_
     dds_sample_rejected_status_t sample_rejected = {0};
 
     /* Topic instance */
-    RoundTripModule_DataType sample = { 0 };
+    RoundTripModule_DataType sample = { { 0 } };
 
     ret = dds_set_enabled_status(wri, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_dds_return_t_eq(ret, DDS_RETCODE_OK);
@@ -379,7 +379,7 @@ Test(vddsc_entity, sample_lost, .init=init_entity_status, .fini=fini_entity_stat
     dds_sample_lost_status_t sample_lost = {0};
     dds_time_t time1;
     /* Topic instance */
-    RoundTripModule_DataType sample = { 0 };
+    RoundTripModule_DataType sample = { { 0 } };
 
     ret = dds_set_enabled_status(wri, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_dds_return_t_eq(ret, DDS_RETCODE_OK);
@@ -421,7 +421,7 @@ Test(vddsc_entity, sample_lost, .init=init_entity_status, .fini=fini_entity_stat
 
 Test(vddsc_entity, data_available, .init=init_entity_status, .fini=fini_entity_status)
 {
-    RoundTripModule_DataType sample = { 0 };
+    RoundTripModule_DataType sample = { { 0 } };
 
     ret = dds_set_enabled_status(wri, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_dds_return_t_eq(ret, DDS_RETCODE_OK);
@@ -466,7 +466,7 @@ Test(vddsc_entity, all_data_available, .init=init_entity_status, .fini=fini_enti
     dds_sample_info_t info;
 
     /* Topic instance */
-    RoundTripModule_DataType p_sample = { 0 };
+    RoundTripModule_DataType p_sample = { { 0 } };
     void * s_samples[1];
     RoundTripModule_DataType s_sample;
 

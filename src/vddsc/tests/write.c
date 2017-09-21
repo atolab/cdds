@@ -10,12 +10,12 @@
    dds_write and dds_write_ts */
 
 static const int payloadSize = 32;
-static RoundTripModule_DataType data = { 0 };
+static RoundTripModule_DataType data;
 
-static dds_entity_t participant = 0;
-static dds_entity_t topic = 0;
-static dds_entity_t publisher = 0;
-static dds_entity_t writer = 0;
+static dds_entity_t participant;
+static dds_entity_t topic;
+static dds_entity_t publisher;
+static dds_entity_t writer;
 
 static void
 setup(void)

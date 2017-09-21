@@ -1,12 +1,7 @@
 #include "dds.h"
+#include "os/os.h"
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
-
-/* We are deliberately testing some bad arguments that SAL will complain about.
- * So, silence SAL regarding these issues. */
-#pragma warning(push)
-#pragma warning(disable: 28020)
-
 
 #define cr_assert_status_eq(s1, s2, ...) cr_assert_eq(dds_err_nr(s1), s2, __VA_ARGS__)
 
@@ -26,7 +21,9 @@ Test(vddsc_publisher, create)
   dds_qos_t *qos;
 
   /* Use NULL participant */
+  OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
   publisher = dds_create_publisher(0, NULL, NULL);
+  OS_WARNING_MSVC_ON(28020);
   cr_assert_eq(dds_err_nr(publisher), DDS_RETCODE_BAD_PARAMETER, "dds_create_publisher(NULL,NULL,NULL)");
 
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
@@ -50,10 +47,6 @@ Test(vddsc_publisher, create)
   cr_assert_gt(publisher, 0, "dds_create_publisher(participant,qos,NULL) where qos with default partition");
   dds_delete(publisher);
 
-/* Somehow, the compiler thinks the char arrays might not be zero-terminated... */
-#pragma warning(push)
-#pragma warning(disable: 6054)
-
   /* Use qos with single partition */
   dds_qset_partition (qos, 1, singlePartitions);
   publisher = dds_create_publisher(participant, qos, NULL);
@@ -71,8 +64,6 @@ Test(vddsc_publisher, create)
   publisher = dds_create_publisher(participant, qos, NULL);
   cr_assert_gt(publisher, 0, "dds_create_publisher(participant,qos,NULL) where qos with duplicate partitions");
   dds_delete(publisher);
-
-#pragma warning(pop)
 
   /* Use listener(NULL) */
   listener = dds_listener_create(NULL);
@@ -123,11 +114,15 @@ Test(vddsc_publisher, suspend_resume)
   dds_return_t status;
 
   /* Suspend a 0 publisher */
+  OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
   status = dds_suspend(0);
+  OS_WARNING_MSVC_ON(28020);
   cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_suspend(NULL)");
 
   /* Resume a 0 publisher */
+  OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
   status = dds_resume(0);
+  OS_WARNING_MSVC_ON(28020);
   cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_resume(NULL)");
 
   /* Uae dds_suspend on something else than a publisher */
@@ -168,21 +163,27 @@ Test(vddsc_publisher, wait_for_acks)
   dds_duration_t oneSec = ((dds_duration_t)DDS_SECS(1));
   dds_duration_t minusOneSec = ((dds_duration_t)DDS_SECS(-1));
 
-  /* Wait_for_acks on 0 publisher or writer and minusOneSec timeout */
-  status = dds_wait_for_acks(0, minusOneSec);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(NULL,-1)");
+  {
+      OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
 
-  /* Wait_for_acks on NULL publisher or writer and zeroSec timeout */
-  status = dds_wait_for_acks(0, zeroSec);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(NULL,0)");
+      /* Wait_for_acks on 0 publisher or writer and minusOneSec timeout */
+      status = dds_wait_for_acks(0, minusOneSec);
+      cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(NULL,-1)");
 
-  /* wait_for_acks on NULL publisher or writer and oneSec timeout */
-  status = dds_wait_for_acks(0, oneSec);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(NULL,1)");
+      /* Wait_for_acks on NULL publisher or writer and zeroSec timeout */
+      status = dds_wait_for_acks(0, zeroSec);
+      cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(NULL,0)");
 
-  /* wait_for_acks on NULL publisher or writer and DDS_INFINITE timeout */
-  status = dds_wait_for_acks(0, DDS_INFINITY);
-  cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(NULL,DDS_INFINITY)");
+      /* wait_for_acks on NULL publisher or writer and oneSec timeout */
+      status = dds_wait_for_acks(0, oneSec);
+      cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(NULL,1)");
+
+      /* wait_for_acks on NULL publisher or writer and DDS_INFINITE timeout */
+      status = dds_wait_for_acks(0, DDS_INFINITY);
+      cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_acks(NULL,DDS_INFINITY)");
+
+      OS_WARNING_MSVC_ON(28020);
+  }
 
   participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   cr_assert_gt(participant, 0, "dds_create_participant(DDS_DOMAIN_DEFAULT,NULL,NULL)");
@@ -253,5 +254,3 @@ Test(vddsc_publisher, coherency)
 {
   return;
 }
-
-#pragma warning(pop)

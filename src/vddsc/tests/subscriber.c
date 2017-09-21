@@ -1,13 +1,8 @@
 #include "dds.h"
+#include "os/os.h"
 
-#include <stdio.h>
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
-
-/* We are deliberately testing some bad arguments that SAL will complain about.
- * So, silence SAL regarding these issues. */
-#pragma warning(push)
-#pragma warning(disable: 6387 28020)
 
 static void on_data_available(dds_entity_t reader, void* arg) {}
 static void on_publication_matched(dds_entity_t writer, const dds_publication_matched_status_t status, void* arg) {}
@@ -43,8 +38,9 @@ Test(vddsc_subscriber, create) {
   cr_assert_gt(participant, 0, "Failed to create prerequisite participant");
 
   /*** Verify participant parameter ***/
-
+  OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
   subscriber = dds_create_subscriber(0, NULL, NULL);
+  OS_WARNING_MSVC_ON(28020);
   cr_assert_eq(dds_err_nr(subscriber), DDS_RETCODE_BAD_PARAMETER, "dds_create_subscriber: invalid participant parameter");
 
   subscriber = dds_create_subscriber(participant, NULL, NULL);
@@ -60,14 +56,18 @@ Test(vddsc_subscriber, create) {
   dds_qos_delete(sqos);
 
   sqos = dds_qos_create();
+  OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
   dds_qset_destination_order(sqos, 3); /* Set invalid dest. order (ignored, not applicable for subscriber) */
+  OS_WARNING_MSVC_ON(28020); /* Disable SAL warning on intentional misuse of the API */
   subscriber = dds_create_subscriber(participant, sqos, NULL);
   cr_assert_gt(subscriber, 0, "dds_create_subscriber: invalid non-applicable QoS parameter");
   dds_delete(subscriber);
   dds_qos_delete(sqos);
 
   sqos = dds_qos_create();
+  OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
   dds_qset_presentation(sqos, 123, 1, 1); /* Set invalid presentation policy */
+  OS_WARNING_MSVC_ON(28020);
   subscriber = dds_create_subscriber(participant, sqos, NULL);
   cr_assert_eq(dds_err_nr(subscriber), DDS_RETCODE_INCONSISTENT_POLICY, "dds_create_subscriber: invalid presentation access_scope QoS parameter");
   dds_qos_delete(sqos);
@@ -96,5 +96,3 @@ Test(vddsc_subscriber, create) {
 
   dds_delete(participant);
 }
-
-#pragma warning(pop)

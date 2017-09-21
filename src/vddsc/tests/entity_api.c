@@ -1,11 +1,7 @@
 #include "dds.h"
+#include "os/os.h"
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
-
-/* We are deliberately testing some bad arguments that SAL will complain about.
- * So, silence SAL regarding these issues. */
-#pragma warning(push)
-#pragma warning(disable: 6387 28020)
 
 /* Add --verbose command line argument to get the cr_log_info traces (if there are any). */
 
@@ -42,7 +38,9 @@ Test(vddsc_entity, enable, .init = create_entity, .fini = delete_entity)
     dds_return_t status;
 
     /* Check enabling with bad parameters. */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     status = dds_enable(0);
+    OS_WARNING_MSVC_ON(28020);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_enable (NULL)");
 
     /* Check actual enabling. */
@@ -80,6 +78,7 @@ Test(vddsc_entity, qos, .init = create_entity, .fini = delete_entity)
      * for the specific entity children, not for the generic part. */
 
     /* Check getting QoS with bad parameters. */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     status = dds_get_qos (0, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_qos(NULL, NULL)");
     status = dds_get_qos (entity, NULL);
@@ -88,12 +87,15 @@ Test(vddsc_entity, qos, .init = create_entity, .fini = delete_entity)
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_qos(NULL, qos)");
 
     /* Check setting QoS with bad parameters. */
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     status = dds_set_qos (0, NULL);
+    OS_WARNING_MSVC_OFF(6387);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_qos(NULL, NULL)");
     status = dds_set_qos (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_qos(entity, NULL)");
     status = dds_set_qos (0, qos);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_qos(NULL, qos)");
+    OS_WARNING_MSVC_ON(28020);
 
     /* Check set/get with entity without initial qos. */
     entity_qos_get_set(entity, "{without initial qos}");
@@ -130,12 +132,14 @@ Test(vddsc_entity, listener, .init = create_entity, .fini = delete_entity)
     dds_lset_publication_matched(l2,        (dds_on_publication_matched_fn)         4321);
 
     /* Check getting Listener with bad parameters. */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     status = dds_get_listener (0, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_listener(NULL, NULL)");
     status = dds_get_listener (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_listener(entity, NULL)");
     status = dds_get_listener (0, l1);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_listener(NULL, listener)");
+    OS_WARNING_MSVC_ON(28020);
 
     /* Get Listener, which should be unset. */
     status = dds_get_listener (entity, l1);
@@ -150,10 +154,12 @@ Test(vddsc_entity, listener, .init = create_entity, .fini = delete_entity)
     cr_assert_eq(cb1, DDS_LUNSET, "Listener not initialized to NULL");
 
     /* Check setting Listener with bad parameters. */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     status = dds_set_listener (0, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_listener(NULL, NULL)");
     status = dds_set_listener (0, l2);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_set_listener(NULL, listener)");
+    OS_WARNING_MSVC_ON(28020);
 
     /* Getting after setting should return set listener. */
     status = dds_set_listener (entity, l2);
@@ -200,12 +206,16 @@ Test(vddsc_entity, status, .init = create_entity, .fini = delete_entity)
      * for the specific entity children, not for the generic part. */
 
     /* Check getting Status with bad parameters. */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     status1 = dds_get_enabled_status (0, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_get_enabled_status(NULL, NULL)");
     status1 = dds_get_enabled_status (entity, NULL);
     cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_get_enabled_status(entity, NULL)");
     status1 = dds_get_enabled_status (0, &s1);
     cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_get_enabled_status(NULL, status)");
+    OS_WARNING_MSVC_ON(28020);
 
     /* Get Status, which should be 0 for a participant. */
     status1 = dds_get_enabled_status (entity, &s1);
@@ -213,7 +223,9 @@ Test(vddsc_entity, status, .init = create_entity, .fini = delete_entity)
     cr_assert_eq(s1, 0, "Enabled status mask is not 0");
 
     /* Check setting Status with bad parameters. */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     status1 = dds_set_enabled_status (0, 0);
+    OS_WARNING_MSVC_ON(28020);
     cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_set_enabled_status(NULL, 0)");
 
     /* I shouldn't be able to set statuses on a participant. */
@@ -223,7 +235,10 @@ Test(vddsc_entity, status, .init = create_entity, .fini = delete_entity)
     cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_set_enabled_status(entity, status)");
 
     /* Check getting Status changes with bad parameters. */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     status1 = dds_get_status_changes (0, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_get_status_changes(NULL, NULL)");
     status1 = dds_get_status_changes (entity, NULL);
     cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_get_status_changes(entity, NULL)");
@@ -231,13 +246,18 @@ Test(vddsc_entity, status, .init = create_entity, .fini = delete_entity)
     cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_get_status_changes(NULL, status)");
     status1 = dds_get_status_changes (entity, &s1);
     cr_assert_status_eq(status1, DDS_RETCODE_OK, "dds_get_status_changes(entity, status)");
+    OS_WARNING_MSVC_ON(28020);
 
     /* Status read and take shouldn't work either. */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     status1 = dds_read_status (0, &s1, 0);
+    OS_WARNING_MSVC_ON(28020);
     cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_read_status(NULL, status, 0)");
     status1 = dds_read_status (entity, &s1, 0);
     cr_assert_status_eq(status1, DDS_RETCODE_OK, "dds_read_status(entity, status, 0)");
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     status1 = dds_take_status (0, &s1, 0);
+    OS_WARNING_MSVC_ON(28020);
     cr_assert_status_eq(status1, DDS_RETCODE_BAD_PARAMETER, "dds_take_status(NULL, status, 0)");
     status1 = dds_take_status (entity, &s1, 0);
     cr_assert_status_eq(status1, DDS_RETCODE_OK, "dds_take_status(entity, status, 0)");
@@ -253,12 +273,16 @@ Test(vddsc_entity, instance_handle, .init = create_entity, .fini = delete_entity
      * for the specific entity children, not for the generic part. */
 
     /* Check getting Handle with bad parameters. */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     status = dds_get_instance_handle (0, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(NULL, NULL)");
     status = dds_get_instance_handle (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(entity, NULL)");
     status = dds_get_instance_handle (0, &hdl);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(NULL, handle)");
+    OS_WARNING_MSVC_ON(28020);
 
     /* Get Instance Handle, which should not be 0 for a participant. */
     status = dds_get_instance_handle (entity, &hdl);
@@ -275,7 +299,9 @@ Test(vddsc_entity, get_entities, .init = create_entity, .fini = delete_entity)
     /* ---------- Get Parent ------------ */
 
     /* Check getting Parent with bad parameters. */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     par = dds_get_parent (0);
+    OS_WARNING_MSVC_ON(28020);
     cr_assert_eq(dds_err_nr(par), DDS_RETCODE_BAD_PARAMETER, "Parent was returned (despite of bad parameter)");
 
     /* Get Parent, a participant doesn't have a parent. */
@@ -285,7 +311,9 @@ Test(vddsc_entity, get_entities, .init = create_entity, .fini = delete_entity)
     /* ---------- Get Participant ------------ */
 
     /* Check getting Participant with bad parameters. */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     par = dds_get_participant (0);
+    OS_WARNING_MSVC_ON(28020);
     cr_assert_eq(dds_err_nr(par), DDS_RETCODE_BAD_PARAMETER, "Participant was returned (despite of bad parameter)");
 
     /* Get Participant, a participants' participant is itself. */
@@ -295,6 +323,7 @@ Test(vddsc_entity, get_entities, .init = create_entity, .fini = delete_entity)
     /* ---------- Get Children ------------ */
 
     /* Check getting Children with bad parameters. */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     status = dds_get_children (0, &child, 1);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_children(NULL, child, 1)");
     status = dds_get_children (entity, NULL, 1);
@@ -305,6 +334,7 @@ Test(vddsc_entity, get_entities, .init = create_entity, .fini = delete_entity)
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_children(NULL, NULL, 1)");
     status = dds_get_children (0, &child, 0);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_children(NULL, child, 0)");
+    OS_WARNING_MSVC_ON(28020);
 
     /* Get Children, of which there are currently none. */
     status = dds_get_children (entity, NULL, 0);
@@ -327,12 +357,16 @@ Test(vddsc_entity, get_domainid, .init = create_entity, .fini = delete_entity)
     dds_domainid_t id;
 
     /* Check getting ID with bad parameters. */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     status = dds_get_domainid (0, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_domainid(NULL, NULL)");
     status = dds_get_domainid (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_domainid(entity, NULL)");
     status = dds_get_domainid (0, &id);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_get_domainid(NULL, id)");
+    OS_WARNING_MSVC_ON(28020);
 
     /* Get and check the domain id. */
     status = dds_get_domainid (entity, &id);
@@ -343,12 +377,12 @@ Test(vddsc_entity, get_domainid, .init = create_entity, .fini = delete_entity)
 Test(vddsc_entity, delete, .init = create_entity)
 {
     dds_return_t status;
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     status = dds_delete(0);
+    OS_WARNING_MSVC_ON(28020);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_delete(NULL)");
 
     status = dds_delete(entity);
     cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_delete(entity)");
     entity = 0;
 }
-
-#pragma warning(pop)
