@@ -11,6 +11,7 @@
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
 #include "kernel/dds_report.h"
+#include "kernel/dds_builtin.h"
 
 #include <string.h>
 #include "os/os.h"
