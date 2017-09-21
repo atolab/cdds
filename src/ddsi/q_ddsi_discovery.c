@@ -192,6 +192,11 @@ int spdp_write (struct participant *pp)
   char node[64];
   uint64_t qosdiff;
 
+  if (pp->e.onlylocal) {
+      /* This topic is only locally available. */
+      return 0;
+  }
+
   TRACE (("spdp_write(%x:%x:%x:%x)\n", PGUID (pp->e.guid)));
 
   if ((wr = get_builtin_writer (pp, NN_ENTITYID_SPDP_BUILTIN_PARTICIPANT_WRITER)) == NULL)
@@ -992,7 +997,7 @@ static struct writer *get_sedp_writer (const struct participant *pp, unsigned en
 
 int sedp_write_writer (struct writer *wr)
 {
-  if (! is_builtin_entityid (wr->e.guid.entityid, ownvendorid))
+  if ((!is_builtin_entityid(wr->e.guid.entityid, ownvendorid)) && (!wr->e.onlylocal))
   {
     struct writer *sedp_wr = get_sedp_writer (wr->c.pp, NN_ENTITYID_SEDP_BUILTIN_PUBLICATIONS_WRITER);
 #ifdef DDSI_INCLUDE_SSM
@@ -1007,7 +1012,7 @@ int sedp_write_writer (struct writer *wr)
 
 int sedp_write_reader (struct reader *rd)
 {
-  if (! is_builtin_entityid (rd->e.guid.entityid, ownvendorid))
+  if ((!is_builtin_entityid (rd->e.guid.entityid, ownvendorid)) && (!rd->e.onlylocal))
   {
     struct writer *sedp_wr = get_sedp_writer (rd->c.pp, NN_ENTITYID_SEDP_BUILTIN_SUBSCRIPTIONS_WRITER);
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
@@ -1022,7 +1027,7 @@ int sedp_write_reader (struct reader *rd)
 
 int sedp_dispose_unregister_writer (struct writer *wr)
 {
-  if (! is_builtin_entityid (wr->e.guid.entityid, ownvendorid))
+  if ((!is_builtin_entityid(wr->e.guid.entityid, ownvendorid)) && (!wr->e.onlylocal))
   {
     struct writer *sedp_wr = get_sedp_writer (wr->c.pp, NN_ENTITYID_SEDP_BUILTIN_PUBLICATIONS_WRITER);
     return sedp_write_endpoint (sedp_wr, 1, &wr->e.guid, NULL, NULL, NULL, NULL);
@@ -1032,7 +1037,7 @@ int sedp_dispose_unregister_writer (struct writer *wr)
 
 int sedp_dispose_unregister_reader (struct reader *rd)
 {
-  if (! is_builtin_entityid (rd->e.guid.entityid, ownvendorid))
+  if ((!is_builtin_entityid(rd->e.guid.entityid, ownvendorid)) && (!rd->e.onlylocal))
   {
     struct writer *sedp_wr = get_sedp_writer (rd->c.pp, NN_ENTITYID_SEDP_BUILTIN_SUBSCRIPTIONS_WRITER);
     return sedp_write_endpoint (sedp_wr, 1, &rd->e.guid, NULL, NULL, NULL, NULL);
@@ -1402,6 +1407,11 @@ int sedp_write_topic (struct participant *pp, const struct nn_plist *datap)
 
   assert (datap->qos.present & QP_TOPIC_NAME);
 
+  if (pp->e.onlylocal) {
+      /* This topic is only locally available. */
+      return 0;
+  }
+
   sedp_wr = get_sedp_writer (pp, NN_ENTITYID_SEDP_BUILTIN_TOPIC_WRITER);
 
   mpayload = nn_xmsg_new (gv.xmsgpool, &sedp_wr->e.guid.prefix, 0, NN_XMSG_KIND_DATA);
@@ -1441,7 +1451,7 @@ int sedp_write_topic (struct participant *pp, const struct nn_plist *datap)
 
 int sedp_write_cm_participant (struct participant *pp, int alive)
 {
-  struct writer * const sedp_wr = get_sedp_writer (pp, NN_ENTITYID_SEDP_BUILTIN_CM_PARTICIPANT_WRITER);
+  struct writer * sedp_wr;
   struct nn_xmsg *mpayload;
   serstate_t serstate;
   serdata_t serdata;
@@ -1450,6 +1460,13 @@ int sedp_write_cm_participant (struct participant *pp, int alive)
   void *payload_blob;
   size_t payload_sz;
   unsigned statusinfo;
+
+  if (pp->e.onlylocal) {
+      /* This topic is only locally available. */
+      return 0;
+  }
+
+  sedp_wr = get_sedp_writer (pp, NN_ENTITYID_SEDP_BUILTIN_CM_PARTICIPANT_WRITER);
 
   /* The message is only a temporary thing, used only for encoding
    the QoS and other settings. So the header fields aren't really
