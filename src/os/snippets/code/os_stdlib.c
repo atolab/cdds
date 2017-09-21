@@ -302,6 +302,8 @@ ssize_t os_write(int fd, const void *buf, size_t count)
 
 void os_flockfile(FILE *file)
 {
+	/* flockfile is not supported on the VxWorks DKM platform.
+	 * Therefore, this function block is empty on the VxWorks platform. */
 #ifndef _WRS_KERNEL
 	flockfile (file);
 #endif
@@ -309,6 +311,8 @@ void os_flockfile(FILE *file)
 
 void os_funlockfile(FILE *file)
 {
+	/* funlockfile is not supported on the VxWorks DKM platform.
+	 * Therefore, this function block is empty on the VxWorks platform. */
 #ifndef _WRS_KERNEL
 	funlockfile (file);
 #endif
