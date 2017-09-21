@@ -197,6 +197,8 @@ int spdp_write (struct participant *pp)
       return 0;
   }
 
+  propagate_builtin_topic_participant(&(pp->e), pp->plist, now());
+
   TRACE (("spdp_write(%x:%x:%x:%x)\n", PGUID (pp->e.guid)));
 
   if ((wr = get_builtin_writer (pp, NN_ENTITYID_SPDP_BUILTIN_PARTICIPANT_WRITER)) == NULL)
@@ -1464,6 +1466,10 @@ int sedp_write_cm_participant (struct participant *pp, int alive)
   if (pp->e.onlylocal) {
       /* This topic is only locally available. */
       return 0;
+  }
+
+  if (alive) {
+      propagate_builtin_topic_cmparticipant(&(pp->e), pp->plist, now());
   }
 
   sedp_wr = get_sedp_writer (pp, NN_ENTITYID_SEDP_BUILTIN_CM_PARTICIPANT_WRITER);

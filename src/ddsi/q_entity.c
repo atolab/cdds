@@ -3574,6 +3574,20 @@ void new_proxy_participant
   if (proxypp->owns_lease)
     lease_register (os_atomic_ldvoidp (&proxypp->lease));
   os_mutexUnlock (&proxypp->e.lock);
+
+  if (config.generate_builtin_topics)
+  {
+    os_mutexLock ((os_mutex *) &proxypp->e.lock);
+    if (proxypp->proxypp_have_spdp)
+    {
+      propagate_builtin_topic_participant(&(proxypp->e), proxypp->plist, timestamp);
+      if (proxypp->proxypp_have_cm)
+      {
+        propagate_builtin_topic_cmparticipant(&(proxypp->e), proxypp->plist, timestamp);
+      }
+    }
+    os_mutexUnlock ((os_mutex *) &proxypp->e.lock);
+  }
 }
 
 int update_proxy_participant_plist_locked (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source, nn_wctime_t timestamp)
@@ -3586,6 +3600,25 @@ int update_proxy_participant_plist_locked (struct proxy_participant *proxypp, co
   nn_plist_fini (proxypp->plist);
   os_free (proxypp->plist);
   proxypp->plist = new_plist;
+
+  if (config.generate_builtin_topics)
+  {
+    switch (source)
+    {
+      case UPD_PROXYPP_SPDP:
+        propagate_builtin_topic_participant(&(proxypp->e), proxypp->plist, timestamp);
+        if (!proxypp->proxypp_have_spdp && proxypp->proxypp_have_cm)
+          propagate_builtin_topic_cmparticipant(&(proxypp->e), proxypp->plist, timestamp);
+        proxypp->proxypp_have_spdp = 1;
+        break;
+      case UPD_PROXYPP_CM:
+        if (proxypp->proxypp_have_spdp)
+          propagate_builtin_topic_cmparticipant(&(proxypp->e), proxypp->plist, timestamp);
+        proxypp->proxypp_have_cm = 1;
+        break;
+    }
+  }
+
   return 0;
 }
 
