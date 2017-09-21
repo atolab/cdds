@@ -245,15 +245,20 @@ Test(vddsc_builtin_topics, availability_builtin_topics, .init = setup, .fini = t
   dds_entity_t topic;
 
   topic = dds_find_topic(g_participant, "DCPSParticipant");
-  cr_assert_lt(topic, 0);
+  cr_assert_gt(topic, 0);
+  dds_delete(topic);
   topic = dds_find_topic(g_participant, "DCPSTopic");
   cr_assert_lt(topic, 0);
+  //TODO CHAM-347: dds_delete(topic);
   topic = dds_find_topic(g_participant, "DCPSType");
   cr_assert_lt(topic, 0);
+  //TODO CHAM-347: dds_delete(topic);
   topic = dds_find_topic(g_participant, "DCPSSubscription");
   cr_assert_lt(topic, 0);
+  //TODO CHAM-347: dds_delete(topic);
   topic = dds_find_topic(g_participant, "DCSPPublication");
   cr_assert_lt(topic, 0);
+  //TODO CHAM-347: dds_delete(topic);
 }
 
 Test(vddsc_builtin_topics, read_publication_data, .init = setup, .fini = teardown)
@@ -286,14 +291,30 @@ Test(vddsc_builtin_topics, create_reader)
     participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(participant, 0, "dds_participant_create");
 
+    /*
+     * The topics are created by the middleware as soon as a participant
+     * is created.
+     */
+#define TEST_FIND(p, t) do { \
+        t1 = dds_find_topic(p, t); \
+        cr_expect_gt(t1, 0, "dds_find_topic(\"" t "\") returned a valid handle"); \
+        dds_delete(t1); \
+    } while(0);
+
+    /* A builtin-topic proxy is created 'on demand' and should not exist before a reader is created for it */
+    TEST_FIND(participant, "DCPSParticipant");
+    TEST_FIND(participant, "CMParticipant");
+#undef TEST_FIND
+
+    /*
+     * TODO CHAM-347: Not all builtin topics are created at the start.
+     */
 #define TEST_FIND(p, t) do { \
         t1 = dds_find_topic(p, t); \
         cr_expect_lt(t1, 0, "dds_find_topic(\"" t "\") returned a valid handle"); \
     } while(0);
 
     /* A builtin-topic proxy is created 'on demand' and should not exist before a reader is created for it */
-    TEST_FIND(participant, "DCPSParticipant");
-    TEST_FIND(participant, "CMParticipant");
     TEST_FIND(participant, "DCPSType");
     TEST_FIND(participant, "DCPSTopic");
     TEST_FIND(participant, "DCPSPublication");
@@ -386,6 +407,7 @@ Test(vddsc_builtin_topics, read_subscription_data, .init = setup, .fini = teardo
 
 Test(vddsc_builtin_topics, read_participant_data, .init = setup, .fini = teardown)
 {
+  dds_entity_t par_CHAM_429;
   dds_entity_t reader;
   dds_return_t ret;
   void * samples[MAX_SAMPLES];
@@ -393,12 +415,56 @@ Test(vddsc_builtin_topics, read_participant_data, .init = setup, .fini = teardow
   reader = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSPARTICIPANT, NULL, NULL);
   cr_assert_gt(reader, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSPARTICIPANT.");
 
+  /* See CHAM-429.
+   * Transient local doesn't work, so create a new participant to get builtin info. */
+  par_CHAM_429 = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_gt(par_CHAM_429, 0, "Failed to create prerequisite par_CHAM_429");
+
   samples[0] = DDS_ParticipantBuiltinTopicData__alloc();
 
   ret = dds_read(reader, samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
   cr_assert_gt(ret, 0, "Failed to read samples DCPSParticipant");
 
+  {
+      DDS_ParticipantBuiltinTopicData *data = (DDS_ParticipantBuiltinTopicData*)samples[0];
+      cr_log_info("Participant.key:      %x.%x.%x\n", data->key[0], data->key[1], data->key[2]);
+      cr_log_info("Participant.userdata: %s\n", data->user_data.value._buffer);
+  }
+
   DDS_ParticipantBuiltinTopicData_free(samples[0], DDS_FREE_ALL);
+
+  dds_delete(par_CHAM_429);
+}
+
+Test(vddsc_builtin_topics, read_cmparticipant_data, .init = setup, .fini = teardown)
+{
+    dds_entity_t par_CHAM_429;
+  dds_entity_t reader;
+  dds_return_t ret;
+  void * samples[MAX_SAMPLES];
+
+  reader = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_CMPARTICIPANT, NULL, NULL);
+  cr_assert_gt(reader, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSPARTICIPANT.");
+
+  /* See CHAM-429.
+   * Transient local doesn't work, so create a new participant to get builtin info. */
+  par_CHAM_429 = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_gt(par_CHAM_429, 0, "Failed to create prerequisite par_CHAM_429");
+
+  samples[0] = DDS_ParticipantBuiltinTopicData__alloc();
+
+  ret = dds_read(reader, samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
+  cr_assert_gt(ret, 0, "Failed to read samples CMParticipant");
+
+  {
+      DDS_CMParticipantBuiltinTopicData *data = (DDS_CMParticipantBuiltinTopicData*)samples[0];
+      cr_log_info("CMParticipant.key:     %x.%x.%x\n", data->key[0], data->key[1], data->key[2]);
+      cr_log_info("CMParticipant.product: %s\n", data->product.value);
+  }
+
+  DDS_ParticipantBuiltinTopicData_free(samples[0], DDS_FREE_ALL);
+
+  dds_delete(par_CHAM_429);
 }
 
 Test(vddsc_builtin_topics, read_topic_data, .init = setup, .fini = teardown)
@@ -414,7 +480,7 @@ Test(vddsc_builtin_topics, read_topic_data, .init = setup, .fini = teardown)
   samples[0] = DDS_TopicBuiltinTopicData__alloc();
 
   ret = dds_read(reader, samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
-  cr_assert_gt(ret, 0, "Failed to read samples DCPSParticipant");
+  cr_assert_gt(ret, 0, "Failed to read samples DCPSTopic");
 
   data = (DDS_TopicBuiltinTopicData *)samples;
   cr_assert_str_eq(data->name, "DCPSSubscription");
