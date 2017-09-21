@@ -1,0 +1,3 @@
+[submodule "tools/launcher/launcherui"]
+	path = tools/launcher/launcherui
+	url = git@repository2.prismtech.com:launcherui
