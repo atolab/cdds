@@ -326,7 +326,8 @@ public class ConfigWindowController implements ActionListener {
                 DataConfiguration config = null;
 
                 try {
-                    if (ConfigModeIntializer.CONFIGURATOR_MODE != ConfigModeIntializer.COMMERCIAL_MODE) {
+                    if (ConfigModeIntializer.CONFIGURATOR_MODE != ConfigModeIntializer.COMMERCIAL_MODE &&
+                            ConfigModeIntializer.CONFIGURATOR_MODE != ConfigModeIntializer.LITE_MODE) {
                         ConfigModeIntializer
                                 .setMode(ConfigModeIntializer.COMMUNITY_MODE_FILE_OPEN);
                     }
@@ -336,7 +337,8 @@ public class ConfigWindowController implements ActionListener {
                     Report.getInstance().writeInfoLog(
                             "ConfigWindowController handleOpen\n"
                                     + e.getMessage());
-                    if (ConfigModeIntializer.CONFIGURATOR_MODE != ConfigModeIntializer.COMMERCIAL_MODE) {
+                    if (ConfigModeIntializer.CONFIGURATOR_MODE != ConfigModeIntializer.COMMERCIAL_MODE &&
+                            ConfigModeIntializer.CONFIGURATOR_MODE != ConfigModeIntializer.LITE_MODE) {
                         ConfigModeIntializer
                                 .setMode(ConfigModeIntializer.COMMUNITY_MODE);
                     }
