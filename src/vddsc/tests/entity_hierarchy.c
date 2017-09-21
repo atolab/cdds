@@ -153,6 +153,52 @@ Test(vddsc_entity_delete, recursive, .init=hierarchy_init, .fini=hierarchy_fini)
 }
 /*************************************************************************************************/
 
+/*************************************************************************************************/
+Test(vddsc_entity_delete, recursive_with_deleted_topic)
+{
+    dds_domainid_t id;
+    dds_return_t ret;
+    char name[100];
+
+    /* Internal handling of topic is different from all the other entities.
+     * It's very interesting if this recursive deletion still works and
+     * doesn't crash when the topic is already deleted (CHAM-424). */
+
+    /* First, create a topic and a writer with that topic. */
+    g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(g_participant, 0, "Failed to create prerequisite g_participant");
+    g_topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_hierarchy_test", name, 100), NULL, NULL);
+    cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
+    g_writer = dds_create_writer(g_participant, g_topic, NULL, NULL);
+    cr_assert_gt(g_writer, 0, "Failed to create prerequisite g_writer");
+    g_keep = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(g_keep, 0, "Failed to create prerequisite g_keep");
+
+    /* Second, delete the topic to make sure that the writer holds the last
+     * reference to the topic and thus will delete it when it itself is
+     * deleted. */
+    ret = dds_delete(g_topic);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK);
+
+    /* Third, deleting the participant should delete all children of which
+     * the writer with the last topic reference is one. */
+    ret = dds_delete(g_participant);
+    /* Before the CHAM-424 fix, we would not get here because of a crash,
+     * or it (incidentally) continued but returned an error. */
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK);
+
+    /* Check if the entities are actually deleted. */
+    ret = dds_get_domainid(g_participant, &id);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "%s", dds_err_str(ret));
+    ret = dds_get_domainid(g_topic, &id);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED);
+    ret = dds_get_domainid(g_writer, &id);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED);
+
+    dds_delete(g_keep);
+}
+/*************************************************************************************************/
+
 
 
 
@@ -846,11 +892,11 @@ Test(vddsc_entity_get_children, implicit_subscriber)
     ret = dds_get_children(participant, child, 2);
     cr_assert_eq(ret, 2);
     if(child[0] == topic){
-      subscriber = child[1];
+        subscriber = child[1];
     } else if(child[1] == topic){
-    	subscriber = child[0];
+        subscriber = child[0];
     } else{
-       cr_assert(false, "topic was not returned");
+        cr_assert(false, "topic was not returned");
     }
     cr_assert_neq(subscriber, topic);
 
