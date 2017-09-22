@@ -271,6 +271,7 @@ dds__get_builtin_topic(
             dds_qset_presentation(tqos, DDS_PRESENTATION_TOPIC, false, false);
             dds_qset_reliability(tqos, DDS_RELIABILITY_RELIABLE, DDS_MSECS(100));
             ret = dds_create_topic(participant, desc, name, tqos, NULL);
+            dds_qos_delete(tqos);
         }
 
     } else {
