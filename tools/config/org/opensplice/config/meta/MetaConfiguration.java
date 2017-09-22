@@ -180,7 +180,7 @@ public class MetaConfiguration {
                     if("rootElement".equals(childName)){
                         rootMetaElement = parseElement((Element)childElement, true);
                         if (rootMetaElement.getName().equals("Lite")
-                                || rootMetaElement.getName().equals("Vortex")){
+                                || rootMetaElement.getName().equals("VortexDDS")){
                             ConfigModeIntializer.setMode(ConfigModeIntializer.LITE_MODE); 
                         }
                     } else if("element".equals(childName)){
