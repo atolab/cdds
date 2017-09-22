@@ -233,7 +233,7 @@ check_default_qos_of_builtin_entity(dds_entity_t entity)
       cr_assert_fail("Unsupported entity kind %s", entity_kind_str(entity));
   }
   if (plen > 0) {
-      for (int i = 0; i < plen; i++) {
+      for (uint32_t i = 0; i < plen; i++) {
           dds_free(partitions[i]);
       }
       dds_free(partitions);
@@ -242,8 +242,6 @@ check_default_qos_of_builtin_entity(dds_entity_t entity)
 }
 
 static dds_entity_t builtin_topic_handles[10];
-
-#define STR(x) #x
 
 Test(vddsc_builtin_topics, types_allocation)
 {
@@ -285,15 +283,18 @@ Test(vddsc_builtin_topics, availability_builtin_topics, .init = setup, .fini = t
 Test(vddsc_builtin_topics, read_publication_data, .init = setup, .fini = teardown)
 {
   dds_entity_t reader;
+#if 0 /* disabled pending CHAM-347 */
   dds_return_t ret;
-  void * samples[MAX_SAMPLES];
   DDS_PublicationBuiltinTopicData *data;
+#endif
+  void *samples[MAX_SAMPLES];
+
 
   reader = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSPUBLICATION, NULL, NULL);
   cr_assert_gt(reader, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSPUBLICATION.");
 
   samples[0] = DDS_PublicationBuiltinTopicData__alloc();
-#if 0
+#if 0 /* disabled pending CHAM-347 */
   ret = dds_read(reader, samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
   cr_assert_gt(ret, 0, "Failed to read samples DCPSPublication");
 
@@ -398,9 +399,11 @@ Test(vddsc_builtin_topics, create_reader)
 Test(vddsc_builtin_topics, read_subscription_data, .init = setup, .fini = teardown)
 {
   dds_entity_t reader;
+#if 0 /* not supported yet */
   dds_return_t ret;
-  void * samples[MAX_SAMPLES];
   DDS_SubscriptionBuiltinTopicData *data;
+#endif
+  void * samples[MAX_SAMPLES];
 
   reader = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION, NULL, NULL);
   cr_assert_gt(reader, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION.");
@@ -421,7 +424,9 @@ Test(vddsc_builtin_topics, read_subscription_data, .init = setup, .fini = teardo
 Test(vddsc_builtin_topics, read_participant_data, .init = setup, .fini = teardown)
 {
   dds_entity_t reader;
+#if 0 /* disabled pending CHAM-347 */
   dds_return_t ret;
+#endif
   void * samples[MAX_SAMPLES];
 
   reader = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSPARTICIPANT, NULL, NULL);
@@ -429,7 +434,7 @@ Test(vddsc_builtin_topics, read_participant_data, .init = setup, .fini = teardow
 
   samples[0] = DDS_ParticipantBuiltinTopicData__alloc();
 
-#if 0
+#if 0 /* disabled pending CHAM-347 */
   ret = dds_read(reader, samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
   cr_assert_gt(ret, 0, "Failed to read samples DCPSParticipant");
 #endif
@@ -440,15 +445,18 @@ Test(vddsc_builtin_topics, read_participant_data, .init = setup, .fini = teardow
 Test(vddsc_builtin_topics, read_topic_data, .init = setup, .fini = teardown)
 {
   dds_entity_t reader;
+#if 0 /* disabled pending CHAM-347 */
   dds_return_t ret;
-  void * samples[MAX_SAMPLES];
   DDS_TopicBuiltinTopicData *data;
+#endif
+  void * samples[MAX_SAMPLES];
+
 
   reader = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSTOPIC, NULL, NULL);
   cr_assert_gt(reader, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSTOPIC.");
 
   samples[0] = DDS_TopicBuiltinTopicData__alloc();
-#if 0
+#if 0 /* disabled pending CHAM-347 */
   ret = dds_read(reader, samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
   cr_assert_gt(ret, 0, "Failed to read samples DCPSParticipant");
 
@@ -461,15 +469,17 @@ Test(vddsc_builtin_topics, read_topic_data, .init = setup, .fini = teardown)
 Test(vddsc_builtin_topics, read_type_data, .init = setup, .fini = teardown)
 {
   dds_entity_t reader;
+#if 0 /* disabled pending CHAM-347 */
   dds_return_t ret;
-  void * samples[MAX_SAMPLES];
   DDS_TypeBuiltinTopicData *data;
+#endif
+  void * samples[MAX_SAMPLES];
 
   reader = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSTYPE, NULL, NULL);
   cr_assert_gt(reader, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSTYPE.");
 
   samples[0] = DDS_TypeBuiltinTopicData__alloc();
-#if 0
+#if 0 /* disabled pending CHAM-347 */
   ret = dds_read(reader, samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
   cr_assert_gt(ret, 0, "Failed to read samples DCPSType");
 
@@ -548,9 +558,11 @@ Test(vddsc_builtin_topics, datareader_qos, .init = setup, .fini = teardown)
 {
   dds_entity_t rdr;
   dds_entity_t subscription_rdr;
-  dds_return_t ret;
   void * subscription_samples[MAX_SAMPLES];
+#if 0 /* disabled pending CHAM-347 */
+  dds_return_t ret;
   DDS_SubscriptionBuiltinTopicData *subscription_data;
+#endif
 
   //  Set some qos' which differ from the default
   dds_qset_durability(g_qos, (dds_durability_kind_t)g_pol_durability.kind);
@@ -573,7 +585,7 @@ Test(vddsc_builtin_topics, datareader_qos, .init = setup, .fini = teardown)
 
   subscription_rdr = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION, NULL, NULL);
   cr_assert_gt(subscription_rdr, 0, "Failed to retrieve built-in datareader for DCPSSubscription");
-#if 0
+#if 0 /* disabled pending CHAM-347 */
   ret = dds_read(subscription_rdr, subscription_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
   cr_assert_gt(ret, 0, "Failed to read Subscription data");
 
@@ -621,9 +633,12 @@ Test(vddsc_builtin_topics, datawriter_qos, .init = setup, .fini = teardown)
 {
   dds_entity_t wrtr;
   dds_entity_t publication_rdr;
+#if 0 /* disabled pending CHAM-347 */
   dds_return_t ret;
-  void * publication_samples[MAX_SAMPLES];
   DDS_PublicationBuiltinTopicData *publication_data;
+#endif
+  void * publication_samples[MAX_SAMPLES];
+
 
   dds_qset_durability(g_qos, g_pol_durability.kind);
   dds_qset_deadline(g_qos, from_ddsi_duration(g_pol_deadline.period));
@@ -646,7 +661,7 @@ Test(vddsc_builtin_topics, datawriter_qos, .init = setup, .fini = teardown)
   publication_rdr = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSPUBLICATION, NULL, NULL);
   cr_assert_gt(publication_rdr, 0, "Failed to retrieve built-in datareader for DCPSPublication");
 
-#if 0
+#if 0 /* disabled pending CHAM-347 */
   ret = dds_read(publication_rdr, publication_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
   cr_assert_gt(ret, 0, "Failed to read Publication data");
 
@@ -695,9 +710,13 @@ Test(vddsc_builtin_topics, topic_qos, .init = setup, .fini = teardown)
 {
   dds_entity_t tpc;
   dds_entity_t topic_rdr;
+
+#if 0 /* disabled pending CHAM-347 */
   dds_return_t ret;
-  void * topic_samples[MAX_SAMPLES];
   DDS_TopicBuiltinTopicData *topic_data;
+#endif
+
+  void * topic_samples[MAX_SAMPLES];
 
   dds_qset_durability(g_qos, g_pol_durability.kind);
   dds_qset_durability_service(g_qos,
@@ -727,7 +746,7 @@ Test(vddsc_builtin_topics, topic_qos, .init = setup, .fini = teardown)
 
   topic_rdr = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSTOPIC, NULL, NULL);
   cr_assert_gt(topic_rdr, 0, "Failed to retrieve built-in datareader for DCPSPublication");
-#if 0
+#if 0 /* disabled pending CHAM-347 */
   ret = dds_read(topic_rdr, topic_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
   cr_assert_gt(ret, 0, "Failed to read Topic data");
 
