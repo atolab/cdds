@@ -22,7 +22,7 @@ extern "C" {
 
 #define DDS_ERR_NO(err) -(DDS__FILE_ID__ + DDS__LINE__ + (err))
 
-#define DDS_ERRNO(e, /* msg, <- C'99 doesn't allow empty VA_ARGS, so include msg in the VA_ARGS */...) (assert(e > DDS_RETCODE_OK), os_report(OS_REPORT_ERROR, OS_FUNCTION, __FILE__, __LINE__, DDS_ERR_NO(e), __VA_ARGS__), DDS_ERR_NO(e))
+#define DDS_ERRNO(e, /* msg, <- C'99 doesn't allow emprt VA_ARGS, so include msg in the VA_ARGS */...) (assert(e > DDS_RETCODE_OK), os_report(OS_REPORT_ERROR, OS_FUNCTION, __FILE__, __LINE__, DDS_ERR_NO(e), __VA_ARGS__), DDS_ERR_NO(e))
 
 #if defined (__cplusplus)
 }

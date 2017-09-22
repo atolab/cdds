@@ -56,7 +56,7 @@ static void serstate_free_wrap (void *elem)
 void ddsi_serstatepool_free (serstatepool_t pool)
 {
   nn_freelist_fini (&pool->freelist, serstate_free_wrap);
-  TRACE (("ddsi_serstatepool_free(%p)\n", pool));
+  TRACE (("ddsi_serstatepool_free(%p)\n", (void*) pool));
   os_free (pool);
 }
 

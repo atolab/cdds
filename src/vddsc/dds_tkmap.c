@@ -321,7 +321,7 @@ retry:
 
   if (tk && rd)
   {
-    TRACE (("tk=%p iid=%"PRIx64"", &tk, tk->m_iid));
+    TRACE (("tk=%p iid=%"PRIx64"", (void*)&tk, tk->m_iid));
   }
   return tk;
 }

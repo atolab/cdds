@@ -74,9 +74,9 @@ void nn_log_set_tstamp (nn_wctime_t tnow);
   } while (0)
 
 
-#define NN_WARNING(fmt,...) nn_log (LC_WARNING, ("<Warning> " fmt),##__VA_ARGS__)
-#define NN_ERROR(fmt,...) nn_log (LC_ERROR, ("<Error> " fmt),##__VA_ARGS__)
-#define NN_FATAL(fmt,...) nn_log (LC_FATAL, ("<Fatal> " fmt),##__VA_ARGS__)
+#define NN_WARNING(/* fmt, <- C'99 doesn't allow empty VA_ARGS, so include fmt in the VA_ARGS */...) nn_log (LC_WARNING, "<Warning> " __VA_ARGS__)
+#define NN_ERROR(/* fmt, <- C'99 doesn't allow empty VA_ARGS, so include fmt in the VA_ARGS */...) nn_log (LC_ERROR, "<Error> " __VA_ARGS__)
+#define NN_FATAL(/* fmt, <- C'99 doesn't allow empty VA_ARGS, so include fmt in the VA_ARGS */...) nn_log (LC_FATAL, "<Fatal> " __VA_ARGS__)
 
 #if defined (__cplusplus)
 }

@@ -257,7 +257,7 @@ static void nn_xmsg_realfree_wrap (void *elem)
 void nn_xmsgpool_free (struct nn_xmsgpool *pool)
 {
   nn_freelist_fini (&pool->freelist, nn_xmsg_realfree_wrap);
-  TRACE (("xmsgpool_free(%p)\n", pool));
+  TRACE (("xmsgpool_free(%p)\n", (void *) pool));
   os_free (pool);
 }
 
