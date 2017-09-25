@@ -1,6 +1,9 @@
 #ifndef _DDS_ERR_H_
 #define _DDS_ERR_H_
 
+#include <assert.h>
+#include "os/os.h"
+
 #if defined (__cplusplus)
 extern "C" {
 #endif

@@ -31,6 +31,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 add_subdirectory(idlc)
 add_subdirectory(src)
 add_subdirectory(examples)
+add_subdirectory(tools)
 
 add_subdirectory(docs)
 

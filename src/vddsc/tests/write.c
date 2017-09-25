@@ -130,8 +130,7 @@ Test(vddsc_write, simpletypes)
         .c = '1',
         .b = true,
         .o = 1,
-        /* TODO: CHAM-405: Below string should not be limited in length */
-        .s = "This string is exactly long enough not to trigger the issue from CHAM-405. If this string is extended by at least a single character, the shit hits the fan. This needs to be investigated for the obvious reasons."
+        .s = "This string is exactly so long that it would previously trigger CHAM-405. If this string is shortened exactly one character, all is well. Since it is fixed now, there doesn't need to be any further investigation."
     };
 
     par = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);

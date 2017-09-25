@@ -53,9 +53,6 @@ extern "C" {
 #define DDS_RETCODE_ILLEGAL_OPERATION    12 /*< When a function is called when it should not be */
 /** @}*/
 
-/* To differentiate between dds_return_t and internal retcodes. */
-typedef _Return_type_success_(return == DDS_RETCODE_OK) int32_t dds_retcode_t;
-
 /* For backwards compatability */
 
 #define DDS_SUCCESS DDS_RETCODE_OK

@@ -66,7 +66,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -90,7 +90,7 @@ reader_init(void)
     g_waitset = dds_create_waitset(g_participant);
     cr_assert_gt(g_waitset, 0, "Failed to create g_waitset");
 
-    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_reader_test", name, 100), NULL, NULL);
+    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_reader_test", name, sizeof name), NULL, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     /* Create a reader that keeps last sample of all instances. */
@@ -239,7 +239,9 @@ Test(vddsc_reader_create, invalid_qos_participant, .init=reader_init, .fini=read
     dds_entity_t rdr;
     dds_qos_t *qos = dds_qos_create();
     /* Set invalid reader data lifecycle policy */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     dds_qset_reader_data_lifecycle(qos, DDS_SECS(-1), DDS_SECS(-1));
+    OS_WARNING_MSVC_ON(28020);
     rdr = dds_create_reader(g_participant, g_topic, qos, NULL);
     cr_assert_eq(dds_err_nr(rdr), DDS_RETCODE_INCONSISTENT_POLICY, "returned %d", dds_err_nr(rdr));
     dds_qos_delete(qos);
@@ -252,7 +254,9 @@ Test(vddsc_reader_create, invalid_qos_subscriber, .init=reader_init, .fini=reade
     dds_entity_t rdr;
     dds_qos_t *qos = dds_qos_create();
     /* Set invalid reader data lifecycle policy */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     dds_qset_reader_data_lifecycle(qos, DDS_SECS(-1), DDS_SECS(-1));
+    OS_WARNING_MSVC_ON(28020);
     rdr = dds_create_reader(g_subscriber, g_topic, qos, NULL);
     cr_assert_eq(dds_err_nr(rdr), DDS_RETCODE_INCONSISTENT_POLICY, "returned %d", dds_err_nr(rdr));
     dds_qos_delete(qos);
@@ -2552,7 +2556,7 @@ Test(vddsc_take_mask, take_instance_last_sample)
     ret = dds_take_mask(g_reader, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES, mask);
     cr_assert_eq(ret, expected_cnt, "# read %d, expected %d", ret, expected_cnt);
     for(int i = 0; i < ret; i++) {
-        Space_Type1 *sample = (Space_Type1*)g_samples[i];
+        Space_Type1 *s = (Space_Type1*)g_samples[i];
 
         /*
          *  | long_1 | long_2 | long_3 |    sst   | vst |    ist     |
@@ -2560,12 +2564,12 @@ Test(vddsc_take_mask, take_instance_last_sample)
          *  |    0   |    1   |    2   |     read | old | alive      | <--- no worries
          *  |    0   |    1   |    3   | not_read | old | alive      | <--- crashed
          */
-        PRINT_SAMPLE("vddsc_take_mask::crash: Take", (*sample));
+        PRINT_SAMPLE("vddsc_take_mask::crash: Take", (*s));
 
         /* Check data. */
-        cr_assert_eq(sample->long_1, 0);
-        cr_assert_eq(sample->long_2, 1);
-        cr_assert_eq(sample->long_3, expected_long_3);
+        cr_assert_eq(s->long_1, 0);
+        cr_assert_eq(s->long_2, 1);
+        cr_assert_eq(s->long_3, expected_long_3);
 
         /* Check states. */
         cr_assert_eq(g_info[i].valid_data,     true);

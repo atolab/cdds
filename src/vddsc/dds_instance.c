@@ -113,7 +113,7 @@ dds_instance_info(
 static const dds_topic * dds_instance_info_by_hdl (dds_entity_t e)
 {
     const dds_topic * topic = NULL;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_entity *w_or_r;
 
     rc = dds_entity_lock(e, DDS_KIND_WRITER, &w_or_r);
@@ -140,7 +140,7 @@ dds_register_instance(
     struct tkmap_instance * inst;
     dds_entity *wr;
     dds_return_t ret;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
 
     DDS_REPORT_STACK();
 
@@ -204,7 +204,7 @@ dds_unregister_instance_ts(
        _In_ dds_time_t timestamp)
 {
     dds_return_t ret = DDS_RETCODE_OK;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     bool autodispose = true;
     dds_write_action action = DDS_WR_ACTION_UNREGISTER;
     void * sample = (void*) data;
@@ -248,7 +248,7 @@ dds_unregister_instance_ih_ts(
        _In_ dds_time_t timestamp)
 {
     dds_return_t ret = DDS_RETCODE_OK;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     bool autodispose = true;
     dds_write_action action = DDS_WR_ACTION_UNREGISTER;
     dds_entity *wr;
@@ -296,7 +296,7 @@ dds_writedispose_ts(
        _In_ dds_time_t timestamp)
 {
     dds_return_t ret;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_writer *wr;
 
     DDS_REPORT_STACK();
@@ -339,7 +339,7 @@ dds_dispose_ts(
        _In_ dds_time_t timestamp)
 {
     dds_return_t ret;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_writer *wr;
 
     DDS_REPORT_STACK();
@@ -363,7 +363,7 @@ dds_dispose_ih_ts(
        _In_ dds_time_t timestamp)
 {
     dds_return_t ret;
-    dds_retcode_t rc;
+    dds__retcode_t rc;
     dds_writer *wr;
 
     DDS_REPORT_STACK();

@@ -489,3 +489,51 @@ ssize_t os_write(
 {
         return _write(fd, buf, (unsigned int)count); /* Type casting is done for the warning of conversion from 'size_t' to 'unsigned int', which may cause possible loss of data */
 }
+
+void os_flockfile(FILE *file)
+{
+	_lock_file (file);
+}
+
+void os_funlockfile(FILE *file)
+{
+	_unlock_file (file);
+}
+
+int os_getopt(
+		_In_range_(0, INT_MAX) int argc,
+		_In_reads_z_(argc) char **argv,
+		_In_z_ const char *opts)
+{
+	return getopt(argc, argv, opts);
+}
+
+void os_set_opterr(_In_range_(0, INT_MAX) int err)
+{
+	opterr = err;
+}
+
+int os_get_opterr(void)
+{
+	return opterr;
+}
+
+void os_set_optind(_In_range_(0, INT_MAX) int index)
+{
+	optind = index;
+}
+
+int os_get_optind(void)
+{
+	return optind;
+}
+
+int os_get_optopt(void)
+{
+	return optopt;
+}
+
+char * os_get_optarg(void)
+{
+	return optarg;
+}

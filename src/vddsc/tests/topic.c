@@ -5,13 +5,6 @@
 #include <criterion/logging.h>
 #include <criterion/theories.h>
 
-/* We are deliberately testing some bad arguments that SAL will complain about.
- * So, silence SAL regarding these issues. */
-#pragma warning(push)
-#pragma warning(disable: 6387 28020)
-
-
-
 /**************************************************************************************************
  *
  * Test fixtures
@@ -37,7 +30,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -99,7 +92,9 @@ Test(vddsc_topic_create, invalid_qos, .init=vddsc_topic_init, .fini=vddsc_topic_
 {
     dds_entity_t topic;
     dds_qos_t *qos = dds_qos_create();
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     dds_qset_lifespan(qos, DDS_SECS(-1));
+    OS_WARNING_MSVC_OFF(28020);
     topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, "inconsistent", qos, NULL);
     cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_INCONSISTENT_POLICY, "returned %s", dds_err_str(topic));
     dds_qos_delete(qos);
@@ -156,7 +151,9 @@ Test(vddsc_topic_create, recreate, .init=vddsc_topic_init, .fini=vddsc_topic_fin
 Test(vddsc_topic_create, desc_null, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
 {
     dds_entity_t topic;
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     topic = dds_create_topic (g_participant, NULL, "desc_null", NULL, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_BAD_PARAMETER, "returned %s", dds_err_str(topic));
 }
 /*************************************************************************************************/
@@ -209,7 +206,9 @@ Test(vddsc_topic_find, non_participants, .init=vddsc_topic_init, .fini=vddsc_top
 Test(vddsc_topic_find, null, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
 {
     dds_entity_t topic;
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     topic = dds_find_topic(g_participant, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_BAD_PARAMETER, "returned %s", dds_err_str(topic));
 }
 /*************************************************************************************************/
@@ -399,7 +398,9 @@ Test(vddsc_topic_set_qos, valid, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
 Test(vddsc_topic_set_qos, inconsistent, .init=vddsc_topic_init, .fini=vddsc_topic_fini)
 {
     dds_return_t ret;
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     dds_qset_lifespan(g_qos, DDS_SECS(-1));
+    OS_WARNING_MSVC_ON(28020);
     ret = dds_set_qos(g_topicRtmDataType, g_qos);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_INCONSISTENT_POLICY, "returned %s", dds_err_str(ret));
 }
@@ -414,6 +415,3 @@ Test(vddsc_topic_set_qos, immutable, .init=vddsc_topic_init, .fini=vddsc_topic_f
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_IMMUTABLE_POLICY, "returned %s", dds_err_str(ret));
 }
 /*************************************************************************************************/
-
-
-#pragma warning(pop)

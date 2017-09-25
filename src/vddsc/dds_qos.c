@@ -209,8 +209,6 @@ dds_qos_delete(
     if (qos) {
         dds_qos_reset(qos);
         dds_free(qos);
-    } else {
-        DDS_WARNING(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
     }
 }
 
@@ -461,15 +459,11 @@ void dds_qset_partition
     size_t len;
 
     if(!qos) {
-        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument QoS is NULL");
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument qos may not be NULL");
         return ;
     }
-    if(!n) {
-        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument n is NULL");
-        return ;
-    }
-    if(!ps) {
-        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument ps is NULL");
+    if(n && !ps) {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument ps is NULL, but n (%u) > 0", n);
         return ;
     }
 
@@ -482,7 +476,9 @@ void dds_qset_partition
     }
 
     qos->partition.n = n;
-    qos->partition.strs = dds_alloc (sizeof (char*) * n);
+    if(n){
+        qos->partition.strs = dds_alloc (sizeof (char*) * n);
+    }
 
     for (i = 0; i < n; i++) {
         len = strlen (ps[i]) + 1;
@@ -848,7 +844,7 @@ void dds_qget_partition
 (
     _In_ const dds_qos_t * __restrict qos,
     _Out_ uint32_t *n,
-    _Outptr_result_maybenull_ char *** ps
+    _Outptr_opt_result_buffer_all_maybenull_(*n) char *** ps
 )
 {
     size_t len;
@@ -862,21 +858,19 @@ void dds_qget_partition
         DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument n is NULL");
         return ;
     }
-    if(!ps){
-        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "Argument ps is NULL");
-        return ;
-    }
 
     *n = qos->partition.n;
-    if (qos->partition.n != 0) {
-        *ps = dds_alloc(sizeof(char*) * qos->partition.n);
-        for (i = 0; i < qos->partition.n; i++) {
-            len = strlen(qos->partition.strs[i]) + 1;
-            (*ps)[i] = dds_alloc(len);
-            strncpy((*ps)[i], qos->partition.strs[i], len);
+    if ( ps ) {
+        if ( qos->partition.n != 0 ) {
+            *ps = dds_alloc(sizeof(char*) * qos->partition.n);
+            for ( i = 0; i < qos->partition.n; i++ ) {
+                len = strlen(qos->partition.strs[i]) + 1;
+                (*ps)[i] = dds_alloc(len);
+                strncpy((*ps)[i], qos->partition.strs[i], len);
+            }
+        } else {
+            *ps = NULL;
         }
-    } else {
-        *ps = NULL;
     }
 }
 

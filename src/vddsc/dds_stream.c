@@ -130,7 +130,7 @@ bool dds_stream_endian (void)
   return DDS_ENDIAN;
 }
 
-size_t dds_stream_check_optimize (const dds_topic_descriptor_t * desc)
+size_t dds_stream_check_optimize (_In_ const dds_topic_descriptor_t * desc)
 {
   dds_stream_t os;
   void * sample = dds_alloc (desc->m_size);
@@ -1161,7 +1161,7 @@ void dds_stream_write_sample (dds_stream_t * os, const void * data, const struct
   }
 }
 
-void dds_stream_from_serstate (dds_stream_t * s, const serstate_t st)
+void dds_stream_from_serstate (_Out_ dds_stream_t * s, _In_ const serstate_t st)
 {
   s->m_failed = false;
   s->m_buffer.p8 = (uint8_t*) st->data;
@@ -1170,7 +1170,7 @@ void dds_stream_from_serstate (dds_stream_t * s, const serstate_t st)
   s->m_endian = (st->data->v.bswap) ? (! DDS_ENDIAN) : DDS_ENDIAN;
 }
 
-void dds_stream_add_to_serstate (dds_stream_t * s, serstate_t st)
+void dds_stream_add_to_serstate (_Inout_ dds_stream_t * s, _Inout_ serstate_t st)
 {
   /* DDSI requires 4 byte alignment */
 
@@ -1180,6 +1180,7 @@ void dds_stream_add_to_serstate (dds_stream_t * s, serstate_t st)
 
   st->data = s->m_buffer.pv;
   st->pos += (s->m_index - offsetof (struct serdata, data));
+  st->size = (s->m_size - offsetof(struct serdata, data));
 }
 
 void dds_stream_write_key
