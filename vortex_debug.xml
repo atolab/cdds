@@ -1,4 +1,4 @@
-<Vortex>
+<VortexDDS>
   <Domain>
     <Id>17</Id>
   </Domain>
@@ -16,4 +16,4 @@
       <EnableCategory>trace,plist</EnableCategory>
     </Tracing>
   </DDSI2E>
-</Vortex>
+</VortexDDS>

@@ -299,3 +299,56 @@ ssize_t os_write(int fd, const void *buf, size_t count)
 {
     return write(fd, buf, count);
 }
+
+void os_flockfile(FILE *file)
+{
+	/* flockfile is not supported on the VxWorks DKM platform.
+	 * Therefore, this function block is empty on the VxWorks platform. */
+#ifndef _WRS_KERNEL
+	flockfile (file);
+#endif
+}
+
+void os_funlockfile(FILE *file)
+{
+	/* funlockfile is not supported on the VxWorks DKM platform.
+	 * Therefore, this function block is empty on the VxWorks platform. */
+#ifndef _WRS_KERNEL
+	funlockfile (file);
+#endif
+}
+
+int os_getopt(int argc, char **argv, const char *opts)
+{
+	return getopt(argc, argv, opts);
+}
+
+void os_set_opterr(int err)
+{
+	opterr = err;
+}
+
+int os_get_opterr(void)
+{
+	return opterr;
+}
+
+void os_set_optind(int index)
+{
+	optind = index;
+}
+
+int os_get_optind(void)
+{
+	return optind;
+}
+
+int os_get_optopt(void)
+{
+	return optopt;
+}
+
+char * os_get_optarg(void)
+{
+	return optarg;
+}
