@@ -53,6 +53,7 @@ project = u'@CMAKE_PROJECT_NAME@'
 copyright = u'@sph_conf_copyright@'
 author = u'@sph_conf_author@'
 
+
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
@@ -124,6 +125,8 @@ htmlhelp_basename = '@CMAKE_PROJECT_NAME@doc'
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
+    'classoptions': ',openany,oneside'
+
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
@@ -145,10 +148,11 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, '@CMAKE_PROJECT_NAME@.tex', u'@CMAKE_PROJECT_NAME@ Documentation',
+    (master_doc, '@CMAKE_PROJECT_NAME@.tex', u'@CMAKE_PROJECT_NAME@',
      u'@sph_conf_author@', 'manual'),
 ]
 
+latex_logo = u'@sph_logo@'
 
 # -- Options for manual page output ---------------------------------------
 
