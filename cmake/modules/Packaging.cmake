@@ -89,6 +89,7 @@ if(WIN32 AND NOT UNIX)
   # Bitmap (.bmp) of size 493x312px
   set(CPACK_WIX_UI_DIALOG "${PACKAGING_MODULE_DIR}/dialog.bmp")
   set(CPACK_WIX_PROGRAM_MENU_FOLDER "${CPACK_PACKAGE_NAME}")
+  set(CPACK_WIX_PATCH_FILE "${PACKAGING_MODULE_DIR}/examples.xml")
   set(CPACK_WIX_PROPERTY_ARPHELPLINK "http://www.prismtech.com/support")
   set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "http://www.prismtech.com/")
   set(CPACK_WIX_PROPERTY_ARPURLUPDATEINFO "http://www.prismtech.com/vortex/software-downloads")
