@@ -22,6 +22,7 @@
 
     <Feature Id="UserWritableExampleFeature" Display="expand" Absent="disallow"  ConfigurableDirectory="VORTEXUSERDIR" Title="Vortex DDS Examples" Description="Example code to getting started with DDS development." Level="1">
       <Feature Id="CM_C_usr" Title="Vortex DDS Development Examples" Description="Example Development files for use with Vortex DDS. Typically installed in the users 'Document' directory.">
+        <ComponentRef Id="CM_CP_dev.usr.VortexDDS.examples.environment" />
         <!-- helloworld -->
         <ComponentRef Id="CM_CP_dev.usr.VortexDDS.examples.remove" />
         <ComponentRef Id="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldData.idl" />
@@ -160,6 +161,13 @@
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.throughput.subscriber.c" Directory="CM_DP_dev.usr.VortexDDS.examples.throughput" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.throughput.subscriber.c" Value="CM_CP_dev.usr.VortexDDS.examples.throughput.subscriber.c" KeyPath="yes" />
       <File Id="CM_FP_usr.usr.VortexDDS.examples.throughput.subscriber.c" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/throughput/subscriber.c" KeyPath="no"/>
+    </Component>
+
+    <Component Id="CM_CP_dev.usr.VortexDDS.examples.environment" Directory="VORTEXUSERDIR" Guid="">
+      <!-- CreateFolder and RegistryValue are needed to keep Wix happy -->
+      <CreateFolder Directory="VORTEXUSERDIR"/>
+      <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.environment" Value="CM_CP_dev.usr.VortexDDS.environment" KeyPath="yes" />
+      <Environment Action="set" Id="PATH" Name="PATH" Part="last" Permanent="yes" System="yes" Value="[INSTALL_ROOT]bin"/>
     </Component>
 
   </CPackWiXFragment>
