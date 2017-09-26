@@ -1,0 +1,1 @@
+configure_file("default.xml.in" "${CMAKE_PROJECT_NAME_NOSPACE_SMALL}.xml" @ONLY)
