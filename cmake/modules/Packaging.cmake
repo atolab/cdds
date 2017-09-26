@@ -89,11 +89,12 @@ if(WIN32 AND NOT UNIX)
   # Bitmap (.bmp) of size 493x312px
   set(CPACK_WIX_UI_DIALOG "${PACKAGING_MODULE_DIR}/dialog.bmp")
   set(CPACK_WIX_PROGRAM_MENU_FOLDER "${CPACK_PACKAGE_NAME}")
-  set(CPACK_WIX_PROPERTY_ARPHELPLINK "http://www.prismtech.com/support")
-  set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "http://www.prismtech.com/")
-  set(CPACK_WIX_PROPERTY_ARPURLUPDATEINFO "http://www.prismtech.com/vortex/software-downloads")
+  set(CPACK_WIX_PROPERTY_ARPHELPLINK "http://www.adlinktech.com/support")
+  set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "http://www.adlinktech.com/")
+  set(CPACK_WIX_PROPERTY_ARPURLUPDATEINFO "http://www.adlinktech.com/")
   # A constant GUID allows installers to replace existing installations that use the same GUID.
   set(CPACK_WIX_UPGRADE_GUID "1351F59A-972B-4624-A7F1-439381BFA41D")
+
   include(InstallRequiredSystemLibraries)
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
   if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
