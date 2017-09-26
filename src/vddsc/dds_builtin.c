@@ -45,6 +45,7 @@ dds__get_builtin_participant(
 
 
 static os_mutex g_builtin_mutex;
+static os_atomic_uint32_t m_call_count = OS_ATOMIC_UINT32_INIT(0);
 
 /* Singletons are used to publish builtin data locally. */
 static dds_entity_t g_builtin_local_participant = 0;
@@ -224,7 +225,7 @@ dds__get_builtin_publisher(
     return g_builtin_local_publisher;
 }
 
-_Check_return_ dds_entity_t
+_Must_inspect_result_ dds_entity_t
 dds__get_builtin_subscriber(
     _In_ dds_entity_t e)
 {
@@ -359,15 +360,18 @@ dds__get_builtin_writer(
 static dds_return_t
 dds__builtin_write(_In_ dds_entity_t topic, void * data, _In_ dds_time_t timestamp)
 {
-    dds_return_t ret;
-    dds_entity_t wr;
-    wr = dds__get_builtin_writer(topic);
-    if (wr > 0) {
-        BUILTIN_INFO("---write by: %x on %ld (%lx)\n", wr, timestamp, timestamp);
-        ret = dds_write_ts(wr, data, timestamp);
-    } else {
-        ret = wr;
+    dds_return_t ret = DDS_RETCODE_OK;
+    if (os_atomic_inc32_nv(&m_call_count) > 1) {
+        dds_entity_t wr;
+        wr = dds__get_builtin_writer(topic);
+        if (wr > 0) {
+            BUILTIN_INFO("---write by: %x on %ld (%lx)\n", wr, timestamp, timestamp);
+            ret = dds_write_ts(wr, data, timestamp);
+        } else {
+            ret = wr;
+        }
     }
+    os_atomic_dec32(&m_call_count);
     return ret;
 }
 
@@ -375,13 +379,20 @@ void
 dds__builtin_init(
         void)
 {
+    assert(os_atomic_ld32(&m_call_count) == 0);
     os_mutexInit(&g_builtin_mutex);
+    os_atomic_inc32(&m_call_count);
 }
 
 void
 dds__builtin_fini(
         void)
 {
+    assert(os_atomic_ld32(&m_call_count) > 0);
+    while (os_atomic_dec32_nv(&m_call_count) > 0) {
+        os_atomic_inc32_nv(&m_call_count);
+        dds_sleepfor(DDS_MSECS(10));
+    }
     dds_delete(g_builtin_local_participant);
     g_builtin_local_participant = 0;
     g_builtin_local_publisher = 0;

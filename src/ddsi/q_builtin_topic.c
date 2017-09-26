@@ -21,18 +21,18 @@
 
 static void generate_user_data (_Out_ DDS_UserDataQosPolicy *a, _In_ const nn_xqos_t *xqos)
 {
-  if (!(xqos->present & QP_USER_DATA) || xqos->user_data.length == 0)
+  if (!(xqos->present & QP_USER_DATA) || (xqos->user_data.length == 0))
   {
     a->value._maximum = 0;
     a->value._length  = 0;
     a->value._buffer  = NULL;
     a->value._release = false;
+  } else {
+    a->value._maximum = xqos->user_data.length;
+    a->value._length  = xqos->user_data.length;
+    a->value._buffer  = xqos->user_data.value;
+    a->value._release = false;
   }
-
-  a->value._maximum = xqos->user_data.length;
-  a->value._maximum = xqos->user_data.length;
-  a->value._buffer  = xqos->user_data.value;
-  a->value._release = false;
 }
 
 static void
