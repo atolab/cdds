@@ -4,57 +4,35 @@
 
     \newpage
 
-########################
-The Hello World! example
-########################
+###############################
+Building VortexDDS applications
+###############################
 
 .. .. contents::
 
-************
-Introduction
-************
+***********************************
+Building the *Hello World!* example
+***********************************
 
-Testing the :ref:`installation <TestYourInstallation>` uses a small
-*Hello World!* application which can also be used as an introduction
-to DDS. This example showed that the HelloWorldPublisher sends a sample
-to the HelloworldSubscriber. This chapter explains what has to be done (as
-in coding) to establish this.
+To test the :ref:`installation <TestYourInstallation>`, a small
+*Hello World!* application is used. This application will also be used
+as an introduction to DDS.
 
-**********************
-Hello World Code Files
-**********************
+This chapter explains how to build this example, without details
+regarding the source code. The next chapter will explain what has
+to be done to code the *Hello World!* example.
 
-The *Hello World!* example directory (:code:`examples/helloworld`)
-contains the following files, which will be explained in more
-detail later on.
+The procedure used to build the *Hello World!* example can also be
+used for building your own applications.
 
-+--------------------------------+--------------------------------------------+
-| File name                      | Description                                |
-+================================+============================================+
-| publisher.c                    | Publishes the Helloworld message.          |
-+--------------------------------+--------------------------------------------+
-| subscriber.c                   | Waits and receives the Helloworld message. |
-+--------------------------------+--------------------------------------------+
-| HelloWorldData.idl             | Datatype description file.                 |
-+--------------------------------+--------------------------------------------+
-| generated/HelloWorldData.c     | Generated datatype source file.            |
-+--------------------------------+--------------------------------------------+
-| generated/HelloWorldData.h     | Generated datatype header file.            |
-+--------------------------------+--------------------------------------------+
-| CMakeLists.txt                 | CMake build file.                          |
-+--------------------------------+--------------------------------------------+
-| Makefile                       | Linux native build file.                   |
-+--------------------------------+--------------------------------------------+
-| HelloWorld.sln                 | Windows Visual Studio solutions file.      |
-+--------------------------------+--------------------------------------------+
-| vs/*                           | Windows Visual Studio support files.       |
-+--------------------------------+--------------------------------------------+
-
+.. note::
+    This chapter refers to the examples, installed in the User Profile
+    directory.
 
 Build Files
 ===========
 
-Three files are available Hello World root directory to support
+Three files are available *Hello World!* root directory to support
 building the example. Both
 :ref:`Windows native <WindowsNativeBuild>` (HelloWorld.sln) and
 :ref:`Linux native <LinuxNativeBuild>` (Makefile) build files
@@ -66,7 +44,7 @@ system and thus only have the CMakeLists.txt build related file.
 Publisher and Subscriber
 ========================
 
-The publisher.c and subscriber.c contain the source for the
+The :code:`publisher.c` and :code:`subscriber.c` contain the source for the
 *Hello World!* example :ref:`Publisher <HelloWorldPublisherSource>`
 and :ref:`Subscriber <HelloWorldSubscriberSource>` respectively.
 
@@ -89,7 +67,7 @@ and the HelloworldSubscriber.
 
 An explanation of the IDL content and how the source files are
 generated is not needed at this point and will be explained in
-the :ref:`Hello World DataType <HelloWorldDataType>` chapter.
+the :ref:`Hello World! DataType <HelloWorldDataType>` chapter.
 
 .. _`HelloWorldDataFiles`:
 
@@ -100,7 +78,7 @@ HelloWorldData.c & HelloWorldData.h
 These are the generated files related to the data type of the
 messages that are sent and received. How they are generated will
 be explained further in the chapter called
-:ref:`Hello World DataType <HelloWorldDataType>`
+:ref:`Hello World! DataType <HelloWorldDataType>`
 
 While the c source has no interest for the application
 developers, HelloWorldData.h contains some information that they
@@ -126,11 +104,6 @@ the DDS middleware as well.
 ::
 
     HelloWorldData_Msg_desc
-
-
-********************
-Building Hello World
-********************
 
 We recommend using `CMake`_, which is explained in one of the
 following chapters. Other VortexDDS examples using this as well.
@@ -193,17 +166,19 @@ with the HelloWorld solution that contains three projects.
 Creating the *Hello World!* example executables is as simple as
 selecting the required configuration and building the solution.
 
-.. note::
-    It is expected that the various Vortex and *Hello World!*
-    example files are installed at system default locations. If
-    that is not the case, then the file
-    :code:`helloworld\vs\directories.props` contains some best
-    guesses of where those files could be. This should mean that
-    building the HelloWorld solution works out-of-the-box.
-    However, if you find that Visual Studio complains about
-    header files or libraries that it can not find, then please
-    update the information in :code:`helloworld\vs\directories.props`
-    to point to the right locations.
+:code:`helloworld\vs\directories.props` contains some best
+guesses of where the VortexDDS header files and libraries
+could be placed but it is based on the default installation
+directory structure. Since we're building this example in the
+User Profile directory, the directories in :code:`helloworld\vs\directories.props`
+should be adapted. Typically the following directories should
+configured like
+
+.. code-block:: xml
+
+  <VortexDDS_lib_dir>C:/Program Files/PrismTech/DDS/lib</VortexDDS_lib_dir>
+  <VortexDDS_inc_dir>C:/Program Files/PrismTech/DDS/include</VortexDDS_inc_dir>
+  <VortexDDS_idlc_dir>C:/Program Files/PrismTech/DDS/share/VortexDDS/idlc</VortexDDS_idlc_dir>
 
 To run the example, Visual Studio should run both the publisher
 and subscriber simultaneously. It is capable of doing so, but
@@ -214,7 +189,7 @@ selecting :code:`Properties`. Then go to :code:`Common Properties`
 and set :code:`Action "Start"` for HelloWorldPublisher and
 HelloWorldSubscriber. Finish the change by selecting :code:`OK`.
 
-Visual Studio is now ready to actually run the Hello World
+Visual Studio is now ready to actually run the *Hello World!*
 example, which can be done by selecting :code:`Debug` ->
 :code:`Start without debugging`.
 Both the HelloworldSubscriber and the HelloworldPublisher will be
@@ -266,10 +241,10 @@ scope of this document.
 
 .. _`VortexDdsPackage`:
 
-Hello World CMake (VortexDDS Package)
-=====================================
+Hello World! CMake (VortexDDS Package)
+======================================
 
-After the CMake digression, we're back with the Hello World
+After the CMake digression, we're back with the *Hello World!*
 example. Apart from the native build files, CMake build files
 are provided as well. See
 :code:`examples/helloworld/CMakeLists.txt`
@@ -282,9 +257,13 @@ It will try to find the :code:`VortexDDS` CMake package. When it
 has found it, every path and dependencies are automatically set.
 After that, an application can use it without fuss. CMake will
 look in the default locations for the code:`VortexDDS` package.
-If it can not find it, you need to add the location of
-:code:`VortexDDSConfig.cmake` to the :code:`CMAKE_PREFIX_PATH`
-environment variable.
+
+.. note::
+    If CMake cannot locate the :code:`VortexDDS` package, an
+    environment variable, called :code:`"CMAKE_PREFIX_PATH"`
+    should be created. The value of :code:`CMAKE_PREFIX_PATH`
+    should contain the location of :code:`VortexDDSConfig.cmake`
+    (typically :code:`C:\Program Files\PrismTech\DDS\share\VortexDDS`).
 
 .. _`IdlcGenerate`:
 
@@ -307,12 +286,12 @@ that was generated by the call to :code:`idlc_generate`.
 
 .. _`HelloWorldBuilding`:
 
-Hello World Configuration
-=========================
+Hello World! Configuration
+==========================
 
-The Hello World is prepared to be built by CMake through the use
-of its :code:`CMakeLists.txt` file. The first step is letting
-CMake configure the build environment.
+The *Hello World!* example is prepared to be built by CMake
+through the use of its :code:`CMakeLists.txt` file. The first
+step is letting CMake configure the build environment.
 
 It's good practice to build examples or applications
 out-of-source. In order to do that, create a :code:`build`
@@ -345,8 +324,8 @@ applications (HelloworldPublisher and HelloworldSubscriber in
 this case).
 
 
-Hello World Build
-=================
+Hello World! Build
+==================
 
 After the configuration step, building the example is as easy
 as typing:

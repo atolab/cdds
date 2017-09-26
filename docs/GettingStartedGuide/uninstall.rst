@@ -38,9 +38,8 @@ Original MSI
 
 Locate the original VortexDDS MSI file on your system and start it.
 After clicking :code:`Next`, an overview of options appears, amongst which
-is the remove option. By clicking :code:`Remove`, everything the installer
-installed will be removed. The installer will leave the user-installed
-files untouched.
+is the remove option. By clicking :code:`Remove`, all files and folders are
+removed, except the VortexDDS examples (if installed).
 
 Apps & features
 ===============
@@ -49,7 +48,8 @@ Go to :code:`Windows Settings` by clicking the :code:`Settings`-icon ( |settings
 in the Windows Start Menu. Choose :code:`Apps` in the
 :code:`Windows Settings` screen. A list of all installed apps
 and programs pops up. Select :code:`VortexDDS` and choose :code:`Uninstall`.
-
+All installed files and folders will be removed, except the
+VortexDDS examples (if installed).
 
 .. |settings_icon| image:: ../_static/pictures/settings-icon.png
   :height: 9

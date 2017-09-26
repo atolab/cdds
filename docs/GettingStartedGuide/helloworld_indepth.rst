@@ -10,15 +10,28 @@ Hello World! in more detail
 
 .. .. contents::
 
+The previous chapter focused on building the *Hello World!* example while
+this chapter focuses on the code itself; what has to be done to code
+this small example.
+
+
+************
+Introduction
+************
+
+The process of building a VortexDDS application is shown below.
+The different steps are described in the following subsections.
+
+.. image:: ../_static/pictures/BuildSchema.png
+   :scale: 30 %
+   :align: center
+
 
 .. _`HelloWorldDataType`:
 
-********************
-Hello World DataType
-********************
-
-So far, we haven't touched the actual data type that is sent
-from the writer to the reader.
+*********************
+Hello World! DataType
+*********************
 
 
 Data-Centric Architecture
@@ -46,8 +59,8 @@ writes the data. The DDS middleware takes care of delivering
 the data when needed.
 
 
-Hello World IDL
-===============
+Hello World! IDL
+================
 
 There are a few ways to describe the structures that make up the
 data layer. The HelloWorld uses the IDL language to describe the
@@ -91,7 +104,7 @@ languages these application are written in.
 Generate DataTypes
 ==================
 
-Like already mentioned in the `Hello World IDL`_ chapter, an IDL
+Like already mentioned in the `Hello World! IDL`_ chapter, an IDL
 file contains the description of data type(s). This needs to be
 translated into programming languages to be useful in the
 creation of DDS applications.
@@ -122,7 +135,7 @@ convenience.
 
 This will result in new :code:`generated/HelloWorldData.c` and
 :code:`generated/HelloWorldData.h`
-files that can be used in the Hello World publisher and
+files that can be used in the *Hello World!* publisher and
 subscriber applications.
 
 The application has to be rebuild when the data type source
@@ -131,9 +144,9 @@ files were re-generated.
 Again, this is all for the native builds. When using CMake, all
 this is done automatically.
 
-***********************
-Hello World Source Code
-***********************
+************************
+Hello World! Source Code
+************************
 
 Apart from the
 :ref:`HelloWorldData data type files <HelloWorldDataFiles>` that
@@ -147,7 +160,7 @@ business logic.
 *Hello World!* Subscriber Source Code
 =====================================
 
-This contains the source that will wait for a Hello World
+This contains the source that will wait for a *Hello World!*
 message and reads it when it receives one.
 
 .. literalinclude:: ../../examples/helloworld/subscriber.c
@@ -164,7 +177,7 @@ appropriate header files.
     #include "HelloWorldData.h"
 
 The main starts with defining a few variables that will be used for
-reading the Hello World message.
+reading the *Hello World!* message.
 The entities are needed to create a reader.
 ::
 
@@ -203,8 +216,8 @@ with a topic named "B".
                               "HelloWorldData_Msg", NULL, NULL);
 
 When we have a participant and a topic, we then can create
-the reader. Since the order in which the Hello World Publisher and
-Hello World Subscriber are started shouldn't matter, we need to create
+the reader. Since the order in which the *Hello World!* Publisher and
+*Hello World!* Subscriber are started shouldn't matter, we need to create
 a so called 'reliable' reader. Without going into details, the reader
 will be created like this
 ::
@@ -276,7 +289,7 @@ automatically delete the topic and reader as well.
 *Hello World!* Publisher Source Code
 ====================================
 
-This contains the source that will write an Hello World message
+This contains the source that will write an *Hello World!* message
 on which the subscriber is waiting.
 
 .. literalinclude:: ../../examples/helloworld/publisher.c

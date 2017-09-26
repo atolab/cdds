@@ -22,6 +22,12 @@ specifically the
 `DDS Getting Started <http://www.omg.org/gettingstarted/omg_idl.htm>`_
 page and the `DDS specification <http://www.omg.org/spec/DDS/>`_ itself.
 
+*************************************
+PrismTech Documentation and Tutorials
+*************************************
+
+* `Documentation <http://www.prismtech.com/vortex/resources/documentation>`_
+* `Tutorials <http://download.prismtech.com/docs/Vortex/html/ospl/DDSTutorial/index.html>`_
 
 **********************
 Youtube and Slideshare
