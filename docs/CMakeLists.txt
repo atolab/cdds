@@ -64,8 +64,8 @@ if (BUILD_DOCS)
   endif()
 
   # Process sphinx configuration file
-  set(sph_conf_author "PrismTech")
-  string(TIMESTAMP sph_conf_copyright "%Y, PrismTech")
+  set(sph_conf_author "AdLink")
+  string(TIMESTAMP sph_conf_copyright "%Y, AdLink")
   set(sph_conf_version "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
   set(sph_conf_release "${PROJECT_VERSION}")
   set(sph_logo "${CMAKE_SOURCE_DIR}/docs/_static/pictures/VORTEX_LOGO.png")

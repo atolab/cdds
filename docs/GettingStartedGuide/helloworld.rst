@@ -25,9 +25,17 @@ to be done to code the *Hello World!* example.
 The procedure used to build the *Hello World!* example can also be
 used for building your own applications.
 
-.. note::
-    This chapter refers to the examples, installed in the User Profile
-    directory.
+:Windows: It is advised to have the VortexDDS examples component installed (see
+  :ref:`Windows installation <WindowsInstallMSI>`) when actively
+  building the VortexDDS examples on Windows. This chapter refers to the
+  VortexDDS examples installed in the User Profile directory on Windows.
+
+:Linux: It is advised to have copied the VortexDDS examples to a user-friendly
+  location as described in :ref:`this <CopyLinuxExamplesToUserFriendlyLocation>`
+  paragraph when actively building the VortexDDS examples on Linux.
+  This chapter refers to the VortexDDS examples installed
+  in the user-defined location.
+
 
 Build Files
 ===========
@@ -39,78 +47,6 @@ building the example. Both
 will only be available for this *Hello World!* example. All the
 other examples make use of the :ref:`CMake <CMakeIntro>` build
 system and thus only have the CMakeLists.txt build related file.
-
-
-Publisher and Subscriber
-========================
-
-The :code:`publisher.c` and :code:`subscriber.c` contain the source for the
-*Hello World!* example :ref:`Publisher <HelloWorldPublisherSource>`
-and :ref:`Subscriber <HelloWorldSubscriberSource>` respectively.
-
-The Publisher writes one message that is received by the
-Subscriber.
-
-
-HelloWorldData.idl
-==================
-
-To be able to sent data from a writer to a reader, DDS needs to
-know the data type. For the *Hello World!* example, this data type
-is described using `IDL <http://www.omg.org/gettingstarted/omg_idl.htm>`_
-and is located in HelloWorldData.idl. This IDL file will be compiled by
-a IDL compiler which in turn generates a C language source and header
-file. These generated source and header file will be used by the
-HelloworldSubscriber and HelloworldPublisher in order to communicate
-the *Hello World!* message between the HelloworldPublisher
-and the HelloworldSubscriber.
-
-An explanation of the IDL content and how the source files are
-generated is not needed at this point and will be explained in
-the :ref:`Hello World! DataType <HelloWorldDataType>` chapter.
-
-.. _`HelloWorldDataFiles`:
-
-
-HelloWorldData.c & HelloWorldData.h
------------------------------------
-
-These are the generated files related to the data type of the
-messages that are sent and received. How they are generated will
-be explained further in the chapter called
-:ref:`Hello World! DataType <HelloWorldDataType>`
-
-While the c source has no interest for the application
-developers, HelloWorldData.h contains some information that they
-depend on. For example, it contains the actual message structure
-that is used when writing or reading data.
-::
-
-    typedef struct HelloWorldData_Msg
-    {
-        int32_t userID;
-        char * message;
-    } HelloWorldData_Msg;
-
-It also contains convenience macros to allocate and free memory
-space for the specific data types.
-::
-
-    HelloWorldData_Msg__alloc()
-    HelloWorldData_Msg_free(d,o)
-
-It contains an extern variable that describes the data type to
-the DDS middleware as well.
-::
-
-    HelloWorldData_Msg_desc
-
-We recommend using `CMake`_, which is explained in one of the
-following chapters. Other VortexDDS examples using this as well.
-
-However, to start things off, a native way of building
-the *Hello World!* example is provided.
-
 
 .. _`LinuxNativeBuild`:
 
@@ -176,9 +112,9 @@ configured like
 
 .. code-block:: xml
 
-  <VortexDDS_lib_dir>C:/Program Files/PrismTech/DDS/lib</VortexDDS_lib_dir>
-  <VortexDDS_inc_dir>C:/Program Files/PrismTech/DDS/include</VortexDDS_inc_dir>
-  <VortexDDS_idlc_dir>C:/Program Files/PrismTech/DDS/share/VortexDDS/idlc</VortexDDS_idlc_dir>
+  <VortexDDS_lib_dir>C:/Program Files/AdLink/DDS/lib</VortexDDS_lib_dir>
+  <VortexDDS_inc_dir>C:/Program Files/AdLink/DDS/include</VortexDDS_inc_dir>
+  <VortexDDS_idlc_dir>C:/Program Files/AdLink/DDS/share/VortexDDS/idlc</VortexDDS_idlc_dir>
 
 To run the example, Visual Studio should run both the publisher
 and subscriber simultaneously. It is capable of doing so, but
@@ -195,6 +131,8 @@ example, which can be done by selecting :code:`Debug` ->
 Both the HelloworldSubscriber and the HelloworldPublisher will be
 started and the HelloworldPublisher will write a message that is
 received by the HelloworldSubscriber.
+
+.. _`BuildingWithCMake`:
 
 *******************
 Building With CMake
@@ -263,7 +201,7 @@ look in the default locations for the code:`VortexDDS` package.
     environment variable, called :code:`"CMAKE_PREFIX_PATH"`
     should be created. The value of :code:`CMAKE_PREFIX_PATH`
     should contain the location of :code:`VortexDDSConfig.cmake`
-    (typically :code:`C:\Program Files\PrismTech\DDS\share\VortexDDS`).
+    (typically :code:`C:\Program Files\AdLink\DDS\share\VortexDDS`).
 
 .. _`IdlcGenerate`:
 

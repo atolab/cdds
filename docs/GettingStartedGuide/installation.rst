@@ -17,7 +17,7 @@ Install VortexDDS
 System requirements
 *******************
 
-Currently Prismtech VortexDDS is supported on the following platforms:
+Currently AdLink VortexDDS is supported on the following platforms:
 
 +-------------------+--------------+--------------------+
 | Operating systems | Architecture | Compiler           |
@@ -42,6 +42,19 @@ On Ubuntu and other debian-derived platforms, the product can be installed using
 
     sudo dpkg -i VortexDDS-<version>-Linux-lib.deb
     sudo dpkg -i VortexDDS-<version>-Linux-dev.deb
+
+
+.. _`CopyLinuxExamplesToUserFriendlyLocation`:
+
+Post install steps
+~~~~~~~~~~~~~~~~~~
+
+The installation package installs examples system directories.
+In order to have a better user experience when building the VortexDDS
+examples, it is advised to copy the examples to a user-defined location.
+The installation package provides a script for this.
+
+TODO vdds_install_examples in /usr/bin directory.
 
 
 Red Hat
@@ -142,7 +155,7 @@ The installation provides a simple prebuilt :ref:`Hello World! <HelloWorld>` app
 can be run in order to test your installation. The *Hello World!* application consists of two
 executables: a so called HelloworldPublisher and a HelloworldSubscriber, typically located in
 :code:`/usr/share/VortexDDS/examples/helloworld/bin` on Linux and in
-:code:`C:\Program Files\PrismTech\DDS\share\VortexDDS\examples\helloworld\bin` on Windows.
+:code:`C:\Program Files\AdLink\DDS\share\VortexDDS\examples\helloworld\bin` on Windows.
 
 To run the example application, please open two console windows and navigate to the appropriate
 directory in both console windows. Run the HelloworldSubscriber in one of the console windows by the

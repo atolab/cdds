@@ -4,6 +4,7 @@
 
     \newpage
 
+
 ###########################
 Hello World! in more detail
 ###########################
@@ -11,7 +12,7 @@ Hello World! in more detail
 .. .. contents::
 
 The previous chapter focused on building the *Hello World!* example while
-this chapter focuses on the code itself; what has to be done to code
+this chapter will focus on the code itself; what has to be done to code
 this small example.
 
 
@@ -26,13 +27,11 @@ The different steps are described in the following subsections.
    :scale: 30 %
    :align: center
 
-
 .. _`HelloWorldDataType`:
 
 *********************
 Hello World! DataType
 *********************
-
 
 Data-Centric Architecture
 =========================
@@ -47,17 +46,30 @@ complexity of a data-centric architecture doesn't really
 increase when more and more publishers/subscribers are added.
 
 The *Hello World!* example has a very simple 'data layer' of only
-one data type :code:`HelloWorldData_Msg`. The subscriber and
-publisher are not aware of each other. The former just waits
-until somebody provides the data it requires, while the latter
-just publishes the data without considering the number of
-interested parties. In other words, it doesn't matter for the
-publisher if there are none or multiple subscribers (try running
-the *Hello World!* example by starting multiple HelloworldSubscribers
-before starting a HelloworldPublisher). A publisher just
-writes the data. The DDS middleware takes care of delivering
-the data when needed.
+one data type :code:`HelloWorldData_Msg` (please read on).
+The subscriber and publisher are not aware of each other.
+The former just waits until somebody provides the data it
+requires, while the latter just publishes the data without
+considering the number of interested parties. In other words,
+it doesn't matter for the publisher if there are none or
+multiple subscribers (try running the *Hello World!* example
+by starting multiple HelloworldSubscribers before starting a
+HelloworldPublisher). A publisher just writes the data. The
+DDS middleware takes care of delivering the data when needed.
 
+******************
+HelloWorldData.idl
+******************
+
+To be able to sent data from a writer to a reader, DDS needs to
+know the data type. For the *Hello World!* example, this data type
+is described using `IDL <http://www.omg.org/gettingstarted/omg_idl.htm>`_
+and is located in HelloWorldData.idl. This IDL file will be compiled by
+a IDL compiler which in turn generates a C language source and header
+file. These generated source and header file will be used by the
+HelloworldSubscriber and HelloworldPublisher in order to communicate
+the *Hello World!* message between the HelloworldPublisher
+and the HelloworldSubscriber.
 
 Hello World! IDL
 ================
@@ -98,11 +110,10 @@ languages after which the resulting applications can communicate
 without concerns about the (possible different) programming
 languages these application are written in.
 
-
 .. _`IdlCompiler`:
 
-Generate DataTypes
-==================
+Generate Sources and Headers
+============================
 
 Like already mentioned in the `Hello World! IDL`_ chapter, an IDL
 file contains the description of data type(s). This needs to be
@@ -123,13 +134,6 @@ the *Hello World!* example, that IDL file is HelloWorldData.idl.
 
     java -classpath "<install_dir>/share/VortexDDS/idlc/idlc-jar-with-dependencies.jar" com.prismtech.vortex.compilers.Idlc HelloWorldData.idl
 
-This seems a bit elaborate, but this step will be done
-automatically if you use the :ref:`idlc_generate <IdlcGenerate>`
-function in the :ref:`VortexDDS CMake package <VortexDdsPackage>`.
-But we get ahead of ourselfs with :ref:`CMake <CMakeIntro>`. Native build targets
-have been provided for the *Hello World!* example for your
-convenience.
-
 :Windows: The :code:`HelloWorldType` project within the HelloWorld solution.
 :Linux: The :code:`make datatype` command.
 
@@ -144,15 +148,51 @@ files were re-generated.
 Again, this is all for the native builds. When using CMake, all
 this is done automatically.
 
-************************
-Hello World! Source Code
-************************
+.. _`HelloWorldDataFiles`:
+
+HelloWorldData.c & HelloWorldData.h
+===================================
+
+As described in the :ref:`Hello World! DataType <HelloWorldDataType>`
+paragraph, the IDL compiler will generate this source and header
+file. These files contain the data type of the messages that are sent
+and received.
+
+While the c source has no interest for the application
+developers, HelloWorldData.h contains some information that they
+depend on. For example, it contains the actual message structure
+that is used when writing or reading data.
+::
+
+    typedef struct HelloWorldData_Msg
+    {
+        int32_t userID;
+        char * message;
+    } HelloWorldData_Msg;
+
+It also contains convenience macros to allocate and free memory
+space for the specific data types.
+::
+
+    HelloWorldData_Msg__alloc()
+    HelloWorldData_Msg_free(d,o)
+
+It contains an extern variable that describes the data type to
+the DDS middleware as well.
+::
+
+    HelloWorldData_Msg_desc
+
+***************************
+Hello World! Business Logic
+***************************
 
 Apart from the
 :ref:`HelloWorldData data type files <HelloWorldDataFiles>` that
-the *Hello World!* example uses to send messages, it also contains
-two (user) source files (:ref:`subscriber.c <HelloWorldPublisherSource>`
-and :ref:`publisher.c <HelloWorldSubscriberSource>`), containing the
+the *Hello World!* example uses to send messages, the *Hello World!*
+example also contains two (user) source files
+(:ref:`subscriber.c <HelloWorldSubscriberSource>` and
+:ref:`publisher.c <HelloWorldPublisherSource>`), containing the
 business logic.
 
 .. _`HelloWorldSubscriberSource`:
@@ -160,7 +200,7 @@ business logic.
 *Hello World!* Subscriber Source Code
 =====================================
 
-This contains the source that will wait for a *Hello World!*
+Subscriber.c contains the source that will wait for a *Hello World!*
 message and reads it when it receives one.
 
 .. literalinclude:: ../../examples/helloworld/subscriber.c
@@ -289,7 +329,7 @@ automatically delete the topic and reader as well.
 *Hello World!* Publisher Source Code
 ====================================
 
-This contains the source that will write an *Hello World!* message
+Publisher.c contains the source that will write an *Hello World!* message
 on which the subscriber is waiting.
 
 .. literalinclude:: ../../examples/helloworld/publisher.c

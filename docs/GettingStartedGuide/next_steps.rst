@@ -15,7 +15,7 @@ visit some of the pages listed below.
 The OMG DDS Specification
 *************************
 
-PrismTech has been an active member of the Object Management Group® (OMG®)
+AdLink has been an active member of the Object Management Group® (OMG®)
 for over twenty years and is heavily involved in the development of the
 DDS specification. Please visit the OMG website at http://www.omg.org and
 specifically the
@@ -23,17 +23,17 @@ specifically the
 page and the `DDS specification <http://www.omg.org/spec/DDS/>`_ itself.
 
 *************************************
-PrismTech Documentation and Tutorials
+AdLink Documentation and Tutorials
 *************************************
 
 * `Documentation <http://www.prismtech.com/vortex/resources/documentation>`_
-* `Tutorials <http://download.prismtech.com/docs/Vortex/html/ospl/DDSTutorial/index.html>`_
+* `DDS Tutorial <http://download.prismtech.com/docs/Vortex/html/ospl/DDSTutorial/index.html>`_
 
-**********************
-Youtube and Slideshare
-**********************
+********************************
+AdLink on Youtube and Slideshare
+********************************
 
-PrismTech is also active on Youtube and Slideshare. Please following
+AdLink is also active on Youtube and Slideshare. Please following
 the links below to view some interesting videos and presentations.
 
 * `Overview <http://www.prismtech.com/vortex/resources/presentations>`_
@@ -41,21 +41,21 @@ the links below to view some interesting videos and presentations.
 * `Vortex Slideshare <https://www.slideshare.net/prismtech1/presentations>`_
 * `Vortex Demo <http://www.prismtech.com/vortex/vortex-demo>`_
 
-************
-Social Media
-************
+**********************
+AdLink on Social Media
+**********************
 
-* `Twitter (@PrismTech) <https://twitter.com/prismtech?lang=en>`_
-* `Facebook <https://www.facebook.com/prismtech/>`_
-* `LinkedIn <https://www.linkedin.com/company/24184/>`_
+* `Twitter (@ADLINKTech_usa) <https://twitter.com/ADLINKTech_usa>`_
+* `Facebook <https://www.facebook.com/ADLINKTECH/>`_
+* `LinkedIn <https://www.linkedin.com/company/79111/>`_
 
 
 *****************
 The DDS community
 *****************
 
-* `The PrismTech DDS-community <http://www.prismtech.com/dds-community>`_
-* `The PrismTech DDS Forum <http://www.prismtech.com/dds-community/community-interaction>`_
+* `The AdLink DDS-community <http://www.prismtech.com/dds-community>`_
+* `The AdLink DDS Forum <http://www.prismtech.com/dds-community/community-interaction>`_
 
 *******
 Support
