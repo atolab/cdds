@@ -1,12 +1,10 @@
-find_package(Java REQUIRED)
+find_package(Java 1.8 REQUIRED)
 include(UseJava)
-
 #enable_testing()
 
 project (chamconf)
 
-# TODO This should specify 1.8, but VS2013 build machine only has jdk 1.7, this should be fixed soon
-set(CMAKE_JAVA_COMPILE_FLAGS "-source" "1.7" "-target" "1.7")
+set(CMAKE_JAVA_COMPILE_FLAGS "-source" "1.8" "-target" "1.8")
 
 file(GLOB_RECURSE JAVA_SOURCES LIST_DIRECTORIES true *.java)
 set(RESOURCES metaconfig.xml metaconfig.xsd resources/ptlogoc16.png resources/ptlogoc24.png resources/ptlogoc32.png resources/ptlogoc48.png)

@@ -671,6 +671,7 @@ extern "C" {
 	 * \brief the os_flockfile() function waits for *filehandle to be
 	 * no longer locked by a different thread, then makes the current
 	 * thread owner of *filehandle, and increments the lockcount.
+	 * (not effective on VxWorks DKM platform)
 	 *
 	 * Precondition:
 	 *   none
@@ -688,6 +689,7 @@ extern "C" {
 	 * \brief the os_funlockfile function decrements the lock count and releases
 	 *  the internal locking object of the *filehandle. The *filehandle must
 	 *  have been locked before by a call to os_flockfile.
+	 *  (not effective on VxWorks DKM platform)
 	 *
 	 * Precondition:
 	 *   none

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <splice_meta_config version="1.0">
   <!--xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.splice-dds.org/splice_metaconfig.xsd"-->
-  <rootElement name="Vortex" minOccurrences="1" maxOccurrences="1" version="VLITE">
+  <rootElement name="VortexDDS" minOccurrences="1" maxOccurrences="1" version="VLITE">
     <comment><![CDATA[
             <p>OpenSplice DDS is highly configurable, even allowing the architecture of the
               DDS middleware to be chosen by the user at deployment time. OpenSplice DDS can
