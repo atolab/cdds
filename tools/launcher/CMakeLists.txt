@@ -23,9 +23,20 @@ add_custom_command(
 
 add_custom_target(launcher ALL DEPENDS "${LAUNCHER_JAR}")
 
-#install(
-#  FILES "${LAUNCHER_JAR}"
-#  DESTINATION "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}/tools/launcher"
-#  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_WRITE GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-#  COMPONENT dev)
+install(
+  DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/app"
+  DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  USE_SOURCE_PERMISSIONS
+  COMPONENT dev)
 
+install(
+  DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/runtime"
+  DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  USE_SOURCE_PERMISSIONS
+  COMPONENT dev)
+
+install(
+  PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/chamlauncher"
+           "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/libpackager.so"
+  DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  COMPONENT dev)
