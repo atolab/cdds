@@ -35,8 +35,18 @@ install(
   USE_SOURCE_PERMISSIONS
   COMPONENT dev)
 
+# FIXME
+# Refactor this to use install TARGET instead, which might take care of the platform specific file name
+if (WIN32)
+install(
+  PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/chamlauncher.exe"
+           "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/packager.dll"
+  DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  COMPONENT dev)
+else()
 install(
   PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/chamlauncher"
            "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/libpackager.so"
   DESTINATION "${CMAKE_INSTALL_BINDIR}"
   COMPONENT dev)
+endif()
