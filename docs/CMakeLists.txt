@@ -95,15 +95,18 @@ if (BUILD_DOCS)
       VERBATIM
     )
 
-    add_custom_command(
-      OUTPUT ${docs_builder_output}
-      COMMAND ${CMAKE_COMMAND}
-        -E tar "zcf"
-        "${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz"
-        "${CMAKE_CURRENT_BINARY_DIR}/html"
-      APPEND
-      VERBATIM
-    )
+    # FIXME: This is definitely in the wrong location
+    if(builder STREQUAL html)
+      add_custom_command(
+        OUTPUT ${docs_builder_output}
+        COMMAND ${CMAKE_COMMAND}
+          -E tar "zcf"
+          "${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz"
+          "${CMAKE_CURRENT_BINARY_DIR}/html"
+        APPEND
+        VERBATIM
+      )
+    endif()
 
     # Create a pdf from the latex builder output, by appending a latexmk command
     # TODO look into rinohtype as an alternative (don't bother with rst2pdf, it's no good)
@@ -113,7 +116,6 @@ if (BUILD_DOCS)
         COMMAND ${LATEXMK_EXECUTABLE}
           -interaction=nonstopmode
           -silent
-          -output-directory=${builder}
           -pdf -dvi- -ps- -cd ${builder}/${CMAKE_PROJECT_NAME}.tex
         APPEND
         VERBATIM
