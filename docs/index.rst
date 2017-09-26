@@ -9,10 +9,8 @@ Welcome to VortexDDS's documentation!
 
    GettingStartedGuide/index
 
-
-.. Enabling this triggers many errors :(
-.. .. doxygenindex::
-..   :project: vddsc_api
+.. doxygenindex::
+   :project: vddsc_api
 
 Indices and tables
 ==================
