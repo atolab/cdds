@@ -125,8 +125,6 @@ htmlhelp_basename = '@CMAKE_PROJECT_NAME@doc'
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
-    'classoptions': ',openany,oneside',
-
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',

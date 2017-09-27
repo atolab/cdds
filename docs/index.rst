@@ -9,16 +9,13 @@ Welcome to VortexDDS's documentation!
 
    GettingStartedGuide/index
 
-.. raw:: latex
-
-    \newpage
-
-Doxygen Generated Output
-========================
-
 .. doxygenindex::
    :project: vddsc_api
 
 
 Indices and tables
 ==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
