@@ -100,7 +100,7 @@ dds_init(void)
       return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize internal handle server");
   }
 
-  uri = os_getenv (VDDSC_PROJECTNAME_CAPS"_URI");
+  uri = os_getenv (VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
   dds_cfgst = config_init (uri);
   if (dds_cfgst == NULL)
   {

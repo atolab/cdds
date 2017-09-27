@@ -30,7 +30,6 @@ else()
   add_library(vddsc "")
 endif()
 
-
 target_sources(vddsc PRIVATE ${srcs_ddsi} ${srcs_vddsc})
 
 target_link_libraries(vddsc PRIVATE util)
@@ -59,8 +58,6 @@ target_include_directories(vddsc PUBLIC
 target_include_directories(vddsc PRIVATE
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/>")
 
-string(TOUPPER ${CMAKE_PROJECT_NAME} VortexDDS_PROJECTNAME_CAPS)
-string(TOLOWER ${CMAKE_PROJECT_NAME} VortexDDS_PROJECTNAME_SMALL)
 configure_file("${CMAKE_SOURCE_DIR}/include/vddsc/vddsc_project.h.in" "include/vddsc/vddsc_project.h")
 
 set_target_file_ids(vddsc)

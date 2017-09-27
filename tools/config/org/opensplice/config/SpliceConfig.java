@@ -53,8 +53,8 @@ public class SpliceConfig extends Initializer {
              * initialize logging with a max size of 10M with a max history of
              * 10 runs and do not append
              */
-            Report.getInstance().initializeInfo("osplconf-info.log", 10000000, 10, false);
-            Report.getInstance().initializeError("osplconf-error.log", 10000000, 10, false);
+            Report.getInstance().initializeInfo("vortexddsconf-info.log", 10000000, 10, false);
+            Report.getInstance().initializeError("vortexddsconf-error.log", 10000000, 10, false);
         } else {
             Report.getInstance().initializeConsole();
             System.out.println("No redirect.");

@@ -44,7 +44,7 @@ if (BUILD_DOCS)
   # The XML will serve as input for sphinx' breathe plugin
   if (TARGET ${CMAKE_PROJECT_NAME}::vddsc)
     # Process doxygen configuration file, for vddsc
-    set(doxy_conf_project "${CMAKE_PROJECT_NAME} C API Documentation")
+    set(doxy_conf_project "${CMAKE_PROJECT_NAME_FULL} C API Documentation")
     set(doxy_conf_outputdir "vddsc_api")
     set(doxy_conf_input "${CMAKE_SOURCE_DIR}/include/dds.h ${CMAKE_SOURCE_DIR}/include/dds")
     configure_file(Doxyfile.in Doxyfile @ONLY)
@@ -64,8 +64,8 @@ if (BUILD_DOCS)
   endif()
 
   # Process sphinx configuration file
-  set(sph_conf_author "AdLink")
-  string(TIMESTAMP sph_conf_copyright "%Y, AdLink")
+  set(sph_conf_author "ADLINK")
+  string(TIMESTAMP sph_conf_copyright "%Y, ADLINK")
   set(sph_conf_version "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
   set(sph_conf_release "${PROJECT_VERSION}")
   set(sph_logo "${CMAKE_SOURCE_DIR}/docs/_static/pictures/VORTEX_LOGO.png")
