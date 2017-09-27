@@ -4,17 +4,21 @@ Welcome to VortexDDS's documentation!
 =====================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 3
+   :caption: Contents
 
    GettingStartedGuide/index
+
+.. raw:: latex
+
+    \newpage
+
+Doxygen Generated Output
+========================
 
 .. doxygenindex::
    :project: vddsc_api
 
+
 Indices and tables
 ==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
