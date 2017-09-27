@@ -4,6 +4,8 @@
 #include <criterion/logging.h>
 
 
+#if 0
+#else
 /* We are deliberately testing some bad arguments that SAL will complain about.
  * So, silence SAL regarding these issues. */
 #pragma warning(push)
@@ -217,8 +219,6 @@ qos_init(void)
     g_pol_durability_service.max_instances = 3;
     g_pol_durability_service.max_samples_per_instance = 4;
     g_pol_durability_service.service_cleanup_delay = 90000;
-
-
 }
 
 static void
@@ -227,10 +227,6 @@ qos_fini(void)
     dds_qos_delete(g_qos);
 }
 
-
-
-#if 0
-#else
 /****************************************************************************
  * API tests
  ****************************************************************************/
