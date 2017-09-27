@@ -16,12 +16,6 @@
 #include "kernel/dds_subscriber.h"
 
 
-#if 0
-#define BUILTIN_INFO printf
-#else
-#define BUILTIN_INFO
-#endif
-
 static dds_return_t
 dds__delete_builtin_participant(
         dds_entity *e);
@@ -192,7 +186,7 @@ dds__create_builtin_writer(
             dds_qset_reliability(qos, DDS_RELIABILITY_RELIABLE, DDS_MSECS(100));
             wr = dds_create_writer(pub, top, qos, NULL);
             dds_qos_delete(qos);
-            dds_delete(top);
+            (void)dds_delete(top);
         } else {
             wr = top;
         }
@@ -372,10 +366,8 @@ dds__builtin_write(
         wr = dds__get_builtin_writer(topic);
         if (wr > 0) {
             if (alive) {
-                BUILTIN_INFO("---write by: %x on %ld (%lx)\n", wr, timestamp, timestamp);
                 ret = dds_write_ts(wr, data, timestamp);
             } else {
-                BUILTIN_INFO("---dispose by: %x on %ld (%lx)\n", wr, timestamp, timestamp);
                 ret = dds_dispose_ts(wr, data, timestamp);
             }
         } else {
@@ -404,7 +396,7 @@ dds__builtin_fini(
         os_atomic_inc32_nv(&m_call_count);
         dds_sleepfor(DDS_MSECS(10));
     }
-    dds_delete(g_builtin_local_participant);
+    (void)dds_delete(g_builtin_local_participant);
     g_builtin_local_participant = 0;
     g_builtin_local_publisher = 0;
     memset(g_builtin_local_writers, 0, sizeof(g_builtin_local_writers));
@@ -420,8 +412,6 @@ forward_builtin_participant(
 {
     dds_return_t ret;
     DDS_REPORT_STACK();
-    BUILTIN_INFO("---dds__builtin_participant_cb(%x.%x.%x)\n", data->key[0], data->key[1], data->key[2]);
-    BUILTIN_INFO("---userdata: %s\n", data->user_data.value._buffer);
     ret = dds__builtin_write(DDS_BUILTIN_TOPIC_DCPSPARTICIPANT, data, timestamp.v, alive);
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
 }
@@ -434,8 +424,6 @@ forward_builtin_cmparticipant(
 {
     dds_return_t ret;
     DDS_REPORT_STACK();
-    BUILTIN_INFO("---dds__builtin_cmparticipant_cb(%x.%x.%x)\n", data->key[0], data->key[1], data->key[2]);
-    BUILTIN_INFO("---product: %s\n", data->product.value);
     ret = dds__builtin_write(DDS_BUILTIN_TOPIC_CMPARTICIPANT, data, timestamp.v, alive);
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
 }
