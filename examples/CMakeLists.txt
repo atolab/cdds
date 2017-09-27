@@ -7,7 +7,7 @@ add_subdirectory(throughput)
 # Examples HTML documentation
 set(EXAMPLES_HTML_ARCHIVE "${CMAKE_PROJECT_NAME}ExamplesHTML.tar.gz")
 set(EXAMPLES_HTML_URI "http://jenkins.prismtech.com:8080 \
-    /job/CHAM-406_TMP/lastSuccessfulBuild/artifact/cham/builds/examples/${EXAMPLES_HTML_ARCHIVE}"
+    /job/BuildChameleonLinux64bit/lastSuccessfulBuild/artifact/cham/builds/examples/${EXAMPLES_HTML_ARCHIVE}"
 )
 
 if (BUILD_DOCS)
@@ -132,6 +132,7 @@ install(
   FILES_MATCHING
   PATTERN "CMakeFiles" EXCLUDE
   PATTERN "cache" EXCLUDE
+  PATTERN "_sources" EXCLUDE
   PATTERN "*.html"
   PATTERN "*.js"
   PATTERN "_static/*"
