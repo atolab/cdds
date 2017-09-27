@@ -1,7 +1,7 @@
 find_package(Java REQUIRED)
 include(UseJava)
 
-set(CONFJAR_TARGET "${CMAKE_PROJECT_NAME_NOSPACE_SMALL}conf")
+set(CONFJAR_TARGET "${CMAKE_PROJECT_NAME_SMALL}conf")
 
 # TODO This should specify 1.8, but VS2013 build machine only has jdk 1.7, this should be fixed soon
 set(CMAKE_JAVA_COMPILE_FLAGS "-source" "1.7" "-target" "1.7")

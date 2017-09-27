@@ -1,4 +1,4 @@
-set(CMAKE_INSTALL_EXAMPLESDIR "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME_NOSPACE}/examples")
+set(CMAKE_INSTALL_EXAMPLESDIR "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}/examples")
 
 add_subdirectory(helloworld)
 add_subdirectory(roundtrip)

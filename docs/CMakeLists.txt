@@ -10,8 +10,8 @@ option(BUILD_DOCS, "Enable generation of docs." OFF)
 
 set(JENKINS_BASE_URI "http://jenkins.prismtech.com:8080/")
 set(JENKINS_DOCS_JOB_NAME "BuildChameleonLinux64bit")
-set(VORTEXDDS_PDF_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME_NOSPACE}.pdf")
-set(VORTEXDDS_HTML_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME_NOSPACE}HTML.tar.gz")
+set(VORTEXDDS_PDF_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}.pdf")
+set(VORTEXDDS_HTML_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}HTML.tar.gz")
 set(DOCS_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/..")
 
 if (BUILD_DOCS)
@@ -44,7 +44,7 @@ if (BUILD_DOCS)
   # The XML will serve as input for sphinx' breathe plugin
   if (TARGET ${CMAKE_PROJECT_NAME}::vddsc)
     # Process doxygen configuration file, for vddsc
-    set(doxy_conf_project "${CMAKE_PROJECT_NAME} C API Documentation")
+    set(doxy_conf_project "${CMAKE_PROJECT_NAME_FULL} C API Documentation")
     set(doxy_conf_outputdir "vddsc_api")
     set(doxy_conf_input "${CMAKE_SOURCE_DIR}/include/dds.h ${CMAKE_SOURCE_DIR}/include/dds")
     configure_file(Doxyfile.in Doxyfile @ONLY)
@@ -99,7 +99,7 @@ if (BUILD_DOCS)
       OUTPUT ${docs_builder_output}
       COMMAND ${CMAKE_COMMAND}
         -E tar "zcf"
-        "${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME_NOSPACE}HTML.tar.gz"
+        "${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz"
         "${CMAKE_CURRENT_BINARY_DIR}/html"
       APPEND
       VERBATIM
@@ -114,7 +114,7 @@ if (BUILD_DOCS)
           -interaction=nonstopmode
           -silent
           -output-directory=${builder}
-          -pdf -dvi- -ps- -cd ${builder}/${CMAKE_PROJECT_NAME_NOSPACE}.tex
+          -pdf -dvi- -ps- -cd ${builder}/${CMAKE_PROJECT_NAME}.tex
         APPEND
         VERBATIM
       )
@@ -122,8 +122,8 @@ if (BUILD_DOCS)
         OUTPUT ${docs_builder_output}
         COMMAND ${CMAKE_COMMAND}
           -E rename
-            ${CMAKE_CURRENT_BINARY_DIR}/latex/${CMAKE_PROJECT_NAME_NOSPACE}.pdf
-            ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME_NOSPACE}.pdf
+            ${CMAKE_CURRENT_BINARY_DIR}/latex/${CMAKE_PROJECT_NAME}.pdf
+            ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf
         APPEND
         VERBATIM
       )
@@ -138,7 +138,7 @@ if (BUILD_DOCS)
   endforeach()
 
   # Remove generated files when cleaning the build tree
-  set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME_NOSPACE}HTML.tar.gz ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME_NOSPACE}.pdf)
+  set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf)
 
   add_custom_target(docs ALL DEPENDS vddsc_docs ${docs_outputs})
 else()
@@ -149,7 +149,7 @@ else()
     add_custom_command(
       TARGET docs
       COMMAND ${CMAKE_COMMAND}
-        -E remove -f "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME_NOSPACE}HTML.tar.gz"
+        -E remove -f "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz"
       VERBATIM
     )
     add_custom_command(
@@ -166,8 +166,8 @@ else()
       TARGET docs
       COMMAND ${CMAKE_COMMAND}
         -E rename
-          ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME_NOSPACE}.pdf
-          ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME_NOSPACE}.pdf
+          ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.pdf
+          ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf
       VERBATIM
     )
   else()
@@ -175,20 +175,20 @@ else()
     # Just try to download the docs straight away.
     file(DOWNLOAD
       ${VORTEXDDS_HTML_URI}
-      ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME_NOSPACE}HTML.tar.gz)
+      ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz)
     file(DOWNLOAD
       ${VORTEXDDS_PDF_URI}
-      ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME_NOSPACE}.pdf)
+      ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf)
   endif()
 
   add_custom_command(
     TARGET docs
     COMMAND ${CMAKE_COMMAND}
-      -E tar "zxf" "${CMAKE_PROJECT_NAME_NOSPACE}HTML.tar.gz" .
+      -E tar "zxf" "${CMAKE_PROJECT_NAME}HTML.tar.gz" .
     VERBATIM
   )
   # Remove generated files when cleaning the build tree
-  set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES html ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME_NOSPACE}HTML.tar.gz ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME_NOSPACE}.pdf)
+  set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES html ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf)
 
 endif()
 
@@ -197,6 +197,6 @@ install(
   DESTINATION ${CMAKE_INSTALL_DOCDIR}
   COMPONENT dev)
 install(
-  FILES ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME_NOSPACE}.pdf
+  FILES ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf
   DESTINATION ${CMAKE_INSTALL_DOCDIR}
   COMPONENT dev)

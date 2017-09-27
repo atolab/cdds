@@ -1,4 +1,4 @@
-<@CMAKE_PROJECT_NAME_NOSPACE@>
+<@CMAKE_PROJECT_NAME@>
   <Domain>
     <Id>0</Id>
   </Domain>
@@ -16,4 +16,4 @@
       <Verbosity>warning</Verbosity> <!-- Set to 'finest' for debugging level output -->
     </Tracing>
   </DDSI2E>
-</@CMAKE_PROJECT_NAME_NOSPACE@>
+</@CMAKE_PROJECT_NAME@>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <splice_meta_config version="1.0">
   <!--xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.splice-dds.org/splice_metaconfig.xsd"-->
-  <rootElement name="@CMAKE_PROJECT_NAME_NOSPACE@" minOccurrences="1" maxOccurrences="1" version="VLITE">
+  <rootElement name="@CMAKE_PROJECT_NAME@" minOccurrences="1" maxOccurrences="1" version="VLITE">
     <comment><![CDATA[
             <p>@CMAKE_PROJECT_NAME@ is highly configurable, allowing many configuration parameters 
               to be chosen by the user at deployment time by means of easily maintainable XML-file(s).</p>

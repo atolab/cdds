@@ -80,11 +80,11 @@ configure_file("${CMAKE_SOURCE_DIR}/include/vddsc/vddsc_project.h.in" "include/v
 # Create a pseudo-target that other targets (i.e. examples, tests) can depend
 # on and can also be provided as import-target by a package-file when building
 # those targets outside the regular Vortex build-tree (i.e. the installed tree)
-add_library(${CMAKE_PROJECT_NAME_NOSPACE}::vddsc ALIAS vddsc)
+add_library(${CMAKE_PROJECT_NAME}::vddsc ALIAS vddsc)
 
 install(
   TARGETS vddsc
-  EXPORT "${CMAKE_PROJECT_NAME_NOSPACE}"
+  EXPORT "${CMAKE_PROJECT_NAME}"
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT lib
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT lib
   ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT lib
