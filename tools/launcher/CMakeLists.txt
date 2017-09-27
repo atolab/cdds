@@ -35,6 +35,12 @@ install(
   USE_SOURCE_PERMISSIONS
   COMPONENT dev)
 
+install(
+  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/launcherui/oLauncher/icons"
+  DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  USE_SOURCE_PERMISSIONS
+  COMPONENT dev)
+
 # FIXME
 # Refactor this to use install TARGET instead, which might take care of the platform specific file name
 if (WIN32)
