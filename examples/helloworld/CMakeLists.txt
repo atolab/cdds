@@ -21,11 +21,6 @@ add_executable(HelloworldSubscriber subscriber.c)
 target_link_libraries(HelloworldPublisher HelloWorldData_lib VortexDDS::vddsc)
 target_link_libraries(HelloworldSubscriber HelloWorldData_lib VortexDDS::vddsc)
 
-
-
-
-
-
 #
 # The helloworld example is the only example to have a different CMakeLists.txt
 # for building in source and install environments. This is because it has to
@@ -49,3 +44,4 @@ install(
   FILES ${GENERATED_FILES}
   DESTINATION "${CMAKE_INSTALL_EXAMPLESDIR}/helloworld/generated"
   COMPONENT dev)
+

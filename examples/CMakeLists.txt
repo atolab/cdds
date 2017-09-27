@@ -6,7 +6,9 @@ add_subdirectory(throughput)
 
 # Examples HTML documentation
 set(EXAMPLES_HTML_ARCHIVE "${CMAKE_PROJECT_NAME}ExamplesHTML.tar.gz")
-set(EXAMPLES_HTML_URI "http://jenkins.prismtech.com:8080/job/CHAM-406_TMP/lastSuccessfulBuild/artifact/${EXAMPLES_HTML_ARCHIVE}")
+set(EXAMPLES_HTML_URI "http://jenkins.prismtech.com:8080 \
+    /job/CHAM-406_TMP/lastSuccessfulBuild/artifact/cham/builds/examples/${EXAMPLES_HTML_ARCHIVE}"
+)
 
 if (BUILD_DOCS)
   find_program(SPHINX_EXECUTABLE NAMES sphinx-build DOC "Sphinx documentation builder")
@@ -47,7 +49,6 @@ if (BUILD_DOCS)
     # Archive the output html files, will become a jenkins artifact for use in other jobs
     # TODO this hardcoded list and archiving should be replaced by ExternalData refs
     set(html_outputs
-        "_sources"
         "_static"
         "search.html"
         "searchindex.js"
@@ -76,13 +77,14 @@ if (BUILD_DOCS)
             "${builder_log}"
             "objects.inv"
             ${html_outputs}
+            "_sources"
             "${EXAMPLES_HTML_ARCHIVE}"
     )
 else()
     # Download example html docs
     message(STATUS "Unable to find sphinx-build executable, downloading examples docs...")
 
-    file(DOWNLOAD "${EXAMPLES_HTML_URI}" "${CMAKE_CURRENT_BINARY_DIR}/Foo${EXAMPLES_HTML_ARCHIVE}"
+    file(DOWNLOAD "${EXAMPLES_HTML_URI}" "${CMAKE_CURRENT_BINARY_DIR}/Downloaded${EXAMPLES_HTML_ARCHIVE}"
         TIMEOUT 10
         STATUS status
     )
@@ -97,7 +99,7 @@ else()
 
     add_custom_target(examples_docs ALL)
     add_custom_command(TARGET examples_docs
-        COMMAND ${CMAKE_COMMAND} -E tar "zxf" "${EXAMPLES_HTML_ARCHIVE}"
+        COMMAND ${CMAKE_COMMAND} -E tar "zxf" "Downloaded${EXAMPLES_HTML_ARCHIVE}"
         VERBATIM
     )
 endif()
@@ -118,5 +120,20 @@ install(
   PATTERN "CMakeLists.export" EXCLUDE
   PATTERN "examples/CMakeLists.txt" EXCLUDE
   REGEX ${platform_exclude} EXCLUDE
+  REGEX "\.rst|\.py" EXCLUDE
+)
+
+# Install example html docs files
+# TODO this should be replaced by install commands that use ExternalData refs (preferably in examples' CMakeLists.txt)
+install(
+  DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/"
+  DESTINATION "${CMAKE_INSTALL_EXAMPLESDIR}"
+  COMPONENT dev
+  FILES_MATCHING
+  PATTERN "CMakeFiles" EXCLUDE
+  PATTERN "cache" EXCLUDE
+  PATTERN "*.html"
+  PATTERN "*.js"
+  PATTERN "_static/*"
 )
 
