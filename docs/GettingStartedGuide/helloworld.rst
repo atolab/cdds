@@ -102,19 +102,17 @@ with the HelloWorld solution that contains three projects.
 Creating the *Hello World!* example executables is as simple as
 selecting the required configuration and building the solution.
 
-:code:`helloworld\vs\directories.props` contains some best
-guesses of where the VortexDDS header files and libraries
-could be placed but it is based on the default installation
-directory structure. Since we're building this example in the
-User Profile directory, the directories in :code:`helloworld\vs\directories.props`
-should be adapted. Typically the following directories should
-configured like
+:code:`helloworld\vs\directories.props` contains the location of where
+the VortexDDS header files and libraries are be placed. These locations
+are based on the default installation directory structure. When VortexDDS
+is installed in a different directory, the following paths in
+:code:`helloworld\vs\directories.props` should be changed, like:
 
 .. code-block:: xml
 
-  <VortexDDS_lib_dir>C:/Program Files/AdLink/DDS/lib</VortexDDS_lib_dir>
-  <VortexDDS_inc_dir>C:/Program Files/AdLink/DDS/include</VortexDDS_inc_dir>
-  <VortexDDS_idlc_dir>C:/Program Files/AdLink/DDS/share/VortexDDS/idlc</VortexDDS_idlc_dir>
+  <VortexDDS_lib_dir>C:/Path/To/VortexDDS/Installation/lib</VortexDDS_lib_dir>
+  <VortexDDS_inc_dir>C:/Path/To/VortexDDS/Installation/include</VortexDDS_inc_dir>
+  <VortexDDS_idlc_dir>C:/Path/To/VortexDDS/Installation/share/VortexDDS/idlc</VortexDDS_idlc_dir>
 
 To run the example, Visual Studio should run both the publisher
 and subscriber simultaneously. It is capable of doing so, but
@@ -290,3 +288,22 @@ in:
 The *Hello World!* example can now be executed,
 like described in :ref:`Test your installation <TestYourInstallation>`,
 using the binaries that were just build. Be sure to use the right directories.
+
+
+*******
+Summary
+*******
+
+We've seen that a VortexDDS application can be build by using a Makefile on Linux
+or a Visual Studio Solutions on Windows. Also CMake can be used to build a VortexDDS
+application. In fact, it is the preferred way of building.
+
+In the end, a predefined way of generating and building the source code should
+be followed when building VortexDDS applications. The figure below shows how a
+typical VortexDDS application is build.
+
+.. image:: ../_static/pictures/BuildSchema.png
+   :scale: 30 %
+   :align: center
+
+Next chapter will provide an overview of all steps mentioned in the figure above.

@@ -15,18 +15,6 @@ The previous chapter focused on building the *Hello World!* example while
 this chapter will focus on the code itself; what has to be done to code
 this small example.
 
-
-************
-Introduction
-************
-
-The process of building a VortexDDS application is shown below.
-The different steps are described in the following subsections.
-
-.. image:: ../_static/pictures/BuildSchema.png
-   :scale: 30 %
-   :align: center
-
 .. _`HelloWorldDataType`:
 
 *********************
