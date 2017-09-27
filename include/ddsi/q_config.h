@@ -23,8 +23,6 @@
 #include "ddsi/ddsi_tran.h"
 #include "ddsi/q_feature_check.h"
 
-#include "dds_builtinTopics.h"
-
 #if defined (__cplusplus)
 extern "C" {
 #endif
@@ -291,7 +289,6 @@ struct config
   uint32_t tp_threads;
   uint32_t tp_max_threads;
 
-  int generate_builtin_topics;
   int advertise_builtin_topic_writers;
 
 #ifdef DDSI_INCLUDE_NETWORK_CHANNELS
@@ -422,11 +419,6 @@ struct ddsi_plugin
   /* IID generator */
 
   uint64_t (*iidgen_fn) (void);
-
-  /* Builtin info. */
-
-  void (*builtin_participant) (DDS_ParticipantBuiltinTopicData *data, nn_wctime_t timestamp);
-  void (*builtin_cmparticipant) (DDS_CMParticipantBuiltinTopicData *data, nn_wctime_t timestamp);
 };
 
 extern struct config OSAPI_EXPORT config;

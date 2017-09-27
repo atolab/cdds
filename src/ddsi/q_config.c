@@ -690,8 +690,6 @@ static const struct cfgelem discovery_peers_cfgelems[] = {
 static const struct cfgelem discovery_cfgelems[] = {
   { LEAF ("DomainId"), 1, "default", ABSOFF (discoveryDomainId), 0, uf_maybe_int32, 0, pf_maybe_int32,
     "<p>This element allows overriding of the DDS Domain Id that is used for DDSI2E.</p>" },
-  { LEAF ("GenerateBuiltinTopics"), 1, "true", ABSOFF (generate_builtin_topics), 0, uf_boolean, 0, pf_boolean,
-    "<p>This element controls whether or not DDSI2E generates built-in topics from its discovery. When disabled, it relies on the durability service.</p>" },
   { LEAF ("AdvertiseBuiltinTopicWriters"), 1, "true", ABSOFF (advertise_builtin_topic_writers), 0, uf_boolean, 0, pf_boolean,
     "<p>This element controls whether or not DDSI2E advertises writers for the built-in topics from its discovery for backwards compatibility with older OpenSplice versions.</p>" },
   { LEAF ("DSGracePeriod"), 1, "30 s", ABSOFF (ds_grace_period), 0, uf_duration_inf, 0, pf_duration,

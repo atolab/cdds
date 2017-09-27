@@ -197,7 +197,7 @@ int spdp_write (struct participant *pp)
       return 0;
   }
 
-  propagate_builtin_topic_participant(&(pp->e), pp->plist, now());
+  propagate_builtin_topic_participant(&(pp->e), pp->plist, now(), true);
 
   TRACE (("spdp_write(%x:%x:%x:%x)\n", PGUID (pp->e.guid)));
 
@@ -1468,9 +1468,7 @@ int sedp_write_cm_participant (struct participant *pp, int alive)
       return 0;
   }
 
-  if (alive) {
-      propagate_builtin_topic_cmparticipant(&(pp->e), pp->plist, now());
-  }
+  propagate_builtin_topic_cmparticipant(&(pp->e), pp->plist, now(), alive);
 
   sedp_wr = get_sedp_writer (pp, NN_ENTITYID_SEDP_BUILTIN_CM_PARTICIPANT_WRITER);
 

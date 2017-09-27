@@ -3,6 +3,7 @@
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
 #include "ddsi/q_config.h"
+#include "ddsi/q_builtin_topic.h"
 #include "kernel/q_osplser.h"
 #include "kernel/dds_init.h"
 #include "kernel/dds_qos.h"
@@ -25,7 +26,7 @@ static dds_return_t
 dds__delete_builtin_participant(
         dds_entity *e);
 
-static dds_entity_t
+static _Must_inspect_result_ dds_entity_t
 dds__create_builtin_participant(
         void);
 
@@ -95,7 +96,7 @@ dds__delete_builtin_participant(
  * be exposed to the outside world. This is what we want, because these builtin
  * writers are only applicable to local user readers.
  */
-static dds_entity_t
+static _Must_inspect_result_ dds_entity_t
 dds__create_builtin_participant(
         void)
 {
@@ -359,15 +360,24 @@ dds__get_builtin_writer(
 }
 
 static dds_return_t
-dds__builtin_write(_In_ dds_entity_t topic, void * data, _In_ dds_time_t timestamp)
+dds__builtin_write(
+        _In_ dds_entity_t topic,
+        _In_ const void *data,
+        _In_ dds_time_t timestamp,
+        _In_ int alive)
 {
     dds_return_t ret = DDS_RETCODE_OK;
     if (os_atomic_inc32_nv(&m_call_count) > 1) {
         dds_entity_t wr;
         wr = dds__get_builtin_writer(topic);
         if (wr > 0) {
-            BUILTIN_INFO("---write by: %x on %ld (%lx)\n", wr, timestamp, timestamp);
-            ret = dds_write_ts(wr, data, timestamp);
+            if (alive) {
+                BUILTIN_INFO("---write by: %x on %ld (%lx)\n", wr, timestamp, timestamp);
+                ret = dds_write_ts(wr, data, timestamp);
+            } else {
+                BUILTIN_INFO("---dispose by: %x on %ld (%lx)\n", wr, timestamp, timestamp);
+                ret = dds_dispose_ts(wr, data, timestamp);
+            }
         } else {
             ret = wr;
         }
@@ -403,27 +413,29 @@ dds__builtin_fini(
 
 
 void
-dds__builtin_participant_cb(
-        DDS_ParticipantBuiltinTopicData *data,
-        nn_wctime_t timestamp)
+forward_builtin_participant(
+        _In_ DDS_ParticipantBuiltinTopicData *data,
+        _In_ nn_wctime_t timestamp,
+        _In_ int alive)
 {
     dds_return_t ret;
     DDS_REPORT_STACK();
     BUILTIN_INFO("---dds__builtin_participant_cb(%x.%x.%x)\n", data->key[0], data->key[1], data->key[2]);
     BUILTIN_INFO("---userdata: %s\n", data->user_data.value._buffer);
-    ret = dds__builtin_write(DDS_BUILTIN_TOPIC_DCPSPARTICIPANT, data, timestamp.v);
+    ret = dds__builtin_write(DDS_BUILTIN_TOPIC_DCPSPARTICIPANT, data, timestamp.v, alive);
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
 }
 
 void
-dds__builtin_cmparticipant_cb(
-        DDS_CMParticipantBuiltinTopicData *data,
-        nn_wctime_t timestamp)
+forward_builtin_cmparticipant(
+        _In_ DDS_CMParticipantBuiltinTopicData *data,
+        _In_ nn_wctime_t timestamp,
+        _In_ int alive)
 {
     dds_return_t ret;
     DDS_REPORT_STACK();
     BUILTIN_INFO("---dds__builtin_cmparticipant_cb(%x.%x.%x)\n", data->key[0], data->key[1], data->key[2]);
     BUILTIN_INFO("---product: %s\n", data->product.value);
-    ret = dds__builtin_write(DDS_BUILTIN_TOPIC_CMPARTICIPANT, data, timestamp.v);
+    ret = dds__builtin_write(DDS_BUILTIN_TOPIC_CMPARTICIPANT, data, timestamp.v, alive);
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
 }

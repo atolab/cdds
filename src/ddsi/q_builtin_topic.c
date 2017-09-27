@@ -159,27 +159,25 @@ void
 propagate_builtin_topic_participant(
         _In_ const struct entity_common *participant,
         _In_ const nn_plist_t *plist,
-        _In_ nn_wctime_t timestamp)
+        _In_ nn_wctime_t timestamp,
+        _In_ int alive)
 {
-  if (ddsi_plugin.builtin_participant) {
-    DDS_ParticipantBuiltinTopicData data;
-    generate_key(&(data.key), &(participant->guid.prefix));
-    generate_user_data(&(data.user_data), &(plist->qos));
-    (ddsi_plugin.builtin_participant)(&data, timestamp);
-  }
+  DDS_ParticipantBuiltinTopicData data;
+  generate_key(&(data.key), &(participant->guid.prefix));
+  generate_user_data(&(data.user_data), &(plist->qos));
+  forward_builtin_participant(&data, timestamp, alive);
 }
 
 void
 propagate_builtin_topic_cmparticipant(
         _In_ const struct entity_common *participant,
         _In_ const nn_plist_t *plist,
-        _In_ nn_wctime_t timestamp)
+        _In_ nn_wctime_t timestamp,
+        _In_ int alive)
 {
-  if (ddsi_plugin.builtin_cmparticipant) {
-    DDS_CMParticipantBuiltinTopicData data;
-    generate_key(&(data.key), &(participant->guid.prefix));
-    generate_product_data(&(data.product), participant, plist);
-    (ddsi_plugin.builtin_cmparticipant)(&data, timestamp);
-    os_free(data.product.value);
-  }
+  DDS_CMParticipantBuiltinTopicData data;
+  generate_key(&(data.key), &(participant->guid.prefix));
+  generate_product_data(&(data.product), participant, plist);
+  forward_builtin_cmparticipant(&data, timestamp, alive);
+  os_free(data.product.value);
 }

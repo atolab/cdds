@@ -71,11 +71,6 @@ void ddsi_impl_init (void)
   /* Register iid generator */
 
   ddsi_plugin.iidgen_fn = dds_iid_gen;
-
-  /* Builtin info. */
-
-  ddsi_plugin.builtin_participant = dds__builtin_participant_cb;
-  ddsi_plugin.builtin_cmparticipant = dds__builtin_cmparticipant_cb;
 }
 
 dds_return_t
