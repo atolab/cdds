@@ -116,7 +116,8 @@ if (BUILD_DOCS)
         COMMAND ${LATEXMK_EXECUTABLE}
           -interaction=nonstopmode
           -silent
-          -pdf -dvi- -ps- -cd ${builder}/${CMAKE_PROJECT_NAME}.tex
+          -output-directory=${builder}
+          -pdf -dvi- -ps- -cd- ${builder}/${CMAKE_PROJECT_NAME}.tex
         APPEND
         VERBATIM
       )
