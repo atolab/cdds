@@ -191,6 +191,7 @@ dds__create_builtin_writer(
             dds_qset_reliability(qos, DDS_RELIABILITY_RELIABLE, DDS_MSECS(100));
             wr = dds_create_writer(pub, top, qos, NULL);
             dds_qos_delete(qos);
+            dds_delete(top);
         } else {
             wr = top;
         }

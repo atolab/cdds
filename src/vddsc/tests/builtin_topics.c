@@ -387,10 +387,6 @@ Test(vddsc_builtin_topics, create_reader)
                 //dds_delete(s);
             }
         }
-
-        if (builtin_subscriber > 0) {
-            dds_delete(builtin_subscriber);
-        }
     }
 
 #define TEST_FOUND(p, t) do { \
@@ -488,7 +484,7 @@ Test(vddsc_builtin_topics, read_cmparticipant_data, .init = setup, .fini = teard
   par_CHAM_429 = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
   cr_assert_gt(par_CHAM_429, 0, "Failed to create prerequisite par_CHAM_429");
 
-  samples[0] = DDS_ParticipantBuiltinTopicData__alloc();
+  samples[0] = DDS_CMParticipantBuiltinTopicData__alloc();
 
   ret = dds_read(reader, samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
   cr_assert_gt(ret, 0, "Failed to read samples CMParticipant");
@@ -499,7 +495,7 @@ Test(vddsc_builtin_topics, read_cmparticipant_data, .init = setup, .fini = teard
       cr_log_info("CMParticipant.product: %s\n", data->product.value);
   }
 
-  DDS_ParticipantBuiltinTopicData_free(samples[0], DDS_FREE_ALL);
+  DDS_CMParticipantBuiltinTopicData_free(samples[0], DDS_FREE_ALL);
 
   dds_delete(par_CHAM_429);
 }
