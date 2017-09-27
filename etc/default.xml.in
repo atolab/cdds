@@ -1,0 +1,19 @@
+<@CMAKE_PROJECT_NAME@>
+  <Domain>
+    <Id>0</Id>
+  </Domain>
+  <DDSI2E>
+    <General>
+      <NetworkInterfaceAddress>auto</NetworkInterfaceAddress>
+      <AllowMulticast>true</AllowMulticast>
+      <EnableMulticastLoopback>true</EnableMulticastLoopback>
+      <EnableLoopback>true</EnableLoopback>
+    </General>
+    <Compatibility>
+      <StandardsConformance>lax</StandardsConformance>
+    </Compatibility>
+    <Tracing>
+      <Verbosity>warning</Verbosity> <!-- Set to 'finest' for debugging level output -->
+    </Tracing>
+  </DDSI2E>
+</@CMAKE_PROJECT_NAME@>
