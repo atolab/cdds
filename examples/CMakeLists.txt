@@ -6,9 +6,7 @@ add_subdirectory(throughput)
 
 # Examples HTML documentation
 set(EXAMPLES_HTML_ARCHIVE "${CMAKE_PROJECT_NAME}ExamplesHTML.tar.gz")
-set(EXAMPLES_HTML_URI "http://jenkins.prismtech.com:8080 \
-    /job/BuildChameleonLinux64bit/lastSuccessfulBuild/artifact/cham/builds/examples/${EXAMPLES_HTML_ARCHIVE}"
-)
+set(EXAMPLES_HTML_URI "http://jenkins.prismtech.com:8080/job/BuildChameleonLinux64bit/lastSuccessfulBuild/artifact/cham/builds/examples/${EXAMPLES_HTML_ARCHIVE}")
 
 if (BUILD_DOCS)
   find_program(SPHINX_EXECUTABLE NAMES sphinx-build DOC "Sphinx documentation builder")
