@@ -17,7 +17,6 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-<if(dll)>#undef DDS_EXPORT<endif>
 #endif /* _DDSL_<nameupper>_H_ */
 
 >>

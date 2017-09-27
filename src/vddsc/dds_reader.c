@@ -11,6 +11,7 @@
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
 #include "kernel/dds_report.h"
+#include "kernel/dds_builtin.h"
 
 #include <string.h>
 #include "os/os.h"
@@ -446,9 +447,11 @@ dds_create_reader(
     dds_entity_unlock(sub);
 
     if (dds_entity_kind(topic) == DDS_KIND_INTERNAL) {
-        /* Delete temporary builtin-topic proxy */
+        /* If topic is builtin, then the topic entity is local and should
+         * be deleted because the application won't. */
         dds_delete(t);
     }
+
     DDS_REPORT_FLUSH(reader <= 0);
     return reader;
 
