@@ -40,6 +40,7 @@ add_subdirectory(idlc)
 add_subdirectory(src)
 add_subdirectory(examples)
 add_subdirectory(tools)
+add_subdirectory(scripts)
 
 add_subdirectory(docs)
 
