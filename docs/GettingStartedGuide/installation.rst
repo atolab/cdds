@@ -49,7 +49,7 @@ On Ubuntu and other debian-derived platforms, the product can be installed using
 Post install steps
 ~~~~~~~~~~~~~~~~~~
 
-The installation package installs examples system directories.
+The installation package installs examples in system directories.
 In order to have a better user experience when building the VortexDDS
 examples, it is advised to copy the examples to a user-defined location.
 This is to be able to build the examples natively and experiment with
@@ -61,6 +61,8 @@ script, located in /usr/bin.
 Create an user writable directory where the examples should go. Navigate
 to that directory and execute the script. Answer 'yes' to the questions
 and the examples will be installed in the current location.
+
+Type :code:`vdds_install_examples -h` for more information.
 
 
 Red Hat
