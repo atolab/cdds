@@ -69,99 +69,99 @@
     <!-- Hello World - files -->
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldData.idl" Directory="CM_DP_dev.usr.VortexDDS.examples.helloworld" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldData.idl" Value="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldData.idl" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldData.idl" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/helloworld/HelloWorldData.idl" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldData.idl" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/helloworld/HelloWorldData.idl" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldData.sln" Directory="CM_DP_dev.usr.VortexDDS.examples.helloworld" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorld.sln" Value="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorld.sln" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorld.sln" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/helloworld/HelloWorld.sln" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorld.sln" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/helloworld/HelloWorld.sln" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldPublisher.vcxproj" Directory="CM_DP_dev.usr.VortexDDS.examples.helloworld.vs" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldPublisher.vcxproj" Value="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldPublisher.vcxproj" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldPublisher.vcxproj" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/helloworld/vs/HelloWorldPublisher.vcxproj" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldPublisher.vcxproj" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/helloworld/vs/HelloWorldPublisher.vcxproj" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldSubscriber.vcxproj" Directory="CM_DP_dev.usr.VortexDDS.examples.helloworld.vs" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldSubscriber.vcxproj" Value="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldSubscriber.vcxproj" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldSubscriber.vcxproj" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/helloworld/vs/HelloWorldSubscriber.vcxproj" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldSubscriber.vcxproj" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/helloworld/vs/HelloWorldSubscriber.vcxproj" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldType.vcxproj" Directory="CM_DP_dev.usr.VortexDDS.examples.helloworld.vs" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldType.vcxproj" Value="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldType.vcxproj" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldType.vcxproj" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/helloworld/vs/HelloWorldType.vcxproj" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldType.vcxproj" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/helloworld/vs/HelloWorldType.vcxproj" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.helloworld.directories.props" Directory="CM_DP_dev.usr.VortexDDS.examples.helloworld.vs" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.helloworld.directories.props" Value="CM_CP_dev.usr.VortexDDS.examples.helloworld.directories.props" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.directories.props" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/helloworld/vs/directories.props" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.directories.props" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/helloworld/vs/directories.props" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldData.c" Directory="CM_DP_dev.usr.VortexDDS.examples.helloworld.generated" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldData.c" Value="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldData.c" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldData.c" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/helloworld/generated/HelloWorldData.c" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldData.c" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/helloworld/generated/HelloWorldData.c" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldData.h" Directory="CM_DP_dev.usr.VortexDDS.examples.helloworld.generated" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldData.h" Value="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldData.h" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldData.h" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/helloworld/generated/HelloWorldData.h" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.HelloWorldData.h" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/helloworld/generated/HelloWorldData.h" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.helloworld.publisher.c" Directory="CM_DP_dev.usr.VortexDDS.examples.helloworld" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.helloworld.publisher.c" Value="CM_CP_dev.usr.VortexDDS.examples.helloworld.publisher.c" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.publisher.c" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/helloworld/publisher.c" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.publisher.c" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/helloworld/publisher.c" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.helloworld.subscriber.c" Directory="CM_DP_dev.usr.VortexDDS.examples.helloworld" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.helloworld.subscriber.c" Value="CM_CP_dev.usr.VortexDDS.examples.helloworld.subscriber.c" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.subscriber.c" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/helloworld/subscriber.c" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.subscriber.c" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/helloworld/subscriber.c" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.helloworld.CMakeLists.txt" Directory="CM_DP_dev.usr.VortexDDS.examples.helloworld" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.helloworld.CMakeLists.txt" Value="CM_CP_dev.usr.VortexDDS.examples.helloworld.CMakeLists.txt" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.CMakeLists.txt" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/helloworld/CMakeLists.txt" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.helloworld.CMakeLists.txt" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/helloworld/CMakeLists.txt" KeyPath="no"/>
     </Component>
 
     <!-- RoundTrip - files -->
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.roundtrip.CMakeLists.txt" Directory="CM_DP_dev.usr.VortexDDS.examples.roundtrip" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.roundtrip.CMakeLists.txt" Value="CM_CP_dev.usr.VortexDDS.examples.roundtrip.CMakeLists.txt" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.roundtrip.CMakeLists.txt" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/roundtrip/CMakeLists.txt" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.roundtrip.CMakeLists.txt" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/roundtrip/CMakeLists.txt" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.roundtrip.RoundTrip.idl" Directory="CM_DP_dev.usr.VortexDDS.examples.roundtrip" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.roundtrip.RoundTrip.idl" Value="CM_CP_dev.usr.VortexDDS.examples.roundtrip.RoundTrip.idl" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.roundtrip.RoundTrip.idl" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/roundtrip/RoundTrip.idl" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.roundtrip.RoundTrip.idl" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/roundtrip/RoundTrip.idl" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.roundtrip.ping.c" Directory="CM_DP_dev.usr.VortexDDS.examples.roundtrip" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.roundtrip.ping.c" Value="CM_CP_dev.usr.VortexDDS.examples.roundtrip.ping.c" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.roundtrip.ping.c" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/roundtrip/ping.c" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.roundtrip.ping.c" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/roundtrip/ping.c" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.roundtrip.pong.c" Directory="CM_DP_dev.usr.VortexDDS.examples.roundtrip" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.roundtrip.pong.c" Value="CM_CP_dev.usr.VortexDDS.examples.roundtrip.pong.c" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.roundtrip.pong.c" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/roundtrip/pong.c" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.roundtrip.pong.c" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/roundtrip/pong.c" KeyPath="no"/>
     </Component>
 
     <!-- Throughput - files -->
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.throughput.CMakeLists.txt" Directory="CM_DP_dev.usr.VortexDDS.examples.throughput" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.throughput.CMakeLists.txt" Value="CM_CP_dev.usr.VortexDDS.examples.throughput.CMakeLists.txt" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.throughput.CMakeLists.txt" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/throughput/CMakeLists.txt" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.throughput.CMakeLists.txt" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/throughput/CMakeLists.txt" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.throughput.Throughput.idl" Directory="CM_DP_dev.usr.VortexDDS.examples.throughput" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.throughput.Throughput.idl" Value="CM_CP_dev.usr.VortexDDS.examples.throughput.Throughput.idl" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.throughput.Throughput.idl" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/throughput/Throughput.idl" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.throughput.Throughput.idl" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/throughput/Throughput.idl" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.throughput.publisher.c" Directory="CM_DP_dev.usr.VortexDDS.examples.throughput" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.throughput.publisher.c" Value="CM_CP_dev.usr.VortexDDS.examples.throughput.publisher.c" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.throughput.publisher.c" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/throughput/publisher.c" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.throughput.publisher.c" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/throughput/publisher.c" KeyPath="no"/>
     </Component>
 
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.throughput.subscriber.c" Directory="CM_DP_dev.usr.VortexDDS.examples.throughput" Guid="">
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.examples.throughput.subscriber.c" Value="CM_CP_dev.usr.VortexDDS.examples.throughput.subscriber.c" KeyPath="yes" />
-      <File Id="CM_FP_usr.usr.VortexDDS.examples.throughput.subscriber.c" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/throughput/subscriber.c" KeyPath="no"/>
+      <File Id="CM_FP_usr.usr.VortexDDS.examples.throughput.subscriber.c" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/throughput/subscriber.c" KeyPath="no"/>
     </Component>
 
     <!-- Add the location of the vddsc.dll to the system path -->
