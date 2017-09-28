@@ -1,8 +1,8 @@
+/* TODO: add copyright header? */
+
 /** @file
  *
  * @brief DDS C Error API
- *
- * @todo add copyright header?
  *
  * This header file defines the public API of error values and convenience
  * functions in the VortexDDS C language binding.
@@ -49,8 +49,8 @@ extern "C" {
 #define DDS_RETCODE_INCONSISTENT_POLICY  8 /**< When a policy is used with inconsistent values */
 #define DDS_RETCODE_ALREADY_DELETED      9 /**< When an attempt is made to delete something more than once */
 #define DDS_RETCODE_TIMEOUT              10 /**< When a timeout has occurred */
-#define DDS_RETCODE_NO_DATA              11 /*< When expected data is not provided */
-#define DDS_RETCODE_ILLEGAL_OPERATION    12 /*< When a function is called when it should not be */
+#define DDS_RETCODE_NO_DATA              11 /**< When expected data is not provided */
+#define DDS_RETCODE_ILLEGAL_OPERATION    12 /**< When a function is called when it should not be */
 /** @}*/
 
 /* For backwards compatability */
@@ -82,66 +82,56 @@ extern "C" {
 #define dds_err_file_id(e) (((-(e)) & DDS_ERR_FILE_ID_MASK) >> 22)
 
 /**
- * Description : This operation takes the error value and outputs a string
- * corresponding to it.
+ * @brief Takes the error value and outputs a string corresponding to it.
  *
- * Arguments :
- *   -# err Error value to be converted to a string
- *   -# Returns a string corresponding to the error value
+ * @param[in]  err  Error value to be converted to a string
+ * @returns  String corresponding to the error value
  */
 DDS_EXPORT const char * dds_err_str (dds_return_t err);
 
 /**
- * Description : This operation takes the error number, error type and filename and line number and formats it to
+ * @brief Takes the error number, error type and filename and line number and formats it to
  * a string which can be used for debugging.
  *
- * Arguments :
- *   -# err Error number
- *   -# flags that indicates Fail, Exit or Report
- *   -# where file and line number
+ * @param[in]  err    Error value
+ * @param[in]  flags  Indicates Fail, Exit or Report
+ * @param[in]  where  File and line number
+ * @returns  true - True
+ * @returns  false - False
  */
 
 DDS_EXPORT bool dds_err_check (dds_return_t err, unsigned flags, const char * where);
 
-/**
- * Macro that defines dds_err_check function
- */
+/** Macro that defines dds_err_check function */
 #define DDS_ERR_CHECK(e, f) (dds_err_check ((e), (f), __FILE__ ":" DDS_INT_TO_STRING(__LINE__)))
 
 /* Failure handling */
 
-/**
- * Failure handler
- */
+/** Failure handler */
 typedef void (*dds_fail_fn) (const char *, const char *);
 
-/**
- * Macro that defines dds_fail function
- */
+/** Macro that defines dds_fail function */
 #define DDS_FAIL(m) (dds_fail (m, __FILE__ ":" DDS_INT_TO_STRING (__LINE__)))
 
 /**
- * Description : Set the failure function
+ * @brief Set the failure function
  *
- * Arguments :
- *   -# fn The pointer to the failure function
+ * @param[in]  fn  Function to invoke on failure
  */
 DDS_EXPORT void dds_fail_set (dds_fail_fn fn);
 
 /**
- * Description : Get the failure function
+ * @brief Get the failure function
  *
- * Arguments :
- *   -# Returns the failure function set
+ * @returns Failure function
  */
 DDS_EXPORT dds_fail_fn dds_fail_get (void);
 
 /**
- * Description : This operation handles failure through an installed failure handler
+ * @brief Handles failure through an installed failure handler
  *
- * Arguments :
- *   -# msg The pointer to the failure message
- *   -# where The pointer to the file and location
+ * @params[in]  msg  String containing failure message
+ * @params[in]  where  String containing file and location
  */
 DDS_EXPORT void dds_fail (const char * msg, const char * where);
 

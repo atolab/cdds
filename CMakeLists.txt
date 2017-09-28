@@ -1,7 +1,14 @@
 cmake_minimum_required(VERSION 3.5)
 # Set module path before defining project so platform files will work.
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
-project(VortexDDS VERSION 0.1.0)
+set(CMAKE_PROJECT_NAME_FULL "Vortex DDS")
+string(REPLACE " " "" PROJECT_NAME "${CMAKE_PROJECT_NAME_FULL}")
+project(${PROJECT_NAME} VERSION 0.1.0)
+
+# Set some convenience variants of the project-name
+string(REPLACE " " "-" CMAKE_PROJECT_NAME_DASHED "${CMAKE_PROJECT_NAME_FULL}")
+string(TOUPPER ${CMAKE_PROJECT_NAME} CMAKE_PROJECT_NAME_CAPS)
+string(TOLOWER ${CMAKE_PROJECT_NAME} CMAKE_PROJECT_NAME_SMALL)
 
 set(CMAKE_C_STANDARD 99)
 if(CMAKE_SYSTEM_NAME STREQUAL "VxWorks")
@@ -28,6 +35,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
+add_subdirectory(etc)
 add_subdirectory(idlc)
 add_subdirectory(src)
 add_subdirectory(examples)

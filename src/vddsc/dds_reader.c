@@ -11,6 +11,7 @@
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
 #include "kernel/dds_report.h"
+#include "kernel/dds_builtin.h"
 
 #include <string.h>
 #include "os/os.h"
@@ -148,6 +149,7 @@ dds_reader_status_cb(
     dds__retcode_t rc;
     void *metrics = NULL;
 
+    DDS_REPORT_STACK();
 
     /* When data is NULL, it means that the DDSI reader is deleted. */
     if (data == NULL) {
@@ -159,6 +161,7 @@ dds_reader_status_cb(
 
     if (dds_reader_lock(((dds_entity*)entity)->m_hdl, &rd) != DDS_RETCODE_OK) {
         /* There's a deletion or closing going on. */
+        DDS_REPORT_FLUSH(false);
         return;
     }
     assert(rd == entity);
@@ -310,10 +313,15 @@ dds_reader_status_cb(
         dds_entity_status_set(entity, data->status);
         /* Notify possible interested observers. */
         dds_entity_status_signal(entity);
+        rc = DDS_RETCODE_OK;
+    } else if (rc == DDS_RETCODE_ALREADY_DELETED) {
+        /* An entity up the hierarchy is being deleted. */
+        rc = DDS_RETCODE_OK;
     } else {
-        /* Something went wrong up the hierarchy.
-         * Likely, a parent is in the process of being deleted. */
+        /* Something went wrong up the hierarchy. */
     }
+
+    DDS_REPORT_FLUSH(rc != DDS_RETCODE_OK);
 }
 
 
@@ -446,9 +454,11 @@ dds_create_reader(
     dds_entity_unlock(sub);
 
     if (dds_entity_kind(topic) == DDS_KIND_INTERNAL) {
-        /* Delete temporary builtin-topic proxy */
+        /* If topic is builtin, then the topic entity is local and should
+         * be deleted because the application won't. */
         dds_delete(t);
     }
+
     DDS_REPORT_FLUSH(reader <= 0);
     return reader;
 

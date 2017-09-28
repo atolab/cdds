@@ -7,6 +7,7 @@
 #include "kernel/dds_iid.h"
 #include "kernel/dds_domain.h"
 #include "kernel/dds_err.h"
+#include "kernel/dds_builtin.h"
 #include "ddsi/ddsi_ser.h"
 #include "os/os.h"
 #include "ddsi/q_config.h"
@@ -99,7 +100,7 @@ dds_init(void)
       return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize internal handle server");
   }
 
-  uri = os_getenv (VDDSC_PROJECTNAME_CAPS"_URI");
+  uri = os_getenv (VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
   dds_cfgst = config_init (uri);
   if (dds_cfgst == NULL)
   {
@@ -199,6 +200,8 @@ dds_init_impl(
   (void) snprintf (gv.default_plist_pp.entity_name, len, "%s<%u>", dds_init_exe ? dds_init_exe : "", gv.default_plist_pp.process_id);
   gv.default_plist_pp.present |= PP_ENTITY_NAME;
 
+  dds__builtin_init();
+
   return DDS_RETCODE_OK;
 
 fail:
@@ -210,6 +213,8 @@ extern void dds_fini (void)
 {
   if (os_atomic_dec32_nv (&dds_global.m_init_count) == 0)
   {
+    dds__builtin_fini();
+
     ut_handleserver_fini();
     if (ddsi_plugin.init_fn)
     {

@@ -1,8 +1,8 @@
+/* TODO: add copyright header? */
+
 /** @file
  *
  * @brief DDS C QoS API
- *
- * @todo add copyright header?
  *
  * This header file defines the public API of QoS and Policies in the
  * VortexDDS C language binding.

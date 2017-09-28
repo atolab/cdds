@@ -161,7 +161,12 @@ CUnit_Test(os_iter, object_indices)
     int32_t *num;
 
     iter = iter_new();
+
+    /* index out of range on purpose */
+    OS_WARNING_MSVC_OFF(28020);
     num = os_iterObject(iter, OS_ITER_LENGTH);
+    OS_WARNING_MSVC_ON(28020);
+
     CU_ASSERT_PTR_NULL(num);
     num = os_iterObject(iter, os_iterLength(iter));
     CU_ASSERT_PTR_NULL(num);
@@ -188,7 +193,11 @@ CUnit_Test(os_iter, take_indices)
     int32_t *num, cnt = 0;
 
     iter = iter_new();
+
+    /* index out of range on purpose */
+    OS_WARNING_MSVC_OFF(28020);
     num = os_iterTake(iter, OS_ITER_LENGTH);
+    OS_WARNING_MSVC_ON(28020);
     CU_ASSERT_PTR_NULL(num);
     num = os_iterTake(iter, os_iterLength(iter));
     CU_ASSERT_PTR_NULL(num);

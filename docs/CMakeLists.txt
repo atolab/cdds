@@ -44,7 +44,7 @@ if (BUILD_DOCS)
   # The XML will serve as input for sphinx' breathe plugin
   if (TARGET ${CMAKE_PROJECT_NAME}::vddsc)
     # Process doxygen configuration file, for vddsc
-    set(doxy_conf_project "${CMAKE_PROJECT_NAME} C API Documentation")
+    set(doxy_conf_project "${CMAKE_PROJECT_NAME_FULL} C API Documentation")
     set(doxy_conf_outputdir "vddsc_api")
     set(doxy_conf_input "${CMAKE_SOURCE_DIR}/include/dds.h ${CMAKE_SOURCE_DIR}/include/dds")
     configure_file(Doxyfile.in Doxyfile @ONLY)
@@ -64,10 +64,11 @@ if (BUILD_DOCS)
   endif()
 
   # Process sphinx configuration file
-  set(sph_conf_author "PrismTech")
-  string(TIMESTAMP sph_conf_copyright "%Y, PrismTech")
+  set(sph_conf_author "ADLINK")
+  string(TIMESTAMP sph_conf_copyright "%Y, ADLINK")
   set(sph_conf_version "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
   set(sph_conf_release "${PROJECT_VERSION}")
+  set(sph_logo "${CMAKE_SOURCE_DIR}/docs/_static/pictures/VORTEX_LOGO.png")
   configure_file(conf.py.in conf.py @ONLY)
 
   # Define a list of output formats (-b option for sphinx-build)
@@ -95,15 +96,18 @@ if (BUILD_DOCS)
       VERBATIM
     )
 
-    add_custom_command(
-      OUTPUT ${docs_builder_output}
-      COMMAND ${CMAKE_COMMAND}
-        -E tar "zcf"
-        "${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz"
-        "${CMAKE_CURRENT_BINARY_DIR}/html"
-      APPEND
-      VERBATIM
-    )
+    # FIXME: This is definitely in the wrong location
+    if(builder STREQUAL html)
+      add_custom_command(
+        OUTPUT ${docs_builder_output}
+        COMMAND ${CMAKE_COMMAND}
+          -E tar "zcf"
+          "${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz"
+          "${CMAKE_CURRENT_BINARY_DIR}/html"
+        APPEND
+        VERBATIM
+      )
+    endif()
 
     # Create a pdf from the latex builder output, by appending a latexmk command
     # TODO look into rinohtype as an alternative (don't bother with rst2pdf, it's no good)
@@ -114,7 +118,7 @@ if (BUILD_DOCS)
           -interaction=nonstopmode
           -silent
           -output-directory=${builder}
-          -pdf -dvi- -ps- -cd ${builder}/${CMAKE_PROJECT_NAME}.tex
+          -pdf -dvi- -ps- -cd- ${builder}/${CMAKE_PROJECT_NAME}.tex
         APPEND
         VERBATIM
       )

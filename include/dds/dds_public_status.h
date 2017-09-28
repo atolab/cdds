@@ -1,8 +1,8 @@
+/* TODO: add copyright header? */
+
 /** @file
  *
  * @brief DDS C Communication Status API
- *
- * @todo add copyright header?
  *
  * This header file defines the public API of the Communication Status in the
  * VortexDDS C language binding.

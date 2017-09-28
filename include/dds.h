@@ -35,12 +35,12 @@ extern "C" {
 #endif
 
 /**
- * Description : Returns the default DDS domain id. This can be configured
- * in xml or set as an evironment variable (VORTEX_DOMAIN).
+ * @brief Returns the default domain identifier.
  *
- * Arguments :
- *   -# None
- *   -# Returns the default domain id
+ * The default domain identifier can be configured in the configuration file
+ * or be set through an evironment variable (VORTEX_DOMAIN).
+ *
+ * @returns Default domain identifier
  */
 DDS_EXPORT dds_domainid_t dds_domain_default (void);
 
@@ -65,101 +65,94 @@ extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_CMDATAREADER;
 
 /** @name Communication Status definitions
   @{**/
+/** Another topic exists with the same name but with different characteristics. */
 #define DDS_INCONSISTENT_TOPIC_STATUS          1u
+/** The deadline that the writer has committed through its deadline QoS policy was not respected for a specific instance. */
 #define DDS_OFFERED_DEADLINE_MISSED_STATUS     2u
+/** The deadline that the reader was expecting through its deadline QoS policy was not respected for a specific instance. */
 #define DDS_REQUESTED_DEADLINE_MISSED_STATUS   4u
+/** A QoS policy setting was incompatible with what was requested. */
 #define DDS_OFFERED_INCOMPATIBLE_QOS_STATUS    32u
+/** A QoS policy setting was incompatible with what is offered. */
 #define DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS  64u
+/** A sample has been lost (never received). */
 #define DDS_SAMPLE_LOST_STATUS                 128u
+/** A (received) sample has been rejected. */
 #define DDS_SAMPLE_REJECTED_STATUS             256u
+/** New information is available. */
 #define DDS_DATA_ON_READERS_STATUS             512u
+/** New information is available. */
 #define DDS_DATA_AVAILABLE_STATUS              1024u
+/** The liveliness that the DDS_DataWriter has committed through its liveliness QoS policy was not respected; thus readers will consider the writer as no longer "alive". */
 #define DDS_LIVELINESS_LOST_STATUS             2048u
+/** The liveliness of one or more writers, that were writing instances read through the readers has changed. Some writers have become "alive" or "not alive". */
 #define DDS_LIVELINESS_CHANGED_STATUS          4096u
+/** The writer has found a reader that matches the topic and has a compatible QoS. */
 #define DDS_PUBLICATION_MATCHED_STATUS         8192u
+/** The reader has found a writer that matches the topic and has a compatible QoS. */
 #define DDS_SUBSCRIPTION_MATCHED_STATUS        16384u
 /** @}*/
 
-/**
- * dds_sample_state_t
- * \brief defines the state for a data value
- * -# DDS_SST_READ - DataReader has already accessed the sample by read
- * -# DDS_SST_NOT_READ - DataReader has not accessed that sample before
- */
+/** Read state for a data value */
 typedef enum dds_sample_state
 {
-  DDS_SST_READ = DDS_READ_SAMPLE_STATE,
-  DDS_SST_NOT_READ = DDS_NOT_READ_SAMPLE_STATE
+  DDS_SST_READ = DDS_READ_SAMPLE_STATE, /**<DataReader has already accessed the sample by read */
+  DDS_SST_NOT_READ = DDS_NOT_READ_SAMPLE_STATE /**<DataReader has not accessed the sample before */
 }
 dds_sample_state_t;
 
-/**
- * dds_view_state_t
- * \brief defines the view state of an instance relative to the samples
- * -# DDS_VST_NEW - DataReader is accessing the sample for the first time when the
- *                  instance is alive
- * -# DDS_VST_OLD - DataReader has accessed the sample before
- */
+/** View state of an instance relative to the samples */
 typedef enum dds_view_state
 {
+  /** DataReader is accessing the sample for the first time when the instance is alive */
   DDS_VST_NEW = DDS_NEW_VIEW_STATE,
+  /** DataReader accessed the sample before */
   DDS_VST_OLD = DDS_NOT_NEW_VIEW_STATE
 }
 dds_view_state_t;
 
-/**
- * dds_instance_state_t
- * \brief defines the state of the instance
- * -# DDS_IST_ALIVE - Samples received for the instance from the live data writers
- * -# DDS_IST_NOT_ALIVE_DISPOSED - Instance was explicitly disposed by the data writer
- * -# DDS_IST_NOT_ALIVE_NO_WRITERS - Instance has been declared as not alive by data reader
- *                                   as there are no live data writers writing that instance
- */
+/** Defines the state of the instance */
 typedef enum dds_instance_state
 {
+  /** Samples received for the instance from the live data writers */
   DDS_IST_ALIVE = DDS_ALIVE_INSTANCE_STATE,
+  /** Instance was explicitly disposed by the data writer */
   DDS_IST_NOT_ALIVE_DISPOSED = DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE,
+  /** Instance has been declared as not alive by data reader as there are no live data writers writing that instance */
   DDS_IST_NOT_ALIVE_NO_WRITERS = DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE
 }
 dds_instance_state_t;
 
-/**
- * Structure dds_sample_info_t - contains information about the associated data value
- * -# sample_state - \ref dds_sample_state_t
- * -# view_state - \ref dds_view_state_t
- * -# instance_state - \ref dds_instance_state_t
- * -# valid_data - indicates whether there is a data associated with a sample
- *    - true, indicates the data is valid
- *    - false, indicates the data is invalid, no data to read
- * -# source_timestamp - timestamp of a data instance when it is written
- * -# instance_handle - handle to the data instance
- * -# publication_handle - handle to the publisher
- * -# disposed_generation_count - count of instance state change from
- *    NOT_ALIVE_DISPOSED to ALIVE
- * -# no_writers_generation_count - count of instance state change from
- *    NOT_ALIVE_NO_WRITERS to ALIVE
- * -# sample_rank - indicates the number of samples of the same instance
- *    that follow the current one in the collection
- * -# generation_rank - difference in generations between the sample and most recent sample
- *    of the same instance that appears in the returned collection
- * -# absolute_generation_rank - difference in generations between the sample and most recent sample
- *    of the same instance when read/take was called
- * -# reception_timestamp - timestamp of a data instance when it is added to a read queue
- */
+/** Contains information about the associated data value */
 typedef struct dds_sample_info
 {
+  /** @ref dds_sample_state_t */
   dds_sample_state_t sample_state;
+  /** @ref dds_view_state_t */
   dds_view_state_t view_state;
+  /** @ref dds_instance_state_t */
   dds_instance_state_t instance_state;
+  /** Indicates whether there is a data associated with a sample
+ *    - true, indicates the data is valid
+ *    - false, indicates the data is invalid, no data to read */
   bool valid_data;
+  /** timestamp of a data instance when it is written */
   dds_time_t source_timestamp;
+  /** handle to the data instance */
   dds_instance_handle_t instance_handle;
+  /** handle to the publisher */
   dds_instance_handle_t publication_handle;
+  /** count of instance state change from NOT_ALIVE_DISPOSED to ALIVE */
   uint32_t disposed_generation_count;
+  /** count of instance state change from NOT_ALIVE_NO_WRITERS to ALIVE */
   uint32_t no_writers_generation_count;
+  /** indicates the number of samples of the same instance that follow the current one in the collection */
   uint32_t sample_rank;
+  /** difference in generations between the sample and most recent sample of the same instance that appears in the returned collection */
   uint32_t generation_rank;
+  /** difference in generations between the sample and most recent sample of the same instance when read/take was called */
   uint32_t absolute_generation_rank;
+  /** timestamp of a data instance when it is added to a read queue */
   dds_time_t reception_timestamp; /* NOTE: VLite extension */
 }
 dds_sample_info_t;
@@ -384,7 +377,15 @@ dds_get_mask(
         _In_ dds_entity_t condition,
         _Out_ uint32_t   *mask);
 
-/* TODO: document. */
+/**
+ * @brief Returns the instance handle that represents the entity.
+ *
+ * @param[in]   entity  Entity of which to get the instance handle
+ * @param[out]  ihdl
+ *
+ * @returns  0 - Success
+ * @returns <0 - Failure
+ */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_get_instance_handle(
@@ -945,17 +946,19 @@ dds_lookup_participant(
         _In_        size_t size);
 
 /**
- * Description : Creates a new DDS topic. The type name for the topic
- * is taken from the generated descriptor. Topic matching is done on a
- * combination of topic name and type name.
+ * @brief Creates a new topic.
  *
- * Arguments :
- *   -# pp The participant on which the topic is being created
- *   -# descriptor The IDL generated topic descriptor
- *   -# name The name of the created topic
- *   -# qos The QoS to set on the new topic (can be NULL)
- *   -# listener Any listener functions associated with the new topic (can be NULL)
- *   -# Returns a status, 0 on success or non-zero value to indicate an error
+ * The type name for the topic is taken from the generated descriptor. Topic
+ * matching is done on a combination of topic name and type name.
+ *
+ * @param[in]  participant  Participant on which to create the topic
+ * @param[in]  descriptor   An IDL generated topic descriptor
+ * @param[in]  name         Name of the topic
+ * @param[in]  qos          QoS to set on the new topic (can be NULL)
+ * @param[in]  listener     Any listener functions associated with the new topic (can be NULL)
+ *
+ * @returns >=0 - Success
+ * @returns  <0 - Failure
  */
 _Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
 DDS_EXPORT dds_entity_t
@@ -967,13 +970,15 @@ dds_create_topic(
         _In_opt_ const dds_listener_t *listener);
 
 /**
- * Description : Finds a named topic. Returns NULL if does not exist.
+ * @brief Finds a named topic.
+ *
  * The returned topic should be released with dds_delete.
  *
- * Arguments :
- *   -# pp The participant on which to find the topic
- *   -# name The name of the topic to find
- *   -# Returns a topic, NULL if could not be found or error
+ * @param[in]  participant  The participant on which to find the topic
+ * @param[in]  name         The name of the topic to find
+ *
+ * @returns  >0 - Success (A valid topic handle)
+ * @returns <=0 - Failure (use dds_err_nr() to get error value).
  */
 _Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
 DDS_EXPORT dds_entity_t
@@ -982,11 +987,13 @@ dds_find_topic(
         _In_z_ const char *name);
 
 /**
- * Description : Returns a topic name.
+ * @brief Returns the name of a given topic.
  *
- * Arguments :
- *   -# topic The topic
- *   -# Returns The topic name or NULL to indicate an error
+ * @param[in]  topic  The topic
+ * @param[out] name   Buffer to write the topic name to
+ * @param[in]  size   Number of bytes available in the buffer
+ *
+ * @returns The topic name or NULL to indicate an error
  */
 /* TODO: do we need a convenience version as well that allocates and add a _s suffix to this one? */
 /* TODO: Check annotation. Could be _Out_writes_to_(size, return + 1) as well. */
@@ -999,11 +1006,13 @@ dds_get_name(
 
 
 /**
- * Description : Returns a topic type name.
+ * @brief Returns the type name of a given topic.
  *
- * Arguments :
- *   -# topic The topic
- *   -# Returns The topic type name or NULL to indicate an error
+ * @param[in]  topic  The topic
+ * @param[out] name   Buffer to write the topic type name to
+ * @param[in]  size   Number of bytes available in the buffer
+ *
+ * @returns The topic type name or NULL to indicate an error
  */
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 DDS_EXPORT dds_return_t
@@ -1012,14 +1021,14 @@ dds_get_type_name(
         _Out_writes_z_(size) char *name,
         _In_ size_t size);
 
+/** Topic filter function */
 typedef bool (*dds_topic_filter_fn) (const void * sample);
 
 /**
- * Description : Sets a filter on a topic.
+ * @brief Sets a filter on a topic.
  *
- * Arguments :
- *   -# topic The topic on which the content filter is set
- *   -# filter The filter function used to filter topic samples
+ * @param[in]  topic   The topic on which the content filter is set
+ * @param[in]  filter  The filter function used to filter topic samples
  */
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 DDS_EXPORT void
@@ -1028,11 +1037,11 @@ dds_topic_set_filter(
         dds_topic_filter_fn filter);
 
 /**
- * Description : Gets a topic's filter.
+ * @brief Gets the filter for a topic.
  *
- * Arguments :
- *   -# topic The topic from which to get the filter
- *   -# Returns The topic filter
+ * @param[in]  topic  The topic from which to get the filter
+ *
+ * @returns The topic filter
  */
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 DDS_EXPORT dds_topic_filter_fn
@@ -1194,15 +1203,17 @@ dds_create_reader(
         _In_opt_ const dds_listener_t *listener);
 
 /**
- * Description : The operation blocks the calling thread until either all "historical" data is
+ * @brief Wait until reader receives all historic data
+ *
+ * The operation blocks the calling thread until either all "historical" data is
  * received, or else the duration specified by the max_wait parameter elapses, whichever happens
  * first. A return value of 0 indicates that all the "historical" data was received; a return
  * value of TIMEOUT indicates that max_wait elapsed before all the data was received.
  *
- * Arguments :
- *   -# reader The reader on which to wait for historical data
- *   -# max_wait How long to wait for historical data before time out
- *   -# Returns a status, 0 on success, TIMEOUT on timeout or a  negative value to indicate error
+ * @param[in]  reader    The reader on which to wait for historical data
+ * @param[in]  max_wait  How long to wait for historical data before time out
+ *
+ * @returns a status, 0 on success, TIMEOUT on timeout or a  negative value to indicate error
  */
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT int
@@ -1533,8 +1544,7 @@ dds_dispose(
        _In_ const void *data);
 
 /**
- * Description : This operation disposes an instance with a specific timestamp,
- *               identified by the data sample.
+ * @brief This operation disposes an instance with a specific timestamp, identified by the data sample.
  *
  * This operation performs the same functions as dds_dispose except that
  * the application provides the value for the source_timestamp that is made
@@ -1615,8 +1625,7 @@ dds_dispose_ih(
        _In_ dds_instance_handle_t handle);
 
 /**
- * Description : This operation disposes an instance with a specific timestamp,
- *               identified by the instance handle.
+ * @brief This operation disposes an instance with a specific timestamp, identified by the instance handle.
  *
  * This operation performs the same functions as dds_dispose_ih except that
  * the application provides the value for the source_timestamp that is made
@@ -1659,7 +1668,7 @@ dds_dispose_ih_ts(
  * @param[in]  writer The writer entity
  * @param[in]  data Value to be written
  *
- * @returns - dds_return_t indicating success or failure
+ * @returns dds_return_t indicating success or failure
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1680,7 +1689,7 @@ dds_write_flush(
  * @param[in]  cdr CDR serialized value to be written
  * @param[in]  size Size (in bytes) of CDR encoded data to be written
  *
- * @returns - A dds_return_t indicating success or failure
+ * @returns A dds_return_t indicating success or failure
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT int
@@ -2940,13 +2949,12 @@ dds_return_loan(
 */
 
 /**
- * Description : This operation takes a sample and returns an instance handle to be used for
- * subsequent operations.
+ * @brief This operation takes a sample and returns an instance handle to be used for subsequent operations.
  *
- * Arguments :
- * -# e Reader or Writer entity
- * -# data sample with a key fields set
- * -# Returns instance handle or DDS_HANDLE_NIL if instance could not be found from key
+ * @param[in]  entity Reader or Writer entity
+ * @param[in]  data   Sample with a key fields set
+ *
+ * @returns instance handle or DDS_HANDLE_NIL if instance could not be found from key
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT dds_instance_handle_t
@@ -2955,15 +2963,15 @@ dds_instance_lookup(
         const void *data);
 
 /**
- * Description : This operation takes an instance handle and return a key-value corresponding to it.
+ * @brief This operation takes an instance handle and return a key-value corresponding to it.
  *
- * Arguments :
- * -# e Reader or Writer entity
- * -# inst Instance handle
- * -# data pointer to an instance, to which the key ID corresponding to the instance handle will be
+ * @param[in]  entity Reader or writer entity
+ * @param[in]  inst   Instance handle
+ * @param[out] data   pointer to an instance, to which the key ID corresponding to the instance handle will be
  *    returned, the sample in the instance should be ignored.
- * -# Returns 0 on successful operation, or a non-zero value to indicate an error if the instance
- *    passed doesn't have a key-value
+ *
+ * @returns  0 - Success
+ * @returns !0 - Failure to indicate an error if the instance passed doesn't have a key-value
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT int
