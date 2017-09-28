@@ -4,7 +4,7 @@ find_package(Maven 3.0 REQUIRED)
 file(GLOB_RECURSE LAUNCHERUI_JAVA_SOURCES LIST_DIRECTORIES true launcherui/oLauncher/*.java)
 file(GLOB_RECURSE LAUNCHER_JAVA_SOURCES LIST_DIRECTORIES true launcherui/chamLauncher/*.java)
 
-set(LAUNCHER_JAR "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/chamlauncher.jar")
+set(LAUNCHER_JAR "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/${CMAKE_PROJECT_NAME_SMALL}launcher.jar")
 mark_as_advanced(LAUNCHER_JAR)
 
 set(basedir "${CMAKE_CURRENT_SOURCE_DIR}/launcherui")
@@ -24,13 +24,13 @@ add_custom_command(
 add_custom_target(launcher ALL DEPENDS "${LAUNCHER_JAR}")
 
 install(
-  DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/app"
+  DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/${CMAKE_PROJECT_NAME_SMALL}launcher/app"
   DESTINATION "${CMAKE_INSTALL_BINDIR}"
   USE_SOURCE_PERMISSIONS
   COMPONENT dev)
 
 install(
-  DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/runtime"
+  DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/${CMAKE_PROJECT_NAME_SMALL}launcher/runtime"
   DESTINATION "${CMAKE_INSTALL_BINDIR}"
   USE_SOURCE_PERMISSIONS
   COMPONENT dev)
@@ -45,14 +45,14 @@ install(
 # Refactor this to use install TARGET instead, which might take care of the platform specific file name
 if (WIN32)
 install(
-  PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/chamlauncher.exe"
-           "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/packager.dll"
+  PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/${CMAKE_PROJECT_NAME_SMALL}launcher/${CMAKE_PROJECT_NAME_SMALL}launcher.exe"
+           "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/${CMAKE_PROJECT_NAME_SMALL}launcher/packager.dll"
   DESTINATION "${CMAKE_INSTALL_BINDIR}"
   COMPONENT dev)
 else()
 install(
-  PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/chamlauncher"
-           "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/chamlauncher/libpackager.so"
+  PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/${CMAKE_PROJECT_NAME_SMALL}launcher/${CMAKE_PROJECT_NAME_SMALL}launcher"
+           "${CMAKE_CURRENT_BINARY_DIR}/launcherui/chamLauncher/target/jfx/native/${CMAKE_PROJECT_NAME_SMALL}launcher/libpackager.so"
   DESTINATION "${CMAKE_INSTALL_BINDIR}"
   COMPONENT dev)
 endif()
