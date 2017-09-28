@@ -289,7 +289,6 @@ struct config
   uint32_t tp_threads;
   uint32_t tp_max_threads;
 
-  int generate_builtin_topics;
   int advertise_builtin_topic_writers;
 
 #ifdef DDSI_INCLUDE_NETWORK_CHANNELS
@@ -420,7 +419,6 @@ struct ddsi_plugin
   /* IID generator */
 
   uint64_t (*iidgen_fn) (void);
-
 };
 
 extern struct config OSAPI_EXPORT config;

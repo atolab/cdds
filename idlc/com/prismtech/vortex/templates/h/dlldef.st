@@ -1,7 +1,7 @@
 dlldef (name, dllname, dllfile) ::= <<
 
+<if(dllfile)>#include "<dllfile>"<else>
 #undef DDS_EXPORT
-<if(dllfile)>#include "<dllfile>"<endif>
 #ifdef _WIN32_DLL_
   #ifdef _<name>_DLL_
     #define DDS_EXPORT extern __declspec (dllexport)
@@ -15,4 +15,5 @@ dlldef (name, dllname, dllfile) ::= <<
 #else
   #define DDS_EXPORT extern
 #endif
+<endif>
 >>

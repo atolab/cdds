@@ -37,6 +37,10 @@ function(IDLC_GENERATE _target)
     message(FATAL_ERROR "idlc_generate called without any idl files")
   endif()
 
+  if (NOT IDLC_ARGS)
+     set(IDLC_ARGS)
+  endif()
+
   set(_dir "${CMAKE_CURRENT_BINARY_DIR}")
   set(_sources)
   set(_headers)
@@ -52,7 +56,7 @@ function(IDLC_GENERATE _target)
     add_custom_command(
       OUTPUT   "${_source}" "${_header}"
       COMMAND  "${IDLC_DIR}/${IDLC}"
-      ARGS     "${ABS_FIL}"
+      ARGS     ${IDLC_ARGS} ${ABS_FIL}
       DEPENDS  "${ABS_FIL}" idlc
       COMMENT  "Running idlc on ${FIL}"
       VERBATIM)

@@ -43,10 +43,11 @@ set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 set(CPACK_PACKAGE_VERSION_TWEAK ${PROJECT_VERSION_TWEAK})
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 
+set(VENDOR_INSTALL_ROOT "ADLINK")
 set(CPACK_PACKAGE_NAME ${CMAKE_PROJECT_NAME})
-set(CPACK_PACKAGE_VENDOR "PrismTech")
-set(CPACK_PACKAGE_CONTACT "info@prismtech.com")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Leading OMG DDS implementation")
+set(CPACK_PACKAGE_VENDOR "ADLINK Technology Inc.")
+set(CPACK_PACKAGE_CONTACT "info@adlinktech.com")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Leading OMG DDS implementation from ADLINK Technology")
 set(CPACK_PACKAGE_ICON "${PACKAGING_MODULE_DIR}/vortex.ico")
 set(CPACK_RESOURCE_FILE_LICENSE "${PACKAGING_MODULE_DIR}/license.txt")
 
@@ -63,10 +64,10 @@ set(CPACK_RESOURCE_FILE_LICENSE "${PACKAGING_MODULE_DIR}/license.txt")
 #       does help to clearify which settings are required for a platform.
 
 set(CPACK_COMPONENTS_ALL dev lib)
-set(CPACK_COMPONENT_LIB_DISPLAY_NAME "Vortex DDS library")
-set(CPACK_COMPONENT_LIB_DESCRIPTION  "Library used to run programs with Vortex DDS")
-set(CPACK_COMPONENT_DEV_DISPLAY_NAME "Vortex DDS development")
-set(CPACK_COMPONENT_DEV_DESCRIPTION  "Development files for use with Vortex DDS")
+set(CPACK_COMPONENT_LIB_DISPLAY_NAME "${CMAKE_PROJECT_NAME_FULL} library")
+set(CPACK_COMPONENT_LIB_DESCRIPTION  "Library used to run programs with ${CMAKE_PROJECT_NAME_FULL}")
+set(CPACK_COMPONENT_DEV_DISPLAY_NAME "${CMAKE_PROJECT_NAME_FULL} development")
+set(CPACK_COMPONENT_DEV_DESCRIPTION  "Development files for use with ${CMAKE_PROJECT_NAME_FULL}")
 
 if(WIN32 AND NOT UNIX)
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -78,25 +79,29 @@ if(WIN32 AND NOT UNIX)
 
   set(CPACK_GENERATOR "WIX;ZIP;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
 
-  set(CPACK_PACKAGE_FILE_NAME "VortexDDS-${CPACK_PACKAGE_VERSION}-${__arch}")
-  set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_VENDOR}/DDS")
+  set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION}-${__arch}")
+  set(CPACK_PACKAGE_INSTALL_DIRECTORY "${VENDOR_INSTALL_ROOT}/${CMAKE_PROJECT_NAME_FULL}")
 
   set(CPACK_WIX_COMPONENT_INSTALL ON)
-  set(CPACK_WIX_ROOT_FEATURE_TITLE "Vortex DDS")
+  set(CPACK_WIX_ROOT_FEATURE_TITLE "${CMAKE_PROJECT_NAME_FULL}")
   set(CPACK_WIX_PRODUCT_ICON "${PACKAGING_MODULE_DIR}/vortex.ico")
   # Bitmap (.bmp) of size 493x58px
   set(CPACK_WIX_UI_BANNER "${PACKAGING_MODULE_DIR}/banner.bmp")
   # Bitmap (.bmp) of size 493x312px
   set(CPACK_WIX_UI_DIALOG "${PACKAGING_MODULE_DIR}/dialog.bmp")
-  set(CPACK_WIX_PROGRAM_MENU_FOLDER "${CPACK_PACKAGE_NAME}")
+  set(CPACK_WIX_PROGRAM_MENU_FOLDER "${CPACK_PACKAGE_NAME_FULL}")
   set(CPACK_WIX_PATCH_FILE "${PACKAGING_MODULE_DIR}/examples.xml")
-  set(CPACK_WIX_PROPERTY_ARPHELPLINK "http://www.prismtech.com/support")
-  set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "http://www.prismtech.com/")
-  set(CPACK_WIX_PROPERTY_ARPURLUPDATEINFO "http://www.prismtech.com/vortex/software-downloads")
+  set(CPACK_WIX_PROPERTY_ARPHELPLINK "http://www.adlinktech.com/support")
+  set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "http://www.adlinktech.com/")
+  set(CPACK_WIX_PROPERTY_ARPURLUPDATEINFO "http://www.adlinktech.com/")
+
   # A constant GUID allows installers to replace existing installations that use the same GUID.
   set(CPACK_WIX_UPGRADE_GUID "1351F59A-972B-4624-A7F1-439381BFA41D")
+
   include(InstallRequiredSystemLibraries)
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+  # CMake prior to v3.6 messes up the name of the packages. >= v3.6 understands CPACK_RPM/DEBIAN_<component>_FILE_NAME
+  cmake_minimum_required(VERSION 3.6)
   if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "Install path prefix prepended on to install directories." FORCE)
   endif()
@@ -117,9 +122,9 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
     set(CPACK_RPM_COMPONENT_INSTALL ON)
     # FIXME: The package file name must be updated to include the distribution.
     #        See Fedora and Red Hat packaging guidelines for details.
-    set(CPACK_RPM_LIB_PACKAGE_NAME "vortex-dds")
+    set(CPACK_RPM_LIB_PACKAGE_NAME "${CMAKE_PROJECT_NAME_DASHED}")
     set(CPACK_RPM_LIB_FILE_NAME "${CPACK_RPM_LIB_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${__arch}.rpm")
-    set(CPACK_RPM_DEV_PACKAGE_NAME "vortex-dds-devel")
+    set(CPACK_RPM_DEV_PACKAGE_NAME "${CPACK_RPM_LIB_PACKAGE_NAME}-devel")
     set(CPACK_RPM_DEV_FILE_NAME "${CPACK_RPM_DEV_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${__arch}.rpm")
     set(CPACK_RPM_DEV_PACKAGE_REQUIRES "${CPACK_RPM_LIB_PACKAGE_NAME} = ${CPACK_PACKAGE_VERSION}")
   elseif(EXISTS "/etc/debian_version")
@@ -132,11 +137,11 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
 
     set(CPACK_GENERATOR "DEB;TGZ;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
 
-    set(CPACK_DEBIAN_LIB_PACKAGE_NAME "vortex-dds")
+    string(TOLOWER "${CMAKE_PROJECT_NAME_DASHED}" CPACK_DEBIAN_LIB_PACKAGE_NAME)
     set(CPACK_DEBIAN_LIB_FILE_NAME "${CPACK_DEBIAN_LIB_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${__arch}.deb")
     set(CPACK_DEBIAN_DEV_PACKAGE_DEPENDS "${CPACK_DEBIAN_LIB_PACKAGE_NAME} (= ${CPACK_PACKAGE_VERSION})")
-    set(CPACK_DEBIAN_DEV_PACKAGE_NAME "vortex-dds-dev")
-    set(CPACK_DEBIAN_DEV_FILE_NAME "${CPACK_DEBIAN_DEV_PACKAGE_NAME}-dev_${CPACK_PACKAGE_VERSION}_${__arch}.deb")
+    set(CPACK_DEBIAN_DEV_PACKAGE_NAME "${CPACK_DEBIAN_LIB_PACKAGE_NAME}-dev")
+    set(CPACK_DEBIAN_DEV_FILE_NAME "${CPACK_DEBIAN_DEV_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${__arch}.deb")
   else()
     # Generic tgz package
     set(CPACK_GENERATOR "TGZ;${CPACK_GENERATOR}" CACHE STRING "List of package generators")
