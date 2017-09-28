@@ -155,7 +155,7 @@ The installation provides a simple prebuilt :ref:`Hello World! <HelloWorld>` app
 can be run in order to test your installation. The *Hello World!* application consists of two
 executables: a so called HelloworldPublisher and a HelloworldSubscriber, typically located in
 :code:`/usr/share/VortexDDS/examples/helloworld/bin` on Linux and in
-:code:`C:\Program Files\AdLink\DDS\share\VortexDDS\examples\helloworld\bin` on Windows.
+:code:`C:\Program Files\ADLINK\Vortex DDS\share\VortexDDS\examples\helloworld\bin` on Windows.
 
 To run the example application, please open two console windows and navigate to the appropriate
 directory in both console windows. Run the HelloworldSubscriber in one of the console windows by the

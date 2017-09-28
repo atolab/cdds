@@ -199,7 +199,7 @@ look in the default locations for the code:`VortexDDS` package.
     environment variable, called :code:`"CMAKE_PREFIX_PATH"`
     should be created. The value of :code:`CMAKE_PREFIX_PATH`
     should contain the location of :code:`VortexDDSConfig.cmake`
-    (typically :code:`C:\Program Files\AdLink\DDS\share\VortexDDS`).
+    (typically :code:`C:\Program Files\ADLINK\Vortex DDS\share\VortexDDS`).
 
 .. _`IdlcGenerate`:
 

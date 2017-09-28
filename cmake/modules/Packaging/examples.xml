@@ -7,7 +7,7 @@
 
     <DirectoryRef Id="TARGETDIR">
       <Directory Id="PersonalFolder">
-        <Directory Id="VORTEXUSERDIR" Name="VortexDDS">
+        <Directory Id="VORTEXUSERDIR" Name="Vortex DDS">
           <Directory Id="CM_DP_dev.usr.VortexDDS.examples" Name="examples">
               <Directory Id="CM_DP_dev.usr.VortexDDS.examples.helloworld" Name="helloworld">
                   <Directory Id="CM_DP_dev.usr.VortexDDS.examples.helloworld.vs" Name="vs"/>
@@ -177,7 +177,7 @@
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Start the Vortex DDS Launcher" />
     <!-- TODO : Launcher should be started -->
-    <Property Id="WixShellExecTarget" Value="C:/Program Files/AdLink/DDS/share/VortexDDS/examples/helloworld/bin/HelloWorldSubscriber.exe" />
+    <Property Id="WixShellExecTarget" Value="C:/Program Files/ADLINK/Vortex DDS/share/VortexDDS/examples/helloworld/bin/HelloWorldSubscriber.exe" />
     <CustomAction Id="CM_CA_dev.user.VortexDDS.Launcher.Launch" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
 
     <UI>
