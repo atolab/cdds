@@ -40,8 +40,8 @@ On Ubuntu and other debian-derived platforms, the product can be installed using
 
 ::
 
-    sudo dpkg -i VortexDDS-<version>-Linux-lib.deb
-    sudo dpkg -i VortexDDS-<version>-Linux-dev.deb
+    sudo dpkg -i vortex-dds_<version>_<architecture>.deb
+    sudo dpkg -i vortex-dds-dev_<version>_<architecture>.deb
 
 
 .. _`CopyLinuxExamplesToUserFriendlyLocation`:
