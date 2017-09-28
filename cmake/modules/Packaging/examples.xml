@@ -22,6 +22,7 @@
 
     <Feature Id="UserWritableExampleFeature" Display="expand" Absent="disallow"  ConfigurableDirectory="VORTEXUSERDIR" Title="Vortex DDS Examples" Description="Example code to getting started with DDS development." Level="1">
       <Feature Id="CM_C_usr" Title="Vortex DDS Development Examples" Description="Example Development files for use with Vortex DDS. Typically installed in the users 'Document' directory.">
+        <ComponentRef Id="CM_CP_dev.usr.VortexDDS.Launcher.ApplicationShortcut" />
         <ComponentRef Id="CM_CP_dev.usr.VortexDDS.examples.environment" />
         <!-- helloworld -->
         <ComponentRef Id="CM_CP_dev.usr.VortexDDS.examples.remove" />
@@ -163,6 +164,7 @@
       <File Id="CM_FP_usr.usr.VortexDDS.examples.throughput.subscriber.c" Source="E:/develop/cham/build-ms/_CPack_Packages/win64/WIX/VortexDDS-0.1.0-win64/dev/share/VortexDDS/examples/throughput/subscriber.c" KeyPath="no"/>
     </Component>
 
+    <!-- Add the location of the vddsc.dll to the system path -->
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.environment" Directory="VORTEXUSERDIR" Guid="">
       <!-- CreateFolder and RegistryValue are needed to keep Wix happy -->
       <CreateFolder Directory="VORTEXUSERDIR"/>
@@ -170,5 +172,41 @@
       <Environment Action="set" Id="PATH" Name="PATH" Part="last" Permanent="yes" System="yes" Value="[INSTALL_ROOT]bin"/>
     </Component>
 
+    <!-- Offer the user the ability the start the launcher -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="After clicking Finish, the Vortex DDS Launcher will start (if indicated below). The Vortex DDS Laucher will help to get started with Vortex DDS." />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Start the Vortex DDS Launcher" />
+    <!-- TODO : Launcher should be started -->
+    <Property Id="WixShellExecTarget" Value="C:/Program Files/AdLink/DDS/share/VortexDDS/examples/helloworld/bin/HelloWorldSubscriber.exe" />
+    <CustomAction Id="CM_CA_dev.user.VortexDDS.Launcher.Launch" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+
+    <UI>
+        <UIRef Id="$(var.CPACK_WIX_UI_REF)" />
+        <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="CM_CA_dev.user.VortexDDS.Launcher.Launch">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+    </UI>
+
+    <!-- Create start-menu -->
+    <DirectoryRef Id="TARGETDIR">
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="VortexDDS"/>
+      </Directory>
+    </DirectoryRef>
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="CM_CP_dev.usr.VortexDDS.Launcher.ApplicationShortcut" Guid="C21831A3-FBCE-44D0-A098-A1F21FD4846F">
+        <!-- TODO : Change WorkingDirectory to location of launcher -->
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="VortexDDS Launcher"
+                  Directory="ApplicationProgramsFolder"
+                  Description="My Application Description"
+                  WorkingDirectory="CM_DP_dev.usr.VortexDDS.examples.roundtrip"
+                  Target="[WixShellExecTarget]"
+                  Icon="ShortcutIcon"
+                  IconIndex="0">
+          <Icon Id="ShortcutIcon" SourceFile="$(var.CPACK_WIX_PRODUCT_ICON)" />
+        </Shortcut>
+        <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\AdLink" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
   </CPackWiXFragment>
 </CPackWiXPatch>
