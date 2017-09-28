@@ -8,17 +8,7 @@ Welcome to VortexDDS's documentation!
    :caption: Contents
 
    GettingStartedGuide/index
-
-.. raw:: latex
-
-    \newpage
-
-Doxygen Generated Output
-========================
-
-.. doxygenindex::
-   :project: vddsc_api
-
+   vddsc
 
 Indices and tables
 ==================

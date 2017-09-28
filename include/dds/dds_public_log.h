@@ -1,9 +1,9 @@
+/* TODO: add copyright header?
+   TODO: do we really need to expose this as an API? */
+
 /** @file
  *
  * @brief DDS C Logging API
- *
- * @todo add copyright header?
- * @todo do we really need to expose this as an API?
  *
  * This header file defines the public API for logging in the
  * VortexDDS C language binding.
