@@ -19,8 +19,8 @@ if (BUILD_DOCS)
     message(STATUS "Examples html docs will be built using sphinx (${SPHINX_EXECUTABLE})")
 
     # Process sphinx configuration file
-    set(sph_conf_author "PrismTech")
-    string(TIMESTAMP sph_conf_copyright "%Y, PrismTech")
+    set(sph_conf_author "ADLINK")
+    string(TIMESTAMP sph_conf_copyright "%Y, ADLINK")
     set(sph_conf_version "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
     set(sph_conf_release "${PROJECT_VERSION}")
     configure_file(sphinx-conf.py.in conf.py @ONLY)
