@@ -50,10 +50,7 @@ extern "C" {
 /** QoS structure */
 typedef struct nn_xqos dds_qos_t;
 
-/* Durability QoS: Applies to Topic, DataReader, DataWriter */
-/**
- * \ref DCPS_QoS_Durability
- */
+/** Durability QoS: Applies to Topic, DataReader, DataWriter */
 typedef enum dds_durability_kind
 {
     DDS_DURABILITY_VOLATILE,
@@ -63,10 +60,7 @@ typedef enum dds_durability_kind
 }
 dds_durability_kind_t;
 
-/* History QoS: Applies to Topic, DataReader, DataWriter */
-/**
- * \ref DCPS_QoS_History
- */
+/** History QoS: Applies to Topic, DataReader, DataWriter */
 typedef enum dds_history_kind
 {
     DDS_HISTORY_KEEP_LAST,
@@ -74,10 +68,7 @@ typedef enum dds_history_kind
 }
 dds_history_kind_t;
 
-/* Ownership QoS: Applies to Topic, DataReader, DataWriter */
-/**
- * \ref DCPS_QoS_Ownership
- */
+/** Ownership QoS: Applies to Topic, DataReader, DataWriter */
 typedef enum dds_ownership_kind
 {
     DDS_OWNERSHIP_SHARED,
@@ -85,10 +76,7 @@ typedef enum dds_ownership_kind
 }
 dds_ownership_kind_t;
 
-/* Liveliness QoS: Applies to Topic, DataReader, DataWriter */
-/**
- * \ref DCPS_QoS_Liveliness
- */
+/** Liveliness QoS: Applies to Topic, DataReader, DataWriter */
 typedef enum dds_liveliness_kind
 {
     DDS_LIVELINESS_AUTOMATIC,
@@ -97,10 +85,7 @@ typedef enum dds_liveliness_kind
 }
 dds_liveliness_kind_t;
 
-/* Reliability QoS: Applies to Topic, DataReader, DataWriter */
-/**
- * \ref DCPS_QoS_Reliability
- */
+/** Reliability QoS: Applies to Topic, DataReader, DataWriter */
 typedef enum dds_reliability_kind
 {
     DDS_RELIABILITY_BEST_EFFORT,
@@ -108,10 +93,7 @@ typedef enum dds_reliability_kind
 }
 dds_reliability_kind_t;
 
-/* DestinationOrder QoS: Applies to Topic, DataReader, DataWriter */
-/**
- * \ref DCPS_QoS_DestinationOrder
- */
+/** DestinationOrder QoS: Applies to Topic, DataReader, DataWriter */
 typedef enum dds_destination_order_kind
 {
     DDS_DESTINATIONORDER_BY_RECEPTION_TIMESTAMP,
@@ -119,10 +101,7 @@ typedef enum dds_destination_order_kind
 }
 dds_destination_order_kind_t;
 
-/* History QoS: Applies to Topic, DataReader, DataWriter */
-/**
- * \ref DCPS_QoS_History
- */
+/** History QoS: Applies to Topic, DataReader, DataWriter */
 typedef struct dds_history_qospolicy
 {
     dds_history_kind_t kind;
@@ -130,10 +109,7 @@ typedef struct dds_history_qospolicy
 }
 dds_history_qospolicy_t;
 
-/* ResourceLimits QoS: Applies to Topic, DataReader, DataWriter */
-/**
- * \ref DCPS_QoS_ResourceLimits
- */
+/** ResourceLimits QoS: Applies to Topic, DataReader, DataWriter */
 typedef struct dds_resource_limits_qospolicy
 {
     int32_t max_samples;
@@ -142,10 +118,7 @@ typedef struct dds_resource_limits_qospolicy
 }
 dds_resource_limits_qospolicy_t;
 
-/* Presentation QoS: Applies to Publisher, Subscriber */
-/**
- * \ref DCPS_QoS_Presentation
- */
+/** Presentation QoS: Applies to Publisher, Subscriber */
 typedef enum dds_presentation_access_scope_kind
 {
     DDS_PRESENTATION_INSTANCE,
