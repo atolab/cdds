@@ -100,9 +100,6 @@ if(WIN32 AND NOT UNIX)
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
   # CMake prior to v3.6 messes up the name of the packages. >= v3.6 understands CPACK_RPM/DEBIAN_<component>_FILE_NAME
   cmake_minimum_required(VERSION 3.6)
-  if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "Install path prefix prepended on to install directories." FORCE)
-  endif()
 
   set(CPACK_COMPONENTS_GROUPING "IGNORE")
 
