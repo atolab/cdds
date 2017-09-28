@@ -227,14 +227,6 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>true</default>
       </leafBoolean>
-      <leafBoolean name="GenerateBuiltinTopics" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
-        <comment>
-          <![CDATA[
-<p>This element controls whether or not DDSI2E generates built-in topics from its discovery. When disabled, it relies on the durability service.</p>
-          ]]>
-        </comment>
-        <default>true</default>
-      </leafBoolean>
       <leafInt name="MaxAutoParticipantIndex" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
         <comment>
           <![CDATA[
