@@ -54,8 +54,10 @@ Linux Native Build
 ==================
 
 A Linux native :code:`Makefile` is provided in the
-:code:`examples/helloworld` directory. In a terminal, go to that
-directory and type
+:code:`examples/helloworld` directory within the destination location
+entered in the
+:ref:`vdds_install_examples script <CopyLinuxExamplesToUserFriendlyLocation>`.
+In a terminal, go to that directory and type
 ::
 
     make
