@@ -24,6 +24,7 @@
       <Feature Id="CM_C_usr" Title="Vortex DDS Development Examples" Description="Example Development files for use with Vortex DDS. Typically installed in the users 'Document' directory.">
         <ComponentRef Id="CM_CP_dev.usr.VortexDDS.Launcher.ApplicationShortcut" />
         <ComponentRef Id="CM_CP_dev.usr.VortexDDS.examples.environment" />
+        <ComponentRef Id="CM_CP_dev.usr.VortexDDS.cmake.prefix.path" />
         <!-- helloworld -->
         <ComponentRef Id="CM_CP_dev.usr.VortexDDS.examples.remove" />
         <ComponentRef Id="CM_CP_dev.usr.VortexDDS.examples.helloworld.HelloWorldData.idl" />
@@ -169,7 +170,14 @@
       <!-- CreateFolder and RegistryValue are needed to keep Wix happy -->
       <CreateFolder Directory="VORTEXUSERDIR"/>
       <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.environment" Value="CM_CP_dev.usr.VortexDDS.environment" KeyPath="yes" />
-      <Environment Action="set" Id="PATH" Name="PATH" Part="last" Permanent="yes" System="yes" Value="[INSTALL_ROOT]bin"/>
+      <Environment Action="set" Id="VortexDDSPath" Name="PATH" Part="last" Permanent="yes" System="yes" Value="[INSTALL_ROOT]bin"/>
+    </Component>
+
+    <Component Id="CM_CP_dev.usr.VortexDDS.cmake.prefix.path" Directory="VORTEXUSERDIR" Guid="">
+      <!-- CreateFolder and RegistryValue are needed to keep Wix happy -->
+      <CreateFolder Directory="VORTEXUSERDIR"/>
+      <RegistryValue Type="string" Root="HKCU" Key="Software\$(var.CPACK_PACKAGE_VENDOR)\$(var.CPACK_PACKAGE_NAME)" Name="CM_CP_dev.usr.VortexDDS.cmake.prefix.path" Value="CM_CP_dev.usr.VortexDDS.cmake.prefix.path" KeyPath="yes" />
+      <Environment Action="set" Id="CMakePrefixPath" Name="CMAKE_PREFIX_PATH" Permanent="no" Value="[INSTALL_ROOT]share/VortexDDS"/>
     </Component>
 
     <!-- Offer the user the ability the start the launcher -->
