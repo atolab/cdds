@@ -61,6 +61,14 @@ if (BUILD_DOCS)
 
     # Add vddsc api docs to sphinx' breathe projects
     set(sph_conf_breathe_projs "\"vddsc_api\": \"${doxy_conf_outputdir}/xml\"")
+
+    add_custom_command(
+      TARGET vddsc_docs
+      POST_BUILD
+      WORKING_DIRECTORY "${doxy_conf_outputdir}"
+      COMMAND ${CMAKE_COMMAND}
+        -E tar "zcf" "${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}_C_HTML.tar.gz" "vddsc"
+    )
   endif()
 
   # Process sphinx configuration file
