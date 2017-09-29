@@ -236,8 +236,12 @@ us by typing:
     cmake ../
 
 .. note::
-    It is possible that you have to supply a specific generator for
-    the configuration, like:
+    CMake does a pretty good job at guessing which generator to use, but some
+    environments require that you supply a specific generator. For example, only
+    64-bit libraries are shipped for Windows, but CMake will generate a 32-bit
+    project by default, resulting in linker errors. When generating a
+    Visual Studio project keep in mind to append **Win64** to the generator.
+    The example below shows how to generate a Visual Studio 2015 project.
     ::
 
         cmake -G "Visual Studio 14 2015 Win64" ..
