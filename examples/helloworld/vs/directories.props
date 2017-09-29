@@ -2,9 +2,9 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
-    <VortexDDS_lib_dir>../../../../../lib</VortexDDS_lib_dir>
-    <VortexDDS_inc_dir>../../../../../include</VortexDDS_inc_dir>
-    <VortexDDS_idlc_dir>../../../idlc</VortexDDS_idlc_dir>
+    <VortexDDS_lib_dir>C:/Program Files/ADLINK/Vortex DDS/lib</VortexDDS_lib_dir>
+    <VortexDDS_inc_dir>C:/Program Files/ADLINK/Vortex DDS/include</VortexDDS_inc_dir>
+    <VortexDDS_idlc_dir>C:/Program Files/ADLINK/Vortex DDS/share/VortexDDS/idlc</VortexDDS_idlc_dir>
   </PropertyGroup>
   <PropertyGroup />
   <ItemGroup>
@@ -19,7 +19,7 @@
     </BuildMacro>
   </ItemGroup>
   <PropertyGroup Label="Configuration">
-    <!--> 
+    <!-->
           User macros are not expanded when starting the build applications in VS.
           The path is extended with a possible Vortex DLL location when they are not
           installed in a system default location.

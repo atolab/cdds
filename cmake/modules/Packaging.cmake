@@ -82,17 +82,20 @@ if(WIN32 AND NOT UNIX)
   set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION}-${__arch}")
   set(CPACK_PACKAGE_INSTALL_DIRECTORY "${VENDOR_INSTALL_ROOT}/${CMAKE_PROJECT_NAME_FULL}")
 
+  set(CPACK_WIX_LIGHT_EXTENSIONS "WixUtilExtension")
   set(CPACK_WIX_COMPONENT_INSTALL ON)
   set(CPACK_WIX_ROOT_FEATURE_TITLE "${CMAKE_PROJECT_NAME_FULL}")
   set(CPACK_WIX_PRODUCT_ICON "${PACKAGING_MODULE_DIR}/vortex.ico")
   # Bitmap (.bmp) of size 493x58px
   set(CPACK_WIX_UI_BANNER "${PACKAGING_MODULE_DIR}/banner.bmp")
   # Bitmap (.bmp) of size 493x312px
-  set(CPACK_WIX_UI_DIALOG "${PACKAGING_MODULE_DIR}/dialog.bmp")
+  set(CPACK_WIX_UI_DIALOG "${PACKAGING_MODULE_DIR}/dialog.png")
   set(CPACK_WIX_PROGRAM_MENU_FOLDER "${CPACK_PACKAGE_NAME_FULL}")
+  set(CPACK_WIX_PATCH_FILE "${PACKAGING_MODULE_DIR}/examples.xml")
   set(CPACK_WIX_PROPERTY_ARPHELPLINK "http://www.adlinktech.com/support")
   set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "http://www.adlinktech.com/")
   set(CPACK_WIX_PROPERTY_ARPURLUPDATEINFO "http://www.adlinktech.com/")
+
   # A constant GUID allows installers to replace existing installations that use the same GUID.
   set(CPACK_WIX_UPGRADE_GUID "1351F59A-972B-4624-A7F1-439381BFA41D")
 
