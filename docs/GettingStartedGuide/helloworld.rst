@@ -196,13 +196,6 @@ has found it, every path and dependencies are automatically set.
 After that, an application can use it without fuss. CMake will
 look in the default locations for the code:`VortexDDS` package.
 
-.. note::
-    If CMake cannot locate the :code:`VortexDDS` package, an
-    environment variable, called :code:`"CMAKE_PREFIX_PATH"`
-    should be created. The value of :code:`CMAKE_PREFIX_PATH`
-    should contain the location of :code:`VortexDDSConfig.cmake`
-    (typically :code:`C:\Program Files\ADLINK\Vortex DDS\share\VortexDDS`).
-
 .. _`IdlcGenerate`:
 
 The :code:`VortexDDS` package provides the :code:`vddsc` library

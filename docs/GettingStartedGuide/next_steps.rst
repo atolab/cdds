@@ -9,14 +9,19 @@ What's next?
 ############
 
 Want to know more about VortexDDS? Please consider following a tutorial or
-visit some of the pages listed below.
+visit some of the pages listed below. The Vortex DDS Launcher (provided with
+this installation) is also a good starting point.
+
+:Windows:  The Vortex DDS Launcher can be started from within the Windows Start Menu
+:Linux:  Type 'vortexddslauncher' in a console window
+
 
 *************************
 The OMG DDS Specification
 *************************
 
-AdLink has been an active member of the Object Management Group® (OMG®)
-for over twenty years and is heavily involved in the development of the
+PrismTech (aquired by AdLink) has been an active member of the Object Management
+Group® (OMG®) for over several years and is heavily involved in the development of the
 DDS specification. Please visit the OMG website at http://www.omg.org and
 specifically the
 `DDS Getting Started <http://www.omg.org/gettingstarted/omg_idl.htm>`_
