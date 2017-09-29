@@ -176,8 +176,7 @@
     <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="After clicking Finish, the Vortex DDS Launcher will start (if indicated below). The Vortex DDS Laucher will help to get started with Vortex DDS." />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Start the Vortex DDS Launcher" />
-    <!-- TODO : Launcher should be started -->
-    <Property Id="WixShellExecTarget" Value="C:/Program Files/ADLINK/Vortex DDS/share/VortexDDS/examples/helloworld/bin/HelloWorldSubscriber.exe" />
+    <Property Id="WixShellExecTarget" Value="[INSTALL_ROOT]/bin/vortexddslauncher.exe" />
     <CustomAction Id="CM_CA_dev.user.VortexDDS.Launcher.Launch" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
 
     <UI>
@@ -188,18 +187,16 @@
     <!-- Create start-menu -->
     <DirectoryRef Id="TARGETDIR">
       <Directory Id="ProgramMenuFolder">
-        <Directory Id="ApplicationProgramsFolder" Name="VortexDDS"/>
+        <Directory Id="ApplicationProgramsFolder" Name="Vortex DDS"/>
       </Directory>
     </DirectoryRef>
     <DirectoryRef Id="ApplicationProgramsFolder">
       <Component Id="CM_CP_dev.usr.VortexDDS.Launcher.ApplicationShortcut" Guid="C21831A3-FBCE-44D0-A098-A1F21FD4846F">
-        <!-- TODO : Change WorkingDirectory to location of launcher -->
         <Shortcut Id="ApplicationStartMenuShortcut"
                   Name="VortexDDS Launcher"
                   Directory="ApplicationProgramsFolder"
                   Description="My Application Description"
-                  WorkingDirectory="CM_DP_dev.usr.VortexDDS.examples.roundtrip"
-                  Target="[WixShellExecTarget]"
+                  Target="[INSTALL_ROOT]/bin/vortexddslauncher.exe"
                   Icon="ShortcutIcon"
                   IconIndex="0">
           <Icon Id="ShortcutIcon" SourceFile="$(var.CPACK_WIX_PRODUCT_ICON)" />
