@@ -40,8 +40,8 @@ On Ubuntu and other debian-derived platforms, the product can be installed using
 
 ::
 
-    sudo dpkg -i VortexDDS-<version>-Linux-lib.deb
-    sudo dpkg -i VortexDDS-<version>-Linux-dev.deb
+    sudo dpkg -i vortex-dds_<version>_<architecture>.deb
+    sudo dpkg -i vortex-dds-dev_<version>_<architecture>.deb
 
 
 .. _`CopyLinuxExamplesToUserFriendlyLocation`:
@@ -49,12 +49,20 @@ On Ubuntu and other debian-derived platforms, the product can be installed using
 Post install steps
 ~~~~~~~~~~~~~~~~~~
 
-The installation package installs examples system directories.
+The installation package installs examples in system directories.
 In order to have a better user experience when building the VortexDDS
 examples, it is advised to copy the examples to a user-defined location.
-The installation package provides a script for this.
+This is to be able to build the examples natively and experiment with
+the example source code.
 
-TODO vdds_install_examples in /usr/bin directory.
+For this, the installation package provides the vdds_install_examples
+script, located in /usr/bin.
+
+Create an user writable directory where the examples should go. Navigate
+to that directory and execute the script. Answer 'yes' to the questions
+and the examples will be installed in the current location.
+
+Type :code:`vdds_install_examples -h` for more information.
 
 
 Red Hat

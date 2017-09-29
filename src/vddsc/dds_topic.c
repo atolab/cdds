@@ -88,8 +88,11 @@ dds_topic_status_cb(
     dds__retcode_t rc;
     void *metrics = NULL;
 
+    DDS_REPORT_STACK();
+
     if (dds_topic_lock(((dds_entity*)cb_t)->m_hdl, &topic) != DDS_RETCODE_OK) {
         /* There's a deletion or closing going on. */
+        DDS_REPORT_FLUSH(false);
         return;
     }
     assert(topic == cb_t);
@@ -126,10 +129,15 @@ dds_topic_status_cb(
         dds_entity_status_set((dds_entity*)topic, DDS_INCONSISTENT_TOPIC_STATUS);
         /* Notify possible interested observers. */
         dds_entity_status_signal((dds_entity*)topic);
+        rc = DDS_RETCODE_OK;
+    } else if (rc == DDS_RETCODE_ALREADY_DELETED) {
+        /* An entity up the hierarchy is being deleted. */
+        rc = DDS_RETCODE_OK;
     } else {
-        /* Something went wrong up the hierarchy.
-         * Likely, a parent is in the process of being deleted. */
+        /* Something went wrong up the hierarchy. */
     }
+
+    DDS_REPORT_FLUSH(rc != DDS_RETCODE_OK);
 }
 
 sertopic_t

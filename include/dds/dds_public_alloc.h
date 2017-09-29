@@ -1,9 +1,9 @@
+/* TODO: add copyright header?
+   TODO: do we really need to expose this as an API? */
+
 /** @file
  *
  * @brief DDS C Allocation API
- *
- * @todo add copyright header?
- * @todo do we really need to expose this as an API?
  *
  * This header file defines the public API of allocation convenience functions
  * in the VortexDDS C language binding.

@@ -1,8 +1,8 @@
+/* TODO: add copyright header? */
+
 /** @file
  *
  * @brief DDS C Communication Status API
- *
- * @todo add copyright header?
  *
  * This header file defines the public API of the Communication Status in the
  * VortexDDS C language binding.
@@ -398,17 +398,18 @@ dds_get_sample_rejected_status (
  * @param[in]  reader  The entity to get the status
  * @param[out] status  The pointer to \ref DCPS_Status_SampleLost to get the status
  *
- * @returns  0 - Success
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure
  *
+ * @retval DDS_RETCODE_OK
+ *            Success
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *            An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  One of the given arguments is not valid.
+ *            One of the given arguments is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *            The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *            The entity has already been deleted.
  */
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT dds_return_t
@@ -426,17 +427,18 @@ dds_get_sample_lost_status (
  * @param[in]  reader  The entity to get the status
  * @param[out] status  The pointer to \ref DCPS_Status_RequestedDeadlineMissed to get the status
  *
- * @returns  0 - Success
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure
  *
+ * @retval DDS_RETCODE_OK
+ *            Success
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *            An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  One of the given arguments is not valid.
+ *            One of the given arguments is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *            The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *            The entity has already been deleted.
  */
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT dds_return_t
@@ -454,17 +456,18 @@ dds_get_requested_deadline_missed_status (
  * @param[in]  reader  The entity to get the status
  * @param[out] status  The pointer to \ref DCPS_Status_RequestedIncompatibleQoS to get the status
  *
- * @returns  0 - Success
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure
  *
+ * @retval DDS_RETCODE_OK
+ *            Success
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *            An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  One of the given arguments is not valid.
+ *            One of the given arguments is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *            The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *            The entity has already been deleted.
  */
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT dds_return_t

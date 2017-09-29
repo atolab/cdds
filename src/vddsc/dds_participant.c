@@ -240,19 +240,32 @@ dds_lookup_participant(
         goto err;
     }
 
-    dds_entity* iter;
     if(participants){
         participants[0] = 0;
     }
-    iter = dds_pp_head;
-    while (iter) {
-        if(iter->m_domainid == domain_id) {
-            if((size_t)ret < size) {
-                participants[ret] = iter->m_hdl;
+
+    /* Check if dds is intialized. */
+    if (os_atomic_ld32(&dds_global.m_init_count) > 0) {
+        /* Make sure that dds isn't un-initialized when we're
+         * searching.
+         * Or re-initialize it when un-initialized between the
+         * check and here. */
+        if (dds_init() == DDS_RETCODE_OK) {
+            dds_entity* iter;
+            os_mutexLock (&dds_global.m_mutex);
+            iter = dds_pp_head;
+            while (iter) {
+                if(iter->m_domainid == domain_id) {
+                    if((size_t)ret < size) {
+                        participants[ret] = iter->m_hdl;
+                    }
+                    ret ++;
+                }
+                iter = iter->m_next;
             }
-            ret ++;
+            os_mutexUnlock (&dds_global.m_mutex);
+            dds_fini();
         }
-        iter = iter->m_next;
     }
 
 err:

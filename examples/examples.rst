@@ -23,11 +23,13 @@ be used.
 
 | *Example*
 | **Windows:** ``set VORTEXDDS_URI=file://%USERPROFILE%/VortexDDS/my-config.xml``
-| **Linux:** ``export VORTEXDDS_URI="file:///$HOME/my-config.xml"``
+| **Linux:** ``export VORTEXDDS_URI="file://$HOME/VortexDDS/my-config.xml"``
 
 The VortexDDS installation comes with a set of standard configuration files for common use cases.
 You update existing configuration files or create your own by using the VortexDDS Configurator tool,
 which provides context-sensitive help on available configuration parameters and their applicability.
 
-You can start the VortexDDS Configuration tool from your command-prompt using the command 'x',
-or through the VortexDDS Launcher.
+You can start the VortexDDS Configuration tool through the VortexDDS Launcher, or from your command-prompt
+by entering the tools directory and running ``java -jar vortexddsconf.jar``. The default location of the tools
+directory is ``/usr/share/VortexDDS/tools`` on Linux or ``C:\Program Files\ADLINK\Vortex DDS\share\VortexDDS\tools``
+on Windows.

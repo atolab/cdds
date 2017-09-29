@@ -30,26 +30,26 @@
 </element>
 
   <!-- DDSI2E CONFIGURATION AUTOMAGICALLY GENERATED (see src/services/ddsi2e/extract-configuration-xml.awk) -->
-  <element name="DDSI2E" minOccurrences="0" maxOccurrences="0" version="COMMERCIAL">
+  <element name="DDSI2E" minOccurrences="0" maxOccurrences="0" version="VLITE">
     <comment>
       <![CDATA[
 <p>DDSI2 settings ...</p>
       ]]>
     </comment>
     <value>CDR_CLIENT</value>
-    <element name="Channels" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="Channels" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>This element is used to group a set of channels. The channels are independent data paths through DDSI2E and by using separate threads and setting their priorities appropriately, chanenls can be used to map transport priorities to operating system scheduler priorities, ensuring system-wide end-to-end priority preservation.</p>
         ]]>
       </comment>
-      <element name="Channel" minOccurrences="0" maxOccurrences="42" version="COMMERCIAL">
+      <element name="Channel" minOccurrences="0" maxOccurrences="42" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element defines a channel.</p>
           ]]>
         </comment>
-        <attributeString name="Name" required="true" version="COMMERCIAL">
+        <attributeString name="Name" required="true" version="VLITE">
           <comment>
             <![CDATA[
 <p>This attribute specifies name of this channel. The name should uniquely identify the channel.</p>
@@ -58,7 +58,7 @@
           <maxLength>0</maxLength>
           <default></default>
         </attributeString>
-        <attributeInt name="TransportPriority" required="false" version="COMMERCIAL">
+        <attributeInt name="TransportPriority" required="false" version="VLITE">
           <comment>
             <![CDATA[
 <p>This attribute sets the transport priority threshold for the channel. Each DCPS data writer has a "transport_priority" QoS and this QoS is used to select a channel for use by this writer. The selected channel is the one with the largest threshold not greater than the writer's transport priority, and if no such channel exists, the channel with the lowest threshold.</p>
@@ -66,7 +66,7 @@
           </comment>
           <default>0</default>
         </attributeInt>
-        <leafString name="AuxiliaryBandwidthLimit" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafString name="AuxiliaryBandwidthLimit" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element specifies the maximum transmit rate of auxiliary traffic on this channel (e.g. retransmits, heartbeats, etc). Bandwidth limiting uses a leaky bucket scheme. The default value "inf" means DDSI2E imposes no limitation, the underlying operating system and hardware will likely limit the maimum transmit rate.</p>
@@ -76,7 +76,7 @@
           <maxLength>0</maxLength>
           <default>inf</default>
         </leafString>
-        <leafString name="DataBandwidthLimit" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafString name="DataBandwidthLimit" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element specifies the maximum transmit rate of new samples and directly related data, for this channel. Bandwidth limiting uses a leaky bucket scheme. The default value "inf" means DDSI2E imposes no limitation, the underlying operating system and hardware will likely limit the maimum transmit rate.</p>
@@ -86,7 +86,7 @@
           <maxLength>0</maxLength>
           <default>inf</default>
         </leafString>
-        <leafInt name="DiffServField" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafInt name="DiffServField" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element describes the DiffServ setting the channel will apply to the networking messages. This parameter determines the value of the diffserv field of the IP version 4 packets sent on this channel which allows QoS setting to be applied to the network traffic send on this channel.<br/>
@@ -103,13 +103,13 @@ When an application is run without Administrative priveleges then only the diffs
         </leafInt>
       </element>
     </element>
-    <element name="Compatibility" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="Compatibility" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>The Compatibility elements allows specifying various settings related to compatability with standards and with other DDSI implementations.</p>
         ]]>
       </comment>
-      <leafInt name="AckNackNumbitsEmptySet" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafInt name="AckNackNumbitsEmptySet" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element governs the representation of an acknowledgement message that does not also negatively-acknowledge some samples. If set to 0, the generated acknowledgements have an invalid form and will be reject by the strict and pedantic conformance modes, but several other implementation require this setting for smooth interoperation.</p>
@@ -118,7 +118,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>0</default>
       </leafInt>
-      <leafBoolean name="ArrivalOfDataAssertsPpAndEpLiveliness" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="ArrivalOfDataAssertsPpAndEpLiveliness" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>When set to true, arrival of a message from a peer asserts liveliness of that peer. When set to false, only SPDP and explicit lease renewals have this effect.</p>
@@ -126,7 +126,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>true</default>
       </leafBoolean>
-      <leafBoolean name="AssumeRtiHasPmdEndpoints" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="AssumeRtiHasPmdEndpoints" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This option assumes ParticipantMessageData endpoints required by the liveliness protocol are present in RTI participants even when not properly advertised by the participant discovery protocol.</p>
@@ -134,7 +134,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>false</default>
       </leafBoolean>
-      <leafBoolean name="ExplicitlyPublishQosSetToDefault" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="ExplicitlyPublishQosSetToDefault" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies whether QoS settings set to default values are explicitly published in the discovery protocol. Implementations are to use the default value for QoS settings not published, which allows a significant reduction of the amount of data that needs to be exchanged for the discovery protocol, but this requires all implementations to adhere to the default values specified by the specifications.</p>
@@ -143,7 +143,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>false</default>
       </leafBoolean>
-      <leafBoolean name="ManySocketsMode" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="ManySocketsMode" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This option specifies whether a network socket will be created for each domain participant on a host. The specification seems to assume that each participant has a unique address, and setting this option will ensure this to be the case. This is not the defeault.</p>
@@ -152,7 +152,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>false</default>
       </leafBoolean>
-      <leafBoolean name="RespondToRtiInitZeroAckWithInvalidHeartbeat" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="RespondToRtiInitZeroAckWithInvalidHeartbeat" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element allows a closer mimicking of the behaviour of some other DDSI implementations, albeit at the cost of generating even more invalid messages. Setting it to true ensures a Heartbeat can be sent at any time when a remote node requests one, setting it to false delays it until a valid one can be sent.</p>
@@ -161,7 +161,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>false</default>
       </leafBoolean>
-      <leafEnum name="StandardsConformance" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafEnum name="StandardsConformance" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element sets the level of standards conformance of this instance of the DDSI2E Service. Stricter conformance typically means less interoperability with other implementations. Currently three modes are defined:</p>
@@ -177,13 +177,13 @@ When an application is run without Administrative priveleges then only the diffs
         <default>lax</default>
       </leafEnum>
     </element>
-    <element name="Discovery" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="Discovery" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>The Discovery element allows specifying various parameters related to the discovery of peers.</p>
         ]]>
       </comment>
-      <leafBoolean name="AdvertiseBuiltinTopicWriters" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="AdvertiseBuiltinTopicWriters" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element controls whether or not DDSI2E advertises writers for the built-in topics from its discovery for backwards compatibility with older OpenSplice versions.</p>
@@ -191,7 +191,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>true</default>
       </leafBoolean>
-      <leafString name="DSGracePeriod" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="DSGracePeriod" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This setting controls for how long endpoints discovered via a Cloud discovery service will survive after the discovery service disappeared, allowing reconnect without loss of data when the discovery service restarts (or another instance takes over).</p>
@@ -201,7 +201,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>30 s</default>
       </leafString>
-      <leafString name="DefaultMulticastAddress" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="DefaultMulticastAddress" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the default multicast address for all traffic other than participant discovery packets. It defaults to Discovery/SPDPMulticastAddress.</p>
@@ -210,7 +210,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>auto</default>
       </leafString>
-      <leafString name="DomainId" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="DomainId" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element allows overriding of the DDS Domain Id that is used for DDSI2E.</p>
@@ -219,7 +219,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>default</default>
       </leafString>
-      <leafBoolean name="EnableTopicDiscovery" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="EnableTopicDiscovery" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>Do not use.</p>
@@ -227,15 +227,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>true</default>
       </leafBoolean>
-      <leafBoolean name="GenerateBuiltinTopics" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
-        <comment>
-          <![CDATA[
-<p>This element controls whether or not DDSI2E generates built-in topics from its discovery. When disabled, it relies on the durability service.</p>
-          ]]>
-        </comment>
-        <default>true</default>
-      </leafBoolean>
-      <leafInt name="MaxAutoParticipantIndex" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafInt name="MaxAutoParticipantIndex" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the maximum DDSI participant index selected by this instance of the DDSI2E service if the Discovery/ParticipantIndex is "auto".</p>
@@ -243,7 +235,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>9</default>
       </leafInt>
-      <leafString name="ParticipantIndex" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="ParticipantIndex" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the DDSI participant index used by this instance of the DDSI2E service for discovery purposes. Only one such participant id is used, independent of the number of actual DomainParticipants on the node. It is either:</p>
@@ -255,7 +247,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>none</default>
       </leafString>
-      <element name="Peers" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <element name="Peers" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element statically configures addresses for discovery.</p>
@@ -263,19 +255,19 @@ When an application is run without Administrative priveleges then only the diffs
           ]]>
         </comment>
         <maxLength>0</maxLength>
-        <element name="Group" minOccurrences="0" maxOccurrences="0" version="COMMERCIAL">
+        <element name="Group" minOccurrences="0" maxOccurrences="0" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element statically configures a fault tolerant group of addresses for discovery. Each member of the group is tried in sequence until one succeeds.</p>
             ]]>
           </comment>
-          <element name="Peer" minOccurrences="0" maxOccurrences="0" version="COMMERCIAL">
+          <element name="Peer" minOccurrences="0" maxOccurrences="0" version="VLITE">
             <comment>
               <![CDATA[
 <p>This element statically configures an addresses for discovery.</p>
               ]]>
             </comment>
-            <attributeString name="Address" required="true" version="COMMERCIAL">
+            <attributeString name="Address" required="true" version="VLITE">
               <comment>
                 <![CDATA[
 <p>This element specifies an IP address to which discovery packets must be sent, in addition to the default multicast address (see also General/AllowMulticast). Both a hostnames and a numerical IP address is accepted; the hostname or IP address may be suffixed with :PORT to explicitly set the port to which it must be sent. Multiple Peers may be specified.</p>
@@ -286,13 +278,13 @@ When an application is run without Administrative priveleges then only the diffs
             </attributeString>
           </element>
         </element>
-        <element name="Peer" minOccurrences="0" maxOccurrences="0" version="COMMERCIAL">
+        <element name="Peer" minOccurrences="0" maxOccurrences="0" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element statically configures an addresses for discovery.</p>
             ]]>
           </comment>
-          <attributeString name="Address" required="true" version="COMMERCIAL">
+          <attributeString name="Address" required="true" version="VLITE">
             <comment>
               <![CDATA[
 <p>This element specifies an IP address to which discovery packets must be sent, in addition to the default multicast address (see also General/AllowMulticast). Both a hostnames and a numerical IP address is accepted; the hostname or IP address may be suffixed with :PORT to explicitly set the port to which it must be sent. Multiple Peers may be specified.</p>
@@ -303,13 +295,13 @@ When an application is run without Administrative priveleges then only the diffs
           </attributeString>
         </element>
       </element>
-      <element name="Ports" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <element name="Ports" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>The Ports element allows specifying various parameters related to the port numbers used for discovery. These all have default values specified by the DDSI 2.1 specification and rarely need to be changed.</p>
           ]]>
         </comment>
-        <leafInt name="Base" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafInt name="Base" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element specifies the base port number (refer to the DDSI 2.1 specification, section 9.6.1, constant PB).</p>
@@ -319,7 +311,7 @@ When an application is run without Administrative priveleges then only the diffs
           <maximum>65535</maximum>
           <default>7400</default>
         </leafInt>
-        <leafInt name="DomainGain" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafInt name="DomainGain" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element specifies the domain gain, relating domain ids to sets of port numbers (refer to the DDSI 2.1 specification, section 9.6.1, constant DG).</p>
@@ -327,7 +319,7 @@ When an application is run without Administrative priveleges then only the diffs
           </comment>
           <default>250</default>
         </leafInt>
-        <leafInt name="MulticastDataOffset" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafInt name="MulticastDataOffset" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element specifies the port number for multicast meta traffic (refer to the DDSI 2.1 specification, section 9.6.1, constant d2).</p>
@@ -335,7 +327,7 @@ When an application is run without Administrative priveleges then only the diffs
           </comment>
           <default>1</default>
         </leafInt>
-        <leafInt name="MulticastMetaOffset" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafInt name="MulticastMetaOffset" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element specifies the port number for multicast meta traffic (refer to the DDSI 2.1 specification, section 9.6.1, constant d0).</p>
@@ -343,7 +335,7 @@ When an application is run without Administrative priveleges then only the diffs
           </comment>
           <default>0</default>
         </leafInt>
-        <leafInt name="ParticipantGain" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafInt name="ParticipantGain" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element specifies the participant gain, relating p0, articipant index to sets of port numbers (refer to the DDSI 2.1 specification, section 9.6.1, constant PG).</p>
@@ -351,7 +343,7 @@ When an application is run without Administrative priveleges then only the diffs
           </comment>
           <default>2</default>
         </leafInt>
-        <leafInt name="UnicastDataOffset" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafInt name="UnicastDataOffset" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element specifies the port number for unicast meta traffic (refer to the DDSI 2.1 specification, section 9.6.1, constant d3).</p>
@@ -359,7 +351,7 @@ When an application is run without Administrative priveleges then only the diffs
           </comment>
           <default>11</default>
         </leafInt>
-        <leafInt name="UnicastMetaOffset" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafInt name="UnicastMetaOffset" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element specifies the port number for unicast meta traffic (refer to the DDSI 2.1 specification, section 9.6.1, constant d1).</p>
@@ -368,7 +360,7 @@ When an application is run without Administrative priveleges then only the diffs
           <default>10</default>
         </leafInt>
       </element>
-      <leafString name="SPDPInterval" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="SPDPInterval" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the interval between spontaneous transmissions of participant discovery packets.</p>
@@ -380,7 +372,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>30 s</default>
       </leafString>
-      <leafString name="SPDPMulticastAddress" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="SPDPMulticastAddress" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the multicast address that is used as the destination for the participant discovery packets. In IPv4 mode the default is the (standardised) 239.255.0.1, in IPv6 mode it becomes ff02::ffff:239.255.0.1, which is a non-standardised link-local multicast address.</p>
@@ -390,13 +382,13 @@ When an application is run without Administrative priveleges then only the diffs
         <default>239.255.0.1</default>
       </leafString>
     </element>
-    <element name="General" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="General" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>The General element specifies overall DDSI2E service settings.</p>
         ]]>
       </comment>
-      <leafString name="AllowMulticast" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="AllowMulticast" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element controls whether DDSI2E uses multicasts for data traffic.</p>
@@ -412,7 +404,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>true</default>
       </leafString>
-      <leafBoolean name="DontRoute" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="DontRoute" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element allows setting the SO_DONTROUTE option for outgoing packets, to bypass the local routing tables. This is generally useful only when the routing tables cannot be trusted, which is highly unusual.</p>
@@ -420,7 +412,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>false</default>
       </leafBoolean>
-      <leafBoolean name="EnableLoopback" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="EnableLoopback" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies whether DDSI packets are visible to all DDSI participants in the same process. It must be "true" for intra-process communications, i.e. a reader and writer communicating in the same address space. If enabled and using multicast then EnableMulticastLoopback must also be enabled.</p>
@@ -428,7 +420,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>false</default>
       </leafBoolean>
-      <leafBoolean name="EnableMulticastLoopback" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="EnableMulticastLoopback" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies whether DDSI2E allows IP multicast packets to be visible to all DDSI participants in the same node, including itself. It must be "true" for intra-node multicast communications, but if a node runs only a single DDSI2E service and does not host any other DDSI-capable programs, it should be set to "false" for improved performance.</p>
@@ -436,7 +428,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>true</default>
       </leafBoolean>
-      <leafString name="ExternalNetworkAddress" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="ExternalNetworkAddress" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element allows explicitly overruling the network address DDSI2E advertises in the discovery protocol, which by default is the address of the preferred network interface (General/NetworkInterfaceAddress), to allow DDSI2E to communicate across a Network Address Translation (NAT) device.</p>
@@ -445,7 +437,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>auto</default>
       </leafString>
-      <leafString name="ExternalNetworkMask" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="ExternalNetworkMask" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the network mask of the external network address. This element is relevant only when an external network address (General/ExternalNetworkAddress) is explicitly configured. In this case locators received via the discovery protocol that are within the same external subnet (as defined by this mask) will be translated to an internal address by replacing the network portion of the external address with the corresponding portion of the preferred network interface address. This option is IPv4-only.</p>
@@ -454,7 +446,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>0.0.0.0</default>
       </leafString>
-      <leafString name="FragmentSize" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="FragmentSize" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the size of DDSI sample fragments generated by DDSI2E. Samples larger than FragmentSize are fragmented into fragments of FragmentSize bytes each, except the last one, which may be smaller. The DDSI spec mandates a minimum fragment size of 1025 bytes, but DDSI2E will do whatever size is requested, accepting fragments of which the size is at least the minimum of 1025 and FragmentSize.</p>
@@ -464,7 +456,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>1280 B</default>
       </leafString>
-      <leafString name="MaxMessageSize" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="MaxMessageSize" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the maximum size of the UDP payload that DDSI2E will generate. DDSI2E will try to maintain this limit within the bounds of the DDSI specification, which means that in some cases (especially for very low values of MaxMessageSize) larger payloads may sporadically be observed (currently up to 1192 B).</p>
@@ -475,7 +467,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>4096 B</default>
       </leafString>
-      <leafString name="MulticastRecvNetworkInterfaceAddresses" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="MulticastRecvNetworkInterfaceAddresses" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies on which network interfaces DDSI2E listens to multicasts. The following options are available:</p>
@@ -492,7 +484,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>preferred</default>
       </leafString>
-      <leafInt name="MulticastTimeToLive" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafInt name="MulticastTimeToLive" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the time-to-live setting for outgoing multicast packets.</p>
@@ -502,7 +494,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maximum>255</maximum>
         <default>32</default>
       </leafInt>
-      <leafString name="NetworkInterfaceAddress" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="NetworkInterfaceAddress" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the preferred network interface for use by DDSI2E. The preferred network interface determines the IP address that DDSI2E advertises in the discovery protocol (but see also General/ExternalNetworkAddress), and is also the only interface over which multicasts are transmitted. The interface can be identified by its IP address, network interface name or network portion of the address. If the value "auto" is entered here, DDSI2E will select what it considers the most suitable interface.</p>
@@ -511,7 +503,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>auto</default>
       </leafString>
-      <leafBoolean name="StartupModeCoversTransient" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="StartupModeCoversTransient" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element configures whether startup-mode should also cover transient and persistent data, for configurations where the durability service does not take care of it. Configurations without defined merge policies best leave this enabled.</p>
@@ -519,7 +511,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>true</default>
       </leafBoolean>
-      <leafString name="StartupModeDuration" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="StartupModeDuration" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies how long the DDSI2E remains in its "startup" mode. While in "startup" mode all volatile reliable data published on the local node is retained as-if it were transient-local data, allowing existing readers on remote nodes to obtain the data even though discovering them takes some time. Best-effort data by definition need not arrive, and transient and persistent data are covered by the durability service.</p>
@@ -533,7 +525,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>2 s</default>
       </leafString>
-      <leafBoolean name="UseIPv6" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="UseIPv6" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element can be used to DDSI2E use IPv6 instead of IPv4. This is currently an either/or switch.</p>
@@ -542,32 +534,32 @@ When an application is run without Administrative priveleges then only the diffs
         <default>false</default>
       </leafBoolean>
     </element>
-    <element name="Internal" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="Internal" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>The Internal elements deal with a variety of settings that evolving and that are not necessarily fully supported. For the vast majority of the Internal settings, the functionality per-se is supported, but the right to change the way the options control the functionality is reserved. This includes renaming or moving options.</p>
         ]]>
       </comment>
     </element>
-    <element name="Partitioning" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="Partitioning" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>The Partitioning element specifies DDSI2E network partitions and how DCPS partition/topic combinations are mapped onto the network partitions.</p>
         ]]>
       </comment>
-      <element name="IgnoredPartitions" minOccurrences="0" maxOccurrences="0" version="COMMERCIAL">
+      <element name="IgnoredPartitions" minOccurrences="0" maxOccurrences="0" version="VLITE">
         <comment>
           <![CDATA[
 <p>The IgnoredPartitions element specifies DCPS partition/topic combinations that are not distributed over the network.</p>
           ]]>
         </comment>
-        <element name="IgnoredPartition" minOccurrences="0" maxOccurrences="0" version="COMMERCIAL">
+        <element name="IgnoredPartition" minOccurrences="0" maxOccurrences="0" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element can be used to prevent certain combinations of DCPS partition and topic from being transmitted over the network. DDSI2E will complete ignore readers and writers for which all DCPS partitions as well as their topic is ignored, not even creating DDSI readers and writers to mirror the DCPS ones.</p>
             ]]>
           </comment>
-          <attributeString name="DCPSPartitionTopic" required="true" version="COMMERCIAL">
+          <attributeString name="DCPSPartitionTopic" required="true" version="VLITE">
             <comment>
               <![CDATA[
 <p>This attribute specifies a partition and a topic expression, separated by a single '.', that are used to determine if a given partition and topic will be ignored or not. The expressions may use the usual wildcards '*' and '?'. DDSI2E will consider an wildcard DCPS partition to match an expression iff there exists a string that satisfies both expressions.</p>
@@ -578,19 +570,19 @@ When an application is run without Administrative priveleges then only the diffs
           </attributeString>
         </element>
       </element>
-      <element name="NetworkPartitions" minOccurrences="0" maxOccurrences="0" version="COMMERCIAL">
+      <element name="NetworkPartitions" minOccurrences="0" maxOccurrences="0" version="VLITE">
         <comment>
           <![CDATA[
 <p>The NetworkPartitions element specifies the DDSI2E network partitions.</p>
           ]]>
         </comment>
-        <element name="NetworkPartition" minOccurrences="0" maxOccurrences="0" version="COMMERCIAL">
+        <element name="NetworkPartition" minOccurrences="0" maxOccurrences="0" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element defines a DDSI2E network partition.</p>
             ]]>
           </comment>
-          <attributeString name="Address" required="true" version="COMMERCIAL">
+          <attributeString name="Address" required="true" version="VLITE">
             <comment>
               <![CDATA[
 <p>This attribute specifies the multicast addresses associated with the network partition as a comma-separated list. Readers matching this network partition (cf. Partitioning/PartitionMappings) will listen for multicasts on all of these addresses and advertise them in the discovery protocol. The writers will select the most suitable address from the addresses advertised by the readers.</p>
@@ -599,7 +591,7 @@ When an application is run without Administrative priveleges then only the diffs
             <maxLength>0</maxLength>
             <default></default>
           </attributeString>
-          <attributeBoolean name="Connected" required="false" version="COMMERCIAL">
+          <attributeBoolean name="Connected" required="false" version="VLITE">
             <comment>
               <![CDATA[
 <p>This attribute is a placeholder.</p>
@@ -607,7 +599,7 @@ When an application is run without Administrative priveleges then only the diffs
             </comment>
             <default>true</default>
           </attributeBoolean>
-          <attributeString name="Name" required="true" version="COMMERCIAL">
+          <attributeString name="Name" required="true" version="VLITE">
             <comment>
               <![CDATA[
 <p>This attribute specifies the name of this DDSI2E network partition. Two network partitions cannot have the same name.</p>
@@ -616,7 +608,7 @@ When an application is run without Administrative priveleges then only the diffs
             <maxLength>0</maxLength>
             <default></default>
           </attributeString>
-          <attributeString name="SecurityProfile" required="false" version="COMMERCIAL">
+          <attributeString name="SecurityProfile" required="false" version="VLITE">
             <comment>
               <![CDATA[
 <p>This attribute selects the DDSI2E security profile for encrypting the traffic mapped to this DDSI2E network partition. The default "null" means the network partition is unsecured; any other name refers to a security profile defined using the Security/SecurityProfile elements.</p>
@@ -627,19 +619,19 @@ When an application is run without Administrative priveleges then only the diffs
           </attributeString>
         </element>
       </element>
-      <element name="PartitionMappings" minOccurrences="0" maxOccurrences="0" version="COMMERCIAL">
+      <element name="PartitionMappings" minOccurrences="0" maxOccurrences="0" version="VLITE">
         <comment>
           <![CDATA[
 <p>The PartitionMappings element specifies the mapping from DCPS partition/topic combinations to DDSI2E network partitions.</p>
           ]]>
         </comment>
-        <element name="PartitionMapping" minOccurrences="0" maxOccurrences="0" version="COMMERCIAL">
+        <element name="PartitionMapping" minOccurrences="0" maxOccurrences="0" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element defines a mapping from a DCPS partition/topic combination to a DDSI2E network partition. This allows partitioning data flows by using special multicast addresses for part of the data and possibly also encrypting the data flow.</p>
             ]]>
           </comment>
-          <attributeString name="DCPSPartitionTopic" required="true" version="COMMERCIAL">
+          <attributeString name="DCPSPartitionTopic" required="true" version="VLITE">
             <comment>
               <![CDATA[
 <p>This attribute specifies a partition and a topic expression, separated by a single '.', that are used to determine if a given partition and topic maps to the DDSI2E network partition named by the NetworkPartition attribute in this PartitionMapping element. The expressions may use the usual wildcards '*' and '?'. DDSI2E will consider a wildcard DCPS partition to match an expression if there exists a string that satisfies both expressions.</p>
@@ -648,7 +640,7 @@ When an application is run without Administrative priveleges then only the diffs
             <maxLength>0</maxLength>
             <default></default>
           </attributeString>
-          <attributeString name="NetworkPartition" required="true" version="COMMERCIAL">
+          <attributeString name="NetworkPartition" required="true" version="VLITE">
             <comment>
               <![CDATA[
 <p>This attribute specifies which DDSI2E network partition is to be used for DCPS partition/topic combinations matching the DCPSPartitionTopic attribute within this PartitionMapping element.</p>
@@ -660,13 +652,13 @@ When an application is run without Administrative priveleges then only the diffs
         </element>
       </element>
     </element>
-    <element name="SSL" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="SSL" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>The SSL element allows specifying various parameters related to using SSL/TLS for DDSI over TCP.</p>
         ]]>
       </comment>
-      <leafBoolean name="CertificateVerification" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="CertificateVerification" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>If disabled this allows SSL connections to occur even if an X509 certificate fails verification.</p>
@@ -674,7 +666,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>true</default>
       </leafBoolean>
-      <leafString name="Ciphers" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="Ciphers" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>The set of ciphers used by SSL/TLS</p>
@@ -683,7 +675,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH</default>
       </leafString>
-      <leafBoolean name="Enable" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="Enable" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This enables SSL/TLS for TCP.</p>
@@ -691,7 +683,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>false</default>
       </leafBoolean>
-      <leafString name="EntropyFile" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="EntropyFile" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>The SSL/TLS random entropy file name.</p>
@@ -700,7 +692,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default></default>
       </leafString>
-      <leafString name="KeyPassphrase" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="KeyPassphrase" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>The SSL/TLS key pass phrase for encrypted keys.</p>
@@ -709,7 +701,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>secret</default>
       </leafString>
-      <leafString name="KeystoreFile" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="KeystoreFile" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>The SSL/TLS key and certificate store file name. The keystore must be in PEM format.</p>
@@ -718,7 +710,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>keystore</default>
       </leafString>
-      <leafBoolean name="SelfSignedCertificates" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="SelfSignedCertificates" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This enables the use of self signed X509 certificates.</p>
@@ -726,7 +718,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>false</default>
       </leafBoolean>
-      <leafBoolean name="VerifyClient" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="VerifyClient" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This enables an SSL server checking the X509 certificate of a connecting client.</p>
@@ -735,19 +727,19 @@ When an application is run without Administrative priveleges then only the diffs
         <default>false</default>
       </leafBoolean>
     </element>
-    <element name="Security" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="Security" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>The Security element specifies DDSI2E security profiles that can be used to encrypt traffic mapped to DDSI2E network partitions.</p>
         ]]>
       </comment>
-      <element name="SecurityProfile" minOccurrences="0" maxOccurrences="0" version="COMMERCIAL">
+      <element name="SecurityProfile" minOccurrences="0" maxOccurrences="0" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element defines a DDSI2E security profile.</p>
           ]]>
         </comment>
-        <attributeEnum name="Cipher" required="false" version="COMMERCIAL">
+        <attributeEnum name="Cipher" required="false" version="VLITE">
           <comment>
             <![CDATA[
 <p>This attribute specifies the cipher to be used for encrypting traffic over network partitions secured by this security profile. The possible ciphers are:</p>
@@ -766,7 +758,7 @@ When an application is run without Administrative priveleges then only the diffs
           <value>aes256</value>
           <default>null</default>
         </attributeEnum>
-        <attributeString name="CipherKey" required="false" version="COMMERCIAL">
+        <attributeString name="CipherKey" required="false" version="VLITE">
           <comment>
             <![CDATA[
 <p>The CipherKey attribute is used to define the secret key required by the cipher selected using the Cipher attribute. The value can be a URI referencing an external file containing the secret key, or the secret key can be defined in-place as a string value.</p>
@@ -778,7 +770,7 @@ When an application is run without Administrative priveleges then only the diffs
           <maxLength>0</maxLength>
           <default></default>
         </attributeString>
-        <attributeString name="Name" required="true" version="COMMERCIAL">
+        <attributeString name="Name" required="true" version="VLITE">
           <comment>
             <![CDATA[
 <p>This attribute specifies the name of this DDSI2E security profile. Two security profiles cannot have the same name.</p>
@@ -789,13 +781,13 @@ When an application is run without Administrative priveleges then only the diffs
         </attributeString>
       </element>
     </element>
-    <element name="Sizing" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="Sizing" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>The Sizing element specifies a variety of configuration settings dealing with expected system sizes, buffer sizes, &c.</p>
         ]]>
       </comment>
-      <leafString name="ReceiveBufferChunkSize" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="ReceiveBufferChunkSize" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the size of one allocation unit in the receive buffer. Must be greater than the maximum packet size by a modest amount (too large packets are dropped). Each allocation is shrunk immediately after processing a message, or freed straightaway.</p>
@@ -805,13 +797,13 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>128 KiB</default>
       </leafString>
-      <element name="Watermarks" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <element name="Watermarks" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
   { LEAF ("ReceiveBufferSize"), 1, "1 MiB", ABSOFF (rbuf_size), 0, uf_memsize, 0, pf_memsize,    "<p>This element sets the size of a single receive buffer. Many receive buffers may be needed. Their size must be greater than ReceiveBufferChunkSize by a modest amount.</p>
           ]]>
         </comment>
-        <leafBoolean name="WhcAdaptive" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafBoolean name="WhcAdaptive" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element controls whether DDSI2E will adapt the high-water mark to current traffic conditions, based on retransmit requests and transmit pressure.</p>
@@ -819,7 +811,7 @@ When an application is run without Administrative priveleges then only the diffs
           </comment>
           <default>true</default>
         </leafBoolean>
-        <leafString name="WhcHigh" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafString name="WhcHigh" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element sets the maximum allowed high-water mark for the DDSI2E WHCs, expressed in bytes. A writer is suspended when the WHC reaches this size.</p>
@@ -829,7 +821,7 @@ When an application is run without Administrative priveleges then only the diffs
           <maxLength>0</maxLength>
           <default>100 kB</default>
         </leafString>
-        <leafString name="WhcHighInit" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafString name="WhcHighInit" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element sets the initial level of the high-water mark for the DDSI2E WHCs, expressed in bytes.</p>
@@ -839,7 +831,7 @@ When an application is run without Administrative priveleges then only the diffs
           <maxLength>0</maxLength>
           <default>30 kB</default>
         </leafString>
-        <leafString name="WhcLow" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafString name="WhcLow" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element sets the low-water mark for the DDSI2E WHCs, expressed in bytes. A suspended writer resumes transmitting when its DDSI2E WHC shrinks to this size.</p>
@@ -851,13 +843,13 @@ When an application is run without Administrative priveleges then only the diffs
         </leafString>
       </element>
     </element>
-    <element name="TCP" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="TCP" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>The TCP element allows specifying various parameters related to running DDSI over TCP.</p>
         ]]>
       </comment>
-      <leafBoolean name="Enable" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="Enable" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element enables the optional TCP transport.</p>
@@ -865,7 +857,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>false</default>
       </leafBoolean>
-      <leafBoolean name="NoDelay" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="NoDelay" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element enables the TCP_NODELAY socket option, preventing multiple DDSI messages being sent in the same TCP request. Setting this option typically optimises latency over throughput.</p>
@@ -873,7 +865,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>true</default>
       </leafBoolean>
-      <leafInt name="Port" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafInt name="Port" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the TCP port number on which DDSI2E accepts connections. If the port is set it is used in entity locators, published with DDSI discovery. Dynamically allocated if zero. Disabled if -1 or not configured. If disabled other DDSI services will not be able to establish connections with the service, the service can only communicate by establishing connections to other services.</p>
@@ -883,7 +875,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maximum>65535</maximum>
         <default>-1</default>
       </leafInt>
-      <leafString name="ReadTimeout" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="ReadTimeout" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the timeout for blocking TCP read operations. If this timeout expires then the connection is closed.</p>
@@ -895,7 +887,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>2 s</default>
       </leafString>
-      <leafString name="WriteTimeout" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="WriteTimeout" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the timeout for blocking TCP write operations. If this timeout expires then the connection is closed.</p>
@@ -908,13 +900,13 @@ When an application is run without Administrative priveleges then only the diffs
         <default>2 s</default>
       </leafString>
     </element>
-    <element name="ThreadPool" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="ThreadPool" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>The ThreadPool element allows specifying various parameters related to using a thread pool to send DDSI messages to multiple unicast addresses (TCP or UDP).</p>
         ]]>
       </comment>
-      <leafBoolean name="Enable" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="Enable" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element enables the optional thread pool.</p>
@@ -922,7 +914,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>false</default>
       </leafBoolean>
-      <leafInt name="ThreadMax" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafInt name="ThreadMax" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This elements configures the maximum number of threads in the thread pool.</p>
@@ -930,7 +922,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>8</default>
       </leafInt>
-      <leafInt name="Threads" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafInt name="Threads" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This elements configures the initial number of threads in the thread pool.</p>
@@ -939,19 +931,19 @@ When an application is run without Administrative priveleges then only the diffs
         <default>4</default>
       </leafInt>
     </element>
-    <element name="Threads" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="Threads" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>This element is used to set thread properties.</p>
         ]]>
       </comment>
-      <element name="Thread" minOccurrences="0" maxOccurrences="1000" version="COMMERCIAL">
+      <element name="Thread" minOccurrences="0" maxOccurrences="1000" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element is used to set thread properties.</p>
           ]]>
         </comment>
-        <attributeString name="Name" required="true" version="COMMERCIAL">
+        <attributeString name="Name" required="true" version="VLITE">
           <comment>
             <![CDATA[
 <p>The Name of the thread for which properties are being set. The following threads exist:</p>
@@ -968,14 +960,14 @@ When an application is run without Administrative priveleges then only the diffs
           <maxLength>0</maxLength>
           <default></default>
         </attributeString>
-        <element name="Scheduling" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <element name="Scheduling" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element configures the scheduling properties of the thread.</p>
             ]]>
           </comment>
           <maxLength>0</maxLength>
-          <leafEnum name="Class" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+          <leafEnum name="Class" minOccurrences="0" maxOccurrences="1" version="VLITE">
             <comment>
               <![CDATA[
 <p>This element specifies the thread scheduling class (<i>realtime</i>, <i>timeshare</i> or <i>default</i>). The user may need special privileges from the underlying operating system to be able to assign some of the privileged scheduling classes.</p>
@@ -986,7 +978,7 @@ When an application is run without Administrative priveleges then only the diffs
             <value>default</value>
             <default>default</default>
           </leafEnum>
-          <leafString name="Priority" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+          <leafString name="Priority" minOccurrences="0" maxOccurrences="1" version="VLITE">
             <comment>
               <![CDATA[
 <p>This element specifies the thread priority (decimal integer or <i>default</i>). Only priorities that are supported by the underlying operating system can be assigned to this element. The user may need special privileges from the underlying operating system to be able to assign some of the privileged priorities.</p>
@@ -996,7 +988,7 @@ When an application is run without Administrative priveleges then only the diffs
             <default>default</default>
           </leafString>
         </element>
-        <leafString name="StackSize" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafString name="StackSize" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element configures the stack size for this thread. The default value <i>default</i> leaves the stack size at the operating system default.</p>
@@ -1008,13 +1000,13 @@ When an application is run without Administrative priveleges then only the diffs
         </leafString>
       </element>
     </element>
-    <element name="Tracing" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="Tracing" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>The Tracing element controls the amount and type of information that is written into the tracing log by the DDSI service. This is useful to track the DDSI service during application development.</p>
         ]]>
       </comment>
-      <leafBoolean name="AppendToFile" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="AppendToFile" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This option specifies whether the output is to be appended to an existing log file. The default is to create a new log file each time, which is generally the best option if a detailed log is generated.</p>
@@ -1022,7 +1014,7 @@ When an application is run without Administrative priveleges then only the diffs
         </comment>
         <default>false</default>
       </leafBoolean>
-      <leafString name="EnableCategory" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="EnableCategory" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element enables individual logging categories. These are enabled in addition to those enabled by Tracing/Verbosity. Recognised categories are:</p>
@@ -1047,7 +1039,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default></default>
       </leafString>
-      <leafString name="OutputFile" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="OutputFile" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This option specifies where the logging is printed to. Note that <i>stdout</i> and <i>stderr</i> are treated as special values, representing "standard out" and "standard error" respectively. No file is created unless logging categories are enabled using the Tracing/Verbosity or Tracing/EnabledCategory settings.</p>
@@ -1056,7 +1048,7 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default>VDDSC_PROJECTNAME_SMALL"-trace.log"</default>
       </leafString>
-      <leafString name="PacketCaptureFile" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafString name="PacketCaptureFile" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This option specifies the file to which received and sent packets will be logged in the "pcap" format suitable for analysis using common networking tools, such as WireShark. IP and UDP headers are ficitious, in particular the destination address of received packets. The TTL may be used to distinguish between sent and received packets: it is 255 for sent packets and 128 for received ones. Currently IPv4 only.</p>
@@ -1065,14 +1057,14 @@ When an application is run without Administrative priveleges then only the diffs
         <maxLength>0</maxLength>
         <default></default>
       </leafString>
-      <leafBoolean name="Timestamps" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafBoolean name="Timestamps" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This option has no effect.</p>
           ]]>
         </comment>
         <default>true</default>
-        <attributeBoolean name="absolute" required="false" version="COMMERCIAL">
+        <attributeBoolean name="absolute" required="false" version="VLITE">
           <comment>
             <![CDATA[
 <p>This option has no effect</p>
@@ -1081,7 +1073,7 @@ When an application is run without Administrative priveleges then only the diffs
           <default>true</default>
         </attributeBoolean>
       </leafBoolean>
-      <leafEnum name="Verbosity" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <leafEnum name="Verbosity" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element enables standard groups of categories, based on a desired verbosity level. This is in addition to the categories enabled by the Tracing/EnableCategory setting. Recognised verbosity levels and the categories they map to are:</p>
@@ -1108,19 +1100,19 @@ When an application is run without Administrative priveleges then only the diffs
         <default>none</default>
       </leafEnum>
     </element>
-    <element name="Watchdog" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+    <element name="Watchdog" minOccurrences="0" maxOccurrences="1" version="VLITE">
       <comment>
         <![CDATA[
 <p>This element specifies the type of OS scheduling class will be used by the thread that announces its liveliness periodically.</p>
         ]]>
       </comment>
-      <element name="Scheduling" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+      <element name="Scheduling" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>
           <![CDATA[
 <p>This element specifies the type of OS scheduling class will be used by the thread that announces its liveliness periodically.</p>
           ]]>
         </comment>
-        <leafEnum name="Class" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafEnum name="Class" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element specifies the thread scheduling class that will be used by the watchdog thread. The user may need the appropriate privileges from the underlying operating system to be able to assign some of the privileged scheduling classes.</p>
@@ -1131,14 +1123,14 @@ When an application is run without Administrative priveleges then only the diffs
           <value>default</value>
           <default>default</default>
         </leafEnum>
-        <leafInt name="Priority" minOccurrences="0" maxOccurrences="1" version="COMMERCIAL">
+        <leafInt name="Priority" minOccurrences="0" maxOccurrences="1" version="VLITE">
           <comment>
             <![CDATA[
 <p>This element specifies the thread priority. Only priorities that are supported by the underlying operating system can be assigned to this element. The user may need special privileges from the underlying operating system to be able to assign some of the privileged priorities.</p>
             ]]>
           </comment>
           <default>0</default>
-          <attributeEnum name="priority_kind" required="false" version="COMMERCIAL">
+          <attributeEnum name="priority_kind" required="false" version="VLITE">
             <comment>
               <![CDATA[
 <p>This attribute specifies whether the specified Priority is a relative or absolute priority.</p>
