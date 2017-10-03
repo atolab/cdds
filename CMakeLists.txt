@@ -43,11 +43,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 add_subdirectory(etc)
 add_subdirectory(idlc)
 add_subdirectory(src)
-#add_subdirectory(examples)
+add_subdirectory(examples)
 add_subdirectory(tools)
 add_subdirectory(scripts)
 
-#add_subdirectory(docs)
+add_subdirectory(docs)
 
 # Pull-in CPack and support for generating <Package>Config.cmake and packages.
 include(Packaging)
