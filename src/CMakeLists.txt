@@ -44,7 +44,7 @@ generate_export_header(
 
 # Generate builtin-topic sources
 set(IDLC_ARGS "-dll" "FOO,dds/dds_export.h")
-idlc_generate(BuiltinTypes vddsc/dds_dcps_builtintopics.idl vddsc/dds_builtinTopics.idl)
+idlc_generate(BuiltinTypes vddsc/dds_dcps_builtintopics.idl vddsc/dds_builtinTopics.idl vddsc/dds_dcps_iot_builtintopics.idl)
 set(IDLC_ARGS)
 target_link_libraries(vddsc PRIVATE BuiltinTypes)
 

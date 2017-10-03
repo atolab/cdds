@@ -1,0 +1,76 @@
+/* https://confluence.prismtech.com/display/~steve/Generic+IOT+DDS+Topic */
+
+module IoTData
+{
+  typedef sequence<octet> BLOB;
+
+  typedef sequence<octet> UI8Seq;
+
+  typedef sequence<unsigned short> UI16Seq;
+
+  typedef sequence<unsigned long> UI32Seq;
+  typedef sequence<unsigned long long> UI64Seq;
+  typedef sequence<char> I8Seq;
+  typedef sequence<short> I16Seq;
+  typedef sequence<long> I32Seq;
+  typedef sequence<long long> I64Seq;
+  typedef sequence<float> FSeq;
+  typedef sequence<double> DSeq;
+  typedef sequence<boolean> BSeq;
+//  typedef sequence<BLOB> BlSeq;
+  typedef sequence<string> StrSeq;
+  typedef sequence<char> ChSeq;
+
+  enum DataType
+  {
+    TYPE_UINT8,
+    TYPE_UINT16,
+    TYPE_UINT32,
+    TYPE_UINT64,
+    TYPE_INT8,
+    TYPE_INT16,
+    TYPE_INT32,
+    TYPE_INT64,
+    TYPE_FLOAT,
+    TYPE_DOUBLE,
+    TYPE_BOOL,
+    TYPE_BLOB,
+    TYPE_STRING,
+    TYPE_CHAR
+  };
+
+  union Data switch (DataType)
+  {
+    case TYPE_UINT8: UI8Seq ui8Value;
+    case TYPE_UINT16: UI16Seq ui16Value;
+    case TYPE_UINT32: UI32Seq ui32Value;
+    case TYPE_UINT64: UI64Seq ui64Value;
+    case TYPE_INT8: I8Seq i8Value;
+    case TYPE_INT16: I16Seq i16Value;
+    case TYPE_INT32: I32Seq i32Value;
+    case TYPE_INT64: I64Seq i64Value;
+    case TYPE_FLOAT: FSeq fValue;
+    case TYPE_DOUBLE: DSeq dValue;
+    case TYPE_BOOL: BSeq bValue;
+    case TYPE_BLOB: BLOB blobValue;
+    case TYPE_STRING: StrSeq strValue;
+    case TYPE_CHAR: ChSeq chValue;
+  };
+
+  struct NVP
+  {
+    string name;
+    Data value;
+  };
+  typedef sequence<NVP> NVPSeq;
+
+  struct Instance
+  {
+    string type;
+    NVPSeq values;
+    string key;
+  };
+
+  #pragma keylist Instance key
+};
+
