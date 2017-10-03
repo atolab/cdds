@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+find_package(Abstraction REQUIRED)
 
 add_executable(pubsub pubsub.c common.c testtype.c porting.c)
 target_link_libraries(pubsub vddsc OSAPI)
