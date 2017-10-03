@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
+
+# Update the git submodules
+execute_process(COMMAND git submodule init)
+execute_process(COMMAND git submodule update)
+
 # Set module path before defining project so platform files will work.
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 set(CMAKE_PROJECT_NAME_FULL "Vortex DDS")
@@ -38,11 +43,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 add_subdirectory(etc)
 add_subdirectory(idlc)
 add_subdirectory(src)
-add_subdirectory(examples)
+#add_subdirectory(examples)
 add_subdirectory(tools)
 add_subdirectory(scripts)
 
-add_subdirectory(docs)
+#add_subdirectory(docs)
 
 # Pull-in CPack and support for generating <Package>Config.cmake and packages.
 include(Packaging)
