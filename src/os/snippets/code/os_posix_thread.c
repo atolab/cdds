@@ -385,7 +385,7 @@ os_threadCreate (
 uintmax_t
 os_threadIdToInteger(os_threadId id)
 {
-   return id.v;
+   return (uintmax_t)(uintptr_t)id.v;
 }
 
 /** \brief Return the thread ID of the calling thread

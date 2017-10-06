@@ -3,7 +3,7 @@
 #endif
 
 #ifdef __APPLE__
-#define USE_EDITLINE 1
+#define USE_EDITLINE 0
 #endif
 
 #define _ISOC99_SOURCE
