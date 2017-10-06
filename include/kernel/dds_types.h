@@ -254,7 +254,7 @@ typedef struct dds_globals
 }
 dds_globals;
 
-DDS_EXPORT dds_globals dds_global;
+DDS_EXPORT extern dds_globals dds_global;
 
 #if defined (__cplusplus)
 }
