@@ -46,8 +46,16 @@ add_subdirectory(src)
 add_subdirectory(examples)
 add_subdirectory(tools)
 add_subdirectory(scripts)
-
 add_subdirectory(docs)
+
+# Package the JRE for install
+install(
+  DIRECTORY "$ENV{JAVA_HOME}/jre"
+  DESTINATION "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}"
+  USE_SOURCE_PERMISSIONS
+  COMPONENT dev
+  OPTIONAL)
+
 
 # Pull-in CPack and support for generating <Package>Config.cmake and packages.
 include(Packaging)
