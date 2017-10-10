@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
 
 # Update the git submodules
-execute_process(COMMAND git submodule init)
-execute_process(COMMAND git submodule update)
+execute_process(COMMAND git submodule init
+                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+execute_process(COMMAND git submodule update
+                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 # Set module path before defining project so platform files will work.
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
