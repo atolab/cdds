@@ -79,6 +79,12 @@ dds_init(void)
   const char * uri;
   char tmp[50];
 
+  {
+    /* TODO: this won't do */
+    void dds_durability_plugin (void);
+    dds_durability_plugin ();
+  }
+
   /* TODO: Proper init-once */
   if (os_atomic_inc32_nv (&dds_global.m_init_count) > 1)
   {

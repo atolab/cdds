@@ -68,6 +68,8 @@ typedef struct c_listener {
 
 #define DDS_ENTITY_ENABLED      0x0001
 #define DDS_ENTITY_IMPLICIT     0x0002
+#define DDS_ENTITY_WAITING      0x0004 /* client-side durability */
+#define DDS_ENTITY_FAILED       0x0008 /* client-side durability */
 
 typedef struct dds_domain
 {
@@ -143,8 +145,8 @@ dds_publisher;
 typedef struct dds_participant
 {
   struct dds_entity m_entity;
-  struct dds_entity * m_dur_reader;
-  struct dds_entity * m_dur_writer;
+  dds_entity_t m_dur_reader;
+  dds_entity_t m_dur_writer;
   dds_entity_t m_builtin_subscriber;
 }
 dds_participant;
