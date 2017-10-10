@@ -3,6 +3,7 @@ set(CMAKE_INSTALL_EXAMPLESDIR "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}/ex
 add_subdirectory(helloworld)
 add_subdirectory(roundtrip)
 add_subdirectory(throughput)
+add_subdirectory(circle)
 
 # Examples HTML documentation
 set(EXAMPLES_HTML_ARCHIVE "${CMAKE_PROJECT_NAME}ExamplesHTML.tar.gz")
