@@ -1,5 +1,5 @@
-#ifndef OS_PLATFORM_PUBLIC_H
-#define OS_PLATFORM_PUBLIC_H
+#ifndef OS_PLATFORM_PUBLIC_SEL_H
+#define OS_PLATFORM_PUBLIC_SEL_H
 
 #if __linux__ == 1
   #include "os/posix/os_platform_public.h"
