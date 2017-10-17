@@ -13,6 +13,7 @@
 extern "C" {
 #endif
 
+typedef _Return_type_success_(return == DDS_RETCODE_OK) int32_t dds__retcode_t;
 
 struct dds_domain;
 struct dds_entity;
@@ -34,21 +35,6 @@ struct rhc;
 
 #define DDS_WAITSET_TRIGGER_STATUS   (0x01000000)
 #define DDS_DELETING_STATUS          (0x02000000)
-
-
-/* To construct return status
- * Use '+' instead of '|'. Otherwise, the SAL checking doesn't
- * understand when a return value is negative or positive and
- * complains a lot about "A successful path through the function
- * does not set the named _Out_ parameter." */
-#if !defined(__FILE_ID__)
-#define __FILE_ID__ (0)
-#endif
-
-#define DDS__FILE_ID__ (((__FILE_ID__ & 0x1ff)) << 22)
-#define DDS__LINE__ ((__LINE__ & 0x3fff) << 8)
-
-#define DDS_ERRNO(e) ((e <= 0) ? e : -(DDS__FILE_ID__ + DDS__LINE__ + (e)))
 
 /* This can be used when polling for various states.
  * Obviously, it is encouraged to use condition variables and such. But
@@ -142,11 +128,24 @@ dds_entity;
 
 extern const ut_avlTreedef_t dds_topictree_def;
 
+typedef struct dds_subscriber
+{
+  struct dds_entity m_entity;
+}
+dds_subscriber;
+
+typedef struct dds_publisher
+{
+  struct dds_entity m_entity;
+}
+dds_publisher;
+
 typedef struct dds_participant
 {
   struct dds_entity m_entity;
   struct dds_entity * m_dur_reader;
   struct dds_entity * m_dur_writer;
+  dds_entity_t m_builtin_subscriber;
 }
 dds_participant;
 
@@ -187,18 +186,6 @@ typedef struct dds_writer
   dds_publication_matched_status_t m_publication_matched_status;
 }
 dds_writer;
-
-typedef struct dds_subscriber
-{
-  struct dds_entity m_entity;
-}
-dds_subscriber;
-
-typedef struct dds_publisher
-{
-  struct dds_entity m_entity;
-}
-dds_publisher;
 
 typedef struct dds_topic
 {
@@ -267,7 +254,7 @@ typedef struct dds_globals
 }
 dds_globals;
 
-DDS_EXPORT dds_globals dds_global;
+DDS_EXPORT extern dds_globals dds_global;
 
 #if defined (__cplusplus)
 }

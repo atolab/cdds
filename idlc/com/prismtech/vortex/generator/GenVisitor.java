@@ -95,12 +95,12 @@ public class GenVisitor extends com.prismtech.vortex.parser.IDLBaseVisitor <Void
     {
       banner.add ("date", new Date ());
     }
-    banner.add ("version", Version.version);
+    banner.add ("version", Project.version);
 
     file.add ("banner", banner);
     if (params.forcpp)
     {
-      file.add ("name", params.basename + "-lite");
+      file.add ("name", params.basename + "-vortex");
     }
     else
     {
@@ -172,7 +172,7 @@ public class GenVisitor extends com.prismtech.vortex.parser.IDLBaseVisitor <Void
     state.setScope (state.struct);
     state.struct.add ("name", ctx.ID ().getText ());
     state.struct.add
-      ("extern", (params.dllname != null) ? "DDS_EXPORT" : "extern");
+      ("extern", (params.dllname != null) ? "extern DDS_EXPORT" : "extern");
     if (params.allstructs)
     {
       state.struct.add ("istopic", "true");

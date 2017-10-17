@@ -10,6 +10,11 @@
 #define MAX_SAMPLES 100
 #define US_IN_ONE_SEC 1000000LL
 
+/* Forward declaration */
+
+static dds_entity_t prepare_dds(dds_entity_t *writer, dds_entity_t *reader, dds_entity_t *readCond);
+static void finalize_dds(dds_entity_t participant, dds_entity_t reader, dds_entity_t readCond);
+
 typedef struct ExampleTimeStats
 {
   dds_time_t * values;
@@ -117,16 +122,7 @@ int main (int argc, char *argv[])
   dds_entity_t writer;
   dds_entity_t reader;
   dds_entity_t participant;
-  dds_entity_t topic;
-  dds_entity_t publisher;
-  dds_entity_t subscriber;
-
-  const char *pubPartitions[] = { "ping" };
-  const char *subPartitions[] = { "pong" };
-  dds_qos_t *pubQos;
-  dds_qos_t *dwQos;
-  dds_qos_t *drQos;
-  dds_qos_t *subQos;
+  dds_entity_t readCond;
 
   ExampleTimeStats roundTrip;
   ExampleTimeStats writeAccess;
@@ -137,6 +133,7 @@ int main (int argc, char *argv[])
 
   unsigned long payloadSize = 0;
   unsigned long long numSamples = 0;
+  bool invalidargs = false;
   dds_time_t timeOut = 0;
   dds_time_t startTime;
   dds_time_t time;
@@ -157,9 +154,7 @@ int main (int argc, char *argv[])
   dds_time_t waitTimeout = DDS_SECS (1);
   unsigned long i;
   int status;
-  bool invalid = false;
   bool warmUp = true;
-  dds_entity_t readCond;
 
   /* Register handler for Ctrl-C */
 #ifdef _WIN32
@@ -187,55 +182,7 @@ int main (int argc, char *argv[])
     samples[i] = &sub_data[i];
   }
 
-  participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  DDS_ERR_CHECK (participant, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-  /* A DDS_Topic is created for our sample type on the domain participant. */
-  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
-  DDS_ERR_CHECK (topic, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-  /* A DDS_Publisher is created on the domain participant. */
-  pubQos = dds_qos_create ();
-  dds_qset_partition (pubQos, 1, pubPartitions);
-
-  publisher = dds_create_publisher (participant, pubQos, NULL);
-  DDS_ERR_CHECK (publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  dds_qos_delete (pubQos);
-
-  /* A DDS_DataWriter is created on the Publisher & Topic with a modified Qos. */
-  dwQos = dds_qos_create ();
-  dds_qset_reliability (dwQos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
-  dds_qset_writer_data_lifecycle (dwQos, false);
-  writer = dds_create_writer (publisher, topic, dwQos, NULL);
-  DDS_ERR_CHECK (writer, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  dds_qos_delete (dwQos);
-
-  /* A DDS_Subscriber is created on the domain participant. */
-  subQos = dds_qos_create ();
-
-  /* Somehow, the compiler thinks the char arrays might not be zero-terminated... */
-#pragma warning(push)
-#pragma warning(disable: 6054)
-  dds_qset_partition (subQos, 1, subPartitions);
-#pragma warning(pop)
-
-  subscriber = dds_create_subscriber (participant, subQos, NULL);
-  DDS_ERR_CHECK (subscriber, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  dds_qos_delete (subQos);
-  /* A DDS_DataReader is created on the Subscriber & Topic with a modified QoS. */
-  drQos = dds_qos_create ();
-  dds_qset_reliability (drQos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
-  reader = dds_create_reader (subscriber, topic, drQos, NULL);
-  DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  dds_qos_delete (drQos);
-
-  waitSet = dds_create_waitset (participant);
-  readCond = dds_create_readcondition (reader, DDS_ANY_STATE);
-
-  status = dds_waitset_attach (waitSet, readCond, (dds_attach_t)(intptr_t)reader);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-  status = dds_waitset_attach (waitSet, waitSet, (dds_attach_t)(intptr_t)waitSet);
-  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  participant = prepare_dds(&writer, &reader, &readCond);
 
   setvbuf(stdout, NULL, _IONBF, 0);
 
@@ -243,7 +190,7 @@ int main (int argc, char *argv[])
   {
     printf ("Sending termination request.\n");
     /* pong uses a waitset which is triggered by instance disposal, and
-       quits when it fires. */
+      quits when it fires. */
     dds_sleepfor (DDS_SECS (1));
     pub_data.payload._length = 0;
     pub_data.payload._buffer = NULL;
@@ -257,7 +204,7 @@ int main (int argc, char *argv[])
 
   if (argc == 1)
   {
-    invalid = true;
+    invalidargs = true;
   }
   if (argc >= 2)
   {
@@ -265,7 +212,7 @@ int main (int argc, char *argv[])
 
     if (payloadSize > 65536)
     {
-      invalid = true;
+      invalidargs = true;
     }
   }
   if (argc >= 3)
@@ -276,14 +223,14 @@ int main (int argc, char *argv[])
   {
     timeOut = atol (argv[3]);
   }
-  if (invalid || (argc == 2 && (strcmp (argv[1], "-h") == 0 || strcmp (argv[1], "--help") == 0)))
+  if (invalidargs || (argc == 2 && (strcmp (argv[1], "-h") == 0 || strcmp (argv[1], "--help") == 0)))
   {
     printf ("Usage (parameters must be supplied in order):\n"
             "./ping [payloadSize (bytes, 0 - 65536)] [numSamples (0 = infinite)] [timeOut (seconds, 0 = infinite)]\n"
             "./ping quit - ping sends a quit signal to pong.\n"
             "Defaults:\n"
             "./ping 0 0 0\n");
-    return (1);
+    return EXIT_FAILURE;
   }
   printf ("# payloadSize: %lu | numSamples: %llu | timeOut: %" PRIi64 "\n\n", payloadSize, numSamples, timeOut);
 
@@ -351,12 +298,12 @@ int main (int argc, char *argv[])
           fprintf (stdout, "%s%d%s", "ERROR: Ping received ", status,
                   " samples but was expecting 1. Are multiple pong applications running?\n");
 
-          return (0);
+          goto done;
         }
         else if (!info[0].valid_data)
         {
           printf ("ERROR: Ping received an invalid sample. Has pong terminated already?\n");
-          return (0);
+          goto done;
         }
       }
 
@@ -435,18 +382,94 @@ done:
   sigaction (SIGINT, &oldAction, 0);
 #endif
 
-  /* Disable callbacks */
-
-  dds_set_enabled_status (reader, 0);
+  finalize_dds(participant, reader, readCond);
 
   /* Clean up */
-
   exampleDeleteTimeStats (&roundTrip);
   exampleDeleteTimeStats (&writeAccess);
   exampleDeleteTimeStats (&readAccess);
   exampleDeleteTimeStats (&roundTripOverall);
   exampleDeleteTimeStats (&writeAccessOverall);
   exampleDeleteTimeStats (&readAccessOverall);
+
+  for (i = 0; i < MAX_SAMPLES; i++)
+  {
+    RoundTripModule_DataType_free (&sub_data[i], DDS_FREE_CONTENTS);
+  }
+  RoundTripModule_DataType_free (&pub_data, DDS_FREE_CONTENTS);
+
+  return EXIT_SUCCESS;
+}
+
+static dds_entity_t prepare_dds(dds_entity_t *writer, dds_entity_t *reader, dds_entity_t *readCond)
+{
+  dds_return_t status;
+  dds_entity_t topic;
+  dds_entity_t publisher;
+  dds_entity_t subscriber;
+
+  const char *pubPartitions[] = { "ping" };
+  const char *subPartitions[] = { "pong" };
+  dds_qos_t *pubQos;
+  dds_qos_t *dwQos;
+  dds_qos_t *drQos;
+  dds_qos_t *subQos;
+
+  dds_entity_t participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  DDS_ERR_CHECK (participant, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+  /* A DDS_Topic is created for our sample type on the domain participant. */
+  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", NULL, NULL);
+  DDS_ERR_CHECK (topic, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+  /* A DDS_Publisher is created on the domain participant. */
+  pubQos = dds_qos_create ();
+  dds_qset_partition (pubQos, 1, pubPartitions);
+
+  publisher = dds_create_publisher (participant, pubQos, NULL);
+  DDS_ERR_CHECK (publisher, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  dds_qos_delete (pubQos);
+
+  /* A DDS_DataWriter is created on the Publisher & Topic with a modified Qos. */
+  dwQos = dds_qos_create ();
+  dds_qset_reliability (dwQos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
+  dds_qset_writer_data_lifecycle (dwQos, false);
+  *writer = dds_create_writer (publisher, topic, dwQos, NULL);
+  DDS_ERR_CHECK (*writer, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  dds_qos_delete (dwQos);
+
+  /* A DDS_Subscriber is created on the domain participant. */
+  subQos = dds_qos_create ();
+
+  dds_qset_partition (subQos, 1, subPartitions);
+
+  subscriber = dds_create_subscriber (participant, subQos, NULL);
+  DDS_ERR_CHECK (subscriber, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  dds_qos_delete (subQos);
+  /* A DDS_DataReader is created on the Subscriber & Topic with a modified QoS. */
+  drQos = dds_qos_create ();
+  dds_qset_reliability (drQos, DDS_RELIABILITY_RELIABLE, DDS_SECS(10));
+  *reader = dds_create_reader (subscriber, topic, drQos, NULL);
+  DDS_ERR_CHECK (*reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  dds_qos_delete (drQos);
+
+  waitSet = dds_create_waitset (participant);
+  *readCond = dds_create_readcondition (*reader, DDS_ANY_STATE);
+
+  status = dds_waitset_attach (waitSet, *readCond, *reader);
+  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  status = dds_waitset_attach (waitSet, waitSet, waitSet);
+  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+  return participant;
+}
+
+static void finalize_dds(dds_entity_t participant, dds_entity_t reader, dds_entity_t readCond)
+{
+  dds_return_t status;
+
+  /* Disable callbacks */
+  dds_set_enabled_status (reader, 0);
 
   status = dds_waitset_detach (waitSet, readCond);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
@@ -458,12 +481,4 @@ done:
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   status = dds_delete (participant);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-  for (i = 0; i < MAX_SAMPLES; i++)
-  {
-    RoundTripModule_DataType_free (&sub_data[i], DDS_FREE_CONTENTS);
-  }
-  RoundTripModule_DataType_free (&pub_data, DDS_FREE_CONTENTS);
-
-  return 0;
 }

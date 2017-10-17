@@ -4,14 +4,6 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
-
-/* We are deliberately testing some bad arguments that SAL will complain about.
- * So, silence SAL regarding these issues. */
-#pragma warning(push)
-#pragma warning(disable: 6387 28020)
-
-
-
 /****************************************************************************
  * TODO: (CHAM-279) Add DDS_INCONSISTENT_TOPIC_STATUS test
  * TODO: (CHAM-277) Add DDS_OFFERED/REQUESTED_DEADLINE_MISSED_STATUS test
@@ -299,7 +291,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -413,7 +405,9 @@ Test(vddsc_listener, create_and_delete)
     ASSERT_CALLBACK_EQUAL(data_available, listener, DDS_LUNSET);
 
     dds_listener_delete(listener);
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     dds_listener_delete(NULL);
+    OS_WARNING_MSVC_ON(6387);
 }
 
 Test(vddsc_listener, reset)
@@ -460,9 +454,11 @@ Test(vddsc_listener, copy)
     ASSERT_CALLBACK_EQUAL(sample_lost, listener2, sample_lost_cb);
 
     /* Calling copy with NULL should not crash and be noops. */
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     dds_listener_copy(listener2, NULL);
     dds_listener_copy(NULL, listener1);
     dds_listener_copy(NULL, NULL);
+    OS_WARNING_MSVC_ON(6387);
 
     dds_listener_delete(listener1);
     dds_listener_delete(listener2);
@@ -551,6 +547,7 @@ Test(vddsc_listener, getters_setters)
     dds_listener_t *listener = dds_listener_create(NULL);
     cr_assert_not_null(listener);
 
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */ \
     TEST_GET_SET(listener, inconsistent_topic, inconsistent_topic_cb);
     TEST_GET_SET(listener, liveliness_lost, liveliness_lost_cb);
     TEST_GET_SET(listener, offered_deadline_missed, offered_deadline_missed_cb);
@@ -564,6 +561,7 @@ Test(vddsc_listener, getters_setters)
     TEST_GET_SET(listener, publication_matched, publication_matched_cb);
     TEST_GET_SET(listener, subscription_matched, subscription_matched_cb);
     TEST_GET_SET(listener, data_available, data_available_cb);
+    OS_WARNING_MSVC_ON(6387);
 
     dds_listener_delete(listener);
 }
@@ -1033,6 +1031,3 @@ Test(vddsc_listener, inconsistent_topic, .init=init_triggering_base, .fini=fini_
 }
 #endif
 #endif
-
-
-#pragma warning(pop)

@@ -6,6 +6,8 @@
 #include "dds.h"
 #include "RoundTrip.h"
 
+#include "test-common.h"
+
 static dds_entity_t e[8];
 
 #define PAR (0) /* Participant */
@@ -16,24 +18,6 @@ static dds_entity_t e[8];
 #define REA (5) /* Reader */
 #define RCD (6) /* ReadCondition */
 #define BAD (7) /* Bad (non-entity) */
-
-static const char *entity_kind_str(dds_entity_t e) {
-    if(e <= 0) {
-        return "(ERROR)";
-    }
-    switch(e & DDS_ENTITY_KIND_MASK) {
-        case DDS_KIND_TOPIC:        return "Topic";
-        case DDS_KIND_PARTICIPANT:  return "Participant";
-        case DDS_KIND_READER:       return "Reader";
-        case DDS_KIND_WRITER:       return "Writer";
-        case DDS_KIND_SUBSCRIBER:   return "Subscriber";
-        case DDS_KIND_PUBLISHER:    return "Publisher";
-        case DDS_KIND_COND_READ:    return "ReadCondition";
-        case DDS_KIND_COND_QUERY:   return "QueryCondition";
-        case DDS_KIND_WAITSET:      return "WaitSet";
-        default:                    return "(INVALID_ENTITY)";
-    }
-}
 
 static void
 setup(void)

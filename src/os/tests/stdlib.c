@@ -10,6 +10,9 @@
 #include <Windows.h>
 #endif
 
+static const os_time wait_time_out = { 1, 0 };
+static FILE *file;
+
 #define ENABLE_TRACING 0
 
 #define FLOCKFILE_THREAD1_INPUT1 "thread1_flockfile_proc: *** input 1 ***"
@@ -33,7 +36,7 @@
 
 #define waitForSignal(signal, mutex) \
 		os_mutexLock(&mutex);\
-		if(!signal##_set) { \
+		while(!signal##_set) { \
 			/* waiting for signal */ \
 			os_condWait(&signal, &mutex);\
 			/* received */ \
@@ -41,13 +44,28 @@
 		os_mutexUnlock(&mutex);
 
 #define timedWaitSignal(signal, mutex, time) \
-		os_mutexLock(&mutex);\
-		if(!signal##_set) { \
-			/* waiting for signal */ \
-			os_condTimedWait(&signal, &mutex, &time); \
-			/* signal received or timeout */ \
-		} /* else already signal received */ \
-		os_mutexUnlock(&mutex);
+		{ \
+			os_time duration = time; \
+			os_time startTime, currentTime; \
+			os_result rc; \
+			os_mutexLock(&mutex); \
+			startTime = os_timeGetElapsed(); \
+			while(!signal##_set) { \
+				/* waiting for signal */ \
+				rc = os_condTimedWait(&signal, &mutex, &duration); \
+				/* signal received or timeout */ \
+				if(rc == os_resultTimeout) { \
+					break; \
+				} else { \
+					currentTime = os_timeGetElapsed(); \
+					if(os_timeCompare(os_timeSub(currentTime, startTime), wait_time_out) >= 0) { \
+						break; \
+					} \
+					duration = os_timeSub(wait_time_out, os_timeSub(currentTime, startTime)); \
+				} \
+			} /* else already signal received */ \
+			os_mutexUnlock(&mutex);\
+		}
 
 static os_mutex mutex;
 static bool do_locking;
@@ -62,9 +80,6 @@ defSignal(action2_done);
 defSignal(do_action1);
 defSignal(do_action2);
 defSignal(do_action3);
-
-static const os_time wait_time_out = { 1, 0 };
-static FILE *file;
 
 static uint32_t thread1_flockfile_proc(void* args) {
 	int result = 0;
@@ -422,7 +437,7 @@ CUnit_Test(os_stdlib, putenv)
 
 CUnit_Test(os_stdlib, getenv)
 {
-    char *env;
+    const char *env;
     os_result res;
 
     printf ("Starting os_stdlib_getenv_001\n");
@@ -782,6 +797,8 @@ CUnit_Test(os_stdlib, flockfile)
 {
 	bool result = false;
 
+	os_osInit();
+
 	/* Check writing in a FILE from multiple threads without using os_flockfile. */
 	printf ("Starting os_stdlib_flockfile_001\n");
 	result = doFlockfileTest(false);
@@ -793,6 +810,8 @@ CUnit_Test(os_stdlib, flockfile)
 	CU_ASSERT (result);
 
 	printf ("Ending os_stdlib_flockfile\n");
+
+	os_osExit();
 }
 
 CUnit_Test(os_stdlib, getopt)
@@ -825,11 +844,12 @@ CUnit_Test(os_stdlib, getopt)
 	c = os_getopt(argc, argv002, "c:");
 	CU_ASSERT (c == -1);
 
-	/* Check correct functioning of os_get_optopt */
+	/* Check correct functioning of os_set_opterr, os_get_opterr and os_get_optopt */
 	printf ("Starting os_stdlib_getopt_004\n");
 	argc = 2;
-	os_set_opterr(0);
 	os_set_optind(1);
+	os_set_opterr(0);
+	CU_ASSERT(os_get_opterr() == 0)
 	c = os_getopt (argc, argv003, "c:");
 	CU_ASSERT (c == '?');
 	CU_ASSERT (os_get_optopt() == 'd');

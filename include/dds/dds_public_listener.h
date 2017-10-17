@@ -1,8 +1,8 @@
+/* TODO: add copyright header? */
+
 /** @file
  *
  * @brief DDS C Listener API
- *
- * @todo add copyright header?
  *
  * This header file defines the public API of listeners in the
  * VortexDDS C language binding.
@@ -45,7 +45,6 @@ typedef void (*dds_on_any_fn) (); /**< Empty parameter list on purpose; should b
 struct c_listener;
 typedef struct c_listener dds_listener_t;
 
-#if 0
 /**
  * @brief Allocate memory and initializes to default values (::DDS_LUNSET) of a listener
  *
@@ -53,7 +52,6 @@ typedef struct c_listener dds_listener_t;
  *
  * @return Returns a pointer to the allocated memory for dds_listener_t structure.
  */
-#endif
 _Ret_notnull_
 DDS_EXPORT dds_listener_t* dds_listener_create (_In_opt_ void* arg);
 

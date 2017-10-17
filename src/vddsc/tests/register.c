@@ -16,6 +16,7 @@
 #define MAX_SAMPLES                 7
 #define INITIAL_SAMPLES             2
 
+
 static dds_entity_t g_participant = 0;
 static dds_entity_t g_topic       = 0;
 static dds_entity_t g_reader      = 0;
@@ -35,7 +36,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -57,7 +58,7 @@ registering_init(void)
     g_waitset = dds_create_waitset(g_participant);
     cr_assert_gt(g_waitset, 0, "Failed to create g_waitset");
 
-    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_registering_test", name, 100), qos, NULL);
+    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_registering_test", name, sizeof name), qos, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     /* Create a reader that keeps one sample on three instances. */
@@ -74,7 +75,7 @@ registering_init(void)
     /* Sync g_writer to g_reader. */
     ret = dds_set_enabled_status(g_writer, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_writer status");
-    ret = dds_waitset_attach(g_waitset, g_writer, (dds_attach_t)(intptr_t)g_writer);
+    ret = dds_waitset_attach(g_waitset, g_writer, g_writer);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_writer");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_writer r");
@@ -85,7 +86,7 @@ registering_init(void)
     /* Sync g_reader to g_writer. */
     ret = dds_set_enabled_status(g_reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_reader status");
-    ret = dds_waitset_attach(g_waitset, g_reader, (dds_attach_t)(intptr_t)g_reader);
+    ret = dds_waitset_attach(g_waitset, g_reader, g_reader);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_reader");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_reader r");
@@ -137,12 +138,11 @@ registering_fini(void)
 Test(vddsc_register_instance, deleted_entity, .init=registering_init, .fini=registering_fini)
 {
     dds_return_t ret;
+    dds_instance_handle_t handle;
     dds_delete(g_writer);
-    ret = dds_register_instance(g_writer, NULL, NULL);
+    ret = dds_register_instance(g_writer, &handle, g_data);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
-
 }
-
 
 static dds_instance_handle_t hndle = 0;
 static Space_Type1           data;
@@ -150,15 +150,17 @@ TheoryDataPoints(vddsc_register_instance, invalid_params) = {
         DataPoints(dds_instance_handle_t *, &hndle, NULL),
         DataPoints(void*, &data, NULL)
 };
-Theory((dds_instance_handle_t *hndl2, void *data), vddsc_register_instance, invalid_params/*, .init=registering_init, .fini=registering_fini*/)
+Theory((dds_instance_handle_t *hndl2, void *datap), vddsc_register_instance, invalid_params/*, .init=registering_init, .fini=registering_fini*/)
 {
     dds_return_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
     /* Only test when the combination of parameters is actually invalid.*/
-    cr_assume((hndl2 == NULL) || (data == NULL));
+    cr_assume((hndl2 == NULL) || (datap == NULL));
 
-    ret = dds_register_instance(g_writer, hndl2, data);
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
+    ret = dds_register_instance(g_writer, hndl2, datap);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d != expected %d", dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER);
 }
 
@@ -169,13 +171,9 @@ Theory((dds_entity_t writer), vddsc_register_instance, invalid_writers, .init=re
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
+    dds_instance_handle_t handle;
 
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
-
-    ret = dds_register_instance(writer, NULL, NULL);
+    ret = dds_register_instance(writer, &handle, g_data);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 
@@ -185,7 +183,8 @@ TheoryDataPoints(vddsc_register_instance, non_writers) = {
 Theory((dds_entity_t *writer), vddsc_register_instance, non_writers, .init=registering_init, .fini=registering_fini)
 {
     dds_return_t ret;
-    ret = dds_register_instance(*writer, NULL, NULL);
+    dds_instance_handle_t handle;
+    ret = dds_register_instance(*writer, &handle, g_data);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 

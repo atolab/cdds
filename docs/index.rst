@@ -4,15 +4,11 @@ Welcome to VortexDDS's documentation!
 =====================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 3
+   :caption: Contents
 
    GettingStartedGuide/index
-
-
-.. Enabling this triggers many errors :(
-.. .. doxygenindex::
-..   :project: vddsc_api
+   vddsc
 
 Indices and tables
 ==================

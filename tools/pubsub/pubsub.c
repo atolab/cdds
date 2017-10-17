@@ -1,5 +1,9 @@
+#ifndef MAIN
+#define MAIN main
+#endif
+
 #ifdef __APPLE__
-#define USE_EDITLINE 1
+#define USE_EDITLINE 0
 #endif
 
 #define _ISOC99_SOURCE
@@ -22,13 +26,6 @@
 #include "tglib.h"
 #include "porting.h"
 #include "os/os.h"
-
-//#define DEBUG
-#ifdef DEBUG
-#define PRINTD printf
-#else
-#define PRINTD(...)
-#endif
 
 //#define NUMSTR "0123456789"
 //#define HOSTNAMESTR "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-." NUMSTR
@@ -58,6 +55,9 @@ static int once_mode = 0;
 static int wait_hist_data = 0;
 static dds_duration_t wait_hist_data_timeout = 0;
 static double dur = 0.0;
+//static int sigpipe[2]; // TODO signal handling support
+//static int termpipe[2];
+//static int fdin = 0; // TODO ARB type support
 static enum tgprint_mode printmode = TGPM_FIELDS;
 static unsigned print_metadata = PM_STATE;
 static int printtype = 0;
@@ -72,18 +72,17 @@ struct readerspec {
   dds_entity_t rd;
   dds_entity_t sub;
   enum topicsel topicsel;
-  char *tpname;
   struct tgtopic *tgtp;
   enum readermode mode;
   int use_take;
-  unsigned sleep_us;
+  dds_duration_t sleep_ns;
   int polling;
   uint32_t read_maxsamples;
   int print_match_pre_read;
   unsigned idx;
 };
 
-enum writermode { //Todo: changed prefix to WRM from WM. Because it is giving error in windows.
+enum writermode {
   WRM_NONE,
   WRM_AUTO,
   WRM_INPUT
@@ -108,11 +107,10 @@ static const struct readerspec def_readerspec = {
   .rd = 0,
   .sub = 0,
   .topicsel = UNSPEC,
-  .tpname = NULL,
   .tgtp = NULL,
   .mode = MODE_PRINT,
   .use_take = 1,
-  .sleep_us = 0,
+  .sleep_ns = 0,
   .polling = 0,
   .read_maxsamples = INT16_MAX,
   .print_match_pre_read = 0
@@ -140,9 +138,9 @@ struct wrspeclist {
 
 static void terminate (void)
 {
-  const char c = 0;
+//  const char c = 0;
   termflag = 1;
-//  os_write(termpipe[1], &c, 1); //Todo: for abstraction layer
+//  os_write(termpipe[1], &c, 1); // TODO: signal handling support; for abstraction layer
   dds_waitset_set_trigger(termcond, true);
 }
 
@@ -152,52 +150,26 @@ static void usage (const char *argv0)
 usage: %s [OPTIONS] PARTITION...\n\
 \n\
 OPTIONS:\n\
-  -T TOPIC[:TO][:EXPR]  set topic name to TOPIC, TO is an optional timeout in\n\
-                  seconds (default 10, use inf to wait indefinitely) for\n\
-                  find_topic in ARB mode; EXPR can be used to create a content\n\
-                  filtered topic \"cftN\" with filter expression EXPR based on\n\
-                  the topic. Environment variables in EXPR are expanded in the\n\
-                  usual manner and with:\n\
-                    $SYSTEMID set to the current system id (in decimal)\n\
-                    $NODE_BUILTIN_PARTITION set to the node-specific built-in\n\
-                        partition\n\
+  -T TOPIC        set topic name to TOPIC\n\
                   specifying a topic name when one has already been given\n\
                   introduces a new reader/writer pair\n\
-  -K TYPE         select type (ARB is default if topic specified, KS if not),\n\
+  -K TYPE         select type (KS is default),\n\
                   (default topic name in parenthesis):\n\
                     KS                - key, seq, octet sequence (PubSub)\n\
                     K32,K64,K128,K256 - key, seq, octet array (PubSub<N>)\n\
                     OU                - one ulong, keyless (PubSubOU)\n\
-                    ARB               - use find_topic - no topic QoS override\n\
-                                        possible)\n\
-                    <FILE>            - read typename, keylist, metadata from\n\
-                                        FILE, then define topic named T with\n\
-                                        specified QoS\n\
                   specifying a type when one has already been given introduces\n\
                   a new reader/writer pair\n\
   -q FS:QOS       set QoS for entities indicated by FS, which must be one or\n\
                   more of: t (topic), p (publisher), s (subscriber),\n\
                   w (writer), r (reader), or a (all of them). For QoS syntax,\n\
                   see below. Inapplicable QoS's are ignored.\n\
-  -q provider=[PROFILE,]URI  use URI, profile as QoS provider, in which case\n\
-                  any QoS specification not of the LETTER=SETTING form gets\n\
-                  passed as-is to the QoS provider (with the exception of the\n\
-                  empty string, which is then translated to a null pointer to\n\
-                  get the default value). Note that later specifications\n\
-                  override earlier ones, so a QoS provider can be combined\n\
-                  with the previous form as well. Also note that the default\n\
-                  QoS's used by this program are slightly different from\n\
-                  those of the DCPS API (topics default to by-source ordering\n\
-                  and reliability, and readers and writers to the topic QoS),\n\
-                  which may cause surprises :)\n\
   -m [0|p[p]|c[p][:N]|z|d[p]]  no reader, print values, check sequence numbers\n\
                   (expecting N keys), \"zero-load\" mode or \"dump\" mode (which\n\
                   is differs from \"print\" primarily because it uses a data-\n\
                   available trigger and reads all samples in read-mode(default:\n\
                   p; pp, cp, dp are polling modes); set per-reader\n\
   -D DUR          run for DUR seconds\n\
-  -M TO:U         wait for matching reader with timeout TO and user_data U and not\n\
-	         	  owned by this instance of pubsub\n\
   -n N            limit take/read to N samples\n\
   -O              take/read once then exit 0 if samples present, or 1 if not\n\
   -P MODES        printing control (prefixing with \"no\" disables):\n\
@@ -214,24 +186,21 @@ OPTIONS:\n\
                     nwgen          no-writers generation count\n\
                     ranks          sample, generation, absolute generation ranks\n\
                     state          instance/sample/view states\n\
-                  additionally, for ARB types the following have effect:\n\
-                    type           print type definition at start up\n\
+		  additionally, the following have effect for sample data values:\n\
                     dense          no additional white space, no field names\n\
                     fields         field names, some white space\n\
                     multiline      field names, one field per line\n\
                   default is \"nometa,state,fields\".\n\
+		  	  	  For K* types, the .baggage field is omitted from the data output\n\
   -r              register instances (-wN mode only)\n\
   -R              use 'read' instead of 'take'\n\
   -s MS           sleep MS ms after each read/take (default: 0)\n\
-  -W TO           wait_for_historical_data TO (TO in seconds or inf)\n\
   -w F            writer mode/input selection, F:\n\
                     -     stdin (default)\n\
                     N     cycle through N keys as fast as possible\n\
                     N:R*B cycle through N keys at R bursts/second, each burst\n\
                           consisting of B samples\n\
                     N:R   as above, B=1\n\
-                    :P    listen on TCP port P\n\
-                    H:P   connect to TCP host H, port P\n\
                   no writer is created if -w0 and no writer listener\n\
                   automatic specifications can be given per writer; final\n\
                   interactive specification determines input used for non-\n\
@@ -253,7 +222,6 @@ OPTIONS:\n\
   -z N            topic size (affects KeyedSeq only)\n\
   -@              echo everything on duplicate writer (only for interactive)\n\
   -* N            sleep for N seconds just before returning from main()\n\
-  -!              disable signal handlers\n\
 \n\
 %s\n\
 Note: defaults above are overridden as follows:\n\
@@ -271,24 +239,14 @@ uN    unregister, key value N; u@T N as above\n\
 rN    register, key value N; u@T N as above\n\
 sN    sleep for N seconds\n\
 zN    set topic size to N (affects KeyedSeq only)\n\
-pX    set publisher partition to comma-separated list X\n\
-Y     dispose_all\n\
-B     begin coherent changes\n\
-E     end coherent changes\n\
-SP;T;U  make persistent snapshot with given partition and topic\n\
-      expressions and URI\n\
-:X    switch to writer X:\n\
-        +N, -N   next, previous Nth writer of all non-automatic writers\n\
-                 N defaults to 1\n\
-        N        Nth writer of all non-automatic writers\n\
-        NAME     unique writer of which topic name starts with NAME\n\
 Note: for K*, OU types, in the above N is always a decimal\n\
 integer (possibly negative); because the OneULong type has no key\n\
 the actual key value is irrelevant. For ARB types, N must be a\n\
 valid initializer. X must always be a list of names.\n\
 \n\
-When invoked as \"sub\", default is -w0 (no writer)\n\
-When invoked as \"pub\", default is -m0 (no reader)\n",
+PARTITION:\n\
+If partition name contains spaces, then wrap it inside quotation marks.\n\
+Use \"\" for default partition.\n",
            argv0, qos_arg_usagestr);
   exit (1);
 }
@@ -321,14 +279,14 @@ static char *expand_env (const char *name, char op, const char *alt)
       else
       {
         char *altx = expand_envvars (alt);
-        error ("%s: %s\n", name, altx);
+        error_exit("%s: %s\n", name, altx);
         os_free (altx);
         return NULL;
       }
     case '+':
       return env ? expand_envvars (alt) : os_strdup ("");
     default:
-      abort ();
+      exit(2);
   }
 }
 
@@ -393,7 +351,7 @@ static char *expand_envbrace (const char **src)
     return x;
   }
  err:
-  error ("%*.*s: invalid expansion\n", (int) (*src - start), (int) (*src - start), start);
+ error_exit("%*.*s: invalid expansion\n", (int) (*src - start), (int) (*src - start), start);
   return NULL;
 }
 
@@ -401,7 +359,7 @@ static char *expand_envsimple (const char **src)
 {
   const char *start = *src;
   char *name, *x;
-  while (**src && (isalnum (**src) || **src == '_'))
+  while (**src && (isalnum ((unsigned char)**src) || **src == '_'))
     (*src)++;
   assert (*src > start);
   name = os_malloc ((size_t) (*src - start) + 1);
@@ -434,7 +392,7 @@ static char *expand_envvars (const char *src0)
     {
       src++;
       if (*src == 0)
-        error ("%s: incomplete escape at end of string\n", src0);
+          error_exit("%s: incomplete escape at end of string\n", src0);
       expand_append (&dst, &sz, &pos, *src++);
     }
     else if (*src == '$')
@@ -443,12 +401,12 @@ static char *expand_envvars (const char *src0)
       src++;
       if (*src == 0)
       {
-        error ("%s: incomplete variable expansion at end of string\n", src0);
+          error_exit("%s: incomplete variable expansion at end of string\n", src0);
         return NULL;
       }
       else if (*src == '{')
         x = expand_envbrace (&src);
-      else if (isalnum (*src) || *src == '_')
+      else if (isalnum ((unsigned char)*src) || *src == '_')
         x = expand_envsimple (&src);
       else
         x = expand_envchar (&src);
@@ -478,7 +436,10 @@ static unsigned split_partitions (const char ***p_ps, char **p_bufcopy, const ch
   i = 0; bc = bufcopy;
   while (1)
   {
+    // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
+    OS_WARNING_MSVC_OFF(6386);
     ps[i++] = bc;
+    OS_WARNING_MSVC_ON(6386);
     while (*bc && *bc != ',') bc++;
     if (*bc == 0) break;
     *bc++ = 0;
@@ -494,11 +455,10 @@ static int set_pub_partition (dds_entity_t pub, const char *buf)
   const char **ps;
   char *bufcopy;
   unsigned nps = split_partitions(&ps, &bufcopy, buf);
-  int rc;
-  if ((rc = change_publisher_partitions (pub, nps, ps)) != DDS_RETCODE_OK)
-    fprintf (stderr, "set_pub_partition failed: %s (%d)\n", dds_strerror (rc), (int) rc);
+  dds_return_t rc = change_publisher_partitions (pub, nps, ps);
+  error_report(rc, "set_pub_partition failed: ");
   os_free (bufcopy);
-  os_free (ps);
+  os_free ((char **)ps);
   return 0;
 }
 
@@ -508,44 +468,13 @@ static int set_sub_partition (dds_entity_t sub, const char *buf)
   const char **ps;
   char *bufcopy;
   unsigned nps = split_partitions(&ps, &bufcopy, buf);
-  int rc;
-  if ((rc = change_subscriber_partitions (sub, nps, ps)) != DDS_RETCODE_OK)
-    fprintf (stderr, "set_partition failed: %s (%d)\n", dds_strerror (rc), (int) rc);
+  dds_return_t rc = change_subscriber_partitions (sub, nps, ps);
+  error_report(rc, "set_partition failed: %s (%d)\n");
   os_free (bufcopy);
   os_free (ps);
   return 0;
 }
 #endif
-
-static void make_persistent_snapshot(const char *args)
-{
-	printf("Make persistent snapshot: not supported\n");
-	return;
-//	DDS_DomainId_t id = DDS_DomainParticipant_get_domain_id(dp);
-//	DDS_Domain dom;
-//	DDS_ReturnCode_t ret;
-//	char *p, *px = NULL, *tx = NULL, *uri = NULL;
-//	px = os_strdup(args);
-//	if ((p = strchr(px, ';')) == NULL) goto err;
-//	*p++ = 0;
-//	tx = p;
-//	if ((p = strchr(tx, ';')) == NULL) goto err;
-//	*p++ = 0;
-//	uri = p;
-//	if ((dom = DDS_DomainParticipantFactory_lookup_domain(dpf, id)) == NULL) {
-//	printf ("failed to lookup domain\n");
-//	} else {
-//	if ((ret = DDS_Domain_create_persistent_snapshot(dom, px, tx, uri)) != DDS_RETCODE_OK)
-//	  printf ("failed to create persistent snapshot, error %d (%s)\n", (int) ret, dds_strerror(ret));
-//	if ((ret = DDS_DomainParticipantFactory_delete_domain(dpf, dom)) != DDS_RETCODE_OK)
-//	  error ("failed to delete domain objet, error %d (%s)\n", (int) ret, dds_strerror(ret));
-//	}
-//	free(px);
-//	return;
-//	err:
-//	printf ("%s: expected PART_EXPR;TOPIC_EXPR;URI\n", args);
-//	free(px);
-}
 
 static int read_int (char *buf, int bufsize, int pos, int accept_minus)
 {
@@ -686,53 +615,54 @@ static int read_value (char *command, int *key, struct tstamp_t *tstamp, char **
   return 0;
 }
 
-static char *getl_simple (int fd, int *count)
-{
-  size_t sz = 0, n = 0;
-  char *line;
-  int c;
-
-  if ((c = getc(stdin)) == EOF)
-  {
-    *count = 0;
-    return NULL;
-  }
-
-  line = NULL;
-  do {
-    if (n == sz) line = os_realloc(line, sz += 256);
-    line[n++] = (char) c;
-  } while ((c = getc (stdin)) != EOF && c != '\n');
-  if (n == sz) line = os_realloc(line, sz += 256);
-  line[n++] = 0;
-  *count = (int) (n-1);
-  return line;
-}
-
-struct getl_arg {
-  int use_editline;
-  union {
-#if USE_EDITLINE
-    struct {
-      FILE *el_fp;
-      EditLine *el;
-      History *hist;
-      HistEvent ev;
-    } el;
-#endif
-    struct {
-      int fd;
-      char *lastline;
-    } s;
-  } u;
-};
-
-static void getl_init_simple (struct getl_arg *arg, int fd)
-{
-  arg->use_editline = 0;
-  arg->u.s.fd = fd;
-  arg->u.s.lastline = NULL;
-}
+// TODO Upon support for ARB types, resolve the declaration of fdin
+//static void getl_init_simple (struct getl_arg *arg, int fd)
+//{
+//  arg->use_editline = 0;
+//  arg->u.s.fd = fd;
+//  arg->u.s.lastline = NULL;
+//}
+//
+//static char *getl_simple (int fd, int *count)
+//{
+//  size_t sz = 0, n = 0;
+//  char *line;
+//  int c;
+//
+//  if ((c = getc(stdin)) == EOF)
+//  {
+//    *count = 0;
+//    return NULL;
+//  }
+//
+//  line = NULL;
+//  do {
+//    if (n == sz) line = os_realloc(line, sz += 256);
+//    line[n++] = (char) c;
+//  } while ((c = getc (stdin)) != EOF && c != '\n');
+//  if (n == sz) line = os_realloc(line, sz += 256);
+//  line[n++] = 0;
+//  *count = (int) (n-1);
+//  return line;
+//}
+//
+//struct getl_arg {
+//  int use_editline;
+//  union {
+//#if USE_EDITLINE
+//    struct {
+//      FILE *el_fp;
+//      EditLine *el;
+//      History *hist;
+//      HistEvent ev;
+//    } el;
+//#endif
+//    struct {
+//      int fd;
+//      char *lastline;
+//    } s;
+//  } u;
+//};
 
 #if USE_EDITLINE
 static int el_getc_wrapper (EditLine *el, char *c)
@@ -778,47 +708,55 @@ static void getl_init_editline (struct getl_arg *arg, int fd)
 }
 #endif
 
-static void getl_fini (struct getl_arg *arg)
-{
-  if (arg->use_editline)
-  {
-#if USE_EDITLINE
-    el_end(arg->u.el.el);
-    history_end(arg->u.el.hist);
-    fclose(arg->u.el.el_fp);
-#endif
-  }
-  else
-  {
-	  os_free(arg->u.s.lastline);
-  }
-}
-
-static const char *getl (struct getl_arg *arg, int *count)
-{
-  if (arg->use_editline)
-  {
-#if USE_EDITLINE
-    return el_gets(arg->u.el.el, count);
-#else
-    abort();
-    return NULL;
-#endif
-  }
-  else
-  {
-	  os_free (arg->u.s.lastline);
-    return arg->u.s.lastline = getl_simple (arg->u.s.fd, count);
-  }
-}
-
-static void getl_enter_hist(struct getl_arg *arg, const char *line)
-{
-#if USE_EDITLINE
-  if (arg->use_editline)
-    history(arg->u.el.hist, &arg->u.el.ev, H_ENTER, line);
-#endif
-}
+// TODO ARB type support
+//static void getl_fini (struct getl_arg *arg)
+//{
+//  if (arg->use_editline)
+//  {
+//#if USE_EDITLINE
+//    el_end(arg->u.el.el);
+//    history_end(arg->u.el.hist);
+//    fclose(arg->u.el.el_fp);
+//#endif
+//  }
+//  else
+//  {
+//	  os_free(arg->u.s.lastline);
+//  }
+//}
+//
+//static const char *getl (struct getl_arg *arg, int *count)
+//{
+//  if (arg->use_editline)
+//  {
+//#if USE_EDITLINE
+//    return el_gets(arg->u.el.el, count);
+//#else
+//    abort();
+//    return NULL;
+//#endif
+//  }
+//  else
+//  {
+//	  os_free (arg->u.s.lastline);
+//    return arg->u.s.lastline = getl_simple (arg->u.s.fd, count);
+//  }
+//}
+//
+//static void getl_enter_hist(struct getl_arg *arg, const char *line)
+//{
+//#if USE_EDITLINE
+//  if (arg->use_editline)
+//    history(arg->u.el.hist, &arg->u.el.ev, H_ENTER, line);
+//#endif
+//}
+//
+//static char *skipspaces (const char *s)
+//{
+//  while (*s && isspace((unsigned char) *s))
+//    s++;
+//  return (char *) s;
+//}
 
 static char si2isc (const dds_sample_info_t *si)
 {
@@ -856,13 +794,9 @@ static int getkeyval_KS (dds_entity_t rd, int32_t *key, dds_instance_handle_t ih
   int result;
   KeyedSeq d_key;
   if ((result = dds_instance_get_key(rd, ih, &d_key)) == DDS_RETCODE_OK)
-		  *key = d_key.keyval;
+	  *key = d_key.keyval;
   else
 	  *key = 0;
-//  if ((result = KeyedSeqDataReader_get_key_value (rd, &d_key, ih)) == DDS_RETCODE_OK) //TODO: Because it is giving error. Need to fix it.
-//    *key = d_key.keyval;
-//  else
-//    *key = 0;
   return result;
 }
 
@@ -871,13 +805,9 @@ static int getkeyval_K32 (dds_entity_t rd, int32_t *key, dds_instance_handle_t i
   int result = 0;
   Keyed32 d_key;
   if ((result = dds_instance_get_key(rd, ih, &d_key)) == DDS_RETCODE_OK)
-  		  *key = d_key.keyval;
-    else
+	  *key = d_key.keyval;
+  else
   	  *key = 0;
-//  if ((result = Keyed32DataReader_get_key_value (rd, &d_key, ih)) == DDS_RETCODE_OK)
-//    *key = d_key.keyval;
-//  else
-//    *key = 0;
   return result;
 }
 
@@ -886,13 +816,9 @@ static int getkeyval_K64 (dds_entity_t rd, int32_t *key, dds_instance_handle_t i
   int result = 0;
   Keyed64 d_key;
   if ((result = dds_instance_get_key(rd, ih, &d_key)) == DDS_RETCODE_OK)
-  		  *key = d_key.keyval;
-    else
+	  *key = d_key.keyval;
+  else
   	  *key = 0;
-//  if ((result = Keyed64DataReader_get_key_value (rd, &d_key, ih)) == DDS_RETCODE_OK)
-//    *key = d_key.keyval;
-//  else
-//    *key = 0;
   return result;
 }
 
@@ -901,13 +827,9 @@ static int getkeyval_K128 (dds_entity_t rd, int32_t *key, dds_instance_handle_t 
   int result = 0;
   Keyed128 d_key;
   if ((result = dds_instance_get_key(rd, ih, &d_key)) == DDS_RETCODE_OK)
-  		  *key = d_key.keyval;
-    else
+	  *key = d_key.keyval;
+  else
   	  *key = 0;
-//  if ((result = Keyed128DataReader_get_key_value (rd, &d_key, ih)) == DDS_RETCODE_OK)
-//    *key = d_key.keyval;
-//  else
-//    *key = 0;
   return result;
 }
 
@@ -916,16 +838,13 @@ static int getkeyval_K256 (dds_entity_t rd, int32_t *key, dds_instance_handle_t 
   int result = 0;
   Keyed256 d_key;
   if ((result = dds_instance_get_key(rd, ih, &d_key)) == DDS_RETCODE_OK)
-  		  *key = d_key.keyval;
-    else
+	  *key = d_key.keyval;
+  else
   	  *key = 0;
-//  if ((result = Keyed256DataReader_get_key_value (rd, &d_key, ih)) == DDS_RETCODE_OK)
-//    *key = d_key.keyval;
-//  else
-//    *key = 0;
   return result;
 }
 
+// TODO Determine encoding of dds_instance_handle_t, and see what sort of value can be extracted from it, if any
 //static void instancehandle_to_id (uint32_t *systemId, uint32_t *localId, dds_instance_handle_t h)
 //{
 //  /* Undocumented and unsupported trick */
@@ -966,12 +885,12 @@ static void print_sampleinfo (unsigned long long *tstart, unsigned long long tno
     n += printf ("%s%"PRIu32".%09"PRIu32, n > 0 ? sep : "", (uint32_t) (si->reception_timestamp/DDS_NSECS_IN_SEC), (uint32_t) (si->reception_timestamp%DDS_NSECS_IN_SEC));
   sep = " : ";
   if (print_metadata & PM_DGEN)
-    n += printf ("%s%d", n > 0 ? sep : "", si->disposed_generation_count), sep = " ";
+    n += printf ("%s%"PRIu32, n > 0 ? sep : "", si->disposed_generation_count), sep = " ";
   if (print_metadata & PM_NWGEN)
-    n += printf ("%s%d", n > 0 ? sep : "", si->no_writers_generation_count), sep = " ";
+    n += printf ("%s%"PRIu32, n > 0 ? sep : "", si->no_writers_generation_count);
   sep = " : ";
   if (print_metadata & PM_RANKS)
-    n += printf ("%s%d %d %d", n > 0 ? sep : "", si->sample_rank, si->generation_rank, si->absolute_generation_rank), sep = " ";
+    n += printf ("%s%"PRIu32" %"PRIu32" %"PRIu32, n > 0 ? sep : "", si->sample_rank, si->generation_rank, si->absolute_generation_rank);
   sep = " : ";
   if (print_metadata & PM_STATE)
     n += printf ("%s%c%c%c", n > 0 ? sep : "", isc, ssc, vsc), sep = " ";
@@ -982,10 +901,17 @@ static void print_sampleinfo (unsigned long long *tstart, unsigned long long tno
 static void print_K (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *si, int32_t keyval, uint32_t seq, int (*getkeyval) (dds_entity_t rd, int32_t *key, dds_instance_handle_t ih))
 {
   int result;
-  flockfile(stdout);
+  os_flockfile(stdout);
   print_sampleinfo(tstart, tnow, si, tag);
-  if (si->valid_data)
-    printf ("%u %d\n", seq, keyval);
+  if (si->valid_data) {
+	  if(printmode == TGPM_MULTILINE) {
+		  printf("{\n%*.*s.seq = %u,\n%*.*s.keyval = %d }\n", 4, 4, "", seq, 4, 4, "", keyval);
+	  } else if(printmode == TGPM_DENSE) {
+		  printf("{%u,%d}\n", seq, keyval);
+	  } else {
+		  printf("{ .seq = %u, .keyval = %d }\n", seq, keyval);
+	  }
+  }
   else
   {
     /* May not look at mseq->_buffer[i] but want the key value
@@ -996,67 +922,81 @@ static void print_K (unsigned long long *tstart, unsigned long long tnow, dds_en
        the blanket statement "may not look at value" if valid_data
        is not set means you can't really use take ...  */
     int32_t d_key;
-    if ((result = getkeyval (rd, &d_key, si->instance_handle)) == DDS_RETCODE_OK)
-      printf ("NA %u\n", d_key);
+    if ((result = getkeyval (rd, &d_key, si->instance_handle)) == DDS_RETCODE_OK) {
+    	if(printmode == TGPM_MULTILINE) {
+    		printf("{\n%*.*s.seq = NA,\n%*.*s.keyval = %d }\n", 4, 4, "", 4, 4, "", keyval);
+    	} else if(printmode == TGPM_DENSE) {
+    		printf("{NA,%d}\n", keyval);
+    	} else {
+    		printf("{ .seq = NA, .keyval = %d }\n", keyval);
+		}
+    }
     else
-      printf ("get_key_value: error %d (%s)\n", (int) result, dds_strerror (result));
+      printf ("get_key_value: error (%s)\n", dds_err_str(result));
   }
-  funlockfile(stdout);
+  os_funlockfile(stdout);
 }
 
 static void print_seq_KS (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, KeyedSeq **mseq, int count)
 {
-  unsigned i;
+  int i;
   for (i = 0; i < count; i++)
     print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_KS);
 }
 
 static void print_seq_K32 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed32 **mseq, int count)
 {
-  unsigned i;
+  int i;
   for (i = 0; i < count; i++)
     print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K32);
 }
 
 static void print_seq_K64 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed64 **mseq, int count)
 {
-  unsigned i;
+  int i;
   for (i = 0; i < count; i++)
     print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K64);
 }
 
 static void print_seq_K128 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed128 **mseq, int count)
 {
-  unsigned i;
+  int i;
   for (i = 0; i < count; i++)
     print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K128);
 }
 
 static void print_seq_K256 (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed256 **mseq, int count)
 {
-  unsigned i;
+  int i;
   for (i = 0; i < count; i++)
     print_K (tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K256);
 }
 
 static void print_seq_OU (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd __attribute__ ((unused)), const char *tag, const dds_sample_info_t *si, const OneULong **mseq, int count)
 {
-  unsigned i;
+  int i;
   for (i = 0; i < count; i++)
   {
-	flockfile(stdout);
+	os_flockfile(stdout);
     print_sampleinfo(tstart, tnow, si, tag);
     if (si->valid_data) {
-    	printf ("%u\n", mseq[i]->seq);
+    	if(printmode == TGPM_MULTILINE) {
+			printf("{\n%*.*s.seq = %u }\n", 4, 4, "", mseq[i]->seq);
+		} else if(printmode == TGPM_DENSE) {
+			printf("{%u}\n", mseq[i]->seq);
+		} else {
+			printf("{ .seq = %u }\n", mseq[i]->seq);
+		}
     } else {
       printf ("NA\n");
     }
-    funlockfile(stdout);
+    os_funlockfile(stdout);
   }
 }
 
 static void print_seq_ARB (unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd __attribute__ ((unused)), const char *tag, const dds_sample_info_t *iseq, const void **mseq, const struct tgtopic *tgtp)
 {
+    // TODO ARB type support
 //  unsigned i;
 //  for (i = 0; i < mseq->_length; i++)
 //  {
@@ -1151,6 +1091,7 @@ static const char *policystr (uint32_t id)
   }
 }
 
+// TODO Decide on whether to work around the lack of DDS_QosPolicyCount, or get rid of this bit.
 //static void format_policies (char *polstr, size_t polsz, const DDS_QosPolicyCount *xs, unsigned nxs)
 //{
 //  char *ps = polstr;
@@ -1195,11 +1136,6 @@ static void wr_on_publication_matched (dds_entity_t wr __attribute__((unused)), 
           status.last_subscription_handle);
 }
 
-//static int unregister_instance_wrapper (dds_entity_t wr, const void *d, const dds_time_t tstamp)
-//{
-// return dds_unregister_instance_ts(wr, d, tstamp);
-//}
-
 static int register_instance_wrapper (dds_entity_t wr, const void *d, const dds_time_t tstamp)
 {
 	dds_instance_handle_t handle;
@@ -1234,38 +1170,32 @@ static const char *get_write_operstr(char command)
 
 static void non_data_operation(char command, dds_entity_t wr)
 {
-	dds_return_t result = 0;
+	dds_return_t rc = 0;
   switch (command)
   {
     case 'Y':
     	printf("Dispose all: not supported\n");
+    	// TODO Implement application side tracking of alive instances for use with a 'dispose all' function
 //      if ((result = DDS_Topic_dispose_all_data (DDS_DataWriter_get_topic (wr))) != DDS_RETCODE_OK)
 //        error ("DDS_Topic_dispose_all: error %d\n", (int) result);
       break;
     case 'B':
-    	if((result = dds_begin_coherent(wr)) != DDS_SUCCESS)
-    		error ("dds_begin_coherent: error %d\n", (int) result);
+        rc = dds_begin_coherent(wr);
+    	error_report(rc, "dds_begin_coherent:");
       break;
     case 'E':
-    	if ((result = dds_end_coherent(wr)) != DDS_SUCCESS)
-    		error ("dds_end_coherent: error %d\n", (int) result);
+        rc = dds_end_coherent(wr);
+        error_report(rc, "dds_end_coherent:");
       break;
     case 'W': {
     	dds_duration_t inf = DDS_INFINITY;
-    	if ((result = dds_wait_for_acks(wr, inf)) != DDS_RETCODE_OK)
-			error ("dds_wait_for_acks: error %d\n", (int) result);
+    	rc = dds_wait_for_acks(wr, inf);
+    	error_report(rc, "dds_wait_for_acks:");
 		break;
     }
     default:
       abort();
   }
-}
-
-static char *skipspaces (const char *s)
-{
-  while (*s && isspace((unsigned char) *s))
-    s++;
-  return (char *) s;
 }
 
 static int accept_error (char command, int retcode)
@@ -1290,10 +1220,8 @@ union data {
 
 static void pub_do_auto (const struct writerspec *spec)
 {
-	PRINTD("starting of pub_do_auto\n");
 	int result;
-//	dds_instance_handle_t handle[nkeyvals];
-	dds_instance_handle_t *handle = (dds_instance_handle_t*) os_malloc(sizeof(dds_instance_handle_t)*nkeyvals); //variable size array malloc
+	dds_instance_handle_t *handle = (dds_instance_handle_t*) os_malloc(sizeof(dds_instance_handle_t)*nkeyvals);
   uint64_t ntot = 0, tfirst, tlast, tprev, tfirst0, tstop;
   struct hist *hist = hist_new (30, 1000, 0);
   int k = 0;
@@ -1329,12 +1257,13 @@ static void pub_do_auto (const struct writerspec *spec)
   {
     d.seq_keyval.keyval = k;
     if(spec->register_instances) {
-    	dds_register_instance(spec->wr, handle, &d);
+        // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
+        OS_WARNING_MSVC_OFF(6386);
+        dds_register_instance(spec->wr, &handle[k], &d);
+        OS_WARNING_MSVC_ON(6386);
     }
   }
-  os_time sDelay = { 1, 0 };
-  os_nanoSleep(sDelay);
-//  sleep (1);
+  dds_sleepfor(DDS_SECS(1)); // TODO is this sleep necessary?
   d.seq_keyval.keyval = 0;
   tfirst0 = tfirst = tprev = nowll ();
   if (dur != 0.0)
@@ -1345,19 +1274,16 @@ static void pub_do_auto (const struct writerspec *spec)
   {
 	  while (!termflag && tprev < tstop)
     {
-      os_time delay = { 0 , 100 * 1000 * 1000 };
-      os_nanoSleep(delay);
-//      nanosleep (&delay, NULL);
+      dds_sleepfor(DDS_MSECS(100));
     }
   }
   else if (spec->writerate <= 0)
   {
     while (!termflag && tprev < tstop)
     {
-//    	usleep(1);
       if ((result = dds_write(spec->wr, &d)) != DDS_RETCODE_OK)
       {
-    	printf ("write: error %d (%s)\n", (int) result, dds_strerror (result));
+    	printf ("write: error %d (%s)\n", (int) result, dds_err_str(result));
         if (result != DDS_RETCODE_TIMEOUT)
           break;
       }
@@ -1391,7 +1317,7 @@ static void pub_do_auto (const struct writerspec *spec)
     {
     	if ((result = dds_write(spec->wr, &d)) != DDS_RETCODE_OK)
       {
-        printf ("write: error %d (%s)\n", (int) result, dds_strerror (result));
+        printf ("write: error %d (%s)\n", (int) result, dds_err_str(result));
         if (result != DDS_RETCODE_TIMEOUT)
           break;
       }
@@ -1413,9 +1339,7 @@ static void pub_do_auto (const struct writerspec *spec)
         {
           while (((ntot / spec->burstsize) / ((t - tfirst0) / 1e9 + 5e-3)) > spec->writerate && !termflag)
           {
-            os_time delay = { 0 , 10 * 1000 * 1000 };
-            os_nanoSleep(delay);
-//            nanosleep (&delay, NULL);
+            dds_sleepfor(DDS_MSECS(10));
             t = nowll ();
           }
           bi = 0;
@@ -1484,16 +1408,16 @@ static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq)
         	tstamp = dds_time();
         	tstamp_spec.t += tstamp;
         }
-
+        tstamp = (tstamp_spec.t % T_SECOND) + ((int) (tstamp_spec.t / T_SECOND) * DDS_NSECS_IN_SEC);
         if ((result = fn (spec->wr, &d, tstamp)) != DDS_RETCODE_OK)
         {
-          printf ("%s %d: error %d (%s)\n", get_write_operstr(command), k, (int) result, dds_strerror(result));
+          printf ("%s %d: error %d (%s)\n", get_write_operstr(command), k, (int) result, dds_err_str(result));
           if (!accept_error (command, result))
             exit(1);
         }
         if (spec->dupwr && (result = fn (spec->dupwr, &d, tstamp)) != DDS_RETCODE_OK)
         {
-          printf ("%s %d(dup): error %d (%s)\n", get_write_operstr(command), k, (int) result, dds_strerror(result));
+          printf ("%s %d(dup): error %d (%s)\n", get_write_operstr(command), k, (int) result, dds_err_str(result));
           if (!accept_error (command, result))
             exit(1);
         }
@@ -1522,16 +1446,11 @@ static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq)
         if (k < 0)
           printf ("invalid sleep duration: %ds\n", k);
         else {
-        	os_time delay = { k, 0 };
-        	os_nanoSleep(delay);
-//          sleep ((unsigned) k);
+        	dds_sleepfor(DDS_SECS(k));
         }
         break;
       case 'Y': case 'B': case 'E': case 'W':
         non_data_operation(command, spec->wr);
-        break;
-      case 'S':
-        make_persistent_snapshot(arg);
         break;
       case ':':
         break;
@@ -1551,11 +1470,12 @@ static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq)
   }
 }
 
-static char *pub_do_arb_line(const struct writerspec *spec, const char *line)
-{
+// TODO ARB type support
+//static char *pub_do_arb_line(const struct writerspec *spec, const char *line)
+//{
 //  int result;
 //  struct tstamp_t tstamp_spec;
-  char *ret = NULL;
+//  char *ret = NULL;
 //  char command;
 //  int k, pos;
 //  while (line && *(line = skipspaces(line)) != 0)
@@ -1597,7 +1517,7 @@ static char *pub_do_arb_line(const struct writerspec *spec, const char *line)
 //          tgfreedata(spec->tgtp, arb);
 //          if (result != DDS_RETCODE_OK)
 //          {
-//            printf ("%s%s: error %d (%s)\n", get_write_operstr(command), diddodup ? "(dup)" : "", (int) result, dds_strerror(result));
+//            printf ("%s%s: error %d (%s)\n", get_write_operstr(command), diddodup ? "(dup)" : "", (int) result, dds_err_str(result));
 //            if (!accept_error (command, result))
 //            {
 //              line = NULL;
@@ -1639,22 +1559,22 @@ static char *pub_do_arb_line(const struct writerspec *spec, const char *line)
 //        break;
 //    }
 //  }
-  return ret;
-}
-
-static char *pub_do_arb(const struct writerspec *spec, struct getl_arg *getl_arg)
-{
-  const char *orgline;
-  char *ret = NULL;
-  int count;
-  while (ret == NULL && (orgline = getl(getl_arg, &count)) != NULL)
-  {
-    const char *line = skipspaces(orgline);
-    if (*line) getl_enter_hist(getl_arg, orgline);
-    ret = pub_do_arb_line (spec, line);
-  }
-  return ret;
-}
+//  return ret;
+//}
+//
+//static char *pub_do_arb(const struct writerspec *spec, struct getl_arg *getl_arg)
+//{
+//  const char *orgline;
+//  char *ret = NULL;
+//  int count;
+//  while (ret == NULL && (orgline = getl(getl_arg, &count)) != NULL)
+//  {
+//    const char *line = skipspaces(orgline);
+//    if (*line) getl_enter_hist(getl_arg, orgline);
+//    ret = pub_do_arb_line (spec, line);
+//  }
+//  return ret;
+//}
 
 static uint32_t pubthread_auto(void *vspec)
 {
@@ -1668,6 +1588,13 @@ static uint32_t pubthread(void *vwrspecs)
 {
   struct wrspeclist *wrspecs = vwrspecs;
   uint32_t seq = 0;
+  // TODO Upon support for ARB types, resolve the declaration of fdin
+//  struct getl_arg getl_arg;
+//#if USE_EDITLINE
+//  getl_init_editline(&getl_arg, fdin);
+//#else
+//  getl_init_simple(&getl_arg, fdin);
+//#endif
 
     struct wrspeclist *cursor = wrspecs;
     struct writerspec *spec = cursor->spec;
@@ -1687,7 +1614,7 @@ static uint32_t pubthread(void *vwrspecs)
           *--tmp = 0;
         if ((sscanf (nextspec, "+%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "+") == 0)) {
           while (cnt--) cursor = cursor->next;
-        } else if ((sscanf (nextspec, "-%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "+") == 0)) {
+        } else if ((sscanf (nextspec, "-%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) || (cnt = 1, strcmp(nextspec, "-") == 0)) {
           while (cnt--) cursor = cursor->prev;
         } else if (sscanf (nextspec, "%d%n", &cnt, &pos) == 1 && nextspec[pos] == 0) {
           cursor = wrspecs; while (cnt--) cursor = cursor->next;
@@ -1712,7 +1639,7 @@ static uint32_t pubthread(void *vwrspecs)
             cursor = cand;
           }
         }
-        spec = cursor->spec;
+        spec = cursor != NULL ? cursor->spec : NULL;
       }
     } while (spec);
 
@@ -1747,7 +1674,7 @@ static int check_eseq (struct eseq_admin *ea, unsigned seq, unsigned keyval, con
   unsigned *eseq;
   if (keyval >= ea->nkeys)
   {
-    printf ("received key %d >= nkeys %d\n", keyval, ea->nkeys);
+    printf ("received key %u >= nkeys %u\n", keyval, ea->nkeys);
     exit (2);
   }
   for (unsigned i = 0; i < ea->nph; i++)
@@ -1762,12 +1689,16 @@ static int check_eseq (struct eseq_admin *ea, unsigned seq, unsigned keyval, con
   ea->eseq = os_realloc (ea->eseq, (ea->nph + 1) * sizeof (*ea->eseq));
   ea->eseq[ea->nph] = os_malloc (ea->nkeys * sizeof (*ea->eseq[ea->nph]));
   eseq = ea->eseq[ea->nph];
+  // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
+  OS_WARNING_MSVC_OFF(6386);
   for (unsigned i = 0; i < ea->nkeys; i++)
     eseq[i] = seq + (i - keyval) + (i <= keyval ? ea->nkeys : 0);
+  OS_WARNING_MSVC_ON(6386);
   ea->nph++;
   return 1;
 }
 
+// TODO coherency - Reintroduce this into application logic where needed. dds.h has this, but returns UNSUPPORTED, so expect that for now
 //static int subscriber_needs_access (dds_entity_t sub)
 //{
 //  dds_qos_t *qos;
@@ -1791,29 +1722,32 @@ static uint32_t subthread (void *vspec)
 {
   const struct readerspec *spec = vspec;
   dds_entity_t rd = spec->rd;
+  // TODO coherency support
 //  dds_entity_t sub = spec->sub;
 //  const int need_access = subscriber_needs_access (sub);
   dds_entity_t ws;
   dds_entity_t rdcondA = 0, rdcondD = 0;
   dds_entity_t stcond = 0;
-  int result = DDS_RETCODE_OK;
-  int ret = DDS_RETCODE_OK;
+  dds_return_t rc;
   uintptr_t exitcode = 0;
   char tag[256];
+  char tn[256];
   size_t nxs = 0;
 
-  snprintf(tag, sizeof(tag), "[%u:%s]", spec->idx, spec->tpname);
+  rc = dds_get_name(dds_get_topic(rd), tn, sizeof(tn));
+  error_report(rc, "dds_get_name failed");
+  (void)snprintf(tag, sizeof(tag), "[%u:%s]", spec->idx, tn);
 
   if (wait_hist_data)
   {
-    if ((result = dds_reader_wait_for_historical_data(rd, wait_hist_data_timeout)) != DDS_RETCODE_OK)
-      error ("dds_reader_wait_for_historical_data: %d (%s)\n", (int) result, dds_strerror (result));
+    rc = dds_reader_wait_for_historical_data(rd, wait_hist_data_timeout);
+    error_report(rc, "dds_reader_wait_for_historical_data");
   }
 
   ws = dds_create_waitset(dp);
-  if ((result = dds_waitset_attach(ws, termcond, &termcond)) != DDS_RETCODE_OK)
-    error ("dds_waitset_attach (termcond): %d (%s)\n", (int) result, dds_strerror (result));
-  nxs++; //increased because of the waitset_attach
+  rc = dds_waitset_attach(ws, termcond, termcond);
+  error_abort(rc, "dds_waitset_attach (termcond)");
+  nxs++;
   switch (spec->mode)
   {
     case MODE_NONE:
@@ -1821,50 +1755,43 @@ static uint32_t subthread (void *vspec)
       /* no triggers */
       break;
     case MODE_PRINT:
-      /* complicated triggers */
-    	if ((rdcondA = dds_create_readcondition(rd, spec->use_take ? (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
-                                                                   : (DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE))) == 0)
-    		error ("dds_readcondition_create (rdcondA)\n");
-    	if ((result = dds_waitset_attach (ws, rdcondA, &rdcondA)) != DDS_RETCODE_OK)
-    		error ("dds_waitset_attach (rdcondA): %d (%s)\n", (int) result, dds_strerror (result));
-    	nxs++; //increased because of the waitset_attach
-    	if ((rdcondD = dds_create_readcondition (rd, (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE))) == 0)
-    		error ("dds_readcondition_create (rdcondD)\n");
-    	if ((result = dds_waitset_attach (ws, rdcondD, &rdcondD)) != DDS_RETCODE_OK)
-    		error ("dds_waitset_attach (rdcondD): %d (%s)\n", (int) result, dds_strerror (result));
-    	nxs++; //increased because of the waitset_attach
-    	break;
+        /* complicated triggers */
+        rdcondA = dds_create_readcondition(rd, spec->use_take ? (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
+                                                              : (DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE));
+        error_abort(rdcondA, "dds_readcondition_create (rdcondA)");
+
+        rc = dds_waitset_attach (ws, rdcondA, rdcondA);
+        error_abort(rc, "dds_waitset_attach (rdcondA)");
+        nxs++;
+
+        rdcondD = dds_create_readcondition (rd, (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE));
+        error_abort(rdcondD, "dds_readcondition_create (rdcondD)");
+
+        rc = dds_waitset_attach (ws, rdcondD, rdcondD);
+        error_abort(rc, "dds_waitset_attach (rdcondD)");
+        nxs++;
+        break;
     case MODE_CHECK:
     case MODE_DUMP:
       if (!spec->polling)
       {
-        /* fastest trigger we have */
-    	if ((result = dds_set_enabled_status(rd, DDS_DATA_AVAILABLE_STATUS)) != DDS_RETCODE_OK) //Todo: Changed the method to match ddsi
-		  error ("dds_set_enabled_status (stcond): %d (%s)\n", (int) result, dds_strerror (result));
-		if ((result = dds_waitset_attach (ws, rd, &rd)) != DDS_RETCODE_OK)
-		  error ("dds_waitset_attach (rd): %d (%s)\n", (int) result, dds_strerror (result));
-		nxs++; //increased because of the waitset_attach
+          /* fastest trigger we have */
+          rc = dds_set_enabled_status(rd, DDS_DATA_AVAILABLE_STATUS);
+          error_abort(rc, "dds_set_enabled_status (stcond)");
+          rc = dds_waitset_attach (ws, rd, rd);
+          error_abort(rc, "dds_waitset_attach (rd)");
+          nxs++;
       }
       break;
   }
 
   {
-//    union {
-////      void *any[spec->read_maxsamples];
-//      void **any;
-//      KeyedSeq *ks;
-//      Keyed32 *k32;
-//      Keyed64 *k64;
-//      Keyed128 *k128;
-//      Keyed256 *k256;
-//      OneULong *ou;
-//    } mseq;
-    void **mseq = (void **) os_malloc(sizeof(void*) * (spec->read_maxsamples)); //variable size array malloc
+    void **mseq = (void **) os_malloc(sizeof(void*) * (spec->read_maxsamples));
 
-    dds_sample_info_t *iseq = (dds_sample_info_t *) os_malloc (sizeof(dds_sample_info_t) * spec->read_maxsamples); //variable size array malloc
-//    dds_condition_seq *glist = os_malloc(sizeof(*glist));
+    dds_sample_info_t *iseq = (dds_sample_info_t *) os_malloc (sizeof(dds_sample_info_t) * spec->read_maxsamples);
     dds_duration_t timeout = (uint64_t)100000000;
-    dds_attach_t *xs = os_malloc(sizeof(dds_attach_t) * nxs); //variable size array malloc
+    dds_attach_t *xs = os_malloc(sizeof(dds_attach_t) * nxs);
+    memset(xs, 0, sizeof(dds_attach_t) * nxs);
 
     unsigned long long tstart = 0, tfirst = 0, tprint = 0;
     long long out_of_seq = 0, nreceived = 0, last_nreceived = 0;
@@ -1873,7 +1800,7 @@ static uint32_t subthread (void *vspec)
     init_eseq_admin(&eseq_admin, nkeyvals);
 
     int ii = 0;
-    for(ii=0; ii<spec->read_maxsamples; ii++) {
+    for(ii = 0; ii < (int32_t) spec->read_maxsamples; ii++) {
     	mseq[ii] = NULL;
     }
 
@@ -1884,44 +1811,43 @@ static uint32_t subthread (void *vspec)
 
       if (spec->polling)
       {
-        os_time d = { 0, 1000000 }; /* 1ms sleep interval, so a bit less than 1kHz poll freq */
-        os_nanoSleep(d);
-//        nanosleep (&d, NULL);
+        dds_sleepfor(DDS_MSECS(1)); /* 1ms sleep interval, so a bit less than 1kHz poll freq */
       }
       else
       {
-    	  result = dds_waitset_wait(ws, xs, nxs, timeout);
-    	  if (result < DDS_RETCODE_OK) {
-			  printf ("wait: error %d\n", (int) result);
+    	  rc = dds_waitset_wait(ws, xs, nxs, timeout);
+    	  if (rc < DDS_RETCODE_OK) {
+			  printf ("wait: error %d\n", (int) rc);
 			  break;
-    	  } else if (result == DDS_RETCODE_OK) {
+    	  } else if (rc == DDS_RETCODE_OK) {
     		  continue;
     	  }
       }
 
-      /* Examine the reader's status to decide what to do. */
-//      dds_waitset_get_conditions(ws, glist);
-
       tnow = nowll ();
       for (gi = 0; gi < (spec->polling ? 1 : nxs); gi++)
       {
-          dds_entity_t cond = !spec->polling && xs[gi] != NULL ? *((dds_entity_t *)xs[gi]) : 0;
-    	  unsigned i;
+          dds_entity_t cond = !spec->polling && xs[gi] != 0 ? (dds_entity_t) xs[gi] : 0;
+          int32_t i;
 
         if (cond == termcond)
           continue;
-        if (cond == 0) {
+        if (cond == 0 && !spec->polling) {
         	break;
         }
 
         if (spec->print_match_pre_read)
 		{
 			dds_subscription_matched_status_t status;
-			result = dds_get_subscription_matched_status(rd, &status);
-			printf ("[pre-read: subscription-matched: total=(%d change %d) current=(%d change %d) handle=%"PRIu64"]\n",
-				  status.total_count, status.total_count_change,
-				  status.current_count, status.current_count_change,
-				  status.last_publication_handle);
+			rc = dds_get_subscription_matched_status(rd, &status);
+            error_report(rc, "dds_get_subscription_matched_status failed");
+            if (rc == DDS_SUCCESS) {
+                printf("[pre-read: subscription-matched: total=(%"PRIu32" change %d) current=(%"PRIu32" change %d) handle=%"PRIu64"]\n",
+                    status.total_count, status.total_count_change,
+                    status.current_count,
+                    status.current_count_change,
+	                status.last_publication_handle);
+			}
 		}
 
         /* Always take NOT_ALIVE_DISPOSED data because it means the
@@ -1942,32 +1868,35 @@ static uint32_t subthread (void *vspec)
          into a NEW one, though.  So HOW AM I TO TRIGGER ON IT
          without triggering CONTINUOUSLY?
          */
+        // TODO coherency support
 //        if (need_access && (result = DDS_Subscriber_begin_access (sub)) != DDS_RETCODE_OK)
-//          error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_strerror (result));
+//          error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_err_str (result));
 
         if (spec->mode == MODE_CHECK || (spec->mode == MODE_DUMP && spec->use_take) || spec->polling) {
-        	result = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+        	rc = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
 		} else if (spec->mode == MODE_DUMP) {
-			result = dds_read_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
+			rc = dds_read_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
 		} else if (spec->use_take || cond == rdcondD) {
-			result = dds_take(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples);
+			rc = dds_take(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples);
 		} else {
-		  result = dds_read(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples);
+		  rc = dds_read(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples);
 		}
 
-        if (result < 1)
+        if (rc < 1)
         {
-          if (spec->polling && result == 0)
+          if (spec->polling && rc == 0) {
             ; /* expected */
-          else if (spec->mode == MODE_CHECK || spec->mode == MODE_DUMP || spec->polling)
-            printf ("%s: %d (%s) on %s\n", (!spec->use_take && spec->mode == MODE_DUMP) ? "read" : "take", (int) result, dds_strerror (result), spec->polling ? "poll" : "stcond");
-          else
-            printf ("%s: %d (%s) on rdcond%s\n", spec->use_take ? "take" : "read", (int) result, dds_strerror (result), (cond == rdcondA) ? "A" : (cond == rdcondD) ? "D" : "?");
+          } else if (spec->mode == MODE_CHECK || spec->mode == MODE_DUMP || spec->polling) {
+            printf ("%s: %d (%s) on %s\n", (!spec->use_take && spec->mode == MODE_DUMP) ? "read" : "take", (int) rc, dds_err_str (rc), spec->polling ? "poll" : "stcond");
+          } else {
+            printf ("%s: %d (%s) on rdcond%s\n", spec->use_take ? "take" : "read", (int) rc, dds_err_str (rc), (cond == rdcondA) ? "A" : (cond == rdcondD) ? "D" : "?");
+          }
           continue;
         }
 
+        // TODO coherency support
 //        if (need_access && (result = DDS_Subscriber_end_access (sub)) != DDS_RETCODE_OK)
-//          error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_strerror (result));
+//          error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_err_str (result));
 
         switch (spec->mode)
         {
@@ -1975,18 +1904,18 @@ static uint32_t subthread (void *vspec)
           case MODE_DUMP:
             switch (spec->topicsel) {
               case UNSPEC: assert(0);
-              case KS:   print_seq_KS (&tstart, tnow, rd, tag, iseq, (KeyedSeq **)mseq, result); break;
-              case K32:  print_seq_K32 (&tstart, tnow, rd, tag, iseq, (Keyed32 **)mseq, result); break;
-              case K64:  print_seq_K64 (&tstart, tnow, rd, tag, iseq, (Keyed64 **)mseq, result); break;
-              case K128: print_seq_K128 (&tstart, tnow, rd, tag, iseq, (Keyed128 **)mseq, result); break;
-              case K256: print_seq_K256 (&tstart, tnow, rd, tag, iseq, (Keyed256 **)mseq, result); break;
-              case OU:   print_seq_OU (&tstart, tnow, rd, tag, iseq, (const OneULong **)mseq, result); break;
+              case KS:   print_seq_KS (&tstart, tnow, rd, tag, iseq, (KeyedSeq **)mseq, rc); break;
+              case K32:  print_seq_K32 (&tstart, tnow, rd, tag, iseq, (Keyed32 **)mseq, rc); break;
+              case K64:  print_seq_K64 (&tstart, tnow, rd, tag, iseq, (Keyed64 **)mseq, rc); break;
+              case K128: print_seq_K128 (&tstart, tnow, rd, tag, iseq, (Keyed128 **)mseq, rc); break;
+              case K256: print_seq_K256 (&tstart, tnow, rd, tag, iseq, (Keyed256 **)mseq, rc); break;
+              case OU:   print_seq_OU (&tstart, tnow, rd, tag, iseq, (const OneULong **)mseq, rc); break;
               case ARB:  print_seq_ARB (&tstart, tnow, rd, tag, iseq, (const void **)mseq, spec->tgtp); break;
             }
             break;
 
           case MODE_CHECK:
-            for (i = 0; i < result; i++)
+            for (i = 0; i < rc; i++)
             {
               int keyval = 0;
               unsigned seq = 0;
@@ -1996,12 +1925,12 @@ static uint32_t subthread (void *vspec)
               switch (spec->topicsel)
               {
                 case UNSPEC: assert(0);
-                case KS:   { KeyedSeq *d = (KeyedSeq *) &mseq;   keyval = d->keyval; seq = d->seq; size = 12 + d->baggage._length; } break;
-                case K32:  { Keyed32 *d  = (Keyed32 *) &mseq;  keyval = d->keyval; seq = d->seq; size = 32; } break;
-                case K64:  { Keyed64 *d  = (Keyed64 *) &mseq;  keyval = d->keyval; seq = d->seq; size = 64; } break;
-                case K128: { Keyed128 *d = (Keyed128 *) &mseq; keyval = d->keyval; seq = d->seq; size = 128; } break;
-                case K256: { Keyed256 *d = (Keyed256 *) &mseq; keyval = d->keyval; seq = d->seq; size = 256; } break;
-                case OU:   { OneULong *d = (OneULong *) &mseq;   keyval = 0;         seq = d->seq; size = 4; } break;
+                case KS:   { KeyedSeq *d = (KeyedSeq *) mseq[i];  keyval = d->keyval; seq = d->seq; size = 12 + d->baggage._length; } break;
+                case K32:  { Keyed32 *d  = (Keyed32 *)  mseq[i];  keyval = d->keyval; seq = d->seq; size = 32; } break;
+                case K64:  { Keyed64 *d  = (Keyed64 *)  mseq[i];  keyval = d->keyval; seq = d->seq; size = 64; } break;
+                case K128: { Keyed128 *d = (Keyed128 *) mseq[i];  keyval = d->keyval; seq = d->seq; size = 128; } break;
+                case K256: { Keyed256 *d = (Keyed256 *) mseq[i];  keyval = d->keyval; seq = d->seq; size = 256; } break;
+                case OU:   { OneULong *d = (OneULong *) mseq[i];  keyval = 0;         seq = d->seq; size = 4; } break;
                 case ARB:  assert(0); break; /* can't check what we don't know */
               }
               if (!check_eseq (&eseq_admin, seq, (unsigned)keyval, iseq[i].publication_handle))
@@ -2033,37 +1962,40 @@ static uint32_t subthread (void *vspec)
           case MODE_ZEROLOAD:
             break;
         }
-        int returnVal = dds_return_loan(rd, mseq, spec->read_maxsamples);
-        if (spec->sleep_us) {
-        	os_time delay = { 0, (spec->sleep_us) * 1000 };
-        	os_nanoSleep(delay);
-//          usleep (spec->sleep_us);
+        rc = dds_return_loan(rd, mseq, spec->read_maxsamples);
+        error_report(rc, "dds_return_loan failed");
+        if (spec->sleep_ns) {
+        	dds_sleepfor(spec->sleep_ns);
         }
       }
-//      dds_free(glist->_buffer);
     }
     os_free(xs);
-//    os_free (glist);
 
     if (spec->mode == MODE_PRINT || spec->mode == MODE_DUMP || once_mode)
     {
+        // TODO coherency support
 //      if (need_access && (result = DDS_Subscriber_begin_access (sub)) != DDS_RETCODE_OK)
-//        error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_strerror (result));
+//        error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_err_str (result));
 
-      result = dds_take(rd, mseq, iseq, spec->read_maxsamples, DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE);
-      if (result == 0)
+        /* This is the final Read/Take */
+        // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
+        OS_WARNING_MSVC_OFF(6386);
+        rc = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
+        OS_WARNING_MSVC_ON(6386);
+      if (rc == 0)
       {
         if (!once_mode)
           printf ("-- final take: data reader empty --\n");
         else
           exitcode = 1;
       }
-      else if (result < DDS_RETCODE_OK)
+      else if (rc < DDS_SUCCESS)
       {
-        if (!once_mode)
-          printf ("-- final take: %d (%s) --\n", (int) result, dds_strerror (result));
-        else
-          error ("read/take: %d (%s)\n", (int) result, dds_strerror (result));
+        if (!once_mode) {
+            error_report (rc, "-- final take --\n");
+        } else {
+            error_report (rc, "read/take");
+        }
       }
       else
       {
@@ -2074,22 +2006,23 @@ static uint32_t subthread (void *vspec)
           switch (spec->topicsel)
           {
             case UNSPEC: assert(0);
-            case KS:   print_seq_KS (&tstart, nowll (), rd, tag, iseq, (KeyedSeq **) mseq, result); break;
-            case K32:  print_seq_K32 (&tstart, nowll (), rd, tag, iseq, (Keyed32 **) mseq, result); break;
-            case K64:  print_seq_K64 (&tstart, nowll (), rd, tag, iseq, (Keyed64 **) mseq, result); break;
-            case K128: print_seq_K128 (&tstart, nowll (), rd, tag, iseq, (Keyed128 **) mseq, result); break;
-            case K256: print_seq_K256 (&tstart, nowll (), rd, tag, iseq, (Keyed256 **) mseq, result); break;
-            case OU:   print_seq_OU (&tstart, nowll (), rd, tag, iseq, (const OneULong **) mseq, result); break;
+            case KS:   print_seq_KS (&tstart, nowll (), rd, tag, iseq, (KeyedSeq **) mseq, rc); break;
+            case K32:  print_seq_K32 (&tstart, nowll (), rd, tag, iseq, (Keyed32 **) mseq, rc); break;
+            case K64:  print_seq_K64 (&tstart, nowll (), rd, tag, iseq, (Keyed64 **) mseq, rc); break;
+            case K128: print_seq_K128 (&tstart, nowll (), rd, tag, iseq, (Keyed128 **) mseq, rc); break;
+            case K256: print_seq_K256 (&tstart, nowll (), rd, tag, iseq, (Keyed256 **) mseq, rc); break;
+            case OU:   print_seq_OU (&tstart, nowll (), rd, tag, iseq, (const OneULong **) mseq, rc); break;
             case ARB:  print_seq_ARB (&tstart, nowll (), rd, tag, iseq, (const void **) mseq, spec->tgtp); break;
           }
         }
       }
+      // TODO coherency support
 //      if (need_access && (result = DDS_Subscriber_end_access (sub)) != DDS_RETCODE_OK)
-//        error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_strerror (result));
-      int returnVal = dds_return_loan(rd, mseq, spec->read_maxsamples);
+//        error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_err_str (result));
+      rc = dds_return_loan(rd, mseq, spec->read_maxsamples);
+      error_report(rc, "dds_return_loan failed");
     }
     os_free(iseq);
-    int iter = 0;
     os_free(mseq);
     if (spec->mode == MODE_CHECK)
       printf ("received: %lld, out of seq: %lld\n", nreceived, out_of_seq);
@@ -2102,9 +2035,9 @@ static uint32_t subthread (void *vspec)
     case MODE_ZEROLOAD:
       break;
     case MODE_PRINT:
-    	ret = dds_waitset_detach(ws, rdcondA);
+    	rc = dds_waitset_detach(ws, rdcondA);
     	dds_delete(rdcondA);
-    	ret = dds_waitset_detach(ws, rdcondD);
+    	rc = dds_waitset_detach(ws, rdcondD);
 		dds_delete(rdcondD);
       break;
     case MODE_CHECK:
@@ -2114,24 +2047,22 @@ static uint32_t subthread (void *vspec)
       break;
   }
 
+  // TODO Confirm that dds_delete(participant) takes care of this
 //  ret = dds_waitset_detach(ws, termcond);
-//  PRINTD("Subthread: dds_waitset_detach: ret: %d\n",ret);
 //  ret = dds_delete(ws);
-//  PRINTD("Subthread: dds_waitset_delete: ret: %d\n",ret);
 
   if (once_mode)
   {
     /* trigger EOF for writer side, so we actually do terminate */
     terminate();
   }
-  return exitcode;
+  return (uint32_t)exitcode;
 }
 
 static uint32_t autotermthread(void *varg __attribute__((unused)))
 {
   unsigned long long tstop, tnow;
-  int result;
-  int ret = 0;
+  dds_return_t rc;
   dds_entity_t ws;
 
   dds_attach_t wsresults[1];
@@ -2143,8 +2074,8 @@ static uint32_t autotermthread(void *varg __attribute__((unused)))
   tstop = tnow + (unsigned long long) (1e9 * dur);
 
   ws = dds_create_waitset(dp);
-  if ((result = dds_waitset_attach(ws, termcond, &termcond)) != DDS_RETCODE_OK)
-    error ("dds_waitset_attach (termcomd): %d (%s)\n", (int) result, dds_strerror (result));
+  rc = dds_waitset_attach(ws, termcond, termcond);
+  error_abort(rc, "dds_waitset_attach (termcomd)");
 
   tnow = nowll();
   while (!termflag && tnow < tstop)
@@ -2155,18 +2086,16 @@ static uint32_t autotermthread(void *varg __attribute__((unused)))
     uint64_t xnanosec = (uint64_t) (dt % 1000000000);
     timeout = DDS_SECS(xsec)+xnanosec;
 
-    if ((result = dds_waitset_wait (ws, wsresults, wsresultsize, timeout)) < DDS_RETCODE_OK)
+    if ((rc = dds_waitset_wait (ws, wsresults, wsresultsize, timeout)) < DDS_RETCODE_OK)
     {
-      printf ("wait: error %d\n", (int) result);
+      printf ("wait: error %s\n", dds_err_str(rc));
       break;
     }
     tnow = nowll();
   }
 
-  ret = dds_waitset_detach(ws, termcond);
-  PRINTD("Autotermthread: dds_waitset_detach: ret: %d\n", ret);
-  ret = dds_delete(ws);
-  PRINTD("Autotermthread: dds_waitset_delete: ret: %d\n", ret);
+  rc = dds_waitset_detach(ws, termcond);
+  rc = dds_delete(ws);
 
   return 0;
 }
@@ -2195,7 +2124,7 @@ static char *read_line_from_textfile(FILE *fp)
     if (n == sz) str = os_realloc(str, sz += 1);
     str[n] = 0;
   } else if (ferror(fp)) {
-    error("error reading file, errno = %d (%s)\n", os_getErrno(), os_strerror(os_getErrno()));
+    error_exit("error reading file, errno = %d (%s)\n", os_getErrno(), os_strerror(os_getErrno()));
   }
   return str;
 }
@@ -2204,19 +2133,20 @@ static int get_metadata (char **metadata, char **typename, char **keylist, const
 {
   FILE *fp;
   if ((fp = fopen(file, "r")) == NULL)
-    error("%s: can't open for reading metadata\n", file);
+      error_exit("%s: can't open for reading metadata\n", file);
   *typename = read_line_from_textfile(fp);
   *keylist = read_line_from_textfile(fp);
   *metadata = read_line_from_textfile(fp);
   if (*typename == NULL || *keylist == NULL || *typename == NULL)
-    error("%s: invalid metadata file\n", file);
+      error_exit("%s: invalid metadata file\n", file);
   fclose(fp);
   return 1;
 }
 
 static dds_entity_t find_topic(dds_entity_t dpFindTopic, const char *name, const dds_duration_t *timeout)
 {
-  dds_entity_t tp = 0;
+  dds_entity_t tp;
+  // TODO ARB type support
 //  int isbuiltin = 0;
 
   /* A historical accident has caused subtle issues with a generic reader for the built-in topics included in the DDS spec. */
@@ -2228,7 +2158,7 @@ static dds_entity_t find_topic(dds_entity_t dpFindTopic, const char *name, const
 //    if (DDS_Subscriber_lookup_datareader(sub, name) == NULL)
 //      error("DDS_Subscriber_lookup_datareader failed\n");
 //    if ((result = DDS_Subscriber_delete_contained_entities(sub)) != DDS_RETCODE_OK)
-//      error("DDS_Subscriber_delete_contained_entities failed: error %d (%s)\n", (int) result, dds_strerror(result));
+//      error("DDS_Subscriber_delete_contained_entities failed: error %d (%s)\n", (int) result, dds_err_str(result));
 //    isbuiltin = 1;
 //  }
 
@@ -2245,7 +2175,7 @@ static dds_entity_t find_topic(dds_entity_t dpFindTopic, const char *name, const
 //    if ((ts = DDS_TypeSupport__alloc(tn, kl ? kl : "", md)) == NULL)
 //      error("DDS_TypeSupport__alloc(%s) failed\n", tn);
 //    if ((result = DDS_TypeSupport_register_type(ts, dp, tn)) != DDS_RETCODE_OK)
-//      error("DDS_TypeSupport_register_type(%s) failed: %d (%s)\n", tn, (int) result, dds_strerror(result));
+//      error("DDS_TypeSupport_register_type(%s) failed: %d (%s)\n", tn, (int) result, dds_err_str(result));
 //    DDS_free(md);
 //    DDS_free(kl);
 //    DDS_free(tn);
@@ -2254,7 +2184,7 @@ static dds_entity_t find_topic(dds_entity_t dpFindTopic, const char *name, const
 //    /* Work around a double-free-at-shutdown issue caused by a find_topic
 //       without a type support having been register */
 //    if ((result = DDS_DomainParticipant_delete_topic(dp, tp)) != DDS_RETCODE_OK) {
-//      error("DDS_DomainParticipant_find_topic failed: %d (%s)\n", (int) result, dds_strerror(result));
+//      error("DDS_DomainParticipant_find_topic failed: %d (%s)\n", (int) result, dds_err_str(result));
 //    }
 //    if ((tp = DDS_DomainParticipant_find_topic(dp, name, timeout)) == NULL) {
 //      error("DDS_DomainParticipant_find_topic(2) failed\n");
@@ -2266,6 +2196,7 @@ static dds_entity_t find_topic(dds_entity_t dpFindTopic, const char *name, const
 
 static void set_systemid_env (void)
 {
+    // TODO Determine encoding of dds_instance_handle_t, and see what sort of value can be extracted from it, if any
 	//Unsupported
 
 	/*uint32_t systemId, localId;
@@ -2310,6 +2241,8 @@ static void addspec(unsigned whatfor, unsigned *specsofar, unsigned *specidx, st
     s->findtopic_timeout = 10;
     s->rd = def_readerspec;
     s->wr = def_writerspec;
+
+    // TODO Upon support for ARB types, resolve the declaration of fdin
 //    if (fdin == -1 && fdservsock == -1)
 //      s->wr.mode = WRM_NONE;
     if (!want_reader)
@@ -2376,24 +2309,19 @@ static void set_print_mode (const char *optarg)
   os_free (copy);
 }
 
-int main (int argc, char *argv[])
+int MAIN (int argc, char *argv[])
 {
 	dds_entity_t sub = 0;
 	dds_entity_t pub = 0;
-	dds_listener_t *rdlistener = dds_listener_create(NULL); // TODO free these
-	dds_listener_t *wrlistener = dds_listener_create(NULL); // TODO free these
+	dds_listener_t *rdlistener = dds_listener_create(NULL);
+	dds_listener_t *wrlistener = dds_listener_create(NULL);
 
 	struct qos *qos;
-//	const char *qtopic[argc];
-	const char **qtopic = (const char **) os_malloc (sizeof(char *) * argc); //variable size array malloc
-//	const char *qreader[2+argc];
-	const char **qreader = (const char **) os_malloc (sizeof(char *) * (2+argc)); //variable size array malloc
-//	const char *qwriter[2+argc];
-	const char **qwriter = (const char **) os_malloc (sizeof(char *) * (2+argc)); //variable size array malloc
-//	const char *qpublisher[2+argc];
-	const char **qpublisher = (const char **) os_malloc (sizeof(char *) * (2+argc)); //variable size array malloc
-//	const char *qsubscriber[2+argc];
-	const char **qsubscriber = (const char **) os_malloc (sizeof(char *) * (2+argc)); //variable size array malloc
+	const char **qtopic = (const char **) os_malloc (sizeof(char *) * argc);
+	const char **qreader = (const char **) os_malloc (sizeof(char *) * (2+argc));
+	const char **qwriter = (const char **) os_malloc (sizeof(char *) * (2+argc));
+	const char **qpublisher = (const char **) os_malloc (sizeof(char *) * (2+argc));
+	const char **qsubscriber = (const char **) os_malloc (sizeof(char *) * (2+argc));
 	int nqtopic = 0, nqreader = 0, nqwriter = 0;
 	int nqpublisher = 0, nqsubscriber = 0;
 	int opt, pos;
@@ -2401,7 +2329,7 @@ int main (int argc, char *argv[])
 	int want_reader = 1;
 	int want_writer = 1;
 	bool isWriterListenerSet = false;
-	int disable_signal_handlers = 0;
+//	int disable_signal_handlers = 0;  // TODO signal handler support
 	unsigned sleep_at_end = 0;
 	os_threadId sigtid;
 	os_threadId inptid;
@@ -2425,13 +2353,16 @@ int main (int argc, char *argv[])
 	save_argv0 (argv[0]);
 	pid = (int) os_procIdSelf();
 
-//	qreader[0] = "k=all";
-//	qreader[1] = "R=10000/inf/inf";
-//	nqreader = 2;
-//
-//	qwriter[0] = "k=all";
-//	qwriter[1] = "R=100/inf/inf";
-//	nqwriter = 2;
+	// TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
+	OS_WARNING_MSVC_OFF(6386);
+	qreader[0] = "k=all";
+	qreader[1] = "R=10000/inf/inf";
+	nqreader = 2;
+
+	qwriter[0] = "k=all";
+	qwriter[1] = "R=100/inf/inf";
+	nqwriter = 2;
+    OS_WARNING_MSVC_OFF(6386);
 
 	spec_sofar = SPEC_TOPICSEL;
 	specidx--;
@@ -2439,68 +2370,68 @@ int main (int argc, char *argv[])
 	spec_sofar = 0;
 	assert(specidx == 0);
 
-  while ((opt = getopt (argc, argv, "!@*:FK:T:D:q:m:M:n:OP:rRs:S:U:W:w:z:")) != EOF)
+  while ((opt = os_getopt (argc, argv, "!@*:FK:T:D:q:m:M:n:OP:rRs:S:U:W:w:z:")) != EOF)
   {
     switch (opt)
     {
       case '!':
-        disable_signal_handlers = 1;
+//        disable_signal_handlers = 1; // TODO signal handler support
         break;
       case '@':
         spec[specidx].wr.duplicate_writer_flag = 1;
         break;
       case '*':
-        sleep_at_end = (unsigned) os_atoll(optarg);
+        sleep_at_end = (unsigned) os_atoll(os_get_optarg());
         break;
       case 'M':
-        if (sscanf(optarg, "%lf:%n", &wait_for_matching_reader_timeout, &pos) != 1)
+        if (sscanf(os_get_optarg(), "%lf:%n", &wait_for_matching_reader_timeout, &pos) != 1)
         {
-          fprintf (stderr, "-M %s: invalid timeout\n", optarg);
+          fprintf (stderr, "-M %s: invalid timeout\n", os_get_optarg());
           exit (2);
         }
-        wait_for_matching_reader_arg = optarg + pos;
+        wait_for_matching_reader_arg = os_get_optarg() + pos;
         break;
       case 'F':
         setvbuf (stdout, (char *) NULL, _IOLBF, 0);
         break;
       case 'K':
         addspec(SPEC_TOPICSEL, &spec_sofar, &specidx, &spec, want_reader);
-        if (os_strcasecmp (optarg, "KS") == 0)
+        if (os_strcasecmp (os_get_optarg(), "KS") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = KS;
-        else if (os_strcasecmp (optarg, "K32") == 0)
+        else if (os_strcasecmp (os_get_optarg(), "K32") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K32;
-        else if (os_strcasecmp (optarg, "K64") == 0)
+        else if (os_strcasecmp (os_get_optarg(), "K64") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K64;
-        else if (os_strcasecmp (optarg, "K128") == 0)
+        else if (os_strcasecmp (os_get_optarg(), "K128") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K128;
-        else if (os_strcasecmp (optarg, "K256") == 0)
+        else if (os_strcasecmp (os_get_optarg(), "K256") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K256;
-        else if (os_strcasecmp (optarg, "OU") == 0)
+        else if (os_strcasecmp (os_get_optarg(), "OU") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = OU;
-        else if (os_strcasecmp (optarg, "ARB") == 0)
+        else if (os_strcasecmp (os_get_optarg(), "ARB") == 0)
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = ARB;
-        else if (get_metadata(&spec[specidx].metadata, &spec[specidx].typename, &spec[specidx].keylist, optarg))
+        else if (get_metadata(&spec[specidx].metadata, &spec[specidx].typename, &spec[specidx].keylist, os_get_optarg()))
           spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = ARB;
         else
         {
-          fprintf (stderr, "-K %s: unknown type\n", optarg);
+          fprintf (stderr, "-K %s: unknown type\n", os_get_optarg());
           exit (2);
         }
         break;
       case 'T': {
         char *p;
         addspec(SPEC_TOPICNAME, &spec_sofar, &specidx, &spec, want_reader);
-        spec[specidx].topicname = (const char *) os_strdup(optarg);
+        spec[specidx].topicname = (const char *) os_strdup(os_get_optarg());
         if ((p = strchr(spec[specidx].topicname, ':')) != NULL) {
           double d;
-          int pos, have_to = 0;
+          int dpos, have_to = 0;
           *p++ = 0;
           if (strcmp (p, "inf") == 0 || strncmp (p, "inf:", 4) == 0) {
             have_to = 1;
             set_infinite_dds_duration (&spec[specidx].findtopic_timeout);
-          } else if (sscanf (p, "%lf%n", &d, &pos) == 1 && (p[pos] == 0 || p[pos] == ':')) {
+          } else if (sscanf (p, "%lf%n", &d, &dpos) == 1 && (p[dpos] == 0 || p[dpos] == ':')) {
             if (double_to_dds_duration (&spec[specidx].findtopic_timeout, d) < 0)
-              error ("-T %s: %s: duration invalid\n", optarg, p);
+              error_exit("-T %s: %s: duration invalid\n", os_get_optarg(), p);
             have_to = 1;
           } else {
             /* assume content filter */
@@ -2515,17 +2446,17 @@ int main (int argc, char *argv[])
         break;
       }
       case 'q':
-        if (strncmp(optarg, "provider=", 9) == 0) {
-          set_qosprovider (optarg+9);
+        if (strncmp(os_get_optarg(), "provider=", 9) == 0) {
+          set_qosprovider (os_get_optarg()+9);
         } else {
-          unsigned long n = strspn(optarg, "atrwps");
-          const char *colon = strchr(optarg, ':');
-          if (colon == NULL || n == 0 || n != (unsigned long) (colon - optarg)) {
-            fprintf (stderr, "-q %s: flags indicating to which entities QoS's apply must match regex \"[^atrwps]+:\"\n", optarg);
+          size_t n = strspn(os_get_optarg(), "atrwps");
+          const char *colon = strchr(os_get_optarg(), ':');
+          if (colon == NULL || n == 0 || n != (size_t) (colon - os_get_optarg())) {
+            fprintf (stderr, "-q %s: flags indicating to which entities QoS's apply must match regex \"[^atrwps]+:\"\n", os_get_optarg());
             exit(2);
           } else {
             const char *q = colon+1;
-            for (const char *flag = optarg; flag != colon; flag++)
+            for (const char *flag = os_get_optarg(); flag != colon; flag++)
               switch (*flag) {
                 case 't': qtopic[nqtopic++] = q; break;
                 case 'r': qreader[nqreader++] = q; break;
@@ -2547,33 +2478,33 @@ int main (int argc, char *argv[])
         }
         break;
       case 'D':
-        dur = atof (optarg);
+        dur = atof (os_get_optarg());
         break;
       case 'm':
         spec[specidx].rd.polling = 0;
-        if (strcmp (optarg, "0") == 0)
+        if (strcmp (os_get_optarg(), "0") == 0)
           spec[specidx].rd.mode = MODE_NONE;
-        else if (strcmp (optarg, "p") == 0)
+        else if (strcmp (os_get_optarg(), "p") == 0)
           spec[specidx].rd.mode = MODE_PRINT;
-        else if (strcmp (optarg, "pp") == 0)
+        else if (strcmp (os_get_optarg(), "pp") == 0)
           spec[specidx].rd.mode = MODE_PRINT, spec[specidx].rd.polling = 1;
-        else if (strcmp (optarg, "c") == 0)
+        else if (strcmp (os_get_optarg(), "c") == 0)
           spec[specidx].rd.mode = MODE_CHECK;
-        else if (sscanf (optarg, "c:%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf (os_get_optarg(), "c:%u%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
           spec[specidx].rd.mode = MODE_CHECK;
-        else if (strcmp (optarg, "cp") == 0)
+        else if (strcmp (os_get_optarg(), "cp") == 0)
           spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
-        else if (sscanf (optarg, "cp:%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf (os_get_optarg(), "cp:%u%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
           spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
-        else if (strcmp (optarg, "z") == 0)
+        else if (strcmp (os_get_optarg(), "z") == 0)
           spec[specidx].rd.mode = MODE_ZEROLOAD;
-        else if (strcmp (optarg, "d") == 0)
+        else if (strcmp (os_get_optarg(), "d") == 0)
           spec[specidx].rd.mode = MODE_DUMP;
-        else if (strcmp (optarg, "dp") == 0)
+        else if (strcmp (os_get_optarg(), "dp") == 0)
           spec[specidx].rd.mode = MODE_DUMP, spec[specidx].rd.polling = 1;
         else
         {
-          fprintf (stderr, "-m %s: invalid mode\n", optarg);
+          fprintf (stderr, "-m %s: invalid mode\n", os_get_optarg());
           exit (2);
         }
         break;
@@ -2581,23 +2512,23 @@ int main (int argc, char *argv[])
         int port;
         spec[specidx].wr.writerate = 0.0;
         spec[specidx].wr.burstsize = 1;
-        if (strcmp (optarg, "-") == 0)
+        if (strcmp (os_get_optarg(), "-") == 0)
         {
           spec[specidx].wr.mode = WRM_INPUT;
         }
-        else if (sscanf (optarg, "%d%n", &nkeyvals, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf (os_get_optarg(), "%u%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf (optarg, "%d:%lf*%u%n", &nkeyvals, &spec[specidx].wr.writerate, &spec[specidx].wr.burstsize, &pos) == 3 && optarg[pos] == 0)
+        else if (sscanf (os_get_optarg(), "%u:%lf*%u%n", &nkeyvals, &spec[specidx].wr.writerate, &spec[specidx].wr.burstsize, &pos) == 3 && os_get_optarg()[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf (optarg, "%d:%lf%n", &nkeyvals, &spec[specidx].wr.writerate, &pos) == 2 && optarg[pos] == 0)
+        else if (sscanf (os_get_optarg(), "%u:%lf%n", &nkeyvals, &spec[specidx].wr.writerate, &pos) == 2 && os_get_optarg()[pos] == 0)
         {
           spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
         }
-        else if (sscanf (optarg, ":%d%n", &port, &pos) == 1 && optarg[pos] == 0)
+        else if (sscanf (os_get_optarg(), ":%d%n", &port, &pos) == 1 && os_get_optarg()[pos] == 0)
         {
         	fprintf(stderr, "listen on TCP port P: not supported\n");
 			exit(1);
@@ -2605,19 +2536,19 @@ int main (int argc, char *argv[])
         else
         {
           spec[specidx].wr.mode = WRM_INPUT;
-          fprintf(stderr, "%s: can't open\n", optarg);
+          fprintf(stderr, "%s: can't open\n", os_get_optarg());
           exit(1);
         }
         break;
       }
       case 'n':
-        spec[specidx].rd.read_maxsamples = atoi (optarg);
+        spec[specidx].rd.read_maxsamples = atoi (os_get_optarg());
         break;
       case 'O':
         once_mode = 1;
         break;
       case 'P':
-        set_print_mode (optarg);
+        set_print_mode (os_get_optarg());
         break;
       case 'R':
         spec[specidx].rd.use_take = 0;
@@ -2626,26 +2557,26 @@ int main (int argc, char *argv[])
         spec[specidx].wr.register_instances = 1;
         break;
       case 's':
-        spec[specidx].rd.sleep_us = 1000u * (unsigned) atoi (optarg);
+        spec[specidx].rd.sleep_ns = DDS_MSECS((int64_t) atoi (os_get_optarg()));
         break;
       case 'W':
         {
           double t;
           wait_hist_data = 1;
-          if (strcmp (optarg, "inf") == 0)
+          if (strcmp (os_get_optarg(), "inf") == 0)
             set_infinite_dds_duration (&wait_hist_data_timeout);
-          else if (sscanf (optarg, "%lf%n", &t, &pos) == 1 && optarg[pos] == 0 && t >= 0)
+          else if (sscanf (os_get_optarg(), "%lf%n", &t, &pos) == 1 && os_get_optarg()[pos] == 0 && t >= 0)
             double_to_dds_duration (&wait_hist_data_timeout, t);
           else
           {
-            fprintf (stderr, "-W %s: invalid duration\n", optarg);
+            fprintf (stderr, "-W %s: invalid duration\n", os_get_optarg());
             exit (2);
           }
         }
         break;
       case 'S':
         {
-          char *copy = os_strdup (optarg), *tok, *lasts;
+          char *copy = os_strdup (os_get_optarg()), *tok, *lasts;
           if (copy == NULL)
             abort ();
           tok = os_strtok_r (copy, ",", &lasts);
@@ -2686,10 +2617,10 @@ int main (int argc, char *argv[])
       case 'z': {
         /* payload is int32 int32 seq<octet>, which we count as 16+N,
          for a 4 byte sequence length */
-        int tmp = atoi (optarg);
+        int tmp = atoi (os_get_optarg());
         if (tmp != 0 && tmp < 12)
         {
-          fprintf (stderr, "-z %s: minimum is 12\n", optarg);
+          fprintf (stderr, "-z %s: minimum is 12\n", os_get_optarg());
 
           exit (1);
         }
@@ -2704,24 +2635,20 @@ int main (int argc, char *argv[])
     }
   }
 
-  if (argc - optind < 1)
+  if (argc - os_get_optind() < 1)
   {
-	  PRINTD("argc: %d optind: %d\n",argc,optind);
 	  usage (argv[0]);
   }
 
   for (i = 0; i <= specidx; i++)
   {
     assert (spec[i].rd.topicsel == spec[i].wr.topicsel);
-    if (spec[i].topicname != NULL)
-    {
-      if (spec[i].rd.topicsel == UNSPEC)
-        spec[i].rd.topicsel = spec[i].wr.topicsel = ARB;
-    }
-    else
-    {
-      if (spec[i].rd.topicsel == UNSPEC)
+
+    if (spec[i].rd.topicsel == UNSPEC)
         spec[i].rd.topicsel = spec[i].wr.topicsel = KS;
+
+    if (spec[i].topicname == NULL)
+    {
       switch (spec[i].rd.topicsel)
       {
         case UNSPEC: assert(0);
@@ -2731,7 +2658,7 @@ int main (int argc, char *argv[])
         case K128: spec[i].topicname = os_strdup("PubSub128"); break;
         case K256: spec[i].topicname = os_strdup("PubSub256"); break;
         case OU: spec[i].topicname = os_strdup("PubSubOU"); break;
-        case ARB: error ("-K ARB requires specifying a topic name\n"); break;
+        case ARB: error_exit("-K ARB requires specifying a topic name\n"); break;
       }
       assert (spec[i].topicname != NULL);
     }
@@ -2753,7 +2680,7 @@ int main (int argc, char *argv[])
         case WRM_AUTO:
           want_writer = 1;
           if (spec[i].wr.topicsel == ARB)
-            error ("auto-write mode requires non-ARB topic\n");
+              error_exit("auto-write mode requires non-ARB topic\n");
           break;
         case WRM_INPUT:
           want_writer = 1;
@@ -2769,6 +2696,7 @@ int main (int argc, char *argv[])
       nkeyvals = 1;
       if (spec[i].rd.topicsel == ARB)
       {
+          // TODO ARB type support
 //        if (((spec[i].rd.mode != MODE_PRINT || spec[i].rd.mode != MODE_DUMP) && spec[i].rd.mode != MODE_NONE) || (fdin == -1 && fdservsock == -1))
 //          error ("-K ARB requires readers in PRINT or DUMP mode and writers in interactive mode\n");
 //        if (nqtopic != 0 && spec[i].metadata == NULL)
@@ -2786,26 +2714,24 @@ int main (int argc, char *argv[])
   set_systemid_env ();
 
   {
-    char **ps = (char **) os_malloc (sizeof(char *) * (argc - optind)); //variable size array malloc
-    for (i = 0; i < (unsigned) (argc - optind); i++)
-      ps[i] = expand_envvars (argv[(unsigned) optind + i]);
+    char **ps = (char **) os_malloc (sizeof(char *) * (argc - os_get_optind()));
+    for (i = 0; i < (unsigned) (argc - os_get_optind()); i++)
+      ps[i] = expand_envvars (argv[(unsigned) os_get_optind() + i]);
     if (want_reader)
     {
     	qos = new_subqos ();
-    	PRINTD("Entering setqos for subscriber\n");
 		setqos_from_args (qos, nqsubscriber, qsubscriber);
-		sub = new_subscriber (qos, (unsigned) (argc - optind), (const char **) ps);
+		sub = new_subscriber (qos, (unsigned) (argc - os_get_optind()), (const char **) ps);
     	free_qos (qos);
     }
     if (want_writer)
     {
       qos = new_pubqos ();
-      PRINTD("Entering setqos for publisher\n");
       setqos_from_args (qos, nqpublisher, qpublisher);
-      pub = new_publisher (qos, (unsigned) (argc - optind), (const char **) ps);
+      pub = new_publisher (qos, (unsigned) (argc - os_get_optind()), (const char **) ps);
       free_qos (qos);
     }
-    for (i = 0; i < (unsigned) (argc - optind); i++)
+    for (i = 0; i < (unsigned) (argc - os_get_optind()); i++)
     	os_free (ps[i]);
     os_free(ps);
   }
@@ -2814,7 +2740,6 @@ int main (int argc, char *argv[])
   for (i = 0; i <= specidx; i++)
   {
     qos = new_tqos ();
-    PRINTD("Entering setqos for Topic\n");
     setqos_from_args (qos, nqtopic, qtopic);
     switch (spec[i].rd.topicsel)
     {
@@ -2826,17 +2751,18 @@ int main (int argc, char *argv[])
       case K256: spec[i].tp = new_topic (spec[i].topicname, ts_Keyed256, qos); break;
       case OU:   spec[i].tp = new_topic (spec[i].topicname, ts_OneULong, qos); break;
       case ARB:
-    	  error("Currently doesn't support ARB type\n");
+          // TODO ARB type support
+        error_exit("Currently doesn't support ARB type\n");
         if (spec[i].metadata == NULL) {
           if (!(spec[i].tp = find_topic(dp, spec[i].topicname, &spec[i].findtopic_timeout)))
-            error("topic %s not found\n", spec[i].topicname);
+              error_exit("topic %s not found\n", spec[i].topicname);
         } else  {
 //          const dds_topic_descriptor_t* ts = dds_topic_descriptor_create(spec[i].typename, spec[i].keylist, spec[i].metadata); //Todo: Not available in cham dds.h
           const dds_topic_descriptor_t* ts = NULL;
           if(ts == NULL)
-        	  error("dds_topic_descriptor_create(%s) failed\n",spec[i].typename);
+              error_exit("dds_topic_descriptor_create(%s) failed\n",spec[i].typename);
           spec[i].tp = new_topic (spec[i].topicname, ts, qos);
-//          dds_topic_descriptor_delete((dds_topic_descriptor_t*) ts); //Todo: Not available in cham dds.h
+//          dds_topic_descriptor_delete((dds_topic_descriptor_t*) ts);
         }
 //        spec[i].rd.tgtp = spec[i].wr.tgtp = tgnew(spec[i].tp, printtype);
         break;
@@ -2852,6 +2778,7 @@ int main (int argc, char *argv[])
     {
     	fprintf(stderr,"C99 API doesn't support the creation of content filtered topic.\n");
     	spec[i].cftp = spec[i].tp;
+    	// TODO Content Filtered Topic support
 //    	char name[40], *expr = expand_envvars(spec[i].cftp_expr);
 //		DDS_StringSeq *params = DDS_StringSeq__alloc();
 //		snprintf (name, sizeof (name), "cft%u", i);
@@ -2863,29 +2790,23 @@ int main (int argc, char *argv[])
 
     if (spec[i].rd.mode != MODE_NONE)
     {
-	  int ret = 0;
       qos = new_rdqos (sub, spec[i].cftp);
-      PRINTD("Entering setqos for Reader\n");
       setqos_from_args (qos, nqreader, qreader);
       spec[i].rd.rd = new_datareader_listener (qos, rdlistener);
-//      ret = dds_get_name(spec[i].tp, spec[i].rd.tpname, sizeof(char*)); //Todo: now working properly.
       spec[i].rd.sub = sub;
       free_qos (qos);
     }
 
     if (spec[i].wr.mode != WRM_NONE)
     {
-      int ret = 0;
       qos = new_wrqos (pub, spec[i].tp);
-      PRINTD("Entering setqos for Writer\n");
       setqos_from_args (qos, nqwriter, qwriter);
       spec[i].wr.wr = new_datawriter_listener (qos, wrlistener);
-//      ret = dds_get_name(spec[i].tp, spec[i].wr.tpname, sizeof(char*));
       spec[i].wr.pub = pub;
       if (spec[i].wr.duplicate_writer_flag)
       {
-    	  if((spec[i].wr.dupwr = dds_create_writer(pub, spec[i].tp, qos_datawriter(qos), NULL)) < DDS_RETCODE_OK)
-    		  error ("dds_writer_create failed with value %d: %s\n",dds_err_nr(spec[i].wr.dupwr),dds_err_str(spec[i].wr.dupwr));
+          spec[i].wr.dupwr = dds_create_writer(pub, spec[i].tp, qos_datawriter(qos), NULL);
+          error_abort(spec[i].wr.dupwr, "dds_writer_create failed");
       }
       free_qos (qos);
     }
@@ -2894,6 +2815,7 @@ int main (int argc, char *argv[])
   if (want_writer && wait_for_matching_reader_arg)
   {
 	  printf("Wait for matching reader: unsupported\n");
+	  // TODO Reimplement wait_for_matching_reader functionality via wait on status subscription matched
 //    struct qos *q = NULL;
 //    uint64_t tnow = nowll();
 //    uint64_t tend = tnow + (uint64_t) (wait_for_matching_reader_timeout >= 0 ? (wait_for_matching_reader_timeout * 1e9 + 0.5) : 0);
@@ -2906,7 +2828,7 @@ int main (int argc, char *argv[])
 //    if ((pphandle = DDS_DomainParticipant_get_instance_handle(dp)) == 0)
 //      error("DDS_DomainParticipant_get_instance_handle failed\n");
 //    if ((ret = DDS_DomainParticipant_get_discovered_participant_data(dp, ppdata, pphandle)) != DDS_RETCODE_OK)
-//      error("DDS_DomainParticipant_get_discovered_participant_data failed: %d (%s)\n", (int) ret, dds_strerror(ret));
+//      error("DDS_DomainParticipant_get_discovered_participant_data failed: %d (%s)\n", (int) ret, dds_err_str(ret));
 //    q = new_wrqos(pub, spec[0].tp);
 //    qos_user_data(q, wait_for_matching_reader_arg);
 //    udqos = &qos_datawriter(q)->user_data;
@@ -2916,7 +2838,7 @@ int main (int argc, char *argv[])
 //        if (spec[i].wr.mode == WM_NONE)
 //          --m;
 //        else if ((ret = DDS_DataWriter_get_matched_subscriptions(spec[i].wr.wr, sh)) != DDS_RETCODE_OK)
-//          error("DDS_DataWriter_get_matched_subscriptions failed: %d (%s)\n", (int) ret, dds_strerror(ret));
+//          error("DDS_DataWriter_get_matched_subscriptions failed: %d (%s)\n", (int) ret, dds_err_str(ret));
 //        else
 //        {
 //          unsigned j;
@@ -2924,7 +2846,7 @@ int main (int argc, char *argv[])
 //          {
 //            DDS_SubscriptionBuiltinTopicData *d = DDS_SubscriptionBuiltinTopicData__alloc();
 //            if ((ret = DDS_DataWriter_get_matched_subscription_data(spec[i].wr.wr, d, sh->_buffer[j])) != DDS_RETCODE_OK)
-//              error("DDS_DataWriter_get_matched_subscription_data(wr %u ih %llx) failed: %d (%s)\n", specidx, sh->_buffer[j], (int) ret, dds_strerror(ret));
+//              error("DDS_DataWriter_get_matched_subscription_data(wr %u ih %llx) failed: %d (%s)\n", specidx, sh->_buffer[j], (int) ret, dds_err_str(ret));
 //            if (memcmp(d->participant_key, ppdata->key, sizeof(ppdata->key)) != 0 &&
 //                d->user_data.value._length == udqos->value._length &&
 //                (d->user_data.value._length == 0 || memcmp(d->user_data.value._buffer, udqos->value._buffer, udqos->value._length) == 0))
@@ -2954,11 +2876,11 @@ int main (int argc, char *argv[])
   }
 
   termcond = dds_create_waitset(dp); // Waitset serves as GuardCondition here.
-  DDS_ERR_CHECK(termcond, DDS_CHECK_FAIL);
-//      error("dds_guardcondition_create failed\n");
+  error_abort(termcond, "dds_create_waitset failed");
 
   os_threadAttr attr;
   os_threadAttrInit(&attr);
+  os_result osres;
 
   if (want_writer)
   {
@@ -2970,10 +2892,12 @@ int main (int argc, char *argv[])
         case WRM_NONE:
           break;
         case WRM_AUTO:
-          os_threadCreate(&spec[i].wrtid, "pubthread_auto", &attr, pubthread_auto, &spec[i].wr);
+          osres = os_threadCreate(&spec[i].wrtid, "pubthread_auto", &attr, pubthread_auto, &spec[i].wr);
+          os_error_exit(osres, "Error: cannot create thread pubthread_auto");
           break;
         case WRM_INPUT:
           wsl = os_malloc(sizeof(*wsl));
+          spec[i].wr.tpname = os_strdup(spec[i].topicname);
           wsl->spec = &spec[i].wr;
           if (wrspecs) {
             wsl->next = wrspecs->next;
@@ -2988,19 +2912,22 @@ int main (int argc, char *argv[])
     if (wrspecs) /* start with first wrspec */
     {
       wrspecs = wrspecs->next;
-      os_threadCreate(&inptid, "pubthread", &attr, pubthread, wrspecs);
+      osres = os_threadCreate(&inptid, "pubthread", &attr, pubthread, wrspecs);
+      os_error_exit(osres, "Error: cannot create thread pubthread");
     }
   }
   else if (dur > 0) /* note: abusing inptid */
   {
-	os_threadCreate(&inptid, "autotermthread", &attr, autotermthread, NULL);
+      osres = os_threadCreate(&inptid, "autotermthread", &attr, autotermthread, NULL);
+      os_error_exit(osres, "Error: cannot create thread autotermthread");
   }
   for (i = 0; i <= specidx; i++)
   {
     if (spec[i].rd.mode != MODE_NONE)
     {
       spec[i].rd.idx = i;
-      os_threadCreate(&spec[i].rdtid, "subthread", &attr, subthread, &spec[i].rd);
+      osres = os_threadCreate(&spec[i].rdtid, "subthread", &attr, subthread, &spec[i].rd);
+      os_error_exit(osres, "Error: cannot create thread subthread");
     }
   }
   if (want_writer || dur > 0)
@@ -3008,14 +2935,14 @@ int main (int argc, char *argv[])
     int term_called = 0;
     if (!want_writer || wrspecs)
     {
-      os_threadWaitExit(inptid, NULL);
+      (void)os_threadWaitExit(inptid, NULL);
       term_called = 1;
       terminate ();
     }
     for (i = 0; i <= specidx; i++)
     {
       if (spec[i].wr.mode == WRM_AUTO)
-    	os_threadWaitExit(spec[i].wrtid, NULL);
+        (void)os_threadWaitExit(spec[i].wrtid, NULL);
     }
     if (!term_called)
       terminate ();
@@ -3028,7 +2955,7 @@ int main (int argc, char *argv[])
     {
       if (spec[i].rd.mode != MODE_NONE)
       {
-    	os_threadWaitExit(spec[i].rdtid, &ret);
+        (void)os_threadWaitExit(spec[i].rdtid, &ret);
         if ((uintptr_t) ret > exitcode)
           exitcode = (uintptr_t) ret;
       }
@@ -3048,11 +2975,14 @@ int main (int argc, char *argv[])
     }
   }
 
-  os_free(qtopic);
-  os_free(qpublisher);
-  os_free(qsubscriber);
-  os_free(qreader);
-  os_free(qwriter);
+  dds_listener_delete(wrlistener);
+  dds_listener_delete(rdlistener);
+
+  os_free((char **) qtopic);
+  os_free((char **) qpublisher);
+  os_free((char **) qsubscriber);
+  os_free((char **) qreader);
+  os_free((char **) qwriter);
 
   for (i = 0; i <= specidx; i++)
   {
@@ -3062,12 +2992,11 @@ int main (int argc, char *argv[])
 	if(spec[i].typename) os_free(spec[i].typename);
 	if(spec[i].keylist) os_free(spec[i].keylist);
 	assert(spec[i].wr.tgtp == spec[i].rd.tgtp); /* so no need to free both */
+    // TODO ARB type support
 //	if (spec[i].rd.tgtp)
 //		tgfree(spec[i].rd.tgtp);
 //	if (spec[i].wr.tgtp)
 //		tgfree(spec[i].wr.tgtp);
-	if(spec[i].rd.tpname)
-		dds_string_free(spec[i].rd.tpname);
 	if (spec[i].wr.tpname)
 		dds_string_free(spec[i].wr.tpname);
   }
@@ -3076,11 +3005,7 @@ int main (int argc, char *argv[])
 //  dds_delete(termcond);
   common_fini ();
   if (sleep_at_end) {
-	  PRINTD("Sleep at the end of main\n");
-	  os_time delay = { sleep_at_end, 0 };
-	  os_nanoSleep(delay);
-//    sleep (sleep_at_end);
+	  dds_sleepfor(DDS_SECS(sleep_at_end));
   }
-  PRINTD("End of main\n\n");
   return (int) exitcode;
 }

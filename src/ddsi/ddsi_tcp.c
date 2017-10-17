@@ -1053,7 +1053,7 @@ int ddsi_tcp_init (void)
       ddsi_name = "tcp/ssl";
       if (! (ddsi_tcp_ssl_plugin.init) ())
       {
-        NN_ERROR0 ("Failed to initialize OpenSSL\n");
+        NN_ERROR ("Failed to initialize OpenSSL\n");
         return -1;
       }
     }

@@ -11,8 +11,8 @@ extern "C" {
 _Check_return_ dds_entity_t
 dds_entity_init(
         _In_       dds_entity * e,
-        _When_(kind != DDS_KIND_PARTICIPANT, _At_(parent,_NotNull_))
-        _When_(kind == DDS_KIND_PARTICIPANT, _At_(parent,_Null_))
+        _When_(kind != DDS_KIND_PARTICIPANT, _Notnull_)
+        _When_(kind == DDS_KIND_PARTICIPANT, _Null_)
           _In_opt_ dds_entity * parent,
         _In_       dds_entity_kind_t kind,
         _In_opt_   dds_qos_t * qos,
@@ -26,9 +26,9 @@ void
 dds_entity_add_ref_nolock(
         _In_ dds_entity *e);
 
-_Check_return_ dds_retcode_t
+_Check_return_ dds__retcode_t
 dds_entity_listener_propagation(
-        _In_ dds_entity *e,
+        _Inout_opt_ dds_entity *e,
         _In_ dds_entity *src,
         _In_ uint32_t status,
         _In_opt_ void *metrics,
@@ -46,41 +46,43 @@ void
 dds_entity_status_signal(
         _In_ dds_entity *e);
 
-_Check_return_ dds_retcode_t
+_Check_return_ dds__retcode_t
 dds_valid_hdl(
         _In_ dds_entity_t hdl,
         _In_ dds_entity_kind_t kind);
 
-_Check_return_ dds_retcode_t
+_Acquires_exclusive_lock_(*e)
+_Check_return_ dds__retcode_t
 dds_entity_lock(
         _In_ dds_entity_t hdl,
         _In_ dds_entity_kind_t kind,
         _Out_ dds_entity **e);
 
+_Releases_exclusive_lock_(e)
 void
 dds_entity_unlock(
-        _In_ dds_entity *e);
+        _Inout_ dds_entity *e);
 
 #define dds_entity_kind(hdl) ((hdl > 0) ? (hdl & DDS_ENTITY_KIND_MASK) : 0)
 
-_Check_return_ dds_retcode_t
+_Check_return_ dds__retcode_t
 dds_entity_observer_register_nl(
         _In_ dds_entity*  observed,
         _In_ dds_entity_t observer,
         _In_ dds_entity_callback cb);
 
-_Check_return_ dds_retcode_t
+_Check_return_ dds__retcode_t
 dds_entity_observer_register(
         _In_ dds_entity_t observed,
         _In_ dds_entity_t observer,
         _In_ dds_entity_callback cb);
 
-dds_retcode_t
+dds__retcode_t
 dds_entity_observer_unregister_nl(
         _In_ dds_entity*  observed,
         _In_ dds_entity_t observer);
 
-dds_retcode_t
+dds__retcode_t
 dds_entity_observer_unregister(
         _In_ dds_entity_t observed,
         _In_ dds_entity_t observer);
@@ -90,6 +92,10 @@ dds_return_t
 dds_delete_impl(
         _In_ dds_entity_t entity,
         _In_ bool keep_if_explicit);
+
+const char *
+dds__entity_kind_str(
+        _In_ dds_entity_t e);
 
 #if defined (__cplusplus)
 }

@@ -66,7 +66,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -90,7 +90,7 @@ reader_init(void)
     g_waitset = dds_create_waitset(g_participant);
     cr_assert_gt(g_waitset, 0, "Failed to create g_waitset");
 
-    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_reader_test", name, 100), NULL, NULL);
+    g_topic = dds_create_topic(g_participant, &Space_Type1_desc, create_topic_name("vddsc_reader_test", name, sizeof name), NULL, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     /* Create a reader that keeps last sample of all instances. */
@@ -106,7 +106,7 @@ reader_init(void)
     /* Sync g_reader to g_writer. */
     ret = dds_set_enabled_status(g_reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_reader status");
-    ret = dds_waitset_attach(g_waitset, g_reader, (dds_attach_t)(intptr_t)g_reader);
+    ret = dds_waitset_attach(g_waitset, g_reader, g_reader);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_reader");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_reader r");
@@ -117,7 +117,7 @@ reader_init(void)
     /* Sync g_writer to g_reader. */
     ret = dds_set_enabled_status(g_writer, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_writer status");
-    ret = dds_waitset_attach(g_waitset, g_writer, (dds_attach_t)(intptr_t)g_writer);
+    ret = dds_waitset_attach(g_waitset, g_writer, g_writer);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_writer");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_writer r");
@@ -234,13 +234,30 @@ Theory((dds_entity_t *ent, dds_qos_t **qos, dds_listener_t **listener), vddsc_re
 /*************************************************************************************************/
 
 /*************************************************************************************************/
-Test(vddsc_reader_create, invalid_qos, .init=reader_init, .fini=reader_fini)
+Test(vddsc_reader_create, invalid_qos_participant, .init=reader_init, .fini=reader_fini)
 {
     dds_entity_t rdr;
     dds_qos_t *qos = dds_qos_create();
     /* Set invalid reader data lifecycle policy */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     dds_qset_reader_data_lifecycle(qos, DDS_SECS(-1), DDS_SECS(-1));
+    OS_WARNING_MSVC_ON(28020);
     rdr = dds_create_reader(g_participant, g_topic, qos, NULL);
+    cr_assert_eq(dds_err_nr(rdr), DDS_RETCODE_INCONSISTENT_POLICY, "returned %d", dds_err_nr(rdr));
+    dds_qos_delete(qos);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_reader_create, invalid_qos_subscriber, .init=reader_init, .fini=reader_fini)
+{
+    dds_entity_t rdr;
+    dds_qos_t *qos = dds_qos_create();
+    /* Set invalid reader data lifecycle policy */
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
+    dds_qset_reader_data_lifecycle(qos, DDS_SECS(-1), DDS_SECS(-1));
+    OS_WARNING_MSVC_ON(28020);
+    rdr = dds_create_reader(g_subscriber, g_topic, qos, NULL);
     cr_assert_eq(dds_err_nr(rdr), DDS_RETCODE_INCONSISTENT_POLICY, "returned %d", dds_err_nr(rdr));
     dds_qos_delete(qos);
 }
@@ -304,11 +321,6 @@ Theory((dds_entity_t rdr), vddsc_read, invalid_readers, .init=reader_init, .fini
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
 
     ret = dds_read(rdr, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -420,11 +432,6 @@ Theory((dds_entity_t rdr), vddsc_read_wl, invalid_readers, .init=reader_init, .f
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
 
     ret = dds_read_wl(rdr, g_loans, g_info, MAX_SAMPLES);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -548,11 +555,6 @@ Theory((dds_entity_t rdr), vddsc_read_mask, invalid_readers, .init=reader_init, 
     uint32_t mask = DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
 
     ret = dds_read_mask(rdr, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES, mask);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -1111,11 +1113,6 @@ Theory((dds_entity_t rdr), vddsc_read_mask_wl, invalid_readers, .init=reader_ini
     uint32_t mask = DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
 
     ret = dds_read_mask_wl(rdr, g_loans, g_info, MAX_SAMPLES, mask);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -1711,11 +1708,6 @@ Theory((dds_entity_t rdr), vddsc_take, invalid_readers, .init=reader_init, .fini
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
-
     ret = dds_take(rdr, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -1826,11 +1818,6 @@ Theory((dds_entity_t rdr), vddsc_take_wl, invalid_readers, .init=reader_init, .f
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
 
     ret = dds_take_wl(rdr, g_loans, g_info, MAX_SAMPLES);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -1955,11 +1942,6 @@ Theory((dds_entity_t rdr), vddsc_take_mask, invalid_readers, .init=reader_init, 
     uint32_t mask = DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
 
     ret = dds_take_mask(rdr, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES, mask);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -2528,7 +2510,7 @@ Test(vddsc_take_mask, take_instance_last_sample)
     /* Sync g_reader to g_writer. */
     ret = dds_set_enabled_status(g_reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_reader status");
-    ret = dds_waitset_attach(g_waitset, g_reader, (dds_attach_t)(intptr_t)g_reader);
+    ret = dds_waitset_attach(g_waitset, g_reader, g_reader);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_reader");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_reader r");
@@ -2539,7 +2521,7 @@ Test(vddsc_take_mask, take_instance_last_sample)
     /* Sync g_writer to g_reader. */
     ret = dds_set_enabled_status(g_writer, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_writer status");
-    ret = dds_waitset_attach(g_waitset, g_writer, (dds_attach_t)(intptr_t)g_writer);
+    ret = dds_waitset_attach(g_waitset, g_writer, g_writer);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_writer");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_writer r");
@@ -2574,7 +2556,7 @@ Test(vddsc_take_mask, take_instance_last_sample)
     ret = dds_take_mask(g_reader, g_samples, g_info, MAX_SAMPLES, MAX_SAMPLES, mask);
     cr_assert_eq(ret, expected_cnt, "# read %d, expected %d", ret, expected_cnt);
     for(int i = 0; i < ret; i++) {
-        Space_Type1 *sample = (Space_Type1*)g_samples[i];
+        Space_Type1 *s = (Space_Type1*)g_samples[i];
 
         /*
          *  | long_1 | long_2 | long_3 |    sst   | vst |    ist     |
@@ -2582,12 +2564,12 @@ Test(vddsc_take_mask, take_instance_last_sample)
          *  |    0   |    1   |    2   |     read | old | alive      | <--- no worries
          *  |    0   |    1   |    3   | not_read | old | alive      | <--- crashed
          */
-        PRINT_SAMPLE("vddsc_take_mask::crash: Take", (*sample));
+        PRINT_SAMPLE("vddsc_take_mask::crash: Take", (*s));
 
         /* Check data. */
-        cr_assert_eq(sample->long_1, 0);
-        cr_assert_eq(sample->long_2, 1);
-        cr_assert_eq(sample->long_3, expected_long_3);
+        cr_assert_eq(s->long_1, 0);
+        cr_assert_eq(s->long_2, 1);
+        cr_assert_eq(s->long_3, expected_long_3);
 
         /* Check states. */
         cr_assert_eq(g_info[i].valid_data,     true);
@@ -2652,11 +2634,6 @@ Theory((dds_entity_t rdr), vddsc_take_mask_wl, invalid_readers, .init=reader_ini
     uint32_t mask = DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ANY_INSTANCE_STATE;
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
 
     ret = dds_take_mask_wl(rdr, g_loans, g_info, MAX_SAMPLES, mask);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));

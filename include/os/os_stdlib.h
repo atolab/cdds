@@ -54,10 +54,13 @@ extern "C" {
      *     variable is found
      * - returns NULL if
      *     variable is not found
+     *
+     * TODO CHAM-379 : Coverity generates a tainted string.
+     * For now, the Coverity warning reported intentional in Coverity.
      */
-    OSAPI_EXPORT char *
+    OSAPI_EXPORT _Ret_opt_z_ const char *
     os_getenv(
-              const char *variable);
+              _In_z_ const char *variable);
 
     /** \brief Set environment variable definition
      *
@@ -78,21 +81,6 @@ extern "C" {
     OSAPI_EXPORT os_result
     os_putenv(
               char *variable_definition);
-
-    /** \brief Set an environment variable definition
-     * Possible Results:
-     * - assertion failure: name or value are null.
-     * @param name variable name to be set
-     * @param value the value to set it to
-     * @return os_resultSuccess if
-     *     environment variable is set according the variable_definition or
-     * os_resultFail if
-     *     environment variable could not be set according the
-     *     variable_definition
-     */
-    OSAPI_EXPORT os_result
-    os_setenv(
-              const char *name, const char *value);
 
     /** \brief Get file seperator
      *
@@ -262,14 +250,14 @@ extern "C" {
      *   The allocated string must be freed using os_free
      *
      * Possible results:
-     * - return NULL if
-     *     all resources are depleted
      * - return duplicate of the string s1 allocated via
      *     os_malloc
      */
+    _Ret_z_
+    _Check_return_
     OSAPI_EXPORT char *
     os_strdup(
-              const char *s1) __nonnull_all__
+              _In_z_ const char *s1) __nonnull_all__
     __attribute_malloc__
     __attribute_returns_nonnull__
     __attribute_warn_unused_result__;
@@ -323,7 +311,7 @@ extern "C" {
      * - return
      *   Upon successful completion will return the number of
      *   bytes written to file
-     *   or a negative value if an error occured.
+     *   or a negative value if an error occurred.
      *   errno will be set in such case
      * - Writes formatted output to file.
      */
@@ -627,9 +615,11 @@ extern "C" {
      * - returns normalized filepath conform current platform
      * - return NULL if out of memory.
      */
+    _Ret_z_
+    _Must_inspect_result_
     OSAPI_EXPORT char *
     os_fileNormalize(
-                     const char *filepath);
+                     _In_z_ const char *filepath);
 
     /**
      * \brief Flushes the internal buffers associated with the file handle to disk
@@ -657,7 +647,7 @@ extern "C" {
      * - char * of the absolute path of the temporary location.  This will return
      * always return a valid value, using a default if necessary
      */
-    OSAPI_EXPORT const char *
+    OSAPI_EXPORT _Ret_opt_z_ const char *
     os_getTempDir(void);
 
     /**
@@ -681,6 +671,7 @@ extern "C" {
 	 * \brief the os_flockfile() function waits for *filehandle to be
 	 * no longer locked by a different thread, then makes the current
 	 * thread owner of *filehandle, and increments the lockcount.
+	 * (not effective on VxWorks DKM platform)
 	 *
 	 * Precondition:
 	 *   none
@@ -698,6 +689,7 @@ extern "C" {
 	 * \brief the os_funlockfile function decrements the lock count and releases
 	 *  the internal locking object of the *filehandle. The *filehandle must
 	 *  have been locked before by a call to os_flockfile.
+	 *  (not effective on VxWorks DKM platform)
 	 *
 	 * Precondition:
 	 *   none
@@ -752,7 +744,10 @@ extern "C" {
 	 *
 	 */
 	OSAPI_EXPORT int
-	os_getopt(int argc, char **argv, const char *opts);
+	os_getopt(
+			_In_range_(0, INT_MAX) int argc,
+			_In_reads_z_(argc) char **argv,
+			_In_z_ const char *opts);
 
 	/**
 	 * \brief the os_set_opterr function sets the value of the opterr variable.
@@ -769,7 +764,7 @@ extern "C" {
 	 *
 	 */
 	OSAPI_EXPORT void
-	os_set_opterr(int err);
+	os_set_opterr(_In_range_(0, INT_MAX) int err);
 
 	/**
 	 * \brief the os_get_opterr returns the value of the opterr variable.
@@ -799,7 +794,7 @@ extern "C" {
 	 *
 	 */
 	OSAPI_EXPORT void
-	os_set_optind(int index);
+	os_set_optind(_In_range_(0, INT_MAX) int index);
 
 	/**
 	 * \brief the os_get_optind function returns the value of the optind variable.

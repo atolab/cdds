@@ -171,13 +171,14 @@ static int is_builtin_endpoint (nn_entityid_t id, nn_vendorid_t vendorid)
   return is_builtin_entityid (id, vendorid) && id.u != NN_ENTITYID_PARTICIPANT;
 }
 
-static void entity_common_init (struct entity_common *e, const struct nn_guid *guid, const char *name, enum entity_kind kind)
+static void entity_common_init (struct entity_common *e, const struct nn_guid *guid, const char *name, enum entity_kind kind, bool onlylocal)
 {
   e->guid = *guid;
   e->kind = kind;
   e->name = os_strdup (name ? name : "");
   e->iid = (ddsi_plugin.iidgen_fn) ();
   os_mutexInit (&e->lock);
+  e->onlylocal = onlylocal;
 }
 
 static void entity_common_fini (struct entity_common *e)
@@ -364,7 +365,7 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
   nn_guid_t subguid, group_guid;
 
   /* no reserved bits may be set */
-  assert ((flags & ~(RTPS_PF_NO_BUILTIN_READERS | RTPS_PF_NO_BUILTIN_WRITERS | RTPS_PF_PRIVILEGED_PP | RTPS_PF_IS_DDSI2_PP)) == 0);
+  assert ((flags & ~(RTPS_PF_NO_BUILTIN_READERS | RTPS_PF_NO_BUILTIN_WRITERS | RTPS_PF_PRIVILEGED_PP | RTPS_PF_IS_DDSI2_PP | RTPS_PF_ONLY_LOCAL)) == 0);
   /* privileged participant MUST have builtin readers and writers */
   assert (!(flags & RTPS_PF_PRIVILEGED_PP) || (flags & (RTPS_PF_NO_BUILTIN_READERS | RTPS_PF_NO_BUILTIN_WRITERS)) == 0);
 
@@ -395,7 +396,7 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
     else
     {
       os_mutexUnlock (&gv.participant_set_lock);
-      NN_ERROR2 ("new_participant(%x:%x:%x:%x, %x) failed: max participants reached\n", PGUID (*ppguid), flags);
+      NN_ERROR ("new_participant(%x:%x:%x:%x, %x) failed: max participants reached\n", PGUID (*ppguid), flags);
       return ERR_OUT_OF_IDS;
     }
   }
@@ -404,7 +405,7 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
 
   pp = os_malloc (sizeof (*pp));
 
-  entity_common_init (&pp->e, ppguid, "", EK_PARTICIPANT);
+  entity_common_init (&pp->e, ppguid, "", EK_PARTICIPANT, ((flags & RTPS_PF_ONLY_LOCAL) != 0));
   pp->user_refc = 1;
   pp->builtin_refc = 0;
   pp->builtins_deleted = 0;
@@ -545,25 +546,28 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
      it depends on the privileged participant, which must exist, hence
      the reference count of the privileged participant is incremented.
      If it is the privileged participant, set the global variable
-     pointing to it. */
-  os_mutexLock (&gv.privileged_pp_lock);
-  if ((pp->bes & builtin_writers_besmask) != builtin_writers_besmask ||
-      (pp->prismtech_bes & prismtech_builtin_writers_besmask) != prismtech_builtin_writers_besmask)
-  {
-    /* Simply crash when the privileged participant doesn't exist when
-       it is needed.  Its existence is a precondition, and this is not
-       a public API */
-    assert (gv.privileged_pp != NULL);
-    ref_participant (gv.privileged_pp, &pp->e.guid);
+     pointing to it.
+     Except when the participant is only locally available. */
+  if (!(flags & RTPS_PF_ONLY_LOCAL)) {
+    os_mutexLock (&gv.privileged_pp_lock);
+    if ((pp->bes & builtin_writers_besmask) != builtin_writers_besmask ||
+        (pp->prismtech_bes & prismtech_builtin_writers_besmask) != prismtech_builtin_writers_besmask)
+    {
+      /* Simply crash when the privileged participant doesn't exist when
+         it is needed.  Its existence is a precondition, and this is not
+         a public API */
+      assert (gv.privileged_pp != NULL);
+      ref_participant (gv.privileged_pp, &pp->e.guid);
+    }
+    if (flags & RTPS_PF_PRIVILEGED_PP)
+    {
+      /* Crash when two privileged participants are created -- this is
+         not a public API. */
+      assert (gv.privileged_pp == NULL);
+      gv.privileged_pp = pp;
+    }
+    os_mutexUnlock (&gv.privileged_pp_lock);
   }
-  if (flags & RTPS_PF_PRIVILEGED_PP)
-  {
-    /* Crash when two privileged participants are created -- this is
-       not a public API. */
-    assert (gv.privileged_pp == NULL);
-    gv.privileged_pp = pp;
-  }
-  os_mutexUnlock (&gv.privileged_pp_lock);
 
   /* Make it globally visible, then signal receive threads if
      necessary. Must do in this order, or the receive thread won't
@@ -744,26 +748,29 @@ static void unref_participant (struct participant *pp, const struct nn_guid *gui
   {
     os_mutexUnlock (&pp->refc_lock);
 
-    if ((pp->bes & builtin_writers_besmask) != builtin_writers_besmask ||
-        (pp->prismtech_bes & prismtech_builtin_writers_besmask) != prismtech_builtin_writers_besmask)
+    if (!(pp->e.onlylocal))
     {
-      /* Participant doesn't have a full complement of built-in
-         writers, therefore, it relies on gv.privileged_pp, and
-         therefore we must decrement the reference count of that one.
+      if ((pp->bes & builtin_writers_besmask) != builtin_writers_besmask ||
+          (pp->prismtech_bes & prismtech_builtin_writers_besmask) != prismtech_builtin_writers_besmask)
+      {
+        /* Participant doesn't have a full complement of built-in
+           writers, therefore, it relies on gv.privileged_pp, and
+           therefore we must decrement the reference count of that one.
 
-         Why read it with the lock held, only to release it and use it
-         without any attempt to maintain a consistent state?  We DO
-         have a counted reference, so it can't be freed, but there is
-         no formal guarantee that the pointer we read is valid unless
-         we read it with the lock held.  We can't keep the lock across
-         the unref_participant, because we may trigger a clean-up of
-         it.  */
-      struct participant *ppp;
-      os_mutexLock (&gv.privileged_pp_lock);
-      ppp = gv.privileged_pp;
-      os_mutexUnlock (&gv.privileged_pp_lock);
-      assert (ppp != NULL);
-      unref_participant (ppp, &pp->e.guid);
+           Why read it with the lock held, only to release it and use it
+           without any attempt to maintain a consistent state?  We DO
+           have a counted reference, so it can't be freed, but there is
+           no formal guarantee that the pointer we read is valid unless
+           we read it with the lock held.  We can't keep the lock across
+           the unref_participant, because we may trigger a clean-up of
+           it.  */
+        struct participant *ppp;
+        os_mutexLock (&gv.privileged_pp_lock);
+        ppp = gv.privileged_pp;
+        os_mutexUnlock (&gv.privileged_pp_lock);
+        assert (ppp != NULL);
+        unref_participant (ppp, &pp->e.guid);
+      }
     }
 
     os_mutexLock (&gv.participant_set_lock);
@@ -808,6 +815,11 @@ int delete_participant (const struct nn_guid *ppguid)
   struct participant *pp;
   if ((pp = ephash_lookup_participant_guid (ppguid)) == NULL)
     return ERR_UNKNOWN_ENTITY;
+  if (!(pp->e.onlylocal))
+  {
+    propagate_builtin_topic_cmparticipant(&(pp->e), pp->plist, now(), false);
+    propagate_builtin_topic_participant(&(pp->e), pp->plist, now(), false);
+  }
   remember_deleted_participant_guid (&pp->e.guid);
   ephash_remove_participant_guid (pp);
   gcreq_participant (pp);
@@ -818,6 +830,10 @@ struct writer *get_builtin_writer (const struct participant *pp, unsigned entity
 {
   nn_guid_t bwr_guid;
   unsigned bes_mask = 0, prismtech_bes_mask = 0;
+
+  if (pp->e.onlylocal) {
+      return NULL;
+  }
 
   /* If the participant the required built-in writer, we use it.  We
      check by inspecting the "built-in endpoint set" advertised by the
@@ -849,7 +865,7 @@ struct writer *get_builtin_writer (const struct participant *pp, unsigned entity
       bes_mask = NN_DISC_BUILTIN_ENDPOINT_TOPIC_ANNOUNCER;
       break;
     default:
-      NN_FATAL1 ("get_builtin_writer called with entityid %x\n", entityid);
+      NN_FATAL ("get_builtin_writer called with entityid %x\n", entityid);
       return NULL;
   }
 
@@ -1927,6 +1943,8 @@ static void connect_writer_with_proxy_reader (struct writer *wr, struct proxy_re
   OS_UNUSED_ARG(tnow);
   if (isb0 != isb1)
     return;
+  if (wr->e.onlylocal)
+    return;
   if (!isb0 && (reason = qos_match_p (prd->c.xqos, wr->xqos)) >= 0)
   {
     writer_qos_mismatch (wr, reason);
@@ -1943,6 +1961,8 @@ static void connect_proxy_writer_with_reader (struct proxy_writer *pwr, struct r
   int32_t reason;
   nn_count_t init_count;
   if (isb0 != isb1)
+    return;
+  if (rd->e.onlylocal)
     return;
   if (!isb0 && (reason = qos_match_p (rd->xqos, pwr->c.xqos)) >= 0)
   {
@@ -2263,7 +2283,7 @@ static void endpoint_common_init
   struct participant *pp
 )
 {
-  entity_common_init (e, guid, NULL, kind);
+  entity_common_init (e, guid, NULL, kind, pp->e.onlylocal);
   c->pp = ref_participant (pp, &e->guid);
   if (group_guid)
   {
@@ -3404,7 +3424,7 @@ void new_proxy_participant
 
   proxypp = os_malloc (sizeof (*proxypp));
 
-  entity_common_init (&proxypp->e, ppguid, "", EK_PROXY_PARTICIPANT);
+  entity_common_init (&proxypp->e, ppguid, "", EK_PROXY_PARTICIPANT, false);
   proxypp->refc = 1;
   proxypp->lease_expired = 0;
   proxypp->vendor = vendor;
@@ -3556,8 +3576,19 @@ void new_proxy_participant
      after ephash_insert_proxy_participant_guid even if
      privileged_pp_guid was NULL originally */
   os_mutexLock (&proxypp->e.lock);
+
   if (proxypp->owns_lease)
     lease_register (os_atomic_ldvoidp (&proxypp->lease));
+
+  if (proxypp->proxypp_have_spdp)
+  {
+    propagate_builtin_topic_participant(&(proxypp->e), proxypp->plist, timestamp, true);
+    if (proxypp->proxypp_have_cm)
+    {
+      propagate_builtin_topic_cmparticipant(&(proxypp->e), proxypp->plist, timestamp, true);
+    }
+  }
+
   os_mutexUnlock (&proxypp->e.lock);
 }
 
@@ -3571,6 +3602,22 @@ int update_proxy_participant_plist_locked (struct proxy_participant *proxypp, co
   nn_plist_fini (proxypp->plist);
   os_free (proxypp->plist);
   proxypp->plist = new_plist;
+
+  switch (source)
+  {
+    case UPD_PROXYPP_SPDP:
+      propagate_builtin_topic_participant(&(proxypp->e), proxypp->plist, timestamp, true);
+      if (!proxypp->proxypp_have_spdp && proxypp->proxypp_have_cm)
+        propagate_builtin_topic_cmparticipant(&(proxypp->e), proxypp->plist, timestamp, true);
+      proxypp->proxypp_have_spdp = 1;
+      break;
+    case UPD_PROXYPP_CM:
+      if (proxypp->proxypp_have_spdp)
+        propagate_builtin_topic_cmparticipant(&(proxypp->e), proxypp->plist, timestamp, true);
+      proxypp->proxypp_have_cm = 1;
+      break;
+  }
+
   return 0;
 }
 
@@ -3861,7 +3908,7 @@ int new_proxy_group (const struct nn_guid *guid, const struct v_gid_s *gid, cons
         is_sub = 1;
         break;
       default:
-        NN_WARNING1 ("new_proxy_group: unrecognised entityid: %x\n", guid->entityid.u);
+        NN_WARNING ("new_proxy_group: unrecognised entityid: %x\n", guid->entityid.u);
         return ERR_INVALID_DATA;
     }
     os_mutexLock (&proxypp->e.lock);
@@ -3952,7 +3999,7 @@ static void proxy_endpoint_common_init
     assert ((plist->qos.present & (QP_TOPIC_NAME | QP_TYPE_NAME)) == (QP_TOPIC_NAME | QP_TYPE_NAME));
 
   name = (plist->present & PP_ENTITY_NAME) ? plist->entity_name : "";
-  entity_common_init (e, guid, name, kind);
+  entity_common_init (e, guid, name, kind, false);
   c->xqos = nn_xqos_dup (&plist->qos);
   c->as = ref_addrset (as);
   c->topic = NULL; /* set from first matching reader/writer */
@@ -3992,7 +4039,7 @@ int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, 
 
   if ((proxypp = ephash_lookup_proxy_participant_guid (ppguid)) == NULL)
   {
-    NN_WARNING1 ("new_proxy_writer(%x:%x:%x:%x): proxy participant unknown\n", PGUID (*guid));
+    NN_WARNING ("new_proxy_writer(%x:%x:%x:%x): proxy participant unknown\n", PGUID (*guid));
     return ERR_UNKNOWN_ENTITY;
   }
 
@@ -4215,7 +4262,7 @@ int new_proxy_reader (const struct nn_guid *ppguid, const struct nn_guid *guid, 
 
   if ((proxypp = ephash_lookup_proxy_participant_guid (ppguid)) == NULL)
   {
-    NN_WARNING1 ("new_proxy_reader(%x:%x:%x:%x): proxy participant unknown\n", PGUID (*guid));
+    NN_WARNING ("new_proxy_reader(%x:%x:%x:%x): proxy participant unknown\n", PGUID (*guid));
     return ERR_UNKNOWN_ENTITY;
   }
 

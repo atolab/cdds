@@ -7,6 +7,8 @@
 #include "kernel/dds_qos.h"
 #include "kernel/dds_domain.h"
 #include "kernel/dds_participant.h"
+#include "kernel/dds_err.h"
+#include "kernel/dds_report.h"
 
 #define DDS_PARTICIPANT_STATUS_MASK    0
 
@@ -19,7 +21,7 @@ dds_participant_status_validate(
         uint32_t mask)
 {
     return (mask & ~(DDS_PARTICIPANT_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER) :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Argument mask is invalid") :
                      DDS_RETCODE_OK;
 }
 
@@ -49,7 +51,7 @@ dds_participant_delete(
             if (prev) {
                 prev->m_next = iter->m_next;
             } else {
-                dds_pp_head = iter->m_next;
+                  dds_pp_head = iter->m_next;
             }
             break;
         }
@@ -66,7 +68,7 @@ dds_participant_delete(
 
     /* Finalize the dds layer when this was the last participant. */
     if(dds_pp_head == NULL){
-      dds_fini();
+        dds_fini();
     }
 
     return DDS_RETCODE_OK;
@@ -88,21 +90,15 @@ dds_participant_qos_validate(
         const dds_qos_t *qos,
         bool enabled)
 {
-    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY);
-    bool consistent = true;
+    dds_return_t ret = DDS_RETCODE_OK;
     assert(qos);
 
     /* Check consistency. */
-    consistent &= (qos->present & QP_USER_DATA) ? validate_octetseq(&qos->user_data) : true;
-    consistent &= (qos->present & QP_PRISMTECH_ENTITY_FACTORY) ? \
-            validate_entityfactory_qospolicy(&qos->entity_factory) : true;
-    if (consistent) {
-        if (enabled) {
-            /* A participant has no immutable QoS. Still, we don't support changing it for now. */
-            ret = DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
-        } else {
-            ret = DDS_RETCODE_OK;
-        }
+    if ((qos->present & QP_USER_DATA) && !validate_octetseq(&qos->user_data)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "User data QoS policy is inconsistent and caused an error");
+    }
+    if ((qos->present & QP_PRISMTECH_ENTITY_FACTORY) && !validate_entityfactory_qospolicy(&qos->entity_factory)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Prismtech entity factory QoS policy is inconsistent and caused an error");
     }
     return ret;
 }
@@ -118,7 +114,7 @@ dds_participant_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED));
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Changing the participant QoS is not supported.");
         }
     }
     return ret;
@@ -132,7 +128,7 @@ dds_create_participant(
 {
     int q_rc;
     dds_return_t ret;
-    dds_entity_t e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
+    dds_entity_t e;
     nn_guid_t guid;
     dds_participant * pp;
     nn_plist_t plist;
@@ -144,9 +140,13 @@ dds_create_participant(
     if (dds_pp_head == NULL) {
         ret = dds_init();
         if (ret != DDS_RETCODE_OK) {
-            return (dds_entity_t)ret;
+            e = DDS_ERRNO(ret, "Initialization of DDS layer is failed");
+            goto fail;
         }
     }
+
+    /* Report stack is only useful after dds (and thus os) init. */
+    DDS_REPORT_STACK();
 
     nn_plist_init_empty (&plist);
 
@@ -186,7 +186,7 @@ dds_create_participant(
 
     if (q_rc != 0) {
         dds_qos_delete(new_qos);
-        e = (dds_entity_t)DDS_ERRNO(DDS_RETCODE_ERROR);
+        e = DDS_ERRNO(DDS_RETCODE_ERROR, "Internal error");
         goto fail;
     }
 
@@ -204,6 +204,7 @@ dds_create_participant(
     pp->m_entity.m_deriver.set_qos = dds_participant_qos_set;
     pp->m_entity.m_deriver.get_instance_hdl = dds_participant_instance_hdl;
     pp->m_entity.m_deriver.validate_status = dds_participant_status_validate;
+    pp->m_builtin_subscriber = 0;
 
     /* Add participant to extent */
     os_mutexLock (&dds_global.m_mutex);
@@ -216,6 +217,7 @@ fail:
     if (dds_pp_head == NULL) {
         dds_fini();
     }
+    DDS_REPORT_FLUSH( e <= 0);
     return e;
 }
 
@@ -225,23 +227,48 @@ dds_lookup_participant(
         _Out_opt_   dds_entity_t *participants,
         _In_        size_t size)
 {
-    dds_return_t ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER);
-    if (((participants != NULL) && (size>0) && (size < INT32_MAX)) || ((participants == NULL) && (size == 0))){
-        dds_entity* iter;
-        if(participants){
-          participants[0] = 0;
-        }
-        ret = 0;
-        iter = dds_pp_head;
-        while(iter){
-          if(iter->m_domainid == domain_id){
-            if((size_t)ret < size){
-              participants[ret] = iter->m_hdl;
-            }
-            ret ++;
-          }
-          iter = iter->m_next;
-       }
+    dds_return_t ret = 0;
+
+    DDS_REPORT_STACK();
+
+    if ((participants != NULL) && ((size <= 0) || (size >= INT32_MAX))) {
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Array is given, but with invalid size");
+        goto err;
     }
+    if ((participants == NULL) && (size != 0)) {
+        ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Size is given, but no array");
+        goto err;
+    }
+
+    if(participants){
+        participants[0] = 0;
+    }
+
+    /* Check if dds is intialized. */
+    if (os_atomic_ld32(&dds_global.m_init_count) > 0) {
+        /* Make sure that dds isn't un-initialized when we're
+         * searching.
+         * Or re-initialize it when un-initialized between the
+         * check and here. */
+        if (dds_init() == DDS_RETCODE_OK) {
+            dds_entity* iter;
+            os_mutexLock (&dds_global.m_mutex);
+            iter = dds_pp_head;
+            while (iter) {
+                if(iter->m_domainid == domain_id) {
+                    if((size_t)ret < size) {
+                        participants[ret] = iter->m_hdl;
+                    }
+                    ret ++;
+                }
+                iter = iter->m_next;
+            }
+            os_mutexUnlock (&dds_global.m_mutex);
+            dds_fini();
+        }
+    }
+
+err:
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
     return ret;
 }

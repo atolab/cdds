@@ -353,3 +353,12 @@ void os_rwlockUnlock (os_rwlock *rwlock)
 {
   os_mutexUnlock (&rwlock->mutex);
 }
+
+void
+os_once(
+    _Inout_ os_once_t *control,
+    _In_ os_once_fn init_fn)
+{
+    /* There are no defined errors that can be returned by pthread_once */
+    (void)pthread_once(control, init_fn);
+}

@@ -35,7 +35,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -74,7 +74,7 @@ unregistering_init(void)
     /* Sync g_writer to g_reader. */
     ret = dds_set_enabled_status(g_writer, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_writer status");
-    ret = dds_waitset_attach(g_waitset, g_writer, (dds_attach_t)(intptr_t)g_writer);
+    ret = dds_waitset_attach(g_waitset, g_writer, g_writer);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_writer");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_writer r");
@@ -85,7 +85,7 @@ unregistering_init(void)
     /* Sync g_reader to g_writer. */
     ret = dds_set_enabled_status(g_reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_reader status");
-    ret = dds_waitset_attach(g_waitset, g_reader, (dds_attach_t)(intptr_t)g_reader);
+    ret = dds_waitset_attach(g_waitset, g_reader, g_reader);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_reader");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_reader r");
@@ -139,7 +139,7 @@ Test(vddsc_unregister_instance, deleted, .init=unregistering_init, .fini=unregis
     dds_return_t ret;
     dds_delete(g_writer);
 
-    ret = dds_unregister_instance(g_writer, NULL);
+    ret = dds_unregister_instance(g_writer, g_data);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -162,12 +162,7 @@ Theory((dds_entity_t writer), vddsc_unregister_instance, invalid_writers, .init=
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
-
-    ret = dds_unregister_instance(writer, NULL);
+    ret = dds_unregister_instance(writer, g_data);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 /*************************************************************************************************/
@@ -179,7 +174,7 @@ TheoryDataPoints(vddsc_unregister_instance, non_writers) = {
 Theory((dds_entity_t *writer), vddsc_unregister_instance, non_writers, .init=unregistering_init, .fini=unregistering_fini)
 {
     dds_return_t ret;
-    ret = dds_unregister_instance(*writer, NULL);
+    ret = dds_unregister_instance(*writer, g_data);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -238,7 +233,7 @@ Test(vddsc_unregister_instance_ts, deleted, .init=unregistering_init, .fini=unre
 {
     dds_return_t ret;
     dds_delete(g_writer);
-    ret = dds_unregister_instance_ts(g_writer, NULL, g_present);
+    ret = dds_unregister_instance_ts(g_writer, g_data, g_present);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -261,12 +256,7 @@ Theory((dds_entity_t writer), vddsc_unregister_instance_ts, invalid_writers, .in
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
 
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
-
-    ret = dds_unregister_instance_ts(writer, NULL, g_present);
+    ret = dds_unregister_instance_ts(writer, g_data, g_present);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
 /*************************************************************************************************/
@@ -278,7 +268,7 @@ TheoryDataPoints(vddsc_unregister_instance_ts, non_writers) = {
 Theory((dds_entity_t *writer), vddsc_unregister_instance_ts, non_writers, .init=unregistering_init, .fini=unregistering_fini)
 {
     dds_return_t ret;
-    ret = dds_unregister_instance_ts(*writer, NULL, g_present);
+    ret = dds_unregister_instance_ts(*writer, g_data, g_present);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
@@ -334,7 +324,7 @@ Test(vddsc_unregister_instance_ts, unregistering_past_sample, .init=unregisterin
     /* Unregistering a sample in the past should trigger a lost sample. */
     ret = dds_set_enabled_status(g_reader, DDS_SAMPLE_LOST_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_reader status");
-    ret = dds_waitset_attach(g_waitset, g_reader, (dds_attach_t)(intptr_t)g_reader);
+    ret = dds_waitset_attach(g_waitset, g_reader, g_reader);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_reader");
 
     /* Now, unregister a sample in the past. */
@@ -393,7 +383,7 @@ Theory((dds_instance_handle_t handle), vddsc_unregister_instance_ih, invalid_han
 {
     dds_return_t ret;
     ret = dds_unregister_instance_ih(g_writer, handle);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
 
@@ -405,11 +395,6 @@ Theory((dds_entity_t writer), vddsc_unregister_instance_ih, invalid_writers, .in
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
 
     ret = dds_unregister_instance_ih(writer, DDS_HANDLE_NIL);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -496,7 +481,7 @@ Theory((dds_instance_handle_t handle), vddsc_unregister_instance_ih_ts, invalid_
 {
     dds_return_t ret;
     ret = dds_unregister_instance_ih_ts(g_writer, handle, g_present);
-    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_PRECONDITION_NOT_MET, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
 
@@ -508,11 +493,6 @@ Theory((dds_entity_t writer), vddsc_unregister_instance_ih_ts, invalid_writers, 
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
-
-    if (writer < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = writer;
-    }
 
     ret = dds_unregister_instance_ih_ts(writer, DDS_HANDLE_NIL, g_present);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
@@ -584,7 +564,7 @@ Test(vddsc_unregister_instance_ih_ts, unregistering_past_sample, .init=unregiste
     /* Unregistering a sample in the past should trigger a lost sample. */
     ret = dds_set_enabled_status(g_reader, DDS_SAMPLE_LOST_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_reader status");
-    ret = dds_waitset_attach(g_waitset, g_reader, (dds_attach_t)(intptr_t)g_reader);
+    ret = dds_waitset_attach(g_waitset, g_reader, g_reader);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_reader");
 
     /* Now, unregister a sample in the past. */

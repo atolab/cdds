@@ -79,7 +79,7 @@
 
 #define Q_REPORT_OPENSSL_ERR(x) \
 while ( ERR_peek_error() ) \
-   NN_ERROR1(x "%s", ERR_error_string(ERR_get_error(), NULL));
+   NN_ERROR(x "%s", ERR_error_string(ERR_get_error(), NULL));
 
 
 
@@ -573,7 +573,7 @@ static c_bool q_securityResolveCipherKeyFromUri
 
             fclose(file);
         } else {
-            NN_ERROR1("q_securityResolveCipherKeyFromUri: Could not open %s",uriStr);
+            NN_ERROR("q_securityResolveCipherKeyFromUri: Could not open %s",uriStr);
         }
 
         os_free(filename);
@@ -610,7 +610,7 @@ static c_bool q_securityCipherTypeFromString(const char* cipherName,
 {
     if (cipherName == NULL)
     {
-        NN_ERROR0("q_securityCipherTypeFromString:internal error, empty cipher string");
+        NN_ERROR("q_securityCipherTypeFromString:internal error, empty cipher string");
         *cipherType = Q_CIPHER_UNDEFINED;
         return FALSE;
     }
@@ -804,7 +804,7 @@ q_securityPartitionEncoderInit(q_securityPartitionEncoder encoder,struct config_
         /* intitialize the key-buffer */
         if (cipherType != Q_CIPHER_NULL && cipherType != Q_CIPHER_NONE &&
             !q_securityResolveCipherKeyFromUri(cipherKeyURL,cipherKeyLength,cipherKey)) {
-            NN_ERROR2("DDSI Security Encoder: dropping traffic of partition '%s' (%d) due to invalid cipher key",
+            NN_ERROR("DDSI Security Encoder: dropping traffic of partition '%s' (%d) due to invalid cipher key",
                               encoder->partitionName, partitionId);
             encoder->state = Q_CODEC_STATE_DROP_TEMP;
         }
@@ -921,7 +921,7 @@ q_securityPartitionDecoderInit(q_securityPartitionDecoder decoder,struct config_
         /* init key-buffer from URL */
         if (cipherType != Q_CIPHER_NULL && cipherType != Q_CIPHER_NONE &&
             !q_securityResolveCipherKeyFromUri(cipherKeyURL,cipherKeyLength,cipherKey)) {
-            NN_ERROR2("DDSI Security Decoder: dropping traffic of partition '%s' (%d) due to invalid cipher key",
+            NN_ERROR("DDSI Security Decoder: dropping traffic of partition '%s' (%d) due to invalid cipher key",
                               decoder->partitionName, partitionId);
             /* can be solved by re-keying, rewriting the file */
             decoder->state = Q_CODEC_STATE_DROP_TEMP;
@@ -1002,7 +1002,7 @@ static q_securityEncoderSet q_securityEncoderSetNew (void)
                     /* the codec config is faulty, the codec has been set into
                     * DROP_TERMP or DROP_PERM state, depending on the kind of
                     * fault. Continue to intitialize remaining codecs */
-                    NN_ERROR2("q_securityEncoderSet:failed to initialize codec of partition '%s' (%d)\n",
+                    NN_ERROR("q_securityEncoderSet:failed to initialize codec of partition '%s' (%d)\n",
                                     p->name,p->partitionId );
                 }
 
@@ -1084,7 +1084,7 @@ static q_securityDecoderSet q_securityDecoderSetNew (void)
                 /* the codec config is faulty, the codec has been set into
                  * DROP_TERMP or DROP_PERM state, depending on the kind of
                  * fault. Continue to intitialize remaining codecs */
-                NN_ERROR2("q_securityDecoderSet:failed to initialize codec of partition '%s' (%d)\n",
+                NN_ERROR("q_securityDecoderSet:failed to initialize codec of partition '%s' (%d)\n",
                         p->name,p->partitionId);
             }
 
@@ -1202,7 +1202,7 @@ static c_bool counterEncryptOrDecryptInPlace
         /* encrypt the current counter */
         if (!EVP_EncryptUpdate(ctx, keyStream, &num, counter, bl)) { /* ECB encrypts exactly 'bl' bytes */
 
-            NN_WARNING3("Incoming encrypted sub-message dropped: Decrypt failed (bufferLength %u, blockSize %u, where %u)",length, bl, where);
+            NN_WARNING("Incoming encrypted sub-message dropped: Decrypt failed (bufferLength %u, blockSize %u, where %u)",length, bl, where);
 
             return FALSE;
         }
@@ -1446,7 +1446,7 @@ static c_bool q_securityDecodeInPlace_Generic
                 result = verifySha1(cipherText, *dataLength, sha1HeaderStart);
                 TRACE((":BLF:%s", result?"OK":"ERROR")); /* debug */
                 if (!result) {
-                    NN_WARNING1("Incoming encrypted sub-message dropped: Decrypt (blowfish) verification failed for partition '%s' - possible Key-mismatch", decoder->partitionName);
+                    NN_WARNING("Incoming encrypted sub-message dropped: Decrypt (blowfish) verification failed for partition '%s' - possible Key-mismatch", decoder->partitionName);
                 }
             }
 
@@ -1481,7 +1481,7 @@ static c_bool q_securityDecodeInPlace_Generic
                 result = verifySha1(cipherText, *dataLength, sha1HeaderStart);
                 TRACE((":AES:%s", result?"OK":"ERROR")); /* debug */
                 if (!result) {
-                    NN_WARNING1("Incoming encrypted sub-message dropped: Decrypt (AES) verification failed for partition '%s' - possible Key-mismatch", decoder->partitionName);
+                    NN_WARNING("Incoming encrypted sub-message dropped: Decrypt (AES) verification failed for partition '%s' - possible Key-mismatch", decoder->partitionName);
                 }
             }
 
@@ -1527,7 +1527,7 @@ static c_bool q_securityEncodeInPlace
     if (partitionId == 0 || partitionId > codec->nofPartitions) {
         /* if partitionId is larger than number of partitions, network service
          * seems to be in undefined state */
-        NN_ERROR1("q_securityEncodeInPlace:Sending message blocked, bad partitionid '%d'",
+        NN_ERROR("q_securityEncodeInPlace:Sending message blocked, bad partitionid '%d'",
                           partitionId);
         return FALSE;
     }
@@ -1536,20 +1536,20 @@ static c_bool q_securityEncodeInPlace
 
 
     if (encoderIsBlocked(encoder)) {
-        NN_ERROR1("q_securityEncodeInPlace:Sending message blocked, encoder of partitionid '%d' in bad state",
+        NN_ERROR("q_securityEncodeInPlace:Sending message blocked, encoder of partitionid '%d' in bad state",
                           partitionId);
         return FALSE;
     }
 
     if (*dataLength <= 0) {
-        NN_WARNING0("q_securityEncodeInPlace:encoder called with empty buffer");
+        NN_WARNING("q_securityEncodeInPlace:encoder called with empty buffer");
         return FALSE;
     }
 
     overallHeaderSize = cipherTypeToHeaderSize(encoder->cipherType);
 
     if (*dataLength + overallHeaderSize  > fragmentLength) {
-        NN_ERROR2("q_securityEncodeInPlace:sending message of %"PA_PRIu32" bytes overlaps with reserved space of %"PA_PRIu32" bytes",
+        NN_ERROR("q_securityEncodeInPlace:sending message of %"PA_PRIu32" bytes overlaps with reserved space of %"PA_PRIu32" bytes",
                           *dataLength, overallHeaderSize);
         return FALSE;
     }
@@ -1620,7 +1620,7 @@ static c_bool q_securityDecodeInPlace
     }
 
     if ((partitionId < 1) || (partitionId > codec->nofPartitions)) {
-        NN_WARNING1("Incoming encrypted sub-message dropped, bad partition hash '%u'", hash);
+        NN_WARNING("Incoming encrypted sub-message dropped, bad partition hash '%u'", hash);
         return FALSE;
     }
 
@@ -1629,16 +1629,16 @@ static c_bool q_securityDecodeInPlace
     overallHeaderSize = cipherTypeToHeaderSize(sendersCipherType);
 
     if (sendersCipherType!=decoder->cipherType) {
-        NN_WARNING3("Incoming encrypted sub-message dropped: cipherType mismatch (%d != %d) for partition '%s'", sendersCipherType,decoder->cipherType, decoder->partitionName);
+        NN_WARNING("Incoming encrypted sub-message dropped: cipherType mismatch (%d != %d) for partition '%s'", sendersCipherType,decoder->cipherType, decoder->partitionName);
         return FALSE;
     }
     if (decoderIsBlocked(decoder)) {
-        NN_WARNING1("Incoming encrypted sub-message dropped: decoder is blocked for partition '%s'", decoder->partitionName);
+        NN_WARNING("Incoming encrypted sub-message dropped: decoder is blocked for partition '%s'", decoder->partitionName);
         return FALSE;
     }
 
     if (overallHeaderSize > dataLength32) {
-        NN_WARNING2("Incoming encrypted sub-message dropped: submessage too small(%"PA_PRIu32" bytes),for partition '%s'", dataLength32, decoder->partitionName);
+        NN_WARNING("Incoming encrypted sub-message dropped: submessage too small(%"PA_PRIu32" bytes),for partition '%s'", dataLength32, decoder->partitionName);
         return FALSE;
     }
 

@@ -13,9 +13,6 @@
 #define Q_ENTITY_H
 
 #include "os/os.h"
-
-#include "kernel/dds_types.h"
-
 #include "util/ut_avl.h"
 #include "ddsi/q_rtps.h"
 #include "ddsi/q_protocol.h"
@@ -137,6 +134,7 @@ struct entity_common {
   char *name;
   uint64_t iid;
   os_mutex lock;
+  bool onlylocal;
 };
 
 struct local_reader_ary {
@@ -443,6 +441,8 @@ int pp_allocate_entityid (nn_entityid_t *id, unsigned kind, struct participant *
 #define RTPS_PF_PRIVILEGED_PP 4u
   /* Set this flag to mark the participant as is_ddsi2_pp. */
 #define RTPS_PF_IS_DDSI2_PP 8u
+  /* Set this flag to mark the participant as an local entity only. */
+#define RTPS_PF_ONLY_LOCAL 16u
 
 /* To create a DDSI participant given a GUID. May return ERR_OUT_OF_IDS
    (a.o.) */

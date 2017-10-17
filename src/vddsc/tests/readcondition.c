@@ -64,7 +64,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -99,7 +99,7 @@ readcondition_init(void)
     /* Sync g_reader to g_writer. */
     ret = dds_set_enabled_status(g_reader, DDS_SUBSCRIPTION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_reader status");
-    ret = dds_waitset_attach(g_waitset, g_reader, (dds_attach_t)(intptr_t)g_reader);
+    ret = dds_waitset_attach(g_waitset, g_reader, g_reader);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_reader");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_reader r");
@@ -110,7 +110,7 @@ readcondition_init(void)
     /* Sync g_writer to g_reader. */
     ret = dds_set_enabled_status(g_writer, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to set prerequisite g_writer status");
-    ret = dds_waitset_attach(g_waitset, g_writer, (dds_attach_t)(intptr_t)g_writer);
+    ret = dds_waitset_attach(g_waitset, g_writer, g_writer);
     cr_assert_eq(ret, DDS_RETCODE_OK, "Failed to attach prerequisite g_writer");
     ret = dds_waitset_wait(g_waitset, &triggered, 1, DDS_SECS(1));
     cr_assert_eq(ret, 1, "Failed prerequisite dds_waitset_wait g_writer r");
@@ -246,11 +246,6 @@ Theory((dds_entity_t rdr), vddsc_readcondition_create, invalid_readers, .init=re
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t cond;
 
-    if (rdr < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = rdr;
-    }
-
     cond = dds_create_readcondition(rdr, mask);
     cr_assert_eq(dds_err_nr(cond), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(cond), dds_err_nr(exp));
 }
@@ -301,7 +296,9 @@ Test(vddsc_readcondition_get_mask, null, .init=readcondition_init, .fini=readcon
     dds_return_t ret;
     condition = dds_create_readcondition(g_reader, mask);
     cr_assert_gt(condition, 0, "Failed to create prerequisite condition");
+    OS_WARNING_MSVC_OFF(6387); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_get_mask(condition, NULL);
+    OS_WARNING_MSVC_ON(6387);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
     dds_delete(condition);
 }
@@ -316,11 +313,6 @@ Theory((dds_entity_t cond), vddsc_readcondition_get_mask, invalid_conditions, .i
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_return_t ret;
     uint32_t mask;
-
-    if (cond < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = cond;
-    }
 
     ret = dds_get_mask(cond, &mask);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));

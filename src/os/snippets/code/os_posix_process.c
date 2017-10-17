@@ -39,7 +39,8 @@ static os_atomic_voidp_t os_procname = OS_ATOMIC_VOIDP_INIT(0);
 
 /** \brief pointer to environment variables */
 #ifdef __APPLE__
-#include <crt_externs.h>
+//not available on iOS, but also not currently used
+//#include <crt_externs.h>
 #else
 extern char **environ;
 #endif

@@ -280,7 +280,7 @@ Test(vddsc_entity, get_entities, .init = create_entity, .fini = delete_entity)
 
     /* Get Parent, a participant doesn't have a parent. */
     par = dds_get_parent (entity);
-    cr_assert_eq(dds_err_nr(par), DDS_RETCODE_ILLEGAL_OPERATION, "Parent was returned (despite of it being a participant)");
+    cr_assert_eq(dds_err_nr(par), DDS_ENTITY_NIL, "Parent was returned (despite of it being a participant)");
 
     /* ---------- Get Participant ------------ */
 

@@ -23,9 +23,9 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Coverage")
     # Any optimizations are disabled to ensure coverage results are correct.
     # See https://gcc.gnu.org/onlinedocs/gcc/Gcov-and-Optimization.html.
     set(CMAKE_C_FLAGS_COVERAGE
-        "-g -O0 --coverage -fprofile-arcs -ftest-coverage")
+        "-DNDEBUG -g -O0 --coverage -fprofile-arcs -ftest-coverage")
     set(CMAKE_CXX_FLAGS_COVERAGE
-        "-g -O0 --coverage -fprofile-arcs -ftest-coverage")
+        "-DNDEBUG -g -O0 --coverage -fprofile-arcs -ftest-coverage")
     mark_as_advanced(
         CMAKE_C_FLAGS_COVERAGE
         CMAKE_CXX_FLAGS_COVERAGE

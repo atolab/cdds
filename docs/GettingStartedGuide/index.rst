@@ -1,4 +1,10 @@
-Getting Started Guide
-=====================
+.. _`GettingStarted`:
 
-This is the getting started guide.
+.. toctree::
+    :maxdepth: 4
+
+    installation.rst
+    helloworld.rst
+    helloworld_indepth.rst
+    next_steps.rst
+    uninstall.rst

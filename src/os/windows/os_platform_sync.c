@@ -242,3 +242,35 @@ void os_rwlockUnlock(os_rwlock *rwlock)
                 ReleaseSRWLockExclusive(&rwlock->lock);
         }
 }
+
+struct os__onceWrapper {
+    os_once_fn init_fn;
+};
+
+static BOOL WINAPI
+os__onceWrapper(
+    _Inout_ PINIT_ONCE InitOnce,
+    _Inout_opt_ PVOID Parameter,
+    _Outptr_opt_result_maybenull_ PVOID *Context)
+{
+    struct os__onceWrapper *wrap = (struct os__onceWrapper *) Parameter;
+
+    /* Only to be invoked from os_once, so assume inputs to be as
+     * expected instead of implementing checks officially needed to
+     * fulfill SAL. */
+    _Analysis_assume_(wrap);
+    _Analysis_assume_(Context == NULL);
+
+    wrap->init_fn();
+
+    return TRUE;
+}
+
+void
+os_once(
+    _Inout_ os_once_t *control,
+    _In_ os_once_fn init_fn)
+{
+    struct os__onceWrapper wrap = { .init_fn = init_fn };
+    (void) InitOnceExecuteOnce(control, &os__onceWrapper, &wrap, NULL);
+}

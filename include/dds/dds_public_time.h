@@ -1,8 +1,8 @@
+/* TODO: add copyright header? */
+
 /** @file
  *
  * @brief DDS C Time support API
- *
- * @todo add copyright header?
  *
  * This header file defines the public API of the in the
  * VortexDDS C language binding.

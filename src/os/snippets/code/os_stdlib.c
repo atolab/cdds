@@ -24,9 +24,9 @@
 
 #include "os_stdlib_strsep.c"
 
-char *
+_Ret_opt_z_ const char *
 os_getenv(
-    const char *variable)
+    _In_z_ const char *variable)
 {
     return getenv(variable);
 }
@@ -95,16 +95,18 @@ os_rindex(
     return last;
 }
 
+_Ret_z_
+_Check_return_
 char *
 os_strdup(
-    const char *s1)
+    _In_z_ const char *s1)
 {
     size_t len;
     char *dup;
 
-    len = strlen (s1) + 1;
-    dup = os_malloc (len);
-    memcpy (dup, s1, len);
+    len = strlen(s1) + 1;
+    dup = os_malloc(len);
+    memcpy(dup, s1, len);
 
     return dup;
 }
@@ -278,10 +280,10 @@ os_fsync(
     return r;
 }
 
-const char *
-os_getTempDir()
+_Ret_opt_z_ const char *
+os_getTempDir(void)
 {
-    char * dir_name = NULL;
+    const char * dir_name = NULL;
 
     dir_name = os_getenv("OSPL_TEMP");
 
@@ -300,12 +302,20 @@ ssize_t os_write(int fd, const void *buf, size_t count)
 
 void os_flockfile(FILE *file)
 {
+	/* flockfile is not supported on the VxWorks DKM platform.
+	 * Therefore, this function block is empty on the VxWorks platform. */
+#ifndef _WRS_KERNEL
 	flockfile (file);
+#endif
 }
 
 void os_funlockfile(FILE *file)
 {
+	/* funlockfile is not supported on the VxWorks DKM platform.
+	 * Therefore, this function block is empty on the VxWorks platform. */
+#ifndef _WRS_KERNEL
 	funlockfile (file);
+#endif
 }
 
 int os_getopt(int argc, char **argv, const char *opts)

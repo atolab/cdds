@@ -11,4 +11,19 @@ module Space {
 	long	long_3;
     };
 #pragma keylist Type2 long_1
+
+    struct simpletypes {
+        long                l;
+        long long           ll;
+        unsigned short      us;
+        unsigned long       ul;
+        unsigned long long  ull;
+        float               f;
+        double              d;
+        char                c;
+        boolean             b;
+        octet               o;
+        string              s; //@Key
+    };
+#pragma keylist simpletypes s
 };

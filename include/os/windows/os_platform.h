@@ -53,7 +53,6 @@ extern "C" {
 #include "os/windows/os_platform_thread.h"
 #include "os/windows/os_platform_stdlib.h"
 #include "os/windows/os_platform_time.h"
-//#include "../../../src/os/snippets/include/os_stdlib_getopt.h"
 
 #if defined (__cplusplus)
 }

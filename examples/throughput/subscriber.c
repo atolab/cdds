@@ -31,12 +31,9 @@ typedef struct HandleMap
   HandleEntry *entries;
 } HandleMap;
 
-static unsigned long cycles = 0;
 static unsigned long pollingDelay = 0;
-static dds_instance_handle_t ph = 0;
 
 static HandleMap * imap;
-static HandleEntry * current = NULL;
 static unsigned long long outOfOrder = 0;
 static unsigned long long total_bytes = 0;
 static unsigned long long total_samples = 0;
@@ -46,7 +43,6 @@ static dds_time_t time_now = 0;
 static dds_time_t prev_time = 0;
 
 static unsigned long payloadSize = 0;
-static double deltaTime = 0;
 
 static ThroughputModule_DataType data [MAX_SAMPLES];
 static void * samples[MAX_SAMPLES];
@@ -55,10 +51,20 @@ static dds_entity_t waitSet;
 static dds_entity_t pollingWaitset;
 
 static bool done = false;
-static bool first_batch = true;
+
+/* Forward declarations */
+static HandleMap * HandleMap__alloc (void);
+static void HandleMap__free (HandleMap *map);
+static HandleEntry * store_handle (HandleMap *map, dds_instance_handle_t key);
+static HandleEntry * retrieve_handle (HandleMap *map, dds_instance_handle_t key);
+
+static void data_available_handler (dds_entity_t reader, void *arg);
+static int parse_args(int argc, char **argv, unsigned long long *maxCycles, char **partitionName);
+static void process_samples(unsigned long long maxCycles);
+static dds_entity_t prepare_dds(dds_entity_t *reader, const char *partitionName);
+static void finalize_dds(dds_entity_t participant);
 
 /* Functions to handle Ctrl-C presses. */
-
 #ifdef _WIN32
 #include <Windows.h>
 static int CtrlHandler (DWORD fdwCtrlType)
@@ -75,10 +81,64 @@ static void CtrlHandler (int fdwCtrlType)
   done = true;
 }
 #endif
+
+int main (int argc, char **argv)
+{
+  unsigned long long maxCycles = 0;
+  char *partitionName = "Throughput example";
+
+  dds_entity_t participant;
+  dds_entity_t reader;
+
+  time_now = dds_time ();
+  prev_time = time_now;
+
+  /* Register handler for Ctrl-C */
+#ifdef _WIN32
+  SetConsoleCtrlHandler((PHANDLER_ROUTINE) CtrlHandler, true);
+#else
+  struct sigaction sat;
+  sat.sa_handler = CtrlHandler;
+  sigemptyset(&sat.sa_mask);
+  sat.sa_flags = 0;
+  sigaction (SIGINT, &sat, &oldAction);
+#endif
+
+  if (parse_args(argc, argv, &maxCycles, &partitionName) == EXIT_FAILURE)
+  {
+    return EXIT_FAILURE;
+  }
+
+  printf ("Cycles: %llu | PollingDelay: %lu | Partition: %s\n",
+    maxCycles, pollingDelay, partitionName);
+
+  participant = prepare_dds(&reader, partitionName);
+
+  printf ("=== [Subscriber] Waiting for samples...\n");
+
+  /* Process samples until Ctrl-C is pressed or until maxCycles */
+  /* has been reached (0 = infinite) */
+  process_samples(maxCycles);
+
+  /* Finished, disable callbacks */
+  dds_set_enabled_status (reader, 0);
+  HandleMap__free (imap);
+
+#ifdef _WIN32
+  SetConsoleCtrlHandler (0, FALSE);
+#else
+  sigaction (SIGINT, &oldAction, 0);
+#endif
+
+  /* Clean up */
+  finalize_dds(participant);
+
+  return EXIT_SUCCESS;
+}
+
 /*
  * This struct contains all of the entities used in the publisher and subscriber.
  */
-
 static HandleMap * HandleMap__alloc (void)
 {
   HandleMap * map = malloc (sizeof (*map));
@@ -132,7 +192,8 @@ static void data_available_handler (dds_entity_t reader, void *arg)
 {
   int samples_received;
   dds_sample_info_t info [MAX_SAMPLES];
-  int i;
+  dds_instance_handle_t ph = 0;
+  HandleEntry * current = NULL;
 
   if (startTime == 0)
   {
@@ -144,7 +205,7 @@ static void data_available_handler (dds_entity_t reader, void *arg)
   samples_received = dds_take (reader, samples, info, MAX_SAMPLES, MAX_SAMPLES);
   DDS_ERR_CHECK (samples_received, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
 
-  for (i = 0; !done && i < samples_received; i++)
+  for (int i = 0; !done && i < samples_received; i++)
   {
     if (info[i].valid_data)
     {
@@ -171,7 +232,6 @@ static void data_available_handler (dds_entity_t reader, void *arg)
       total_samples++;
     }
   }
-
   time_now = dds_time ();
   if ((pollingDelay == 0) && (time_now > (prev_time + DDS_SECS (1))))
   {
@@ -179,38 +239,8 @@ static void data_available_handler (dds_entity_t reader, void *arg)
   }
 }
 
-int main (int argc, char **argv)
+static int parse_args(int argc, char **argv, unsigned long long *maxCycles, char **partitionName)
 {
-  int status;
-  unsigned long i;
-  int result = EXIT_SUCCESS;
-  unsigned long long maxCycles = 0;
-  char *partitionName = "Throughput example";
-
-  dds_entity_t participant;
-  dds_entity_t topic;
-  dds_entity_t subscriber;
-  dds_entity_t reader;
-  dds_listener_t *rd_listener;
-
-  unsigned long long prev_samples = 0;
-  unsigned long long prev_bytes = 0;
-  dds_time_t deltaTv;
-
-  time_now = dds_time ();
-  prev_time = time_now;
-
-  /* Register handler for Ctrl-C */
-#ifdef _WIN32
-  SetConsoleCtrlHandler((PHANDLER_ROUTINE) CtrlHandler, true);
-#else
-  struct sigaction sat;
-  sat.sa_handler = CtrlHandler;
-  sigemptyset(&sat.sa_mask);
-  sat.sa_flags = 0;
-  sigaction (SIGINT, &sat, &oldAction);
-#endif
-
   /*
    * Get the program parameters
    * Parameters: subscriber [maxCycles] [pollingDelay] [partitionName]
@@ -221,12 +251,12 @@ int main (int argc, char **argv)
     printf ("./subscriber [maxCycles (0 = infinite)] [pollingDelay (ms, 0 = event based)] [partitionName]\n");
     printf ("Defaults:\n");
     printf ("./subscriber 0 0 \"Throughput example\"\n");
-    return result;
+    return EXIT_FAILURE;
   }
 
   if (argc > 1)
   {
-    maxCycles = atoi (argv[1]); /* The number of times to output statistics before terminating */
+    *maxCycles = atoi (argv[1]); /* The number of times to output statistics before terminating */
   }
   if (argc > 2)
   {
@@ -234,155 +264,151 @@ int main (int argc, char **argv)
   }
   if (argc > 3)
   {
-    partitionName = argv[3]; /* The name of the partition */
+    *partitionName = argv[3]; /* The name of the partition */
   }
+  return EXIT_SUCCESS;
+}
 
-  printf ("Cycles: %llu | PollingDelay: %lu | Partition: %s\n",
-    maxCycles, pollingDelay, partitionName);
+static void process_samples(unsigned long long maxCycles)
+{
+  dds_return_t status;
+  unsigned long long prev_bytes = 0;
+  unsigned long long prev_samples = 0;
+  dds_attach_t wsresults[1];
+  size_t wsresultsize = 1U;
+  dds_time_t deltaTv;
+  bool first_batch = true;
+  unsigned long cycles = 0;
+  double deltaTime = 0;
 
-  /* Initialise entities */
-
+  while (!done && (maxCycles == 0 || cycles < maxCycles))
   {
-    const char *subParts[1];
-    dds_qos_t *subQos = dds_qos_create ();
-    dds_qos_t *drQos = dds_qos_create ();
-    uint32_t maxSamples = 400;
-    dds_attach_t wsresults[1];
-    size_t wsresultsize = 1U;
-    dds_duration_t infinite = DDS_INFINITY;
-
-    /* A Participant is created for the default domain. */
-
-    participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    DDS_ERR_CHECK (participant, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-    /* A Topic is created for our sample type on the domain participant. */
-
-    topic = dds_create_topic (participant, &ThroughputModule_DataType_desc, "Throughput", NULL, NULL);
-    DDS_ERR_CHECK (topic, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-    /* A Subscriber is created on the domain participant. */
-
-    subParts[0] = partitionName;
-    dds_qset_partition (subQos, 1, subParts);
-    subscriber = dds_create_subscriber (participant, subQos, NULL);
-    DDS_ERR_CHECK (subscriber, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-    dds_qos_delete (subQos);
-
-    /* A Reader is created on the Subscriber & Topic with a modified Qos. */
-
-    dds_qset_reliability (drQos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
-    dds_qset_history (drQos, DDS_HISTORY_KEEP_ALL, 0);
-    dds_qset_resource_limits (drQos, maxSamples, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
-
-    rd_listener = dds_listener_create(NULL);
-    //memset (&rd_listener, 0, sizeof (rd_listener));
-    DDS_ERR_CHECK ((rd_listener == NULL) ? -1 : 0, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-    //OS_API void dds_lset_data_available (_Inout_ dds_listener_t * __restrict listener, _In_opt_ dds_on_data_available_fn callback);
-    dds_lset_data_available(rd_listener, data_available_handler);
-    //rd_listener.on_data_available = data_available_handler;
-
-    /* A Read Condition is created which is triggered when data is available to read */
-
-    waitSet = dds_create_waitset (participant);
-    DDS_ERR_CHECK (waitSet, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-    pollingWaitset = dds_create_waitset (participant);
-    DDS_ERR_CHECK (pollingWaitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-    status = dds_waitset_attach (waitSet, pollingWaitset, (dds_attach_t)(intptr_t)pollingWaitset);
-    DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-    status = dds_waitset_attach (waitSet, waitSet, (dds_attach_t)(intptr_t)waitSet);
-    DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-    /* Read samples until the maxCycles has been reached (0 = infinite) */
-
-    imap = HandleMap__alloc ();
-
-    memset (data, 0, sizeof (data));
-    for (int j = 0; j < MAX_SAMPLES; j++)
+    if (pollingDelay)
     {
-      samples[j] = &data[j];
+      dds_sleepfor (DDS_MSECS (pollingDelay));
+    }
+    else
+    {
+      status = dds_waitset_wait (waitSet, wsresults, wsresultsize, DDS_INFINITY);
+      DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+      if ((status > 0 ) && (dds_triggered (pollingWaitset)))
+      {
+        dds_waitset_set_trigger (pollingWaitset, false);
+      }
     }
 
-    reader = dds_create_reader (subscriber, topic, drQos, rd_listener);
-    DDS_ERR_CHECK (reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-    dds_qos_delete (drQos);
-
-    printf ("Waiting for samples...\n");
-
-    while (!done && (maxCycles == 0 || cycles < maxCycles))
+    if (!first_batch)
     {
-      if (pollingDelay)
-      {
-        dds_sleepfor (DDS_MSECS (pollingDelay));
-      }
-      else
-      {
-        status = dds_waitset_wait (waitSet, wsresults, wsresultsize, infinite);
-        DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+      deltaTv = time_now - prev_time;
+      deltaTime = (double) deltaTv / DDS_NSECS_IN_SEC;
+      prev_time = time_now;
 
-        if ((status > 0 ) && (dds_triggered (pollingWaitset)))
-        {
-          dds_waitset_set_trigger (pollingWaitset, false);
-        }
-      }
-
-      if (!first_batch)
-      {
-        deltaTv = time_now - prev_time;
-        deltaTime = (double) deltaTv / DDS_NSECS_IN_SEC;
-        prev_time = time_now;
-
-        printf
-        (
-          "Payload size: %lu | Total received: %llu samples, %llu bytes | Out of order: %llu samples "
-          "Transfer rate: %.2lf samples/s, %.2lf Mbit/s\n",
-          payloadSize, total_samples, total_bytes, outOfOrder,
-          (deltaTime) ? ((total_samples - prev_samples) / deltaTime) : 0,
-          (deltaTime) ? (((total_bytes - prev_bytes) / BYTES_PER_SEC_TO_MEGABITS_PER_SEC) / deltaTime) : 0
-        );
-        cycles++;
-      }
-      else
-      {
-        prev_time = time_now;
-        first_batch = false;
-      }
-
-      /* Update the previous values for next iteration */
-
-      prev_bytes = total_bytes;
-      prev_samples = total_samples;
+      printf
+      (
+        "=== [Subscriber] Payload size: %lu | Total received: %llu samples, %llu bytes | Out of order: %llu samples "
+        "Transfer rate: %.2lf samples/s, %.2lf Mbit/s\n",
+        payloadSize, total_samples, total_bytes, outOfOrder,
+        (deltaTime) ? ((total_samples - prev_samples) / deltaTime) : 0,
+        (deltaTime) ? (((total_bytes - prev_bytes) / BYTES_PER_SEC_TO_MEGABITS_PER_SEC) / deltaTime) : 0
+      );
+      cycles++;
+    }
+    else
+    {
+      prev_time = time_now;
+      first_batch = false;
     }
 
-    /* Disable callbacks */
+    /* Update the previous values for next iteration */
 
-    dds_set_enabled_status (reader, 0);
-
-    /* Output totals and averages */
-
-    deltaTv = time_now - startTime;
-    deltaTime = (double) (deltaTv / DDS_NSECS_IN_SEC);
-    printf ("\nTotal received: %llu samples, %llu bytes\n", total_samples, total_bytes);
-    printf ("Out of order: %llu samples\n", outOfOrder);
-    printf ("Average transfer rate: %.2lf samples/s, ", total_samples / deltaTime);
-    printf ("%.2lf Mbit/s\n", (total_bytes / BYTES_PER_SEC_TO_MEGABITS_PER_SEC) / deltaTime);
-
-    HandleMap__free (imap);
+    prev_bytes = total_bytes;
+    prev_samples = total_samples;
   }
 
-#ifdef _WIN32
-  SetConsoleCtrlHandler (0, FALSE);
-#else
-  sigaction (SIGINT, &oldAction, 0);
-#endif
+  /* Output totals and averages */
+  deltaTv = time_now - startTime;
+  deltaTime = (double) (deltaTv / DDS_NSECS_IN_SEC);
+  printf ("\nTotal received: %llu samples, %llu bytes\n", total_samples, total_bytes);
+  printf ("Out of order: %llu samples\n", outOfOrder);
+  printf ("Average transfer rate: %.2lf samples/s, ", total_samples / deltaTime);
+  printf ("%.2lf Mbit/s\n", (total_bytes / BYTES_PER_SEC_TO_MEGABITS_PER_SEC) / deltaTime);
+}
 
-  /* Clean up */
+static dds_entity_t prepare_dds(dds_entity_t *reader, const char *partitionName)
+{
+  dds_return_t status;
+  dds_entity_t topic;
+  dds_entity_t subscriber;
+  dds_listener_t *rd_listener;
+  dds_entity_t participant;
 
-  for (i = 0; i < MAX_SAMPLES; i++)
+  uint32_t maxSamples = 400;
+  const char *subParts[1];
+  dds_qos_t *subQos = dds_qos_create ();
+  dds_qos_t *drQos = dds_qos_create ();
+
+  /* A Participant is created for the default domain. */
+
+  participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  DDS_ERR_CHECK (participant, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+  /* A Topic is created for our sample type on the domain participant. */
+
+  topic = dds_create_topic (participant, &ThroughputModule_DataType_desc, "Throughput", NULL, NULL);
+  DDS_ERR_CHECK (topic, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+  /* A Subscriber is created on the domain participant. */
+
+  subParts[0] = partitionName;
+  dds_qset_partition (subQos, 1, subParts);
+  subscriber = dds_create_subscriber (participant, subQos, NULL);
+  DDS_ERR_CHECK (subscriber, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  dds_qos_delete (subQos);
+
+  /* A Reader is created on the Subscriber & Topic with a modified Qos. */
+
+  dds_qset_reliability (drQos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
+  dds_qset_history (drQos, DDS_HISTORY_KEEP_ALL, 0);
+  dds_qset_resource_limits (drQos, maxSamples, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
+
+  rd_listener = dds_listener_create(NULL);
+  dds_lset_data_available(rd_listener, data_available_handler);
+
+  /* A Read Condition is created which is triggered when data is available to read */
+  waitSet = dds_create_waitset (participant);
+  DDS_ERR_CHECK (waitSet, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+  pollingWaitset = dds_create_waitset (participant);
+  DDS_ERR_CHECK (pollingWaitset, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+  status = dds_waitset_attach (waitSet, pollingWaitset, pollingWaitset);
+  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+  status = dds_waitset_attach (waitSet, waitSet, waitSet);
+  DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+
+  imap = HandleMap__alloc ();
+
+  memset (data, 0, sizeof (data));
+  for (unsigned int i = 0; i < MAX_SAMPLES; i++)
+  {
+    samples[i] = &data[i];
+  }
+
+  *reader = dds_create_reader (subscriber, topic, drQos, rd_listener);
+  DDS_ERR_CHECK (*reader, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
+  dds_qos_delete (drQos);
+  dds_listener_delete(rd_listener);
+
+  return participant;
+}
+
+static void finalize_dds(dds_entity_t participant)
+{
+  dds_return_t status;
+
+  for (unsigned int i = 0; i < MAX_SAMPLES; i++)
   {
     ThroughputModule_DataType_free (&data[i], DDS_FREE_CONTENTS);
   }
@@ -397,6 +423,4 @@ int main (int argc, char **argv)
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
   status = dds_delete (participant);
   DDS_ERR_CHECK (status, DDS_CHECK_REPORT | DDS_CHECK_EXIT);
-
-  return result;
 }

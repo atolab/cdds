@@ -192,6 +192,13 @@ int spdp_write (struct participant *pp)
   char node[64];
   uint64_t qosdiff;
 
+  if (pp->e.onlylocal) {
+      /* This topic is only locally available. */
+      return 0;
+  }
+
+  propagate_builtin_topic_participant(&(pp->e), pp->plist, now(), true);
+
   TRACE (("spdp_write(%x:%x:%x:%x)\n", PGUID (pp->e.guid)));
 
   if ((wr = get_builtin_writer (pp, NN_ENTITYID_SPDP_BUILTIN_PARTICIPANT_WRITER)) == NULL)
@@ -442,7 +449,7 @@ static int handle_SPDP_dead (const struct receiver_state *rst, nn_wctime_t times
   }
   else
   {
-    NN_WARNING2 ("data (SPDP, vendor %u.%u): no/invalid payload\n", rst->vendor.id[0], rst->vendor.id[1]);
+    NN_WARNING ("data (SPDP, vendor %u.%u): no/invalid payload\n", rst->vendor.id[0], rst->vendor.id[1]);
   }
   return 1;
 }
@@ -537,7 +544,7 @@ static int handle_SPDP_alive (const struct receiver_state *rst, nn_wctime_t time
 
   if (!(datap->present & PP_PARTICIPANT_GUID) || !(datap->present & PP_BUILTIN_ENDPOINT_SET))
   {
-    NN_WARNING2 ("data (SPDP, vendor %u.%u): no/invalid payload\n", rst->vendor.id[0], rst->vendor.id[1]);
+    NN_WARNING ("data (SPDP, vendor %u.%u): no/invalid payload\n", rst->vendor.id[0], rst->vendor.id[1]);
     return 1;
   }
 
@@ -555,7 +562,7 @@ static int handle_SPDP_alive (const struct receiver_state *rst, nn_wctime_t time
            NN_BUILTIN_ENDPOINT_PARTICIPANT_MESSAGE_DATA_WRITER)) &&
       config.assume_rti_has_pmd_endpoints)
   {
-    NN_WARNING2 ("data (SPDP, vendor %u.%u): assuming unadvertised PMD endpoints do exist\n",
+    NN_WARNING ("data (SPDP, vendor %u.%u): assuming unadvertised PMD endpoints do exist\n",
                  rst->vendor.id[0], rst->vendor.id[1]);
     builtin_endpoint_set |=
       NN_BUILTIN_ENDPOINT_PARTICIPANT_MESSAGE_DATA_READER |
@@ -815,7 +822,7 @@ static void handle_SPDP (const struct receiver_state *rst, nn_wctime_t timestamp
     src.bufsz = len - 4;
     if (nn_plist_init_frommsg (&decoded_data, NULL, ~(uint64_t)0, ~(uint64_t)0, &src) < 0)
     {
-      NN_WARNING2 ("SPDP (vendor %u.%u): invalid qos/parameters\n", src.vendorid.id[0], src.vendorid.id[1]);
+      NN_WARNING ("SPDP (vendor %u.%u): invalid qos/parameters\n", src.vendorid.id[0], src.vendorid.id[1]);
       return;
     }
 
@@ -986,13 +993,13 @@ static struct writer *get_sedp_writer (const struct participant *pp, unsigned en
 {
   struct writer *sedp_wr = get_builtin_writer (pp, entityid);
   if (sedp_wr == NULL)
-    NN_FATAL2 ("sedp_write_writer: no SEDP builtin writer %x for %x:%x:%x:%x\n", entityid, PGUID (pp->e.guid));
+    NN_FATAL ("sedp_write_writer: no SEDP builtin writer %x for %x:%x:%x:%x\n", entityid, PGUID (pp->e.guid));
   return sedp_wr;
 }
 
 int sedp_write_writer (struct writer *wr)
 {
-  if (! is_builtin_entityid (wr->e.guid.entityid, ownvendorid))
+  if ((!is_builtin_entityid(wr->e.guid.entityid, ownvendorid)) && (!wr->e.onlylocal))
   {
     struct writer *sedp_wr = get_sedp_writer (wr->c.pp, NN_ENTITYID_SEDP_BUILTIN_PUBLICATIONS_WRITER);
 #ifdef DDSI_INCLUDE_SSM
@@ -1007,7 +1014,7 @@ int sedp_write_writer (struct writer *wr)
 
 int sedp_write_reader (struct reader *rd)
 {
-  if (! is_builtin_entityid (rd->e.guid.entityid, ownvendorid))
+  if ((!is_builtin_entityid (rd->e.guid.entityid, ownvendorid)) && (!rd->e.onlylocal))
   {
     struct writer *sedp_wr = get_sedp_writer (rd->c.pp, NN_ENTITYID_SEDP_BUILTIN_SUBSCRIPTIONS_WRITER);
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
@@ -1022,7 +1029,7 @@ int sedp_write_reader (struct reader *rd)
 
 int sedp_dispose_unregister_writer (struct writer *wr)
 {
-  if (! is_builtin_entityid (wr->e.guid.entityid, ownvendorid))
+  if ((!is_builtin_entityid(wr->e.guid.entityid, ownvendorid)) && (!wr->e.onlylocal))
   {
     struct writer *sedp_wr = get_sedp_writer (wr->c.pp, NN_ENTITYID_SEDP_BUILTIN_PUBLICATIONS_WRITER);
     return sedp_write_endpoint (sedp_wr, 1, &wr->e.guid, NULL, NULL, NULL, NULL);
@@ -1032,7 +1039,7 @@ int sedp_dispose_unregister_writer (struct writer *wr)
 
 int sedp_dispose_unregister_reader (struct reader *rd)
 {
-  if (! is_builtin_entityid (rd->e.guid.entityid, ownvendorid))
+  if ((!is_builtin_entityid(rd->e.guid.entityid, ownvendorid)) && (!rd->e.onlylocal))
   {
     struct writer *sedp_wr = get_sedp_writer (rd->c.pp, NN_ENTITYID_SEDP_BUILTIN_SUBSCRIPTIONS_WRITER);
     return sedp_write_endpoint (sedp_wr, 1, &rd->e.guid, NULL, NULL, NULL, NULL);
@@ -1359,7 +1366,7 @@ static void handle_SEDP (const struct receiver_state *rst, nn_wctime_t timestamp
     src.bufsz = len - 4;
     if (nn_plist_init_frommsg (&decoded_data, NULL, ~(uint64_t)0, ~(uint64_t)0, &src) < 0)
     {
-      NN_WARNING2 ("SEDP (vendor %u.%u): invalid qos/parameters\n", src.vendorid.id[0], src.vendorid.id[1]);
+      NN_WARNING ("SEDP (vendor %u.%u): invalid qos/parameters\n", src.vendorid.id[0], src.vendorid.id[1]);
       return;
     }
 
@@ -1402,6 +1409,11 @@ int sedp_write_topic (struct participant *pp, const struct nn_plist *datap)
 
   assert (datap->qos.present & QP_TOPIC_NAME);
 
+  if (pp->e.onlylocal) {
+      /* This topic is only locally available. */
+      return 0;
+  }
+
   sedp_wr = get_sedp_writer (pp, NN_ENTITYID_SEDP_BUILTIN_TOPIC_WRITER);
 
   mpayload = nn_xmsg_new (gv.xmsgpool, &sedp_wr->e.guid.prefix, 0, NN_XMSG_KIND_DATA);
@@ -1441,7 +1453,7 @@ int sedp_write_topic (struct participant *pp, const struct nn_plist *datap)
 
 int sedp_write_cm_participant (struct participant *pp, int alive)
 {
-  struct writer * const sedp_wr = get_sedp_writer (pp, NN_ENTITYID_SEDP_BUILTIN_CM_PARTICIPANT_WRITER);
+  struct writer * sedp_wr;
   struct nn_xmsg *mpayload;
   serstate_t serstate;
   serdata_t serdata;
@@ -1450,6 +1462,15 @@ int sedp_write_cm_participant (struct participant *pp, int alive)
   void *payload_blob;
   size_t payload_sz;
   unsigned statusinfo;
+
+  if (pp->e.onlylocal) {
+      /* This topic is only locally available. */
+      return 0;
+  }
+
+  propagate_builtin_topic_cmparticipant(&(pp->e), pp->plist, now(), alive);
+
+  sedp_wr = get_sedp_writer (pp, NN_ENTITYID_SEDP_BUILTIN_CM_PARTICIPANT_WRITER);
 
   /* The message is only a temporary thing, used only for encoding
    the QoS and other settings. So the header fields aren't really
@@ -1511,7 +1532,7 @@ static void handle_SEDP_CM (const struct receiver_state *rst, nn_entityid_t wr_e
     src.bufsz = len - 4;
     if (nn_plist_init_frommsg (&decoded_data, NULL, ~(uint64_t)0, ~(uint64_t)0, &src) < 0)
     {
-      NN_WARNING2 ("SEDP_CM (vendor %u.%u): invalid qos/parameters\n", src.vendorid.id[0], src.vendorid.id[1]);
+      NN_WARNING ("SEDP_CM (vendor %u.%u): invalid qos/parameters\n", src.vendorid.id[0], src.vendorid.id[1]);
       return;
     }
 
@@ -1520,7 +1541,7 @@ static void handle_SEDP_CM (const struct receiver_state *rst, nn_entityid_t wr_e
     {
       struct proxy_participant *proxypp;
       if (!(decoded_data.present & PP_PARTICIPANT_GUID))
-        NN_WARNING2 ("SEDP_CM (vendor %u.%u): missing participant GUID\n", src.vendorid.id[0], src.vendorid.id[1]);
+        NN_WARNING ("SEDP_CM (vendor %u.%u): missing participant GUID\n", src.vendorid.id[0], src.vendorid.id[1]);
       else
       {
         if ((proxypp = ephash_lookup_proxy_participant_guid (&decoded_data.participant_guid)) == NULL)
@@ -1711,7 +1732,7 @@ static void handle_SEDP_GROUP (const struct receiver_state *rst, nn_wctime_t tim
     src.bufsz = len - 4;
     if (nn_plist_init_frommsg (&decoded_data, NULL, ~(uint64_t)0, ~(uint64_t)0, &src) < 0)
     {
-      NN_WARNING2 ("SEDP_GROUP (vendor %u.%u): invalid qos/parameters\n", src.vendorid.id[0], src.vendorid.id[1]);
+      NN_WARNING ("SEDP_GROUP (vendor %u.%u): invalid qos/parameters\n", src.vendorid.id[0], src.vendorid.id[1]);
       return;
     }
 
@@ -1832,7 +1853,7 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
     src.bufsz = NN_RDATA_PAYLOAD_OFF (fragchain) - qos_offset;
     if (nn_plist_init_frommsg (&qos, NULL, PP_STATUSINFO | PP_KEYHASH, 0, &src) < 0)
     {
-      NN_WARNING4 ("data(builtin, vendor %u.%u): %x:%x:%x:%x #%"PRId64": invalid inline qos\n",
+      NN_WARNING ("data(builtin, vendor %u.%u): %x:%x:%x:%x #%"PRId64": invalid inline qos\n",
                    src.vendorid.id[0], src.vendorid.id[1], PGUID (srcguid), sampleinfo->seq);
       goto done_upd_deliv;
     }
@@ -1856,7 +1877,7 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
   {
     if (datasz == 0 || !(data_smhdr_flags & DATA_FLAG_DATAFLAG))
     {
-      NN_WARNING4 ("data(builtin, vendor %u.%u): %x:%x:%x:%x #%"PRId64": "
+      NN_WARNING ("data(builtin, vendor %u.%u): %x:%x:%x:%x #%"PRId64": "
                    "built-in data but no payload\n",
                    sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
                    PGUID (srcguid), sampleinfo->seq);
@@ -1870,7 +1891,7 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
        hasn't been checked fully yet. */
     if (!(data_smhdr_flags & DATA_FLAG_KEYFLAG))
     {
-      NN_WARNING4 ("data(builtin, vendor %u.%u): %x:%x:%x:%x #%"PRId64": "
+      NN_WARNING ("data(builtin, vendor %u.%u): %x:%x:%x:%x #%"PRId64": "
                    "dispose/unregister of built-in data but payload not just key\n",
                    sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
                    PGUID (srcguid), sampleinfo->seq);
@@ -1912,7 +1933,7 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
           pid = PID_ENDPOINT_GUID;
           break;
         default:
-          NN_WARNING4 ("data(builtin, vendor %u.%u): %x:%x:%x:%x #%"PRId64": mapping keyhash to ENDPOINT_GUID",
+          NN_WARNING ("data(builtin, vendor %u.%u): %x:%x:%x:%x #%"PRId64": mapping keyhash to ENDPOINT_GUID",
                        sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
                        PGUID (srcguid), sampleinfo->seq);
           pid = PID_ENDPOINT_GUID;
@@ -1929,7 +1950,7 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
   }
   else
   {
-    NN_WARNING4 ("data(builtin, vendor %u.%u): %x:%x:%x:%x #%"PRId64": "
+    NN_WARNING ("data(builtin, vendor %u.%u): %x:%x:%x:%x #%"PRId64": "
                  "dispose/unregister with no content\n",
                  sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
                  PGUID (srcguid), sampleinfo->seq);
@@ -1957,7 +1978,7 @@ int builtins_dqueue_handler (const struct nn_rsample_info *sampleinfo, const str
       handle_SEDP_GROUP (sampleinfo->rst, timestamp, statusinfo, datap, datasz);
       break;
     default:
-      NN_WARNING4 ("data(builtin, vendor %u.%u): %x:%x:%x:%x #%"PRId64": not handled\n",
+      NN_WARNING ("data(builtin, vendor %u.%u): %x:%x:%x:%x #%"PRId64": not handled\n",
                    sampleinfo->rst->vendor.id[0], sampleinfo->rst->vendor.id[1],
                    PGUID (srcguid), sampleinfo->seq);
       break;

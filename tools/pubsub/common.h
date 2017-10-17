@@ -65,20 +65,24 @@ void hist_reset (struct hist *h);
 void hist_record (struct hist *h, uint64_t x, unsigned weight);
 void hist_print (struct hist *h, uint64_t dt, int reset);
 
-void save_argv0 (const char *argv0);
-const char *dds_strerror (int code);
 void error (const char *fmt, ...);
+#define error_abort(rc, fmt, ...) if (rc < DDS_SUCCESS) { error(fmt); DDS_ERR_CHECK(rc, DDS_CHECK_FAIL); }
+#define error_report(rc, fmt, ...) if (rc < DDS_SUCCESS) { error(fmt); DDS_ERR_CHECK(rc, DDS_CHECK_REPORT); }
+#define error_return(rc, fmt, ...) if (rc < DDS_SUCCESS) { error_report(rc, fmt); return; }
+#define error_exit(fmt, ...) { error(fmt); exit(2); }
+#define os_error_exit(osres, fmt, ...) if (osres != os_resultSuccess) { error(fmt); exit(2); }
+
+void save_argv0 (const char *argv0);
 int common_init (const char *argv0);
 void common_fini (void);
 int change_publisher_partitions (dds_entity_t pub, unsigned npartitions, const char *partitions[]);
-////int change_subscriber_partitions (dds_entity_t sub, unsigned npartitions, const char *partitions[]);
+int change_subscriber_partitions (dds_entity_t sub, unsigned npartitions, const char *partitions[]);
 dds_entity_t new_publisher (const struct qos *a, unsigned npartitions, const char **partitions);
 dds_entity_t new_subscriberNew (dds_qos_t *a, unsigned npartitions, const char **partitions);
 dds_entity_t new_subscriber (const struct qos *a, unsigned npartitions, const char **partitions);
 struct qos *new_tqos (void);
 struct qos *new_pubqos (void);
 struct qos *new_subqos (void);
-dds_qos_t *new_subqosNew (void);
 struct qos *new_rdqos (dds_entity_t s, dds_entity_t t);
 struct qos *new_wrqos (dds_entity_t p, dds_entity_t t);
 void free_qos (struct qos *a);
@@ -114,7 +118,5 @@ void qos_subscription_keys (struct qos *a, const char *arg);
 void set_qosprovider (const char *arg);
 void setqos_from_args (struct qos *q, int n, const char *args[]);
 void setqos_from_argsNew (dds_qos_t *q, int n, const char *args[]);
-char* enumValue(const struct qos *a);
-void errorMsg(int value, char* msg);
 
 #endif
