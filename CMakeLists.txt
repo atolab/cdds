@@ -17,6 +17,7 @@ project(${PROJECT_NAME} VERSION 0.1.0)
 
 # We also need to line up test related directories by including CTest in the
 # top level CMakeLists.txt
+option(BUILD_TESTING "Build the testing tree." OFF)
 include(CTest)
 
 # Now continue doing the actual work.
