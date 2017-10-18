@@ -1,6 +1,4 @@
-find_package(Abstraction REQUIRED)
-
-include (GenerateExportHeader)
+cmake_minimum_required(VERSION 3.5)
 
 FUNCTION(PREPEND var prefix)
    SET(listVar "")
@@ -10,97 +8,59 @@ FUNCTION(PREPEND var prefix)
    SET(${var} "${listVar}" PARENT_SCOPE)
 ENDFUNCTION(PREPEND)
 
-# Create the os & util target
+# Update the git submodules
+execute_process(COMMAND git submodule init
+                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+execute_process(COMMAND git submodule update
+                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# Set module path before defining project so platform files will work.
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
+set(CMAKE_PROJECT_NAME_FULL "Vortex DDS")
+string(REPLACE " " "" PROJECT_NAME "${CMAKE_PROJECT_NAME_FULL}")
+project(${PROJECT_NAME} VERSION 0.1.0)
+
+find_package(Abstraction REQUIRED)
+
+# Set some convenience variants of the project-name
+string(REPLACE " " "-" CMAKE_PROJECT_NAME_DASHED "${CMAKE_PROJECT_NAME_FULL}")
+string(TOUPPER ${CMAKE_PROJECT_NAME} CMAKE_PROJECT_NAME_CAPS)
+string(TOLOWER ${CMAKE_PROJECT_NAME} CMAKE_PROJECT_NAME_SMALL)
+
+set(CMAKE_C_STANDARD 99)
+if(CMAKE_SYSTEM_NAME STREQUAL "VxWorks")
+  add_definitions(-std=c99)
+endif()
+
+include(FileIDs)
+include(GNUInstallDirs)
+include(AnalyzeBuild)
+# Include Coverage before CTest so that COVERAGE_COMMAND can be modified
+# in the Coverage module should that ever be necessary.
+include(Coverage)
+set(MEMORYCHECK_COMMAND_OPTIONS "--track-origins=yes --leak-check=full --trace-children=yes --child-silent-after-fork=yes --xml=yes --xml-file=TestResultValgrind_%p.xml --tool=memcheck --show-reachable=yes --leak-resolution=high")
+set(MEMORYCHECK_SUPPRESSIONS_FILE "${CMAKE_SOURCE_DIR}/valgrind.supp" CACHE FILEPATH "suppression file")
+
+# By default building the testing tree is enabled by including CTest, but
+# since not everybody has CUnit and/or Criterion installed, and because it is
+# not strictly required to build the product itself, switch to off by default.
+option(BUILD_TESTING "Build the testing tree." OFF)
+include(CTest)
+
+# Build all executables and libraries into the top-level /bin and /lib folders.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+
+add_subdirectory(idlc)
 add_subdirectory(os)
+add_subdirectory(etc)
 add_subdirectory(util)
+add_subdirectory(vddsc)
+add_subdirectory(tools)
+add_subdirectory(scripts)
+add_subdirectory(examples)
+add_subdirectory(docs)
 
-PREPEND(srcs_ddsi ddsi ddsi_ser.c ddsi_ssl.c ddsi_tcp.c ddsi_tran.c ddsi_udp.c q_addrset.c q_bitset_inlines.c q_bswap.c q_bswap_inlines.c q_builtin_topic.c q_config.c q_ddsi_discovery.c q_debmon.c q_entity.c q_ephash.c q_gc.c q_init.c q_lat_estim.c q_lease.c q_log.c q_md5.c q_misc.c q_nwif.c q_pcap.c q_plist.c q_qosmatch.c q_radmin.c q_receive.c q_security.c q_servicelease.c q_sockwaitset.c q_thread.c q_thread_inlines.c q_time.c q_transmit.c q_whc.c q_xevent.c q_xmsg.c q_freelist.c sysdeps.c)
-
-PREPEND(srcs_vddsc vddsc dds_alloc.c dds_builtin.c dds_coherent.c dds_iid.c dds_participant.c dds_reader.c dds_writer.c dds_init.c dds_publisher.c dds_rhc.c dds_time.c q_osplser.c dds_domain.c dds_instance.c dds_qos.c dds_tkmap.c dds_entity.c dds_key.c dds_querycond.c dds_topic.c dds_err.c dds_listener.c dds_read.c dds_stream.c dds_waitset.c dds_log.c dds_readcond.c dds_subscriber.c dds_write.c dds_report.c)
-
-option(VDDSC_SHARED "Build VDDSC as a shared library" ON)
-
-if(VDDSC_SHARED AND ((NOT DEFINED BUILD_SHARED_LIBS) OR BUILD_SHARED_LIBS))
-  # BUILD_SHARED_LIBS is set to off by for example VxWorks DKM environment
-  add_library(vddsc SHARED "")
-else()
-  if(VDDSC_SHARED)
-    message(STATUS "Option VDDSC_SHARED ignored. Only static libraries supported on this platform.")
-  endif()
-  add_library(vddsc "")
-endif()
-
-target_sources(vddsc PRIVATE ${srcs_ddsi} ${srcs_vddsc})
-
-target_link_libraries(vddsc PRIVATE util)
-
-# SOVERSION should increase on incompatible ABI change
-set_target_properties(vddsc PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
-
-generate_export_header(
-  vddsc
-  BASE_NAME DDS
-  EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/exports/dds/dds_export.h")
-
-# Generate builtin-topic sources
-set(IDLC_ARGS "-dll" "FOO,dds/dds_export.h")
-idlc_generate(BuiltinTypes vddsc/dds_dcps_builtintopics.idl vddsc/dds_builtinTopics.idl)
-set(IDLC_ARGS)
-target_link_libraries(vddsc PRIVATE BuiltinTypes)
-
-# Generator expressions are used here to refer to different paths during build
-# and install phases. It is a requirement for creating relocatable packages.
-target_include_directories(vddsc PUBLIC
-  "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/>"
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports/>"
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
-  "$<INSTALL_INTERFACE:include>")
-target_include_directories(vddsc PRIVATE
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/>")
-
-configure_file("${CMAKE_SOURCE_DIR}/include/vddsc/vddsc_project.h.in" "include/vddsc/vddsc_project.h")
-
-set_target_file_ids(vddsc)
-
-# Create a pseudo-target that other targets (i.e. examples, tests) can depend
-# on and can also be provided as import-target by a package-file when building
-# those targets outside the regular Vortex build-tree (i.e. the installed tree)
-add_library(${CMAKE_PROJECT_NAME}::vddsc ALIAS vddsc)
-
-install(
-  TARGETS vddsc
-  EXPORT "${CMAKE_PROJECT_NAME}"
-  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT lib
-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT lib
-  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT lib
-)
-
-install(
-  FILES "${CMAKE_SOURCE_DIR}/include/dds.h"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-  COMPONENT dev)
-
-# FIXME: Not sure if this is actually required.
-install(
-  FILES "${CMAKE_CURRENT_BINARY_DIR}/exports/dds/dds_export.h"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/dds"
-
-  COMPONENT dev)
-
-install(
-  FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/dds_dcps_builtintopics.h"
-    "${CMAKE_CURRENT_BINARY_DIR}/dds_builtinTopics.h"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-  COMPONENT dev)
-
-install(
-  DIRECTORY "${CMAKE_SOURCE_DIR}/include/dds"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-  COMPONENT dev)
-
-# TODO: improve test inclusion.
-if((BUILD_TESTING) AND ((NOT DEFINED MSVC_VERSION) OR (MSVC_VERSION GREATER "1800")))
-  add_subdirectory(vddsc/tests)
-endif()
-
+# Pull-in CPack and support for generating <Package>Config.cmake and packages.
+include(Packaging)
