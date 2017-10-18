@@ -46,7 +46,7 @@ if (BUILD_DOCS)
     # Process doxygen configuration file, for vddsc
     set(doxy_conf_project "${CMAKE_PROJECT_NAME_FULL} C API Documentation")
     set(doxy_conf_outputdir "vddsc_api")
-    set(doxy_conf_input "${CMAKE_SOURCE_DIR}/vddsc/vddsc/include/vddsc/dds.h ${CMAKE_SOURCE_DIR}/vddsc/vddsc/include/vddsc")
+    set(doxy_conf_input "${PROJECT_SOURCE_DIR}/vddsc/vddsc/include/vddsc/dds.h ${PROJECT_SOURCE_DIR}/vddsc/vddsc/include/vddsc")
     configure_file(Doxyfile.in Doxyfile @ONLY)
 
     add_custom_target(vddsc_docs
@@ -76,7 +76,7 @@ if (BUILD_DOCS)
   string(TIMESTAMP sph_conf_copyright "%Y, ADLINK")
   set(sph_conf_version "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
   set(sph_conf_release "${PROJECT_VERSION}")
-  set(sph_logo "${CMAKE_SOURCE_DIR}/docs/_static/pictures/VORTEX_LOGO.png")
+  set(sph_logo "${PROJECT_SOURCE_DIR}/docs/_static/pictures/VORTEX_LOGO.png")
   configure_file(conf.py.in conf.py @ONLY)
 
   # Define a list of output formats (-b option for sphinx-build)
@@ -97,7 +97,7 @@ if (BUILD_DOCS)
         -b ${builder}
         -d ${CMAKE_CURRENT_BINARY_DIR}/cache
         -c ${CMAKE_CURRENT_BINARY_DIR}
-        ${CMAKE_SOURCE_DIR}/docs
+        ${PROJECT_SOURCE_DIR}/docs
         ${CMAKE_CURRENT_BINARY_DIR}/${builder}
         > ${docs_builder_log}
       COMMENT "Running Sphinx for ${builder} output"

@@ -112,7 +112,7 @@ endif()
 
 # Install example source-files
 install(
-  DIRECTORY "${CMAKE_SOURCE_DIR}/examples/"
+  DIRECTORY "${PROJECT_SOURCE_DIR}/examples/"
   DESTINATION "${CMAKE_INSTALL_EXAMPLESDIR}"
   COMPONENT dev
   PATTERN "CMakeLists.export" EXCLUDE
