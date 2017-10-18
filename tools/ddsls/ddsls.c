@@ -6,8 +6,10 @@
  */
 
 
-#include "dds_builtInTopics.h"
 #include "os/os.h"
+#include "dds.h"
+#include "dds_builtinTopics.h"
+
 
 #define DURATION_INFINITE_SEC 0x7fffffff
 #define DURATION_INFINITE_NSEC 0x7fffffff
@@ -26,11 +28,11 @@
 #define DCPSPARTICIPANT_FLAG (1<<1)
 #define DCPSSUBSCRIPTION_FLAG (1<<2)
 #define DCPSPUBLICATION_FLAG (1<<3)
-//#define CMPARTICIPANT_FLAG (1<<4)
-//#define CMPUBLISHER_FLAG (1<<5)
-//#define CMSUBSCRIBER_FLAG (1<<6)
-//#define CMDATAREADER_FLAG (1<<7)
-//#define CMDATAWRITER_FLAG (1<<8)
+#define CMPARTICIPANT_FLAG (1<<4)
+#define CMPUBLISHER_FLAG (1<<5)
+#define CMSUBSCRIBER_FLAG (1<<6)
+#define CMDATAREADER_FLAG (1<<7)
+#define CMDATAWRITER_FLAG (1<<8)
 
 static struct topictab{
 	const char *name;
@@ -40,11 +42,11 @@ static struct topictab{
 		{"dcpsparticipant", DCPSPARTICIPANT_FLAG},
 		{"dcpssubscription", DCPSSUBSCRIPTION_FLAG},
 		{"dcpspublication", DCPSPUBLICATION_FLAG},
-//		{"cmparticipant", CMPARTICIPANT_FLAG},
-//		{"cmpublisher", CMPUBLISHER_FLAG},
-//		{"cmsubscriber", CMPUBLISHER_FLAG},
-//		{"cmdatareader", CMDATAREADER_FLAG},
-//		{"cmdatawriter", CMDATAWRITER_FLAG},
+		{"cmparticipant", CMPARTICIPANT_FLAG},
+		{"cmpublisher", CMPUBLISHER_FLAG},
+		{"cmsubscriber", CMPUBLISHER_FLAG},
+		{"cmdatareader", CMDATAREADER_FLAG},
+		{"cmdatawriter", CMDATAWRITER_FLAG},
 
 };
 #define TOPICTAB_SIZE (sizeof(topictab)/sizeof(struct topictab))
@@ -401,15 +403,12 @@ void qp_reader_lifespan (const DDS_ReaderLifespanQosPolicy *q, FILE *fp)
 
 void print_dcps_topic(FILE *fp){
 	DDS_TopicBuiltinTopicData * dcps_topic_samples[10];
-	dds_entity_t dcps_topic;
 	dds_entity_t dcps_topic_reader;
 	int i = 0;
-	dcps_topic = dds_create_topic(participant, &DDS_TopicBuiltinTopicData_desc, "DCPSTopic", tqos, NULL);
-	PRINTD("DCPSTopic Create: %s\n", dds_err_str(status));
-	dcps_topic_reader = dds_create_reader(subscriber, dcps_topic, NULL, NULL);
-	PRINTD("DCPSTopic Reader Create: %s\n", dds_err_str(status));
-//	reader_wait = dds_reader_wait_for_historical_data(dcps_topic_reader, DDS_SECS(5));
-//	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
+	dcps_topic_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_DCPSTOPIC, NULL, NULL);
+	PRINTD("DCPSTopic Reader Create: %s\n", dds_err_str(dcps_topic_reader));
+	reader_wait = dds_reader_wait_for_historical_data(dcps_topic_reader, DDS_SECS(5));
+	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
 	while(true){
 		zero(dcps_topic_samples, MAX_SAMPLES);
 		status = dds_take_mask(dcps_topic_reader, (void**)dcps_topic_samples, info, MAX_SAMPLES, MAX_SAMPLES, states);
@@ -445,15 +444,12 @@ void print_dcps_topic(FILE *fp){
 void print_dcps_participant(FILE *fp){
 
 	DDS_ParticipantBuiltinTopicData * dcps_participant_samples[10];
-	dds_entity_t dcps_participant;
 	dds_entity_t dcps_participant_reader;
 	int i = 0;
-	dcps_participant = dds_create_topic(participant, &DDS_ParticipantBuiltinTopicData_desc, "DCPSParticipant", tqos, NULL);
-	PRINTD("DCPSParticipant Create: %s\n", dds_err_str(status));
-	dcps_participant_reader = dds_create_reader(subscriber, dcps_participant, NULL, NULL);
-	PRINTD("DCPSSubscription Reader Create: %s\n", dds_err_str(status));
-//	reader_wait = dds_reader_wait_for_historical_data(dcps_participant_reader, DDS_SECS(5));
-//	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
+	dcps_participant_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_DCPSPARTICIPANT, NULL, NULL);
+	PRINTD("DCPSSubscription Reader Create: %s\n", dds_err_str(dcps_participant_reader));
+	reader_wait = dds_reader_wait_for_historical_data(dcps_participant_reader, DDS_SECS(5));
+	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
 	while(true){
 		zero(dcps_participant_samples, MAX_SAMPLES);
 		status = dds_take_mask(dcps_participant_reader, (void**)dcps_participant_samples, info, MAX_SAMPLES, MAX_SAMPLES, states);
@@ -475,15 +471,12 @@ void print_dcps_participant(FILE *fp){
 
 void print_dcps_subscription(FILE *fp){
 	DDS_SubscriptionBuiltinTopicData * dcps_subscription_samples[10];
-	dds_entity_t dcps_subscription;
 	dds_entity_t dcps_subscription_reader;
 	int i = 0;
-	dcps_subscription = dds_create_topic(participant, &DDS_SubscriptionBuiltinTopicData_desc, "DCPSSubscription", tqos, NULL);
-	PRINTD("DCPSSubscription Create: %s\n", dds_err_str(status));
-	dcps_subscription_reader = dds_create_reader(subscriber, dcps_subscription, NULL, NULL);
-	PRINTD("DCPSParticipant Reader Create: %s\n", dds_err_str(status));
-//	reader_wait = dds_reader_wait_for_historical_data(dcps_subscription_reader, DDS_SECS(5));
-//	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
+	dcps_subscription_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION, NULL, NULL);
+	PRINTD("DCPSParticipant Reader Create: %s\n", dds_err_str(dcps_subscription_reader));
+	reader_wait = dds_reader_wait_for_historical_data(dcps_subscription_reader, DDS_SECS(5));
+	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
 	while(true){
 		zero(dcps_subscription_samples, MAX_SAMPLES);
 		status = dds_take_mask(dcps_subscription_reader, (void**)dcps_subscription_samples, info, MAX_SAMPLES, MAX_SAMPLES, states);
@@ -520,15 +513,12 @@ void print_dcps_subscription(FILE *fp){
 
 void print_dcps_publication(FILE *fp){
 	DDS_PublicationBuiltinTopicData * dcps_publication_samples[10];
-	dds_entity_t dcps_publication;
 	dds_entity_t dcps_publication_reader;
 	int i = 0;
-	dcps_publication = dds_create_topic(participant, &DDS_PublicationBuiltinTopicData_desc, "DCPSPublication", tqos, NULL);
-	PRINTD("DCPSPublication Create: %s\n", dds_err_str(status));
-	dcps_publication_reader = dds_create_reader(subscriber, dcps_publication, NULL, NULL);
-	PRINTD("DCPSPublication Reader Create: %s\n", dds_err_str(status));
-//	reader_wait = dds_reader_wait_for_historical_data(dcps_publication_reader, DDS_SECS(5));
-//	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
+	dcps_publication_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_DCPSPUBLICATION, NULL, NULL);
+	PRINTD("DCPSPublication Reader Create: %s\n", dds_err_str(dcps_publication_reader));
+	reader_wait = dds_reader_wait_for_historical_data(dcps_publication_reader, DDS_SECS(5));
+	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
 	while(true){
 		zero(dcps_publication_samples, MAX_SAMPLES);
 		status = dds_take_mask(dcps_publication_reader, (void**)dcps_publication_samples, info, MAX_SAMPLES, MAX_SAMPLES, states);
@@ -564,176 +554,162 @@ void print_dcps_publication(FILE *fp){
 	}
 }
 
-//void print_cm_participant(FILE *fp){
-//	DDS_CMParticipantBuiltinTopicData * cm_participant_samples[10];
-//	dds_entity_t cm_participant;
-//	dds_entity_t cm_participant_reader;
-//	int i = 0;
-//	status = dds_topic_create(participant, &cm_participant, &DDS_CMParticipantBuiltinTopicData_desc, "CMParticipant", tqos, NULL);
-//	PRINTD("CMParticipant Create: %s\n", dds_err_str(status));
-//	status = dds_reader_create(subscriber, &cm_participant_reader, cm_participant, NULL, NULL);
-//	PRINTD("CMParticipant Reader Create: %s\n", dds_err_str(status));
-//	reader_wait = dds_reader_wait_for_historical_data(cm_participant_reader, DDS_SECS(5));
-//	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
-//	while(true){
-//		zero(cm_participant_samples, MAX_SAMPLES);
-//		status = dds_take(cm_participant_reader, (void**)cm_participant_samples, MAX_SAMPLES, info, states);
-//		PRINTD("DDS reading samples returns %d \n", status);
-//		for(i = 0; i < status; i++) {
-//			DDS_CMParticipantBuiltinTopicData *data = cm_participant_samples[i];
-//			fprintf(fp,"CMPARTICIPANT:\n");
-//			fprintf(fp," key = %u:%u:%u \n", (unsigned) data->key[0], (unsigned) data->key[1], (unsigned) data->key[2]);
-//			qp_product_data(&data->product,fp);
-//		}
-//		if(status > 0) {
-//			dds_return_loan(cm_participant_reader, (void**)cm_participant_samples, status);
-//		}
-//		if(status <= 0){
-//			break;
-//		}
-//	}
-//}
-//
-//void print_cm_publisher(FILE *fp){
-//	DDS_CMPublisherBuiltinTopicData * cm_publisher_samples[10];
-//	dds_entity_t cm_publisher;
-//	dds_entity_t cm_publisher_reader;
-//	int i = 0;
-//	status = dds_topic_create(participant, &cm_publisher, &DDS_CMPublisherBuiltinTopicData_desc, "CMPublisher", tqos, NULL);
-//	PRINTD("CMPublisher Create: %s\n", dds_err_str(status));
-//	status = dds_reader_create(subscriber, &cm_publisher_reader, cm_publisher, NULL, NULL);
-//	PRINTD("CMPublisher Reader Create: %s\n", dds_err_str(status));
-//	reader_wait = dds_reader_wait_for_historical_data(cm_publisher_reader, DDS_SECS(5));
-//	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
-//	while(true){
-//		zero(cm_publisher_samples, MAX_SAMPLES);
-//		status = dds_take(cm_publisher_reader, (void**)cm_publisher_samples, MAX_SAMPLES, info, states);
-//		PRINTD("DDS reading samples returns %d \n", status);
-//		for(i = 0; i < status; i++) {
-//			DDS_CMPublisherBuiltinTopicData *data = cm_publisher_samples[i];
-//			fprintf(fp,"CMPUBLISHER:\n");
-//			fprintf(fp," key = %u:%u:%u \n", (unsigned) data->key[0], (unsigned) data->key[1], (unsigned) data->key[2]);
-//			fprintf(fp," participant_key = %u:%u:%u\n", (unsigned) data->key[0], (unsigned) data->key[1], (unsigned) data->key[2]);
-//			fprintf(fp," name = %s\n", data->name);
-//			qp_entity_factory(&data->entity_factory,fp);
-//			qp_partition(&data->partition,fp);
-//			qp_product_data(&data->product,fp);
-//		}
-//		if(status > 0) {
-//			dds_return_loan(cm_publisher_reader, (void**)cm_publisher_samples, status);
-//		}
-//		if(status <= 0){
-//			break;
-//		}
-//	}
-//}
-//
-//void print_cm_subscriber(FILE *fp){
-//	DDS_CMSubscriberBuiltinTopicData * cm_subscriber_samples[10];
-//	dds_entity_t cm_subscriber, cm_subscriber_reader;
-//	int i = 0;
-//	status = dds_topic_create(participant, &cm_subscriber, &DDS_CMSubscriberBuiltinTopicData_desc, "CMSubscriber", tqos, NULL);
-//	PRINTD("CMSubscriber Create: %s\n", dds_err_str(status));
-//	status = dds_reader_create(subscriber, &cm_subscriber_reader, cm_subscriber, NULL, NULL);
-//	PRINTD("CMSubscriber Reader Create: %s\n", dds_err_str(status));
-//	reader_wait = dds_reader_wait_for_historical_data(cm_subscriber_reader, DDS_SECS(5));
-//	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
-//	while(true){
-//		zero(cm_subscriber_samples, MAX_SAMPLES);
-//		status = dds_take(cm_subscriber_reader, (void**)cm_subscriber_samples, MAX_SAMPLES, info, states);
-//		PRINTD("DDS reading samples returns %d \n", status);
-//		for(i = 0; i < status; i++) {
-//			DDS_CMSubscriberBuiltinTopicData *data = cm_subscriber_samples[i];
-//			fprintf(fp,"CMSUBSCRIBER:\n");
-//			fprintf(fp," key = %u:%u:%u \n", (unsigned) data->key[0], (unsigned) data->key[1], (unsigned) data->key[2]);
-//			fprintf(fp," participant_key = %u:%u:%u\n", (unsigned) data->participant_key[0], (unsigned) data->participant_key[1], (unsigned) data->participant_key[2]);
-//			fprintf(fp," name = %s\n", data->name);
-//			qp_entity_factory(&data->entity_factory,fp);
-//			qp_partition(&data->partition,fp);
-//			qp_share(&data->share,fp);
-//			qp_product_data(&data->product,fp);
-//		}
-//		if(status > 0) {
-//			dds_return_loan(cm_subscriber_reader, (void**)cm_subscriber_samples, status);
-//		}
-//		if(status <= 0){
-//			break;
-//		}
-//	}
-//}
-//
-//void print_cm_datawriter(FILE *fp){
-//	DDS_CMDataWriterBuiltinTopicData * cm_datawriter_samples[10];
-//	dds_entity_t cm_datawriter;
-//	dds_entity_t cm_datawriter_reader;
-//	int i = 0;
-//	status = dds_topic_create(participant, &cm_datawriter, &DDS_CMDataWriterBuiltinTopicData_desc, "CMDataWriter", tqos, NULL);
-//	PRINTD("CMDataWriter Create: %s\n", dds_err_str(status));
-//	status = dds_reader_create(subscriber, &cm_datawriter_reader, cm_datawriter, NULL, NULL);
-//	PRINTD("CMDataWriter Reader Create: %s\n", dds_err_str(status));
-//	reader_wait = dds_reader_wait_for_historical_data(cm_datawriter_reader, DDS_SECS(5));
-//	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
-//	while(true){
-//		zero(cm_datawriter_samples, MAX_SAMPLES);
-//		status = dds_take(cm_datawriter_reader, (void**)cm_datawriter_samples, MAX_SAMPLES, info, states);
-//		PRINTD("DDS reading samples returns %d \n", status);
-//		for(i = 0; i < status; i++) {
-//			DDS_CMDataWriterBuiltinTopicData *data = cm_datawriter_samples[i];
-//			fprintf(fp,"CMDATAWRITER:\n");
-//			fprintf(fp," key = %u:%u:%u \n", (unsigned) data->key[0], (unsigned) data->key[1], (unsigned) data->key[2]);
-//			fprintf(fp," publisher_key = %u:%u:%u\n", (unsigned) data->publisher_key[0], (unsigned) data->publisher_key[1], (unsigned) data->publisher_key[2]);
-//			fprintf(fp," name = %s\n", data->name);
-//			qp_history (&data->history,fp);
-//			qp_resource_limits (&data->resource_limits,fp);
-//			qp_writer_data_lifecycle (&data->writer_data_lifecycle,fp);
-//			qp_product_data (&data->product,fp);
-//		}
-//		if(status > 0) {
-//			dds_return_loan(cm_datawriter_reader, (void**)cm_datawriter_samples, status);
-//		}
-//		if(status <= 0){
-//			break;
-//		}
-//	}
-//}
-//
-//void print_cm_datareader(FILE *fp){
-//	DDS_CMDataReaderBuiltinTopicData * cm_datareader_samples[10];
-//	dds_entity_t cm_datareader;
-//	dds_entity_t cm_datareader_reader;
-//	int i = 0;
-//	status = dds_topic_create(participant, &cm_datareader, &DDS_CMDataReaderBuiltinTopicData_desc, "CMDataReader", tqos, NULL);
-//	PRINTD("CMDataReader Create: %s\n", dds_err_str(status));
-//	status = dds_reader_create(subscriber, &cm_datareader_reader, cm_datareader, NULL, NULL);
-//	PRINTD("CMDataReader Reader Create: %s\n", dds_err_str(status));
-//	reader_wait = dds_reader_wait_for_historical_data(cm_datareader_reader, DDS_SECS(5));
-//	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
-//	while(true){
-//		zero(cm_datareader_samples, MAX_SAMPLES);
-//		status = dds_take(cm_datareader_reader, (void**)cm_datareader_samples, MAX_SAMPLES, info, states);
-//		PRINTD("DDS reading samples returns %d \n", status);
-//		for(i = 0; i < status; i++) {
-//			DDS_CMDataReaderBuiltinTopicData *data = cm_datareader_samples[i];
-//			fprintf(fp,"CMDATAREADER:\n");
-//			fprintf(fp," key = %u:%u:%u \n", (unsigned) data->key[0], (unsigned) data->key[1], (unsigned) data->key[2]);
-//			fprintf(fp," subscriber_key = %u:%u:%u\n", (unsigned) data->subscriber_key[0], (unsigned) data->subscriber_key[1], (unsigned) data->subscriber_key[2]);
-//			fprintf(fp," name = %s\n", data->name);
-//			qp_history (&data->history,fp);
-//			qp_resource_limits (&data->resource_limits,fp);
-//			qp_reader_data_lifecycle (&data->reader_data_lifecycle,fp);
-//			qp_subscription_keys (&data->subscription_keys,fp);
-//			qp_reader_lifespan (&data->reader_lifespan,fp);
-//			qp_share (&data->share,fp);
-//			qp_product_data (&data->product,fp);
-//		}
-//		if(status > 0) {
-//			dds_return_loan(cm_datareader_reader, (void**)cm_datareader_samples, status);
-//		}
-//		if(status <= 0){
-//			break;
-//		}
-//	}
-//}
+void print_cm_participant(FILE *fp){
+	DDS_CMParticipantBuiltinTopicData * cm_participant_samples[10];
+	dds_entity_t cm_participant_reader;
+	int i = 0;
+	cm_participant_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_CMPARTICIPANT, NULL, NULL);
+	PRINTD("CMParticipant Reader Create: %s\n", dds_err_str(cm_participant_reader));
+	reader_wait = dds_reader_wait_for_historical_data(cm_participant_reader, DDS_SECS(5));
+	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
+	while(true){
+		zero(cm_participant_samples, MAX_SAMPLES);
+		status = dds_take_mask(cm_participant_reader, (void**)cm_participant_samples, info, MAX_SAMPLES, MAX_SAMPLES, states);
+		PRINTD("DDS reading samples returns %d \n", status);
+		for(i = 0; i < status; i++) {
+			DDS_CMParticipantBuiltinTopicData *data = cm_participant_samples[i];
+			fprintf(fp,"CMPARTICIPANT:\n");
+			fprintf(fp," key = %u:%u:%u \n", (unsigned) data->key[0], (unsigned) data->key[1], (unsigned) data->key[2]);
+			qp_product_data(&data->product,fp);
+		}
+		if(status > 0) {
+		    status = dds_return_loan(cm_participant_reader, (void**)cm_participant_samples, status);
+		}
+		if(status <= 0){
+			break;
+		}
+	}
+}
+
+void print_cm_publisher(FILE *fp){
+	DDS_CMPublisherBuiltinTopicData * cm_publisher_samples[10];
+	dds_entity_t cm_publisher_reader;
+	int i = 0;
+	cm_publisher_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_CMPUBLISHER, NULL, NULL);
+	PRINTD("CMPublisher Reader Create: %s\n", dds_err_str(cm_publisher_reader));
+	reader_wait = dds_reader_wait_for_historical_data(cm_publisher_reader, DDS_SECS(5));
+	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
+	while(true){
+		zero(cm_publisher_samples, MAX_SAMPLES);
+		status = dds_take_mask(cm_publisher_reader, (void**)cm_publisher_samples, info, MAX_SAMPLES, MAX_SAMPLES, states);
+		PRINTD("DDS reading samples returns %d \n", status);
+		for(i = 0; i < status; i++) {
+			DDS_CMPublisherBuiltinTopicData *data = cm_publisher_samples[i];
+			fprintf(fp,"CMPUBLISHER:\n");
+			fprintf(fp," key = %u:%u:%u \n", (unsigned) data->key[0], (unsigned) data->key[1], (unsigned) data->key[2]);
+			fprintf(fp," participant_key = %u:%u:%u\n", (unsigned) data->key[0], (unsigned) data->key[1], (unsigned) data->key[2]);
+			fprintf(fp," name = %s\n", data->name);
+			qp_entity_factory(&data->entity_factory,fp);
+			qp_partition(&data->partition,fp);
+			qp_product_data(&data->product,fp);
+		}
+		if(status > 0) {
+		    status = dds_return_loan(cm_publisher_reader, (void**)cm_publisher_samples, status);
+		}
+		if(status <= 0){
+			break;
+		}
+	}
+}
+
+void print_cm_subscriber(FILE *fp){
+	DDS_CMSubscriberBuiltinTopicData * cm_subscriber_samples[10];
+	dds_entity_t cm_subscriber_reader;
+	int i = 0;
+	cm_subscriber_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_CMSUBSCRIBER, NULL, NULL);
+	PRINTD("CMSubscriber Reader Create: %s\n", dds_err_str(cm_subscriber_reader));
+	reader_wait = dds_reader_wait_for_historical_data(cm_subscriber_reader, DDS_SECS(5));
+	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
+	while(true){
+		zero(cm_subscriber_samples, MAX_SAMPLES);
+		status = dds_take_mask(cm_subscriber_reader, (void**)cm_subscriber_samples, info, MAX_SAMPLES, MAX_SAMPLES, states);
+		PRINTD("DDS reading samples returns %d \n", status);
+		for(i = 0; i < status; i++) {
+			DDS_CMSubscriberBuiltinTopicData *data = cm_subscriber_samples[i];
+			fprintf(fp,"CMSUBSCRIBER:\n");
+			fprintf(fp," key = %u:%u:%u \n", (unsigned) data->key[0], (unsigned) data->key[1], (unsigned) data->key[2]);
+			fprintf(fp," participant_key = %u:%u:%u\n", (unsigned) data->participant_key[0], (unsigned) data->participant_key[1], (unsigned) data->participant_key[2]);
+			fprintf(fp," name = %s\n", data->name);
+			qp_entity_factory(&data->entity_factory,fp);
+			qp_partition(&data->partition,fp);
+			qp_share(&data->share,fp);
+			qp_product_data(&data->product,fp);
+		}
+		if(status > 0) {
+		    status = dds_return_loan(cm_subscriber_reader, (void**)cm_subscriber_samples, status);
+		}
+		if(status <= 0){
+			break;
+		}
+	}
+}
+
+void print_cm_datawriter(FILE *fp){
+	DDS_CMDataWriterBuiltinTopicData * cm_datawriter_samples[10];
+	dds_entity_t cm_datawriter_reader;
+	int i = 0;
+	cm_datawriter_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_CMDATAWRITER, NULL, NULL);
+	PRINTD("CMDataWriter Reader Create: %s\n", dds_err_str(cm_datawriter_reader));
+	reader_wait = dds_reader_wait_for_historical_data(cm_datawriter_reader, DDS_SECS(5));
+	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
+	while(true){
+		zero(cm_datawriter_samples, MAX_SAMPLES);
+		status = dds_take_mask(cm_datawriter_reader, (void**)cm_datawriter_samples, info, MAX_SAMPLES, MAX_SAMPLES, states);
+		PRINTD("DDS reading samples returns %d \n", status);
+		for(i = 0; i < status; i++) {
+			DDS_CMDataWriterBuiltinTopicData *data = cm_datawriter_samples[i];
+			fprintf(fp,"CMDATAWRITER:\n");
+			fprintf(fp," key = %u:%u:%u \n", (unsigned) data->key[0], (unsigned) data->key[1], (unsigned) data->key[2]);
+			fprintf(fp," publisher_key = %u:%u:%u\n", (unsigned) data->publisher_key[0], (unsigned) data->publisher_key[1], (unsigned) data->publisher_key[2]);
+			fprintf(fp," name = %s\n", data->name);
+			qp_history (&data->history,fp);
+			qp_resource_limits (&data->resource_limits,fp);
+			qp_writer_data_lifecycle (&data->writer_data_lifecycle,fp);
+			qp_product_data (&data->product,fp);
+		}
+		if(status > 0) {
+		    status = dds_return_loan(cm_datawriter_reader, (void**)cm_datawriter_samples, status);
+		}
+		if(status <= 0){
+			break;
+		}
+	}
+}
+
+void print_cm_datareader(FILE *fp){
+	DDS_CMDataReaderBuiltinTopicData * cm_datareader_samples[10];
+	dds_entity_t cm_datareader_reader;
+	int i = 0;
+	status = dds_create_reader(participant, DDS_BUILTIN_TOPIC_CMDATAREADER, NULL, NULL);
+	PRINTD("CMDataReader Reader Create: %s\n", dds_err_str(cm_datareader_reader));
+	reader_wait = dds_reader_wait_for_historical_data(cm_datareader_reader, DDS_SECS(5));
+	PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
+	while(true){
+		zero(cm_datareader_samples, MAX_SAMPLES);
+		status = dds_take_mask(cm_datareader_reader, (void**)cm_datareader_samples, info, MAX_SAMPLES, MAX_SAMPLES, states);
+		PRINTD("DDS reading samples returns %d \n", status);
+		for(i = 0; i < status; i++) {
+			DDS_CMDataReaderBuiltinTopicData *data = cm_datareader_samples[i];
+			fprintf(fp,"CMDATAREADER:\n");
+			fprintf(fp," key = %u:%u:%u \n", (unsigned) data->key[0], (unsigned) data->key[1], (unsigned) data->key[2]);
+			fprintf(fp," subscriber_key = %u:%u:%u\n", (unsigned) data->subscriber_key[0], (unsigned) data->subscriber_key[1], (unsigned) data->subscriber_key[2]);
+			fprintf(fp," name = %s\n", data->name);
+			qp_history (&data->history,fp);
+			qp_resource_limits (&data->resource_limits,fp);
+			qp_reader_data_lifecycle (&data->reader_data_lifecycle,fp);
+			qp_subscription_keys (&data->subscription_keys,fp);
+			qp_reader_lifespan (&data->reader_lifespan,fp);
+			qp_share (&data->share,fp);
+			qp_product_data (&data->product,fp);
+		}
+		if(status > 0) {
+		    status = dds_return_loan(cm_datareader_reader, (void**)cm_datareader_samples, status);
+		}
+		if(status <= 0){
+			break;
+		}
+	}
+}
 
 void usage(){
 	/*describe the default options*/
@@ -748,7 +724,7 @@ void usage(){
 }
 
 int main(int argc, char **argv){
-	FILE *fp;
+	FILE *fp = NULL;
 	int flags = 0;
 	int j;
 	int index;
@@ -814,27 +790,14 @@ int main(int argc, char **argv){
 	participant = dds_create_participant(d, NULL, NULL);
 	PRINTD("DDS Participant Create: %s\n", dds_err_str(status));
 
-	/* Built-in topic qos */
-	tqos = dds_qos_create();
-	dds_qset_reliability(tqos, DDS_RELIABILITY_RELIABLE, DDS_MSECS(100));
-	dds_qset_history(tqos, DDS_HISTORY_KEEP_ALL, -1);
-	dds_qset_durability(tqos, DDS_DURABILITY_TRANSIENT);
-
-	/* Built-in subscriber */
-	sqos = dds_qos_create();
-	const int partNum = 1;
-	const char* c[partNum];
-	c[0]= "__BUILT-IN PARTITION__";
-	dds_qset_partition(sqos, partNum, c);
-	subscriber = dds_create_subscriber(participant, sqos, NULL);
-	PRINTD("DDS Subscriber Create: %s\n", dds_err_str(status));
-
 	if(flags & DCPSTOPIC_FLAG) {
 		print_dcps_topic(fp);
 	}
+
 	if(flags & DCPSPARTICIPANT_FLAG) {
 		print_dcps_participant(fp);
 	}
+
 	if(flags & DCPSSUBSCRIPTION_FLAG){
 		print_dcps_subscription(fp);
 	}
@@ -842,25 +805,28 @@ int main(int argc, char **argv){
 	if(flags & DCPSPUBLICATION_FLAG){
 		print_dcps_publication(fp);
 	}
-//	if(flags & CMPARTICIPANT_FLAG){
-//		print_cm_participant(fp);
-//	}
-//	if(flags & CMPUBLISHER_FLAG){
-//		print_cm_publisher(fp);
-//	}
-//	if(flags & CMSUBSCRIBER_FLAG){
-//		print_cm_subscriber(fp);
-//	}
-//	if(flags & CMDATAWRITER_FLAG){
-//		print_cm_datawriter(fp);
-//	}
-//	if(flags & CMDATAREADER_FLAG){
-//		print_cm_datareader(fp);
-//	}
+
+	if(flags & CMPARTICIPANT_FLAG){
+		print_cm_participant(fp);
+	}
+
+	if(flags & CMPUBLISHER_FLAG){
+		print_cm_publisher(fp);
+	}
+
+	if(flags & CMSUBSCRIBER_FLAG){
+		print_cm_subscriber(fp);
+	}
+
+	if(flags & CMDATAWRITER_FLAG){
+		print_cm_datawriter(fp);
+	}
+
+	if(flags & CMDATAREADER_FLAG){
+		print_cm_datareader(fp);
+	}
 
 	dds_delete(participant);
-//	dds_delete(subscriber);
-//	dds_fini();
 	fclose(fp);
 	return 0;
 }
