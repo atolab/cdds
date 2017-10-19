@@ -18,6 +18,8 @@ project(${PROJECT_NAME} VERSION 0.1.0)
 # We also need to line up test related directories by including CTest in the
 # top level CMakeLists.txt
 option(BUILD_TESTING "Build the testing tree." OFF)
+set(MEMORYCHECK_COMMAND_OPTIONS "--track-origins=yes --leak-check=full --trace-children=yes --child-silent-after-fork=yes --xml=yes --xml-file=TestResultValgrind_%p.xml --tool=memcheck --show-reachable=yes --leak-resolution=high")
+set(MEMORYCHECK_SUPPRESSIONS_FILE "${CMAKE_CURRENT_LIST_DIR}/src/valgrind.supp" CACHE FILEPATH "suppression file")
 include(CTest)
 
 # Now continue doing the actual work.
