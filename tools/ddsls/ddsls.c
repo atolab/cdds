@@ -238,14 +238,14 @@ void print_octetseq (const DDS_octSeq *v, FILE *fp)
 
     unsigned i, n;
     const char *sep = "";
-    fprintf (fp, "%d<", v->_length);
+    fprintf (fp, "%u<", v->_length);
     i = 0;
     while (i < v->_length)
     {
         if ((n = printable_seq_length (v->_buffer + i, v->_length - i)) < 4)
         {
             while (n--)
-                fprintf (fp,"%s%d", sep, v->_buffer[i++]);
+                fprintf (fp,"%s%u", sep, v->_buffer[i++]);
         }
         else
         {
@@ -479,8 +479,8 @@ void print_dcps_subscription(FILE *fp){
         for(i = 0; i < status; i++) {
             DDS_SubscriptionBuiltinTopicData *data = dcps_subscription_samples[i];
             fprintf(fp,"SUBSCRIPTION:\n");
-            fprintf(fp," key = %u:%u:%u\n", data->key[0], data->key[1], data->key[2]);
-            fprintf(fp," participant_key = %u:%u:%u\n", (unsigned) data->participant_key[0], (unsigned) data->participant_key[1], (unsigned) data->participant_key[2]);
+            fprintf(fp," key = %u:%u:%u\n", (uint32_t) data->key[0], (uint32_t) data->key[1], (uint32_t) data->key[2]);
+            fprintf(fp," participant_key = %u:%u:%u\n", (uint32_t) data->participant_key[0], (uint32_t) data->participant_key[1], (uint32_t) data->participant_key[2]);
             fprintf(fp," topic_name = %s\n", data->topic_name);
             fprintf(fp," type_name = %s\n", data->type_name);
             qp_durability(&data->durability,fp);
@@ -521,8 +521,8 @@ void print_dcps_publication(FILE *fp){
         for(i = 0; i < status; i++) {
             DDS_PublicationBuiltinTopicData *data = dcps_publication_samples[i];
             fprintf(fp,"PUBLICATION:\n");
-            fprintf(fp," key = %u:%u:%u\n", data->key[0], data->key[1], data->key[2]);
-            fprintf(fp," participant_key = %u:%u:%u\n", (unsigned) data->participant_key[0], (unsigned) data->participant_key[1], (unsigned) data->participant_key[2]);
+            fprintf(fp," key = %u:%u:%u\n", (uint32_t) data->key[0], (uint32_t) data->key[1], (uint32_t) data->key[2]);
+            fprintf(fp," participant_key = %u:%u:%u\n", (uint32_t) data->participant_key[0], (uint32_t) data->participant_key[1], (uint32_t) data->participant_key[2]);
             fprintf(fp," topic_name = %s\n", data->topic_name);
             fprintf(fp," type_name = %s\n", data->type_name);
             qp_durability(&data->durability,fp);
