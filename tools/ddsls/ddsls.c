@@ -7,6 +7,9 @@
 #define DURATION_INFINITE_NSEC 0x7fffffff
 #define zero(pp,sz) _zero((void**)pp,sz)
 
+// FIXME Temporary workaround for lack of wait_for_historical implementation. Remove this on completion of CHAM-268.
+#define dds_reader_wait_for_historical_data(a,b) DDS_SUCCESS; dds_sleepfor(DDS_MSECS(200));
+
 /* Enable DEBUG for printing debug statements*/
 //#define DEBUG
 
@@ -36,7 +39,7 @@ static struct topictab{
         {"dcpspublication", DCPSPUBLICATION_FLAG},
         {"cmparticipant", CMPARTICIPANT_FLAG},
         {"cmpublisher", CMPUBLISHER_FLAG},
-        {"cmsubscriber", CMPUBLISHER_FLAG},
+        {"cmsubscriber", CMSUBSCRIBER_FLAG},
         {"cmdatareader", CMDATAREADER_FLAG},
         {"cmdatawriter", CMDATAWRITER_FLAG},
 
@@ -49,11 +52,10 @@ int status = 0;
 int reader_wait = 0;
 dds_entity_t participant;
 dds_entity_t subscriber;
-dds_domainid_t d = DDS_DOMAIN_DEFAULT;
+dds_domainid_t did = DDS_DOMAIN_DEFAULT;
 dds_sample_info_t info[10];
 dds_qos_t* tqos;
 dds_qos_t* sqos;
-int isprint(int c);
 
 void _zero(void ** samples, int size) {
     int i;
@@ -76,7 +78,7 @@ void qp_durability (const DDS_DurabilityQosPolicy *q, FILE *fp)
     case DDS_TRANSIENT_LOCAL_DURABILITY_QOS: k = "transient-local"; break;
     case DDS_TRANSIENT_DURABILITY_QOS: k = "transient"; break;
     case DDS_PERSISTENT_DURABILITY_QOS: k = "persistent"; break;
-    default: snprintf (buf, sizeof (buf), "invalid (%d)", (int) q->kind); k = buf; break;
+    default: (void) snprintf (buf, sizeof (buf), "invalid (%d)", (int) q->kind); k = buf; break;
     }
     fprintf (fp, "  durability: kind = %s\n", k);
 }
@@ -87,7 +89,7 @@ void qp_deadline (const DDS_DeadlineQosPolicy *q, FILE *fp)
     if (duration_is_infinite(&q->period))
         fprintf (fp, "infinite\n");
     else
-        fprintf (fp,"%d.%09d\n", q->period.sec, q->period.nanosec);
+        fprintf (fp,"%d.%09u\n", q->period.sec, q->period.nanosec);
 }
 
 void qp_latency_budget (const DDS_LatencyBudgetQosPolicy *q, FILE *fp)
@@ -96,7 +98,7 @@ void qp_latency_budget (const DDS_LatencyBudgetQosPolicy *q, FILE *fp)
     if (duration_is_infinite (&q->duration))
         fprintf (fp,"infinite\n");
     else
-        fprintf (fp,"%d.%09d\n", q->duration.sec, q->duration.nanosec);
+        fprintf (fp,"%d.%09u\n", q->duration.sec, q->duration.nanosec);
 }
 
 void qp_liveliness (const DDS_LivelinessQosPolicy *q, FILE *fp)
@@ -108,13 +110,13 @@ void qp_liveliness (const DDS_LivelinessQosPolicy *q, FILE *fp)
     case DDS_AUTOMATIC_LIVELINESS_QOS: k = "automatic"; break;
     case DDS_MANUAL_BY_PARTICIPANT_LIVELINESS_QOS: k = "manual-by-participant"; break;
     case DDS_MANUAL_BY_TOPIC_LIVELINESS_QOS: k = "manual-by-topic"; break;
-    default: snprintf (buf, sizeof (buf), "invalid (%d)", (int) q->kind); k = buf; break;
+    default: (void) snprintf (buf, sizeof (buf), "invalid (%d)", (int) q->kind); k = buf; break;
     }
     fprintf (fp,"  liveliness: kind = %s, lease_duration = ", k);
     if (duration_is_infinite(&q->lease_duration))
         fprintf (fp,"infinite\n");
     else
-        fprintf (fp,"%d.%09d\n", q->lease_duration.sec, q->lease_duration.nanosec);
+        fprintf (fp,"%d.%09u\n", q->lease_duration.sec, q->lease_duration.nanosec);
 }
 
 void qp_reliability (const DDS_ReliabilityQosPolicy *q, FILE *fp)
@@ -125,13 +127,13 @@ void qp_reliability (const DDS_ReliabilityQosPolicy *q, FILE *fp)
     {
     case DDS_BEST_EFFORT_RELIABILITY_QOS: k = "best-effort"; break;
     case DDS_RELIABLE_RELIABILITY_QOS: k = "reliable"; break;
-    default: snprintf (buf, sizeof (buf), "invalid (%d)", (int) q->kind); k = buf; break;
+    default: (void) snprintf (buf, sizeof (buf), "invalid (%d)", (int) q->kind); k = buf; break;
     }
     fprintf (fp,"  reliability: kind = %s, max_blocking_time = ", k);
     if (duration_is_infinite(&q->max_blocking_time))
         fprintf (fp,"infinite");
     else
-        fprintf (fp,"%d.%09d", q->max_blocking_time.sec, q->max_blocking_time.nanosec);
+        fprintf (fp,"%d.%09u", q->max_blocking_time.sec, q->max_blocking_time.nanosec);
     fprintf (fp,", synchronous = %s\n", q->synchronous ? "true" : "false");
 }
 
@@ -146,7 +148,7 @@ void qp_lifespan (const DDS_LifespanQosPolicy *q, FILE *fp)
     if (duration_is_infinite(&q->duration))
         fprintf (fp, "infinite\n");
     else
-        fprintf (fp, "%d.%09d\n", q->duration.sec, q->duration.nanosec);
+        fprintf (fp, "%d.%09u\n", q->duration.sec, q->duration.nanosec);
 }
 
 void qp_destination_order (const DDS_DestinationOrderQosPolicy *q, FILE *fp)
@@ -157,7 +159,7 @@ void qp_destination_order (const DDS_DestinationOrderQosPolicy *q, FILE *fp)
     {
     case DDS_BY_RECEPTION_TIMESTAMP_DESTINATIONORDER_QOS: k = "by-reception-timestamp"; break;
     case DDS_BY_SOURCE_TIMESTAMP_DESTINATIONORDER_QOS: k = "by-source-timestamp"; break;
-    default: snprintf (buf, sizeof (buf), "invalid (%d)", (int) q->kind); k = buf; break;
+    default: (void) snprintf (buf, sizeof (buf), "invalid (%d)", (int) q->kind); k = buf; break;
     }
     fprintf (fp,"  destination_order: kind = %s\n", k);
 }
@@ -170,7 +172,7 @@ void qp_history_kind_1 (DDS_HistoryQosPolicyKind kind, int indent, FILE *fp)
     {
     case DDS_KEEP_LAST_HISTORY_QOS: k = "keep-last"; break;
     case DDS_KEEP_ALL_HISTORY_QOS: k = "keep-all"; break;
-    default: snprintf (buf, sizeof (buf), "invalid (%d)", (int) kind); k = buf; break;
+    default: (void) snprintf (buf, sizeof (buf), "invalid (%d)", (int) kind); k = buf; break;
     }
     fprintf (fp,"%*.*shistory: kind = %s", indent, indent, "", k);
 }
@@ -216,7 +218,7 @@ void qp_ownership (const DDS_OwnershipQosPolicy *q, FILE *fp)
     {
     case DDS_SHARED_OWNERSHIP_QOS: k = "shared"; break;
     case DDS_EXCLUSIVE_OWNERSHIP_QOS: k = "exclusive"; break;
-    default: snprintf (buf, sizeof (buf), "invalid (%d)", (int) q->kind); k = buf; break;
+    default: (void) snprintf (buf, sizeof (buf), "invalid (%d)", (int) q->kind); k = buf; break;
     }
     fprintf (fp,"  ownership: kind = %s\n", k);
 }
@@ -224,9 +226,10 @@ void qp_ownership (const DDS_OwnershipQosPolicy *q, FILE *fp)
 unsigned printable_seq_length(const unsigned char *as, unsigned n)
 {
     unsigned i;
-    for (i = 0; i < n; i++)
-        if (!isprint (as[i]))
+    for (i = 0; i < n; i++) {
+        if (as[i] < 32 || as[i] >= 127)
             break;
+    }
     return i;
 }
 
@@ -274,7 +277,7 @@ void qp_time_based_filter (const DDS_TimeBasedFilterQosPolicy *q, FILE *fp)
     if (duration_is_infinite (&q->minimum_separation))
         fprintf (fp,"infinite\n");
     else
-        fprintf (fp,"%d.%09d\n", q->minimum_separation.sec, q->minimum_separation.nanosec);
+        fprintf (fp,"%d.%09u\n", q->minimum_separation.sec, q->minimum_separation.nanosec);
 }
 
 void qp_presentation (const DDS_PresentationQosPolicy *q, FILE *fp)
@@ -286,7 +289,7 @@ void qp_presentation (const DDS_PresentationQosPolicy *q, FILE *fp)
     case DDS_INSTANCE_PRESENTATION_QOS: k = "instance"; break;
     case DDS_TOPIC_PRESENTATION_QOS: k = "topic"; break;
     case DDS_GROUP_PRESENTATION_QOS: k = "group"; break;
-    default: snprintf (buf, sizeof (buf), "invalid (%d)", (int) q->access_scope); k = buf; break;
+    default: (void) snprintf (buf, sizeof (buf), "invalid (%d)", (int) q->access_scope); k = buf; break;
     }
     fprintf (fp, "  presentation: scope = %s, coherent_access = %s, ordered_access = %s\n", k,
             q->coherent_access ? "true" : "false",
@@ -350,12 +353,12 @@ void qp_writer_data_lifecycle (const DDS_WriterDataLifecycleQosPolicy *q, FILE *
     if (duration_is_infinite (&q->autopurge_suspended_samples_delay))
         fprintf (fp,"infinite");
     else
-        fprintf (fp,"%d.%09d", q->autopurge_suspended_samples_delay.sec, q->autopurge_suspended_samples_delay.nanosec);
+        fprintf (fp,"%d.%09u", q->autopurge_suspended_samples_delay.sec, q->autopurge_suspended_samples_delay.nanosec);
     fprintf (fp,", autounregister_instance_delay = ");
     if (duration_is_infinite (&q->autounregister_instance_delay))
         fprintf (fp,"infinite\n");
     else
-        fprintf (fp,"%d.%09d\n", q->autounregister_instance_delay.sec, q->autounregister_instance_delay.nanosec);
+        fprintf (fp,"%d.%09u\n", q->autounregister_instance_delay.sec, q->autounregister_instance_delay.nanosec);
 }
 
 void qp_reader_data_lifecycle (const DDS_ReaderDataLifecycleQosPolicy *q, FILE *fp)
@@ -364,12 +367,12 @@ void qp_reader_data_lifecycle (const DDS_ReaderDataLifecycleQosPolicy *q, FILE *
     if (duration_is_infinite (&q->autopurge_nowriter_samples_delay))
         fprintf (fp,"infinite");
     else
-        fprintf (fp,"%d.%09d", q->autopurge_nowriter_samples_delay.sec, q->autopurge_nowriter_samples_delay.nanosec);
+        fprintf (fp,"%d.%09u", q->autopurge_nowriter_samples_delay.sec, q->autopurge_nowriter_samples_delay.nanosec);
     fprintf (fp,", autopurge_disposed_samples_delay = ");
     if (duration_is_infinite (&q->autopurge_disposed_samples_delay))
         fprintf (fp,"infinite");
     else
-        fprintf (fp,"%d.%09d", q->autopurge_disposed_samples_delay.sec, q->autopurge_disposed_samples_delay.nanosec);
+        fprintf (fp,"%d.%09u", q->autopurge_disposed_samples_delay.sec, q->autopurge_disposed_samples_delay.nanosec);
     fprintf (fp,", enable_invalid_samples = %s\n", q->enable_invalid_samples ? "true" : "false");
 }
 
@@ -387,7 +390,7 @@ void qp_reader_lifespan (const DDS_ReaderLifespanQosPolicy *q, FILE *fp)
     if (duration_is_infinite (&q->duration))
         fprintf (fp,"infinite");
     else
-        fprintf (fp,"%d.%09d", q->duration.sec, q->duration.nanosec);
+        fprintf (fp,"%d.%09u", q->duration.sec, q->duration.nanosec);
     if (!q->use_lifespan)
         fprintf (fp,")");
     fprintf (fp,"\n");
@@ -779,7 +782,7 @@ int main(int argc, char **argv){
     }
 
     /* Create the participant with the default domain */
-    participant = dds_create_participant(d, NULL, NULL);
+    participant = dds_create_participant(did, NULL, NULL);
     PRINTD("DDS Participant Create: %s\n", dds_err_str(status));
 
     if(flags & DCPSTOPIC_FLAG) {
