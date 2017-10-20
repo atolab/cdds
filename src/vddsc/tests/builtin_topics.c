@@ -440,18 +440,12 @@ Test(vddsc_builtin_topics, read_subscription_data, .init = setup, .fini = teardo
 
 Test(vddsc_builtin_topics, read_participant_data, .init = setup, .fini = teardown)
 {
-  dds_entity_t par_CHAM_429;
   dds_entity_t reader;
   dds_return_t ret;
   void * samples[MAX_SAMPLES];
 
   reader = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_DCPSPARTICIPANT, NULL, NULL);
   cr_assert_gt(reader, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSPARTICIPANT.");
-
-  /* See CHAM-429.
-   * Transient local doesn't work, so create a new participant to get builtin info. */
-  par_CHAM_429 = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(par_CHAM_429, 0, "Failed to create prerequisite par_CHAM_429");
 
   samples[0] = DDS_ParticipantBuiltinTopicData__alloc();
 
@@ -465,24 +459,16 @@ Test(vddsc_builtin_topics, read_participant_data, .init = setup, .fini = teardow
   }
 
   DDS_ParticipantBuiltinTopicData_free(samples[0], DDS_FREE_ALL);
-
-  dds_delete(par_CHAM_429);
 }
 
 Test(vddsc_builtin_topics, read_cmparticipant_data, .init = setup, .fini = teardown)
 {
-  dds_entity_t par_CHAM_429;
   dds_entity_t reader;
   dds_return_t ret;
   void * samples[MAX_SAMPLES];
 
   reader = dds_create_reader(g_participant, DDS_BUILTIN_TOPIC_CMPARTICIPANT, NULL, NULL);
   cr_assert_gt(reader, 0, "Failed to create a data reader for DDS_BUILTIN_TOPIC_DCPSPARTICIPANT.");
-
-  /* See CHAM-429.
-   * Transient local doesn't work, so create a new participant to get builtin info. */
-  par_CHAM_429 = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(par_CHAM_429, 0, "Failed to create prerequisite par_CHAM_429");
 
   samples[0] = DDS_CMParticipantBuiltinTopicData__alloc();
 
@@ -496,8 +482,6 @@ Test(vddsc_builtin_topics, read_cmparticipant_data, .init = setup, .fini = teard
   }
 
   DDS_CMParticipantBuiltinTopicData_free(samples[0], DDS_FREE_ALL);
-
-  dds_delete(par_CHAM_429);
 }
 
 Test(vddsc_builtin_topics, read_topic_data, .init = setup, .fini = teardown)

@@ -396,6 +396,14 @@ seqno_t whc_next_seq (const struct whc *whc, seqno_t seq)
     return n->seq;
 }
 
+struct whc_node* whc_next_node(const struct whc *whc, seqno_t seq)
+{
+    struct whc_node *n;
+    struct whc_intvnode *intv;
+    check_whc (whc);
+    return find_nextseq_intv(&intv, whc, seq);
+}
+
 static void delete_one_sample_from_idx (struct whc *whc, struct whc_node *whcn)
 {
   struct whc_idxnode * const idxn = whcn->idxnode;
