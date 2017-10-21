@@ -32,6 +32,7 @@ dds_globals dds_global =
 
 static char * dds_init_exe = NULL;
 static struct cfgst * dds_cfgst = NULL;
+bool is_initialized=false;
 
 extern void ddsi_impl_init (void);
 
@@ -107,8 +108,11 @@ dds_init(void)
     return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to parse configuration XML file %s", uri);
   }
 
+
   os_procName(tmp, sizeof(tmp));
   dds_init_exe = dds_string_dup (tmp);
+
+  dds__builtin_init();
 
   return DDS_RETCODE_OK;
 }
@@ -126,35 +130,47 @@ dds_init_impl(
 {
   char buff[64];
   uint32_t len;
-  dds_return_t ret;
+  dds_return_t ret=DDS_RETCODE_OK;
 
-  if (dds_global.m_default_domain != DDS_DOMAIN_DEFAULT)
-  {
-    if ((dds_global.m_default_domain != domain) && (domain != DDS_DOMAIN_DEFAULT))
-    {
-      ret = DDS_ERRNO(DDS_RETCODE_ERROR,
-                      "DDS Init failed: Inconsistent domain configuration detected: default domain %d, domain %d",
-                      dds_global.m_default_domain, domain);
-      goto fail;
-    }
-    return DDS_RETCODE_OK;
-  }
 
   /* If domain not set check environment variable */
-
   if (domain == DDS_DOMAIN_DEFAULT)
   {
-    const char * edom = os_getenv ("VORTEX_DOMAIN");
-    if (edom)
+    const char * env_domain = os_getenv ("VORTEX_DOMAIN");
+
+
+    if (env_domain) //environment variable exists
     {
-      config.domainId = atoi (edom);
+        //should be set from environment?
+        dds_domainid_t env_domain_value = atoi (env_domain);
+
+        if(env_domain_value == DDS_DOMAIN_DEFAULT){ //then use the value from configuration
+            domain = config.domainId;
+        }
+        else{ //act like the user called with this value
+            domain = env_domain_value;
+        }
+
+    }
+    else{ // no environment variable defined. then use the value from configuration
+        domain = config.domainId;;
     }
   }
-  else
-  {
-    config.domainId = domain;
+
+  if ( config.domainId != domain) { //if a valid ID exists on configuration and not matching the given ID
+  		ret = DDS_ERRNO(DDS_RETCODE_ERROR,
+  				"DDS Init failed: Inconsistent domain configuration detected: domain on configuration: %d, domain %d",
+                config.domainId, domain);
   }
-  dds_global.m_default_domain = config.domainId;
+
+  if( ret != DDS_RETCODE_OK){
+	goto fail;
+  }
+  else if(is_initialized){ //Did RTPS initialized before?
+    return ret;
+  }
+
+
   if (rtps_config_prep (dds_cfgst) != 0)
   {
     ret = DDS_ERRNO(DDS_RETCODE_ERROR, "RTPS configuration failed.");
@@ -200,14 +216,16 @@ dds_init_impl(
   (void) snprintf (gv.default_plist_pp.entity_name, len, "%s<%u>", dds_init_exe ? dds_init_exe : "", gv.default_plist_pp.process_id);
   gv.default_plist_pp.present |= PP_ENTITY_NAME;
 
-  dds__builtin_init();
 
+  is_initialized=true;
   return DDS_RETCODE_OK;
 
 fail:
 
   return ret;
 }
+
+
 
 extern void dds_fini (void)
 {
@@ -228,6 +246,6 @@ extern void dds_fini (void)
     }
     os_osExit ();
     dds_string_free (dds_init_exe);
-    dds_global.m_default_domain = DDS_DOMAIN_DEFAULT;
+    is_initialized=false;
   }
 }
