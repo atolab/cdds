@@ -1,7 +1,7 @@
 set(CMAKE_INSTALL_TOOLSDIR "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}/tools")
-
 add_subdirectory(pubsub)
 add_subdirectory(config)
+add_subdirectory(ddsls)
 
 # VxWorks build machines use OpenJDK 8, which lack jfxrt.jar. Do not build launcher on that platform.
 #
