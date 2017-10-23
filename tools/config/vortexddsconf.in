@@ -1,0 +1,12 @@
+#!/bin/sh
+
+scriptloc=`which "$0"`
+vortexddshome=`dirname "$scriptloc"`/..
+
+JAVA=java
+if [ -e "$vortexddshome/@PACKAGED_JRE_DIR@" ]
+then
+    JAVA="$vortexddshome/@PACKAGED_JRE_DIR@/bin/java"
+fi
+
+"$JAVA" -jar "$vortexddshome/@CMAKE_INSTALL_TOOLSDIR@/@CONFJAR_TARGET@.jar" "$@"

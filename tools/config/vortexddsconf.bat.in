@@ -1,0 +1,7 @@
+@echo off
+
+set JAVA=java
+IF EXIST "%~dp0\..\@PACKAGED_JRE_DIR@" set JAVA="%~dp0\..\@PACKAGED_JRE_DIR@\bin\java.exe"
+
+%JAVA% -jar "%~dp0\..\@CMAKE_INSTALL_TOOLSDIR@\@LAUNCHER_JAR@" %*
+
