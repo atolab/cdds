@@ -55,7 +55,10 @@ set(PACKAGED_JRE_DIR "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}/jre" CACHE 
 mark_as_advanced(PACKAGED_JRE_DIR)
 option(PACKAGE_JRE "Include a Java runtime distribution in the install." ON)
 if(PACKAGE_JRE)
-  get_filename_component(JAVA_DIR ${Java_JAVA_EXECUTABLE} DIRECTORY)
+  # Actual location of the jre folder differs between Windows/Linux and between Oracle/OpenJDK versions
+  # Getting it via a path relative to javac seems most reliable
+  get_filename_component(JAVAC_REALPATH ${Java_JAVAC_EXECUTABLE} REALPATH)
+  get_filename_component(JAVA_DIR ${JAVAC_REALPATH} DIRECTORY)
   install(
     DIRECTORY "${JAVA_DIR}/../jre"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}"
