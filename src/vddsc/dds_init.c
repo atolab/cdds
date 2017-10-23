@@ -119,7 +119,33 @@ dds_init(void)
 
 dds_domainid_t dds_domain_default (void)
 {
-  return config.domainId;
+  if(dds_global.m_default_domain == DDS_DOMAIN_DEFAULT ){
+    const char * env_domain = os_getenv ("VORTEX_DOMAIN");
+    if (env_domain) //environment variable exists
+    {
+
+      dds_domainid_t env_domain_value = atoi (env_domain);
+
+      if(env_domain_value == DDS_DOMAIN_DEFAULT){
+        //then use the value from configuration
+        dds_global.m_default_domain = config.domainId;
+      }
+      else if (env_domain_value >=0){ //Valid value for environment variable
+        //use environment variable for the domain
+        dds_global.m_default_domain = env_domain_value;
+      }
+      else{ //Invalid value for environment variable
+        dds_global.m_default_domain = DDS_DOMAIN_DEFAULT ;
+      }
+
+    }
+    else{ // no environment variable defined. then use the value from configuration
+      dds_global.m_default_domain = config.domainId;
+    }
+  }
+
+  return  dds_global.m_default_domain;
+
 }
 
 /* Actual initialization called when participant created */
@@ -132,41 +158,22 @@ dds_init_impl(
   uint32_t len;
   dds_return_t ret=DDS_RETCODE_OK;
 
-
-  /* If domain not set check environment variable */
-  if (domain == DDS_DOMAIN_DEFAULT)
-  {
+  if( dds_domain_default() == DDS_DOMAIN_DEFAULT) { //exact value should be a valid domain ID
     const char * env_domain = os_getenv ("VORTEX_DOMAIN");
 
-
-    if (env_domain) //environment variable exists
-    {
-        //should be set from environment?
-        dds_domainid_t env_domain_value = atoi (env_domain);
-
-        if(env_domain_value == DDS_DOMAIN_DEFAULT){ //then use the value from configuration
-            domain = config.domainId;
-        }
-        else{ //act like the user called with this value
-            domain = env_domain_value;
-        }
-
-    }
-    else{ // no environment variable defined. then use the value from configuration
-        domain = config.domainId;;
-    }
+    ret = DDS_ERRNO(DDS_RETCODE_ERROR,
+                    "DDS Init failed: Inconsistent domain configuration detected: domain on configuration: %d, domain on environment %s",
+                    dds_domain_default(), env_domain);
+    goto fail;
   }
-
-  if ( config.domainId != domain) { //if a valid ID exists on configuration and not matching the given ID
+  if ( dds_domain_default() != domain &&  DDS_DOMAIN_DEFAULT != domain ) { //if a valid ID exists on configuration and not matching  the given ID
   		ret = DDS_ERRNO(DDS_RETCODE_ERROR,
   				"DDS Init failed: Inconsistent domain configuration detected: domain on configuration: %d, domain %d",
-                config.domainId, domain);
+                dds_domain_default(), domain);
+  	    goto fail;
   }
 
-  if( ret != DDS_RETCODE_OK){
-	goto fail;
-  }
-  else if(is_initialized){ //Did RTPS initialized before?
+  if(is_initialized){ //Did RTPS initialized before?
     return ret;
   }
 

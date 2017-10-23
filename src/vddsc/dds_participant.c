@@ -199,8 +199,8 @@ dds_create_participant(
     }
 
     pp->m_entity.m_guid = guid;
-    pp->m_entity.m_domain = dds_domain_create (config.domainId);
-    pp->m_entity.m_domainid = config.domainId;
+    pp->m_entity.m_domain = dds_domain_create (dds_domain_default());
+    pp->m_entity.m_domainid = dds_domain_default();
     pp->m_entity.m_deriver.delete = dds_participant_delete;
     pp->m_entity.m_deriver.set_qos = dds_participant_qos_set;
     pp->m_entity.m_deriver.get_instance_hdl = dds_participant_instance_hdl;
