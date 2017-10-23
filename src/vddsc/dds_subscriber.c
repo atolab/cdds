@@ -1,59 +1,75 @@
-#include <assert.h>
 #include <string.h>
 #include "kernel/dds_listener.h"
 #include "kernel/dds_qos.h"
+#include "kernel/dds_err.h"
 #include "ddsi/q_entity.h"
+#include "kernel/dds_report.h"
 
 #define DDS_SUBSCRIBER_STATUS_MASK                               \
                         DDS_DATA_ON_READERS_STATUS
 
-static dds_return_t dds_subscriber_instance_hdl(dds_entity *e, dds_instance_handle_t *i)
+static dds_return_t
+dds_subscriber_instance_hdl(
+        dds_entity *e,
+        dds_instance_handle_t *i)
 {
     assert(e);
     assert(i);
     /* TODO: Get/generate proper handle. */
-    return DDS_ERRNO (DDS_RETCODE_UNSUPPORTED);
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Generating subscriber instance handle is not supported");
 }
 
-static dds_return_t dds_subscriber_qos_validate (const dds_qos_t *qos, bool enabled)
+static dds_return_t
+dds__subscriber_qos_validate(
+        _In_ const dds_qos_t *qos,
+        _In_ bool enabled)
 {
-    dds_return_t ret = DDS_ERRNO (DDS_RETCODE_INCONSISTENT_POLICY);
-    bool consistent = true;
+    dds_return_t ret = DDS_RETCODE_OK;
 
     assert(qos);
-    consistent &= (qos->present & QP_GROUP_DATA) ? validate_octetseq(&qos->group_data) : true;
-    consistent &= (qos->present & QP_PARTITION) ? validate_stringseq(&qos->partition) : true;
-    consistent &= (qos->present & QP_PRESENTATION) ? !validate_presentation_qospolicy(&qos->presentation) : true;
-    consistent &= (qos->present & QP_PRISMTECH_ENTITY_FACTORY) ? \
-        validate_entityfactory_qospolicy(&qos->entity_factory) : true;
 
-    if (consistent) {
-        if (enabled) {
-            /* TODO: Improve/check immutable check. */
-            ret = DDS_ERRNO (DDS_RETCODE_IMMUTABLE_POLICY);
-        } else {
-            ret = DDS_RETCODE_OK;
-        }
+    if((qos->present & QP_GROUP_DATA) && !validate_octetseq(&qos->group_data)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Group data policy is inconsistent and caused an error");
     }
+    if((qos->present & QP_PARTITION) && !validate_stringseq(&qos->partition)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Partition policy is inconsistent and caused an error");
+    }
+    if((qos->present & QP_PRESENTATION) && validate_presentation_qospolicy(&qos->presentation)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Presentation policy is inconsistent and caused an error");
+    }
+    if((qos->present & QP_PRISMTECH_ENTITY_FACTORY) && !validate_entityfactory_qospolicy(&qos->entity_factory)) {
+        ret = DDS_ERRNO(DDS_RETCODE_INCONSISTENT_POLICY, "Prismtech entity factory policy is inconsistent and caused an error");
+    }
+    if(ret == DDS_RETCODE_OK && enabled && (qos->present & QP_PRESENTATION)) {
+        /* TODO: Improve/check immutable check. */
+        ret = DDS_ERRNO(DDS_RETCODE_IMMUTABLE_POLICY, "Presentation QoS policy is immutable");
+    }
+
     return ret;
 }
 
-static dds_return_t dds_subscriber_qos_set (dds_entity *e, const dds_qos_t *qos, bool enabled)
+static dds_return_t
+dds_subscriber_qos_set(
+        dds_entity *e,
+        const dds_qos_t *qos,
+        bool enabled)
 {
-    dds_return_t ret = dds_subscriber_qos_validate(qos, enabled);
+    dds_return_t ret = dds__subscriber_qos_validate(qos, enabled);
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = (dds_return_t)(DDS_ERRNO(DDS_RETCODE_UNSUPPORTED));
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "VortexDDS does not support changing QoS policies yet");
         }
     }
     return ret;
 }
 
-static dds_return_t dds_subscriber_status_validate (uint32_t mask)
+static dds_return_t
+dds_subscriber_status_validate(
+        uint32_t mask)
 {
     return (mask & ~(DDS_SUBSCRIBER_STATUS_MASK)) ?
-                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER) :
+                     DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "Invalid status mask") :
                      DDS_RETCODE_OK;
 }
 
@@ -61,7 +77,11 @@ static dds_return_t dds_subscriber_status_validate (uint32_t mask)
   Set boolean on readers that indicates state of DATA_ON_READERS
   status on parent subscriber
 */
-static dds_return_t dds_subscriber_status_propagate (dds_entity *sub, uint32_t mask, bool set)
+static dds_return_t
+dds_subscriber_status_propagate(
+        dds_entity *sub,
+        uint32_t mask,
+        bool set)
 {
     if (mask & DDS_DATA_ON_READERS_STATUS) {
         dds_entity *iter = sub->m_children;
@@ -75,6 +95,46 @@ static dds_return_t dds_subscriber_status_propagate (dds_entity *sub, uint32_t m
     return DDS_RETCODE_OK;
 }
 
+_Requires_exclusive_lock_held_(participant)
+_Check_return_ dds_entity_t
+dds__create_subscriber_l(
+        _Inout_  dds_entity *participant, /* entity-lock must be held */
+        _In_opt_ const dds_qos_t *qos,
+        _In_opt_ const dds_listener_t *listener)
+{
+    dds_subscriber * sub;
+    dds_entity_t subscriber;
+    dds_return_t ret;
+    dds_qos_t * new_qos;
+
+    /* Validate qos */
+    if (qos) {
+        if ((ret = dds__subscriber_qos_validate(qos, false)) != DDS_RETCODE_OK) {
+            goto err_param;
+        }
+        new_qos = dds_qos_create();
+        /* Only returns failure when one of the qos args is NULL, which
+         * is not the case here. */
+        (void)dds_qos_copy(new_qos, qos);
+    } else {
+        new_qos = NULL;
+    }
+
+    /* Create subscriber */
+    sub = dds_alloc(sizeof(*sub));
+    subscriber = dds_entity_init(&sub->m_entity, participant, DDS_KIND_SUBSCRIBER, new_qos, listener, DDS_SUBSCRIBER_STATUS_MASK);
+    sub->m_entity.m_deriver.set_qos = dds_subscriber_qos_set;
+    sub->m_entity.m_deriver.validate_status = dds_subscriber_status_validate;
+    sub->m_entity.m_deriver.propagate_status = dds_subscriber_status_propagate;
+    sub->m_entity.m_deriver.get_instance_hdl = dds_subscriber_instance_hdl;
+
+    return subscriber;
+
+    /* Error handling */
+err_param:
+    return ret;
+}
+
 _Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
 _Must_inspect_result_ dds_entity_t
 dds_create_subscriber(
@@ -83,39 +143,21 @@ dds_create_subscriber(
         _In_opt_ const dds_listener_t *listener)
 {
     dds_entity * par;
-    dds_subscriber * sub;
     dds_entity_t hdl;
-    dds_qos_t * new_qos = NULL;
-    dds_return_t ret;
-    int32_t errnr;
+    dds__retcode_t errnr;
+
+    DDS_REPORT_STACK();
 
     errnr = dds_entity_lock(participant, DDS_KIND_PARTICIPANT, &par);
     if (errnr != DDS_RETCODE_OK) {
-        return DDS_ERRNO(errnr);
+        hdl = DDS_ERRNO(errnr, "Error occurred on locking participant");
+        return hdl;
     }
 
-    /* Validate qos */
-    if (qos) {
-        ret = dds_subscriber_qos_validate(qos, false);
-        if (ret != DDS_RETCODE_OK) {
-            dds_entity_unlock(par);
-            return ret;
-        }
-        new_qos = dds_qos_create();
-        /* Only returns failure when one of the qos args is NULL, which
-         * is not the case here. */
-        (void)dds_qos_copy(new_qos, qos);
-    }
-
-    /* Create subscriber */
-    sub = dds_alloc(sizeof(*sub));
-    hdl = dds_entity_init(&sub->m_entity, par, DDS_KIND_SUBSCRIBER, new_qos, listener, DDS_SUBSCRIBER_STATUS_MASK);
-    sub->m_entity.m_deriver.set_qos = dds_subscriber_qos_set;
-    sub->m_entity.m_deriver.validate_status = dds_subscriber_status_validate;
-    sub->m_entity.m_deriver.propagate_status = dds_subscriber_status_propagate;
-    sub->m_entity.m_deriver.get_instance_hdl = dds_subscriber_instance_hdl;
+    hdl = dds__create_subscriber_l(par, qos, listener);
     dds_entity_unlock(par);
 
+    DDS_REPORT_FLUSH(hdl <= 0);
     return hdl;
 }
 
@@ -126,11 +168,15 @@ dds_notify_readers(
 {
     dds_entity *iter;
     dds_entity *sub;
-    int32_t errnr;
+    dds__retcode_t errnr;
+    dds_return_t ret;
+
+    DDS_REPORT_STACK();
 
     errnr = dds_entity_lock(subscriber, DDS_KIND_SUBSCRIBER, &sub);
     if (errnr == DDS_RETCODE_OK) {
         errnr = DDS_RETCODE_UNSUPPORTED;
+        ret = DDS_ERRNO(errnr, "Unsupported operation");
         iter = sub->m_children;
         while (iter) {
             os_mutexLock(&iter->m_mutex);
@@ -139,25 +185,27 @@ dds_notify_readers(
             iter = iter->m_next;
         }
         dds_entity_unlock(sub);
+    } else {
+        ret = DDS_ERRNO(errnr, "Error occurred on locking subscriber");
     }
 
-    return DDS_ERRNO(errnr);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+    return ret;
 }
 
 dds_return_t
-dds_subscriber_begin_coherent
-(
-    dds_entity_t e
-)
+dds_subscriber_begin_coherent(
+        _In_ dds_entity_t e)
 {
-    return DDS_RETCODE_UNSUPPORTED;
+    /* TODO: CHAM-124 Currently unsupported. */
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Using coherency to get a coherent data set is not currently being supported");
 }
 
 dds_return_t
-dds_subscriber_end_coherent
-(
-    dds_entity_t e
-)
+dds_subscriber_end_coherent(
+        _In_ dds_entity_t e)
 {
-    return DDS_RETCODE_UNSUPPORTED;
+    /* TODO: CHAM-124 Currently unsupported. */
+    return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Using coherency to get a coherent data set is not currently being supported");
 }
+

@@ -1,4 +1,6 @@
-add_library(GetTime INTERFACE)
+if (NOT TARGET GetTime)
+  add_library(GetTime INTERFACE)
+endif()
 
 include(CheckLibraryExists)
 

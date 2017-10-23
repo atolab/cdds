@@ -1,7 +1,6 @@
 #ifndef _DDS_QOS_H_
 #define _DDS_QOS_H_
 
-#include "kernel/dds_types.h"
 #include "kernel/dds_entity.h"
 #include "ddsi/q_xqos.h"
 #include "ddsi/q_time.h"
@@ -19,6 +18,7 @@ bool validate_reliability_qospolicy (const nn_reliability_qospolicy_t * reliabil
 bool validate_stringseq (const nn_stringseq_t* seq);
 
 bool dds_qos_validate_common (const dds_qos_t *qos);
+dds_return_t dds_qos_validate_mutable_common (_In_ const dds_qos_t *qos);
 
 #if defined (__cplusplus)
 }

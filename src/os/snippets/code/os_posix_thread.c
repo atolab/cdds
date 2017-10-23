@@ -24,12 +24,10 @@
 #include <strings.h>
 #include <string.h>
 #include <stdio.h>
-#ifndef INTEGRITY
 #include <signal.h>
 /* TODO: should introduce a HAVE_PRCTL define rather than blacklisting some platforms */
 #if !defined __VXWORKS__ && !defined __APPLE__
 #include <sys/prctl.h>
-#endif
 #endif
 #include <limits.h>
 
@@ -42,11 +40,7 @@ typedef struct {
 static pthread_key_t os_threadNameKey;
 static pthread_key_t os_threadMemKey;
 
-static os_threadHook os_threadCBs;
-
-#ifndef INTEGRITY
 static sigset_t os_threadBlockAllMask;
-#endif
 
 /** \brief Initialize the thread private memory array
  *
@@ -71,13 +65,13 @@ os_threadMemInit (
     if (pthreadMemArray != NULL) {
         memset (pthreadMemArray, 0, sizeof(void *) * OS_THREAD_MEM_ARRAY_SIZE);
         if (pthread_setspecific (os_threadMemKey, pthreadMemArray) == EINVAL) {
-            OS_REPORT (OS_ERROR, "os_threadMemInit", 4,
+            OS_ERROR("os_threadMemInit", 4,
                          "pthread_setspecific failed with error EINVAL (%d), "
                          "invalid threadMemKey value", EINVAL);
             os_free(pthreadMemArray);
         }
     } else {
-        OS_REPORT (OS_ERROR, "os_threadMemInit", 3, "Out of heap memory");
+        OS_ERROR("os_threadMemInit", 3, "Out of heap memory");
     }
 }
 
@@ -112,44 +106,9 @@ os_threadMemExit(
         os_free (pthreadMemArray);
         pthreadMemArray = NULL;
         if (pthread_setspecific (os_threadMemKey, pthreadMemArray) == EINVAL) {
-            OS_REPORT (OS_ERROR, "os_threadMemExit", 4, "pthread_setspecific failed with error %d", EINVAL);
+            OS_ERROR("os_threadMemExit", 4, "pthread_setspecific failed with error %d", EINVAL);
         }
     }
-}
-
-static int
-os_threadStartCallback(
-    os_threadId id,
-    void *arg)
-{
-    OS_UNUSED_ARG(id);
-    OS_UNUSED_ARG(arg);
-    return 0;
-}
-
-static int
-os_threadStopCallback(
-    os_threadId id,
-    void *arg)
-{
-    OS_UNUSED_ARG(id);
-    OS_UNUSED_ARG(arg);
-    return 0;
-}
-
-static void
-os_threadHookInit(void)
-{
-    os_threadCBs.startCb = os_threadStartCallback;
-    os_threadCBs.startArg = NULL;
-    os_threadCBs.stopCb = os_threadStopCallback;
-    os_threadCBs.stopArg = NULL;
-}
-
-static void
-os_threadHookExit(void)
-{
-    return;
 }
 
 /** \brief Initialize the thread module
@@ -164,14 +123,9 @@ os_threadModuleInit (
     pthread_key_create (&os_threadNameKey, NULL);
     pthread_key_create (&os_threadMemKey, NULL);
 
-#ifndef INTEGRITY
     sigfillset(&os_threadBlockAllMask);
-#endif
 
     os_threadMemInit();
-
-    os_threadHookInit();
-
 }
 
 /** \brief Deinitialize the thread module
@@ -182,46 +136,10 @@ os_threadModuleInit (
 void
 os_threadModuleExit(void)
 {
-    os_threadHookExit();
     os_threadMemExit();
 
     pthread_key_delete(os_threadNameKey);
     pthread_key_delete(os_threadMemKey);
-}
-
-os_result
-os_threadModuleSetHook(
-    os_threadHook *hook,
-    os_threadHook *oldHook)
-{
-    os_result result;
-    os_threadHook oh;
-
-    result = os_resultFail;
-    oh = os_threadCBs;
-
-    if (hook) {
-        if (hook->startCb) {
-            os_threadCBs.startCb = hook->startCb;
-            os_threadCBs.startArg = hook->startArg;
-        } else {
-            os_threadCBs.startCb = os_threadStartCallback;
-            os_threadCBs.startArg = NULL;
-        }
-        if (hook->stopCb) {
-            os_threadCBs.stopCb = hook->stopCb;
-            os_threadCBs.stopArg = hook->stopArg;
-        } else {
-            os_threadCBs.stopCb = os_threadStopCallback;
-            os_threadCBs.stopArg = NULL;
-        }
-
-        if (oldHook) {
-            *oldHook = oh;
-        }
-    }
-
-    return result;
 }
 
 /** \brief Wrap thread start routine
@@ -241,15 +159,13 @@ os_startRoutineWrapper (
 
     resultValue = 0;
 
-#if defined(INTEGRITY)
-    SetTaskName(CurrentTask(), context->threadName, strlen(context->threadName));
-#elif !defined(__VXWORKS__) && !defined(__APPLE__)
+#if !defined(__VXWORKS__) && !defined(__APPLE__)
     prctl(PR_SET_NAME, context->threadName);
 #endif
 
     /* store the thread name with the thread via thread specific data; failure isn't  */
     if (pthread_setspecific (os_threadNameKey, context->threadName) == EINVAL) {
-        OS_REPORT (OS_WARNING, "os_startRoutineWrapper", 0,
+        OS_WARNING("os_startRoutineWrapper", 0,
                      "pthread_setspecific failed with error EINVAL (%d), "
                      "invalid os_threadNameKey value", EINVAL);
     }
@@ -258,13 +174,10 @@ os_startRoutineWrapper (
     os_threadMemInit ();
 
     id.v = pthread_self();
-    /* Call the start callback */
-    if (os_threadCBs.startCb(id, os_threadCBs.startArg) == 0) {
-        /* Call the user routine */
-        resultValue = context->startRoutine (context->arguments);
-    }
+    /* Call the user routine */
+    resultValue = context->startRoutine (context->arguments);
 
-    os_threadCBs.stopCb(id, os_threadCBs.stopArg);
+    os_report_stack_free();
 
     /* Free the thread context resources, arguments is responsibility */
     /* for the caller of os_procCreate                                */
@@ -315,12 +228,8 @@ os_threadCreate (
 
     if (tattr.schedClass == OS_SCHED_DEFAULT) {
 #if 0 /* FIXME! */
-#ifndef PIKEOS_POSIX
-#ifndef VXWORKS_RTP
         tattr.schedClass = os_procAttrGetClass ();
-#endif
         tattr.schedPriority = os_procAttrGetPriority ();
-#endif
 #endif
     }
     if (pthread_attr_init (&attr) != 0)
@@ -369,21 +278,21 @@ os_threadCreate (
              if (result != 0) {
                 char errmsg[64];
                 (void)os_strerror_r(result, errmsg, sizeof(errmsg));
-                OS_REPORT (OS_WARNING, "os_threadCreate", 2,
+                OS_WARNING("os_threadCreate", 2,
                              "pthread_attr_setschedpolicy failed for SCHED_FIFO with "\
                              "error %d (%s) for thread '%s', reverting to SCHED_OTHER.",
                              result, errmsg, name);
 
                 result = pthread_attr_setschedpolicy (&attr, SCHED_OTHER);
                 if (result != 0) {
-                   OS_REPORT (OS_WARNING, "os_threadCreate", 2, "pthread_attr_setschedpolicy failed with error %d (%s)", result, name);
+                   OS_WARNING("os_threadCreate", 2, "pthread_attr_setschedpolicy failed with error %d (%s)", result, name);
                 }
              }
           } else {
              result = pthread_attr_setschedpolicy (&attr, SCHED_OTHER);
 
              if (result != 0) {
-                OS_REPORT (OS_WARNING, "os_threadCreate", 2,
+                OS_WARNING("os_threadCreate", 2,
                              "pthread_attr_setschedpolicy failed with error %d (%s)",
                              result, name);
              }
@@ -392,7 +301,7 @@ os_threadCreate (
 
           if ((tattr.schedPriority < sched_get_priority_min(policy)) ||
               (tattr.schedPriority > sched_get_priority_max(policy))) {
-             OS_REPORT (OS_WARNING, "os_threadCreate", 2,
+             OS_WARNING("os_threadCreate", 2,
                           "scheduling priority outside valid range for the policy "\
                           "reverted to valid value (%s)", name);
              sched_param.sched_priority = (sched_get_priority_min(policy) +
@@ -410,7 +319,7 @@ os_threadCreate (
           /* start the thread */
           result = pthread_attr_setschedparam (&attr, &sched_param);
           if (result != 0) {
-             OS_REPORT (OS_WARNING, "os_threadCreate", 2,
+             OS_WARNING("os_threadCreate", 2,
                           "pthread_attr_setschedparam failed with error %d (%s)",
                           result, name);
           }
@@ -423,7 +332,7 @@ os_threadCreate (
               */
              if((create_ret == EPERM) && (tattr.schedClass == OS_SCHED_REALTIME))
              {
-                OS_REPORT (OS_WARNING, "os_threadCreate", 2,
+                OS_WARNING("os_threadCreate", 2,
                              "pthread_create failed with SCHED_FIFO "     \
                              "for thread '%s', reverting to SCHED_OTHER.",
                              name);
@@ -433,7 +342,7 @@ os_threadCreate (
                 if ((tattr.schedPriority < sched_get_priority_min(policy)) ||
                     (tattr.schedPriority > sched_get_priority_max(policy)))
                 {
-                   OS_REPORT (OS_WARNING, "os_threadCreate", 2,
+                   OS_WARNING("os_threadCreate", 2,
                                 "scheduling priority outside valid range for the " \
                                 "policy reverted to valid value (%s)", name);
                    sched_param.sched_priority =
@@ -445,7 +354,7 @@ os_threadCreate (
 
                 result = pthread_attr_setschedparam (&attr, &sched_param);
                 if (result != 0) {
-                   OS_REPORT (OS_WARNING, "os_threadCreate", 2,
+                   OS_WARNING("os_threadCreate", 2,
                                 "pthread_attr_setschedparam failed "      \
                                 "with error %d (%s)", result, name);
                 } else {
@@ -459,7 +368,7 @@ os_threadCreate (
           if(create_ret != 0){
              os_free (threadContext->threadName);
              os_free (threadContext);
-             OS_REPORT (OS_WARNING, "os_threadCreate", 2, "pthread_create failed with error %d (%s)", create_ret, name);
+             OS_WARNING("os_threadCreate", 2, "pthread_create failed with error %d (%s)", create_ret, name);
              rv = os_resultFail;
           }
        }
@@ -476,7 +385,7 @@ os_threadCreate (
 uintmax_t
 os_threadIdToInteger(os_threadId id)
 {
-   return id.v;
+   return (uintmax_t)(uintptr_t)id.v;
 }
 
 /** \brief Return the thread ID of the calling thread
@@ -495,7 +404,7 @@ os_threadIdSelf (void)
  *
  * \b os_threadFigureIdentity determines the numeric identity
  * of a thread. POSIX does not identify threads by name,
- * therefor only the numeric identification is returned,
+ * therefore only the numeric identification is returned,
  */
 int32_t
 os_threadFigureIdentity (
@@ -579,7 +488,7 @@ os_threadWaitExit (
     if (result != 0) {
         /* NOTE: The below report actually is a debug output; makes no sense from
          * a customer perspective. Made OS_INFO for now. */
-        OS_REPORT (OS_INFO, "os_threadWaitExit", 2, "pthread_join(0x%"PRIxMAX") failed with error %d", os_threadIdToInteger(threadId), result);
+        OS_INFO("os_threadWaitExit", 2, "pthread_join(0x%"PRIxMAX") failed with error %d", os_threadIdToInteger(threadId), result);
         rv = os_resultFail;
     } else {
         rv = os_resultSuccess;
@@ -693,3 +602,87 @@ os_threadMemGet (
     return threadMemLoc;
 }
 
+
+static pthread_key_t cleanup_key;
+static pthread_once_t cleanup_once = PTHREAD_ONCE_INIT;
+
+static void
+os_threadCleanupFini(
+    void *data)
+{
+    os_iter *itr;
+    os_threadCleanup *obj;
+
+    if (data != NULL) {
+        itr = (os_iter *)data;
+        for (obj = (os_threadCleanup *)os_iterTake(itr, -1);
+             obj != NULL;
+             obj = (os_threadCleanup *)os_iterTake(itr, -1))
+        {
+            assert(obj->func != NULL);
+            obj->func(obj->data);
+            os_free(obj);
+        }
+        os_iterFree(itr, NULL);
+    }
+}
+
+static void
+os_threadCleanupInit(
+    void)
+{
+    (void)pthread_key_create(&cleanup_key, &os_threadCleanupFini);
+}
+
+/* os_threadCleanupPush and os_threadCleanupPop are mapped onto a destructor
+   registered with pthread_key_create in stead of being mapped directly onto
+   pthread_cleanup_push/pthread_cleanup_pop because the cleanup routines could
+   otherwise be popped of the stack by the user */
+void
+os_threadCleanupPush(
+    void (*func)(void*),
+    void *data)
+{
+    os_iter *itr;
+    os_threadCleanup *obj;
+
+    assert(func != NULL);
+
+    (void)pthread_once(&cleanup_once, &os_threadCleanupInit);
+    itr = (os_iter *)pthread_getspecific(cleanup_key);
+    if (itr == NULL) {
+        itr = os_iterNew();
+        assert(itr != NULL);
+        if (pthread_setspecific(cleanup_key, itr) == EINVAL) {
+            OS_WARNING(OS_FUNCTION, 0, "pthread_setspecific failed with error EINVAL (%d)", EINVAL);
+            os_iterFree(itr, NULL);
+            itr = NULL;
+        }
+    }
+
+    if(itr) {
+        obj = os_malloc(sizeof(*obj));
+        obj->func = func;
+        obj->data = data;
+        os_iterAppend(itr, obj);
+    }
+}
+
+void
+os_threadCleanupPop(
+    int execute)
+{
+    os_iter *itr;
+    os_threadCleanup *obj;
+
+    (void)pthread_once(&cleanup_once, &os_threadCleanupInit);
+    if ((itr = (os_iter *)pthread_getspecific(cleanup_key)) != NULL) {
+        obj = (os_threadCleanup *)os_iterTake(itr, -1);
+        if (obj != NULL) {
+            if (execute) {
+                obj->func(obj->data);
+            }
+            os_free(obj);
+        }
+    }
+}

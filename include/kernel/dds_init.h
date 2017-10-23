@@ -7,7 +7,9 @@
 extern "C" {
 #endif
 
-int dds_init_impl (dds_domainid_t domain);
+dds_return_t
+dds_init_impl(
+        _In_ dds_domainid_t domain);
 
 /**
  *Description : Initialization function, called from main. This operation
@@ -18,8 +20,8 @@ int dds_init_impl (dds_domainid_t domain);
  *Arguments :
  *-# Returns 0 on success or a non-zero error status
  **/
-
-int dds_init ();
+dds_return_t
+dds_init(void);
 
 /* Finalization function, called from main */
 
@@ -30,7 +32,8 @@ int dds_init ();
  *Arguments :
  *-# None
  **/
-void dds_fini (void);
+void
+dds_fini(void);
 
 #if defined (__cplusplus)
 }

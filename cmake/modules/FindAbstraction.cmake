@@ -1,5 +1,7 @@
 
-add_library(Abstraction INTERFACE)
+if (NOT TARGET Abstraction)
+  add_library(Abstraction INTERFACE)
+endif()
 
 # Link with the platform-specific threads library that find_package provides us
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)

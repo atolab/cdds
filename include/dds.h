@@ -14,7 +14,17 @@
 #include "dds/dds_export.h"
 
 /* TODO: Move to appropriate location */
+/**
+ * Return code indicating success (DDS_RETCODE_OK) or failure. If a given
+ * operation failed the value will be a unique error code and dds_err_nr() must
+ * be used to extract the DDS_RETCODE_* value.
+ */
 typedef _Return_type_success_(return >= 0) int32_t dds_return_t;
+/**
+ * Handle to an entity. A valid entity handle will always have a positive
+ * integer value. Should the value be negative, the value represents a unique
+ * error code. dds_err_nr() can be used to extract the DDS_RETCODE_* value.
+ */
 typedef _Return_type_success_(return >  0) int32_t dds_entity_t;
 
 /* Sub components */
@@ -28,118 +38,131 @@ typedef _Return_type_success_(return >  0) int32_t dds_entity_t;
 #include "dds/dds_public_status.h"
 #include "dds/dds_public_listener.h"
 #include "dds/dds_public_log.h"
+#include "dds_dcps_builtintopics.h"
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
 
 /**
- * Description : Returns the default DDS domain id. This can be configured
- * in xml or set as an evironment variable (VORTEX_DOMAIN).
+ * @brief Returns the default domain identifier.
  *
- * Arguments :
- *   -# None
- *   -# Returns the default domain id
+ * The default domain identifier can be configured in the configuration file
+ * or be set through an evironment variable (VORTEX_DOMAIN).
+ *
+ * @returns Default domain identifier
  */
 DDS_EXPORT dds_domainid_t dds_domain_default (void);
 
+/* @defgroup builtintopic_constants Convenience constants for referring to builtin topics
+ *
+ * These constants can be used in place of an actual dds_topic_t, when creating
+ * readers or writers for builtin-topics.
+ *
+ * @{
+ */
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_DCPSPARTICIPANT;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_CMPARTICIPANT;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_DCPSTYPE;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_DCPSTOPIC;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_DCPSPUBLICATION;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_CMPUBLISHER;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_CMSUBSCRIBER;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_CMDATAWRITER;
+extern DDS_EXPORT const dds_entity_t DDS_BUILTIN_TOPIC_CMDATAREADER;
+/** @}*/
+
 /** @name Communication Status definitions
   @{**/
+/** Another topic exists with the same name but with different characteristics. */
 #define DDS_INCONSISTENT_TOPIC_STATUS          1u
+/** The deadline that the writer has committed through its deadline QoS policy was not respected for a specific instance. */
 #define DDS_OFFERED_DEADLINE_MISSED_STATUS     2u
+/** The deadline that the reader was expecting through its deadline QoS policy was not respected for a specific instance. */
 #define DDS_REQUESTED_DEADLINE_MISSED_STATUS   4u
+/** A QoS policy setting was incompatible with what was requested. */
 #define DDS_OFFERED_INCOMPATIBLE_QOS_STATUS    32u
+/** A QoS policy setting was incompatible with what is offered. */
 #define DDS_REQUESTED_INCOMPATIBLE_QOS_STATUS  64u
+/** A sample has been lost (never received). */
 #define DDS_SAMPLE_LOST_STATUS                 128u
+/** A (received) sample has been rejected. */
 #define DDS_SAMPLE_REJECTED_STATUS             256u
+/** New information is available. */
 #define DDS_DATA_ON_READERS_STATUS             512u
+/** New information is available. */
 #define DDS_DATA_AVAILABLE_STATUS              1024u
+/** The liveliness that the DDS_DataWriter has committed through its liveliness QoS policy was not respected; thus readers will consider the writer as no longer "alive". */
 #define DDS_LIVELINESS_LOST_STATUS             2048u
+/** The liveliness of one or more writers, that were writing instances read through the readers has changed. Some writers have become "alive" or "not alive". */
 #define DDS_LIVELINESS_CHANGED_STATUS          4096u
+/** The writer has found a reader that matches the topic and has a compatible QoS. */
 #define DDS_PUBLICATION_MATCHED_STATUS         8192u
+/** The reader has found a writer that matches the topic and has a compatible QoS. */
 #define DDS_SUBSCRIPTION_MATCHED_STATUS        16384u
 /** @}*/
 
-/**
- * dds_sample_state_t
- * \brief defines the state for a data value
- * -# DDS_SST_READ - DataReader has already accessed the sample by read
- * -# DDS_SST_NOT_READ - DataReader has not accessed that sample before
- */
+/** Read state for a data value */
 typedef enum dds_sample_state
 {
-  DDS_SST_READ = DDS_READ_SAMPLE_STATE,
-  DDS_SST_NOT_READ = DDS_NOT_READ_SAMPLE_STATE
+  DDS_SST_READ = DDS_READ_SAMPLE_STATE, /**<DataReader has already accessed the sample by read */
+  DDS_SST_NOT_READ = DDS_NOT_READ_SAMPLE_STATE /**<DataReader has not accessed the sample before */
 }
 dds_sample_state_t;
 
-/**
- * dds_view_state_t
- * \brief defines the view state of an instance relative to the samples
- * -# DDS_VST_NEW - DataReader is accessing the sample for the first time when the
- *                  instance is alive
- * -# DDS_VST_OLD - DataReader has accessed the sample before
- */
+/** View state of an instance relative to the samples */
 typedef enum dds_view_state
 {
+  /** DataReader is accessing the sample for the first time when the instance is alive */
   DDS_VST_NEW = DDS_NEW_VIEW_STATE,
+  /** DataReader accessed the sample before */
   DDS_VST_OLD = DDS_NOT_NEW_VIEW_STATE
 }
 dds_view_state_t;
 
-/**
- * dds_instance_state_t
- * \brief defines the state of the instance
- * -# DDS_IST_ALIVE - Samples received for the instance from the live data writers
- * -# DDS_IST_NOT_ALIVE_DISPOSED - Instance was explicitly disposed by the data writer
- * -# DDS_IST_NOT_ALIVE_NO_WRITERS - Instance has been declared as not alive by data reader
- *                                   as there are no live data writers writing that instance
- */
+/** Defines the state of the instance */
 typedef enum dds_instance_state
 {
+  /** Samples received for the instance from the live data writers */
   DDS_IST_ALIVE = DDS_ALIVE_INSTANCE_STATE,
+  /** Instance was explicitly disposed by the data writer */
   DDS_IST_NOT_ALIVE_DISPOSED = DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE,
+  /** Instance has been declared as not alive by data reader as there are no live data writers writing that instance */
   DDS_IST_NOT_ALIVE_NO_WRITERS = DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE
 }
 dds_instance_state_t;
 
-/**
- * Structure dds_sample_info_t - contains information about the associated data value
- * -# sample_state - \ref dds_sample_state_t
- * -# view_state - \ref dds_view_state_t
- * -# instance_state - \ref dds_instance_state_t
- * -# valid_data - indicates whether there is a data associated with a sample
- *    - true, indicates the data is valid
- *    - false, indicates the data is invalid, no data to read
- * -# source_timestamp - timestamp of a data instance when it is written
- * -# instance_handle - handle to the data instance
- * -# publication_handle - handle to the publisher
- * -# disposed_generation_count - count of instance state change from
- *    NOT_ALIVE_DISPOSED to ALIVE
- * -# no_writers_generation_count - count of instance state change from
- *    NOT_ALIVE_NO_WRITERS to ALIVE
- * -# sample_rank - indicates the number of samples of the same instance
- *    that follow the current one in the collection
- * -# generation_rank - difference in generations between the sample and most recent sample
- *    of the same instance that appears in the returned collection
- * -# absolute_generation_rank - difference in generations between the sample and most recent sample
- *    of the same instance when read/take was called
- * -# reception_timestamp - timestamp of a data instance when it is added to a read queue
- */
+/** Contains information about the associated data value */
 typedef struct dds_sample_info
 {
+  /** Sample state */
   dds_sample_state_t sample_state;
+  /** View state */
   dds_view_state_t view_state;
+  /** Instance state */
   dds_instance_state_t instance_state;
+  /** Indicates whether there is a data associated with a sample
+   *  - true, indicates the data is valid
+   *  - false, indicates the data is invalid, no data to read */
   bool valid_data;
+  /** timestamp of a data instance when it is written */
   dds_time_t source_timestamp;
+  /** handle to the data instance */
   dds_instance_handle_t instance_handle;
+  /** handle to the publisher */
   dds_instance_handle_t publication_handle;
+  /** count of instance state change from NOT_ALIVE_DISPOSED to ALIVE */
   uint32_t disposed_generation_count;
+  /** count of instance state change from NOT_ALIVE_NO_WRITERS to ALIVE */
   uint32_t no_writers_generation_count;
+  /** indicates the number of samples of the same instance that follow the current one in the collection */
   uint32_t sample_rank;
+  /** difference in generations between the sample and most recent sample of the same instance that appears in the returned collection */
   uint32_t generation_rank;
+  /** difference in generations between the sample and most recent sample of the same instance when read/take was called */
   uint32_t absolute_generation_rank;
+  /** timestamp of a data instance when it is added to a read queue */
   dds_time_t reception_timestamp; /* NOTE: VLite extension */
 }
 dds_sample_info_t;
@@ -184,9 +207,6 @@ dds_sample_info_t;
  * Entities created with a parent that is disabled, are created disabled regardless of
  * the setting of the entityfactory policy.
  *
- * Calling dds_enable on an Entity whose parent is not enabled
- * will fail and return DDS_RETCODE_PRECONDITION_NOT_MET.
- *
  * If the entityfactory policy has autoenable_created_entities
  * set to TRUE, the dds_enable operation on the parent will
  * automatically enable all child entities created with the parent.
@@ -195,22 +215,21 @@ dds_sample_info_t;
  * Entity is enabled. Conditions associated with an Entity that
  * is not enabled are "inactive", that is, have a trigger_value which is FALSE.
  *
- * @param[in]  e        The entity to enable.
+ * @param[in]  entity  The entity to enable.
  *
- * @returns  0 - Success (DDS_RETCODE_OK).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                  The listeners of to the entity have been successfully been
- *                  copied into the specified listener parameter.
+ *             The listeners of to the entity have been successfully been copied
+ *             into the specified listener parameter.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  * @retval DDS_RETCODE_PRECONDITION_NOT_MET
- *                  The parent of the given Entity is not enabled.
+ *             The parent of the given Entity is not enabled.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -230,27 +249,24 @@ dds_enable(
  * This operation will delete the given entity. It will also automatically
  * delete all its children, childrens' children, etc entities.
  *
- * TODO: Link to generic dds entity relations documentation.
+ * @param[in]  entity  Entity to delete.
  *
- * @param[in]  entity  Entity from which to get its parent.
+ * @returns A dds_return_t indicating success or failure.
  *
- * @returns  0 - Success (DDS_RETCODE_OK).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
- *
+ * @retval DDS_RETCODE_OK
+ *             The entity and its children (recursive are deleted).
  * @retval DDS_RETCODE_ERROR
- *                  The entity and its children (recursive are deleted).
- * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
+/* TODO: Link to generic dds entity relations documentation. */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT dds_return_t
 dds_delete(
         _In_ dds_entity_t entity);
-
 
 /**
  * @brief Get entity publisher.
@@ -259,25 +275,24 @@ dds_delete(
  * For instance, it will return the Publisher that was used when
  * creating a DataWriter (when that DataWriter was provided here).
  *
- * TODO: Link to generic dds entity relations documentation.
- *
  * @param[in]  entity  Entity from which to get its publisher.
  *
- * @returns >0 - Success (valid entity handle).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A valid entity or an error code.
  *
+ * @retval >0
+ *             A valid publisher handle.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
+/* TODO: Link to generic dds entity relations documentation. */
 _Pre_satisfies_(((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER))
 DDS_EXPORT dds_entity_t
 dds_get_publisher(
         _In_ dds_entity_t writer);
-
 
 /**
  * @brief Get entity subscriber.
@@ -286,27 +301,26 @@ dds_get_publisher(
  * For instance, it will return the Subscriber that was used when
  * creating a DataReader (when that DataReader was provided here).
  *
- * TODO: Link to generic dds entity relations documentation.
- *
  * @param[in]  entity  Entity from which to get its subscriber.
  *
- * @returns >0 - Success (valid entity handle).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A valid subscriber handle or an error code.
  *
+ * @retval >0
+ *             A valid subscriber handle.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
+/* TODO: Link to generic dds entity relations documentation. */
 _Pre_satisfies_(((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER    ) || \
                 ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
                 ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
 DDS_EXPORT dds_entity_t
 dds_get_subscriber(
         _In_ dds_entity_t entity);
-
 
 /**
  * @brief Get entity datareader.
@@ -315,27 +329,25 @@ dds_get_subscriber(
  * For instance, it will return the DataReader that was used when
  * creating a ReadCondition (when that ReadCondition was provided here).
  *
- * TODO: Link to generic dds entity relations documentation.
- *
  * @param[in]  entity  Entity from which to get its datareader.
  *
- * @returns >0 - Success (valid entity handle).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A valid reader handle or an error code.
  *
+ * @retval >0
+ *             A valid reader handle.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
+/* TODO: Link to generic dds entity relations documentation. */
 _Pre_satisfies_(((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
                 ((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
 DDS_EXPORT dds_entity_t
 dds_get_datareader(
         _In_ dds_entity_t condition);
-
-
 
 /**
  * @brief Get the mask of a condition.
@@ -345,17 +357,18 @@ dds_get_datareader(
  *
  * @param[in]  condition  Read or Query condition that has a mask.
  *
- * @returns  0 - Success (given mask is set).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
+ * @retval DDS_RETCODE_OK
+ *             Success (given mask is set).
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  The mask arg is NULL.
+ *             The mask arg is NULL.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
                 ((condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY) )
@@ -364,10 +377,23 @@ dds_get_mask(
         _In_ dds_entity_t condition,
         _Out_ uint32_t   *mask);
 
-/* TODO: document. */
+/**
+ * @brief Returns the instance handle that represents the entity.
+ *
+ * @param[in]   entity  Entity of which to get the instance handle.
+ * @param[out]  ihdl    Pointer to dds_instance_handle_t.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             Success.
+ * @retval DDS_RETCODE_ERROR
+ *             An internal error has occurred.
+ */
+/* TODO: Check list of return codes is complete. */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
-dds_instancehandle_get(
+dds_get_instance_handle(
         _In_  dds_entity_t entity,
         _Out_ dds_instance_handle_t *ihdl);
 
@@ -378,17 +404,26 @@ dds_instancehandle_get(
   of the statuses. Enabled status analogously to DCPS spec.
 */
 
-
 /**
- * Description : Read the status(es) set for the entity based on the enabled
- * status and mask set. This operation does not clear the read status(es).
+ * @brief Read the status set for the entity
  *
- * Arguments :
- *   -# e Entity on which the status has to be read
- *   -# status Returns the status set on the entity, based on the enabled status
- *   -# mask Filter the status condition to be read (can be NULL)
- *   -# Returns 0 on success, or a non-zero error value if the mask does not
- *      correspond to the entity
+ * This operation reads the status(es) set for the entity based on
+ * the enabled status and mask set. It does not clear the read status(es).
+ *
+ * @param[in]  entity  Entity on which the status has to be read.
+ * @param[out] status  Returns the status set on the entity, based on the enabled status.
+ * @param[in]  mask    Filter the status condition to be read (can be NULL).
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             Success.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The entity parameter is not a valid parameter.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -398,15 +433,25 @@ dds_read_status(
         _In_  uint32_t mask);
 
 /**
- * Description : Read the status(es) set for the entity based on the enabled
- * status and mask set. This operation clears the status set after reading.
+ * @brief Read the status set for the entity
  *
- * Arguments :
- *   -# e Entity on which the status has to be read
- *   -# status Returns the status set on the entity, based on the enabled status
- *   -# mask Filter the status condition to be read (can be NULL)
- *   -# Returns 0 on success, or a non-zero error value if the mask does not
- *      correspond to the entity
+ * This operation reads the status(es) set for the entity based on the enabled
+ * status and mask set. It clears the status set after reading.
+ *
+ * @param[in]  entity  Entity on which the status has to be read.
+ * @param[out] status  Returns the status set on the entity, based on the enabled status.
+ * @param[in]  mask    Filter the status condition to be read (can be NULL).
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             Success.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The entity parameter is not a valid parameter.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -416,24 +461,48 @@ dds_take_status(
         _In_  uint32_t mask);
 
 /**
- * Description : Returns the status changes since they were last read.
+ * @brief Get changed status(es)
  *
- * Arguments :
- *   -# e Entity on which the statuses are read
- *   -# Returns the curent set of triggered statuses.
+ * This operation returns the status changes since they were last read.
+ *
+ * @param[in]  entity  Entity on which the statuses are read.
+ * @param[out] status  Returns the current set of triggered statuses.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             Success.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The entity parameter is not a valid parameter.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
-DDS_EXPORT _Check_return_ dds_return_t
+DDS_EXPORT _Must_inspect_result_ dds_return_t
 dds_get_status_changes(
         _In_  dds_entity_t entity,
         _Out_ uint32_t *status);
 
 /**
- * Description : This operation returns the status enabled on the entity
+ * @brief Get enabled status on entity
  *
- * Arguments :
- *   -# e Entity to get the status
- *   -# Returns the status that are enabled for the entity
+ * This operation returns the status enabled on the entity
+ *
+ * @param[in]  entity  Entity to get the status.
+ * @param[out] status  Status set on the entity.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             Success.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The entity parameter is not a valid parameter.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -441,15 +510,24 @@ dds_get_enabled_status(
         _In_  dds_entity_t entity,
         _Out_ uint32_t *status);
 
-
 /**
- * Description : This operation enables the status(es) based on the mask set
+ * @brief Set status enabled on entity
  *
- * Arguments :
- *   -# e Entity to enable the status
- *   -# mask Status value that indicates the status to be enabled
- *   -# Returns 0 on success, or a non-zero error value indicating failure if the mask
- *      does not correspond to the entity.
+ * This operation enables the status(es) based on the mask set
+ *
+ * @param[in]  entity  Entity to enable the status.
+ * @param[in]  mask    Status value that indicates the status to be enabled.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             Success.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The entity parameter is not a valid parameter.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT dds_return_t
@@ -470,33 +548,29 @@ dds_set_enabled_status(
  * This operation allows access to the existing set of QoS policies
  * for the entity.
  *
- * TODO: Link to generic QoS information documentation.
+ * @param[in]  entity  Entity on which to get qos.
+ * @param[out] qos     Pointer to the qos structure that returns the set policies.
  *
- * @param[in]  e    Entity on which to get qos
- * @param[out] qos  Pointer to the qos structure that returns the set policies
- *
- * @returns  0 - Success (DDS_RETCODE_OK).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                  The existing set of QoS policy values applied to the
- *                  entity has successfully been copied into the specified
- *                  qos parameter.
+ *             The existing set of QoS policy values applied to the entity
+ *             has successfully been copied into the specified qos parameter.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  The qos parameter is NULL.
+ *             The qos parameter is NULL.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
+/* TODO: Link to generic QoS information documentation. */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_get_qos(
         _In_  dds_entity_t entity,
         _Out_ dds_qos_t *qos);
-
 
 /**
  * @brief Set entity QoS policies.
@@ -511,34 +585,31 @@ dds_get_qos(
  *
  * Not all policies are changeable when the entity is enabled.
  *
- * TODO: Link to generic QoS information documentation.
- *
  * @note Currently only Latency Budget and Ownership Strength are changeable QoS
  *       that can be set.
  *
- * @param[in]  e    Entity from which to get qos
- * @param[in]  qos  Pointer to the qos structure that provides the policies
+ * @param[in]  entity  Entity from which to get qos.
+ * @param[in]  qos     Pointer to the qos structure that provides the policies.
  *
- * @returns  0 - Success (DDS_RETCODE_OK).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                  The new QoS policies are set.
+ *             The new QoS policies are set.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  The qos parameter is NULL.
+ *             The qos parameter is NULL.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  * @retval DDS_RETCODE_IMMUTABLE_POLICY
- *                  The entity is enabled and one or more of the policies of
- *                  the QoS are immutable.
+ *             The entity is enabled and one or more of the policies of the QoS
+ *             are immutable.
  * @retval DDS_RETCODE_INCONSISTENT_POLICY
- *                  A few policies within the QoS are not consistent with
- *                  each other.
+ *             A few policies within the QoS are not consistent with each other.
  */
+/* TODO: Link to generic QoS information documentation. */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_set_qos(
@@ -556,33 +627,30 @@ dds_set_qos(
  * This operation allows access to the existing listeners attached to
  * the entity.
  *
- * TODO: Link to (generic) Listener and status information.
- *
- * @param[in]  e        Entity on which to get the listeners
+ * @param[in]  entity   Entity on which to get the listeners.
  * @param[out] listener Pointer to the listener structure that returns the
  *                      set of listener callbacks.
  *
- * @returns  0 - Success (DDS_RETCODE_OK).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                  The listeners of to the entity have been successfully been
- *                  copied into the specified listener parameter.
+ *             The listeners of to the entity have been successfully been
+ *             copied into the specified listener parameter.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  The listener parameter is NULL.
+ *             The listener parameter is NULL.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
+/* TODO: Link to (generic) Listener and status information. */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_get_listener(
         _In_  dds_entity_t entity,
         _Out_ dds_listener_t * listener);
-
 
 /**
  * @brief Set entity listeners.
@@ -596,8 +664,6 @@ dds_get_listener(
  * set on the Entity will be removed.
  *
  * @note Not all listener callbacks are related to all entities.
- *
- * TODO: Link to (generic) Listener and status information.
  *
  * <b><i>Communication Status</i></b><br>
  * For each communication status, the StatusChangedFlag flag is initially set to
@@ -622,23 +688,23 @@ dds_get_listener(
  * Listener either, the Communication Status flag will be set, resulting in a
  * possible WaitSet trigger.
  *
- * @param[in]  e        Entity on which to get the listeners
- * @param[in] listener  Pointer to the listener structure that contains the
- *                      set of listener callbacks (maybe NULL).
+ * @param[in]  entity    Entity on which to get the listeners.
+ * @param[in]  listener  Pointer to the listener structure that contains the
+ *                       set of listener callbacks (maybe NULL).
  *
- * @returns  0 - Success (DDS_RETCODE_OK).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                  The listeners of to the entity have been successfully been
- *                  copied into the specified listener parameter.
+ *             The listeners of to the entity have been successfully been
+ *             copied into the specified listener parameter.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
+/* TODO: Link to (generic) Listener and status information. */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_set_listener(
@@ -667,24 +733,22 @@ dds_set_listener(
  * can be configured by setting the environment variable VORTEX_DOMAIN, if this is not set
  * the the default domain is 0. Valid values for domain id are between 0 and 230.
  *
- *
- * @param[in]  domain - The domain in which to create the participant (can be DDS_DOMAIN_DEFAULT)
- * @param[in]  qos - The QoS to set on the new participant (can be NULL)
- * @param[in]  listener - Any listener functions associated with the new participant (can be NULL)
+ * @param[in]  domain The domain in which to create the participant (can be DDS_DOMAIN_DEFAULT).
+ * @param[in]  qos The QoS to set on the new participant (can be NULL).
+ * @param[in]  listener Any listener functions associated with the new participant (can be NULL).
 
- * @returns >0 - Success (valid handle of a participant entity).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A valid participant handle or an error code.
  *
+ * @retval >0
+ *             A valid participant handle.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  */
 DDS_EXPORT _Must_inspect_result_ dds_entity_t
 dds_create_participant(
         _In_     const dds_domainid_t domain,
         _In_opt_ const dds_qos_t *qos,
         _In_opt_ const dds_listener_t *listener);
-
-
 
 /**
  * @brief Get entity parent.
@@ -693,25 +757,36 @@ dds_create_participant(
  * For instance, it will return the Participant that was used when
  * creating a Publisher (when that Publisher was provided here).
  *
- * TODO: Link to generic dds entity relations documentation.
+ * When a reader or a writer are created with a partition, then a
+ * subscriber or publisher respectively are created implicitly. These
+ * implicit subscribers or publishers will be deleted automatically
+ * when the reader or writer is deleted. However, when this function
+ * returns such an implicit entity, it is from there on out considered
+ * 'explicit'. This means that it isn't deleted automatically anymore.
+ * The application should explicitly call dds_delete on those entities
+ * now (or delete the parent participant which will delete all entities
+ * within its hierarchy).
  *
  * @param[in]  entity  Entity from which to get its parent.
  *
- * @returns >0 - Success (valid entity handle).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A valid entity handle or an error code.
  *
+ * @retval >0
+ *             A valid entity handle.
+ * @retval DDS_ENTITY_NIL
+ *             Called with a participant.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
+/* TODO: Link to generic dds entity relations documentation. */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_entity_t
 dds_get_parent(
         _In_ dds_entity_t entity);
-
 
 /**
  * @brief Get entity participant.
@@ -725,21 +800,21 @@ dds_get_parent(
  *
  * @param[in]  entity  Entity from which to get its participant.
  *
- * @returns >0 - Success (valid entity handle).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A valid entity or an error code.
  *
+ * @retval >0
+ *             A valid participant handle.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_entity_t
 dds_get_participant (
         _In_ dds_entity_t entity);
-
 
 /**
  * @brief Get entity children.
@@ -761,31 +836,40 @@ dds_get_participant (
  * When supplying NULL as list and 0 as size, you can use this to acquire
  * the number of children without having to pre-allocate a list.
  *
- * TODO: Link to generic dds entity relations documentation.
+ * When a reader or a writer are created with a partition, then a
+ * subscriber or publisher respectively are created implicitly. These
+ * implicit subscribers or publishers will be deleted automatically
+ * when the reader or writer is deleted. However, when this function
+ * returns such an implicit entity, it is from there on out considered
+ * 'explicit'. This means that it isn't deleted automatically anymore.
+ * The application should explicitly call dds_delete on those entities
+ * now (or delete the parent participant which will delete all entities
+ * within its hierarchy).
  *
  * @param[in]  entity   Entity from which to get its children.
  * @param[out] children Pre-allocated array to contain the found children.
  * @param[in]  size     Size of the pre-allocated children's list.
  *
- * @returns >=0 - Success (number of found children, can be larger than 'size').
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns Number of children or an error code.
  *
+ * @retval >=0
+ *             Number of childer found children (can be larger than 'size').
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  The children parameter is NULL, while a size is provided.
+ *             The children parameter is NULL, while a size is provided.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
+/* TODO: Link to generic dds entity relations documentation. */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
 dds_get_children(
         _In_        dds_entity_t entity,
         _Out_opt_   dds_entity_t *children,
         _In_        size_t size);
-
 
 /**
  * @brief Get the domain id to which this entity is attached.
@@ -800,19 +884,18 @@ dds_get_children(
  * @param[in]  entity   Entity from which to get its children.
  * @param[out] id       Pointer to put the domain ID in.
  *
- * @returns  0 - Success (DDS_RETCODE_OK).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                  Domain ID was returned.
+ *             Domain ID was returned.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  The id parameter is NULL.
+ *             The id parameter is NULL.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT _Check_return_ dds_return_t
@@ -833,17 +916,18 @@ dds_get_domainid(
  * untouched. If more participants are found and the array is too small, then the
  * participants returned are undefined.
  *
- * @param[in]  domain_id    The domain id
- * @param[out] participants The participant for domain
+ * @param[in]  domain_id    The domain id.
+ * @param[out] participants The participant for domain.
  * @param[in]  size         Size of the pre-allocated participant's list.
  *
- * @returns >=0 - Success (number of found participants).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns Number of participants found or and error code.
  *
+ * @retval >0
+ *             Number of participants found.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  The participant parameter is NULL, while a size is provided.
+ *             The participant parameter is NULL, while a size is provided.
  */
 DDS_EXPORT _Check_return_ dds_return_t
 dds_lookup_participant(
@@ -852,18 +936,25 @@ dds_lookup_participant(
         _In_        size_t size);
 
 /**
- * Description : Creates a new DDS topic. The type name for the topic
- * is taken from the generated descriptor. Topic matching is done on a
- * combination of topic name and type name.
+ * @brief Creates a new topic.
  *
- * Arguments :
- *   -# pp The participant on which the topic is being created
- *   -# descriptor The IDL generated topic descriptor
- *   -# name The name of the created topic
- *   -# qos The QoS to set on the new topic (can be NULL)
- *   -# listener Any listener functions associated with the new topic (can be NULL)
- *   -# Returns a status, 0 on success or non-zero value to indicate an error
+ * The type name for the topic is taken from the generated descriptor. Topic
+ * matching is done on a combination of topic name and type name.
+ *
+ * @param[in]  participant  Participant on which to create the topic.
+ * @param[in]  descriptor   An IDL generated topic descriptor.
+ * @param[in]  name         Name of the topic.
+ * @param[in]  qos          QoS to set on the new topic (can be NULL).
+ * @param[in]  listener     Any listener functions associated with the new topic (can be NULL).
+ *
+ * @returns A valid topic handle or an error code.
+ *
+ * @retval >=0
+ *             A valid topic handle.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             Either participant, descriptor, name or qos is invalid.
  */
+/* TODO: Check list of retcodes is complete. */
 _Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
 DDS_EXPORT dds_entity_t
 dds_create_topic(
@@ -874,14 +965,21 @@ dds_create_topic(
         _In_opt_ const dds_listener_t *listener);
 
 /**
- * Description : Finds a named topic. Returns NULL if does not exist.
+ * @brief Finds a named topic.
+ *
  * The returned topic should be released with dds_delete.
  *
- * Arguments :
- *   -# pp The participant on which to find the topic
- *   -# name The name of the topic to find
- *   -# Returns a topic, NULL if could not be found or error
+ * @param[in]  participant  The participant on which to find the topic.
+ * @param[in]  name         The name of the topic to find.
+ *
+ * @returns A valid topic handle or an error code.
+ *
+ * @retval >0
+ *             A valid topic handle.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             Participant was invalid.
  */
+/* TODO: Check list of retcodes is complete. */
 _Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
 DDS_EXPORT dds_entity_t
 dds_find_topic(
@@ -889,11 +987,16 @@ dds_find_topic(
         _In_z_ const char *name);
 
 /**
- * Description : Returns a topic name.
+ * @brief Returns the name of a given topic.
  *
- * Arguments :
- *   -# topic The topic
- *   -# Returns The topic name or NULL to indicate an error
+ * @param[in]  topic  The topic.
+ * @param[out] name   Buffer to write the topic name to.
+ * @param[in]  size   Number of bytes available in the buffer.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             Success.
  */
 /* TODO: do we need a convenience version as well that allocates and add a _s suffix to this one? */
 /* TODO: Check annotation. Could be _Out_writes_to_(size, return + 1) as well. */
@@ -904,13 +1007,17 @@ dds_get_name(
         _Out_writes_z_(size) char *name,
         _In_                 size_t size);
 
-
 /**
- * Description : Returns a topic type name.
+ * @brief Returns the type name of a given topic.
  *
- * Arguments :
- *   -# topic The topic
- *   -# Returns The topic type name or NULL to indicate an error
+ * @param[in]  topic  The topic.
+ * @param[out] name   Buffer to write the topic type name to.
+ * @param[in]  size   Number of bytes available in the buffer.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @return DDS_RETCODE_OK
+ *             Success.
  */
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 DDS_EXPORT dds_return_t
@@ -919,14 +1026,14 @@ dds_get_type_name(
         _Out_writes_z_(size) char *name,
         _In_ size_t size);
 
+/** Topic filter function */
 typedef bool (*dds_topic_filter_fn) (const void * sample);
 
 /**
- * Description : Sets a filter on a topic.
+ * @brief Sets a filter on a topic.
  *
- * Arguments :
- *   -# topic The topic on which the content filter is set
- *   -# filter The filter function used to filter topic samples
+ * @param[in]  topic   The topic on which the content filter is set.
+ * @param[in]  filter  The filter function used to filter topic samples.
  */
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 DDS_EXPORT void
@@ -935,11 +1042,11 @@ dds_topic_set_filter(
         dds_topic_filter_fn filter);
 
 /**
- * Description : Gets a topic's filter.
+ * @brief Gets the filter for a topic.
  *
- * Arguments :
- *   -# topic The topic from which to get the filter
- *   -# Returns The topic filter
+ * @param[in]  topic  The topic from which to get the filter.
+ *
+ * @returns The topic filter.
  */
 _Pre_satisfies_((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC)
 DDS_EXPORT dds_topic_filter_fn
@@ -949,17 +1056,18 @@ dds_topic_get_filter(
 /**
  * @brief Creates a new instance of a DDS subscriber
  *
- * @param[in]  participant The participant on which the subscriber is being created
- * @param[in]  qos         The QoS to set on the new subscriber (can be NULL)
- * @param[in]  listener    Any listener functions associated with the new subscriber (can be NULL)
-
- * @returns >0 - Success (valid handle of a subscriber entity).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @param[in]  participant The participant on which the subscriber is being created.
+ * @param[in]  qos         The QoS to set on the new subscriber (can be NULL).
+ * @param[in]  listener    Any listener functions associated with the new subscriber (can be NULL).
  *
+ * @returns A valid subscriber handle or an error code.
+ *
+ * @retval >0
+ *             A valid subscriber handle.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
- *         DDS_RETCODE_BAD_PARAMETER
- *                  One of the parameters is invalid
+ *             An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the parameters is invalid.
  */
 _Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
 DDS_EXPORT _Must_inspect_result_ dds_entity_t
@@ -968,24 +1076,27 @@ dds_create_subscriber(
         _In_opt_ const dds_qos_t *qos,
         _In_opt_ const dds_listener_t *listener);
 
-
 /**
  * @brief Creates a new instance of a DDS publisher
  *
- * @param[in]  participant The participant to create a publisher for
- * @param[in]  qos         The QoS to set on the new publisher (can be NULL)
- * @param[in]  listener    Any listener functions associated with the new publisher (can be NULL)
+ * @param[in]  participant The participant to create a publisher for.
+ * @param[in]  qos         The QoS to set on the new publisher (can be NULL).
+ * @param[in]  listener    Any listener functions associated with the new publisher (can be NULL).
  *
- * @returns >0 - Success (valid handle of a publisher entity).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A valid publisher handle or an error code.
+ *
+ * @retval >0
+ *            A valid publisher handle.
+ * @retval DDS_RETCODE_ERROR
+ *            An internal error has occurred.
  */
+/* TODO: Check list of error codes is complete. */
 _Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
 DDS_EXPORT _Must_inspect_result_ dds_entity_t
 dds_create_publisher(
         _In_     dds_entity_t participant,
         _In_opt_ const dds_qos_t *qos,
         _In_opt_ const dds_listener_t *listener);
-
 
 /**
  * @brief Suspends the publications of the Publisher
@@ -996,45 +1107,43 @@ dds_create_publisher(
  * Every invocation of this operation must be matched by a corresponding call to @see dds_resume
  * indicating that the set of modifications has completed.
  *
- * @param[in]  publisher The publisher for which all publications will be suspended
+ * @param[in]  publisher The publisher for which all publications will be suspended.
  *
- * @returns >0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                Publications suspended successfully.
+ *             Publications suspended successfully.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                The pub parameter is not a valid publisher.
+ *             The pub parameter is not a valid publisher.
  * @retval DDS_RETCODE_UNSUPPORTED
- *                Operation is not supported
+ *             Operation is not supported.
  */
 _Pre_satisfies_((publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER)
 DDS_EXPORT dds_return_t
 dds_suspend(
         _In_ dds_entity_t publisher);
 
-
 /**
  * @brief Resumes the publications of the Publisher
  *
- * This operation is a hint to the Service to indicate that the application has completed changes
- * initiated by a previous @see suspend. The Service is not required to use the hint.
+ * This operation is a hint to the Service to indicate that the application has
+ * completed changes initiated by a previous dds_suspend(). The Service is not
+ * required to use the hint.
  *
  * The call to resume_publications must match a previous call to @see suspend_publications.
  *
- * @param[in]  publisher The publisher for which all publications will be resumed
+ * @param[in]  publisher The publisher for which all publications will be resumed.
  *
- * @returns >0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                Publications resumed successfully.
+ *             Publications resumed successfully.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                The pub parameter is not a valid publisher.
+ *             The pub parameter is not a valid publisher.
  * @retval DDS_RETCODE_PRECONDITION_NOT_MET
- *                No previous matching @see dds_suspend.
+ *             No previous matching dds_suspend().
  * @retval DDS_RETCODE_UNSUPPORTED
- *                Operation is not supported.
+ *             Operation is not supported.
  */
 _Pre_satisfies_((publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER)
 DDS_EXPORT dds_return_t
@@ -1049,19 +1158,19 @@ dds_resume(
  * or writer is acknowledged by all matched reliable reader entities, or else the duration
  * specified by the timeout parameter elapses, whichever happens first.
  *
- * @param[in]  pub_or_w   The publisher or writer whose acknowledgements must be waited for.
+ * @param[in]  publisher_or_writer Publisher or writer whose acknowledgments must be waited for
+ * @param[in]  timeout             How long to wait for acknowledgments before time out
  *
- * @returns >0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                All acknowledgements successfully received with the timeout.
+ *             All acknowledgments successfully received with the timeout.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                The pub_or_w parameter is not a valid publisher or writer.
+ *             The publisher_or_writer is not a valid publisher or writer.
  * @retval DDS_RETCODE_TIMEOUT
- *                Timeout expired before all acknowledgements from reliable reader entities were received.
+ *             Timeout expired before all acknowledgments from reliable reader entities were received.
  * @retval DDS_RETCODE_UNSUPPORTED
- *                Operation is not supported.
+ *             Operation is not supported.
  */
 _Pre_satisfies_(((publisher_or_writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER   ) ||\
                 ((publisher_or_writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER) )
@@ -1072,23 +1181,28 @@ dds_wait_for_acks(
 
 
 /**
- * @brief Creates a new instance of a DDS reader
+ * @brief Creates a new instance of a DDS reader.
  *
- * @param[in]  participant_or_subscriber The participant or subscriber on which the reader is being created
+ * This implicit subscriber will be deleted automatically when the created reader
+ * is deleted.
  *
- * @param[in]  topic The topic to read
+ * @param[in]  participant_or_subscriber The participant or subscriber on which the reader is being created.
+ * @param[in]  topic                     The topic to read.
+ * @param[in]  qos                       The QoS to set on the new reader (can be NULL).
+ * @param[in]  listener                  Any listener functions associated with the new reader (can be NULL).
  *
- * @param[in]  qos The QoS to set on the new reader (can be NULL)
+ * @returns A valid reader handle or an error code.
  *
- * @param[in]  listener Any listener functions associated with the new reader (can be NULL)
- *
- * @returns >0 - Success (valid handle of a reader entity)
- * @returns <0 - Failure (use dds_err_nr() to get error value)
- *
+ * @retval >0
+ *            A valid reader handle.
+ * @retval DDS_RETCODE_ERROR
+ *            An internal error occurred.
  */
+/* TODO: Complete list of error codes */
 _Pre_satisfies_(((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER ) ||\
                 ((participant_or_subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
-_Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
+_Pre_satisfies_(((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC   ) ||\
+                ((topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_INTERNAL) )
 DDS_EXPORT dds_entity_t
 dds_create_reader(
         _In_ dds_entity_t participant_or_subscriber,
@@ -1123,6 +1237,7 @@ dds_create_reader(
  *                Operation is not supported.
  *
  */
+/* TODO: Complete list of error codes */
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT dds_return_t
 dds_wait_for_historical_data(
@@ -1130,16 +1245,24 @@ dds_wait_for_historical_data(
         _In_range_(0, DDS_INFINITY) dds_duration_t max_wait);
 
 /**
- * @brief Creates a new instance of a DDS writer
+ * @brief Creates a new instance of a DDS writer.
  *
- * @param[in]  participant_or_publisher The participant or publisher on which the writer is being created
- * @param[in]  topic The topic to write
- * @param[in]  qos The QoS to set on the new writer (can be NULL)
- * @param[in]  listener Any listener functions associated with the new writer (can be NULL)
+ * This implicit publisher will be deleted automatically when the created writer
+ * is deleted.
  *
- * @returns >0 - Success (valid handle of a writer entity).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @param[in]  participant_or_publisher The participant or publisher on which the writer is being created.
+ * @param[in]  topic The topic to write.
+ * @param[in]  qos The QoS to set on the new writer (can be NULL).
+ * @param[in]  listener Any listener functions associated with the new writer (can be NULL).
+ *
+ * @returns A valid writer handle or an error code.
+ *
+ * @returns >0
+ *              A valid writer handle.
+ * @returns DDS_RETCODE_ERROR
+ *              An internal error occurred.
  */
+/* TODO: Complete list of error codes */
 _Pre_satisfies_(((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PUBLISHER  ) ||\
                 ((participant_or_publisher & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT) )
 _Pre_satisfies_( (topic & DDS_ENTITY_KIND_MASK) == DDS_KIND_TOPIC )
@@ -1150,7 +1273,6 @@ dds_create_writer(
         _In_opt_ const dds_qos_t *qos,
         _In_opt_ const dds_listener_t *listener);
 
-
 /*
   Writing data (and variants of it) is straightforward. The first set
   is equivalent to the second set with -1 passed for "timestamp",
@@ -1159,59 +1281,134 @@ dds_create_writer(
   only touch the key fields; the remained may be undefined.
 */
 /**
- * Description : Registers an instance with a key value to the data writer
+ * @brief Registers an instance
  *
- * Arguments :
- *   -# wr The writer to which instance has be associated
- *   -# data Instance with the key value
- *   -# Returns an instance handle that could be used for successive write & dispose operations or
- *      NULL, if handle is not allocated
+ * This operation registers an instance with a key value to the data writer and
+ * returns an instance handle that could be used for successive write & dispose
+ * operations. When the handle is not allocated, the function will return and
+ * error and the handle will be un-touched.
+ *
+ * @param[in]  writer  The writer to which instance has be associated.
+ * @param[out] handle  The instance handle.
+ * @param[in]  data    The instance with the key value.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *            The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *            One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *            The operation is invoked on an inappropriate object.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT dds_instance_handle_t
-dds_instance_register(
-        dds_entity_t writer,
-        const void *data);
+DDS_EXPORT dds_return_t
+dds_register_instance(
+        _In_ dds_entity_t writer,
+        _Out_ dds_instance_handle_t *handle,
+        _In_ const void *data);
 
 /**
- * Description : Unregisters an instance with a key value from the data writer. Instance can be identified
- *               either from data sample or from instance handle (at least one must be provided).
+ * @brief Unregisters an instance
  *
- * Arguments :
- *   -# wr The writer to which instance is associated
- *   -# data Instance with the key value (can be NULL if handle set)
- *   -# handle Instance handle (can be DDS_HANDLE_NIL if data set)
- *   -# Returns 0 on success, or non-zero value to indicate an error
+ * This operation reverses the action of register instance, removes all information regarding
+ * the instance and unregisters an instance with a key value from the data writer.
  *
- * Note : If an unregistered key ID is passed as instance data, an error is logged and not flagged as return value
+ * @param[in]  writer  The writer to which instance is associated.
+ * @param[in]  data    The instance with the key value.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT int
-dds_instance_unregister(
-        dds_entity_t writer,
-        const void *data,
-        dds_instance_handle_t handle);
+DDS_EXPORT dds_return_t
+dds_unregister_instance(
+        _In_ dds_entity_t writer,
+        _In_opt_ const void *data);
 
-  /**
- * Description : Unregisters an instance with a key value from the data writer. Instance can be identified
- *               either from data sample or from instance handle (at least one must be provided).
+/**
+ * @brief Unregisters an instance
  *
- * Arguments :
- *   -# wr The writer to which instance is associated
- *   -# data Instance with the key value (can be NULL if handle set)
- *   -# handle Instance handle (can be DDS_HANDLE_NIL if data set)
- *   -# timestamp used at registration.
- *   -# Returns 0 on success, or non-zero value to indicate an error
+ *This operation unregisters the instance which is identified by the key fields of the given
+ *typed instance handle.
  *
- * Note : If an unregistered key ID is passed as instance data, an error is logged and not flagged as return value
+ * @param[in]  writer  The writer to which instance is associated.
+ * @param[in]  handle  The instance handle.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
-DDS_EXPORT int
-dds_instance_unregister_ts(
-        dds_entity_t writer,
-        const void *data,
-        dds_instance_handle_t handle,
-        dds_time_t timestamp);
+DDS_EXPORT dds_return_t
+dds_unregister_instance_ih(
+       _In_ dds_entity_t writer,
+       _In_opt_ dds_instance_handle_t handle);
+
+/**
+ * @brief Unregisters an instance
+ *
+ * This operation reverses the action of register instance, removes all information regarding
+ * the instance and unregisters an instance with a key value from the data writer. It also
+ * provides a value for the timestamp explicitly.
+ *
+ * @param[in]  writer    The writer to which instance is associated.
+ * @param[in]  data      The instance with the key value.
+ * @param[in]  timestamp The timestamp used at registration.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ */
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_unregister_instance_ts(
+       _In_ dds_entity_t writer,
+       _In_opt_ const void *data,
+       _In_ dds_time_t timestamp);
+
+/**
+ * @brief Unregisters an instance
+ *
+ * This operation unregisters an instance with a key value from the handle. Instance can be identified
+ * from instance handle. If an unregistered key ID is passed as an instance data, an error is logged and
+ * not flagged as return value.
+ *
+ * @param[in]  writer    The writer to which instance is associated.
+ * @param[in]  handle    The instance handle.
+ * @param[in]  timestamp The timestamp used at registration.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the given arguments is not valid
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object
+ */
+_Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
+DDS_EXPORT dds_return_t
+dds_unregister_instance_ih_ts(
+       _In_ dds_entity_t writer,
+       _In_opt_ dds_instance_handle_t handle,
+       _In_ dds_time_t timestamp);
 
 /**
  * @brief This operation modifies and disposes a data instance.
@@ -1241,27 +1438,26 @@ dds_instance_unregister_ts(
  * @param[in]  writer The writer to dispose the data instance from.
  * @param[in]  data   The data to be written and disposed.
  *
- * @returns  0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                The sample is written and the instance is marked for deletion.
+ *             The sample is written and the instance is marked for deletion.
  * @retval DDS_RETCODE_ERROR
- *                An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                At least one of the arguments is invalid.
+ *             At least one of the arguments is invalid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                The entity has already been deleted.
+ *             The entity has already been deleted.
  * @retval DDS_RETCODE_TIMEOUT
- *                Either the current action overflowed the available resources
- *                as specified by the combination of the reliability QoS policy,
- *                history QoS policy and resource_limits QoS policy, or the
- *                current action was waiting for data delivery acknowledgement
- *                by synchronous readers. This caused blocking of this operation,
- *                which could not be resolved before max_blocking_time of the
- *                reliability QoS policy elapsed.
+ *             Either the current action overflowed the available resources as
+ *             specified by the combination of the reliability QoS policy,
+ *             history QoS policy and resource_limits QoS policy, or the
+ *             current action was waiting for data delivery acknowledgement
+ *             by synchronous readers. This caused blocking of this operation,
+ *             which could not be resolved before max_blocking_time of the
+ *             reliability QoS policy elapsed.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1270,8 +1466,8 @@ dds_writedispose(
        _In_ const void *data);
 
 /**
- * Description : This operation modifies and disposes a data instance with
- *               a specific timestamp.
+ * @brief This operation modifies and disposes a data instance with a specific
+ *        timestamp.
  *
  * This operation performs the same functions as dds_writedispose except that
  * the application provides the value for the source_timestamp that is made
@@ -1282,27 +1478,26 @@ dds_writedispose(
  * @param[in]  data      The data to be written and disposed.
  * @param[in]  timestamp The timestamp used as source timestamp.
  *
- * @returns  0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                The sample is written and the instance is marked for deletion.
+ *             The sample is written and the instance is marked for deletion.
  * @retval DDS_RETCODE_ERROR
- *                An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                At least one of the arguments is invalid.
+ *             At least one of the arguments is invalid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                The entity has already been deleted.
+ *             The entity has already been deleted.
  * @retval DDS_RETCODE_TIMEOUT
- *                Either the current action overflowed the available resources
- *                as specified by the combination of the reliability QoS policy,
- *                history QoS policy and resource_limits QoS policy, or the
- *                current action was waiting for data delivery acknowledgement
- *                by synchronous readers. This caused blocking of this operation,
- *                which could not be resolved before max_blocking_time of the
- *                reliability QoS policy elapsed.
+ *             Either the current action overflowed the available resources as
+ *             specified by the combination of the reliability QoS policy,
+ *             history QoS policy and resource_limits QoS policy, or the
+ *             current action was waiting for data delivery acknowledgement
+ *             by synchronous readers. This caused blocking of this operation,
+ *             which could not be resolved before max_blocking_time of the
+ *             reliability QoS policy elapsed.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1340,27 +1535,26 @@ dds_writedispose_ts(
  * @param[in]  data   The data sample that identifies the instance
  *                    to be disposed.
  *
- * @returns  0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                The sample is written and the instance is marked for deletion.
+ *             The sample is written and the instance is marked for deletion.
  * @retval DDS_RETCODE_ERROR
- *                An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                At least one of the arguments is invalid.
+ *             At least one of the arguments is invalid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                The entity has already been deleted.
+ *             The entity has already been deleted.
  * @retval DDS_RETCODE_TIMEOUT
- *                Either the current action overflowed the available resources
- *                as specified by the combination of the reliability QoS policy,
- *                history QoS policy and resource_limits QoS policy, or the
- *                current action was waiting for data delivery acknowledgement
- *                by synchronous readers. This caused blocking of this operation,
- *                which could not be resolved before max_blocking_time of the
- *                reliability QoS policy elapsed.
+ *             Either the current action overflowed the available resources as
+ *             specified by the combination of the reliability QoS policy,
+ *             history QoS policy and resource_limits QoS policy, or the
+ *             current action was waiting for data delivery acknowledgement
+ *             by synchronous readers. This caused blocking of this operation,
+ *             which could not be resolved before max_blocking_time of the
+ *             reliability QoS policy elapsed.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1369,8 +1563,7 @@ dds_dispose(
        _In_ const void *data);
 
 /**
- * Description : This operation disposes an instance with a specific timestamp,
- *               identified by the data sample.
+ * @brief This operation disposes an instance with a specific timestamp, identified by the data sample.
  *
  * This operation performs the same functions as dds_dispose except that
  * the application provides the value for the source_timestamp that is made
@@ -1382,27 +1575,26 @@ dds_dispose(
  *                       to be disposed.
  * @param[in]  timestamp The timestamp used as source timestamp.
  *
- * @returns  0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                The sample is written and the instance is marked for deletion.
+ *             The sample is written and the instance is marked for deletion
  * @retval DDS_RETCODE_ERROR
- *                An internal error has occurred.
+ *             An internal error has occurred
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                At least one of the arguments is invalid.
+ *             At least one of the arguments is invalid
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                The entity has already been deleted.
+ *             The entity has already been deleted
  * @retval DDS_RETCODE_TIMEOUT
- *                Either the current action overflowed the available resources
- *                as specified by the combination of the reliability QoS policy,
- *                history QoS policy and resource_limits QoS policy, or the
- *                current action was waiting for data delivery acknowledgement
- *                by synchronous readers. This caused blocking of this operation,
- *                which could not be resolved before max_blocking_time of the
- *                reliability QoS policy elapsed.
+ *             Either the current action overflowed the available resources as
+ *             specified by the combination of the reliability QoS policy,
+ *             history QoS policy and resource_limits QoS policy, or the
+ *             current action was waiting for data delivery acknowledgment
+ *             by synchronous readers. This caused blocking of this operation,
+ *             which could not be resolved before max_blocking_time of the
+ *             reliability QoS policy elapsed.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1428,19 +1620,20 @@ dds_dispose_ts(
  * @param[in]  writer The writer to dispose the data instance from.
  * @param[in]  handle The handle to identify an instance.
  *
- * @returns  0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                The sample is written and the instance is marked for deletion.
+ *             The sample is written and the instance is marked for deletion.
  * @retval DDS_RETCODE_ERROR
- *                An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                At least one of the arguments is invalid.
+ *             At least one of the arguments is invalid
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                The entity has already been deleted.
+ *             The entity has already been deleted
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *             The instance handle has not been registered with this writer
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1449,8 +1642,7 @@ dds_dispose_ih(
        _In_ dds_instance_handle_t handle);
 
 /**
- * Description : This operation disposes an instance with a specific timestamp,
- *               identified by the instance handle.
+ * @brief This operation disposes an instance with a specific timestamp, identified by the instance handle.
  *
  * This operation performs the same functions as dds_dispose_ih except that
  * the application provides the value for the source_timestamp that is made
@@ -1461,19 +1653,20 @@ dds_dispose_ih(
  * @param[in]  handle    The handle to identify an instance.
  * @param[in]  timestamp The timestamp used as source timestamp.
  *
- * @returns  0 - Success.
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *                The sample is written and the instance is marked for deletion.
+ *             The sample is written and the instance is marked for deletion.
  * @retval DDS_RETCODE_ERROR
- *                An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                At least one of the arguments is invalid.
+ *             At least one of the arguments is invalid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                The entity has already been deleted.
+ *             The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *             The instance handle has not been registered with this writer.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1488,10 +1681,10 @@ dds_dispose_ih_ts(
  * With this API, the value of the source timestamp is automatically made
  * available to the data reader by the service.
  *
- * @param[in]  writer The writer entity
- * @param[in]  data Value to be written
+ * @param[in]  writer The writer entity.
+ * @param[in]  data Value to be written.
  *
- * @returns - dds_return_t indicating success or failure
+ * @returns dds_return_t indicating success or failure.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1508,11 +1701,11 @@ dds_write_flush(
 /**
  * @brief Write a CDR serialized value of a data instance
  *
- * @param[in]  writer The writer entity
- * @param[in]  cdr CDR serialized value to be written
- * @param[in]  size Size (in bytes) of CDR encoded data to be written
+ * @param[in]  writer The writer entity.
+ * @param[in]  cdr CDR serialized value to be written.
+ * @param[in]  size Size (in bytes) of CDR encoded data to be written.
  *
- * @returns - A dds_return_t indicating success or failure
+ * @returns A dds_return_t indicating success or failure.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT int
@@ -1524,11 +1717,11 @@ dds_writecdr(
 /**
  * @brief Write the value of a data instance along with the source timestamp passed.
  *
- * @param[in]  writer The writer entity
- * @param[in]  data Value to be written
- * @param[in]  timestamp Source timestamp
+ * @param[in]  writer The writer entity.
+ * @param[in]  data Value to be written.
+ * @param[in]  timestamp Source timestamp.
  *
- * @returns - A dds_return_t indicating success or failure
+ * @returns A dds_return_t indicating success or failure.
  */
 _Pre_satisfies_((writer & DDS_ENTITY_KIND_MASK) == DDS_KIND_WRITER)
 DDS_EXPORT dds_return_t
@@ -1563,21 +1756,24 @@ dds_write_ts(
  * @param[in]  reader  Reader to associate the condition to.
  * @param[in]  mask    Interest (dds_sample_state_t|dds_view_state_t|dds_instance_state_t).
  *
- * @returns >0 - Success (valid condition).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A valid condition handle or an error code.
  *
+ * @retval >0
+ *             A valid condition handle
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT _Must_inspect_result_ dds_entity_t
 dds_create_readcondition(
         _In_ dds_entity_t reader,
         _In_ uint32_t mask);
+
+typedef bool (*dds_querycondition_filter_fn) (const void * sample);
 
 /**
  * @brief Creates a queryondition associated to the given reader.
@@ -1586,9 +1782,6 @@ dds_create_readcondition(
  * a data reader's history, by means of a mask and a filter. The mask is
  * or'd with the flags that are dds_sample_state_t, dds_view_state_t and
  * dds_instance_state_t.
- *
- * TODO: Explain the filter (aka expression & parameters) of the (to be
- *       implemented) new querycondition implementation.
  *
  * Based on the mask value set and data that matches the filter, the
  * querycondition gets triggered when data is available on the reader.
@@ -1606,30 +1799,31 @@ dds_create_readcondition(
  *       associated reader/conditions. Or if one takes a sample, then it's not
  *       available to any other associated reader/condition.
  *
- * TODO: Update parameters when new querycondition is introduced.
- *
  * @param[in]  reader  Reader to associate the condition to.
  * @param[in]  mask    Interest (dds_sample_state_t|dds_view_state_t|dds_instance_state_t).
  * @param[in]  filter  Callback that the application can use to filter specific samples.
  *
- * @returns >0 - Success (valid condition).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A valid condition handle or an error code
  *
+ * @retval >=0
+ *             A valid condition handle.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
-typedef bool (*dds_querycondition_filter_fn) (const void * sample);
+/* TODO: Explain the filter (aka expression & parameters) of the (to be
+ *       implemented) new querycondition implementation.
+ * TODO: Update parameters when new querycondition is introduced.
+ */
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
 DDS_EXPORT dds_entity_t
 dds_create_querycondition(
         _In_ dds_entity_t reader,
         _In_ uint32_t mask,
         _In_ dds_querycondition_filter_fn filter);
-
 
 /**
  * @brief Waitset attachment argument.
@@ -1639,7 +1833,7 @@ dds_create_querycondition(
  * entity that triggered, then the returning array will be populated with
  * these attachment arguments that are related to the triggered entity.
  */
-typedef void * dds_attach_t;
+typedef intptr_t dds_attach_t;
 
 /**
  * @brief Create a waitset and allocate the resources required
@@ -1650,21 +1844,21 @@ typedef void * dds_attach_t;
  *
  * @param[in]  participant  Domain participant which the WaitSet contains.
  *
- * @returns >0 - Success (valid waitset).
- * @returns <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A valid waitset handle or an error code.
  *
+ * @retval >=0
+ *             A valid waitset handle.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_((participant & DDS_ENTITY_KIND_MASK) == DDS_KIND_PARTICIPANT)
 DDS_EXPORT _Must_inspect_result_ dds_entity_t
 dds_create_waitset(
         _In_ dds_entity_t participant);
-
 
 /**
  * @brief Acquire previously attached entities.
@@ -1682,17 +1876,18 @@ dds_create_waitset(
  * @param[out] entities Pre-allocated array to contain the found entities.
  * @param[in]  size     Size of the pre-allocated entities' list.
  *
- * @returns >=0 - Success (number of found children, can be larger than 'size').
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t with the number of children or an error code.
  *
+ * @retval >=0
+ *             Number of children found (can be larger than 'size').
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  The entities parameter is NULL, while a size is provided.
+ *             The entities parameter is NULL, while a size is provided.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The waitset has already been deleted.
+ *             The waitset has already been deleted.
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
@@ -1729,19 +1924,20 @@ dds_waitset_get_entities(
  * @param[in]  x        Blob that will be supplied when the waitset wait is
  *                      triggerd by the given entity.
  *
- * @returns   0 - Success (entity attached).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
+ * @retval DDS_RETCODE_OK
+ *             Entity attached.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  The given waitset or entity are not valid.
+ *             The given waitset or entity are not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The waitset has already been deleted.
+ *             The waitset has already been deleted.
  * @retval DDS_RETCODE_PRECONDITION_NOT_MET
- *                  The entity was already attached.
+ *             The entity was already attached.
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
@@ -1750,26 +1946,26 @@ dds_waitset_attach(
         _In_ dds_entity_t entity,
         _In_ dds_attach_t x);
 
-
 /**
  * @brief This operation detaches an Entity to the WaitSet.
  *
  * @param[in]  waitset  The waitset to detach the given entity from.
  * @param[in]  entity   The entity to detach.
  *
- * @returns   0 - Success (entity attached).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
+ * @retval DDS_RETCODE_OK
+ *             Entity attached.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  The given waitset or entity are not valid.
+ *             The given waitset or entity are not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The waitset has already been deleted.
+ *             The waitset has already been deleted.
  * @retval DDS_RETCODE_PRECONDITION_NOT_MET
- *                  The entity is not attached.
+ *             The entity is not attached.
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
@@ -1794,17 +1990,18 @@ dds_waitset_detach(
  * @param[in]  waitset  The waitset to set the trigger value on.
  * @param[in]  trigger  The trigger value to set.
  *
- * @returns   0 - Success (entity attached).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t indicating success or failure.
  *
+ * @retval DDS_RETCODE_OK
+ *             Entity attached.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  The given waitset is not valid.
+ *             The given waitset is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The waitset has already been deleted.
+ *             The waitset has already been deleted.
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
@@ -1862,24 +2059,26 @@ dds_waitset_set_trigger(
  * @param[in]  nxs        The size of the pre-allocated blobs list.
  * @param[in]  reltimeout Relative timeout
  *
- * @returns  >0 - Success (number of entities triggered).
- * @returns   0 - Time out (no entities were triggered).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t with the number of entities triggered or an error code
  *
+ * @retval >0
+ *             Number of entities triggered.
+ * @retval  0
+ *             Time out (no entities were triggered).
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  The given waitset is not valid.
+ *             The given waitset is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The waitset has already been deleted.
+ *             The waitset has already been deleted.
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
 dds_waitset_wait(
         _In_ dds_entity_t waitset,
-        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _Out_writes_to_opt_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
         _In_ size_t nxs,
         _In_ dds_duration_t reltimeout);
 
@@ -1936,24 +2135,26 @@ dds_waitset_wait(
  * @param[in]  nxs        The size of the pre-allocated blobs list.
  * @param[in]  abstimeout Absolute timeout
  *
- * @returns  >0 - Success (number of entities triggered).
- * @returns   0 - Time out (no entities were triggered).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t with the number of entities triggered or an error code.
  *
+ * @retval >0
+ *             Number of entities triggered.
+ * @retval  0
+ *             Time out (no entities were triggered).
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  The given waitset is not valid.
+ *             The given waitset is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The waitset has already been deleted.
+ *             The waitset has already been deleted.
  */
 _Pre_satisfies_((waitset & DDS_ENTITY_KIND_MASK) == DDS_KIND_WAITSET)
 DDS_EXPORT dds_return_t
 dds_waitset_wait_until(
         _In_ dds_entity_t waitset,
-        _Out_writes_to_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
+        _Out_writes_to_opt_(nxs, return < 0 ? 0 : return) dds_attach_t *xs,
         _In_ size_t nxs,
         _In_ dds_time_t abstimeout);
 
@@ -1989,23 +2190,24 @@ dds_waitset_wait_until(
  * Data values once read will remain in the buffer with the sample_state set to READ
  * and view_state set to NOT_NEW.
  *
- * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
- * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
- * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
- * @param[in]  bufsz The size of buffer provided
- * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  bufsz The size of buffer provided.
+ * @param[in]  maxs Maximum number of samples to read.
  *
- * @returns >=0 - Success (number of samples read).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t with the number of samples read or an error code.
  *
+ * @retval >=0
+ *             Number of samples read.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  One of the given arguments is not valid.
+ *             One of the given arguments is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -2028,17 +2230,18 @@ dds_read(
  * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
  * @param[in]  maxs Maximum number of samples to read
  *
- * @returns >=0 - Success (number of samples read).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t with the number of samples read or an error code
  *
+ * @retval >=0
+ *             Number of samples read.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  One of the given arguments is not valid.
+ *             One of the given arguments is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -2056,25 +2259,25 @@ dds_read_wl(
  *
  * When using a readcondition or querycondition, their masks are or'd with the given mask.
  *
- *
- * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
- * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
- * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
- * @param[in]  bufsz The size of buffer provided
- * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  bufsz The size of buffer provided.
+ * @param[in]  maxs Maximum number of samples to read.
  * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
  *
- * @returns >=0 - Success (number of samples read).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t with the number of samples read or an error code.
  *
+ * @retval >=0
+ *             Number of samples read.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  One of the given arguments is not valid.
+ *             One of the given arguments is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -2096,23 +2299,24 @@ dds_read_mask(
  *
  * After dds_read_mask_wl function is being called and the data has been handled, dds_return_loan function must be called to possibly free memory
  *
- * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
- * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
- * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
- * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  maxs Maximum number of samples to read.
  * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
  *
- * @returns >=0 - Success (number of samples read).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t with the number of samples read or an error code.
  *
+ * @retval >=0
+ *             Number of samples read.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  One of the given arguments is not valid.
+ *             One of the given arguments is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -2125,28 +2329,169 @@ dds_read_mask_wl(
         _In_ uint32_t maxs,
         _In_ uint32_t mask);
 
+/**
+ * @brief Access and read the collection of data values (of same type) and sample info from the
+ *        data reader, readcondition or querycondition, coped by the provided instance handle.
+ *
+ * This operation implements the same functionality as dds_read, except that only data scoped to
+ * the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  bufsz The size of buffer provided.
+ * @param[in]  maxs Maximum number of samples to read.
+ * @param[in]  handle Instance handle related to the samples to read.
+ *
+ * @returns A dds_return_t with the number of samples read or an error code.
+ *
+ * @retval >=0
+ *             Number of samples read.
+ * @retval DDS_RETCODE_ERROR
+ *             An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *             The instance handle has not been registered with this reader.
+ */
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_read_instance(
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle);
 
 /**
- * Description : Implements the same functionality as dds_read, except that only data
- *               scoped to the provided instance handle is read.
+ * @brief Access and read loaned samples of data reader, readcondition or querycondition,
+ *        scoped by the provided instance handle.
  *
- * Arguments :
- *   -# rd Reader entity
- *   -# buf an array of pointers to samples into which data is read (pointers can be NULL)
- *   -# maxs maximum number of samples to read
- *   -# si pointer to an array of \ref dds_sample_info_t returned for each data value
- *   -# handle the instance handle identifying the instance from which to read
- *   -# mask filter the data value based on the set sample, view and instance state
- *   -# Returns the number of samples read, 0 indicates no data to read.
+ * This operation implements the same functionality as dds_read_wl, except that only data
+ * scoped to the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  maxs Maximum number of samples to read.
+ * @param[in]  handle Instance handle related to the samples to read.
+ *
+ * @returns A dds_return_t with the number of samples read or an error code.
+ *
+ * @retval >=0
+ *             Number of samples read.
+ * @retval DDS_RETCODE_ERROR
+ *             An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *             The instance handle has not been registered with this reader.
  */
-DDS_EXPORT int
-dds_read_instance(
-        dds_entity_t reader_or_condition,
-        void **buf,
-        uint32_t maxs,
-        dds_sample_info_t *si,
-        dds_instance_handle_t handle,
-        uint32_t mask);
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_read_instance_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle);
+
+/**
+ * @brief Read the collection of data values and sample info from the data reader, readcondition
+ *        or querycondition based on mask and scoped by the provided instance handle.
+ *
+ * This operation implements the same functionality as dds_read_mask, except that only data
+ * scoped to the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  bufsz The size of buffer provided.
+ * @param[in]  maxs Maximum number of samples to read.
+ * @param[in]  handle Instance handle related to the samples to read.
+ * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
+ *
+ * @returns A dds_return_t with the number of samples read or an error code.
+ *
+ * @retval >=0
+ *             Number of samples read.
+ * @retval DDS_RETCODE_ERROR
+ *             An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *             The instance handle has not been registered with this reader.
+ */
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_read_instance_mask(
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask);
+
+/**
+ * @brief Access and read loaned samples of data reader, readcondition or
+ *        querycondition based on mask, scoped by the provided instance handle.
+ *
+ * This operation implements the same functionality as dds_read_mask_wl, except that
+ * only data scoped to the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  maxs Maximum number of samples to read.
+ * @param[in]  handle Instance handle related to the samples to read.
+ * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
+ *
+ * @returns A dds_return_t with the number of samples read or an error code.
+ *
+ * @retval >=0
+ *             Number of samples read.
+ * @retval DDS_RETCODE_ERROR
+ *             An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *             The instance handle has not been registered with this reader.
+ */
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_read_instance_mask_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask);
 
 /**
  * @brief Access the collection of data values (of same type) and sample info from the
@@ -2161,23 +2506,24 @@ dds_read_instance(
  * use the memory from data reader to prevent copy. In the latter case, buffer and
  * sample_info should be returned back, once it is no longer using the Data.
  *
- * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
- * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
- * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
- * @param[in]  bufsz The size of buffer provided
- * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  bufsz The size of buffer provided.
+ * @param[in]  maxs Maximum number of samples to read.
  *
- * @returns >=0 - Success (number of samples read).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t with the number of samples read or an error code.
  *
+ * @retval >=0
+ *             Number of samples read.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  One of the given arguments is not valid.
+ *             One of the given arguments is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -2195,22 +2541,23 @@ dds_take(
  *
  * After dds_take_wl function is being called and the data has been handled, dds_return_loan function must be called to possibly free memory
  *
- * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
- * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
- * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
- * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  maxs Maximum number of samples to read.
  *
- * @returns >=0 - Success (number of samples read).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t with the number of samples read or an error code.
  *
+ * @retval >=0
+ *             Number of samples read.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  One of the given arguments is not valid.
+ *             One of the given arguments is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -2228,24 +2575,25 @@ dds_take_wl(
  *
  * When using a readcondition or querycondition, their masks are or'd with the given mask.
  *
- * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
- * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
- * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
- * @param[in]  bufsz The size of buffer provided
- * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  bufsz The size of buffer provided.
+ * @param[in]  maxs Maximum number of samples to read.
  * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
  *
- * @returns >=0 - Success (number of samples read).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t with the number of samples read or an error code.
  *
+ * @retval >=0
+ *             Number of samples read.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  One of the given arguments is not valid.
+ *             One of the given arguments is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -2266,23 +2614,24 @@ dds_take_mask(
  *
  * After dds_take_mask_wl function is being called and the data has been handled, dds_return_loan function must be called to possibly free memory
  *
- * @param[in]  reader_or_condition Reader, readcondition or querycondition entity
- * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL)
- * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value
- * @param[in]  maxs Maximum number of samples to read
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  maxs Maximum number of samples to read.
  * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
  *
- * @returns >=0 - Success (number of samples read).
- * @returns  <0 - Failure (use dds_err_nr() to get error value).
+ * @returns A dds_return_t with the number of samples read or an error code.
  *
+ * @retval >=0
+ *             Number of samples read.
  * @retval DDS_RETCODE_ERROR
- *                  An internal error has occurred.
+ *             An internal error has occurred.
  * @retval DDS_RETCODE_BAD_PARAMETER
- *                  One of the given arguments is not valid.
+ *             One of the given arguments is not valid.
  * @retval DDS_RETCODE_ILLEGAL_OPERATION
- *                  The operation is invoked on an inappropriate object.
+ *             The operation is invoked on an inappropriate object.
  * @retval DDS_RETCODE_ALREADY_DELETED
- *                  The entity has already been deleted.
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
@@ -2306,27 +2655,170 @@ dds_takecdr(
         uint32_t mask);
 
 /**
- * Description : Implements the same functionality as dds_take, except that only data
- *               scoped to the provided instance handle is taken.
+ * @brief Access the collection of data values (of same type) and sample info from the
+ *        data reader, readcondition or querycondition but scoped by the given
+ *        instance handle.
  *
- * Arguments :
- *   -# rd Reader entity
- *   -# buf an array of pointers to samples into which data is read (pointers can be NULL)
- *   -# maxs maximum number of samples to read
- *   -# si pointer to an array of \ref dds_sample_info_t returned for each data value
- *   -# mask filter the data value based on the set sample, view and instance state
- *   -# handle the instance handle identifying the instance from which to take
- *   -# Returns the number of samples read, 0 indicates no data to read.
+ * This operation mplements the same functionality as dds_take, except that only data
+ * scoped to the provided instance handle is taken.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  bufsz The size of buffer provided.
+ * @param[in]  maxs Maximum number of samples to read.
+ * @param[in]  handle Instance handle related to the samples to read.
+ *
+ * @returns A dds_return_t with the number of samples read or an error code.
+ *
+ * @retval >=0
+ *             Number of samples read.
+ * @retval DDS_RETCODE_ERROR
+ *             An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *             The instance handle has not been registered with this reader.
  */
-DDS_EXPORT int
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
 dds_take_instance(
-        dds_entity_t reader_or_condition,
-        void **buf,
-        uint32_t maxs,
-        dds_sample_info_t *si,
-        dds_instance_handle_t handle,
-        uint32_t mask);
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle);
 
+/**
+ * @brief Access loaned samples of data reader, readcondition or querycondition,
+ *        scoped by the given instance handle.
+ *
+ * This operation implements the same functionality as dds_take_wl, except that
+ * only data scoped to the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  maxs Maximum number of samples to read.
+ * @param[in]  handle Instance handle related to the samples to read.
+ *
+ * @returns A dds_return_t with the number of samples read or an error code.
+ *
+ * @retval >=0
+ *             Number of samples read.
+ * @retval DDS_RETCODE_ERROR
+ *             An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *             The instance handle has not been registered with this reader.
+ */
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_take_instance_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle);
+
+/**
+ * @brief Take the collection of data values (of same type) and sample info from the
+ *        data reader, readcondition or querycondition based on mask and scoped
+ *        by the given instance handle.
+ *
+ * This operation implements the same functionality as dds_take_mask, except that only
+ * data scoped to the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  bufsz The size of buffer provided.
+ * @param[in]  maxs Maximum number of samples to read.
+ * @param[in]  handle Instance handle related to the samples to read.
+ * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
+ *
+ * @returns A dds_return_t with the number of samples read or an error code.
+ *
+ * @retval >=0
+ *             Number of samples read.
+ * @retval DDS_RETCODE_ERROR
+ *             An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *             The instance handle has not been registered with this reader.
+ */
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_take_instance_mask(
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ size_t bufsz,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask);
+
+/**
+ * @brief  Access loaned samples of data reader, readcondition or querycondition based
+ *         on mask and scoped by the given intance handle.
+ *
+ * This operation implements the same functionality as dds_take_mask_wl, except that
+ * only data scoped to the provided instance handle is read.
+ *
+ * @param[in]  reader_or_condition Reader, readcondition or querycondition entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si Pointer to an array of \ref dds_sample_info_t returned for each data value.
+ * @param[in]  maxs Maximum number of samples to read.
+ * @param[in]  handle Instance handle related to the samples to read.
+ * @param[in]  mask Filter the data based on dds_sample_state_t|dds_view_state_t|dds_instance_state_t.
+ *
+ * @returns A dds_return_t with the number of samples or an error code.
+ *
+ * @retval >= 0
+ *             Number of samples read.
+ * @retval DDS_RETCODE_ERROR
+ *             An internal error has occurred.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the given arguments is not valid.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
+ * @retval DDS_RETCODE_PRECONDITION_NOT_MET
+ *             The instance handle has not been registered with this reader.
+ */
+_Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
+                ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
+DDS_EXPORT dds_return_t
+dds_take_instance_mask_wl(
+        _In_ dds_entity_t reader_or_condition,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si,
+        _In_ uint32_t maxs,
+        _In_ dds_instance_handle_t handle,
+        _In_ uint32_t mask);
 
 /*
   The read/take next functions return a single sample. The returned sample
@@ -2335,36 +2827,126 @@ dds_take_instance(
 */
 
 /**
- * Description : This operation copies the next, non-previously accessed data value and corresponding
- *               sample info and removes from the data reader.
+ * @brief Read, copy and remove the status set for the entity
  *
- * Arguments :
- * -# rd Reader entity
- * -# buf an array of pointers to samples into which data is read (pointers can be NULL)
- * -# si pointer to \ref dds_sample_info_t returned for a data value
- * -# Returns 1 on successful operation, else 0 if there is no data to be read.
+ * This operation copies the next, non-previously accessed
+ * data value and corresponding sample info and removes from
+ * the data reader. As an entity, only reader is accepted.
+ *
+ * @param[in]  reader The reader entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si The pointer to \ref dds_sample_info_t returned for a data value.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The entity parameter is not a valid parameter.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
  */
-DDS_EXPORT int
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
+DDS_EXPORT dds_return_t
 dds_take_next(
-        dds_entity_t reader_or_condition,
-        void **buf,
-        dds_sample_info_t *si);
+        _In_ dds_entity_t reader,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si);
 
 /**
- * Description : This operation copies the next, non-previously accessed data value and corresponding
- *               sample info.
+ * @brief Read, copy and remove the status set for the entity
  *
- * Arguments :
- * -# rd Reader entity
- * -# buf an array of pointers to samples into which data is read (pointers can be NULL)
- * -# si pointer to \ref dds_sample_info_t returned for a data value
- * -# Returns 1 on successful operation, else 0 if there is no data to be read.
+ * This operation copies the next, non-previously accessed
+ * data value and corresponding sample info and removes from
+ * the data reader. As an entity, only reader is accepted.
+ *
+ * After dds_take_next_wl function is being called and the data has been handled,
+ * dds_return_loan function must be called to possibly free memory.
+ *
+ * @param[in]  reader The reader entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si The pointer to \ref dds_sample_info_t returned for a data value.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The entity parameter is not a valid parameter.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
  */
-DDS_EXPORT int
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
+DDS_EXPORT dds_return_t
+dds_take_next_wl(
+        _In_ dds_entity_t reader,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si);
+
+/**
+ * @brief Read and copy the status set for the entity
+ *
+ * This operation copies the next, non-previously accessed
+ * data value and corresponding sample info. As an entity,
+ * only reader is accepted.
+ *
+ * @param[in]  reader The reader entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si The pointer to \ref dds_sample_info_t returned for a data value.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The entity parameter is not a valid parameter.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
+ */
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
+DDS_EXPORT dds_return_t
 dds_read_next(
-        dds_entity_t reader_or_condition,
-        void **buf,
-        dds_sample_info_t *si);
+        _In_ dds_entity_t reader,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si);
+
+/**
+ * @brief Read and copy the status set for the loaned sample
+ *
+ * This operation copies the next, non-previously accessed
+ * data value and corresponding loaned sample info. As an entity,
+ * only reader is accepted.
+ *
+ * After dds_read_next_wl function is being called and the data has been handled,
+ * dds_return_loan function must be called to possibly free memory.
+ *
+ * @param[in]  reader The reader entity.
+ * @param[out] buf An array of pointers to samples into which data is read (pointers can be NULL).
+ * @param[out] si The pointer to \ref dds_sample_info_t returned for a data value.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The entity parameter is not a valid parameter.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
+ */
+_Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER )
+DDS_EXPORT dds_return_t
+dds_read_next_wl(
+        _In_ dds_entity_t reader,
+        _Inout_ void **buf,
+        _Out_ dds_sample_info_t *si);
 
 /**
  * @brief Return loaned samples to data-reader or condition associated with a data-reader
@@ -2374,12 +2956,13 @@ dds_read_next(
  * the memory is released so that the buffer can be reused during a successive read/take operation.
  * When a condition is provided, the reader to which the condition belongs is looked up.
  *
- * @param[in] rd_or_cnd Reader or condition that belongs to a reader
- * @param[in] buf An array of (pointers to) samples
- * @param[in] bufsz The number of (pointers to) samples stored in buf
+ * @param[in] rd_or_cnd Reader or condition that belongs to a reader.
+ * @param[in] buf An array of (pointers to) samples.
+ * @param[in] bufsz The number of (pointers to) samples stored in buf.
  *
  * @returns A dds_return_t indicating success or failure
  */
+/* TODO: Add list of possible return codes */
 _Pre_satisfies_(((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER ) ||\
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_READ ) || \
                 ((reader_or_condition & DDS_ENTITY_KIND_MASK) == DDS_KIND_COND_QUERY ))
@@ -2402,13 +2985,12 @@ dds_return_loan(
 */
 
 /**
- * Description : This operation takes a sample and returns an instance handle to be used for
- * subsequent operations.
+ * @brief This operation takes a sample and returns an instance handle to be used for subsequent operations.
  *
- * Arguments :
- * -# e Reader or Writer entity
- * -# data sample with a key fields set
- * -# Returns instance handle or DDS_HANDLE_NIL if instance could not be found from key
+ * @param[in]  entity Reader or Writer entity.
+ * @param[in]  data   Sample with a key fields set.
+ *
+ * @returns instance handle or DDS_HANDLE_NIL if instance could not be found from key.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT dds_instance_handle_t
@@ -2417,43 +2999,29 @@ dds_instance_lookup(
         const void *data);
 
 /**
- * Description : This operation takes an instance handle and return a key-value corresponding to it.
+ * @brief This operation takes an instance handle and return a key-value corresponding to it.
  *
- * Arguments :
- * -# e Reader or Writer entity
- * -# inst Instance handle
- * -# data pointer to an instance, to which the key ID corresponding to the instance handle will be
+ * @param[in]  entity Reader or writer entity.
+ * @param[in]  inst   Instance handle.
+ * @param[out] data   pointer to an instance, to which the key ID corresponding to the instance handle will be
  *    returned, the sample in the instance should be ignored.
- * -# Returns 0 on successful operation, or a non-zero value to indicate an error if the instance
- *    passed doesn't have a key-value
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             One of the parameters was invalid or the topic does not exist.
+ * @retval DDS_RETCODE_ERROR
+ *             An internal error has occurred.
  */
+/* TODO: Check return codes for completeness */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
-DDS_EXPORT int
+DDS_EXPORT dds_return_t
 dds_instance_get_key(
         dds_entity_t entity,
         dds_instance_handle_t inst,
         void *data);
-
-/**
- * Description : This operation stores the thread state for the thread created.
- *
- * Arguments :
- * -# name Thread name
- * -# Returns 0 on successful thread creation, else a non-zero value to indicate an error,
- *    which could be a lack of resources or a thread with the same name already exists.
- */
-DDS_EXPORT int
-dds_thread_init(
-        const char * name);
-
-/**
- * Description : This operation frees the thread state stored
- *
- * Note: This function should be called from the same thread context before exiting
- */
-DDS_EXPORT void
-dds_thread_fini(
-        void);
 
 /**
  * @brief Begin coherent publishing or begin accessing a coherent set in a subscriber
@@ -2461,14 +3029,16 @@ dds_thread_fini(
  * Invoking on a Writer or Reader behaves as if dds_begin_coherent was invoked on its parent
  * Publisher or Subscriber respectively.
  *
- * @param[in]  e - The entity that is prepared for coherent access
+ * @param[in]  entity The entity that is prepared for coherent access.
  *
- * @returns - A dds_return_t indicating success or failure
+ * @returns A dds_return_t indicating success or failure.
  *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful.
  * @retval DDS_RETCODE_ERROR
  *             An internal error has occurred.
- *         DDS_RETCODE_BAD_PARAMETER
- *             The provided entity is invalid or not supported
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The provided entity is invalid or not supported.
  */
 _Pre_satisfies_(((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER    ) || \
                 ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER) || \
@@ -2484,14 +3054,14 @@ dds_begin_coherent(
  * Invoking on a Writer or Reader behaves as if dds_end_coherent was invoked on its parent
  * Publisher or Subscriber respectively.
  *
- * @param[in] e - The entity on which coherent access is finished
+ * @param[in] entity The entity on which coherent access is finished.
  *
- * @returns - A dds_return_t indicating success or failure
+ * @returns A dds_return_t indicating success or failure.
  *
  * @retval DDS_RETCODE_OK
- *             The operation was successful
- *         DDS_RETCODE_BAD_PARAMETER
- *             The provided entity is invalid or not supported
+ *             The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The provided entity is invalid or not supported.
  */
 _Pre_satisfies_(((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER    ) || \
                 ((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER) || \
@@ -2508,30 +3078,66 @@ dds_end_coherent(
  * have new data available. Any on_data_available listener callbacks attached to respective
  * readers are invoked.
  *
- * @param[in] sub A subscriber
+ * @param[in] subscriber A valid subscriber handle.
  *
- * @returns - A dds_return_t indicating success or failure
+ * @returns A dds_return_t indicating success or failure.
  *
- * @reval DDS_RETCODE_OK
- *            The operation was successful
- *        DDS_RETCODE_BAD_PARAMETER
- *            The provided subscriber is invalid
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The provided subscriber is invalid.
  */
 _Pre_satisfies_((subscriber & DDS_ENTITY_KIND_MASK) == DDS_KIND_SUBSCRIBER)
 DDS_EXPORT dds_return_t
 dds_notify_readers(
         _In_ dds_entity_t subscriber);
 
-
 /**
- * Description : Checks whether the entity has one of its enabled statuses triggered.
+ * @brief Checks whether the entity has one of its enabled statuses triggered.
  *
- * Arguments :
- * -# e Entity for which to check for triggered status
+ * @param[in]  entity  Entity for which to check for triggered status.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The entity parameter is not a valid parameter.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
  */
 _Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
 DDS_EXPORT dds_return_t
 dds_triggered(
+        _In_ dds_entity_t entity);
+
+/**
+ * @brief Get the topic
+ *
+ * This operation returns a topic (handle) when the function call is done
+ * with reader, writer, read condition or query condition. For instance, it
+ * will return the topic when it is used for creating the reader or writer.
+ * For the conditions, it returns the topic that is used for creating the reader
+ * which was used to create the condition.
+ *
+ * @param[in] entity The entity.
+ *
+ * @returns A dds_return_t indicating success or failure.
+ *
+ * @retval DDS_RETCODE_OK
+ *             The operation was successful.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *             The entity parameter is not a valid parameter.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *             The operation is invoked on an inappropriate object.
+ * @retval DDS_RETCODE_ALREADY_DELETED
+ *             The entity has already been deleted.
+ */
+_Pre_satisfies_(entity & DDS_ENTITY_KIND_MASK)
+DDS_EXPORT dds_entity_t
+dds_get_topic(
         _In_ dds_entity_t entity);
 
 #if defined (__cplusplus)

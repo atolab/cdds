@@ -1,9 +1,9 @@
+/* TODO: add copyright header?
+   TODO: do we really need to expose all of this as an API? maybe some, but all? */
+
 /** @file
  *
  * @brief DDS C Implementation API
- *
- * @todo add copyright header?
- * @todo do we really need to expose all of this as an API? maybe some, but all?
  *
  * This header file defines the public API for all kinds of things in the
  * VortexDDS C language binding.
@@ -85,6 +85,7 @@ dds_topic_descriptor_t;
 
 #define DDS_DOMAIN_DEFAULT -1
 #define DDS_HANDLE_NIL 0
+#define DDS_ENTITY_NIL 0
 
 #define DDS_ENTITY_KIND_MASK (0x7F000000) /* Should be same as UT_HANDLE_KIND_MASK. */
 typedef enum dds_entity_kind
@@ -98,7 +99,8 @@ typedef enum dds_entity_kind
   DDS_KIND_PUBLISHER   = 0x06000000,
   DDS_KIND_COND_READ   = 0x07000000,
   DDS_KIND_COND_QUERY  = 0x08000000,
-  DDS_KIND_WAITSET     = 0x0A000000,
+  DDS_KIND_WAITSET     = 0x09000000,
+  DDS_KIND_INTERNAL    = 0x0A000000,
 }
 dds_entity_kind_t;
 
@@ -149,6 +151,9 @@ typedef int32_t dds_domainid_t;
 #define DDS_OP_TYPE_UNI (DDS_OP_VAL_UNI << 16)
 #define DDS_OP_TYPE_STU (DDS_OP_VAL_STU << 16)
 #define DDS_OP_TYPE_BST (DDS_OP_VAL_BST << 16)
+
+#define DDS_OP_TYPE_BOO DDS_OP_TYPE_1BY
+#define DDS_OP_SUBTYPE_BOO DDS_OP_SUBTYPE_1BY
 
 #define DDS_OP_SUBTYPE_1BY (DDS_OP_VAL_1BY << 8)
 #define DDS_OP_SUBTYPE_2BY (DDS_OP_VAL_2BY << 8)

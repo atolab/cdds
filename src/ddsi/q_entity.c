@@ -107,7 +107,7 @@ static struct reader * new_reader_guid
 );
 static struct participant *ref_participant (struct participant *pp, const struct nn_guid *guid_of_refing_entity);
 static void unref_participant (struct participant *pp, const struct nn_guid *guid_of_refing_entity);
-static void delete_proxy_group_locked (struct proxy_group *pgroup, int isimplicit);
+static void delete_proxy_group_locked (struct proxy_group *pgroup, nn_wctime_t timestamp, int isimplicit);
 
 static int gcreq_participant (struct participant *pp);
 static int gcreq_writer (struct writer *wr);
@@ -176,13 +176,14 @@ static int is_builtin_endpoint (nn_entityid_t id, nn_vendorid_t vendorid)
   return is_builtin_entityid (id, vendorid) && id.u != NN_ENTITYID_PARTICIPANT;
 }
 
-static void entity_common_init (struct entity_common *e, const struct nn_guid *guid, const char *name, enum entity_kind kind)
+static void entity_common_init (struct entity_common *e, const struct nn_guid *guid, const char *name, enum entity_kind kind, bool onlylocal)
 {
   e->guid = *guid;
   e->kind = kind;
   e->name = os_strdup (name ? name : "");
   e->iid = (ddsi_plugin.iidgen_fn) ();
   os_mutexInit (&e->lock);
+  e->onlylocal = onlylocal;
 }
 
 static void entity_common_fini (struct entity_common *e)
@@ -369,7 +370,7 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
   nn_guid_t subguid, group_guid;
 
   /* no reserved bits may be set */
-  assert ((flags & ~(RTPS_PF_NO_BUILTIN_READERS | RTPS_PF_NO_BUILTIN_WRITERS | RTPS_PF_PRIVILEGED_PP | RTPS_PF_IS_DDSI2_PP)) == 0);
+  assert ((flags & ~(RTPS_PF_NO_BUILTIN_READERS | RTPS_PF_NO_BUILTIN_WRITERS | RTPS_PF_PRIVILEGED_PP | RTPS_PF_IS_DDSI2_PP | RTPS_PF_ONLY_LOCAL)) == 0);
   /* privileged participant MUST have builtin readers and writers */
   assert (!(flags & RTPS_PF_PRIVILEGED_PP) || (flags & (RTPS_PF_NO_BUILTIN_READERS | RTPS_PF_NO_BUILTIN_WRITERS)) == 0);
 
@@ -400,7 +401,7 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
     else
     {
       os_mutexUnlock (&gv.participant_set_lock);
-      NN_ERROR2 ("new_participant(%x:%x:%x:%x, %x) failed: max participants reached\n", PGUID (*ppguid), flags);
+      NN_ERROR ("new_participant(%x:%x:%x:%x, %x) failed: max participants reached\n", PGUID (*ppguid), flags);
       return ERR_OUT_OF_IDS;
     }
   }
@@ -409,7 +410,7 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
 
   pp = os_malloc (sizeof (*pp));
 
-  entity_common_init (&pp->e, ppguid, "", EK_PARTICIPANT);
+  entity_common_init (&pp->e, ppguid, "", EK_PARTICIPANT, ((flags & RTPS_PF_ONLY_LOCAL) != 0));
   pp->user_refc = 1;
   pp->builtin_refc = 0;
   pp->builtins_deleted = 0;
@@ -550,25 +551,28 @@ int new_participant_guid (const nn_guid_t *ppguid, unsigned flags, const nn_plis
      it depends on the privileged participant, which must exist, hence
      the reference count of the privileged participant is incremented.
      If it is the privileged participant, set the global variable
-     pointing to it. */
-  os_mutexLock (&gv.privileged_pp_lock);
-  if ((pp->bes & builtin_writers_besmask) != builtin_writers_besmask ||
-      (pp->prismtech_bes & prismtech_builtin_writers_besmask) != prismtech_builtin_writers_besmask)
-  {
-    /* Simply crash when the privileged participant doesn't exist when
-       it is needed.  Its existence is a precondition, and this is not
-       a public API */
-    assert (gv.privileged_pp != NULL);
-    ref_participant (gv.privileged_pp, &pp->e.guid);
+     pointing to it.
+     Except when the participant is only locally available. */
+  if (!(flags & RTPS_PF_ONLY_LOCAL)) {
+    os_mutexLock (&gv.privileged_pp_lock);
+    if ((pp->bes & builtin_writers_besmask) != builtin_writers_besmask ||
+        (pp->prismtech_bes & prismtech_builtin_writers_besmask) != prismtech_builtin_writers_besmask)
+    {
+      /* Simply crash when the privileged participant doesn't exist when
+         it is needed.  Its existence is a precondition, and this is not
+         a public API */
+      assert (gv.privileged_pp != NULL);
+      ref_participant (gv.privileged_pp, &pp->e.guid);
+    }
+    if (flags & RTPS_PF_PRIVILEGED_PP)
+    {
+      /* Crash when two privileged participants are created -- this is
+         not a public API. */
+      assert (gv.privileged_pp == NULL);
+      gv.privileged_pp = pp;
+    }
+    os_mutexUnlock (&gv.privileged_pp_lock);
   }
-  if (flags & RTPS_PF_PRIVILEGED_PP)
-  {
-    /* Crash when two privileged participants are created -- this is
-       not a public API. */
-    assert (gv.privileged_pp == NULL);
-    gv.privileged_pp = pp;
-  }
-  os_mutexUnlock (&gv.privileged_pp_lock);
 
   /* Make it globally visible, then signal receive threads if
      necessary. Must do in this order, or the receive thread won't
@@ -749,26 +753,29 @@ static void unref_participant (struct participant *pp, const struct nn_guid *gui
   {
     os_mutexUnlock (&pp->refc_lock);
 
-    if ((pp->bes & builtin_writers_besmask) != builtin_writers_besmask ||
-        (pp->prismtech_bes & prismtech_builtin_writers_besmask) != prismtech_builtin_writers_besmask)
+    if (!(pp->e.onlylocal))
     {
-      /* Participant doesn't have a full complement of built-in
-         writers, therefore, it relies on gv.privileged_pp, and
-         therefore we must decrement the reference count of that one.
+      if ((pp->bes & builtin_writers_besmask) != builtin_writers_besmask ||
+          (pp->prismtech_bes & prismtech_builtin_writers_besmask) != prismtech_builtin_writers_besmask)
+      {
+        /* Participant doesn't have a full complement of built-in
+           writers, therefore, it relies on gv.privileged_pp, and
+           therefore we must decrement the reference count of that one.
 
-         Why read it with the lock held, only to release it and use it
-         without any attempt to maintain a consistent state?  We DO
-         have a counted reference, so it can't be freed, but there is
-         no formal guarantee that the pointer we read is valid unless
-         we read it with the lock held.  We can't keep the lock across
-         the unref_participant, because we may trigger a clean-up of
-         it.  */
-      struct participant *ppp;
-      os_mutexLock (&gv.privileged_pp_lock);
-      ppp = gv.privileged_pp;
-      os_mutexUnlock (&gv.privileged_pp_lock);
-      assert (ppp != NULL);
-      unref_participant (ppp, &pp->e.guid);
+           Why read it with the lock held, only to release it and use it
+           without any attempt to maintain a consistent state?  We DO
+           have a counted reference, so it can't be freed, but there is
+           no formal guarantee that the pointer we read is valid unless
+           we read it with the lock held.  We can't keep the lock across
+           the unref_participant, because we may trigger a clean-up of
+           it.  */
+        struct participant *ppp;
+        os_mutexLock (&gv.privileged_pp_lock);
+        ppp = gv.privileged_pp;
+        os_mutexUnlock (&gv.privileged_pp_lock);
+        assert (ppp != NULL);
+        unref_participant (ppp, &pp->e.guid);
+      }
     }
 
     os_mutexLock (&gv.participant_set_lock);
@@ -813,6 +820,11 @@ int delete_participant (const struct nn_guid *ppguid)
   struct participant *pp;
   if ((pp = ephash_lookup_participant_guid (ppguid)) == NULL)
     return ERR_UNKNOWN_ENTITY;
+  if (!(pp->e.onlylocal))
+  {
+    propagate_builtin_topic_cmparticipant(&(pp->e), pp->plist, now(), false);
+    propagate_builtin_topic_participant(&(pp->e), pp->plist, now(), false);
+  }
   remember_deleted_participant_guid (&pp->e.guid);
   ephash_remove_participant_guid (pp);
   gcreq_participant (pp);
@@ -823,6 +835,10 @@ struct writer *get_builtin_writer (const struct participant *pp, unsigned entity
 {
   nn_guid_t bwr_guid;
   unsigned bes_mask = 0, prismtech_bes_mask = 0;
+
+  if (pp->e.onlylocal) {
+      return NULL;
+  }
 
   /* If the participant the required built-in writer, we use it.  We
      check by inspecting the "built-in endpoint set" advertised by the
@@ -854,7 +870,7 @@ struct writer *get_builtin_writer (const struct participant *pp, unsigned entity
       bes_mask = NN_DISC_BUILTIN_ENDPOINT_TOPIC_ANNOUNCER;
       break;
     default:
-      NN_FATAL1 ("get_builtin_writer called with entityid %x\n", entityid);
+      NN_FATAL ("get_builtin_writer called with entityid %x\n", entityid);
       return NULL;
   }
 
@@ -1723,7 +1739,7 @@ static void proxy_writer_add_connection (struct proxy_writer *pwr, struct reader
   else if (last_deliv_seq == 0)
   {
     /* proxy-writer hasn't seen any data yet, in which case this reader is in sync with the proxy writer (i.e., no reader-specific reorder buffer needed), but still should generate a notification when all historical data has been received, except for the built-in ones (for now anyway, it may turn out to be useful for determining discovery status). */
-    m->in_sync = is_builtin_entityid (rd->e.guid.entityid, ownvendorid) ? PRMSS_SYNC : PRMSS_TLCATCHUP;
+    m->in_sync = PRMSS_TLCATCHUP;
     m->u.not_in_sync.end_of_tl_seq = MAX_SEQ_NUMBER;
     if (m->in_sync != PRMSS_SYNC)
       nn_log (LC_DISCOVERY, " - tlcatchup");
@@ -1737,7 +1753,7 @@ static void proxy_writer_add_connection (struct proxy_writer *pwr, struct reader
   {
     /* normal transient-local, reader is behind proxy writer */
     m->in_sync = PRMSS_OUT_OF_SYNC;
-    m->u.not_in_sync.end_of_tl_seq = MAX_SEQ_NUMBER;
+    m->u.not_in_sync.end_of_tl_seq = pwr->last_seq;
     m->u.not_in_sync.end_of_out_of_sync_seq = last_deliv_seq;
     nn_log(LC_DISCOVERY, " - out-of-sync %"PRId64, m->u.not_in_sync.end_of_out_of_sync_seq);
   }
@@ -1932,6 +1948,8 @@ static void connect_writer_with_proxy_reader (struct writer *wr, struct proxy_re
   OS_UNUSED_ARG(tnow);
   if (isb0 != isb1)
     return;
+  if (wr->e.onlylocal)
+    return;
   if (!isb0 && (reason = qos_match_p (prd->c.xqos, wr->xqos)) >= 0)
   {
     writer_qos_mismatch (wr, reason);
@@ -1948,6 +1966,8 @@ static void connect_proxy_writer_with_reader (struct proxy_writer *pwr, struct r
   int32_t reason;
   nn_count_t init_count;
   if (isb0 != isb1)
+    return;
+  if (rd->e.onlylocal)
     return;
   if (!isb0 && (reason = qos_match_p (rd->xqos, pwr->c.xqos)) >= 0)
   {
@@ -2268,7 +2288,7 @@ static void endpoint_common_init
   struct participant *pp
 )
 {
-  entity_common_init (e, guid, NULL, kind);
+  entity_common_init (e, guid, NULL, kind, pp->e.onlylocal);
   c->pp = ref_participant (pp, &e->guid);
   if (group_guid)
   {
@@ -2543,6 +2563,7 @@ static struct writer * new_writer_guid
   wr->num_acks_received = 0;
   wr->num_nacks_received = 0;
   wr->throttle_count = 0;
+  wr->throttle_tracing = 0;
   wr->rexmit_count = 0;
   wr->rexmit_lost_count = 0;
 
@@ -3474,7 +3495,8 @@ void new_proxy_participant
   const nn_plist_t *plist,
   int64_t tlease_dur,
   nn_vendorid_t vendor,
-  unsigned custom_flags
+  unsigned custom_flags,
+  nn_wctime_t timestamp
 )
 {
   /* No locking => iff all participants use unique guids, and sedp
@@ -3490,7 +3512,7 @@ void new_proxy_participant
 
   proxypp = os_malloc (sizeof (*proxypp));
 
-  entity_common_init (&proxypp->e, ppguid, "", EK_PROXY_PARTICIPANT);
+  entity_common_init (&proxypp->e, ppguid, "", EK_PROXY_PARTICIPANT, false);
   proxypp->refc = 1;
   proxypp->lease_expired = 0;
   proxypp->vendor = vendor;
@@ -3524,7 +3546,10 @@ void new_proxy_participant
     }
     else
     {
-      os_atomic_stvoidp (&proxypp->lease, lease_new (tlease_dur, &proxypp->e));
+      /* Lease duration is meaningless when the lease never expires, but when proxy participants are created implicitly because of endpoint discovery from a cloud service, we do want the lease to expire eventually when the cloud discovery service disappears and never reappears. The normal data path renews the lease, so if the lease expiry is changed after the DS disappears but data continues to flow (even if it is only a single sample) the proxy participant would immediately go back to a non-expiring lease with no further triggers for deleting it. Instead, we take tlease_dur == NEVER as a special value meaning a lease that doesn't expire now and that has a "reasonable" lease duration. That way the lease renewal in the data path is fine, and we only need to do something special in SEDP handling. */
+      nn_etime_t texp = add_duration_to_etime (now_et(), tlease_dur);
+      int64_t dur = (tlease_dur == T_NEVER) ? config.lease_duration : tlease_dur;
+      os_atomic_stvoidp (&proxypp->lease, lease_new (texp, dur, &proxypp->e));
       proxypp->owns_lease = 1;
     }
   }
@@ -3617,15 +3642,15 @@ void new_proxy_participant
         assert (is_builtin_entityid (guid1.entityid, proxypp->vendor));
         if (is_writer_entityid (guid1.entityid))
         {
-          new_proxy_writer (ppguid, &guid1, proxypp->as_meta, &plist_wr, gv.builtins_dqueue, gv.xevents);
+          new_proxy_writer (ppguid, &guid1, proxypp->as_meta, &plist_wr, gv.builtins_dqueue, gv.xevents, timestamp);
         }
         else
         {
 #ifdef DDSI_INCLUDE_SSM
           const int ssm = addrset_contains_ssm (proxypp->as_meta);
-          new_proxy_reader (ppguid, &guid1, proxypp->as_meta, &plist_rd, ssm);
+          new_proxy_reader (ppguid, &guid1, proxypp->as_meta, &plist_rd, timestamp, ssm);
 #else
-          new_proxy_reader (ppguid, &guid1, proxypp->as_meta, &plist_rd);
+          new_proxy_reader (ppguid, &guid1, proxypp->as_meta, &plist_rd, timestamp);
 #endif
         }
       }
@@ -3639,12 +3664,23 @@ void new_proxy_participant
      after ephash_insert_proxy_participant_guid even if
      privileged_pp_guid was NULL originally */
   os_mutexLock (&proxypp->e.lock);
+
   if (proxypp->owns_lease)
     lease_register (os_atomic_ldvoidp (&proxypp->lease));
+
+  if (proxypp->proxypp_have_spdp)
+  {
+    propagate_builtin_topic_participant(&(proxypp->e), proxypp->plist, timestamp, true);
+    if (proxypp->proxypp_have_cm)
+    {
+      propagate_builtin_topic_cmparticipant(&(proxypp->e), proxypp->plist, timestamp, true);
+    }
+  }
+
   os_mutexUnlock (&proxypp->e.lock);
 }
 
-int update_proxy_participant_plist_locked (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source)
+int update_proxy_participant_plist_locked (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source, nn_wctime_t timestamp)
 {
   /* Currently, built-in processing is single-threaded, and it is only through this function and the proxy participant deletion (which necessarily happens when no-one else potentially references the proxy participant anymore).  So at the moment, the lock is superfluous. */
   nn_plist_t *new_plist;
@@ -3654,10 +3690,26 @@ int update_proxy_participant_plist_locked (struct proxy_participant *proxypp, co
   nn_plist_fini (proxypp->plist);
   os_free (proxypp->plist);
   proxypp->plist = new_plist;
+
+  switch (source)
+  {
+    case UPD_PROXYPP_SPDP:
+      propagate_builtin_topic_participant(&(proxypp->e), proxypp->plist, timestamp, true);
+      if (!proxypp->proxypp_have_spdp && proxypp->proxypp_have_cm)
+        propagate_builtin_topic_cmparticipant(&(proxypp->e), proxypp->plist, timestamp, true);
+      proxypp->proxypp_have_spdp = 1;
+      break;
+    case UPD_PROXYPP_CM:
+      if (proxypp->proxypp_have_spdp)
+        propagate_builtin_topic_cmparticipant(&(proxypp->e), proxypp->plist, timestamp, true);
+      proxypp->proxypp_have_cm = 1;
+      break;
+  }
+
   return 0;
 }
 
-int update_proxy_participant_plist (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source)
+int update_proxy_participant_plist (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source, nn_wctime_t timestamp)
 {
   nn_plist_t tmp;
 
@@ -3666,7 +3718,7 @@ int update_proxy_participant_plist (struct proxy_participant *proxypp, const str
   switch (source)
   {
     case UPD_PROXYPP_SPDP:
-      update_proxy_participant_plist_locked (proxypp, datap, source);
+      update_proxy_participant_plist_locked (proxypp, datap, source, timestamp);
       break;
     case UPD_PROXYPP_CM:
       tmp = *datap;
@@ -3675,7 +3727,7 @@ int update_proxy_participant_plist (struct proxy_participant *proxypp, const str
         PP_PRISMTECH_WATCHDOG_SCHEDULING | PP_PRISMTECH_LISTENER_SCHEDULING |
         PP_PRISMTECH_SERVICE_TYPE | PP_ENTITY_NAME;
       tmp.qos.present &= QP_PRISMTECH_ENTITY_FACTORY;
-      update_proxy_participant_plist_locked (proxypp, &tmp, source);
+      update_proxy_participant_plist_locked (proxypp, &tmp, source, timestamp);
       break;
   }
   os_mutexUnlock (&proxypp->e.lock);
@@ -3701,6 +3753,7 @@ static void ref_proxy_participant (struct proxy_participant *proxypp, struct pro
 static void unref_proxy_participant (struct proxy_participant *proxypp, struct proxy_endpoint_common *c)
 {
   uint32_t refc;
+  const nn_wctime_t tnow = now();
 
   os_mutexLock (&proxypp->e.lock);
   refc = --proxypp->refc;
@@ -3737,7 +3790,7 @@ static void unref_proxy_participant (struct proxy_participant *proxypp, struct p
     assert (refc == 1);
     os_mutexUnlock (&proxypp->e.lock);
     nn_log (LC_DISCOVERY, "unref_proxy_participant(%x:%x:%x:%x): refc=%u, no endpoints, implicitly created, deleting\n", PGUID (proxypp->e.guid), (unsigned) refc);
-    delete_proxy_participant_by_guid(&proxypp->e.guid, 1);
+    delete_proxy_participant_by_guid(&proxypp->e.guid, tnow, 1);
     /* Deletion is still (and has to be) asynchronous. A parallel endpoint creation may or may not
        succeed, and if it succeeds it will be deleted along with the proxy participant. So "your
        mileage may vary". Also, the proxy participant may be blacklisted for a little ... */
@@ -3766,7 +3819,33 @@ static struct entity_common *entity_common_from_proxy_endpoint_common (const str
   return (struct entity_common *) ((char *) c - offsetof (struct proxy_writer, c));
 }
 
-static void delete_ppt (struct proxy_participant * proxypp, int isimplicit)
+static void delete_or_detach_dependent_pp (struct proxy_participant *p, struct proxy_participant *proxypp, nn_wctime_t timestamp, int isimplicit)
+{
+  os_mutexLock (&p->e.lock);
+  if (memcmp (&p->privileged_pp_guid, &proxypp->e.guid, sizeof (proxypp->e.guid)) != 0)
+  {
+    /* p not dependent on proxypp */
+    os_mutexUnlock (&p->e.lock);
+    return;
+  }
+  else if (!(vendor_is_cloud(p->vendor) && p->implicitly_created))
+  {
+    /* DDSI2 minimal participant mode -- but really, anything not discovered via Cloud gets deleted */
+    os_mutexUnlock (&p->e.lock);
+    (void) delete_proxy_participant_by_guid (&p->e.guid, timestamp, isimplicit);
+  }
+  else
+  {
+    nn_etime_t texp = add_duration_to_etime (now_et(), config.ds_grace_period);
+    /* Clear dependency (but don't touch entity id, which must be 0x1c1) and set the lease ticking */
+    nn_log (LC_DISCOVERY, "%x:%x:%x:%x detach-from-DS %x:%x:%x:%x\n", PGUID(p->e.guid), PGUID(proxypp->e.guid));
+    memset (&p->privileged_pp_guid.prefix, 0, sizeof (p->privileged_pp_guid.prefix));
+    lease_set_expiry (os_atomic_ldvoidp (&p->lease), texp);
+    os_mutexUnlock (&p->e.lock);
+  }
+}
+
+static void delete_ppt (struct proxy_participant * proxypp, nn_wctime_t timestamp, int isimplicit)
 {
   struct proxy_endpoint_common * c;
   int ret;
@@ -3778,10 +3857,7 @@ static void delete_ppt (struct proxy_participant * proxypp, int isimplicit)
     struct proxy_participant *p;
     ephash_enum_proxy_participant_init (&est);
     while ((p = ephash_enum_proxy_participant_next (&est)) != NULL)
-    {
-      if (memcmp (&p->privileged_pp_guid, &proxypp->e.guid, sizeof (proxypp->e.guid)) == 0)
-        (void) delete_proxy_participant_by_guid (&p->e.guid, isimplicit);
-    }
+      delete_or_detach_dependent_pp(p, proxypp, timestamp, isimplicit);
     ephash_enum_proxy_participant_fini (&est);
   }
 
@@ -3794,7 +3870,7 @@ static void delete_ppt (struct proxy_participant * proxypp, int isimplicit)
 
   nn_log (LC_DISCOVERY, "delete_ppt(%x:%x:%x:%x) - deleting groups\n", PGUID (proxypp->e.guid));
   while (!ut_avlIsEmpty (&proxypp->groups))
-    delete_proxy_group_locked (ut_avlRoot (&proxypp_groups_treedef, &proxypp->groups), isimplicit);
+    delete_proxy_group_locked (ut_avlRoot (&proxypp_groups_treedef, &proxypp->groups), timestamp, isimplicit);
 
   nn_log (LC_DISCOVERY, "delete_ppt(%x:%x:%x:%x) - deleting endpoints\n", PGUID (proxypp->e.guid));
   c = proxypp->endpoints;
@@ -3803,11 +3879,11 @@ static void delete_ppt (struct proxy_participant * proxypp, int isimplicit)
     struct entity_common *e = entity_common_from_proxy_endpoint_common (c);
     if (is_writer_entityid (e->guid.entityid))
     {
-      ret = delete_proxy_writer (&e->guid, isimplicit);
+      ret = delete_proxy_writer (&e->guid, timestamp, isimplicit);
     }
     else
     {
-      ret = delete_proxy_reader (&e->guid, isimplicit);
+      ret = delete_proxy_reader (&e->guid, timestamp, isimplicit);
     }
     (void) ret;
     c = c->next_ep;
@@ -3820,13 +3896,14 @@ static void delete_ppt (struct proxy_participant * proxypp, int isimplicit)
 typedef struct proxy_purge_data {
   struct proxy_participant *proxypp;
   const nn_locator_t *loc;
+  nn_wctime_t timestamp;
 } *proxy_purge_data_t;
 
 static void purge_helper (const nn_locator_t *n, void * varg)
 {
   proxy_purge_data_t data = (proxy_purge_data_t) varg;
   if (compare_locators (n, data->loc) == 0)
-    delete_proxy_participant_by_guid (&data->proxypp->e.guid, 1);
+    delete_proxy_participant_by_guid (&data->proxypp->e.guid, data->timestamp, 1);
 }
 
 void purge_proxy_participants (const nn_locator_t *loc, bool delete_from_as_disc)
@@ -3842,6 +3919,7 @@ void purge_proxy_participants (const nn_locator_t *loc, bool delete_from_as_disc
     thread_state_awake(self);
 
   data.loc = loc;
+  data.timestamp = now();
   ephash_enum_proxy_participant_init (&est);
   while ((data.proxypp = ephash_enum_proxy_participant_next (&est)) != NULL)
     addrset_forall (data.proxypp->as_meta, purge_helper, &data);
@@ -3855,7 +3933,7 @@ void purge_proxy_participants (const nn_locator_t *loc, bool delete_from_as_disc
     thread_state_asleep(self);
 }
 
-int delete_proxy_participant_by_guid (const struct nn_guid * guid, int isimplicit)
+int delete_proxy_participant_by_guid (const struct nn_guid * guid, nn_wctime_t timestamp, int isimplicit)
 {
   struct proxy_participant * ppt;
 
@@ -3872,7 +3950,7 @@ int delete_proxy_participant_by_guid (const struct nn_guid * guid, int isimplici
   remember_deleted_participant_guid (&ppt->e.guid);
   ephash_remove_proxy_participant_guid (ppt);
   os_mutexUnlock (&gv.lock);
-  delete_ppt (ppt, isimplicit);
+  delete_ppt (ppt, timestamp, isimplicit);
 
   return 0;
 }
@@ -3893,7 +3971,7 @@ uint64_t participant_instance_id (const struct nn_guid *guid)
 
 /* PROXY-GROUP --------------------------------------------------- */
 
-int new_proxy_group (const struct nn_guid *guid, const struct v_gid_s *gid, const char *name, const struct nn_xqos *xqos)
+int new_proxy_group (const struct nn_guid *guid, const struct v_gid_s *gid, const char *name, const struct nn_xqos *xqos, nn_wctime_t timestamp)
 {
   struct proxy_participant *proxypp;
   nn_guid_t ppguid;
@@ -3918,7 +3996,7 @@ int new_proxy_group (const struct nn_guid *guid, const struct v_gid_s *gid, cons
         is_sub = 1;
         break;
       default:
-        NN_WARNING1 ("new_proxy_group: unrecognised entityid: %x\n", guid->entityid.u);
+        NN_WARNING ("new_proxy_group: unrecognised entityid: %x\n", guid->entityid.u);
         return ERR_INVALID_DATA;
     }
     os_mutexLock (&proxypp->e.lock);
@@ -3956,7 +4034,7 @@ int new_proxy_group (const struct nn_guid *guid, const struct v_gid_s *gid, cons
   }
 }
 
-static void delete_proxy_group_locked (struct proxy_group *pgroup, int isimplicit)
+static void delete_proxy_group_locked (struct proxy_group *pgroup, nn_wctime_t timestamp, int isimplicit)
 {
   struct proxy_participant *proxypp = pgroup->proxypp;
   assert ((pgroup->xqos != NULL) == (pgroup->name != NULL));
@@ -3976,7 +4054,7 @@ static void delete_proxy_group_locked (struct proxy_group *pgroup, int isimplici
   os_free (pgroup);
 }
 
-void delete_proxy_group (const nn_guid_t *guid, int isimplicit)
+void delete_proxy_group (const nn_guid_t *guid, nn_wctime_t timestamp, int isimplicit)
 {
   struct proxy_participant *proxypp;
   nn_guid_t ppguid;
@@ -3987,7 +4065,7 @@ void delete_proxy_group (const nn_guid_t *guid, int isimplicit)
     struct proxy_group *pgroup;
     os_mutexLock (&proxypp->e.lock);
     if ((pgroup = ut_avlLookup (&proxypp_groups_treedef, &proxypp->groups, guid)) != NULL)
-      delete_proxy_group_locked (pgroup, isimplicit);
+      delete_proxy_group_locked (pgroup, timestamp, isimplicit);
     os_mutexUnlock (&proxypp->e.lock);
   }
 }
@@ -4009,7 +4087,7 @@ static void proxy_endpoint_common_init
     assert ((plist->qos.present & (QP_TOPIC_NAME | QP_TYPE_NAME)) == (QP_TOPIC_NAME | QP_TYPE_NAME));
 
   name = (plist->present & PP_ENTITY_NAME) ? plist->entity_name : "";
-  entity_common_init (e, guid, name, kind);
+  entity_common_init (e, guid, name, kind, false);
   c->xqos = nn_xqos_dup (&plist->qos);
   c->as = ref_addrset (as);
   c->topic = NULL; /* set from first matching reader/writer */
@@ -4037,7 +4115,7 @@ static void proxy_endpoint_common_fini (struct entity_common *e, struct proxy_en
 
 /* PROXY-WRITER ----------------------------------------------------- */
 
-int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, struct addrset *as, const nn_plist_t *plist, struct nn_dqueue *dqueue, struct xeventq *evq)
+int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, struct addrset *as, const nn_plist_t *plist, struct nn_dqueue *dqueue, struct xeventq *evq, nn_wctime_t timestamp)
 {
   struct proxy_participant *proxypp;
   struct proxy_writer *pwr;
@@ -4049,7 +4127,7 @@ int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, 
 
   if ((proxypp = ephash_lookup_proxy_participant_guid (ppguid)) == NULL)
   {
-    NN_WARNING1 ("new_proxy_writer(%x:%x:%x:%x): proxy participant unknown\n", PGUID (*guid));
+    NN_WARNING ("new_proxy_writer(%x:%x:%x:%x): proxy participant unknown\n", PGUID (*guid));
     return ERR_UNKNOWN_ENTITY;
   }
 
@@ -4232,7 +4310,7 @@ static void gc_delete_proxy_writer (struct gcreq *gcreq)
   os_free (pwr);
 }
 
-int delete_proxy_writer (const struct nn_guid *guid, int isimplicit)
+int delete_proxy_writer (const struct nn_guid *guid, nn_wctime_t timestamp, int isimplicit)
 {
   struct proxy_writer *pwr;
   nn_log (LC_DISCOVERY, "delete_proxy_writer (%x:%x:%x:%x) ", PGUID (*guid));
@@ -4257,7 +4335,7 @@ int delete_proxy_writer (const struct nn_guid *guid, int isimplicit)
 
 /* PROXY-READER ----------------------------------------------------- */
 
-int new_proxy_reader (const struct nn_guid *ppguid, const struct nn_guid *guid, struct addrset *as, const nn_plist_t *plist
+int new_proxy_reader (const struct nn_guid *ppguid, const struct nn_guid *guid, struct addrset *as, const nn_plist_t *plist, nn_wctime_t timestamp
 #ifdef DDSI_INCLUDE_SSM
                       , int favours_ssm
 #endif
@@ -4272,7 +4350,7 @@ int new_proxy_reader (const struct nn_guid *ppguid, const struct nn_guid *guid, 
 
   if ((proxypp = ephash_lookup_proxy_participant_guid (ppguid)) == NULL)
   {
-    NN_WARNING1 ("new_proxy_reader(%x:%x:%x:%x): proxy participant unknown\n", PGUID (*guid));
+    NN_WARNING ("new_proxy_reader(%x:%x:%x:%x): proxy participant unknown\n", PGUID (*guid));
     return ERR_UNKNOWN_ENTITY;
   }
 
@@ -4357,7 +4435,7 @@ static void gc_delete_proxy_reader (struct gcreq *gcreq)
   os_free (prd);
 }
 
-int delete_proxy_reader (const struct nn_guid *guid, int isimplicit)
+int delete_proxy_reader (const struct nn_guid *guid, nn_wctime_t timestamp, int isimplicit)
 {
   struct proxy_reader *prd;
   nn_log (LC_DISCOVERY, "delete_proxy_reader (%x:%x:%x:%x) ", PGUID (*guid));

@@ -6,6 +6,8 @@
 #include "kernel/dds_tkmap.h"
 #include "kernel/dds_iid.h"
 #include "kernel/dds_domain.h"
+#include "kernel/dds_err.h"
+#include "kernel/dds_builtin.h"
 #include "ddsi/ddsi_ser.h"
 #include "os/os.h"
 #include "ddsi/q_config.h"
@@ -13,6 +15,8 @@
 #include "ddsi/q_servicelease.h"
 #include "ddsi/q_entity.h"
 #include "ddsi/q_thread.h"
+#include "vddsc/vddsc_project.h"
+#include "kernel/dds_report.h"
 
 #ifdef _WRS_KERNEL
 char *os_environ[] = { NULL };
@@ -69,38 +73,17 @@ void ddsi_impl_init (void)
   ddsi_plugin.iidgen_fn = dds_iid_gen;
 }
 
-static void dds_set_report_level (void)
-{
-  os_reportVerbosity = OS_NONE;
-  if (config.enabled_logcats & LC_FATAL)
-  {
-    os_reportVerbosity = OS_FATAL;
-  }
-  if (config.enabled_logcats & LC_ERROR)
-  {
-    os_reportVerbosity = OS_ERROR;
-  }
-  if (config.enabled_logcats & LC_WARNING)
-  {
-    os_reportVerbosity = OS_WARNING;
-  }
-  if (config.enabled_logcats != 0)
-  {
-    os_reportVerbosity = OS_DEBUG;
-  }
-}
-
-extern int dds_init ()
+dds_return_t
+dds_init(void)
 {
   const char * uri;
   char tmp[50];
 
+  /* TODO: Proper init-once */
   if (os_atomic_inc32_nv (&dds_global.m_init_count) > 1)
   {
     return DDS_RETCODE_OK;
   }
-
-  uri = os_getenv ("VORTEX_URI");
 
   os_osInit ();
   gv.tstart = now ();
@@ -114,23 +97,15 @@ extern int dds_init ()
 
   if (ut_handleserver_init() != UT_HANDLE_OK)
   {
-    fprintf (stderr, "Initializing handle server failed\n");
-    return DDS_ERRNO (DDS_RETCODE_ERROR);
+      return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize internal handle server");
   }
 
+  uri = os_getenv (VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
   dds_cfgst = config_init (uri);
   if (dds_cfgst == NULL)
   {
-    fprintf (stderr, "Configuration XML file failed to parse\n");
-    return DDS_ERRNO (DDS_RETCODE_ERROR);
+    return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to parse configuration XML file %s", uri);
   }
-
-  if (! rtps_config_open ())
-  {
-    fprintf (stderr, "Failed to open log file\n");
-    return DDS_ERRNO (DDS_RETCODE_ERROR);
-  }
-  dds_set_report_level ();
 
   os_procName(tmp, sizeof(tmp));
   dds_init_exe = dds_string_dup (tmp);
@@ -145,15 +120,21 @@ dds_domainid_t dds_domain_default (void)
 
 /* Actual initialization called when participant created */
 
-extern int dds_init_impl (dds_domainid_t domain)
+dds_return_t
+dds_init_impl(
+        _In_ dds_domainid_t domain)
 {
   char buff[64];
   uint32_t len;
+  dds_return_t ret;
 
   if (dds_global.m_default_domain != DDS_DOMAIN_DEFAULT)
   {
     if ((dds_global.m_default_domain != domain) && (domain != DDS_DOMAIN_DEFAULT))
     {
+      ret = DDS_ERRNO(DDS_RETCODE_ERROR,
+                      "DDS Init failed: Inconsistent domain configuration detected: default domain %d, domain %d",
+                      dds_global.m_default_domain, domain);
       goto fail;
     }
     return DDS_RETCODE_OK;
@@ -163,7 +144,7 @@ extern int dds_init_impl (dds_domainid_t domain)
 
   if (domain == DDS_DOMAIN_DEFAULT)
   {
-    char * edom = os_getenv ("VORTEX_DOMAIN");
+    const char * edom = os_getenv ("VORTEX_DOMAIN");
     if (edom)
     {
       config.domainId = atoi (edom);
@@ -176,6 +157,7 @@ extern int dds_init_impl (dds_domainid_t domain)
   dds_global.m_default_domain = config.domainId;
   if (rtps_config_prep (dds_cfgst) != 0)
   {
+    ret = DDS_ERRNO(DDS_RETCODE_ERROR, "RTPS configuration failed.");
     goto fail;
   }
   ut_avlInit (&dds_domaintree_def, &dds_global.m_domains);
@@ -218,17 +200,21 @@ extern int dds_init_impl (dds_domainid_t domain)
   (void) snprintf (gv.default_plist_pp.entity_name, len, "%s<%u>", dds_init_exe ? dds_init_exe : "", gv.default_plist_pp.process_id);
   gv.default_plist_pp.present |= PP_ENTITY_NAME;
 
+  dds__builtin_init();
+
   return DDS_RETCODE_OK;
 
 fail:
 
-  return DDS_ERRNO (DDS_RETCODE_ERROR);
+  return ret;
 }
 
 extern void dds_fini (void)
 {
   if (os_atomic_dec32_nv (&dds_global.m_init_count) == 0)
   {
+    dds__builtin_fini();
+
     ut_handleserver_fini();
     if (ddsi_plugin.init_fn)
     {

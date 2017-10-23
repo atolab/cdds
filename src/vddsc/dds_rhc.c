@@ -26,6 +26,7 @@
 #include "ddsi/q_radmin.h" /* sampleinfo */
 #include "ddsi/q_entity.h" /* proxy_writer_info */
 #include "ddsi/sysdeps.h"
+#include "kernel/dds_report.h"
 
 /* INSTANCE MANAGEMENT
    ===================
@@ -1782,16 +1783,20 @@ static int dds_rhc_take_w_qminv
                     inst->nvread--;
                     rhc->n_vread--;
                   }
-                  free_sample (inst, sample);
 
                   if (--inst->nvsamples > 0)
                   {
+                    if (inst->latest == sample) {
+                      inst->latest = psample;
+                    }
                     psample->next = sample1;
                   }
                   else
                   {
                     inst->latest = NULL;
                   }
+
+                  free_sample (inst, sample);
 
                   if (++n == max_samples)
                   {
@@ -2047,7 +2052,7 @@ static uint32_t rhc_get_cond_trigger (struct rhc_instance * const inst, const dd
       m = m && !INST_IS_EMPTY (inst);
       break;
     default:
-      NN_FATAL1 ("update_readconditions: sample_states invalid: %x\n", c->m_sample_states);
+      NN_FATAL ("update_readconditions: sample_states invalid: %x\n", c->m_sample_states);
   }
   return m ? 1 : 0;
 }
@@ -2165,7 +2170,7 @@ static bool update_conditions_locked
         m_post = m_post && (post->has_read + post->has_not_read);
         break;
       default:
-        NN_FATAL1 ("update_readconditions: sample_states invalid: %x\n", iter->m_sample_states);
+        NN_FATAL ("update_readconditions: sample_states invalid: %x\n", iter->m_sample_states);
     }
 
     TRACE (("  cond %p: ", (void *) iter));

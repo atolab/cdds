@@ -62,39 +62,21 @@ void nn_log_set_tstamp (nn_wctime_t tnow);
 #define LOG_THREAD_CPUTIME(guard) do {                                  \
     if (config.enabled_logcats & LC_TIMING)                             \
     {                                                                   \
-      nn_mtime_t tnow = now_mt ();                                      \
-      if (tnow.v >= (guard).v)                                          \
+      nn_mtime_t tnowlt = now_mt ();                                      \
+      if (tnowlt.v >= (guard).v)                                          \
       {                                                                 \
         int64_t ts = get_thread_cputime ();                            \
         nn_log (LC_TIMING, "thread_cputime %d.%09d\n",                  \
                 (int) (ts / T_SECOND), (int) (ts % T_SECOND));          \
-        (guard).v = tnow.v + T_SECOND;                                  \
+        (guard).v = tnowlt.v + T_SECOND;                                  \
       }                                                                 \
     }                                                                   \
   } while (0)
 
 
-#define NN_WARNING0(fmt) nn_log (LC_WARNING, ("<Warning> " fmt))
-#define NN_WARNING1(fmt,a) nn_log (LC_WARNING, ("<Warning> " fmt),a)
-#define NN_WARNING2(fmt,a,b) nn_log (LC_WARNING, ("<Warning> " fmt),a,b)
-#define NN_WARNING3(fmt,a,b,c) nn_log (LC_WARNING, ("<Warning> " fmt),a,b,c)
-#define NN_WARNING4(fmt,a,b,c,d) nn_log (LC_WARNING, ("<Warning> " fmt),a,b,c,d)
-#define NN_WARNING5(fmt,a,b,c,d,e) nn_log (LC_WARNING, ("<Warning> " fmt),a,b,c,d,e)
-#define NN_WARNING6(fmt,a,b,c,d,e,f) nn_log (LC_WARNING, ("<Warning> " fmt),a,b,c,d,e,f)
-#define NN_WARNING7(fmt,a,b,c,d,e,f,g) nn_log (LC_WARNING, ("<Warning> " fmt),a,b,c,d,e,f,g)
-
-#define NN_ERROR0(fmt) nn_log (LC_ERROR, ("<Error> " fmt))
-#define NN_ERROR1(fmt,a) nn_log (LC_ERROR, ("<Error> " fmt),a)
-#define NN_ERROR2(fmt,a,b) nn_log (LC_ERROR, ("<Error> " fmt),a,b)
-#define NN_ERROR3(fmt,a,b,c) nn_log (LC_ERROR, ("<Error> " fmt),a,b,c)
-#define NN_ERROR4(fmt,a,b,c,d) nn_log (LC_ERROR, ("<Error> " fmt),a,b,c,d)
-#define NN_ERROR5(fmt,a,b,c,d,e) nn_log (LC_ERROR, ("<Error> " fmt),a,b,c,d,e)
-
-#define NN_FATAL0(fmt) nn_log (LC_FATAL, ("<Fatal> " fmt))
-#define NN_FATAL1(fmt,a) nn_log (LC_FATAL, ("<Fatal> " fmt),a)
-#define NN_FATAL2(fmt,a,b) nn_log (LC_FATAL, ("<Fatal> " fmt),a,b)
-#define NN_FATAL3(fmt,a,b,c) nn_log (LC_FATAL, ("<Fatal> " fmt),a,b,c)
-#define NN_FATAL4(fmt,a,b,c,d) nn_log (LC_FATAL, ("<Fatal> " fmt),a,b,c,d)
+#define NN_WARNING(fmt,...) nn_log (LC_WARNING, ("<Warning> " fmt),##__VA_ARGS__)
+#define NN_ERROR(fmt,...) nn_log (LC_ERROR, ("<Error> " fmt),##__VA_ARGS__)
+#define NN_FATAL(fmt,...) nn_log (LC_FATAL, ("<Fatal> " fmt),##__VA_ARGS__)
 
 #if defined (__cplusplus)
 }

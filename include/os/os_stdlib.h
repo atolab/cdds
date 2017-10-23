@@ -54,10 +54,13 @@ extern "C" {
      *     variable is found
      * - returns NULL if
      *     variable is not found
+     *
+     * TODO CHAM-379 : Coverity generates a tainted string.
+     * For now, the Coverity warning reported intentional in Coverity.
      */
-    OSAPI_EXPORT char *
+    OSAPI_EXPORT _Ret_opt_z_ const char *
     os_getenv(
-              const char *variable);
+              _In_z_ const char *variable);
 
     /** \brief Set environment variable definition
      *
@@ -78,21 +81,6 @@ extern "C" {
     OSAPI_EXPORT os_result
     os_putenv(
               char *variable_definition);
-
-    /** \brief Set an environment variable definition
-     * Possible Results:
-     * - assertion failure: name or value are null.
-     * @param name variable name to be set
-     * @param value the value to set it to
-     * @return os_resultSuccess if
-     *     environment variable is set according the variable_definition or
-     * os_resultFail if
-     *     environment variable could not be set according the
-     *     variable_definition
-     */
-    OSAPI_EXPORT os_result
-    os_setenv(
-              const char *name, const char *value);
 
     /** \brief Get file seperator
      *
@@ -262,14 +250,14 @@ extern "C" {
      *   The allocated string must be freed using os_free
      *
      * Possible results:
-     * - return NULL if
-     *     all resources are depleted
      * - return duplicate of the string s1 allocated via
      *     os_malloc
      */
+    _Ret_z_
+    _Check_return_
     OSAPI_EXPORT char *
     os_strdup(
-              const char *s1) __nonnull_all__
+              _In_z_ const char *s1) __nonnull_all__
     __attribute_malloc__
     __attribute_returns_nonnull__
     __attribute_warn_unused_result__;
@@ -323,7 +311,7 @@ extern "C" {
      * - return
      *   Upon successful completion will return the number of
      *   bytes written to file
-     *   or a negative value if an error occured.
+     *   or a negative value if an error occurred.
      *   errno will be set in such case
      * - Writes formatted output to file.
      */
@@ -627,9 +615,11 @@ extern "C" {
      * - returns normalized filepath conform current platform
      * - return NULL if out of memory.
      */
+    _Ret_z_
+    _Must_inspect_result_
     OSAPI_EXPORT char *
     os_fileNormalize(
-                     const char *filepath);
+                     _In_z_ const char *filepath);
 
     /**
      * \brief Flushes the internal buffers associated with the file handle to disk
@@ -657,7 +647,7 @@ extern "C" {
      * - char * of the absolute path of the temporary location.  This will return
      * always return a valid value, using a default if necessary
      */
-    OSAPI_EXPORT const char *
+    OSAPI_EXPORT _Ret_opt_z_ const char *
     os_getTempDir(void);
 
     /**
@@ -678,6 +668,42 @@ extern "C" {
         _In_ size_t count);
 
     /**
+	 * \brief the os_flockfile() function waits for *filehandle to be
+	 * no longer locked by a different thread, then makes the current
+	 * thread owner of *filehandle, and increments the lockcount.
+	 * (not effective on VxWorks DKM platform)
+	 *
+	 * Precondition:
+	 *   none
+	 *
+	 * Possible results:
+	 * - No error information is returned.
+	 * The thread will block until the lock is acquired.
+	 * An explicit call to os_funlockfile has to be used to release the lock.
+	 *
+	 */
+	OSAPI_EXPORT void os_flockfile(
+		FILE *file);
+
+	/**
+	 * \brief the os_funlockfile function decrements the lock count and releases
+	 *  the internal locking object of the *filehandle. The *filehandle must
+	 *  have been locked before by a call to os_flockfile.
+	 *  (not effective on VxWorks DKM platform)
+	 *
+	 * Precondition:
+	 *   none
+	 *
+	 * Possible results:
+	 * -  No error information is returned.
+	 * The behaviour is undefined if a thread other than the current owner calls
+	 * the os_funlockfile() function.
+	 *
+	 */
+	OSAPI_EXPORT void os_funlockfile(
+		FILE *file);
+
+    /**
      * \brief binary search algorithm on an already sorted list.
      *
      *
@@ -692,6 +718,131 @@ extern "C" {
     OSAPI_EXPORT void *
     os_bsearch(const void *key, const void *base, size_t nmemb, size_t size,
                int (*compar) (const void *, const void *));
+
+    /**
+	 * \brief the os_getopt function gets the next option argument from the argument
+	 * list specified by the argv and argc arguments. Normally these values come
+	 * directly from the arguments received by main.
+	 *
+	 * The opts argument is a string that specifies the option characters that are
+	 * valid for this program. An option character in this string can be followed
+	 * by a colon (‘:’) to indicate that it takes a required argument. If an option
+	 * character is followed by two colons (‘::’), its argument is optional;
+	 *
+	 *
+	 * Precondition:
+	 *   none
+	 *
+	 * Possible results:
+	 * - If an option was successfully found, then os_getopt() returns the option
+	 * character.  If all command-line options have been parsed, then
+	 * os_getopt() returns -1.  If os_getopt() encounters an option character that
+	 * was not in opts, then '?' is returned.  If os_getopt() encounters
+	 * an option with a missing argument, then the return value depends on
+	 * the first character in opts: if it is ':', then ':' is returned;
+	 * otherwise '?' is returned.
+	 *
+	 */
+	OSAPI_EXPORT int
+	os_getopt(
+			_In_range_(0, INT_MAX) int argc,
+			_In_reads_z_(argc) char **argv,
+			_In_z_ const char *opts);
+
+	/**
+	 * \brief the os_set_opterr function sets the value of the opterr variable.
+	 * opterr is used as a flag to suppress an error message generated by
+	 * getopt. When opterr is set to 0, it suppresses the error message generated
+	 * by getopt when that function does not recognize an option character.
+	 *
+	 * Precondition:
+	 *   none
+	 *
+	 * Possible results:
+	 * - No error information is returned.
+	 * Set the value of the opterr variable.
+	 *
+	 */
+	OSAPI_EXPORT void
+	os_set_opterr(_In_range_(0, INT_MAX) int err);
+
+	/**
+	 * \brief the os_get_opterr returns the value of the opterr variable.
+	 * opterr is used as a flag to suppress an error message generated by
+	 * getopt. When opterr is set to 0, it suppresses the error message generated
+	 * by getopt when that function does not recognize an option character.
+	 *
+	 * Precondition:
+	 *   none
+	 *
+	 * Possible results:
+	 * - return the value of the opterr variable.
+	 *
+	 */
+	OSAPI_EXPORT int
+	os_get_opterr(void);
+
+	/**
+	 * \brief the os_set_optind function sets the value of the optind variable.
+	 *
+	 * Precondition:
+	 *   none
+	 *
+	 * Possible results:
+	 * - No error information is returned.
+	 * Set the value of the optind variable.
+	 *
+	 */
+	OSAPI_EXPORT void
+	os_set_optind(_In_range_(0, INT_MAX) int index);
+
+	/**
+	 * \brief the os_get_optind function returns the value of the optind variable.
+	 * optind is set by getopt to the index of the next element of the argv
+	 * array to be processed. Once getopt has found all of the option arguments,
+	 * this variable can be used to determine where the remaining non-option
+	 * arguments begin. The initial value of this variable is 1.
+	 *
+	 * Precondition:
+	 *   none
+	 *
+	 * Possible results:
+	 * - return the value of the optind variable.
+	 *
+	 */
+	OSAPI_EXPORT int
+	os_get_optind(void);
+
+	/**
+	 * \brief the os_get_optopt function returns the value of the optopt variable.
+	 * optopt holds the unknown option character when that option
+	 * character is not recognized by getopt.
+	 *
+	 * Precondition:
+	 *   none
+	 *
+	 * Possible results:
+	 * - return the value of the optopt variable.
+	 *
+	 */
+	OSAPI_EXPORT int
+	os_get_optopt(void);
+
+	/**
+	 * \brief the os_get_optarg function returns the value of the optarg variable.
+	 * optarg is set by getopt to point at the value of the option
+	 * argument, for those options that accept arguments.
+	 *
+	 * Precondition:
+	 *   none
+	 *
+	 * Possible results:
+	 * - return the value of the optarg variable.
+	 *
+	 */
+	OSAPI_EXPORT char *
+	os_get_optarg(void);
+
 
 #if defined (__cplusplus)
 }

@@ -12,6 +12,7 @@ function(add_criterion_executable _target)
   set(test "(^|${b})Test${s}*\\(${arg},${arg}(,[^\\)]+)?\\)") # Test
   set(params "${s}*\\([^\\)]*\\)${s}*")
   set(theory "(^|${b})Theory${s}*\\(${params},${arg},${arg}(,[^\\)]+)?\\)") # Theory
+  set(paramtest "(^|${b})ParameterizedTest${s}*\\([^,]+,${arg},${arg}(,[^\\)]+)?\\)") # ParameterizedTest
 
   glob(_files "c" ${ARGN})
 
@@ -35,6 +36,16 @@ function(add_criterion_executable _target)
       foreach(_match ${_matches})
         string(REGEX REPLACE "${theory}" "\\2" _suite "${_match}")
         string(REGEX REPLACE "${theory}" "\\3" _name "${_match}")
+        list(APPEND _tests "${_suite}:${_name}")
+      endforeach()
+    endif()
+
+    string(REGEX MATCHALL "${paramtest}" _matches "${_contents}")
+    list(LENGTH _matches _length)
+    if(_length)
+      foreach(_match ${_matches})
+        string(REGEX REPLACE "${paramtest}" "\\2" _suite "${_match}")
+        string(REGEX REPLACE "${paramtest}" "\\3" _name "${_match}")
         list(APPEND _tests "${_suite}:${_name}")
       endforeach()
     endif()

@@ -236,6 +236,7 @@ typedef struct nn_share_qospolicy {
 #define QP_PRISMTECH_SUBSCRIPTION_KEYS       ((uint64_t)1 << 25)
 #define QP_PRISMTECH_ENTITY_FACTORY          ((uint64_t)1 << 27)
 #define QP_PRISMTECH_SYNCHRONOUS_ENDPOINT    ((uint64_t)1 << 28)
+#define QP_RTI_TYPECODE                      ((uint64_t)1 << 29)
 
 /* Partition QoS is not RxO according to the specification (DDS 1.2,
    section 7.1.3), but communication will not take place unless it
@@ -289,6 +290,8 @@ typedef struct nn_xqos {
   /*x xR*/nn_reader_lifespan_qospolicy_t reader_lifespan;
   /*x xR*/nn_share_qospolicy_t share;
   /*xxx */nn_synchronous_endpoint_qospolicy_t synchronous_endpoint;
+
+  /*   X*/nn_octetseq_t rti_typecode;
 } nn_xqos_t;
 
 struct nn_xmsg;

@@ -1,8 +1,8 @@
+/* TODO: add copyright header? */
+
 /** @file
  *
  * @brief DDS C Stream API
- *
- * @todo add copyright header?
  *
  * This header file defines the public API of the Streams in the
  * VortexDDS C language binding.

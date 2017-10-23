@@ -38,7 +38,7 @@ create_topic_name(const char *prefix, char *name, size_t size)
     /* Get semi random g_topic name. */
     os_procId pid = os_procIdSelf();
     uintmax_t tid = os_threadIdToInteger(os_threadIdSelf());
-    snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
+    (void) snprintf(name, size, "%s_pid%"PRIprocId"_tid%"PRIuMAX"", prefix, pid, tid);
     return name;
 }
 
@@ -51,7 +51,7 @@ hierarchy_init(void)
     g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
     cr_assert_gt(g_participant, 0, "Failed to create prerequisite g_participant");
 
-    g_topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_hierarchy_test", name, 100), NULL, NULL);
+    g_topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_hierarchy_test", name, sizeof name), NULL, NULL);
     cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
 
     g_publisher = dds_create_publisher(g_participant, NULL, NULL);
@@ -153,6 +153,52 @@ Test(vddsc_entity_delete, recursive, .init=hierarchy_init, .fini=hierarchy_fini)
 }
 /*************************************************************************************************/
 
+/*************************************************************************************************/
+Test(vddsc_entity_delete, recursive_with_deleted_topic)
+{
+    dds_domainid_t id;
+    dds_return_t ret;
+    char name[100];
+
+    /* Internal handling of topic is different from all the other entities.
+     * It's very interesting if this recursive deletion still works and
+     * doesn't crash when the topic is already deleted (CHAM-424). */
+
+    /* First, create a topic and a writer with that topic. */
+    g_participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(g_participant, 0, "Failed to create prerequisite g_participant");
+    g_topic = dds_create_topic(g_participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_hierarchy_test", name, 100), NULL, NULL);
+    cr_assert_gt(g_topic, 0, "Failed to create prerequisite g_topic");
+    g_writer = dds_create_writer(g_participant, g_topic, NULL, NULL);
+    cr_assert_gt(g_writer, 0, "Failed to create prerequisite g_writer");
+    g_keep = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(g_keep, 0, "Failed to create prerequisite g_keep");
+
+    /* Second, delete the topic to make sure that the writer holds the last
+     * reference to the topic and thus will delete it when it itself is
+     * deleted. */
+    ret = dds_delete(g_topic);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK);
+
+    /* Third, deleting the participant should delete all children of which
+     * the writer with the last topic reference is one. */
+    ret = dds_delete(g_participant);
+    /* Before the CHAM-424 fix, we would not get here because of a crash,
+     * or it (incidentally) continued but returned an error. */
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK);
+
+    /* Check if the entities are actually deleted. */
+    ret = dds_get_domainid(g_participant, &id);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED, "%s", dds_err_str(ret));
+    ret = dds_get_domainid(g_topic, &id);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED);
+    ret = dds_get_domainid(g_writer, &id);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED);
+
+    dds_delete(g_keep);
+}
+/*************************************************************************************************/
+
 
 
 
@@ -194,11 +240,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_participant, invalid_entities, .i
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t participant;
-
-    if (entity < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = entity;
-    }
 
     participant = dds_get_participant(entity);
     cr_assert_eq(dds_err_nr(participant), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(participant), dds_err_nr(exp));
@@ -261,7 +302,7 @@ Test(vddsc_entity_get_parent, participant, .init=hierarchy_init, .fini=hierarchy
 {
     dds_entity_t parent;
     parent = dds_get_parent(g_participant);
-    cr_assert_eq(dds_err_nr(parent), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(parent));
+    cr_assert_eq(dds_err_nr(parent), DDS_ENTITY_NIL, "returned %d", dds_err_nr(parent));
 }
 /*************************************************************************************************/
 
@@ -286,11 +327,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_parent, invalid_entities, .init=h
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t parent;
-
-    if (entity < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = entity;
-    }
 
     parent = dds_get_parent(entity);
     cr_assert_eq(dds_err_nr(parent), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(parent), dds_err_nr(exp));
@@ -444,11 +480,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_children, invalid_entities, .init
     dds_entity_t children[4];
     dds_return_t ret;
 
-    if (entity < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = entity;
-    }
-
     ret = dds_get_children(entity, children, 4);
     cr_assert_eq(dds_err_nr(ret), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(ret), dds_err_nr(exp));
 }
@@ -458,8 +489,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_children, invalid_entities, .init
 
 
 
-#if 0
-/* TODO: CHAM-291 Switch tests on when dds_get_topic gets available. */
 /**************************************************************************************************
  *
  * These will check the dds_get_topic in various ways.
@@ -467,13 +496,13 @@ Theory((dds_entity_t entity), vddsc_entity_get_children, invalid_entities, .init
  *************************************************************************************************/
 /*************************************************************************************************/
 TheoryDataPoints(vddsc_entity_get_topic, data_entities) = {
-        DataPoints(dds_entity_t*, &g_readcond, &data_entities, &g_reader, &g_writer),
+        DataPoints(dds_entity_t*, &g_readcond, &g_querycond, &g_reader, &g_writer),
 };
 Theory((dds_entity_t *entity), vddsc_entity_get_topic, data_entities, .init=hierarchy_init, .fini=hierarchy_fini)
 {
     dds_entity_t topic;
     topic = dds_get_topic(*entity);
-    cr_assert_eq(topic, g_topic);
+    cr_assert_eq(topic, g_topic );
 }
 /*************************************************************************************************/
 
@@ -499,11 +528,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_topic, invalid_entities, .init=hi
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t topic;
 
-    if (entity < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = entity;
-    }
-
     topic = dds_get_topic(entity);
     cr_assert_eq(dds_err_nr(topic), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(topic), dds_err_nr(exp));
 }
@@ -520,7 +544,7 @@ Theory((dds_entity_t *entity), vddsc_entity_get_topic, non_data_entities, .init=
     cr_assert_eq(dds_err_nr(topic), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(topic));
 }
 /*************************************************************************************************/
-#endif
+
 
 
 
@@ -557,11 +581,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_publisher, invalid_writers, .init
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t publisher;
-
-    if (entity < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = entity;
-    }
 
     publisher = dds_get_publisher(entity);
     cr_assert_eq(dds_err_nr(publisher), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(publisher), dds_err_nr(exp));
@@ -621,11 +640,6 @@ Theory((dds_entity_t entity), vddsc_entity_get_subscriber, invalid_readers, .ini
 {
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t subscriber;
-
-    if (entity < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = entity;
-    }
 
     subscriber = dds_get_subscriber(entity);
     cr_assert_eq(dds_err_nr(subscriber), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(subscriber), dds_err_nr(exp));
@@ -688,11 +702,6 @@ Theory((dds_entity_t cond), vddsc_entity_get_datareader, invalid_conds, .init=hi
     dds_entity_t exp = DDS_RETCODE_BAD_PARAMETER * -1;
     dds_entity_t reader;
 
-    if (cond < 0) {
-        /* Entering the API with an error should return the same error. */
-        exp = cond;
-    }
-
     reader = dds_get_datareader(cond);
     cr_assert_eq(dds_err_nr(reader), dds_err_nr(exp), "returned %d != expected %d", dds_err_nr(reader), dds_err_nr(exp));
 }
@@ -708,7 +717,268 @@ Theory((dds_entity_t *cond), vddsc_entity_get_datareader, non_conds, .init=hiera
     reader = dds_get_datareader(*cond);
     cr_assert_eq(dds_err_nr(reader), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(reader));
 }
+
 /*************************************************************************************************/
 
+/*************************************************************************************************/
+Test(vddsc_entity_implicit_publisher, deleted)
+{
+    dds_entity_t participant;
+    dds_entity_t writer;
+    dds_entity_t topic;
+    dds_return_t ret;
+    char name[100];
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_entity_implicit_publisher_test", name, 100), NULL, NULL);
+    cr_assert_gt(topic, 0);
+
+    writer = dds_create_writer(participant, topic, NULL, NULL);
+    cr_assert_gt(writer, 0);
+
+    ret = dds_get_children(participant, NULL, 0);
+    cr_assert_eq(ret, 2);
+
+    dds_delete(writer);
+
+    ret = dds_get_children(participant, NULL, 0);
+    cr_assert_eq(ret, 1);
+
+    dds_delete(topic);
+    dds_delete(participant);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_entity_implicit_publisher, invalid_topic)
+{
+    dds_entity_t participant;
+    dds_entity_t writer;
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    /* Disable SAL warning on intentional misuse of the API */
+    OS_WARNING_MSVC_OFF(28020);
+    writer = dds_create_writer(participant, 0, NULL, NULL);
+    /* Disable SAL warning on intentional misuse of the API */
+    OS_WARNING_MSVC_ON(28020);
+    cr_assert_lt(writer, 0);
+
+    dds_delete(writer);
+    dds_delete(participant);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_entity_implicit_subscriber, deleted)
+{
+    dds_entity_t participant;
+    dds_entity_t reader;
+    dds_entity_t topic;
+    dds_return_t ret;
+    char name[100];
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_entity_implicit_subscriber_test", name, 100), NULL, NULL);
+    cr_assert_gt(topic, 0);
+
+    reader = dds_create_reader(participant, topic, NULL, NULL);
+    cr_assert_gt(reader, 0);
+
+    ret = dds_get_children(participant, NULL, 0);
+    cr_assert_eq(ret, 2);
+
+    dds_delete(reader);
+
+    ret = dds_get_children(participant, NULL, 0);
+    cr_assert_eq(ret, 1);
+
+    dds_delete(topic);
+    dds_delete(participant);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_entity_explicit_subscriber, invalid_topic)
+{
+    dds_entity_t participant;
+    dds_entity_t reader;
+    dds_entity_t subscriber;
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    subscriber = dds_create_subscriber(participant, NULL,NULL);
+    /* Disable SAL warning on intentional misuse of the API */
+    OS_WARNING_MSVC_OFF(28020);
+    reader = dds_create_reader(subscriber, 0, NULL, NULL);
+    OS_WARNING_MSVC_ON(28020);
+    cr_assert_lt(reader, 0);
+
+    dds_delete(reader);
+    dds_delete(participant);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_entity_get_children, implicit_publisher)
+{
+    dds_entity_t participant;
+    dds_entity_t publisher;
+    dds_entity_t writer;
+    dds_entity_t topic;
+    dds_entity_t child[2], child2[2];
+    dds_return_t ret;
+    char name[100];
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_entity_implicit_publisher_test", name, 100), NULL, NULL);
+    cr_assert_gt(topic, 0);
+
+    writer = dds_create_writer(participant, topic, NULL, NULL);
+    cr_assert_gt(writer, 0);
+    ret = dds_get_children(participant, child, 2);
+    cr_assert_eq(ret, 2);
+    if(child[0] == topic){
+      publisher = child[1];
+    } else if(child[1] == topic){
+        publisher = child[0];
+    } else{
+       cr_assert(false, "topic was not returned");
+    }
+    cr_assert_neq(publisher, topic);
+
+    cr_assert_gt(publisher, 0);
+    cr_assert_neq(publisher, writer);
+
+    dds_delete(writer);
+
+    ret = dds_get_children(participant, child2, 2);
+    cr_assert_eq(ret, 2);
+    cr_assert( (child2[0] == child[0]) || (child2[0] == child[1]) );
+    cr_assert( (child2[1] == child[0]) || (child2[1] == child[1]) );
+
+    dds_delete(topic);
+    dds_delete(participant);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_entity_get_children, implicit_subscriber)
+{
+    dds_entity_t participant;
+    dds_entity_t subscriber;
+    dds_entity_t reader;
+    dds_entity_t topic;
+    dds_entity_t child[2], child2[2];
+    dds_return_t ret;
+    char name[100];
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_entity_implicit_subscriber_test", name, 100), NULL, NULL);
+    cr_assert_gt(topic, 0);
+
+    reader = dds_create_reader(participant, topic, NULL, NULL);
+    cr_assert_gt(reader, 0);
+    ret = dds_get_children(participant, child, 2);
+    cr_assert_eq(ret, 2);
+    if(child[0] == topic){
+        subscriber = child[1];
+    } else if(child[1] == topic){
+        subscriber = child[0];
+    } else{
+        cr_assert(false, "topic was not returned");
+    }
+    cr_assert_neq(subscriber, topic);
+
+    cr_assert_gt(subscriber, 0);
+    cr_assert_neq(subscriber, reader);
+
+    dds_delete(reader);
+
+    ret = dds_get_children(participant, child2, 2);
+    cr_assert_eq(ret, 2);
+    cr_assert( (child2[0] == child[0]) || (child2[0] == child[1]) );
+    cr_assert( (child2[1] == child[0]) || (child2[1] == child[1]) );
+
+    dds_delete(topic);
+    dds_delete(participant);
+
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_entity_get_parent, implicit_publisher)
+{
+    dds_entity_t participant;
+    dds_entity_t writer;
+    dds_entity_t parent;
+    dds_entity_t topic;
+    dds_return_t ret;
+    char name[100];
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_entity_implicit_publisher_promotion_test", name, 100), NULL, NULL);
+    cr_assert_gt(topic, 0);
+
+    writer = dds_create_writer(participant, topic, NULL, NULL);
+    cr_assert_gt(writer, 0);
+
+    parent = dds_get_parent(writer);
+    cr_assert_neq(parent, participant);
+    cr_assert_gt(parent, 0);
+
+    dds_delete(writer);
+
+    ret = dds_delete(parent);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK);
+    dds_delete(participant);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_entity_get_parent, implicit_subscriber)
+{
+    dds_entity_t participant;
+    dds_entity_t reader;
+    dds_entity_t parent;
+    dds_entity_t topic;
+    dds_return_t ret;
+    char name[100];
+
+    participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    cr_assert_gt(participant, 0);
+
+    topic = dds_create_topic(participant, &RoundTripModule_DataType_desc, create_topic_name("vddsc_entity_implicit_subscriber_promotion_test", name, 100), NULL, NULL);
+    cr_assert_gt(topic, 0);
+
+    reader = dds_create_reader(participant, topic, NULL, NULL);
+    cr_assert_gt(reader, 0);
+
+    parent = dds_get_parent(reader);
+    cr_assert_neq(parent, participant);
+    cr_assert_gt(parent, 0);
+
+    dds_delete(reader);
+
+    ret = dds_delete(parent);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK);
+    dds_delete(participant);
+
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
 
 #endif

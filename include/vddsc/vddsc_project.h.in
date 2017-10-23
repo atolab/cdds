@@ -1,0 +1,25 @@
+/*
+ *                         OpenSplice DDS
+ *
+ *   This software and documentation are Copyright 2006 to TO_YEAR PrismTech
+ *   Limited and its licensees. All rights reserved. See file:
+ *
+ *                     $OSPL_HOME/LICENSE
+ *
+ *   for full copyright notice and license terms.
+ *
+ */
+#ifndef VDDSC_PROJECT_H
+#define VDDSC_PROJECT_H
+
+#define VDDSC_VERSION "@VortexDDS_VERSION@"
+#define VDDSC_VERSION_MAJOR @VortexDDS_VERSION_MAJOR@
+#define VDDSC_VERSION_MINOR @VortexDDS_VERSION_MINOR@
+#define VDDSC_VERSION_PATCH @VortexDDS_VERSION_PATCH@
+#define VDDSC_VERSION_TWEAK @VortexDDS_VERSION_TWEAK@
+#define VDDSC_PROJECT_NAME_NOSPACE_CAPS "@CMAKE_PROJECT_NAME_CAPS@"
+#define VDDSC_PROJECT_NAME_NOSPACE_SMALL "@CMAKE_PROJECT_NAME_SMALL@"
+#define VDDSC_PROJECT_NAME_NOSPACE "@CMAKE_PROJECT_NAME@"
+#define VDDSC_PROJECT_NAME "@CMAKE_PROJECT_NAME@"
+
+#endif /* VDDSC_PROJECT_H */

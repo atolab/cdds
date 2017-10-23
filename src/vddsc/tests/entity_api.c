@@ -65,11 +65,8 @@ void entity_qos_get_set(dds_entity_t e, const char* info)
     status = dds_get_qos (e, qos);
     cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_qos(e, qos) ret: %d, %s", dds_err_nr(status), info);
 
-    /* Entity (partition) is enabled, so we shouldn't be able to set QoS. */
-    /* Checking all QoS internals (also related to enabled/disabled) should be
-     * done by a QoS test and specific 'child' entities. */
-    status = dds_set_qos (e, qos);
-    cr_assert_status_eq(status, DDS_RETCODE_IMMUTABLE_POLICY, "dds_set_qos(entity, qos) %s", info);
+    status = dds_set_qos (e, qos); /* Doesn't change anything, so no need to forbid. But we return NOT_SUPPORTED anyway for now*/
+    cr_assert_status_eq(status, DDS_RETCODE_UNSUPPORTED, "dds_set_qos(entity, qos) %s", info);
 
     dds_qos_delete(qos);
 }
@@ -256,15 +253,15 @@ Test(vddsc_entity, instance_handle, .init = create_entity, .fini = delete_entity
      * for the specific entity children, not for the generic part. */
 
     /* Check getting Handle with bad parameters. */
-    status = dds_instancehandle_get (0, NULL);
+    status = dds_get_instance_handle (0, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(NULL, NULL)");
-    status = dds_instancehandle_get (entity, NULL);
+    status = dds_get_instance_handle (entity, NULL);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(entity, NULL)");
-    status = dds_instancehandle_get (0, &hdl);
+    status = dds_get_instance_handle (0, &hdl);
     cr_assert_status_eq(status, DDS_RETCODE_BAD_PARAMETER, "dds_instancehandle_get(NULL, handle)");
 
     /* Get Instance Handle, which should not be 0 for a participant. */
-    status = dds_instancehandle_get (entity, &hdl);
+    status = dds_get_instance_handle (entity, &hdl);
     cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_instancehandle_get(entity, handle)");
     cr_assert_neq(hdl, 0, "Entity instance handle is 0");
 }
@@ -283,7 +280,7 @@ Test(vddsc_entity, get_entities, .init = create_entity, .fini = delete_entity)
 
     /* Get Parent, a participant doesn't have a parent. */
     par = dds_get_parent (entity);
-    cr_assert_eq(dds_err_nr(par), DDS_RETCODE_ILLEGAL_OPERATION, "Parent was returned (despite of it being a participant)");
+    cr_assert_eq(dds_err_nr(par), DDS_ENTITY_NIL, "Parent was returned (despite of it being a participant)");
 
     /* ---------- Get Participant ------------ */
 

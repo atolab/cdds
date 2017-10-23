@@ -85,7 +85,7 @@ void os_osExit (void)
     uint32_t initCount;
 
 #if defined(OS_USE_ALLIGNED_MALLOC) && !defined(NDEBUG)
-    OS_REPORT(OS_INFO, "os__reallocdoublecopycount", 0, "count=%d", vxAtomicGet(&os__reallocdoublecopycount));
+    OS_INFO("os__reallocdoublecopycount", 0, "count=%d", vxAtomicGet(&os__reallocdoublecopycount));
 #endif
     initCount = os_atomic_dec32_nv(&_ospl_osInitCount);
 
@@ -97,7 +97,7 @@ void os_osExit (void)
         /* The 0 boundary is passed, so os_osExit is called more often than
          * os_osInit. Therefore undo decrement as nothing happened and warn. */
         initCount = os_atomic_inc32_nv(&_ospl_osInitCount);
-        OS_REPORT(OS_WARNING, "os_osExit", 1, "OS-layer not initialized");
+        OS_WARNING("os_osExit", 1, "OS-layer not initialized");
         /* Fail in case of DEV, as it is incorrect API usage */
         assert(0);
     }

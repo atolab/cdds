@@ -584,7 +584,7 @@ int nn_xmsg_setdstPRD (struct nn_xmsg *m, const struct proxy_reader *prd)
   }
   else
   {
-    NN_WARNING1("nn_xmsg_setdstPRD: no address for %x:%x:%x:%x", PGUID (prd->e.guid));
+    NN_WARNING("nn_xmsg_setdstPRD: no address for %x:%x:%x:%x", PGUID (prd->e.guid));
     return ERR_NO_ADDRESS;
   }
 }
@@ -597,7 +597,7 @@ int nn_xmsg_setdstPWR (struct nn_xmsg *m, const struct proxy_writer *pwr)
     nn_xmsg_setdst1 (m, &pwr->e.guid.prefix, &loc);
     return 0;
   }
-  NN_WARNING1 ("nn_xmsg_setdstPRD: no address for %x:%x:%x:%x", PGUID (pwr->e.guid));
+  NN_WARNING ("nn_xmsg_setdstPRD: no address for %x:%x:%x:%x", PGUID (pwr->e.guid));
   return ERR_NO_ADDRESS;
 }
 
@@ -885,7 +885,18 @@ void nn_xmsg_addpar_BE4u (struct nn_xmsg *m, unsigned pid, unsigned x)
 
 void nn_xmsg_addpar_statusinfo (struct nn_xmsg *m, unsigned statusinfo)
 {
-  nn_xmsg_addpar_BE4u (m, PID_STATUSINFO, statusinfo);
+  if ((statusinfo & ~NN_STATUSINFO_STANDARDIZED) == 0)
+    nn_xmsg_addpar_BE4u (m, PID_STATUSINFO, statusinfo);
+  else
+  {
+    unsigned *p = nn_xmsg_addpar (m, PID_STATUSINFO, 8);
+    unsigned statusinfox = 0;
+    assert ((statusinfo & ~NN_STATUSINFO_STANDARDIZED) == NN_STATUSINFO_OSPL_AUTO);
+    if (statusinfo & NN_STATUSINFO_OSPL_AUTO)
+      statusinfox |= NN_STATUSINFOX_OSPL_AUTO;
+    p[0] = toBE4u (statusinfo & NN_STATUSINFO_STANDARDIZED);
+    p[1] = toBE4u (statusinfox);
+  }
 }
 
 

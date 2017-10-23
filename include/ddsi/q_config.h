@@ -289,7 +289,6 @@ struct config
   uint32_t tp_threads;
   uint32_t tp_max_threads;
 
-  int generate_builtin_topics;
   int advertise_builtin_topic_writers;
 
 #ifdef DDSI_INCLUDE_NETWORK_CHANNELS
@@ -342,6 +341,8 @@ struct config
   int64_t nack_delay;
   int64_t preemptive_ack_delay;
   int64_t schedule_time_rounding;
+  int64_t auto_resched_nack_delay;
+  int64_t ds_grace_period;
 #ifdef DDSI_INCLUDE_BANDWIDTH_LIMITING
   uint32_t auxiliary_bandwidth_limit; /* bytes/second */
 #endif
@@ -418,7 +419,6 @@ struct ddsi_plugin
   /* IID generator */
 
   uint64_t (*iidgen_fn) (void);
-
 };
 
 extern struct config OSAPI_EXPORT config;

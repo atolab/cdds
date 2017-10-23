@@ -26,38 +26,6 @@ typedef struct {
 } os_threadContext;
 
 static DWORD tlsIndex;
-static os_threadHook os_threadCBs;
-
-static int
-os_threadStartCallback(
-    os_threadId id,
-    void *arg)
-{
-    return 0;
-}
-
-static int
-os_threadStopCallback(
-    os_threadId id,
-    void *arg)
-{
-    return 0;
-}
-
-static void
-os_threadHookInit(void)
-{
-    os_threadCBs.startCb = os_threadStartCallback;
-    os_threadCBs.startArg = NULL;
-    os_threadCBs.stopCb = os_threadStopCallback;
-    os_threadCBs.stopArg = NULL;
-}
-
-static void
-os_threadHookExit(void)
-{
-    return;
-}
 
 static os_result
 os_threadMemInit(void)
@@ -113,7 +81,7 @@ os_threadModuleInit(void)
         //OS_INIT_FAIL("os_threadModuleInit: could not allocate thread-local memory (System Error Code: %i)", os_getErrno());
         goto err_tlsAllocFail;
     }
-    os_threadHookInit();
+
     return os_resultSuccess;
 
 err_tlsAllocFail:
@@ -135,42 +103,6 @@ os_threadModuleExit(void)
     }
 
     TlsFree(tlsIndex);
-    os_threadHookExit();
-}
-
-os_result
-os_threadModuleSetHook(
-    os_threadHook *hook,
-    os_threadHook *oldHook)
-{
-    os_result result;
-    os_threadHook oh;
-
-    result = os_resultFail;
-    oh = os_threadCBs;
-
-    if (hook) {
-        if (hook->startCb) {
-            os_threadCBs.startCb = hook->startCb;
-            os_threadCBs.startArg = hook->startArg;
-        } else {
-            os_threadCBs.startCb = os_threadStartCallback;
-            os_threadCBs.startArg = NULL;
-        }
-        if (hook->stopCb) {
-            os_threadCBs.stopCb = hook->stopCb;
-            os_threadCBs.stopArg = hook->stopArg;
-        } else {
-            os_threadCBs.stopCb = os_threadStopCallback;
-            os_threadCBs.stopArg = NULL;
-        }
-
-        if (oldHook) {
-            *oldHook = oh;
-        }
-    }
-
-    return result;
 }
 
 const DWORD MS_VC_EXCEPTION=0x406D1388;
@@ -252,16 +184,11 @@ os_startRoutineWrapper(
 
     id.threadId = GetCurrentThreadId();
     id.handle = GetCurrentThread();
-    /* Call the start callback */
-    if (os_threadCBs.startCb(id, os_threadCBs.startArg) == 0) {
-        /* Call the user routine */
-        resultValue = context->startRoutine(context->arguments);
-    }
 
-    os_threadCBs.stopCb(id, os_threadCBs.stopArg);
+    /* Call the user routine */
+    resultValue = context->startRoutine(context->arguments);
 
     os_report_stack_free();
-    os_reportClearApiInfo();
 
     /* Free the thread context resources, arguments is responsibility */
     /* for the caller of os_threadCreate                                */
@@ -309,7 +236,7 @@ os_threadCreate(
         (LPVOID)threadContext,
         (DWORD)0, &threadIdent);
     if (threadHandle == 0) {
-        OS_REPORT(OS_WARNING, "os_threadCreate", os_getErrno(), "Failed with System Error Code: %i\n", os_getErrno ());
+        OS_WARNING("os_threadCreate", os_getErrno(), "Failed with System Error Code: %i\n", os_getErrno ());
         return os_resultFail;
     }
 
@@ -350,7 +277,7 @@ os_threadCreate(
         }
     }
     if (SetThreadPriority (threadHandle, effective_priority) == 0) {
-        OS_REPORT(OS_INFO, "os_threadCreate", os_getErrno(), "SetThreadPriority failed with %i", os_getErrno());
+        OS_INFO("os_threadCreate", os_getErrno(), "SetThreadPriority failed with %i", os_getErrno());
     }
 
    /* ES: dds2086: Close handle should not be performed here. Instead the handle
@@ -569,4 +496,110 @@ os_threadMemGet(
     }
 
     return data;
+}
+
+
+static os_threadLocal os_iter *cleanup_funcs;
+
+/* executed before dllmain within the context of the thread itself */
+void NTAPI
+os_threadCleanupFini(
+    PVOID handle,
+    DWORD reason,
+    PVOID reserved)
+{
+    os_threadCleanup *obj;
+
+    switch(reason) {
+        case DLL_PROCESS_DETACH: /* specified when main thread exits */
+        case DLL_THREAD_DETACH: /* specified when thread exits */
+            if (cleanup_funcs != NULL) {
+                for (obj = (os_threadCleanup *)os_iterTake(cleanup_funcs, -1);
+                     obj != NULL;
+                     obj = (os_threadCleanup *)os_iterTake(cleanup_funcs, -1))
+                {
+                    assert(obj->func != NULL);
+                    obj->func(obj->data);
+                    os_free(obj);
+                }
+                os_iterFree(cleanup_funcs, NULL);
+            }
+            cleanup_funcs = NULL;
+            break;
+        case DLL_PROCESS_ATTACH:
+        case DLL_THREAD_ATTACH:
+        default:
+            /* do nothing */
+            break;
+    }
+
+    (void)handle;
+    (void)reserved;
+}
+
+/* These instructions are very specific to the Windows platform. They register
+   a function (or multiple) as a TLS initialization function. TLS initializers
+   are executed when a thread (or program) attaches or detaches. In contrast to
+   DllMain, a TLS initializer is also executed when the library is linked
+   statically. TLS initializers are always executed before DllMain (both when
+   the library is attached and detached). See http://www.nynaeve.net/?p=190,
+   for a detailed explanation on TLS initializers. Boost and/or POSIX Threads
+   for Windows code bases may also form good sources of information on this
+   subject.
+
+   These instructions could theoretically be hidden in the build system, but
+   doing so would be going a bit overboard as only Windows offers (and
+   requires) this type of functionality/initialization. Apart from that the
+   logic isn't exactly as trivial as for example determining the endianness of
+   a platform, so keeping this close to the implementation is probably wise. */
+#ifdef _WIN64
+    #pragma comment (linker, "/INCLUDE:_tls_used")
+    #pragma comment (linker, "/INCLUDE:tls_callback_func")
+    #pragma const_seg(".CRT$XLZ")
+    EXTERN_C const PIMAGE_TLS_CALLBACK tls_callback_func = os_threadCleanupFini;
+    #pragma const_seg()
+#else
+    #pragma comment (linker, "/INCLUDE:__tls_used")
+    #pragma comment (linker, "/INCLUDE:_tls_callback_func")
+    #pragma data_seg(".CRT$XLZ")
+    EXTERN_C PIMAGE_TLS_CALLBACK tls_callback_func = os_threadCleanupFini;
+    #pragma data_seg()
+#endif
+
+void
+os_threadCleanupPush(
+    void (*func)(void *),
+    void *data)
+{
+    os_threadCleanup *obj;
+
+    assert(func != NULL);
+
+    if (cleanup_funcs == NULL) {
+        cleanup_funcs = os_iterNew();
+        assert(cleanup_funcs != NULL);
+    }
+
+    obj = os_malloc(sizeof(*obj));
+    assert(obj != NULL);
+    obj->func = func;
+    obj->data = data;
+    (void)os_iterAppend(cleanup_funcs, obj);
+}
+
+void
+os_threadCleanupPop(
+    int execute)
+{
+    os_threadCleanup *obj;
+
+    if (cleanup_funcs != NULL) {
+        obj = os_iterTake(cleanup_funcs, -1);
+        if (obj != NULL) {
+            if (execute) {
+                obj->func(obj->data);
+            }
+            os_free(obj);
+        }
+    }
 }
