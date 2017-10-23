@@ -732,12 +732,11 @@ dds_set_listener(
  * been configured or an error status will be returned.
  * Currently only a single domain can be configured by providing configuration file and
  * by  setting the environment variable VORTEX_DOMAIN.
- * Environment variable overwrites the configuration file value.
+ * VORTEX_DOMAIN environment variable overwrites the configuration file value.
  * If nothing is set, the default domain is 0.
- * Valid values for domain id are between 0 and 230.
  *
  *
- * @param[in]  domain The domain in which to create the participant (can be DDS_DOMAIN_DEFAULT).
+ * @param[in]  domain The domain in which to create the participant (can be DDS_DOMAIN_DEFAULT). Valid values for domain id are between 0 and 230. DDS_DOMAIN_DEFAULT is for using the domain in the configuration.
  * @param[in]  qos The QoS to set on the new participant (can be NULL).
  * @param[in]  listener Any listener functions associated with the new participant (can be NULL).
 
