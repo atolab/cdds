@@ -1556,6 +1556,26 @@ static void writer_add_connection (struct writer *wr, struct proxy_reader *prd)
   }
 }
 
+static void
+init_sampleinfo(
+        _Out_ struct nn_rsample_info *sampleinfo,
+        _In_  struct writer *wr,
+        _In_  int64_t seq,
+        _In_  serdata_t payload)
+{
+    memset(sampleinfo, 0, sizeof(*sampleinfo));
+    sampleinfo->bswap = 0;
+    sampleinfo->complex_qos = 0;
+    sampleinfo->hashash = 0;
+    sampleinfo->seq = seq;
+    sampleinfo->reception_timestamp = payload->v.msginfo.timestamp;
+    sampleinfo->statusinfo = payload->v.msginfo.statusinfo;
+    sampleinfo->pwr_info.iid = 1;
+    sampleinfo->pwr_info.auto_dispose = 0;
+    sampleinfo->pwr_info.guid = wr->e.guid;
+    sampleinfo->pwr_info.ownership_strength = 0;
+}
+
 static void writer_add_local_connection (struct writer *wr, struct reader *rd)
 {
   struct wr_rd_match *m = os_malloc (sizeof (*m));
@@ -1574,6 +1594,24 @@ static void writer_add_local_connection (struct writer *wr, struct reader *rd)
   m->rd_guid = rd->e.guid;
   ut_avlInsertIPath (&wr_local_readers_treedef, &wr->local_readers, m, &path);
   local_reader_ary_insert (&wr->rdary, rd);
+
+  /* Store available data into the late joining reader when it is reliable. */
+  if ((rd->xqos->reliability.kind > NN_BEST_EFFORT_RELIABILITY_QOS) /* transient reader */ &&
+      (!whc_empty(wr->whc))                                         /* data available   */ )
+  {
+    seqno_t seq = -1;
+    struct whc_node *n;
+    while ((n = whc_next_node(wr->whc, seq)) != NULL)
+    {
+      struct nn_rsample_info sampleinfo;
+      serdata_t payload = n->serdata;
+      struct tkmap_instance *tk = (ddsi_plugin.rhc_lookup_fn) (payload);
+      init_sampleinfo(&sampleinfo, wr, n->seq, payload);
+      (void)(ddsi_plugin.rhc_store_fn) (rd->rhc, &sampleinfo, payload, tk);
+      seq = n->seq;
+    }
+  }
+
   os_mutexUnlock (&wr->e.lock);
 
   nn_log(LC_DISCOVERY, "\n");
