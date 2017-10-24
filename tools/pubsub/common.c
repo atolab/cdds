@@ -1,4 +1,3 @@
-
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
@@ -13,36 +12,36 @@
 #include "os/os.h"
 
 enum qostype {
-  QT_TOPIC,
-  QT_PUBLISHER,
-  QT_SUBSCRIBER,
-  QT_READER,
-  QT_WRITER
+    QT_TOPIC,
+    QT_PUBLISHER,
+    QT_SUBSCRIBER,
+    QT_READER,
+    QT_WRITER
 };
 
 struct qos {
-  enum qostype qt;
-  union {
-    struct {
-    	dds_qos_t *q;
-    } topic;
-    struct {
-    	dds_qos_t *q;
-    } pub;
-    struct {
-    	dds_qos_t *q;
-    } sub;
-    struct {
-    	dds_entity_t t;
-    	dds_entity_t s;
-    	dds_qos_t *q;
-    } rd;
-    struct {
-    	dds_entity_t t;
-    	dds_entity_t p;
-    	dds_qos_t *q;
-    } wr;
-  } u;
+    enum qostype qt;
+    union {
+        struct {
+            dds_qos_t *q;
+        } topic;
+        struct {
+            dds_qos_t *q;
+        } pub;
+        struct {
+            dds_qos_t *q;
+        } sub;
+        struct {
+            dds_entity_t t;
+            dds_entity_t s;
+            dds_qos_t *q;
+        } rd;
+        struct {
+            dds_entity_t t;
+            dds_entity_t p;
+            dds_qos_t *q;
+        } wr;
+    } u;
 };
 
 dds_entity_t dp = 0;
@@ -56,281 +55,257 @@ const dds_topic_descriptor_t *ts_OneULong;
 
 const char *saved_argv0;
 
-unsigned long long nowll (void)
-{
-  os_time t = os_timeGet ();
-  return (unsigned long long) (t.tv_sec * 1000000000ll + t.tv_nsec);
+unsigned long long nowll(void) {
+    os_time t = os_timeGet();
+    return (unsigned long long) (t.tv_sec * 1000000000ll + t.tv_nsec);
 }
 
-////void nowll_as_ddstime (DDS_Time_t *t)
-////{
-////  os_time ost = os_timeGet ();
-////  t->sec = ost.tv_sec;
-////  t->nanosec = (DDS_unsigned_long) ost.tv_nsec;
-////}
-//
-//void bindelta (unsigned long long *bins, unsigned long long d, unsigned repeat)
-//{
-//  int bin = 0;
-//  while (d)
-//  {
-//    bin++;
-//    d >>= 1;
-//  }
-//  bins[bin] += repeat;
+//void nowll_as_ddstime(DDS_Time_t *t) {
+//    os_time ost = os_timeGet();
+//    t->sec = ost.tv_sec;
+//    t->nanosec = (DDS_unsigned_long) ost.tv_nsec;
 //}
 //
-//void binprint (unsigned long long *bins, unsigned long long telapsed)
-//{
-//  unsigned long long n;
-//  unsigned i, minbin = BINS_LENGTH- 1, maxbin = 0;
-//  n = 0;
-//  for (i = 0; i < BINS_LENGTH; i++)
-//  {
-//    n += bins[i];
-//    if (bins[i] && i < minbin)
-//      minbin = i;
-//    if (bins[i] && i > maxbin)
-//      maxbin = i;
-//  }
-//  printf ("< 2**n | %llu in %.06fs avg %.1f/s\n", n, telapsed * 1e-9, n / (telapsed * 1e-9));
-//  for (i = minbin; i <= maxbin; i++)
-//  {
-//    static const char ats[] = "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@";
-//    double pct = 100.0 * (double) bins[i] / n;
-//    int nats = (int) ((pct / 100.0) * (sizeof (ats) - 1));
-//    printf ("%2d: %6.2f%% %*.*s\n", i, pct, nats, nats, ats);
-//  }
+//void bindelta(unsigned long long *bins, unsigned long long d, unsigned repeat) {
+//    int bin = 0;
+//    while (d) {
+//        bin++;
+//        d >>= 1;
+//    }
+//    bins[bin] += repeat;
+//}
+//
+//void binprint(unsigned long long *bins, unsigned long long telapsed) {
+//    unsigned long long n;
+//    unsigned i, minbin = BINS_LENGTH-1, maxbin = 0;
+//    n = 0;
+//    for (i = 0; i < BINS_LENGTH; i++) {
+//        n += bins[i];
+//        if (bins[i] && i < minbin)
+//            minbin = i;
+//        if (bins[i] && i > maxbin)
+//            maxbin = i;
+//    }
+//    printf ("< 2**n | %llu in %.06fs avg %.1f/s\n", n, telapsed * 1e-9, n / (telapsed * 1e-9));
+//    for (i = minbin; i <= maxbin; i++) {
+//        static const char ats[] = "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@";
+//        double pct = 100.0 * (double) bins[i] / n;
+//        int nats = (int) ((pct / 100.0) * (sizeof(ats) - 1));
+//        printf ("%2d: %6.2f%% %*.*s\n", i, pct, nats, nats, ats);
+//    }
 //}
 
 struct hist {
-  unsigned nbins;
-  uint64_t binwidth;
-  uint64_t bin0; /* bins are [bin0,bin0+binwidth),[bin0+binwidth,bin0+2*binwidth) */
-  uint64_t binN; /* bin0 + nbins*binwidth */
-  uint64_t min, max; /* min and max observed since last reset */
-  uint64_t under, over; /* < bin0, >= binN */
-  uint64_t bins[];
+    unsigned nbins;
+    uint64_t binwidth;
+    uint64_t bin0; /* bins are [bin0,bin0+binwidth),[bin0+binwidth,bin0+2*binwidth) */
+    uint64_t binN; /* bin0 + nbins*binwidth */
+    uint64_t min, max; /* min and max observed since last reset */
+    uint64_t under, over; /* < bin0, >= binN */
+    uint64_t bins[];
 };
 
-struct hist *hist_new (unsigned nbins, uint64_t binwidth, uint64_t bin0)
-{
-  struct hist *h = os_malloc (sizeof (*h) + nbins * sizeof (*h->bins));
-  h->nbins = nbins;
-  h->binwidth = binwidth;
-  h->bin0 = bin0;
-  h->binN = h->bin0 + h->nbins * h->binwidth;
-  hist_reset (h);
-  return h;
+struct hist *hist_new(unsigned nbins, uint64_t binwidth, uint64_t bin0) {
+    struct hist *h = os_malloc(sizeof(*h) + nbins * sizeof(*h->bins));
+    h->nbins = nbins;
+    h->binwidth = binwidth;
+    h->bin0 = bin0;
+    h->binN = h->bin0 + h->nbins * h->binwidth;
+    hist_reset(h);
+    return h;
 }
 
-void hist_free (struct hist *h)
-{
-  os_free (h);
+void hist_free(struct hist *h) {
+    os_free(h);
 }
 
-void hist_reset_minmax (struct hist *h)
-{
-  h->min = UINT64_MAX;
-  h->max = 0;
+void hist_reset_minmax(struct hist *h) {
+    h->min = UINT64_MAX;
+    h->max = 0;
 }
 
-void hist_reset (struct hist *h)
-{
-  hist_reset_minmax (h);
-  h->under = 0;
-  h->over = 0;
-  memset (h->bins, 0, h->nbins * sizeof (*h->bins));
+void hist_reset(struct hist *h) {
+    hist_reset_minmax(h);
+    h->under = 0;
+    h->over = 0;
+    memset(h->bins, 0, h->nbins * sizeof(*h->bins));
 }
 
-void hist_record (struct hist *h, uint64_t x, unsigned weight)
-{
-  if (x < h->min)
-    h->min = x;
-  if (x > h->max)
-    h->max = x;
-  if (x < h->bin0)
-    h->under += weight;
-  else if (x >= h->binN)
-    h->over += weight;
-  else
-    h->bins[(x - h->bin0) / h->binwidth] += weight;
+void hist_record(struct hist *h, uint64_t x, unsigned weight) {
+    if (x < h->min)
+        h->min = x;
+    if (x > h->max)
+        h->max = x;
+    if (x < h->bin0)
+        h->under += weight;
+    else if (x >= h->binN)
+        h->over += weight;
+    else
+        h->bins[(x - h->bin0) / h->binwidth] += weight;
 }
 
-static void xsnprintf (char *buf, size_t bufsz, size_t *p, const char *fmt, ...)
-{
-  if (*p < bufsz)
-  {
-    int n;
+static void xsnprintf(char *buf, size_t bufsz, size_t *p, const char *fmt, ...) {
+    if (*p < bufsz) {
+        int n;
+        va_list ap;
+        va_start(ap, fmt);
+        n = os_vsnprintf(buf + *p, bufsz - *p, fmt, ap);
+        va_end(ap);
+        *p += (size_t)n;
+    }
+}
+
+void hist_print(struct hist *h, uint64_t dt, int reset) {
+    const size_t l_size = sizeof(char) * h->nbins + 200;
+    const size_t hist_size = sizeof(char) * h->nbins + 1;
+    char *l = (char *) os_malloc(l_size);
+    char *hist = (char *) os_malloc(hist_size);
+    double dt_s = dt / 1e9, avg;
+    uint64_t peak = 0, cnt = h->under + h->over;
+    size_t p = 0;
+    hist[h->nbins] = 0;
+    for (unsigned i = 0; i < h->nbins; i++) {
+        cnt += h->bins[i];
+        if (h->bins[i] > peak)
+            peak = h->bins[i];
+    }
+
+    const uint64_t p1 = peak / 100;
+    const uint64_t p10 = peak / 10;
+    const uint64_t p20 = 1 * peak / 5;
+    const uint64_t p40 = 2 * peak / 5;
+    const uint64_t p60 = 3 * peak / 5;
+    const uint64_t p80 = 4 * peak / 5;
+    for (unsigned i = 0; i < h->nbins; i++) {
+        if (h->bins[i] == 0) hist[i] = ' ';
+        else if (h->bins[i] <= p1) hist[i] = '.';
+        else if (h->bins[i] <= p10) hist[i] = '_';
+        else if (h->bins[i] <= p20) hist[i] = '-';
+        else if (h->bins[i] <= p40) hist[i] = '=';
+        else if (h->bins[i] <= p60) hist[i] = 'x';
+        else if (h->bins[i] <= p80) hist[i] = 'X';
+        else hist[i] = '@';
+    }
+
+    avg = cnt / dt_s;
+    if (avg < 999.5)
+        xsnprintf(l, l_size, &p, "%5.3g", avg);
+    else if (avg < 1e6)
+        xsnprintf(l, l_size, &p, "%4.3gk", avg / 1e3);
+    else
+        xsnprintf(l, l_size, &p, "%4.3gM", avg / 1e6);
+    xsnprintf(l, l_size, &p, "/s (");
+
+    if (cnt < (uint64_t) 10e3)
+        xsnprintf(l, l_size, &p, "%5"PRIu64" ", cnt);
+    else if (cnt < (uint64_t) 1e6)
+        xsnprintf(l, l_size, &p, "%5.1fk", cnt / 1e3);
+    else
+        xsnprintf(l, l_size, &p, "%5.1fM", cnt / 1e6);
+
+    xsnprintf(l, l_size, &p, " in %.1fs) ", dt_s);
+
+    if (h->min == UINT64_MAX)
+        xsnprintf(l, l_size, &p, " inf ");
+    else if (h->min < 1000)
+        xsnprintf(l, l_size, &p, "%3"PRIu64"n ", h->min);
+    else if (h->min + 500 < 1000000)
+        xsnprintf(l, l_size, &p, "%3"PRIu64"u ", (h->min + 500) / 1000);
+    else if (h->min + 500000 < 1000000000)
+        xsnprintf(l, l_size, &p, "%3"PRIu64"m ", (h->min + 500000) / 1000000);
+    else
+        xsnprintf(l, l_size, &p, "%3"PRIu64"s ", (h->min + 500000000) / 1000000000);
+
+    if (h->bin0 > 0) {
+        int pct = (cnt == 0) ? 0 : 100 * (int) ((h->under + cnt/2) / cnt);
+        xsnprintf(l, l_size, &p, "%3d%% ", pct);
+    }
+
+    {
+        int pct = (cnt == 0) ? 0 : 100 * (int) ((h->over + cnt/2) / cnt);
+        xsnprintf(l, l_size, &p, "|%s| %3d%%", hist, pct);
+    }
+
+    if (h->max < 1000)
+        xsnprintf(l, l_size, &p, " %3"PRIu64"n", h->max);
+    else if (h->max + 500 < 1000000)
+        xsnprintf(l, l_size, &p, " %3"PRIu64"u", (h->max + 500) / 1000);
+    else if (h->max + 500000 < 1000000000)
+        xsnprintf(l, l_size, &p, " %3"PRIu64"m", (h->max + 500000) / 1000000);
+    else
+        xsnprintf(l, l_size, &p, " %3"PRIu64"s", (h->max + 500000000) / 1000000000);
+
+    (void) p;
+    puts(l);
+    os_free(l);
+    os_free(hist);
+    if (reset)
+        hist_reset(h);
+}
+
+void error(const char *fmt, ...) {
     va_list ap;
+    fprintf (stderr, "%s: error: ", saved_argv0);
     va_start(ap, fmt);
-    n = os_vsnprintf(buf + *p, bufsz - *p, fmt, ap);
+    vfprintf (stderr, fmt, ap);
     va_end(ap);
-    *p += (size_t)n;
-  }
+    fprintf (stderr, "\n");
 }
 
-void hist_print (struct hist *h, uint64_t dt, int reset)
-{
-  const size_t l_size = sizeof(char) * h->nbins + 200;
-  const size_t hist_size = sizeof(char) * h->nbins + 1;
-  char *l = (char *) os_malloc(l_size);
-  char *hist = (char *) os_malloc(hist_size);
-  double dt_s = dt / 1e9, avg;
-  uint64_t peak = 0, cnt = h->under + h->over;
-  size_t p = 0;
-  hist[h->nbins] = 0;
-  for (unsigned i = 0; i < h->nbins; i++)
-  {
-    cnt += h->bins[i];
-    if (h->bins[i] > peak)
-      peak = h->bins[i];
-  }
-
-  const uint64_t p1 = peak / 100;
-  const uint64_t p10 = peak / 10;
-  const uint64_t p20 = 1 * peak / 5;
-  const uint64_t p40 = 2 * peak / 5;
-  const uint64_t p60 = 3 * peak / 5;
-  const uint64_t p80 = 4 * peak / 5;
-  for (unsigned i = 0; i < h->nbins; i++)
-  {
-    if (h->bins[i] == 0) hist[i] = ' ';
-    else if (h->bins[i] <= p1) hist[i] = '.';
-    else if (h->bins[i] <= p10) hist[i] = '_';
-    else if (h->bins[i] <= p20) hist[i] = '-';
-    else if (h->bins[i] <= p40) hist[i] = '=';
-    else if (h->bins[i] <= p60) hist[i] = 'x';
-    else if (h->bins[i] <= p80) hist[i] = 'X';
-    else hist[i] = '@';
-  }
-
-  avg = cnt / dt_s;
-  if (avg < 999.5)
-    xsnprintf (l, l_size, &p, "%5.3g", avg);
-  else if (avg < 1e6)
-    xsnprintf (l, l_size, &p, "%4.3gk", avg / 1e3);
-  else
-    xsnprintf (l, l_size, &p, "%4.3gM", avg / 1e6);
-  xsnprintf (l, l_size, &p, "/s (");
-
-  if (cnt < (uint64_t) 10e3)
-    xsnprintf (l, l_size, &p, "%5"PRIu64" ", cnt);
-  else if (cnt < (uint64_t) 1e6)
-    xsnprintf (l, l_size, &p, "%5.1fk", cnt / 1e3);
-  else
-    xsnprintf (l, l_size, &p, "%5.1fM", cnt / 1e6);
-
-  xsnprintf (l, l_size, &p, " in %.1fs) ", dt_s);
-
-  if (h->min == UINT64_MAX)
-    xsnprintf (l, l_size, &p, " inf ");
-  else if (h->min < 1000)
-    xsnprintf (l, l_size, &p, "%3"PRIu64"n ", h->min);
-  else if (h->min + 500 < 1000000)
-    xsnprintf (l, l_size, &p, "%3"PRIu64"u ", (h->min + 500) / 1000);
-  else if (h->min + 500000 < 1000000000)
-    xsnprintf (l, l_size, &p, "%3"PRIu64"m ", (h->min + 500000) / 1000000);
-  else
-    xsnprintf (l, l_size, &p, "%3"PRIu64"s ", (h->min + 500000000) / 1000000000);
-
-  if (h->bin0 > 0)
-  {
-    int pct = (cnt == 0) ? 0 : 100 * (int) ((h->under + cnt/2) / cnt);
-    xsnprintf (l, l_size, &p, "%3d%% ", pct);
-  }
-
-  {
-    int pct = (cnt == 0) ? 0 : 100 * (int) ((h->over + cnt/2) / cnt);
-    xsnprintf (l, l_size, &p, "|%s| %3d%%", hist, pct);
-  }
-
-  if (h->max < 1000)
-    xsnprintf (l, l_size, &p, " %3"PRIu64"n", h->max);
-  else if (h->max + 500 < 1000000)
-    xsnprintf (l, l_size, &p, " %3"PRIu64"u", (h->max + 500) / 1000);
-  else if (h->max + 500000 < 1000000000)
-    xsnprintf (l, l_size, &p, " %3"PRIu64"m", (h->max + 500000) / 1000000);
-  else
-    xsnprintf (l, l_size, &p, " %3"PRIu64"s", (h->max + 500000000) / 1000000000);
-
-  (void) p;
-  puts (l);
-  os_free(l);
-  os_free(hist);
-  if (reset)
-    hist_reset (h);
+void save_argv0(const char *argv0) {
+    saved_argv0 = argv0;
 }
 
-void error (const char *fmt, ...)
-{
-  va_list ap;
-  fprintf (stderr, "%s: error: ", saved_argv0);
-  va_start (ap, fmt);
-  vfprintf (stderr, fmt, ap);
-  va_end (ap);
-  fprintf (stderr, "\n");
+int common_init(const char *argv0) {
+    save_argv0(argv0);
+    dp = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
+    error_abort(dp, "dds_create_participant failed");
+
+    ts_KeyedSeq = &KeyedSeq_desc;
+    ts_Keyed32 = &Keyed32_desc;
+    ts_Keyed64 = &Keyed64_desc;
+    ts_Keyed128 = &Keyed128_desc;
+    ts_Keyed256 = &Keyed256_desc;
+    ts_OneULong = &OneULong_desc;
+    return 0;
 }
 
-void save_argv0 (const char *argv0)
-{
-  saved_argv0 = argv0;
+void common_fini(void) {
+    dds_return_t rc;
+    if (qosprov != 0) {
+        rc = dds_delete(qosprov);
+        error_report(rc, "dds_delete qosprov failed");
+    }
+    rc = dds_delete(dp);
+    error_report(rc, "dds_delete participant failed");
 }
 
-int common_init (const char *argv0)
-{
-	save_argv0 (argv0);
-	dp = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-	error_abort(dp, "dds_create_participant failed");
+int change_publisher_partitions(dds_entity_t pub, unsigned npartitions, const char *partitions[]) {
+    dds_qos_t *qos;
+    dds_return_t rc;
 
-	ts_KeyedSeq = &KeyedSeq_desc;
-	ts_Keyed32 = &Keyed32_desc;
-	ts_Keyed64 = &Keyed64_desc;
-	ts_Keyed128 = &Keyed128_desc;
-	ts_Keyed256 = &Keyed256_desc;
-	ts_OneULong = &OneULong_desc;
-	return 0;
+    qos = dds_qos_create();
+    rc = dds_get_qos(pub, qos);
+    if (rc == DDS_SUCCESS) {
+        dds_qset_partition(qos, npartitions, partitions);
+        rc = dds_set_qos(pub, qos);
+    }
+    dds_qos_delete(qos);
+    return rc;
 }
 
-void common_fini (void)
-{
-	dds_return_t rc;
-	if(qosprov != 0) {
-		rc = dds_delete(qosprov);
-		error_report(rc, "dds_delete qosprov failed");
-	}
-	rc = dds_delete(dp);
-	error_report(rc, "dds_delete participant failed");
-}
+int change_subscriber_partitions(dds_entity_t sub, unsigned npartitions, const char *partitions[]) {
+    dds_qos_t *qos;
+    dds_return_t rc;
 
-int change_publisher_partitions (dds_entity_t pub, unsigned npartitions, const char *partitions[])
-{
-	dds_qos_t *qos;
-	dds_return_t rc;
-
-	qos = dds_qos_create();
-	rc = dds_get_qos(pub, qos);
-	if (rc == DDS_SUCCESS) {
-	    dds_qset_partition(qos, npartitions, partitions);
-	    rc = dds_set_qos(pub, qos);
-	}
-	dds_qos_delete(qos);
-	return rc;
-}
-
-int change_subscriber_partitions (dds_entity_t sub, unsigned npartitions, const char *partitions[])
-{
-  dds_qos_t *qos;
-  dds_return_t rc;
-
-  qos = dds_qos_create();
-  rc = dds_get_qos(sub, qos);
-  if (rc == DDS_SUCCESS) {
-      dds_qset_partition(qos, npartitions, partitions);
-      rc = dds_set_qos (sub, qos);
-  }
-  dds_qos_delete(qos);
-  return rc;
+    qos = dds_qos_create();
+    rc = dds_get_qos(sub, qos);
+    if (rc == DDS_SUCCESS) {
+        dds_qset_partition(qos, npartitions, partitions);
+        rc = dds_set_qos(sub, qos);
+    }
+    dds_qos_delete(qos);
+    return rc;
 }
 
 static dds_qos_t *get_topic_qos (dds_entity_t t)
