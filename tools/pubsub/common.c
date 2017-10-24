@@ -608,7 +608,7 @@ static unsigned char gethexchar(const char **str) {
         empty = 0;
     }
     done:
-    return v;
+        return v;
 }
 
 static unsigned char getoctchar(const char **str) {
@@ -844,7 +844,7 @@ void qos_resource_limits(struct qos *a, const char *arg) {
     return;
 
     err:
-    error_exit("resource limits qos: %s: invalid\n", arg);
+        error_exit("resource limits qos: %s: invalid\n", arg);
 }
 
 void qos_durability_service(struct qos *a, const char *arg) {
@@ -912,7 +912,7 @@ void qos_durability_service(struct qos *a, const char *arg) {
     return;
 
     err:
-    error_exit("durability service qos: %s: invalid\n", arg);
+        error_exit("durability service qos: %s: invalid\n", arg);
 }
 
 void qos_presentation(struct qos *a, const char *arg) {

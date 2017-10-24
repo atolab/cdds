@@ -64,181 +64,179 @@ static int printtype = 0;
 
 #define T_SECOND ((int64_t) 1000000000)
 struct tstamp_t {
-  int isabs;
-  int64_t t;
+    int isabs;
+    int64_t t;
 };
 
 struct readerspec {
-  dds_entity_t rd;
-  dds_entity_t sub;
-  enum topicsel topicsel;
-  struct tgtopic *tgtp;
-  enum readermode mode;
-  int use_take;
-  dds_duration_t sleep_ns;
-  int polling;
-  uint32_t read_maxsamples;
-  int print_match_pre_read;
-  unsigned idx;
+    dds_entity_t rd;
+    dds_entity_t sub;
+    enum topicsel topicsel;
+    struct tgtopic *tgtp;
+    enum readermode mode;
+    int use_take;
+    dds_duration_t sleep_ns;
+    int polling;
+    uint32_t read_maxsamples;
+    int print_match_pre_read;
+    unsigned idx;
 };
 
 enum writermode {
-  WRM_NONE,
-  WRM_AUTO,
-  WRM_INPUT
+    WRM_NONE,
+    WRM_AUTO,
+    WRM_INPUT
 };
 
 struct writerspec {
-  dds_entity_t wr;
-  dds_entity_t dupwr;
-  dds_entity_t pub;
-  enum topicsel topicsel;
-  char *tpname;
-  struct tgtopic *tgtp;
-  double writerate;
-  unsigned baggagesize;
-  int register_instances;
-  int duplicate_writer_flag;
-  unsigned burstsize;
-  enum writermode mode;
+    dds_entity_t wr;
+    dds_entity_t dupwr;
+    dds_entity_t pub;
+    enum topicsel topicsel;
+    char *tpname;
+    struct tgtopic *tgtp;
+    double writerate;
+    unsigned baggagesize;
+    int register_instances;
+    int duplicate_writer_flag;
+    unsigned burstsize;
+    enum writermode mode;
 };
 
 static const struct readerspec def_readerspec = {
-  .rd = 0,
-  .sub = 0,
-  .topicsel = UNSPEC,
-  .tgtp = NULL,
-  .mode = MODE_PRINT,
-  .use_take = 1,
-  .sleep_ns = 0,
-  .polling = 0,
-  .read_maxsamples = INT16_MAX,
-  .print_match_pre_read = 0
+    .rd = 0,
+    .sub = 0,
+    .topicsel = UNSPEC,
+    .tgtp = NULL,
+    .mode = MODE_PRINT,
+    .use_take = 1,
+    .sleep_ns = 0,
+    .polling = 0,
+    .read_maxsamples = INT16_MAX,
+    .print_match_pre_read = 0
 };
 
 static const struct writerspec def_writerspec = {
-  .wr = 0,
-  .dupwr = 0,
-  .pub = 0,
-  .topicsel = UNSPEC,
-  .tpname = NULL,
-  .tgtp = NULL,
-  .writerate = 0.0,
-  .baggagesize = 0,
-  .register_instances = 0,
-  .duplicate_writer_flag = 0,
-  .burstsize = 1,
-  .mode = WRM_INPUT
+    .wr = 0,
+    .dupwr = 0,
+    .pub = 0,
+    .topicsel = UNSPEC,
+    .tpname = NULL,
+    .tgtp = NULL,
+    .writerate = 0.0,
+    .baggagesize = 0,
+    .register_instances = 0,
+    .duplicate_writer_flag = 0,
+    .burstsize = 1,
+    .mode = WRM_INPUT
 };
 
 struct wrspeclist {
-  struct writerspec *spec;
-  struct wrspeclist *prev, *next; /* circular */
+    struct writerspec *spec;
+    struct wrspeclist *prev, *next; /* circular */
 };
 
-static void terminate (void)
-{
-//  const char c = 0;
-  termflag = 1;
-//  os_write(termpipe[1], &c, 1); // TODO: signal handling support; for abstraction layer
-  dds_waitset_set_trigger(termcond, true);
+static void terminate(void) {
+//    const char c = 0;
+    termflag = 1;
+//    os_write(termpipe[1], &c, 1); // TODO: signal handling support; for abstraction layer
+    dds_waitset_set_trigger(termcond, true);
 }
 
-static void usage (const char *argv0)
-{
-  fprintf (stderr, "\
+static void usage(const char *argv0) {
+    fprintf (stderr, "\
 usage: %s [OPTIONS] PARTITION...\n\
 \n\
 OPTIONS:\n\
-  -T TOPIC        set topic name to TOPIC\n\
-                  specifying a topic name when one has already been given\n\
-                  introduces a new reader/writer pair\n\
-  -K TYPE         select type (KS is default),\n\
-                  (default topic name in parenthesis):\n\
-                    KS                - key, seq, octet sequence (PubSub)\n\
-                    K32,K64,K128,K256 - key, seq, octet array (PubSub<N>)\n\
-                    OU                - one ulong, keyless (PubSubOU)\n\
-                  specifying a type when one has already been given introduces\n\
-                  a new reader/writer pair\n\
-  -q FS:QOS       set QoS for entities indicated by FS, which must be one or\n\
-                  more of: t (topic), p (publisher), s (subscriber),\n\
-                  w (writer), r (reader), or a (all of them). For QoS syntax,\n\
-                  see below. Inapplicable QoS's are ignored.\n\
-  -m [0|p[p]|c[p][:N]|z|d[p]]  no reader, print values, check sequence numbers\n\
-                  (expecting N keys), \"zero-load\" mode or \"dump\" mode (which\n\
-                  is differs from \"print\" primarily because it uses a data-\n\
-                  available trigger and reads all samples in read-mode(default:\n\
-                  p; pp, cp, dp are polling modes); set per-reader\n\
-  -D DUR          run for DUR seconds\n\
-  -n N            limit take/read to N samples\n\
-  -O              take/read once then exit 0 if samples present, or 1 if not\n\
-  -P MODES        printing control (prefixing with \"no\" disables):\n\
-                    meta           enable printing of all metadata\n\
-                    trad           pid, time, phandle, stime, state\n\
-                    pid            process id of pubsub\n\
-                    topic          which topic (topic is def. for multi-topic)\n\
-                    time           read time relative to program start\n\
-                    phandle        publication handle\n\
-                    ihandle        instance handle\n\
-                    stime          source timestamp\n\
-                    rtime          reception timestamp\n\
-                    dgen           disposed generation count\n\
-                    nwgen          no-writers generation count\n\
-                    ranks          sample, generation, absolute generation ranks\n\
-                    state          instance/sample/view states\n\
-		  additionally, the following have effect for sample data values:\n\
-                    dense          no additional white space, no field names\n\
-                    fields         field names, some white space\n\
-                    multiline      field names, one field per line\n\
-                  default is \"nometa,state,fields\".\n\
-		  	  	  For K* types, the .baggage field is omitted from the data output\n\
-  -r              register instances (-wN mode only)\n\
-  -R              use 'read' instead of 'take'\n\
-  -s MS           sleep MS ms after each read/take (default: 0)\n\
-  -w F            writer mode/input selection, F:\n\
-                    -     stdin (default)\n\
-                    N     cycle through N keys as fast as possible\n\
-                    N:R*B cycle through N keys at R bursts/second, each burst\n\
-                          consisting of B samples\n\
-                    N:R   as above, B=1\n\
-                  no writer is created if -w0 and no writer listener\n\
-                  automatic specifications can be given per writer; final\n\
-                  interactive specification determines input used for non-\n\
-                  automatic ones\n\
-  -S EVENTS       monitor status events (comma separated; default: none)\n\
-                  reader (abbreviated and full form):\n\
-                    pr   pre-read (virtual event)\n\
-                    sl   sample-lost\n\
-                    sr   sample-rejected\n\
-                    lc   liveliness-changed\n\
-                    sm   subscription-matched\n\
-                    riq  requested-incompatible-qos\n\
-                    rdm  requested-deadline-missed\n\
-                  writer:\n\
-                    ll   liveliness-lost\n\
-                    pm   publication-matched\n\
-                    oiq  offered-incompatible-qos\n\
-                    odm  offered-deadline-missed\n\
-  -z N            topic size (affects KeyedSeq only)\n\
-  -@              echo everything on duplicate writer (only for interactive)\n\
-  -* N            sleep for N seconds just before returning from main()\n\
+    -T TOPIC        set topic name to TOPIC\n\
+                    specifying a topic name when one has already been given\n\
+                    introduces a new reader/writer pair\n\
+    -K TYPE         select type (KS is default),\n\
+                    (default topic name in parenthesis):\n\
+                        KS                - key, seq, octet sequence (PubSub)\n\
+                        K32,K64,K128,K256 - key, seq, octet array (PubSub<N>)\n\
+                        OU                - one ulong, keyless (PubSubOU)\n\
+                    specifying a type when one has already been given introduces\n\
+                    a new reader/writer pair\n\
+    -q FS:QOS       set QoS for entities indicated by FS, which must be one or\n\
+                    more of: t (topic), p (publisher), s (subscriber),\n\
+                    w (writer), r (reader), or a (all of them). For QoS syntax,\n\
+                    see below. Inapplicable QoS's are ignored.\n\
+    -m [0|p[p]|c[p][:N]|z|d[p]]  no reader, print values, check sequence numbers\n\
+                    (expecting N keys), \"zero-load\" mode or \"dump\" mode (which\n\
+                    is differs from \"print\" primarily because it uses a data-\n\
+                    available trigger and reads all samples in read-mode(default:\n\
+                    p; pp, cp, dp are polling modes); set per-reader\n\
+    -D DUR          run for DUR seconds\n\
+    -n N            limit take/read to N samples\n\
+    -O              take/read once then exit 0 if samples present, or 1 if not\n\
+    -P MODES        printing control (prefixing with \"no\" disables):\n\
+                        meta           enable printing of all metadata\n\
+                        trad           pid, time, phandle, stime, state\n\
+                        pid            process id of pubsub\n\
+                        topic          which topic (topic is def. for multi-topic)\n\
+                        time           read time relative to program start\n\
+                        phandle        publication handle\n\
+                        ihandle        instance handle\n\
+                        stime          source timestamp\n\
+                        rtime          reception timestamp\n\
+                        dgen           disposed generation count\n\
+                        nwgen          no-writers generation count\n\
+                        ranks          sample, generation, absolute generation ranks\n\
+                        state          instance/sample/view states\n\
+                    additionally, the following have effect for sample data values:\n\
+                        dense          no additional white space, no field names\n\
+                        fields         field names, some white space\n\
+                        multiline      field names, one field per line\n\
+                    default is \"nometa,state,fields\".\n\
+                    For K* types, the .baggage field is omitted from the data output\n\
+    -r              register instances (-wN mode only)\n\
+    -R              use 'read' instead of 'take'\n\
+    -s MS           sleep MS ms after each read/take (default: 0)\n\
+    -w F            writer mode/input selection, F:\n\
+                        -     stdin (default)\n\
+                        N     cycle through N keys as fast as possible\n\
+                        N:R*B cycle through N keys at R bursts/second, each burst\n\
+                            consisting of B samples\n\
+                        N:R   as above, B=1\n\
+                    no writer is created if -w0 and no writer listener\n\
+                    automatic specifications can be given per writer; final\n\
+                    interactive specification determines input used for non-\n\
+                    automatic ones\n\
+    -S EVENTS       monitor status events (comma separated; default: none)\n\
+                    reader (abbreviated and full form):\n\
+                        pr   pre-read (virtual event)\n\
+                        sl   sample-lost\n\
+                        sr   sample-rejected\n\
+                        lc   liveliness-changed\n\
+                        sm   subscription-matched\n\
+                        riq  requested-incompatible-qos\n\
+                        rdm  requested-deadline-missed\n\
+                    writer:\n\
+                        ll   liveliness-lost\n\
+                        pm   publication-matched\n\
+                        oiq  offered-incompatible-qos\n\
+                        odm  offered-deadline-missed\n\
+    -z N            topic size (affects KeyedSeq only)\n\
+    -@              echo everything on duplicate writer (only for interactive)\n\
+    -* N            sleep for N seconds just before returning from main()\n\
 \n\
 %s\n\
 Note: defaults above are overridden as follows:\n\
-  r:k=all,R=10000/inf/inf\n\
-  w:k=all,R=100/inf/inf\n\
+    r:k=all,R=10000/inf/inf\n\
+    w:k=all,R=100/inf/inf\n\
 \n\
 Input format is a white-space separated sequence (K* and OU, newline\n\
 separated for ARB) of:\n\
-N     write next sample, key value N\n\
-wN    synonym for plain N; w@T N same with timestamp of T\n\
-      T is absolute of prefixed with \"=\", T currently in seconds\n\
-dN    dispose, key value N; d@T N as above\n\
-DN    write dispose, key value N; D@T N as above\n\
-uN    unregister, key value N; u@T N as above\n\
-rN    register, key value N; u@T N as above\n\
-sN    sleep for N seconds\n\
-zN    set topic size to N (affects KeyedSeq only)\n\
+    N     write next sample, key value N\n\
+    wN    synonym for plain N; w@T N same with timestamp of T\n\
+          T is absolute of prefixed with \"=\", T currently in seconds\n\
+    dN    dispose, key value N; d@T N as above\n\
+    DN    write dispose, key value N; D@T N as above\n\
+    uN    unregister, key value N; u@T N as above\n\
+    rN    register, key value N; u@T N as above\n\
+    sN    sleep for N seconds\n\
+    zN    set topic size to N (affects KeyedSeq only)\n\
 Note: for K*, OU types, in the above N is always a decimal\n\
 integer (possibly negative); because the OneULong type has no key\n\
 the actual key value is irrelevant. For ARB types, N must be a\n\
@@ -247,372 +245,335 @@ valid initializer. X must always be a list of names.\n\
 PARTITION:\n\
 If partition name contains spaces, then wrap it inside quotation marks.\n\
 Use \"\" for default partition.\n",
-           argv0, qos_arg_usagestr);
-  exit (1);
+            argv0, qos_arg_usagestr);
+    exit (1);
 }
 
-static void expand_append (char **dst, size_t *sz, size_t *pos, char c)
-{
-  if (*pos == *sz)
-  {
-    *sz += 1024;
-    *dst = os_realloc (*dst, *sz);
-  }
-  (*dst)[*pos] = c;
-  (*pos)++;
+static void expand_append(char **dst, size_t *sz, size_t *pos, char c) {
+    if (*pos == *sz) {
+        *sz += 1024;
+        *dst = os_realloc(*dst, *sz);
+    }
+    (*dst)[*pos] = c;
+    (*pos)++;
 }
 
-static char *expand_envvars (const char *src0);
+static char *expand_envvars(const char *src0);
 
-static char *expand_env (const char *name, char op, const char *alt)
-{
-  const char *env = os_getenv (name);
-  switch (op)
-  {
+static char *expand_env(const char *name, char op, const char *alt) {
+    const char *env = os_getenv(name);
+    switch (op) {
     case 0:
-      return os_strdup (env ? env : "");
+        return os_strdup(env ? env : "");
     case '-':
-      return env ? os_strdup (env) : expand_envvars (alt);
+        return env ? os_strdup(env) : expand_envvars(alt);
     case '?':
-      if (env)
-        return os_strdup (env);
-      else
-      {
-        char *altx = expand_envvars (alt);
-        error_exit("%s: %s\n", name, altx);
-        os_free (altx);
-        return NULL;
-      }
+        if (env)
+            return os_strdup(env);
+        else {
+            char *altx = expand_envvars(alt);
+            error_exit("%s: %s\n", name, altx);
+            os_free(altx);
+            return NULL;
+        }
     case '+':
-      return env ? expand_envvars (alt) : os_strdup ("");
+        return env ? expand_envvars(alt) : os_strdup("");
     default:
-      exit(2);
-  }
+        exit(2);
+    }
 }
 
-static char *expand_envbrace (const char **src)
-{
-  const char *start = *src + 1;
-  char *name, *x;
-  assert (**src == '{');
-  (*src)++;
-  while (**src && **src != ':' && **src != '}')
+static char *expand_envbrace(const char **src) {
+    const char *start = *src + 1;
+    char *name, *x;
+    assert(**src == '{');
     (*src)++;
-  if (**src == 0)
-    goto err;
-
-  name = os_malloc ((size_t) (*src - start) + 1);
-  memcpy (name, start, (size_t) (*src - start));
-  name[*src - start] = 0;
-  if (**src == '}')
-  {
-    (*src)++;
-    x = expand_env (name, 0, NULL);
-    os_free (name);
-    return x;
-  }
-  else
-  {
-    const char *altstart;
-    char *alt;
-    char op;
-    assert (**src == ':');
-    (*src)++;
-    switch (**src)
-    {
-      case '-': case '+': case '?':
-        op = **src;
+    while (**src && **src != ':' && **src != '}')
         (*src)++;
-        break;
-      default:
-        goto err;
-    }
-    altstart = *src;
-    while (**src && **src != '}')
-    {
-      if (**src == '\\')
-      {
-        (*src)++;
-        if (**src == 0)
-          goto err;
-      }
-      (*src)++;
-    }
     if (**src == 0)
-      goto err;
-    assert (**src == '}');
-    alt = os_malloc ((size_t) (*src - altstart) + 1);
-    memcpy (alt, altstart, (size_t) (*src - altstart));
-    alt[*src - altstart] = 0;
-    (*src)++;
-    x = expand_env (name, op, alt);
-    os_free (alt);
-    os_free (name);
+        goto err;
+
+    name = os_malloc((size_t) (*src - start) + 1);
+    memcpy(name, start, (size_t) (*src - start));
+    name[*src - start] = 0;
+    if (**src == '}') {
+        (*src)++;
+        x = expand_env(name, 0, NULL);
+        os_free(name);
+        return x;
+    } else {
+        const char *altstart;
+        char *alt;
+        char op;
+        assert(**src == ':');
+        (*src)++;
+
+        switch (**src) {
+        case '-': case '+': case '?':
+            op = **src;
+            (*src)++;
+            break;
+        default:
+            goto err;
+        }
+
+        altstart = *src;
+        while (**src && **src != '}') {
+            if (**src == '\\') {
+                (*src)++;
+                if (**src == 0)
+                goto err;
+            }
+            (*src)++;
+        }
+        if (**src == 0)
+            goto err;
+        assert(**src == '}');
+        alt = os_malloc((size_t) (*src - altstart) + 1);
+        memcpy(alt, altstart, (size_t) (*src - altstart));
+        alt[*src - altstart] = 0;
+        (*src)++;
+        x = expand_env(name, op, alt);
+        os_free(alt);
+        os_free(name);
+        return x;
+    }
+
+    err:
+        error_exit("%*.*s: invalid expansion\n", (int) (*src - start), (int) (*src - start), start);
+    return NULL;
+}
+
+static char *expand_envsimple(const char **src) {
+    const char *start = *src;
+    char *name, *x;
+    while (**src && (isalnum((unsigned char)**src) || **src == '_'))
+        (*src)++;
+    assert(*src > start);
+    name = os_malloc((size_t) (*src - start) + 1);
+    memcpy(name, start, (size_t) (*src - start));
+    name[*src - start] = 0;
+    x = expand_env(name, 0, NULL);
+    os_free(name);
     return x;
-  }
- err:
- error_exit("%*.*s: invalid expansion\n", (int) (*src - start), (int) (*src - start), start);
-  return NULL;
 }
 
-static char *expand_envsimple (const char **src)
-{
-  const char *start = *src;
-  char *name, *x;
-  while (**src && (isalnum ((unsigned char)**src) || **src == '_'))
+static char *expand_envchar(const char **src) {
+    char name[2];
+    assert(**src);
+    name[0] = **src;
+    name[1] = 0;
     (*src)++;
-  assert (*src > start);
-  name = os_malloc ((size_t) (*src - start) + 1);
-  memcpy (name, start, (size_t) (*src - start));
-  name[*src - start] = 0;
-  x = expand_env (name, 0, NULL);
-  os_free (name);
-  return x;
+    return expand_env(name, 0, NULL);
 }
 
-static char *expand_envchar (const char **src)
-{
-  char name[2];
-  assert (**src);
-  name[0] = **src;
-  name[1] = 0;
-  (*src)++;
-  return expand_env (name, 0, NULL);
-}
-
-static char *expand_envvars (const char *src0)
-{
-  /* Expands $X, ${X}, ${X:-Y}, ${X:+Y}, ${X:?Y} forms */
-  const char *src = src0;
-  size_t sz = strlen (src) + 1, pos = 0;
-  char *dst = os_malloc (sz);
-  while (*src)
-  {
-    if (*src == '\\')
-    {
-      src++;
-      if (*src == 0)
-          error_exit("%s: incomplete escape at end of string\n", src0);
-      expand_append (&dst, &sz, &pos, *src++);
+static char *expand_envvars(const char *src0) {
+    /* Expands $X, ${X}, ${X:-Y}, ${X:+Y}, ${X:?Y} forms */
+    const char *src = src0;
+    size_t sz = strlen(src) + 1, pos = 0;
+    char *dst = os_malloc(sz);
+    while (*src) {
+        if (*src == '\\') {
+            src++;
+            if (*src == 0)
+                error_exit("%s: incomplete escape at end of string\n", src0);
+            expand_append(&dst, &sz, &pos, *src++);
+        } else if (*src == '$') {
+            char *x, *xp;
+            src++;
+            if (*src == 0) {
+                error_exit("%s: incomplete variable expansion at end of string\n", src0);
+                return NULL;
+            } else if (*src == '{') {
+                x = expand_envbrace(&src);
+            } else if (isalnum((unsigned char)*src) || *src == '_') {
+                x = expand_envsimple(&src);
+            } else {
+                x = expand_envchar(&src);
+            }
+            xp = x;
+            while (*xp)
+                expand_append(&dst, &sz, &pos, *xp++);
+            os_free(x);
+        } else {
+            expand_append(&dst, &sz, &pos, *src++);
+        }
     }
-    else if (*src == '$')
-    {
-      char *x, *xp;
-      src++;
-      if (*src == 0)
-      {
-          error_exit("%s: incomplete variable expansion at end of string\n", src0);
-        return NULL;
-      }
-      else if (*src == '{')
-        x = expand_envbrace (&src);
-      else if (isalnum ((unsigned char)*src) || *src == '_')
-        x = expand_envsimple (&src);
-      else
-        x = expand_envchar (&src);
-      xp = x;
-      while (*xp)
-        expand_append (&dst, &sz, &pos, *xp++);
-      os_free (x);
-    }
-    else
-    {
-      expand_append (&dst, &sz, &pos, *src++);
-    }
-  }
-  expand_append (&dst, &sz, &pos, 0);
-  return dst;
+    expand_append(&dst, &sz, &pos, 0);
+    return dst;
 }
 
-static unsigned split_partitions (const char ***p_ps, char **p_bufcopy, const char *buf)
-{
-  const char *b;
-  const char **ps;
-  char *bufcopy, *bc;
-  unsigned i, nps;
-  nps = 1; for (b = buf; *b; b++) nps += (*b == ',');
-  ps = os_malloc (nps * sizeof (*ps));
-  bufcopy = expand_envvars (buf);
-  i = 0; bc = bufcopy;
-  while (1)
-  {
-    // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
-    OS_WARNING_MSVC_OFF(6386);
-    ps[i++] = bc;
-    OS_WARNING_MSVC_ON(6386);
-    while (*bc && *bc != ',') bc++;
-    if (*bc == 0) break;
-    *bc++ = 0;
-  }
-  assert (i == nps);
-  *p_ps = ps;
-  *p_bufcopy = bufcopy;
-  return nps;
+static unsigned split_partitions(const char ***p_ps, char **p_bufcopy, const char *buf) {
+    const char *b;
+    const char **ps;
+    char *bufcopy, *bc;
+    unsigned i, nps;
+    nps = 1;
+    for (b = buf; *b; b++) {
+        nps += (*b == ',');
+    }
+    ps = os_malloc(nps * sizeof(*ps));
+    bufcopy = expand_envvars(buf);
+    i = 0; bc = bufcopy;
+    while (1) {
+        // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
+        OS_WARNING_MSVC_OFF(6386);
+        ps[i++] = bc;
+        OS_WARNING_MSVC_ON(6386);
+        while (*bc && *bc != ',') bc++;
+        if (*bc == 0) break;
+        *bc++ = 0;
+    }
+    assert(i == nps);
+    *p_ps = ps;
+    *p_bufcopy = bufcopy;
+    return nps;
 }
 
-static int set_pub_partition (dds_entity_t pub, const char *buf)
-{
-  const char **ps;
-  char *bufcopy;
-  unsigned nps = split_partitions(&ps, &bufcopy, buf);
-  dds_return_t rc = change_publisher_partitions (pub, nps, ps);
-  error_report(rc, "set_pub_partition failed: ");
-  os_free (bufcopy);
-  os_free ((char **)ps);
-  return 0;
+static int set_pub_partition(dds_entity_t pub, const char *buf) {
+    const char **ps;
+    char *bufcopy;
+    unsigned nps = split_partitions(&ps, &bufcopy, buf);
+    dds_return_t rc = change_publisher_partitions(pub, nps, ps);
+    error_report(rc, "set_pub_partition failed: ");
+    os_free(bufcopy);
+    os_free((char **)ps);
+    return 0;
 }
 
 #if 0
-static int set_sub_partition (dds_entity_t sub, const char *buf)
-{
-  const char **ps;
-  char *bufcopy;
-  unsigned nps = split_partitions(&ps, &bufcopy, buf);
-  dds_return_t rc = change_subscriber_partitions (sub, nps, ps);
-  error_report(rc, "set_partition failed: %s (%d)\n");
-  os_free (bufcopy);
-  os_free (ps);
-  return 0;
+static int set_sub_partition(dds_entity_t sub, const char *buf) {
+    const char **ps;
+    char *bufcopy;
+    unsigned nps = split_partitions(&ps, &bufcopy, buf);
+    dds_return_t rc = change_subscriber_partitions(sub, nps, ps);
+    error_report(rc, "set_partition failed: %s (%d)\n");
+    os_free(bufcopy);
+    os_free(ps);
+    return 0;
 }
 #endif
 
-static int read_int (char *buf, int bufsize, int pos, int accept_minus)
-{
-  int c = EOF;
-  while (pos < bufsize-1 && (c = getc (stdin)) != EOF && (isdigit ((unsigned char) c) || (c == '-' && accept_minus)))
-  {
-    accept_minus = 0;
-    buf[pos++] = (char) c;
-  }
-  buf[pos] = 0;
-  if (c == EOF || isspace ((unsigned char) c))
-    return (pos > 0);
-  else if (!isdigit ((unsigned char) c))
-  {
-    fprintf (stderr, "%c: unexpected character\n", c);
-    return 0;
-  }
-  else if (pos == bufsize-1)
-  {
-    fprintf (stderr, "integer too long\n");
-    return 0;
-  }
-  return 1;
+static int read_int(char *buf, int bufsize, int pos, int accept_minus) {
+    int c = EOF;
+    while (pos < bufsize-1 && (c = getc(stdin)) != EOF && (isdigit((unsigned char) c) || (c == '-' && accept_minus))) {
+        accept_minus = 0;
+        buf[pos++] = (char) c;
+    }
+    buf[pos] = 0;
+    if (c == EOF || isspace((unsigned char) c)) {
+        return (pos > 0);
+    } else if (!isdigit((unsigned char) c)) {
+        fprintf (stderr, "%c: unexpected character\n", c);
+        return 0;
+    } else if (pos == bufsize-1) {
+        fprintf (stderr, "integer too long\n");
+        return 0;
+    }
+    return 1;
 }
 
-static int read_int_w_tstamp (struct tstamp_t *tstamp, char *buf, int bufsize, int pos)
-{
-  int c;
-  assert (pos < bufsize - 2);
-  c = getc (stdin);
-  if (c == EOF)
-    return 0;
-  else if (c == '@')
-  {
-    int posoff = 0;
-    c = getc (stdin);
+static int read_int_w_tstamp(struct tstamp_t *tstamp, char *buf, int bufsize, int pos) {
+    int c;
+    assert(pos < bufsize - 2);
+    c = getc(stdin);
     if (c == EOF)
-      return 0;
-    else if (c == '=')
-      tstamp->isabs = 1;
-    else
-    {
-      buf[pos] = (char) c;
-      posoff = 1;
+        return 0;
+    else if (c == '@') {
+        int posoff = 0;
+        c = getc(stdin);
+        if (c == EOF)
+            return 0;
+        else if (c == '=')
+            tstamp->isabs = 1;
+        else {
+            buf[pos] = (char) c;
+            posoff = 1;
+        }
+        if (read_int(buf, bufsize, pos + posoff, 1))
+            tstamp->t = atoi(buf + pos) * T_SECOND;
+        else
+            return 0;
+        while ((c = getc(stdin)) != EOF && isspace((unsigned char) c))
+            ;
+        if (!isdigit((unsigned char) c))
+            return 0;
     }
-    if (read_int (buf, bufsize, pos + posoff, 1))
-      tstamp->t = atoi (buf + pos) * T_SECOND;
-    else
-      return 0;
-    while ((c = getc (stdin)) != EOF && isspace ((unsigned char) c))
-      ;
-    if (!isdigit ((unsigned char) c))
-      return 0;
-  }
-  buf[pos++] = (char) c;
-  while (pos < bufsize-1 && (c = getc (stdin)) != EOF && isdigit ((unsigned char) c))
     buf[pos++] = (char) c;
-  buf[pos] = 0;
-  if (c == EOF || isspace ((unsigned char) c))
-    return (pos > 0);
-  else if (!isdigit ((unsigned char) c))
-  {
-    fprintf (stderr, "%c: unexpected character\n", c);
-    return 0;
-  }
-  else if (pos == bufsize-1)
-  {
-    fprintf (stderr, "integer too long\n");
-    return 0;
-  }
-  return 1;
+    while (pos < bufsize-1 && (c = getc(stdin)) != EOF && isdigit((unsigned char) c))
+        buf[pos++] = (char) c;
+    buf[pos] = 0;
+    if (c == EOF || isspace((unsigned char) c))
+        return (pos > 0);
+    else if (!isdigit((unsigned char) c)) {
+        fprintf (stderr, "%c: unexpected character\n", c);
+        return 0;
+    } else if (pos == bufsize-1) {
+        fprintf (stderr, "integer too long\n");
+        return 0;
+    }
+    return 1;
 }
 
-static int read_value (char *command, int *key, struct tstamp_t *tstamp, char **arg)
-{
-  char buf[1024];
-  int c;
-  if (*arg) { os_free(*arg); *arg = NULL; }
-  tstamp->isabs = 0;
-  tstamp->t = 0;
-  do {
-	  while ((c = getc (stdin)) != EOF && isspace ((unsigned char) c))
-      ;
-    if (c == EOF)
-      return 0;
-    switch (c)
-    {
-      case '-':
-      case '0': case '1': case '2': case '3': case '4':
-      case '5': case '6': case '7': case '8': case '9':
-        buf[0] = (char) c;
-        if (read_int (buf, sizeof (buf), 1, 0))
-        {
-          *command = 'w';
-          *key = atoi (buf);
-          return 1;
+static int read_value(char *command, int *key, struct tstamp_t *tstamp, char **arg) {
+    char buf[1024];
+    int c;
+    if (*arg) { os_free(*arg); *arg = NULL; }
+    tstamp->isabs = 0;
+    tstamp->t = 0;
+    do {
+        while ((c = getc(stdin)) != EOF && isspace((unsigned char) c))
+            ;
+        if (c == EOF)
+            return 0;
+        switch (c) {
+        case '-':
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+            buf[0] = (char) c;
+            if (read_int(buf, sizeof(buf), 1, 0)) {
+                *command = 'w';
+                *key = atoi(buf);
+                return 1;
+            }
+            break;
+        case 'w': case 'd': case 'D': case 'u': case 'r':
+            *command = (char) c;
+            if (read_int_w_tstamp(tstamp, buf, sizeof(buf), 0)) {
+                *key = atoi(buf);
+                return 1;
+            }
+            break;
+        case 'z': case 's':
+            *command = (char) c;
+            if (read_int(buf, sizeof(buf), 0, 0)) {
+                *key = atoi(buf);
+                return 1;
+            }
+            break;
+        case 'p': case 'S': case ':': {
+            int i = 0;
+            *command = (char) c;
+            while ((c = getc(stdin)) != EOF && !isspace((unsigned char) c)) {
+                assert(i < (int) sizeof(buf) - 1);
+                buf[i++] = (char) c;
+            }
+            buf[i] = 0;
+            *arg = os_strdup(buf);
+            ungetc(c, stdin);
+            return 1;
         }
-        break;
-      case 'w': case 'd': case 'D': case 'u': case 'r':
-        *command = (char) c;
-        if (read_int_w_tstamp (tstamp, buf, sizeof (buf), 0))
-        {
-          *key = atoi (buf);
-          return 1;
+        case 'Y': case 'B': case 'E': case 'W':
+            *command = (char) c;
+            return 1;
+        default:
+            fprintf (stderr, "'%c': unexpected character\n", c);
+            break;
         }
-        break;
-      case 'z': case 's':
-        *command = (char) c;
-        if (read_int (buf, sizeof (buf), 0, 0))
-        {
-          *key = atoi (buf);
-          return 1;
-        }
-        break;
-      case 'p': case 'S': case ':': {
-        int i = 0;
-        *command = (char) c;
-        while ((c = getc (stdin)) != EOF && !isspace ((unsigned char) c))
-        {
-          assert (i < (int) sizeof (buf) - 1);
-          buf[i++] = (char) c;
-        }
-        buf[i] = 0;
-        *arg = os_strdup(buf);
-        ungetc (c, stdin);
-        return 1;
-      }
-      case 'Y': case 'B': case 'E': case 'W':
-        *command = (char) c;
-        return 1;
-      default:
-        fprintf (stderr, "'%c': unexpected character\n", c);
-        break;
-    }
-    while ((c = getc (stdin)) != EOF && !isspace ((unsigned char) c))
-      ;
-  } while (c != EOF);
-  return 0;
+        while ((c = getc(stdin)) != EOF && !isspace((unsigned char) c))
+            ;
+    } while (c != EOF);
+    return 0;
 }
 
 // TODO Upon support for ARB types, resolve the declaration of fdin
