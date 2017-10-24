@@ -141,9 +141,10 @@ dds_create_participant(
         ret = dds_init();
         if (ret != DDS_RETCODE_OK) {
             e = DDS_ERRNO(ret, "Initialization of DDS layer is failed");
-            goto fail;
+            goto finalize;
         }
     }
+
 
     /* Report stack is only useful after dds (and thus os) init. */
     DDS_REPORT_STACK();
@@ -154,7 +155,7 @@ dds_create_participant(
     ret = dds_init_impl (domain);
     if (ret != DDS_RETCODE_OK) {
         e = (dds_entity_t)ret;
-        goto fail;
+        goto finalize;
     }
 
     /* Validate qos */
@@ -162,7 +163,7 @@ dds_create_participant(
         ret = dds_participant_qos_validate (qos, false);
         if (ret != DDS_RETCODE_OK) {
             e = (dds_entity_t)ret;
-            goto fail;
+            goto finalize;
         }
         new_qos = dds_qos_create ();
         /* Only returns failure when one of the qos args is NULL, which
@@ -187,19 +188,19 @@ dds_create_participant(
     if (q_rc != 0) {
         dds_qos_delete(new_qos);
         e = DDS_ERRNO(DDS_RETCODE_ERROR, "Internal error");
-        goto fail;
+        goto finalize;
     }
 
     pp = dds_alloc (sizeof (*pp));
     e = dds_entity_init (&pp->m_entity, NULL, DDS_KIND_PARTICIPANT, new_qos, listener, DDS_PARTICIPANT_STATUS_MASK);
     if (e < 0) {
         dds_qos_delete(new_qos);
-        goto fail;
+        goto finalize;
     }
 
     pp->m_entity.m_guid = guid;
-    pp->m_entity.m_domain = dds_domain_create (config.domainId);
-    pp->m_entity.m_domainid = config.domainId;
+    pp->m_entity.m_domain = dds_domain_create (dds_domain_default());
+    pp->m_entity.m_domainid = dds_domain_default();
     pp->m_entity.m_deriver.delete = dds_participant_delete;
     pp->m_entity.m_deriver.set_qos = dds_participant_qos_set;
     pp->m_entity.m_deriver.get_instance_hdl = dds_participant_instance_hdl;
@@ -212,7 +213,7 @@ dds_create_participant(
     dds_pp_head = &pp->m_entity;
     os_mutexUnlock (&dds_global.m_mutex);
 
-fail:
+finalize:
     nn_plist_fini (&plist);
     if (dds_pp_head == NULL) {
         dds_fini();
