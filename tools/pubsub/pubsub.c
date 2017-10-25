@@ -1740,8 +1740,8 @@ static uint32_t subthread (void *vspec)
 
   if (wait_hist_data)
   {
-    rc = dds_reader_wait_for_historical_data(rd, wait_hist_data_timeout);
-    error_report(rc, "dds_reader_wait_for_historical_data");
+    rc = dds_wait_for_historical_data(rd, wait_hist_data_timeout);
+    error_report(rc, "dds_wait_for_historical_data");
   }
 
   ws = dds_create_waitset(dp);

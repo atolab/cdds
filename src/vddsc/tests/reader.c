@@ -45,73 +45,6 @@
 #define SAMPLE_SST(idx)           ((idx <= SAMPLE_LAST_READ_SST) ? DDS_SST_READ : DDS_SST_NOT_READ)
 
 
-Test(vddsc_reader, wait_for_historical_data)
-{
-  dds_entity_t participant;
-  dds_entity_t topic;
-  dds_entity_t reader;
-  dds_qos_t *qos;
-  dds_return_t ret;
-  dds_duration_t zeroSec = ((dds_duration_t)DDS_SECS(0));
-  dds_duration_t oneSec = ((dds_duration_t)DDS_SECS(1));
-  dds_duration_t minusOneSec = ((dds_duration_t)DDS_SECS(-1));
-  dds_duration_t infinite = DDS_INFINITY;
-
-  participant = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  qos = dds_qos_create ();
-  dds_qset_durability(qos, DDS_DURABILITY_TRANSIENT_LOCAL);
-  topic = dds_create_topic (participant, &RoundTripModule_DataType_desc, "RoundTrip", qos, NULL);
-  cr_assert_gt(topic, 0, "dds_create_topic(Roundtrip)");
-
-  /* Call wait_for_historical_data with various reader arguments */
-  ret = dds_wait_for_historical_data(0, oneSec);
-  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_historial_data(NULL, oneSec)");
-  ret = dds_wait_for_historical_data(participant, oneSec);
-  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "dds_wait_for_historial_data(participant, oneSec)");
-
-  /* Call wait_for_historical_data with a transient-local reader and various max_wait arguments */
-  reader = dds_create_reader (participant, topic, qos, NULL);
-  cr_assert_gt(reader, 0, "transient-local reader created");
-  ret = dds_wait_for_historical_data(reader, minusOneSec);
-  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "dds_wait_for_historial_data(reader, minusOneSec)");
-  ret = dds_wait_for_historical_data(reader, oneSec);
-  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "dds_wait_for_historial_data(reader, oneSec)");
-  ret = dds_wait_for_historical_data(reader, oneSec);
-  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "dds_wait_for_historial_data(reader, oneSec) again");
-  ret = dds_wait_for_historical_data(reader, zeroSec);
-  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "dds_wait_for_historial_data(reader, zeroSec)");
-  ret = dds_wait_for_historical_data(reader, infinite);
-  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "dds_wait_for_historial_data(reader, infinite)");
-  dds_delete(reader);
-
-  /* Call wait_for_historical_data on volatile, transient and persistent readers */
-  dds_qset_durability(qos, DDS_DURABILITY_VOLATILE);
-  reader = dds_create_reader (participant, topic, qos, NULL);
-  cr_assert_gt(reader, 0, "volatile reader created");
-  ret = dds_wait_for_historical_data(reader, oneSec);
-  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_UNSUPPORTED, "dds_wait_for_historial_data(volatile_reader, oneSec)");
-  dds_delete(reader);
-
-  dds_qset_durability(qos, DDS_DURABILITY_TRANSIENT);
-  reader = dds_create_reader (participant, topic, qos, NULL);
-  cr_assert_gt(reader, 0, "transient reader created");
-  ret = dds_wait_for_historical_data(reader, oneSec);
-  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_UNSUPPORTED, "dds_wait_for_historial_data(transient_reader, oneSec)");
-  dds_delete(reader);
-
-  dds_qset_durability(qos, DDS_DURABILITY_PERSISTENT);
-  reader = dds_create_reader (participant, topic, qos, NULL);
-  cr_assert_gt(reader, 0, "persistent reader created");
-  ret = dds_wait_for_historical_data(reader, oneSec);
-  cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_UNSUPPORTED, "dds_wait_for_historial_data(persistent_reader, oneSec)");
-  dds_delete(reader);
-
-  dds_qos_delete (qos);
-  dds_delete(reader);
-  dds_delete(topic);
-  dds_delete(participant);
-}
-
 static dds_entity_t g_participant = 0;
 static dds_entity_t g_subscriber  = 0;
 static dds_entity_t g_topic       = 0;
@@ -1858,7 +1791,7 @@ Test(vddsc_take, valid, .init=reader_init, .fini=reader_fini)
 
 /**************************************************************************************************
  *
- * These will check the read_wl in various ways.
+ * These will check the take_wl in various ways.
  *
  *************************************************************************************************/
 /*************************************************************************************************/
@@ -1972,7 +1905,7 @@ Test(vddsc_take_wl, valid, .init=reader_init, .fini=reader_fini)
 
 /**************************************************************************************************
  *
- * These will check the read_mask in various ways.
+ * These will check the take_mask in various ways.
  *
  *************************************************************************************************/
 /*************************************************************************************************/
@@ -2672,7 +2605,7 @@ Test(vddsc_take_mask, take_instance_last_sample)
 
 /**************************************************************************************************
  *
- * These will check the read_mask_wl in various ways.
+ * These will check the take_mask_wl in various ways.
  *
  *************************************************************************************************/
 /*************************************************************************************************/
@@ -3263,3 +3196,134 @@ Test(vddsc_take_mask_wl, combination_of_states, .init=reader_init, .fini=reader_
     cr_assert_eq(ret, MAX_SAMPLES - expected_cnt, "# samples %d, expected %d", ret,  MAX_SAMPLES - expected_cnt);
 }
 /*************************************************************************************************/
+
+
+
+
+
+
+
+
+
+
+/**************************************************************************************************
+ *
+ * These will check the wait_for_historical_data in various ways.
+ *
+ *************************************************************************************************/
+/*************************************************************************************************/
+Test(vddsc_wait_for_historical_data, invalid_args, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    ret = dds_wait_for_historical_data(g_reader, -1);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_wait_for_historical_data, invalid_readers) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t rdr), vddsc_wait_for_historical_data, invalid_readers, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    ret = dds_wait_for_historical_data(rdr, 0);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_wait_for_historical_data, non_readers) = {
+        DataPoints(dds_entity_t*, &g_participant, &g_topic, &g_writer, &g_subscriber, &g_waitset),
+};
+Theory((dds_entity_t *rdr), vddsc_wait_for_historical_data, non_readers, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    ret = dds_wait_for_historical_data(*rdr, 0);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_wait_for_historical_data, already_deleted, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    dds_delete(g_reader);
+    ret = dds_wait_for_historical_data(g_reader, 0);
+    cr_expect_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_wait_for_historical_data, unsupported) = {
+        DataPoints(dds_durability_kind_t, DDS_DURABILITY_TRANSIENT, DDS_DURABILITY_PERSISTENT),
+};
+Theory((dds_durability_kind_t kind), vddsc_wait_for_historical_data, unsupported, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    dds_entity_t rdr;
+    dds_entity_t top;
+    dds_qset_durability(g_qos, kind);
+    top = dds_create_topic(g_participant, &Space_Type1_desc, "WaitForHistoricalDataUnsupported", g_qos, NULL);
+    cr_assert_gt(top, 0, "dds_create_topic(Roundtrip)");
+    rdr = dds_create_reader (g_participant, top, g_qos, NULL);
+    cr_assert_gt(rdr, 0, "dds_create_reader(Roundtrip)");
+    ret = dds_wait_for_historical_data(rdr, 0);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_UNSUPPORTED, "returned %d", dds_err_nr(ret));
+    dds_delete(top);
+    dds_delete(rdr);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_wait_for_historical_data, no_writer) = {
+        DataPoints(dds_durability_kind_t, DDS_DURABILITY_VOLATILE, DDS_DURABILITY_TRANSIENT_LOCAL),
+        DataPoints(dds_duration_t, DDS_INFINITY, ((dds_duration_t)DDS_SECS(1)), ((dds_duration_t)DDS_SECS(0))),
+};
+Theory((dds_durability_kind_t kind, dds_duration_t timeout), vddsc_wait_for_historical_data, no_writer, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    dds_entity_t rdr;
+    dds_entity_t top;
+    dds_qset_durability(g_qos, kind);
+    top = dds_create_topic(g_participant, &Space_Type1_desc, "WaitForHistoricalNoWriter", g_qos, NULL);
+    cr_assert_gt(top, 0, "dds_create_topic(Roundtrip)");
+    rdr = dds_create_reader (g_participant, top, g_qos, NULL);
+    cr_assert_gt(rdr, 0, "dds_create_reader(Roundtrip)");
+    ret = dds_wait_for_historical_data(rdr, timeout);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+    dds_delete(top);
+    dds_delete(rdr);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_wait_for_historical_data, local_writer) = {
+        DataPoints(dds_durability_kind_t, DDS_DURABILITY_VOLATILE, DDS_DURABILITY_TRANSIENT_LOCAL),
+        DataPoints(dds_duration_t, DDS_INFINITY, ((dds_duration_t)DDS_SECS(1)), ((dds_duration_t)DDS_SECS(0))),
+};
+Theory((dds_durability_kind_t kind, dds_duration_t timeout), vddsc_wait_for_historical_data, local_writer, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    dds_entity_t wtr;
+    dds_entity_t rdr;
+    dds_entity_t top;
+    Space_Type1 sample = { 5, 3, 1 };
+    dds_qset_durability(g_qos, kind);
+    top = dds_create_topic(g_participant, &Space_Type1_desc, "WaitForHistoricalEarlyWriterData", g_qos, NULL);
+    cr_assert_gt(top, 0, "dds_create_topic(Roundtrip)");
+    wtr = dds_create_writer (g_participant, top, g_qos, NULL);
+    cr_assert_gt(wtr, 0, "dds_create_writer(Roundtrip)");
+    ret = dds_write(g_writer, &sample);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite write");
+    rdr = dds_create_reader (g_participant, top, g_qos, NULL);
+    cr_assert_gt(rdr, 0, "dds_create_reader(Roundtrip)");
+    ret = dds_wait_for_historical_data(rdr, timeout);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+    dds_delete(top);
+    dds_delete(rdr);
+    dds_delete(wtr);
+}
+/*************************************************************************************************/
+
+/* TODO: Test with remote writer. */

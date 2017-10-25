@@ -574,6 +574,10 @@ void delete_proxy_group (const struct nn_guid *guid, nn_wctime_t timestamp, int 
 void writer_exit_startup_mode (struct writer *wr);
 uint64_t writer_instance_id (const struct nn_guid *guid);
 
+void notify_wait_for_historical_data (struct proxy_writer *pwr, const nn_guid_t *rd_guid);
+
+/* -1: error, 0: not in sync/timeout, 1: synced. */
+int wait_for_historical_data(struct reader * rd, os_time timeout);
 
 #if defined (__cplusplus)
 }

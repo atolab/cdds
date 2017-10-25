@@ -548,56 +548,67 @@ dds_wait_for_historical_data(
         _In_ dds_entity_t reader,
         _In_range_(0, DDS_INFINITY) dds_duration_t max_wait)
 {
-  dds_reader *dds_rd;
-  dds__retcode_t errnr;
+    dds_reader *dds_rd;
+    dds__retcode_t errnr;
+    dds_return_t ret = DDS_RETCODE_OK;
 
-  errnr = dds_reader_lock(reader, &dds_rd);
-  if (errnr != DDS_RETCODE_OK) {
-     return DDS_ERRNO(errnr);
-  }
-  if (max_wait < 0) {
-    errnr = DDS_RETCODE_BAD_PARAMETER;
-    goto skip;
-  }
-  if (!((dds_entity*)dds_rd)->m_status_enable) {
-    errnr = DDS_RETCODE_NOT_ENABLED;
-    goto skip;
-  }
-  /* TODO wait_for_historical data is currently only supported for transient-local readers
-   * For volatile, transient and persistent readers the behaviour of wait_for_historical_data
-   * requires a durability service or something equivalent. Until a durability service is
-   * not available UNSUPPORTED will be returned.
-   */ 
-  if (((dds_entity*)dds_rd)->m_qos->durability.kind != NN_TRANSIENT_LOCAL_DURABILITY_QOS) {
-    errnr = DDS_RETCODE_UNSUPPORTED;
-    goto skip;
-  }
-  /* At this point the reader must be transient-local */
-
-  {
-    struct reader *rd;
-    os_time timeout;
-    os_result result = os_resultSuccess;
-
-    rd = dds_rd->m_rd;
-    if (rd->in_sync) {
-      errnr = DDS_RETCODE_OK;
-      goto skip;
+    if (max_wait < 0) {
+        return DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "The max_wait value is negative");
     }
-    /* TODO Until CHAM-142 is fixed we need to translate dds_duration to os_time */
-    timeout.tv_sec = (int32_t) (max_wait / T_SECOND);
-    timeout.tv_nsec = (int32_t) (max_wait % T_SECOND);
-    os_mutexLock (&rd->complete_lock);
-    result = os_condTimedWait (&rd->complete_cond, &rd->complete_lock, &timeout);
-    os_mutexUnlock (&rd->complete_lock);
-    errnr = ((result == os_resultSuccess) ? DDS_RETCODE_OK      :
-             (result == os_resultTimeout) ? DDS_RETCODE_TIMEOUT :
-                                            DDS_RETCODE_ERROR);
-  }
 
+    errnr = dds_reader_lock(reader, &dds_rd);
+    if (errnr != DDS_RETCODE_OK) {
+        return DDS_ERRNO(errnr, "Failed to lock reader.");
+    }
+
+    if (!((dds_entity*)dds_rd)->m_status_enable) {
+        ret = DDS_ERRNO(DDS_RETCODE_NOT_ENABLED, "The reader is not enabled");
+        goto skip;
+    }
+
+    /* TODO wait_for_historical data is currently only supported for transient-local readers
+     * For volatile, transient and persistent readers the behaviour of wait_for_historical_data
+     * requires a durability service or something equivalent. Until a durability service is
+     * not available UNSUPPORTED will be returned.
+     */
+    if (((dds_entity*)dds_rd)->m_qos->durability.kind != NN_TRANSIENT_LOCAL_DURABILITY_QOS) {
+        if (((dds_entity*)dds_rd)->m_qos->durability.kind == NN_VOLATILE_DURABILITY_QOS) {
+            ret = DDS_RETCODE_OK;
+        } else {
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "This is only supported for transient local readers.");
+        }
+        goto skip;
+    }
+    /* At this point the reader must be transient-local */
+
+    {
+        struct reader *rd = dds_rd->m_rd;
+        os_time timeout;
+        int wait_ret;
+
+        /* TODO Until CHAM-142 is fixed we need to translate dds_duration to os_time */
+        timeout.tv_sec = (int32_t) (max_wait / T_SECOND);
+        timeout.tv_nsec = (int32_t) (max_wait % T_SECOND);
+
+        /*
+         * Unlock reader to be able to access rhc to deliver the historical data.
+         * By using the mutex directly we still have a claim on the handle, which
+         * will prevent the reader to be deleted while we're within this function.
+         */
+        os_mutexUnlock(&dds_rd->m_entity.m_mutex);
+
+        wait_ret = wait_for_historical_data(rd, timeout);
+
+        os_mutexLock(&dds_rd->m_entity.m_mutex);
+
+        ret = ((wait_ret == 1) ? DDS_RETCODE_OK      :
+               (wait_ret == 0) ? DDS_ERRNO(DDS_RETCODE_TIMEOUT, "Historical data not received within timeout.") :
+                                 DDS_ERRNO(DDS_RETCODE_ERROR, "Internal error during historical data collection."));
+
+    }
 skip:
     dds_reader_unlock(dds_rd);
-    return DDS_ERRNO(errnr);
+    return ret;
 }
 
 _Pre_satisfies_(((entity & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER    ) || \
