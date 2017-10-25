@@ -1572,595 +1572,556 @@ static int check_eseq(struct eseq_admin *ea, unsigned seq, unsigned keyval, cons
 //    return x;
 //}
 
-static uint32_t subthread (void *vspec)
-{
-  const struct readerspec *spec = vspec;
-  dds_entity_t rd = spec->rd;
-  // TODO coherency support
-//  dds_entity_t sub = spec->sub;
-//  const int need_access = subscriber_needs_access (sub);
-  dds_entity_t ws;
-  dds_entity_t rdcondA = 0, rdcondD = 0;
-  dds_entity_t stcond = 0;
-  dds_return_t rc;
-  uintptr_t exitcode = 0;
-  char tag[256];
-  char tn[256];
-  size_t nxs = 0;
+static uint32_t subthread(void *vspec) {
+    const struct readerspec *spec = vspec;
+    dds_entity_t rd = spec->rd;
+// TODO coherency support
+//    dds_entity_t sub = spec->sub;
+//    const int need_access = subscriber_needs_access(sub);
+    dds_entity_t ws;
+    dds_entity_t rdcondA = 0, rdcondD = 0;
+    dds_entity_t stcond = 0;
+    dds_return_t rc;
+    uintptr_t exitcode = 0;
+    char tag[256];
+    char tn[256];
+    size_t nxs = 0;
 
-  rc = dds_get_name(dds_get_topic(rd), tn, sizeof(tn));
-  error_report(rc, "dds_get_name failed");
-  (void)snprintf(tag, sizeof(tag), "[%u:%s]", spec->idx, tn);
+    rc = dds_get_name(dds_get_topic(rd), tn, sizeof(tn));
+    error_report(rc, "dds_get_name failed");
+    (void)snprintf(tag, sizeof(tag), "[%u:%s]", spec->idx, tn);
 
-  if (wait_hist_data)
-  {
-    rc = dds_reader_wait_for_historical_data(rd, wait_hist_data_timeout);
-    error_report(rc, "dds_reader_wait_for_historical_data");
-  }
+    if (wait_hist_data) {
+        rc = dds_reader_wait_for_historical_data(rd, wait_hist_data_timeout);
+        error_report(rc, "dds_reader_wait_for_historical_data");
+    }
 
-  ws = dds_create_waitset(dp);
-  rc = dds_waitset_attach(ws, termcond, termcond);
-  error_abort(rc, "dds_waitset_attach (termcond)");
-  nxs++;
-  switch (spec->mode)
-  {
+    ws = dds_create_waitset(dp);
+    rc = dds_waitset_attach(ws, termcond, termcond);
+    error_abort(rc, "dds_waitset_attach(termcond)");
+    nxs++;
+    switch (spec->mode) {
     case MODE_NONE:
     case MODE_ZEROLOAD:
-      /* no triggers */
-      break;
+        /* no triggers */
+        break;
     case MODE_PRINT:
         /* complicated triggers */
         rdcondA = dds_create_readcondition(rd, spec->use_take ? (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
-                                                              : (DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE));
-        error_abort(rdcondA, "dds_readcondition_create (rdcondA)");
+                : (DDS_NOT_READ_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_ALIVE_INSTANCE_STATE | DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE));
+        error_abort(rdcondA, "dds_readcondition_create(rdcondA)");
 
-        rc = dds_waitset_attach (ws, rdcondA, rdcondA);
-        error_abort(rc, "dds_waitset_attach (rdcondA)");
+        rc = dds_waitset_attach(ws, rdcondA, rdcondA);
+        error_abort(rc, "dds_waitset_attach(rdcondA)");
         nxs++;
 
-        rdcondD = dds_create_readcondition (rd, (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE));
-        error_abort(rdcondD, "dds_readcondition_create (rdcondD)");
+        rdcondD = dds_create_readcondition(rd, (DDS_ANY_SAMPLE_STATE | DDS_ANY_VIEW_STATE | DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE));
+        error_abort(rdcondD, "dds_readcondition_create(rdcondD)");
 
-        rc = dds_waitset_attach (ws, rdcondD, rdcondD);
-        error_abort(rc, "dds_waitset_attach (rdcondD)");
+        rc = dds_waitset_attach(ws, rdcondD, rdcondD);
+        error_abort(rc, "dds_waitset_attach(rdcondD)");
         nxs++;
         break;
     case MODE_CHECK:
     case MODE_DUMP:
-      if (!spec->polling)
-      {
-          /* fastest trigger we have */
-          rc = dds_set_enabled_status(rd, DDS_DATA_AVAILABLE_STATUS);
-          error_abort(rc, "dds_set_enabled_status (stcond)");
-          rc = dds_waitset_attach (ws, rd, rd);
-          error_abort(rc, "dds_waitset_attach (rd)");
-          nxs++;
-      }
-      break;
-  }
-
-  {
-    void **mseq = (void **) os_malloc(sizeof(void*) * (spec->read_maxsamples));
-
-    dds_sample_info_t *iseq = (dds_sample_info_t *) os_malloc (sizeof(dds_sample_info_t) * spec->read_maxsamples);
-    dds_duration_t timeout = (uint64_t)100000000;
-    dds_attach_t *xs = os_malloc(sizeof(dds_attach_t) * nxs);
-    memset(xs, 0, sizeof(dds_attach_t) * nxs);
-
-    unsigned long long tstart = 0, tfirst = 0, tprint = 0;
-    long long out_of_seq = 0, nreceived = 0, last_nreceived = 0;
-    long long nreceived_bytes = 0, last_nreceived_bytes = 0;
-    struct eseq_admin eseq_admin;
-    init_eseq_admin(&eseq_admin, nkeyvals);
-
-    int ii = 0;
-    for(ii = 0; ii < (int32_t) spec->read_maxsamples; ii++) {
-    	mseq[ii] = NULL;
+        if (!spec->polling) {
+            /* fastest trigger we have */
+            rc = dds_set_enabled_status(rd, DDS_DATA_AVAILABLE_STATUS);
+            error_abort(rc, "dds_set_enabled_status(stcond)");
+            rc = dds_waitset_attach(ws, rd, rd);
+            error_abort(rc, "dds_waitset_attach(rd)");
+            nxs++;
+        }
+        break;
     }
 
-    while (!termflag && !once_mode)
     {
-      unsigned long long tnow;
-      unsigned gi;
+        void **mseq = (void **) os_malloc(sizeof(void*) * (spec->read_maxsamples));
 
-      if (spec->polling)
-      {
-        dds_sleepfor(DDS_MSECS(1)); /* 1ms sleep interval, so a bit less than 1kHz poll freq */
-      }
-      else
-      {
-    	  rc = dds_waitset_wait(ws, xs, nxs, timeout);
-    	  if (rc < DDS_RETCODE_OK) {
-			  printf ("wait: error %d\n", (int) rc);
-			  break;
-    	  } else if (rc == DDS_RETCODE_OK) {
-    		  continue;
-    	  }
-      }
+        dds_sample_info_t *iseq = (dds_sample_info_t *) os_malloc(sizeof(dds_sample_info_t) * spec->read_maxsamples);
+        dds_duration_t timeout = (uint64_t)100000000;
+        dds_attach_t *xs = os_malloc(sizeof(dds_attach_t) * nxs);
+        memset(xs, 0, sizeof(dds_attach_t) * nxs);
 
-      tnow = nowll ();
-      for (gi = 0; gi < (spec->polling ? 1 : nxs); gi++)
-      {
-          dds_entity_t cond = !spec->polling && xs[gi] != 0 ? (dds_entity_t) xs[gi] : 0;
-          int32_t i;
+        unsigned long long tstart = 0, tfirst = 0, tprint = 0;
+        long long out_of_seq = 0, nreceived = 0, last_nreceived = 0;
+        long long nreceived_bytes = 0, last_nreceived_bytes = 0;
+        struct eseq_admin eseq_admin;
+        init_eseq_admin(&eseq_admin, nkeyvals);
 
-        if (cond == termcond)
-          continue;
-        if (cond == 0 && !spec->polling) {
-        	break;
+        int ii = 0;
+        for(ii = 0; ii < (int32_t) spec->read_maxsamples; ii++) {
+            mseq[ii] = NULL;
         }
 
-        if (spec->print_match_pre_read)
-		{
-			dds_subscription_matched_status_t status;
-			rc = dds_get_subscription_matched_status(rd, &status);
-            error_report(rc, "dds_get_subscription_matched_status failed");
-            if (rc == DDS_SUCCESS) {
-                printf("[pre-read: subscription-matched: total=(%"PRIu32" change %d) current=(%"PRIu32" change %d) handle=%"PRIu64"]\n",
-                    status.total_count, status.total_count_change,
-                    status.current_count,
-                    status.current_count_change,
-	                status.last_publication_handle);
-			}
-		}
+        while (!termflag && !once_mode) {
+            unsigned long long tnow;
+            unsigned gi;
 
-        /* Always take NOT_ALIVE_DISPOSED data because it means the
-         instance has reached its end-of-life.
-
-         NO_WRITERS I usually don't care for (though there certainly
-         are situations in which it is useful information).  But you
-         can't have a NO_WRITERS with invalid_data set:
-
-         - either the reader contains the instance without data in
-         the disposed state, but in that case it stays in the
-         NOT_ALIVED_DISPOSED state;
-
-         - or the reader doesn't have the instance yet, in which
-         case the unregister is silently discarded.
-
-         However, receiving an unregister doesn't turn the sample
-         into a NEW one, though.  So HOW AM I TO TRIGGER ON IT
-         without triggering CONTINUOUSLY?
-         */
-        // TODO coherency support
-//        if (need_access && (result = DDS_Subscriber_begin_access (sub)) != DDS_RETCODE_OK)
-//          error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_err_str (result));
-
-        if (spec->mode == MODE_CHECK || (spec->mode == MODE_DUMP && spec->use_take) || spec->polling) {
-        	rc = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
-		} else if (spec->mode == MODE_DUMP) {
-			rc = dds_read_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
-		} else if (spec->use_take || cond == rdcondD) {
-			rc = dds_take(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples);
-		} else {
-		  rc = dds_read(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples);
-		}
-
-        if (rc < 1)
-        {
-          if (spec->polling && rc == 0) {
-            ; /* expected */
-          } else if (spec->mode == MODE_CHECK || spec->mode == MODE_DUMP || spec->polling) {
-            printf ("%s: %d (%s) on %s\n", (!spec->use_take && spec->mode == MODE_DUMP) ? "read" : "take", (int) rc, dds_err_str (rc), spec->polling ? "poll" : "stcond");
-          } else {
-            printf ("%s: %d (%s) on rdcond%s\n", spec->use_take ? "take" : "read", (int) rc, dds_err_str (rc), (cond == rdcondA) ? "A" : (cond == rdcondD) ? "D" : "?");
-          }
-          continue;
-        }
-
-        // TODO coherency support
-//        if (need_access && (result = DDS_Subscriber_end_access (sub)) != DDS_RETCODE_OK)
-//          error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_err_str (result));
-
-        switch (spec->mode)
-        {
-          case MODE_PRINT:
-          case MODE_DUMP:
-            switch (spec->topicsel) {
-              case UNSPEC: assert(0);
-              case KS:   print_seq_KS (&tstart, tnow, rd, tag, iseq, (KeyedSeq **)mseq, rc); break;
-              case K32:  print_seq_K32 (&tstart, tnow, rd, tag, iseq, (Keyed32 **)mseq, rc); break;
-              case K64:  print_seq_K64 (&tstart, tnow, rd, tag, iseq, (Keyed64 **)mseq, rc); break;
-              case K128: print_seq_K128 (&tstart, tnow, rd, tag, iseq, (Keyed128 **)mseq, rc); break;
-              case K256: print_seq_K256 (&tstart, tnow, rd, tag, iseq, (Keyed256 **)mseq, rc); break;
-              case OU:   print_seq_OU (&tstart, tnow, rd, tag, iseq, (const OneULong **)mseq, rc); break;
-              case ARB:  print_seq_ARB (&tstart, tnow, rd, tag, iseq, (const void **)mseq, spec->tgtp); break;
+            if (spec->polling) {
+                dds_sleepfor(DDS_MSECS(1)); /* 1ms sleep interval, so a bit less than 1kHz poll freq */
+            } else {
+                rc = dds_waitset_wait(ws, xs, nxs, timeout);
+                if (rc < DDS_RETCODE_OK) {
+                    printf ("wait: error %d\n", (int) rc);
+                    break;
+                } else if (rc == DDS_RETCODE_OK) {
+                    continue;
+                }
             }
-            break;
 
-          case MODE_CHECK:
-            for (i = 0; i < rc; i++)
-            {
-              int keyval = 0;
-              unsigned seq = 0;
-              unsigned size = 0;
-              if (!iseq[i].valid_data)
-                continue;
-              switch (spec->topicsel)
-              {
-                case UNSPEC: assert(0);
-                case KS:   { KeyedSeq *d = (KeyedSeq *) mseq[i];  keyval = d->keyval; seq = d->seq; size = 12 + d->baggage._length; } break;
-                case K32:  { Keyed32 *d  = (Keyed32 *)  mseq[i];  keyval = d->keyval; seq = d->seq; size = 32; } break;
-                case K64:  { Keyed64 *d  = (Keyed64 *)  mseq[i];  keyval = d->keyval; seq = d->seq; size = 64; } break;
-                case K128: { Keyed128 *d = (Keyed128 *) mseq[i];  keyval = d->keyval; seq = d->seq; size = 128; } break;
-                case K256: { Keyed256 *d = (Keyed256 *) mseq[i];  keyval = d->keyval; seq = d->seq; size = 256; } break;
-                case OU:   { OneULong *d = (OneULong *) mseq[i];  keyval = 0;         seq = d->seq; size = 4; } break;
-                case ARB:  assert(0); break; /* can't check what we don't know */
-              }
-              if (!check_eseq (&eseq_admin, seq, (unsigned)keyval, iseq[i].publication_handle))
-                out_of_seq++;
-              if (nreceived == 0)
-              {
-                tfirst = tnow;
-                tprint = tfirst;
-              }
-              nreceived++;
-              nreceived_bytes += size;
-              if (tnow - tprint >= 1000000000ll)
-              {
-                const unsigned long long tdelta_ns = tnow - tfirst;
-                const unsigned long long tdelta_s = tdelta_ns / 1000000000;
-                const unsigned tdelta_ms = ((tdelta_ns % 1000000000) + 500000) / 1000000;
-                const long long ndelta = nreceived - last_nreceived;
-                const double rate_Mbps = (nreceived_bytes - last_nreceived_bytes) * 8 / 1e6;
-                printf ("%llu.%03u ntot %lld nseq %lld ndelta %lld rate %.2f Mb/s\n",
-                        tdelta_s, tdelta_ms, nreceived, out_of_seq, ndelta, rate_Mbps);
-                last_nreceived = nreceived;
-                last_nreceived_bytes = nreceived_bytes;
-                tprint = tnow;
-              }
+            tnow = nowll();
+            for (gi = 0; gi < (spec->polling ? 1 : nxs); gi++) {
+                dds_entity_t cond = !spec->polling && xs[gi] != 0 ? (dds_entity_t) xs[gi] : 0;
+                int32_t i;
+
+                if (cond == termcond)
+                    continue;
+                if (cond == 0 && !spec->polling) {
+                    break;
+                }
+
+                if (spec->print_match_pre_read) {
+                    dds_subscription_matched_status_t status;
+                    rc = dds_get_subscription_matched_status(rd, &status);
+                    error_report(rc, "dds_get_subscription_matched_status failed");
+                    if (rc == DDS_SUCCESS) {
+                        printf("[pre-read: subscription-matched: total=(%"PRIu32" change %d) current=(%"PRIu32" change %d) handle=%"PRIu64"]\n",
+                                status.total_count, status.total_count_change,
+                                status.current_count,
+                                status.current_count_change,
+                                status.last_publication_handle);
+                    }
+                }
+
+                /* Always take NOT_ALIVE_DISPOSED data because it means the
+                 instance has reached its end-of-life.
+
+                 NO_WRITERS I usually don't care for (though there certainly
+                 are situations in which it is useful information).  But you
+                 can't have a NO_WRITERS with invalid_data set:
+
+                 - either the reader contains the instance without data in
+                 the disposed state, but in that case it stays in the
+                 NOT_ALIVED_DISPOSED state;
+
+                 - or the reader doesn't have the instance yet, in which
+                 case the unregister is silently discarded.
+
+                 However, receiving an unregister doesn't turn the sample
+                 into a NEW one, though.  So HOW AM I TO TRIGGER ON IT
+                 without triggering CONTINUOUSLY?
+                 */
+                // TODO coherency support
+//                if (need_access && (result = DDS_Subscriber_begin_access(sub)) != DDS_RETCODE_OK)
+//                    error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_err_str(result));
+
+                if (spec->mode == MODE_CHECK || (spec->mode == MODE_DUMP && spec->use_take) || spec->polling) {
+                    rc = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
+                } else if (spec->mode == MODE_DUMP) {
+                    rc = dds_read_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
+                } else if (spec->use_take || cond == rdcondD) {
+                    rc = dds_take(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples);
+                } else {
+                    rc = dds_read(cond, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples);
+                }
+
+                if (rc < 1) {
+                    if (spec->polling && rc == 0) {
+                        ; /* expected */
+                    } else if (spec->mode == MODE_CHECK || spec->mode == MODE_DUMP || spec->polling) {
+                        printf ("%s: %d (%s) on %s\n", (!spec->use_take && spec->mode == MODE_DUMP) ? "read" : "take", (int) rc, dds_err_str(rc), spec->polling ? "poll" : "stcond");
+                    } else {
+                        printf ("%s: %d (%s) on rdcond%s\n", spec->use_take ? "take" : "read", (int) rc, dds_err_str(rc), (cond == rdcondA) ? "A" : (cond == rdcondD) ? "D" : "?");
+                    }
+                    continue;
+                }
+
+//                TODO coherency support
+//                if (need_access && (result = DDS_Subscriber_end_access(sub)) != DDS_RETCODE_OK)
+//                    error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_err_str(result));
+
+                switch (spec->mode) {
+                case MODE_PRINT:
+                case MODE_DUMP:
+                    switch (spec->topicsel) {
+                    case UNSPEC: assert(0);
+                    case KS:   print_seq_KS(&tstart, tnow, rd, tag, iseq, (KeyedSeq **)mseq, rc); break;
+                    case K32:  print_seq_K32(&tstart, tnow, rd, tag, iseq, (Keyed32 **)mseq, rc); break;
+                    case K64:  print_seq_K64(&tstart, tnow, rd, tag, iseq, (Keyed64 **)mseq, rc); break;
+                    case K128: print_seq_K128(&tstart, tnow, rd, tag, iseq, (Keyed128 **)mseq, rc); break;
+                    case K256: print_seq_K256(&tstart, tnow, rd, tag, iseq, (Keyed256 **)mseq, rc); break;
+                    case OU:   print_seq_OU(&tstart, tnow, rd, tag, iseq, (const OneULong **)mseq, rc); break;
+                    case ARB:  print_seq_ARB(&tstart, tnow, rd, tag, iseq, (const void **)mseq, spec->tgtp); break;
+                    }
+                    break;
+
+                case MODE_CHECK:
+                    for (i = 0; i < rc; i++) {
+                        int keyval = 0;
+                        unsigned seq = 0;
+                        unsigned size = 0;
+                        if (!iseq[i].valid_data)
+                            continue;
+                        switch (spec->topicsel) {
+                        case UNSPEC: assert(0);
+                        case KS:   { KeyedSeq *d = (KeyedSeq *) mseq[i];  keyval = d->keyval; seq = d->seq; size = 12 + d->baggage._length; } break;
+                        case K32:  { Keyed32 *d  = (Keyed32 *)  mseq[i];  keyval = d->keyval; seq = d->seq; size = 32; } break;
+                        case K64:  { Keyed64 *d  = (Keyed64 *)  mseq[i];  keyval = d->keyval; seq = d->seq; size = 64; } break;
+                        case K128: { Keyed128 *d = (Keyed128 *) mseq[i];  keyval = d->keyval; seq = d->seq; size = 128; } break;
+                        case K256: { Keyed256 *d = (Keyed256 *) mseq[i];  keyval = d->keyval; seq = d->seq; size = 256; } break;
+                        case OU:   { OneULong *d = (OneULong *) mseq[i];  keyval = 0;         seq = d->seq; size = 4; } break;
+                        case ARB:  assert(0); break; /* can't check what we don't know */
+                        }
+                        if (!check_eseq(&eseq_admin, seq, (unsigned)keyval, iseq[i].publication_handle))
+                            out_of_seq++;
+                        if (nreceived == 0) {
+                            tfirst = tnow;
+                            tprint = tfirst;
+                        }
+                        nreceived++;
+                        nreceived_bytes += size;
+                        if (tnow - tprint >= 1000000000ll) {
+                            const unsigned long long tdelta_ns = tnow - tfirst;
+                            const unsigned long long tdelta_s = tdelta_ns / 1000000000;
+                            const unsigned tdelta_ms = ((tdelta_ns % 1000000000) + 500000) / 1000000;
+                            const long long ndelta = nreceived - last_nreceived;
+                            const double rate_Mbps = (nreceived_bytes - last_nreceived_bytes) * 8 / 1e6;
+                            printf ("%llu.%03u ntot %lld nseq %lld ndelta %lld rate %.2f Mb/s\n",
+                                    tdelta_s, tdelta_ms, nreceived, out_of_seq, ndelta, rate_Mbps);
+                            last_nreceived = nreceived;
+                            last_nreceived_bytes = nreceived_bytes;
+                            tprint = tnow;
+                        }
+                    }
+                    break;
+
+                case MODE_NONE:
+                case MODE_ZEROLOAD:
+                    break;
+                }
+                rc = dds_return_loan(rd, mseq, spec->read_maxsamples);
+                error_report(rc, "dds_return_loan failed");
+                if (spec->sleep_ns) {
+                    dds_sleepfor(spec->sleep_ns);
+                }
             }
-            break;
+        }
+        os_free(xs);
 
-          case MODE_NONE:
-          case MODE_ZEROLOAD:
-            break;
+        if (spec->mode == MODE_PRINT || spec->mode == MODE_DUMP || once_mode) {
+            // TODO coherency support
+//            if (need_access && (result = DDS_Subscriber_begin_access (sub)) != DDS_RETCODE_OK)
+//                error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_err_str (result));
+
+            /* This is the final Read/Take */
+            // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
+            OS_WARNING_MSVC_OFF(6386);
+            rc = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
+            OS_WARNING_MSVC_ON(6386);
+            if (rc == 0) {
+                if (!once_mode)
+                    printf ("-- final take: data reader empty --\n");
+                else
+                    exitcode = 1;
+            } else if (rc < DDS_SUCCESS) {
+                if (!once_mode) {
+                    error_report(rc, "-- final take --\n");
+                } else {
+                    error_report(rc, "read/take");
+                }
+            } else {
+                if (!once_mode)
+                    printf ("-- final contents of data reader --\n");
+                if (spec->mode == MODE_PRINT || spec->mode == MODE_DUMP) {
+                    switch (spec->topicsel) {
+                    case UNSPEC: assert(0);
+                    case KS:   print_seq_KS(&tstart, nowll(), rd, tag, iseq, (KeyedSeq **) mseq, rc); break;
+                    case K32:  print_seq_K32(&tstart, nowll(), rd, tag, iseq, (Keyed32 **) mseq, rc); break;
+                    case K64:  print_seq_K64(&tstart, nowll(), rd, tag, iseq, (Keyed64 **) mseq, rc); break;
+                    case K128: print_seq_K128(&tstart, nowll(), rd, tag, iseq, (Keyed128 **) mseq, rc); break;
+                    case K256: print_seq_K256(&tstart, nowll(), rd, tag, iseq, (Keyed256 **) mseq, rc); break;
+                    case OU:   print_seq_OU(&tstart, nowll(), rd, tag, iseq, (const OneULong **) mseq, rc); break;
+                    case ARB:  print_seq_ARB(&tstart, nowll(), rd, tag, iseq, (const void **) mseq, spec->tgtp); break;
+                    }
+                }
+            }
+            // TODO coherency support
+//            if (need_access && (result = DDS_Subscriber_end_access(sub)) != DDS_RETCODE_OK)
+//                error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_err_str(result));
+            rc = dds_return_loan(rd, mseq, spec->read_maxsamples);
+            error_report(rc, "dds_return_loan failed");
         }
-        rc = dds_return_loan(rd, mseq, spec->read_maxsamples);
-        error_report(rc, "dds_return_loan failed");
-        if (spec->sleep_ns) {
-        	dds_sleepfor(spec->sleep_ns);
-        }
-      }
+        os_free(iseq);
+        os_free(mseq);
+        if (spec->mode == MODE_CHECK)
+            printf ("received: %lld, out of seq: %lld\n", nreceived, out_of_seq);
+        fini_eseq_admin(&eseq_admin);
     }
-    os_free(xs);
 
-    if (spec->mode == MODE_PRINT || spec->mode == MODE_DUMP || once_mode)
-    {
-        // TODO coherency support
-//      if (need_access && (result = DDS_Subscriber_begin_access (sub)) != DDS_RETCODE_OK)
-//        error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_err_str (result));
-
-        /* This is the final Read/Take */
-        // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
-        OS_WARNING_MSVC_OFF(6386);
-        rc = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
-        OS_WARNING_MSVC_ON(6386);
-      if (rc == 0)
-      {
-        if (!once_mode)
-          printf ("-- final take: data reader empty --\n");
-        else
-          exitcode = 1;
-      }
-      else if (rc < DDS_SUCCESS)
-      {
-        if (!once_mode) {
-            error_report (rc, "-- final take --\n");
-        } else {
-            error_report (rc, "read/take");
-        }
-      }
-      else
-      {
-        if (!once_mode)
-          printf ("-- final contents of data reader --\n");
-        if (spec->mode == MODE_PRINT || spec->mode == MODE_DUMP)
-        {
-          switch (spec->topicsel)
-          {
-            case UNSPEC: assert(0);
-            case KS:   print_seq_KS (&tstart, nowll (), rd, tag, iseq, (KeyedSeq **) mseq, rc); break;
-            case K32:  print_seq_K32 (&tstart, nowll (), rd, tag, iseq, (Keyed32 **) mseq, rc); break;
-            case K64:  print_seq_K64 (&tstart, nowll (), rd, tag, iseq, (Keyed64 **) mseq, rc); break;
-            case K128: print_seq_K128 (&tstart, nowll (), rd, tag, iseq, (Keyed128 **) mseq, rc); break;
-            case K256: print_seq_K256 (&tstart, nowll (), rd, tag, iseq, (Keyed256 **) mseq, rc); break;
-            case OU:   print_seq_OU (&tstart, nowll (), rd, tag, iseq, (const OneULong **) mseq, rc); break;
-            case ARB:  print_seq_ARB (&tstart, nowll (), rd, tag, iseq, (const void **) mseq, spec->tgtp); break;
-          }
-        }
-      }
-      // TODO coherency support
-//      if (need_access && (result = DDS_Subscriber_end_access (sub)) != DDS_RETCODE_OK)
-//        error ("DDS_Subscriber_end_access: %d (%s)\n", (int) result, dds_err_str (result));
-      rc = dds_return_loan(rd, mseq, spec->read_maxsamples);
-      error_report(rc, "dds_return_loan failed");
-    }
-    os_free(iseq);
-    os_free(mseq);
-    if (spec->mode == MODE_CHECK)
-      printf ("received: %lld, out of seq: %lld\n", nreceived, out_of_seq);
-    fini_eseq_admin (&eseq_admin);
-  }
-
-  switch (spec->mode)
-  {
+    switch (spec->mode) {
     case MODE_NONE:
     case MODE_ZEROLOAD:
-      break;
+        break;
     case MODE_PRINT:
-    	rc = dds_waitset_detach(ws, rdcondA);
-    	dds_delete(rdcondA);
-    	rc = dds_waitset_detach(ws, rdcondD);
-		dds_delete(rdcondD);
-      break;
+        rc = dds_waitset_detach(ws, rdcondA);
+        dds_delete(rdcondA);
+        rc = dds_waitset_detach(ws, rdcondD);
+        dds_delete(rdcondD);
+        break;
     case MODE_CHECK:
     case MODE_DUMP:
-      if (!spec->polling)
-    	  dds_waitset_detach(ws, stcond);
-      break;
-  }
-
-  // TODO Confirm that dds_delete(participant) takes care of this
-//  ret = dds_waitset_detach(ws, termcond);
-//  ret = dds_delete(ws);
-
-  if (once_mode)
-  {
-    /* trigger EOF for writer side, so we actually do terminate */
-    terminate();
-  }
-  return (uint32_t)exitcode;
-}
-
-static uint32_t autotermthread(void *varg __attribute__((unused)))
-{
-  unsigned long long tstop, tnow;
-  dds_return_t rc;
-  dds_entity_t ws;
-
-  dds_attach_t wsresults[1];
-  size_t wsresultsize = 1u;
-
-  assert (dur > 0);
-
-  tnow = nowll ();
-  tstop = tnow + (unsigned long long) (1e9 * dur);
-
-  ws = dds_create_waitset(dp);
-  rc = dds_waitset_attach(ws, termcond, termcond);
-  error_abort(rc, "dds_waitset_attach (termcomd)");
-
-  tnow = nowll();
-  while (!termflag && tnow < tstop)
-  {
-	unsigned long long dt = tstop - tnow;
-    dds_duration_t timeout;
-    int64_t xsec = (int64_t) (dt / 1000000000);
-    uint64_t xnanosec = (uint64_t) (dt % 1000000000);
-    timeout = DDS_SECS(xsec)+xnanosec;
-
-    if ((rc = dds_waitset_wait (ws, wsresults, wsresultsize, timeout)) < DDS_RETCODE_OK)
-    {
-      printf ("wait: error %s\n", dds_err_str(rc));
-      break;
+        if (!spec->polling)
+            dds_waitset_detach(ws, stcond);
+        break;
     }
+
+//    TODO Confirm that dds_delete(participant) takes care of this
+//    ret = dds_waitset_detach(ws, termcond);
+//    ret = dds_delete(ws);
+
+    if (once_mode) {
+        /* trigger EOF for writer side, so we actually do terminate */
+        terminate();
+    }
+    return (uint32_t)exitcode;
+}
+
+static uint32_t autotermthread(void *varg __attribute__((unused))) {
+    unsigned long long tstop, tnow;
+    dds_return_t rc;
+    dds_entity_t ws;
+
+    dds_attach_t wsresults[1];
+    size_t wsresultsize = 1u;
+
+    assert(dur > 0);
+
     tnow = nowll();
-  }
+    tstop = tnow + (unsigned long long) (1e9 * dur);
 
-  rc = dds_waitset_detach(ws, termcond);
-  rc = dds_delete(ws);
+    ws = dds_create_waitset(dp);
+    rc = dds_waitset_attach(ws, termcond, termcond);
+    error_abort(rc, "dds_waitset_attach(termcomd)");
 
-  return 0;
+    tnow = nowll();
+    while (!termflag && tnow < tstop) {
+        unsigned long long dt = tstop - tnow;
+        dds_duration_t timeout;
+        int64_t xsec = (int64_t) (dt / 1000000000);
+        uint64_t xnanosec = (uint64_t) (dt % 1000000000);
+        timeout = DDS_SECS(xsec)+xnanosec;
+
+        if ((rc = dds_waitset_wait(ws, wsresults, wsresultsize, timeout)) < DDS_RETCODE_OK) {
+            printf ("wait: error %s\n", dds_err_str(rc));
+            break;
+        }
+        tnow = nowll();
+    }
+
+    rc = dds_waitset_detach(ws, termcond);
+    rc = dds_delete(ws);
+
+    return 0;
 }
 
-static const char *execname (int argc, char *argv[])
-{
-  const char *p;
-  if (argc == 0 || argv[0] == NULL)
-    return "";
-  else if ((p = strrchr(argv[0], '/')) != NULL)
-    return p + 1;
-  else
-    return argv[0];
+static const char *execname(int argc, char *argv[]) {
+    const char *p;
+    if (argc == 0 || argv[0] == NULL)
+        return "";
+    else if ((p = strrchr(argv[0], '/')) != NULL)
+        return p + 1;
+    else
+        return argv[0];
 }
 
-static char *read_line_from_textfile(FILE *fp)
-{
-  char *str = NULL;
-  size_t sz = 0, n = 0;
-  int c;
-  while ((c = fgetc(fp)) != EOF && c != '\n') {
-    if (n == sz) str = os_realloc(str, sz += 256);
-    str[n++] = (char)c;
-  }
-  if (c != EOF || n > 0) {
-    if (n == sz) str = os_realloc(str, sz += 1);
-    str[n] = 0;
-  } else if (ferror(fp)) {
-    error_exit("error reading file, errno = %d (%s)\n", os_getErrno(), os_strerror(os_getErrno()));
-  }
-  return str;
+static char *read_line_from_textfile(FILE *fp) {
+    char *str = NULL;
+    size_t sz = 0, n = 0;
+    int c;
+    while ((c = fgetc(fp)) != EOF && c != '\n') {
+        if (n == sz) str = os_realloc(str, sz += 256);
+        str[n++] = (char)c;
+    }
+    if (c != EOF || n > 0) {
+        if (n == sz) str = os_realloc(str, sz += 1);
+        str[n] = 0;
+    } else if (ferror(fp)) {
+        error_exit("error reading file, errno = %d (%s)\n", os_getErrno(), os_strerror(os_getErrno()));
+    }
+    return str;
 }
 
-static int get_metadata (char **metadata, char **typename, char **keylist, const char *file)
-{
-  FILE *fp;
-  if ((fp = fopen(file, "r")) == NULL)
-      error_exit("%s: can't open for reading metadata\n", file);
-  *typename = read_line_from_textfile(fp);
-  *keylist = read_line_from_textfile(fp);
-  *metadata = read_line_from_textfile(fp);
-  if (*typename == NULL || *keylist == NULL || *typename == NULL)
-      error_exit("%s: invalid metadata file\n", file);
-  fclose(fp);
-  return 1;
+static int get_metadata(char **metadata, char **typename, char **keylist, const char *file) {
+    FILE *fp;
+    if ((fp = fopen(file, "r")) == NULL)
+        error_exit("%s: can't open for reading metadata\n", file);
+    *typename = read_line_from_textfile(fp);
+    *keylist = read_line_from_textfile(fp);
+    *metadata = read_line_from_textfile(fp);
+    if (*typename == NULL || *keylist == NULL || *typename == NULL)
+        error_exit("%s: invalid metadata file\n", file);
+    fclose(fp);
+    return 1;
 }
 
-static dds_entity_t find_topic(dds_entity_t dpFindTopic, const char *name, const dds_duration_t *timeout)
-{
-  dds_entity_t tp;
-  // TODO ARB type support
-//  int isbuiltin = 0;
+static dds_entity_t find_topic(dds_entity_t dpFindTopic, const char *name, const dds_duration_t *timeout) {
+    dds_entity_t tp;
+//    TODO ARB type support
+//    int isbuiltin = 0;
 
-  /* A historical accident has caused subtle issues with a generic reader for the built-in topics included in the DDS spec. */
-//  if (strcmp(name, "DCPSParticipant") == 0 || strcmp(name, "DCPSTopic") == 0 ||
-//      strcmp(name, "DCPSSubscription") == 0 || strcmp(name, "DCPSPublication") == 0) {
-//    dds_entity_t sub;
-//    if ((sub = DDS_DomainParticipant_get_builtin_subscriber(dp)) == NULL)
-//      error("DDS_DomainParticipant_get_builtin_subscriber failed\n");
-//    if (DDS_Subscriber_lookup_datareader(sub, name) == NULL)
-//      error("DDS_Subscriber_lookup_datareader failed\n");
-//    if ((result = DDS_Subscriber_delete_contained_entities(sub)) != DDS_RETCODE_OK)
-//      error("DDS_Subscriber_delete_contained_entities failed: error %d (%s)\n", (int) result, dds_err_str(result));
-//    isbuiltin = 1;
-//  }
+    /* A historical accident has caused subtle issues with a generic reader for the built-in topics included in the DDS spec. */
+//    if (strcmp(name, "DCPSParticipant") == 0 || strcmp(name, "DCPSTopic") == 0 ||
+//            strcmp(name, "DCPSSubscription") == 0 || strcmp(name, "DCPSPublication") == 0) {
+//        dds_entity_t sub;
+//        if ((sub = DDS_DomainParticipant_get_builtin_subscriber(dp)) == NULL)
+//            error("DDS_DomainParticipant_get_builtin_subscriber failed\n");
+//        if (DDS_Subscriber_lookup_datareader(sub, name) == NULL)
+//            error("DDS_Subscriber_lookup_datareader failed\n");
+//        if ((result = DDS_Subscriber_delete_contained_entities(sub)) != DDS_RETCODE_OK)
+//            error("DDS_Subscriber_delete_contained_entities failed: error %d (%s)\n", (int) result, dds_err_str(result));
+//        isbuiltin = 1;
+//    }
 
-  // TODO Note: the implementation for dds_topic_find blocks infinitely if the topic does not exist in the domain
-  if (!(tp = dds_find_topic(dpFindTopic, name)))
-    printf("topic %s not found\n", name);
+//    TODO Note: the implementation for dds_topic_find blocks infinitely if the topic does not exist in the domain
+    if (!(tp = dds_find_topic(dpFindTopic, name)))
+        printf ("topic %s not found\n", name);
 
-//  if (!isbuiltin) {
-//    char *tn = DDS_Topic_get_type_name(tp);
-//    char *kl = DDS_Topic_get_keylist(tp);
-//    char *md = DDS_Topic_get_metadescription(tp);
-//    DDS_ReturnCode_t result;
-//    DDS_TypeSupport ts;
-//    if ((ts = DDS_TypeSupport__alloc(tn, kl ? kl : "", md)) == NULL)
-//      error("DDS_TypeSupport__alloc(%s) failed\n", tn);
-//    if ((result = DDS_TypeSupport_register_type(ts, dp, tn)) != DDS_RETCODE_OK)
-//      error("DDS_TypeSupport_register_type(%s) failed: %d (%s)\n", tn, (int) result, dds_err_str(result));
-//    DDS_free(md);
-//    DDS_free(kl);
-//    DDS_free(tn);
-//    DDS_free(ts);
+//    if (!isbuiltin) {
+//        char *tn = DDS_Topic_get_type_name(tp);
+//        char *kl = DDS_Topic_get_keylist(tp);
+//        char *md = DDS_Topic_get_metadescription(tp);
+//        DDS_ReturnCode_t result;
+//        DDS_TypeSupport ts;
+//        if ((ts = DDS_TypeSupport__alloc(tn, kl ? kl : "", md)) == NULL)
+//            error("DDS_TypeSupport__alloc(%s) failed\n", tn);
+//        if ((result = DDS_TypeSupport_register_type(ts, dp, tn)) != DDS_RETCODE_OK)
+//            error("DDS_TypeSupport_register_type(%s) failed: %d (%s)\n", tn, (int) result, dds_err_str(result));
+//        DDS_free(md);
+//        DDS_free(kl);
+//        DDS_free(tn);
+//        DDS_free(ts);
 //
-//    /* Work around a double-free-at-shutdown issue caused by a find_topic
-//       without a type support having been register */
-//    if ((result = DDS_DomainParticipant_delete_topic(dp, tp)) != DDS_RETCODE_OK) {
-//      error("DDS_DomainParticipant_find_topic failed: %d (%s)\n", (int) result, dds_err_str(result));
+//        /* Work around a double-free-at-shutdown issue caused by a find_topic
+//        without a type support having been register */
+//        if ((result = DDS_DomainParticipant_delete_topic(dp, tp)) != DDS_RETCODE_OK) {
+//            error("DDS_DomainParticipant_find_topic failed: %d (%s)\n", (int) result, dds_err_str(result));
+//        }
+//        if ((tp = DDS_DomainParticipant_find_topic(dp, name, timeout)) == NULL) {
+//            error("DDS_DomainParticipant_find_topic(2) failed\n");
+//        }
 //    }
-//    if ((tp = DDS_DomainParticipant_find_topic(dp, name, timeout)) == NULL) {
-//      error("DDS_DomainParticipant_find_topic(2) failed\n");
-//    }
-//  }
 
-  return tp;
+    return tp;
 }
 
-static void set_systemid_env (void)
-{
-    // TODO Determine encoding of dds_instance_handle_t, and see what sort of value can be extracted from it, if any
-	//Unsupported
+static void set_systemid_env(void) {
+//    TODO Determine encoding of dds_instance_handle_t, and see what sort of value can be extracted from it, if any
+//    Unsupported
 
-	/*uint32_t systemId, localId;
-	char str[128];
-	instancehandle_to_id (&systemId, &localId, DDS_Entity_get_instance_handle (dp));
-	snprintf (str, sizeof (str), "%u", systemId);
-	setenv ("SYSTEMID", str, 1);
-	snprintf (str, sizeof (str), "__NODE%08x BUILT-IN PARTITION__", systemId);
-	setenv ("NODE_BUILTIN_PARTITION", str, 1);*/
+    /*uint32_t systemId, localId;
+    char str[128];
+    instancehandle_to_id(&systemId, &localId, DDS_Entity_get_instance_handle(dp));
+    snprintf (str, sizeof(str), "%u", systemId);
+    setenv("SYSTEMID", str, 1);
+    snprintf (str, sizeof(str), "__NODE%08x BUILT-IN PARTITION__", systemId);
+    setenv("NODE_BUILTIN_PARTITION", str, 1);*/
 }
 
 struct spec {
-	dds_entity_t tp;
-	dds_entity_t cftp;
-	const char *topicname;
-	const char *cftp_expr;
-	char *metadata;
-	char *typename;
-	char *keylist;
-	dds_duration_t findtopic_timeout;
-	struct readerspec rd;
-	struct writerspec wr;
-	os_threadId rdtid;
-	os_threadId wrtid;
+    dds_entity_t tp;
+    dds_entity_t cftp;
+    const char *topicname;
+    const char *cftp_expr;
+    char *metadata;
+    char *typename;
+    char *keylist;
+    dds_duration_t findtopic_timeout;
+    struct readerspec rd;
+    struct writerspec wr;
+    os_threadId rdtid;
+    os_threadId wrtid;
 };
 
-static void addspec(unsigned whatfor, unsigned *specsofar, unsigned *specidx, struct spec **spec, int want_reader)
-{
-  if (*specsofar & whatfor)
-  {
-    struct spec *s;
-    (*specidx)++;
-    *spec = os_realloc(*spec, (*specidx + 1) * sizeof(**spec));
-    s = &(*spec)[*specidx];
-    s->tp = 0;
-    s->cftp = 0;
-    s->topicname = NULL;
-    s->cftp_expr = NULL;
-    s->metadata = NULL;
-    s->typename = NULL;
-    s->keylist = NULL;
-    s->findtopic_timeout = 10;
-    s->rd = def_readerspec;
-    s->wr = def_writerspec;
+static void addspec(unsigned whatfor, unsigned *specsofar, unsigned *specidx, struct spec **spec, int want_reader) {
+    if (*specsofar & whatfor)
+    {
+        struct spec *s;
+        (*specidx)++;
+        *spec = os_realloc(*spec, (*specidx + 1) * sizeof(**spec));
+        s = &(*spec)[*specidx];
+        s->tp = 0;
+        s->cftp = 0;
+        s->topicname = NULL;
+        s->cftp_expr = NULL;
+        s->metadata = NULL;
+        s->typename = NULL;
+        s->keylist = NULL;
+        s->findtopic_timeout = 10;
+        s->rd = def_readerspec;
+        s->wr = def_writerspec;
 
-    // TODO Upon support for ARB types, resolve the declaration of fdin
-//    if (fdin == -1 && fdservsock == -1)
-//      s->wr.mode = WRM_NONE;
-    if (!want_reader)
-      s->rd.mode = MODE_NONE;
-    *specsofar = 0;
-  }
-  *specsofar |= whatfor;
+//        TODO Upon support for ARB types, resolve the declaration of fdin
+//        if (fdin == -1 && fdservsock == -1)
+//            s->wr.mode = WRM_NONE;
+        if (!want_reader)
+            s->rd.mode = MODE_NONE;
+        *specsofar = 0;
+    }
+    *specsofar |= whatfor;
 }
 
-static void set_print_mode (const char *optarg)
-{
-  char *copy = os_strdup(optarg), *cursor = copy, *tok;
-  while ((tok = os_strsep(&cursor, ",")) != NULL) {
-    int enable;
-    if (strncmp(tok, "no", 2) == 0)
-      enable = 0, tok += 2;
-    else
-      enable = 1;
-    if (strcmp(tok, "type") == 0)
-      printtype = enable;
-    else if (strcmp(tok, "dense") == 0)
-      printmode = TGPM_DENSE;
-    else if (strcmp(tok, "space") == 0)
-      printmode = TGPM_SPACE;
-    else if (strcmp(tok, "fields") == 0)
-      printmode = TGPM_FIELDS;
-    else if (strcmp(tok, "multiline") == 0)
-      printmode = TGPM_MULTILINE;
-    else
-    {
-      static struct { const char *name; unsigned flag; } tab[] = {
-        { "meta", ~0u },
-        { "trad", PM_PID | PM_TIME | PM_PHANDLE | PM_STIME | PM_STATE },
-        { "pid", PM_PID },
-        { "topic", PM_TOPIC },
-        { "time", PM_TIME },
-        { "phandle", PM_PHANDLE },
-        { "ihandle", PM_IHANDLE },
-        { "stime", PM_STIME },
-        { "rtime", PM_RTIME },
-        { "dgen", PM_DGEN },
-        { "nwgen", PM_NWGEN },
-        { "ranks", PM_RANKS },
-        { "state", PM_STATE }
-      };
-      size_t i;
-      for (i = 0; i < sizeof(tab)/sizeof(tab[0]); i++)
-        if (strcmp(tok, tab[i].name) == 0)
-          break;
-      if (i < sizeof(tab)/sizeof(tab[0]))
-      {
-        if (enable)
-          print_metadata |= tab[i].flag;
+static void set_print_mode(const char *optarg) {
+    char *copy = os_strdup(optarg), *cursor = copy, *tok;
+    while ((tok = os_strsep(&cursor, ",")) != NULL) {
+        int enable;
+        if (strncmp(tok, "no", 2) == 0)
+            enable = 0, tok += 2;
         else
-          print_metadata &= ~tab[i].flag;
-      }
-      else
-      {
-        fprintf (stderr, "-P %s: invalid print mode\n", optarg);
-        exit (2);
-      }
+            enable = 1;
+        if (strcmp(tok, "type") == 0)
+            printtype = enable;
+        else if (strcmp(tok, "dense") == 0)
+            printmode = TGPM_DENSE;
+        else if (strcmp(tok, "space") == 0)
+            printmode = TGPM_SPACE;
+        else if (strcmp(tok, "fields") == 0)
+            printmode = TGPM_FIELDS;
+        else if (strcmp(tok, "multiline") == 0)
+            printmode = TGPM_MULTILINE;
+        else
+        {
+            static struct { const char *name; unsigned flag; } tab[] = {
+                    { "meta", ~0u },
+                    { "trad", PM_PID | PM_TIME | PM_PHANDLE | PM_STIME | PM_STATE },
+                    { "pid", PM_PID },
+                    { "topic", PM_TOPIC },
+                    { "time", PM_TIME },
+                    { "phandle", PM_PHANDLE },
+                    { "ihandle", PM_IHANDLE },
+                    { "stime", PM_STIME },
+                    { "rtime", PM_RTIME },
+                    { "dgen", PM_DGEN },
+                    { "nwgen", PM_NWGEN },
+                    { "ranks", PM_RANKS },
+                    { "state", PM_STATE }
+            };
+            size_t i;
+            for (i = 0; i < sizeof(tab)/sizeof(tab[0]); i++)
+                if (strcmp(tok, tab[i].name) == 0)
+                    break;
+            if (i < sizeof(tab)/sizeof(tab[0])) {
+                if (enable)
+                    print_metadata |= tab[i].flag;
+                else
+                    print_metadata &= ~tab[i].flag;
+            } else {
+                fprintf (stderr, "-P %s: invalid print mode\n", optarg);
+                exit(2);
+            }
+        }
     }
-  }
-  os_free (copy);
+    os_free(copy);
 }
 
 int MAIN (int argc, char *argv[])
