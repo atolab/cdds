@@ -6,65 +6,6 @@
 
 #define cr_assert_status_eq(s1, s2, ...) cr_assert_eq(dds_err_nr(s1), s2, __VA_ARGS__)
 
-void test_create_participant_domain_values(_In_     const dds_domainid_t valid_domain);
-
-void test_create_participant_domain_values(_In_     const dds_domainid_t valid_domain){
-  dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
-  dds_return_t status;
-  dds_domainid_t domain_id;
-
-  //invalid domain
-  participant = dds_create_participant (1, NULL, NULL);
-  cr_assert_lt(participant, 0, "Error must be received for invalid domain value");
-
-
-  //valid specific domain value
-  participant2 = dds_create_participant (valid_domain, NULL, NULL);
-  cr_assert_gt(participant2, 0, "Valid participant must be received for valid specific domain value");
-  status = dds_get_domainid(participant2, &domain_id);
-  cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_domainid(participant, domain_id)");
-  cr_assert_eq(domain_id, valid_domain, "Retrieved domain ID must be valid");
-
-
-  //DDS_DOMAIN_DEFAULT with no domain environment variable
-  participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant3, 0, "Valid participant must be received for DDS_DOMAIN_DEFAULT with no domain environment variable");
-  status = dds_get_domainid(participant3, &domain_id);
-  cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_domainid(participant, domain_id)");
-  cr_assert_eq(domain_id, valid_domain, "Retrieved domain ID must be valid");
-
-  //DDS_DOMAIN_DEFAULT with invalid domain environment variable
-  putenv("VORTEX_DOMAIN=-5");
-  participant4 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_lt(participant4, 0, "Invalid participant  must be received for DDS_DOMAIN_DEFAULT with invalid domain environment variable");
-
-  //DDS_DOMAIN_DEFAULT with valid domain environment variable
-  putenv("VORTEX_DOMAIN=2");
-  participant5 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant5, 0, "Valid participant  must be received for DDS_DOMAIN_DEFAULT with valid domain environment variable");
-  status = dds_get_domainid(participant5, &domain_id);
-  cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_domainid(participant, domain_id)");
-  cr_assert_eq(domain_id, 2, "Retrieved domain ID must be valid");
-
-  //Invalid domain ID with valid domain environment variable
-  putenv("VORTEX_DOMAIN=2");
-  participant6 = dds_create_participant (1, NULL, NULL);
-  cr_assert_lt(participant6, 0, "Error must be received for invalid domain with valid domain environment variable");
-
-  //DDS_DOMAIN_DEFAULT with valid domain environment variable
-  char *env_domain_str;
-  env_domain_str = os_malloc(strlen("VORTEX_DOMAIN") + strlen("=") + 3 + 1);
-  (void) sprintf(env_domain_str, "%s=%d", "VORTEX_DOMAIN", valid_domain);
-  putenv(env_domain_str);
-  participant7 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant7, 0, "Valid participant with DDS_DOMAIN_DEFAULT with valid domain environment variable");
-
-  dds_delete (participant2);
-  dds_delete (participant3);
-  dds_delete (participant5);
-  dds_delete (participant7);
-
-}
 
 Test(vddsc_participant, create_and_delete) {
 
@@ -89,7 +30,7 @@ Test(vddsc_participant, create_and_delete) {
 
 /* Test for creating participant with no configuration file and with no environment variable */
 Test(vddsc_participant, create_with_no_conf_no_env) {
-  dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
+  dds_entity_t participant, participant2, participant3;
   dds_return_t status;
   dds_domainid_t domain_id;
   dds_domainid_t valid_domain=0;
@@ -126,7 +67,7 @@ Test(vddsc_participant, create_with_no_conf_no_env) {
 /* Test for creating participant with no configuration file and with valid environment variable */
 Test(vddsc_participant, create_with_no_conf_valid_env) {
 
-  dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
+  dds_entity_t participant, participant2, participant3;
   dds_return_t status;
   dds_domainid_t domain_id;
   dds_domainid_t valid_domain=2;
@@ -152,23 +93,21 @@ Test(vddsc_participant, create_with_no_conf_valid_env) {
   cr_assert_eq(domain_id, valid_domain, "Retrieved domain ID must be valid");
 
   //DDS_DOMAIN_DEFAULT with valid domain environment variable
-  participant5 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant5, 0, "Valid participant  must be received for DDS_DOMAIN_DEFAULT with valid domain environment variable");
-  status = dds_get_domainid(participant5, &domain_id);
+  participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_gt(participant3, 0, "Valid participant  must be received for DDS_DOMAIN_DEFAULT with valid domain environment variable");
+  status = dds_get_domainid(participant3, &domain_id);
   cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_domainid(participant, domain_id)");
   cr_assert_eq(domain_id, valid_domain, "Retrieved domain ID must be valid");
 
   dds_delete (participant2);
-  dds_delete (participant5);
+  dds_delete (participant3);
 
 }
 
 Test(vddsc_participant, create_with_no_conf_invalid_env) {
 
 
-  dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
-  dds_return_t status;
-  dds_domainid_t domain_id;
+  dds_entity_t participant, participant2, participant3;
   dds_domainid_t valid_domain=0;
   putenv("VORTEX_DOMAIN=-5");
   const char * env_uri = os_getenv("VORTEXDDS_URI");
@@ -190,8 +129,8 @@ Test(vddsc_participant, create_with_no_conf_invalid_env) {
   cr_assert_lt(participant2, 0, "Error must be received for invalid environment variable");
 
   //DDS_DOMAIN_DEFAULT with invalid domain environment variable
-  participant4 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_lt(participant4, 0, "Invalid participant  must be received for DDS_DOMAIN_DEFAULT with invalid domain environment variable");
+  participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_lt(participant3, 0, "Invalid participant  must be received for DDS_DOMAIN_DEFAULT with invalid domain environment variable");
 
 
 }
@@ -199,7 +138,7 @@ Test(vddsc_participant, create_with_no_conf_invalid_env) {
 Test(vddsc_participant, create_with_no_conf_default_env) {
 
 
-  dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
+  dds_entity_t participant, participant2, participant3;
   dds_return_t status;
   dds_domainid_t domain_id;
   dds_domainid_t valid_domain=0;
@@ -224,14 +163,14 @@ Test(vddsc_participant, create_with_no_conf_default_env) {
   cr_assert_eq(domain_id, valid_domain, "Retrieved domain ID must be valid");
 
   //DDS_DOMAIN_DEFAULT with invalid domain environment variable
-  participant4 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant4, 0, "Valid participant must be received for default domain value");
+  participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_gt(participant3, 0, "Valid participant must be received for default domain value");
   status = dds_get_domainid(participant2, &domain_id);
   cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_domainid(participant, domain_id)");
   cr_assert_eq(domain_id, valid_domain, "Retrieved domain ID must be valid");
 
   dds_delete (participant2);
-  dds_delete (participant4);
+  dds_delete (participant3);
 
 }
 
@@ -239,7 +178,7 @@ Test(vddsc_participant, create_with_no_conf_default_env) {
 
 /* Test for creating participant with valid configuration file and with no environment variable */
 Test(vddsc_participant, create_with_conf_no_env) {
-  dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
+  dds_entity_t participant, participant2, participant3;
   dds_return_t status;
   dds_domainid_t domain_id;
   dds_domainid_t valid_domain=3;
@@ -287,7 +226,7 @@ Test(vddsc_participant, create_with_conf_no_env) {
 /* Test for creating participant with valid configuration file and with valid environment variable */
 Test(vddsc_participant, create_with_conf_valid_env) {
 
-  dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
+  dds_entity_t participant, participant2, participant3;
   dds_return_t status;
   dds_domainid_t domain_id;
   dds_domainid_t valid_domain=2;
@@ -323,14 +262,14 @@ Test(vddsc_participant, create_with_conf_valid_env) {
   cr_assert_eq(domain_id, valid_domain, "Retrieved domain ID must be valid");
 
   //DDS_DOMAIN_DEFAULT with valid domain environment variable
-  participant5 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant5, 0, "Valid participant  must be received for DDS_DOMAIN_DEFAULT with valid domain environment variable");
-  status = dds_get_domainid(participant5, &domain_id);
+  participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_gt(participant3, 0, "Valid participant  must be received for DDS_DOMAIN_DEFAULT with valid domain environment variable");
+  status = dds_get_domainid(participant3, &domain_id);
   cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_domainid(participant, domain_id)");
   cr_assert_eq(domain_id, valid_domain, "Retrieved domain ID must be valid");
 
   dds_delete (participant2);
-  dds_delete (participant5);
+  dds_delete (participant3);
 
 }
 
@@ -338,9 +277,7 @@ Test(vddsc_participant, create_with_conf_invalid_env)
 {
 
 
-  dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
-  dds_return_t status;
-  dds_domainid_t domain_id;
+  dds_entity_t participant, participant2, participant3;
   dds_domainid_t valid_domain=3;
   putenv("VORTEX_DOMAIN=-5");
 
@@ -369,15 +306,15 @@ Test(vddsc_participant, create_with_conf_invalid_env)
   cr_assert_lt(participant2, 0, "Valid participant must be received for valid specific domain value");
 
   //DDS_DOMAIN_DEFAULT with invalid domain environment variable
-  participant4 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_lt(participant4, 0, "Invalid participant  must be received for DDS_DOMAIN_DEFAULT with invalid domain environment variable");
+  participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_lt(participant3, 0, "Invalid participant  must be received for DDS_DOMAIN_DEFAULT with invalid domain environment variable");
 
 }
 
 Test(vddsc_participant, create_with_conf_default_env)
 {
 
-  dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
+  dds_entity_t participant, participant2, participant3;
   dds_return_t status;
   dds_domainid_t domain_id;
   dds_domainid_t valid_domain=3; //as in config file
@@ -410,14 +347,14 @@ Test(vddsc_participant, create_with_conf_default_env)
   cr_assert_eq(domain_id, valid_domain, "Retrieved domain ID must be valid");
 
   //DDS_DOMAIN_DEFAULT with default domain environment variable
-  participant4 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant4, 0, "Valid participant must be received for default domain value");
+  participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_gt(participant3, 0, "Valid participant must be received for default domain value");
   status = dds_get_domainid(participant2, &domain_id);
   cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_domainid(participant, domain_id)");
   cr_assert_eq(domain_id, valid_domain, "Retrieved domain ID must be valid");
 
   dds_delete (participant2);
-  dds_delete (participant4);
+  dds_delete (participant3);
 
 }
 
@@ -426,7 +363,7 @@ Test(vddsc_participant, create_with_conf_default_env)
 /* Test for creating participant with valid configuration file and with valid environment variable */
 Test(vddsc_participant, test_conf) {
 
-  dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
+  dds_entity_t participant, participant2, participant3;
   //invalid domain
   participant = dds_create_participant (1, NULL, NULL);
   cr_assert_lt(participant, 0, "Error must be received for invalid domain value");
