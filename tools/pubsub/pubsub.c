@@ -2124,703 +2124,646 @@ static void set_print_mode(const char *optarg) {
     os_free(copy);
 }
 
-int MAIN (int argc, char *argv[])
-{
-	dds_entity_t sub = 0;
-	dds_entity_t pub = 0;
-	dds_listener_t *rdlistener = dds_listener_create(NULL);
-	dds_listener_t *wrlistener = dds_listener_create(NULL);
+int MAIN(int argc, char *argv[]) {
+    dds_entity_t sub = 0;
+    dds_entity_t pub = 0;
+    dds_listener_t *rdlistener = dds_listener_create(NULL);
+    dds_listener_t *wrlistener = dds_listener_create(NULL);
 
-	struct qos *qos;
-	const char **qtopic = (const char **) os_malloc (sizeof(char *) * argc);
-	const char **qreader = (const char **) os_malloc (sizeof(char *) * (2+argc));
-	const char **qwriter = (const char **) os_malloc (sizeof(char *) * (2+argc));
-	const char **qpublisher = (const char **) os_malloc (sizeof(char *) * (2+argc));
-	const char **qsubscriber = (const char **) os_malloc (sizeof(char *) * (2+argc));
-	int nqtopic = 0, nqreader = 0, nqwriter = 0;
-	int nqpublisher = 0, nqsubscriber = 0;
-	int opt, pos;
-	uintptr_t exitcode = 0;
-	int want_reader = 1;
-	int want_writer = 1;
-	bool isWriterListenerSet = false;
-//	int disable_signal_handlers = 0;  // TODO signal handler support
-	unsigned sleep_at_end = 0;
-	os_threadId sigtid;
-	os_threadId inptid;
-	#define SPEC_TOPICSEL 1
-	#define SPEC_TOPICNAME 2
-	unsigned spec_sofar = 0;
-	unsigned specidx = 0;
-	unsigned i;
-	double wait_for_matching_reader_timeout = 0.0;
-	const char *wait_for_matching_reader_arg = NULL;
-	struct spec *spec = NULL;
-	struct wrspeclist *wrspecs = NULL;
-	memset (&sigtid, 0, sizeof(sigtid));
-	memset (&inptid, 0, sizeof(inptid));
+    struct qos *qos;
+    const char **qtopic = (const char **) os_malloc(sizeof(char *) * argc);
+    const char **qreader = (const char **) os_malloc(sizeof(char *) * (2+argc));
+    const char **qwriter = (const char **) os_malloc(sizeof(char *) * (2+argc));
+    const char **qpublisher = (const char **) os_malloc(sizeof(char *) * (2+argc));
+    const char **qsubscriber = (const char **) os_malloc(sizeof(char *) * (2+argc));
+    int nqtopic = 0, nqreader = 0, nqwriter = 0;
+    int nqpublisher = 0, nqsubscriber = 0;
+    int opt, pos;
+    uintptr_t exitcode = 0;
+    int want_reader = 1;
+    int want_writer = 1;
+    bool isWriterListenerSet = false;
+//    int disable_signal_handlers = 0;  // TODO signal handler support
+    unsigned sleep_at_end = 0;
+    os_threadId sigtid;
+    os_threadId inptid;
+    #define SPEC_TOPICSEL 1
+    #define SPEC_TOPICNAME 2
+    unsigned spec_sofar = 0;
+    unsigned specidx = 0;
+    unsigned i;
+    double wait_for_matching_reader_timeout = 0.0;
+    const char *wait_for_matching_reader_arg = NULL;
+    struct spec *spec = NULL;
+    struct wrspeclist *wrspecs = NULL;
+    memset (&sigtid, 0, sizeof(sigtid));
+    memset (&inptid, 0, sizeof(inptid));
 
-	if (os_strcasecmp(execname(argc, argv), "sub") == 0)
-		want_writer = 0;
-	else if(os_strcasecmp(execname(argc, argv), "pub") == 0)
-		want_reader = 0;
+    if (os_strcasecmp(execname(argc, argv), "sub") == 0)
+        want_writer = 0;
+    else if(os_strcasecmp(execname(argc, argv), "pub") == 0)
+        want_reader = 0;
 
-	save_argv0 (argv[0]);
-	pid = (int) os_procIdSelf();
+    save_argv0 (argv[0]);
+    pid = (int) os_procIdSelf();
 
-	// TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
-	OS_WARNING_MSVC_OFF(6386);
-	qreader[0] = "k=all";
-	qreader[1] = "R=10000/inf/inf";
-	nqreader = 2;
+//    TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
+    OS_WARNING_MSVC_OFF(6386);
+    qreader[0] = "k=all";
+    qreader[1] = "R=10000/inf/inf";
+    nqreader = 2;
 
-	qwriter[0] = "k=all";
-	qwriter[1] = "R=100/inf/inf";
-	nqwriter = 2;
+    qwriter[0] = "k=all";
+    qwriter[1] = "R=100/inf/inf";
+    nqwriter = 2;
     OS_WARNING_MSVC_OFF(6386);
 
-	spec_sofar = SPEC_TOPICSEL;
-	specidx--;
-	addspec(SPEC_TOPICSEL, &spec_sofar, &specidx, &spec, want_reader);
-	spec_sofar = 0;
-	assert(specidx == 0);
+    spec_sofar = SPEC_TOPICSEL;
+    specidx--;
+    addspec(SPEC_TOPICSEL, &spec_sofar, &specidx, &spec, want_reader);
+    spec_sofar = 0;
+    assert(specidx == 0);
 
-  while ((opt = os_getopt (argc, argv, "!@*:FK:T:D:q:m:M:n:OP:rRs:S:U:W:w:z:")) != EOF)
-  {
-    switch (opt)
-    {
-      case '!':
-//        disable_signal_handlers = 1; // TODO signal handler support
-        break;
-      case '@':
-        spec[specidx].wr.duplicate_writer_flag = 1;
-        break;
-      case '*':
-        sleep_at_end = (unsigned) os_atoll(os_get_optarg());
-        break;
-      case 'M':
-        if (sscanf(os_get_optarg(), "%lf:%n", &wait_for_matching_reader_timeout, &pos) != 1)
-        {
-          fprintf (stderr, "-M %s: invalid timeout\n", os_get_optarg());
-          exit (2);
-        }
-        wait_for_matching_reader_arg = os_get_optarg() + pos;
-        break;
-      case 'F':
-        setvbuf (stdout, (char *) NULL, _IOLBF, 0);
-        break;
-      case 'K':
-        addspec(SPEC_TOPICSEL, &spec_sofar, &specidx, &spec, want_reader);
-        if (os_strcasecmp (os_get_optarg(), "KS") == 0)
-          spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = KS;
-        else if (os_strcasecmp (os_get_optarg(), "K32") == 0)
-          spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K32;
-        else if (os_strcasecmp (os_get_optarg(), "K64") == 0)
-          spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K64;
-        else if (os_strcasecmp (os_get_optarg(), "K128") == 0)
-          spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K128;
-        else if (os_strcasecmp (os_get_optarg(), "K256") == 0)
-          spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K256;
-        else if (os_strcasecmp (os_get_optarg(), "OU") == 0)
-          spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = OU;
-        else if (os_strcasecmp (os_get_optarg(), "ARB") == 0)
-          spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = ARB;
-        else if (get_metadata(&spec[specidx].metadata, &spec[specidx].typename, &spec[specidx].keylist, os_get_optarg()))
-          spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = ARB;
-        else
-        {
-          fprintf (stderr, "-K %s: unknown type\n", os_get_optarg());
-          exit (2);
-        }
-        break;
-      case 'T': {
-        char *p;
-        addspec(SPEC_TOPICNAME, &spec_sofar, &specidx, &spec, want_reader);
-        spec[specidx].topicname = (const char *) os_strdup(os_get_optarg());
-        if ((p = strchr(spec[specidx].topicname, ':')) != NULL) {
-          double d;
-          int dpos, have_to = 0;
-          *p++ = 0;
-          if (strcmp (p, "inf") == 0 || strncmp (p, "inf:", 4) == 0) {
-            have_to = 1;
-            set_infinite_dds_duration (&spec[specidx].findtopic_timeout);
-          } else if (sscanf (p, "%lf%n", &d, &dpos) == 1 && (p[dpos] == 0 || p[dpos] == ':')) {
-            if (double_to_dds_duration (&spec[specidx].findtopic_timeout, d) < 0)
-              error_exit("-T %s: %s: duration invalid\n", os_get_optarg(), p);
-            have_to = 1;
-          } else {
-            /* assume content filter */
-          }
-          if (have_to && (p = strchr (p, ':')) != NULL) {
-            p++;
-          }
-        }
-        if (p != NULL) {
-          spec[specidx].cftp_expr = p;
-        }
-        break;
-      }
-      case 'q':
-        if (strncmp(os_get_optarg(), "provider=", 9) == 0) {
-          set_qosprovider (os_get_optarg()+9);
-        } else {
-          size_t n = strspn(os_get_optarg(), "atrwps");
-          const char *colon = strchr(os_get_optarg(), ':');
-          if (colon == NULL || n == 0 || n != (size_t) (colon - os_get_optarg())) {
-            fprintf (stderr, "-q %s: flags indicating to which entities QoS's apply must match regex \"[^atrwps]+:\"\n", os_get_optarg());
-            exit(2);
-          } else {
-            const char *q = colon+1;
-            for (const char *flag = os_get_optarg(); flag != colon; flag++)
-              switch (*flag) {
-                case 't': qtopic[nqtopic++] = q; break;
-                case 'r': qreader[nqreader++] = q; break;
-                case 'w': qwriter[nqwriter++] = q; break;
-                case 'p': qpublisher[nqpublisher++] = q; break;
-                case 's': qsubscriber[nqsubscriber++] = q; break;
-                case 'a':
-                  qtopic[nqtopic++] = q;
-                  qreader[nqreader++] = q;
-                  qwriter[nqwriter++] = q;
-                  qpublisher[nqpublisher++] = q;
-                  qsubscriber[nqsubscriber++] = q;
-                  break;
-              break;
-                default:
-                  assert(0);
-              }
-          }
-        }
-        break;
-      case 'D':
-        dur = atof (os_get_optarg());
-        break;
-      case 'm':
-        spec[specidx].rd.polling = 0;
-        if (strcmp (os_get_optarg(), "0") == 0)
-          spec[specidx].rd.mode = MODE_NONE;
-        else if (strcmp (os_get_optarg(), "p") == 0)
-          spec[specidx].rd.mode = MODE_PRINT;
-        else if (strcmp (os_get_optarg(), "pp") == 0)
-          spec[specidx].rd.mode = MODE_PRINT, spec[specidx].rd.polling = 1;
-        else if (strcmp (os_get_optarg(), "c") == 0)
-          spec[specidx].rd.mode = MODE_CHECK;
-        else if (sscanf (os_get_optarg(), "c:%u%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
-          spec[specidx].rd.mode = MODE_CHECK;
-        else if (strcmp (os_get_optarg(), "cp") == 0)
-          spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
-        else if (sscanf (os_get_optarg(), "cp:%u%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
-          spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
-        else if (strcmp (os_get_optarg(), "z") == 0)
-          spec[specidx].rd.mode = MODE_ZEROLOAD;
-        else if (strcmp (os_get_optarg(), "d") == 0)
-          spec[specidx].rd.mode = MODE_DUMP;
-        else if (strcmp (os_get_optarg(), "dp") == 0)
-          spec[specidx].rd.mode = MODE_DUMP, spec[specidx].rd.polling = 1;
-        else
-        {
-          fprintf (stderr, "-m %s: invalid mode\n", os_get_optarg());
-          exit (2);
-        }
-        break;
-      case 'w': {
-        int port;
-        spec[specidx].wr.writerate = 0.0;
-        spec[specidx].wr.burstsize = 1;
-        if (strcmp (os_get_optarg(), "-") == 0)
-        {
-          spec[specidx].wr.mode = WRM_INPUT;
-        }
-        else if (sscanf (os_get_optarg(), "%u%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
-        {
-          spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
-        }
-        else if (sscanf (os_get_optarg(), "%u:%lf*%u%n", &nkeyvals, &spec[specidx].wr.writerate, &spec[specidx].wr.burstsize, &pos) == 3 && os_get_optarg()[pos] == 0)
-        {
-          spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
-        }
-        else if (sscanf (os_get_optarg(), "%u:%lf%n", &nkeyvals, &spec[specidx].wr.writerate, &pos) == 2 && os_get_optarg()[pos] == 0)
-        {
-          spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
-        }
-        else if (sscanf (os_get_optarg(), ":%d%n", &port, &pos) == 1 && os_get_optarg()[pos] == 0)
-        {
-        	fprintf(stderr, "listen on TCP port P: not supported\n");
-			exit(1);
-        }
-        else
-        {
-          spec[specidx].wr.mode = WRM_INPUT;
-          fprintf(stderr, "%s: can't open\n", os_get_optarg());
-          exit(1);
-        }
-        break;
-      }
-      case 'n':
-        spec[specidx].rd.read_maxsamples = atoi (os_get_optarg());
-        break;
-      case 'O':
-        once_mode = 1;
-        break;
-      case 'P':
-        set_print_mode (os_get_optarg());
-        break;
-      case 'R':
-        spec[specidx].rd.use_take = 0;
-        break;
-      case 'r':
-        spec[specidx].wr.register_instances = 1;
-        break;
-      case 's':
-        spec[specidx].rd.sleep_ns = DDS_MSECS((int64_t) atoi (os_get_optarg()));
-        break;
-      case 'W':
-        {
-          double t;
-          wait_hist_data = 1;
-          if (strcmp (os_get_optarg(), "inf") == 0)
-            set_infinite_dds_duration (&wait_hist_data_timeout);
-          else if (sscanf (os_get_optarg(), "%lf%n", &t, &pos) == 1 && os_get_optarg()[pos] == 0 && t >= 0)
-            double_to_dds_duration (&wait_hist_data_timeout, t);
-          else
-          {
-            fprintf (stderr, "-W %s: invalid duration\n", os_get_optarg());
-            exit (2);
-          }
-        }
-        break;
-      case 'S':
-        {
-          char *copy = os_strdup (os_get_optarg()), *tok, *lasts;
-          if (copy == NULL)
-            abort ();
-          tok = os_strtok_r (copy, ",", &lasts);
-          while (tok)
-          {
-            if (strcmp (tok, "pr") == 0 || strcmp (tok, "pre-read") == 0)
-                spec[specidx].rd.print_match_pre_read = 1;
-            else if (strcmp (tok, "sl") == 0 || strcmp (tok, "sample-lost") == 0)
-                dds_lset_sample_lost (rdlistener, rd_on_sample_lost);
-            else if (strcmp (tok, "sr") == 0 || strcmp (tok, "sample-rejected") == 0)
-                dds_lset_sample_rejected (rdlistener, rd_on_sample_rejected);
-            else if (strcmp (tok, "lc") == 0 || strcmp (tok, "liveliness-changed") == 0)
-                dds_lset_liveliness_changed (rdlistener, rd_on_liveliness_changed);
-            else if (strcmp (tok, "sm") == 0 || strcmp (tok, "subscription-matched") == 0)
-                dds_lset_subscription_matched (rdlistener, rd_on_subscription_matched);
-            else if (strcmp (tok, "ll") == 0 || strcmp (tok, "liveliness-lost") == 0) {
-                dds_lset_liveliness_lost (wrlistener, wr_on_liveliness_lost); isWriterListenerSet = true;}
-            else if (strcmp (tok, "odm") == 0 || strcmp (tok, "offered-deadline-missed") == 0) {
-                dds_lset_offered_deadline_missed (wrlistener, wr_on_offered_deadline_missed); isWriterListenerSet = true;}
-            else if (strcmp (tok, "pm") == 0 || strcmp (tok, "publication-matched") == 0){
-                dds_lset_publication_matched (wrlistener, wr_on_publication_matched); isWriterListenerSet = true;}
-            else if (strcmp (tok, "rdm") == 0 || strcmp (tok, "requested-deadline-missed") == 0)
-                dds_lset_requested_deadline_missed (rdlistener, rd_on_requested_deadline_missed);
-            else if (strcmp (tok, "riq") == 0 || strcmp (tok, "requested-incompatible-qos") == 0)
-                dds_lset_requested_incompatible_qos (rdlistener, rd_on_requested_incompatible_qos);
-            else if (strcmp (tok, "oiq") == 0 || strcmp (tok, "offered-incompatible-qos") == 0){
-                dds_lset_offered_incompatible_qos (wrlistener, wr_on_offered_incompatible_qos); isWriterListenerSet = true;}
-            else
-            {
-              fprintf (stderr, "-S %s: invalid event\n", tok);
-              exit (2);
+    while ((opt = os_getopt(argc, argv, "!@*:FK:T:D:q:m:M:n:OP:rRs:S:U:W:w:z:")) != EOF) {
+        switch (opt) {
+        case '!':
+//            disable_signal_handlers = 1; // TODO signal handler support
+            break;
+        case '@':
+            spec[specidx].wr.duplicate_writer_flag = 1;
+            break;
+        case '*':
+            sleep_at_end = (unsigned) os_atoll(os_get_optarg());
+            break;
+        case 'M':
+            if (sscanf(os_get_optarg(), "%lf:%n", &wait_for_matching_reader_timeout, &pos) != 1) {
+                fprintf (stderr, "-M %s: invalid timeout\n", os_get_optarg());
+                exit(2);
             }
-            tok = os_strtok_r (NULL, ",", &lasts);
-          }
-          os_free (copy);
+            wait_for_matching_reader_arg = os_get_optarg() + pos;
+            break;
+        case 'F':
+            setvbuf(stdout, (char *) NULL, _IOLBF, 0);
+            break;
+        case 'K':
+            addspec(SPEC_TOPICSEL, &spec_sofar, &specidx, &spec, want_reader);
+            if (os_strcasecmp(os_get_optarg(), "KS") == 0)
+                spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = KS;
+            else if (os_strcasecmp(os_get_optarg(), "K32") == 0)
+                spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K32;
+            else if (os_strcasecmp(os_get_optarg(), "K64") == 0)
+                spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K64;
+            else if (os_strcasecmp(os_get_optarg(), "K128") == 0)
+                spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K128;
+            else if (os_strcasecmp(os_get_optarg(), "K256") == 0)
+                spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = K256;
+            else if (os_strcasecmp(os_get_optarg(), "OU") == 0)
+                spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = OU;
+            else if (os_strcasecmp(os_get_optarg(), "ARB") == 0)
+                spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = ARB;
+            else if (get_metadata(&spec[specidx].metadata, &spec[specidx].typename, &spec[specidx].keylist, os_get_optarg()))
+                spec[specidx].rd.topicsel = spec[specidx].wr.topicsel = ARB;
+            else {
+                fprintf (stderr, "-K %s: unknown type\n", os_get_optarg());
+                exit(2);
+            }
+            break;
+        case 'T': {
+            char *p;
+            addspec(SPEC_TOPICNAME, &spec_sofar, &specidx, &spec, want_reader);
+            spec[specidx].topicname = (const char *) os_strdup(os_get_optarg());
+            if ((p = strchr(spec[specidx].topicname, ':')) != NULL) {
+                double d;
+                int dpos, have_to = 0;
+                *p++ = 0;
+                if (strcmp (p, "inf") == 0 || strncmp (p, "inf:", 4) == 0) {
+                    have_to = 1;
+                    set_infinite_dds_duration(&spec[specidx].findtopic_timeout);
+                } else if (sscanf(p, "%lf%n", &d, &dpos) == 1 && (p[dpos] == 0 || p[dpos] == ':')) {
+                    if (double_to_dds_duration(&spec[specidx].findtopic_timeout, d) < 0)
+                        error_exit("-T %s: %s: duration invalid\n", os_get_optarg(), p);
+                    have_to = 1;
+                } else {
+                    /* assume content filter */
+                }
+                if (have_to && (p = strchr(p, ':')) != NULL) {
+                    p++;
+                }
+            }
+            if (p != NULL) {
+                spec[specidx].cftp_expr = p;
+            }
+            break;
+        }
+        case 'q':
+            if (strncmp(os_get_optarg(), "provider=", 9) == 0) {
+                set_qosprovider(os_get_optarg()+9);
+            } else {
+                size_t n = strspn(os_get_optarg(), "atrwps");
+                const char *colon = strchr(os_get_optarg(), ':');
+                if (colon == NULL || n == 0 || n != (size_t) (colon - os_get_optarg())) {
+                    fprintf (stderr, "-q %s: flags indicating to which entities QoS's apply must match regex \"[^atrwps]+:\"\n", os_get_optarg());
+                    exit(2);
+                } else {
+                    const char *q = colon+1;
+                    for (const char *flag = os_get_optarg(); flag != colon; flag++)
+                        switch (*flag) {
+                        case 't': qtopic[nqtopic++] = q; break;
+                        case 'r': qreader[nqreader++] = q; break;
+                        case 'w': qwriter[nqwriter++] = q; break;
+                        case 'p': qpublisher[nqpublisher++] = q; break;
+                        case 's': qsubscriber[nqsubscriber++] = q; break;
+                        case 'a':
+                            qtopic[nqtopic++] = q;
+                            qreader[nqreader++] = q;
+                            qwriter[nqwriter++] = q;
+                            qpublisher[nqpublisher++] = q;
+                            qsubscriber[nqsubscriber++] = q;
+                            break;
+                            break;
+                        default:
+                            assert(0);
+                        }
+                }
+            }
+            break;
+        case 'D':
+            dur = atof(os_get_optarg());
+            break;
+        case 'm':
+            spec[specidx].rd.polling = 0;
+            if (strcmp(os_get_optarg(), "0") == 0)
+                spec[specidx].rd.mode = MODE_NONE;
+            else if (strcmp(os_get_optarg(), "p") == 0)
+                spec[specidx].rd.mode = MODE_PRINT;
+            else if (strcmp(os_get_optarg(), "pp") == 0)
+                spec[specidx].rd.mode = MODE_PRINT, spec[specidx].rd.polling = 1;
+            else if (strcmp(os_get_optarg(), "c") == 0)
+                spec[specidx].rd.mode = MODE_CHECK;
+            else if (sscanf(os_get_optarg(), "c:%u%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
+                spec[specidx].rd.mode = MODE_CHECK;
+            else if (strcmp(os_get_optarg(), "cp") == 0)
+                spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
+            else if (sscanf(os_get_optarg(), "cp:%u%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0)
+                spec[specidx].rd.mode = MODE_CHECK, spec[specidx].rd.polling = 1;
+            else if (strcmp(os_get_optarg(), "z") == 0)
+                spec[specidx].rd.mode = MODE_ZEROLOAD;
+            else if (strcmp(os_get_optarg(), "d") == 0)
+                spec[specidx].rd.mode = MODE_DUMP;
+            else if (strcmp(os_get_optarg(), "dp") == 0)
+                spec[specidx].rd.mode = MODE_DUMP, spec[specidx].rd.polling = 1;
+            else {
+                fprintf (stderr, "-m %s: invalid mode\n", os_get_optarg());
+                exit(2);
+            }
+            break;
+        case 'w': {
+            int port;
+            spec[specidx].wr.writerate = 0.0;
+            spec[specidx].wr.burstsize = 1;
+            if (strcmp(os_get_optarg(), "-") == 0) {
+                spec[specidx].wr.mode = WRM_INPUT;
+            } else if (sscanf(os_get_optarg(), "%u%n", &nkeyvals, &pos) == 1 && os_get_optarg()[pos] == 0) {
+                spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
+            } else if (sscanf(os_get_optarg(), "%u:%lf*%u%n", &nkeyvals, &spec[specidx].wr.writerate, &spec[specidx].wr.burstsize, &pos) == 3
+                    && os_get_optarg()[pos] == 0) {
+                spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
+            } else if (sscanf(os_get_optarg(), "%u:%lf%n", &nkeyvals, &spec[specidx].wr.writerate, &pos) == 2
+                    && os_get_optarg()[pos] == 0) {
+                spec[specidx].wr.mode = (nkeyvals == 0) ? WRM_NONE : WRM_AUTO;
+            } else if (sscanf(os_get_optarg(), ":%d%n", &port, &pos) == 1 && os_get_optarg()[pos] == 0) {
+                fprintf (stderr, "listen on TCP port P: not supported\n");
+                exit(1);
+            } else {
+                spec[specidx].wr.mode = WRM_INPUT;
+                fprintf (stderr, "%s: can't open\n", os_get_optarg());
+                exit(1);
+            }
+            break;
+        }
+        case 'n':
+            spec[specidx].rd.read_maxsamples = atoi(os_get_optarg());
+            break;
+        case 'O':
+            once_mode = 1;
+            break;
+        case 'P':
+            set_print_mode(os_get_optarg());
+            break;
+        case 'R':
+            spec[specidx].rd.use_take = 0;
+            break;
+        case 'r':
+            spec[specidx].wr.register_instances = 1;
+            break;
+        case 's':
+            spec[specidx].rd.sleep_ns = DDS_MSECS((int64_t) atoi(os_get_optarg()));
+            break;
+        case 'W': {
+            double t;
+            wait_hist_data = 1;
+            if (strcmp(os_get_optarg(), "inf") == 0)
+                set_infinite_dds_duration(&wait_hist_data_timeout);
+            else if (sscanf(os_get_optarg(), "%lf%n", &t, &pos) == 1 && os_get_optarg()[pos] == 0 && t >= 0)
+                double_to_dds_duration(&wait_hist_data_timeout, t);
+            else {
+                fprintf (stderr, "-W %s: invalid duration\n", os_get_optarg());
+                exit(2);
+            }
         }
         break;
-      case 'z': {
-        /* payload is int32 int32 seq<octet>, which we count as 16+N,
-         for a 4 byte sequence length */
-        int tmp = atoi (os_get_optarg());
-        if (tmp != 0 && tmp < 12)
+        case 'S': {
+            char *copy = os_strdup(os_get_optarg()), *tok, *lasts;
+            if (copy == NULL)
+                abort();
+            tok = os_strtok_r(copy, ",", &lasts);
+            while (tok) {
+                if (strcmp(tok, "pr") == 0 || strcmp(tok, "pre-read") == 0)
+                    spec[specidx].rd.print_match_pre_read = 1;
+                else if (strcmp(tok, "sl") == 0 || strcmp(tok, "sample-lost") == 0)
+                    dds_lset_sample_lost(rdlistener, rd_on_sample_lost);
+                else if (strcmp(tok, "sr") == 0 || strcmp(tok, "sample-rejected") == 0)
+                    dds_lset_sample_rejected(rdlistener, rd_on_sample_rejected);
+                else if (strcmp(tok, "lc") == 0 || strcmp(tok, "liveliness-changed") == 0)
+                    dds_lset_liveliness_changed(rdlistener, rd_on_liveliness_changed);
+                else if (strcmp(tok, "sm") == 0 || strcmp(tok, "subscription-matched") == 0)
+                    dds_lset_subscription_matched(rdlistener, rd_on_subscription_matched);
+                else if (strcmp(tok, "ll") == 0 || strcmp(tok, "liveliness-lost") == 0) {
+                    dds_lset_liveliness_lost(wrlistener, wr_on_liveliness_lost);
+                    isWriterListenerSet = true;
+                } else if (strcmp(tok, "odm") == 0 || strcmp(tok, "offered-deadline-missed") == 0) {
+                    dds_lset_offered_deadline_missed(wrlistener, wr_on_offered_deadline_missed);
+                    isWriterListenerSet = true;
+                } else if (strcmp(tok, "pm") == 0 || strcmp(tok, "publication-matched") == 0) {
+                    dds_lset_publication_matched(wrlistener, wr_on_publication_matched);
+                    isWriterListenerSet = true;
+                } else if (strcmp(tok, "rdm") == 0 || strcmp(tok, "requested-deadline-missed") == 0)
+                    dds_lset_requested_deadline_missed(rdlistener, rd_on_requested_deadline_missed);
+                else if (strcmp(tok, "riq") == 0 || strcmp(tok, "requested-incompatible-qos") == 0)
+                    dds_lset_requested_incompatible_qos(rdlistener, rd_on_requested_incompatible_qos);
+                else if (strcmp(tok, "oiq") == 0 || strcmp(tok, "offered-incompatible-qos") == 0) {
+                    dds_lset_offered_incompatible_qos(wrlistener, wr_on_offered_incompatible_qos);
+                    isWriterListenerSet = true;
+                } else {
+                    fprintf (stderr, "-S %s: invalid event\n", tok);
+                    exit(2);
+                }
+                tok = os_strtok_r(NULL, ",", &lasts);
+            }
+            os_free(copy);
+        }
+        break;
+        case 'z': {
+            /* payload is int32 int32 seq<octet>, which we count as 16+N,
+                for a 4 byte sequence length */
+            int tmp = atoi(os_get_optarg());
+            if (tmp != 0 && tmp < 12) {
+                fprintf (stderr, "-z %s: minimum is 12\n", os_get_optarg());
+                exit(1);
+            } else if (tmp == 0)
+                spec[specidx].wr.baggagesize = 0;
+            else
+                spec[specidx].wr.baggagesize = (unsigned) (tmp - 12);
+            break;
+        }
+        default:
+            usage(argv[0]);
+        }
+    }
+
+    if (argc - os_get_optind() < 1) {
+        usage(argv[0]);
+    }
+
+    for (i = 0; i <= specidx; i++) {
+        assert(spec[i].rd.topicsel == spec[i].wr.topicsel);
+
+        if (spec[i].rd.topicsel == UNSPEC)
+            spec[i].rd.topicsel = spec[i].wr.topicsel = KS;
+
+        if (spec[i].topicname == NULL) {
+            switch (spec[i].rd.topicsel) {
+            case UNSPEC: assert(0);
+            case KS: spec[i].topicname = os_strdup("PubSub"); break;
+            case K32: spec[i].topicname = os_strdup("PubSub32"); break;
+            case K64: spec[i].topicname = os_strdup("PubSub64"); break;
+            case K128: spec[i].topicname = os_strdup("PubSub128"); break;
+            case K256: spec[i].topicname = os_strdup("PubSub256"); break;
+            case OU: spec[i].topicname = os_strdup("PubSubOU"); break;
+            case ARB: error_exit("-K ARB requires specifying a topic name\n"); break;
+            }
+            assert(spec[i].topicname != NULL);
+        }
+        assert(spec[i].rd.topicsel != UNSPEC && spec[i].rd.topicsel == spec[i].wr.topicsel);
+    }
+
+    if (!isWriterListenerSet) {
+        want_writer = 0;
+        want_reader = 0;
+        for (i = 0; i <= specidx; i++) {
+            if (spec[i].rd.mode != MODE_NONE)
+                want_reader = 1;
+            switch(spec[i].wr.mode) {
+            case WRM_NONE:
+                break;
+            case WRM_AUTO:
+                want_writer = 1;
+                if (spec[i].wr.topicsel == ARB)
+                    error_exit("auto-write mode requires non-ARB topic\n");
+                break;
+            case WRM_INPUT:
+                want_writer = 1;
+            }
+        }
+    }
+
+    for (i = 0; i <= specidx; i++) {
+        if (spec[i].rd.topicsel == OU) {
+            /* by definition only 1 instance for OneULong type */
+            nkeyvals = 1;
+            if (spec[i].rd.topicsel == ARB) {
+//                TODO ARB type support
+//                if (((spec[i].rd.mode != MODE_PRINT || spec[i].rd.mode != MODE_DUMP) && spec[i].rd.mode != MODE_NONE) || (fdin == -1 && fdservsock == -1))
+//                    error("-K ARB requires readers in PRINT or DUMP mode and writers in interactive mode\n");
+//                if (nqtopic != 0 && spec[i].metadata == NULL)
+//                    error("-K ARB disallows specifying topic QoS when using find_topic\n");
+            }
+        }
+        if (spec[i].rd.mode == MODE_ZEROLOAD)
         {
-          fprintf (stderr, "-z %s: minimum is 12\n", os_get_optarg());
-
-          exit (1);
+            /* need to change to keep-last-1 (unless overridden by user) */
+            qreader[0] = "k=1";
         }
-        else if (tmp == 0)
-          spec[specidx].wr.baggagesize = 0;
-        else
-          spec[specidx].wr.baggagesize = (unsigned) (tmp - 12);
-        break;
-      }
-      default:
-        usage (argv[0]);
     }
-  }
 
-  if (argc - os_get_optind() < 1)
-  {
-	  usage (argv[0]);
-  }
+    common_init(argv[0]);
+    set_systemid_env();
 
-  for (i = 0; i <= specidx; i++)
-  {
-    assert (spec[i].rd.topicsel == spec[i].wr.topicsel);
-
-    if (spec[i].rd.topicsel == UNSPEC)
-        spec[i].rd.topicsel = spec[i].wr.topicsel = KS;
-
-    if (spec[i].topicname == NULL)
     {
-      switch (spec[i].rd.topicsel)
-      {
-        case UNSPEC: assert(0);
-        case KS: spec[i].topicname = os_strdup("PubSub"); break;
-        case K32: spec[i].topicname = os_strdup("PubSub32"); break;
-        case K64: spec[i].topicname = os_strdup("PubSub64"); break;
-        case K128: spec[i].topicname = os_strdup("PubSub128"); break;
-        case K256: spec[i].topicname = os_strdup("PubSub256"); break;
-        case OU: spec[i].topicname = os_strdup("PubSubOU"); break;
-        case ARB: error_exit("-K ARB requires specifying a topic name\n"); break;
-      }
-      assert (spec[i].topicname != NULL);
-    }
-    assert(spec[i].rd.topicsel != UNSPEC && spec[i].rd.topicsel == spec[i].wr.topicsel);
-  }
-
-  if (!isWriterListenerSet)
-  {
-    want_writer = 0;
-    want_reader = 0;
-    for (i = 0; i <= specidx; i++)
-    {
-      if (spec[i].rd.mode != MODE_NONE)
-        want_reader = 1;
-      switch(spec[i].wr.mode)
-      {
-        case WRM_NONE:
-          break;
-        case WRM_AUTO:
-          want_writer = 1;
-          if (spec[i].wr.topicsel == ARB)
-              error_exit("auto-write mode requires non-ARB topic\n");
-          break;
-        case WRM_INPUT:
-          want_writer = 1;
-      }
-    }
-  }
-
-  for (i = 0; i <= specidx; i++)
-  {
-    if (spec[i].rd.topicsel == OU)
-    {
-      /* by definition only 1 instance for OneULong type */
-      nkeyvals = 1;
-      if (spec[i].rd.topicsel == ARB)
-      {
-          // TODO ARB type support
-//        if (((spec[i].rd.mode != MODE_PRINT || spec[i].rd.mode != MODE_DUMP) && spec[i].rd.mode != MODE_NONE) || (fdin == -1 && fdservsock == -1))
-//          error ("-K ARB requires readers in PRINT or DUMP mode and writers in interactive mode\n");
-//        if (nqtopic != 0 && spec[i].metadata == NULL)
-//          error ("-K ARB disallows specifying topic QoS when using find_topic\n");
-      }
-    }
-    if (spec[i].rd.mode == MODE_ZEROLOAD)
-    {
-      /* need to change to keep-last-1 (unless overridden by user) */
-      qreader[0] = "k=1";
-    }
-  }
-
-  common_init (argv[0]);
-  set_systemid_env ();
-
-  {
-    char **ps = (char **) os_malloc (sizeof(char *) * (argc - os_get_optind()));
-    for (i = 0; i < (unsigned) (argc - os_get_optind()); i++)
-      ps[i] = expand_envvars (argv[(unsigned) os_get_optind() + i]);
-    if (want_reader)
-    {
-    	qos = new_subqos ();
-		setqos_from_args (qos, nqsubscriber, qsubscriber);
-		sub = new_subscriber (qos, (unsigned) (argc - os_get_optind()), (const char **) ps);
-    	free_qos (qos);
-    }
-    if (want_writer)
-    {
-      qos = new_pubqos ();
-      setqos_from_args (qos, nqpublisher, qpublisher);
-      pub = new_publisher (qos, (unsigned) (argc - os_get_optind()), (const char **) ps);
-      free_qos (qos);
-    }
-    for (i = 0; i < (unsigned) (argc - os_get_optind()); i++)
-    	os_free (ps[i]);
-    os_free(ps);
-  }
-
-
-  for (i = 0; i <= specidx; i++)
-  {
-    qos = new_tqos ();
-    setqos_from_args (qos, nqtopic, qtopic);
-    switch (spec[i].rd.topicsel)
-    {
-      case UNSPEC: assert(0); break;
-      case KS:   spec[i].tp = new_topic (spec[i].topicname, ts_KeyedSeq, qos); break;
-      case K32:  spec[i].tp = new_topic (spec[i].topicname, ts_Keyed32, qos); break;
-      case K64:  spec[i].tp = new_topic (spec[i].topicname, ts_Keyed64, qos); break;
-      case K128: spec[i].tp = new_topic (spec[i].topicname, ts_Keyed128, qos); break;
-      case K256: spec[i].tp = new_topic (spec[i].topicname, ts_Keyed256, qos); break;
-      case OU:   spec[i].tp = new_topic (spec[i].topicname, ts_OneULong, qos); break;
-      case ARB:
-          // TODO ARB type support
-        error_exit("Currently doesn't support ARB type\n");
-        if (spec[i].metadata == NULL) {
-          if (!(spec[i].tp = find_topic(dp, spec[i].topicname, &spec[i].findtopic_timeout)))
-              error_exit("topic %s not found\n", spec[i].topicname);
-        } else  {
-//          const dds_topic_descriptor_t* ts = dds_topic_descriptor_create(spec[i].typename, spec[i].keylist, spec[i].metadata); //Todo: Not available in cham dds.h
-          const dds_topic_descriptor_t* ts = NULL;
-          if(ts == NULL)
-              error_exit("dds_topic_descriptor_create(%s) failed\n",spec[i].typename);
-          spec[i].tp = new_topic (spec[i].topicname, ts, qos);
-//          dds_topic_descriptor_delete((dds_topic_descriptor_t*) ts);
+        char **ps = (char **) os_malloc(sizeof(char *) * (argc - os_get_optind()));
+        for (i = 0; i < (unsigned) (argc - os_get_optind()); i++)
+            ps[i] = expand_envvars(argv[(unsigned) os_get_optind() + i]);
+        if (want_reader) {
+            qos = new_subqos();
+            setqos_from_args(qos, nqsubscriber, qsubscriber);
+            sub = new_subscriber(qos, (unsigned) (argc - os_get_optind()), (const char **) ps);
+            free_qos(qos);
         }
-//        spec[i].rd.tgtp = spec[i].wr.tgtp = tgnew(spec[i].tp, printtype);
-        break;
-    }
-    assert (spec[i].tp);
-//    assert (spec[i].rd.topicsel != ARB || spec[i].rd.tgtp != NULL);
-//    assert (spec[i].wr.topicsel != ARB || spec[i].wr.tgtp != NULL);
-    free_qos (qos);
-
-    if (spec[i].cftp_expr == NULL)
-      spec[i].cftp = spec[i].tp;
-    else
-    {
-    	fprintf(stderr,"C99 API doesn't support the creation of content filtered topic.\n");
-    	spec[i].cftp = spec[i].tp;
-    	// TODO Content Filtered Topic support
-//    	char name[40], *expr = expand_envvars(spec[i].cftp_expr);
-//		DDS_StringSeq *params = DDS_StringSeq__alloc();
-//		snprintf (name, sizeof (name), "cft%u", i);
-//		if ((spec[i].cftp = DDS_DomainParticipant_create_contentfilteredtopic(dp, name, spec[i].tp, expr, params)) == NULL)
-//			error("DDS_DomainParticipant_create_contentfiltered_topic failed\n");
-//		DDS_free(params);
-//		free(expr);
+        if (want_writer) {
+            qos = new_pubqos();
+            setqos_from_args(qos, nqpublisher, qpublisher);
+            pub = new_publisher(qos, (unsigned) (argc - os_get_optind()), (const char **) ps);
+            free_qos(qos);
+        }
+        for (i = 0; i < (unsigned) (argc - os_get_optind()); i++)
+            os_free(ps[i]);
+        os_free(ps);
     }
 
-    if (spec[i].rd.mode != MODE_NONE)
-    {
-      qos = new_rdqos (sub, spec[i].cftp);
-      setqos_from_args (qos, nqreader, qreader);
-      spec[i].rd.rd = new_datareader_listener (qos, rdlistener);
-      spec[i].rd.sub = sub;
-      free_qos (qos);
+
+    for (i = 0; i <= specidx; i++) {
+        qos = new_tqos();
+        setqos_from_args(qos, nqtopic, qtopic);
+        switch (spec[i].rd.topicsel) {
+        case UNSPEC: assert(0); break;
+        case KS:   spec[i].tp = new_topic(spec[i].topicname, ts_KeyedSeq, qos); break;
+        case K32:  spec[i].tp = new_topic(spec[i].topicname, ts_Keyed32, qos); break;
+        case K64:  spec[i].tp = new_topic(spec[i].topicname, ts_Keyed64, qos); break;
+        case K128: spec[i].tp = new_topic(spec[i].topicname, ts_Keyed128, qos); break;
+        case K256: spec[i].tp = new_topic(spec[i].topicname, ts_Keyed256, qos); break;
+        case OU:   spec[i].tp = new_topic(spec[i].topicname, ts_OneULong, qos); break;
+        case ARB:
+            // TODO ARB type support
+            error_exit("Currently doesn't support ARB type\n");
+            if (spec[i].metadata == NULL) {
+                if (!(spec[i].tp = find_topic(dp, spec[i].topicname, &spec[i].findtopic_timeout)))
+                    error_exit("topic %s not found\n", spec[i].topicname);
+            } else  {
+//                const dds_topic_descriptor_t* ts = dds_topic_descriptor_create(spec[i].typename, spec[i].keylist, spec[i].metadata); //Todo: Not available in cham dds.h
+                const dds_topic_descriptor_t* ts = NULL;
+                if(ts == NULL)
+                    error_exit("dds_topic_descriptor_create(%s) failed\n",spec[i].typename);
+                spec[i].tp = new_topic(spec[i].topicname, ts, qos);
+//                dds_topic_descriptor_delete((dds_topic_descriptor_t*) ts);
+            }
+//            spec[i].rd.tgtp = spec[i].wr.tgtp = tgnew(spec[i].tp, printtype);
+            break;
+        }
+        assert(spec[i].tp);
+//        assert(spec[i].rd.topicsel != ARB || spec[i].rd.tgtp != NULL);
+//        assert(spec[i].wr.topicsel != ARB || spec[i].wr.tgtp != NULL);
+        free_qos(qos);
+
+        if (spec[i].cftp_expr == NULL)
+            spec[i].cftp = spec[i].tp;
+        else {
+            fprintf (stderr,"C99 API doesn't support the creation of content filtered topic.\n");
+            spec[i].cftp = spec[i].tp;
+//            TODO Content Filtered Topic support
+//            char name[40], *expr = expand_envvars(spec[i].cftp_expr);
+//            DDS_StringSeq *params = DDS_StringSeq__alloc();
+//            snprintf (name, sizeof (name), "cft%u", i);
+//            if ((spec[i].cftp = DDS_DomainParticipant_create_contentfilteredtopic(dp, name, spec[i].tp, expr, params)) == NULL)
+//                error("DDS_DomainParticipant_create_contentfiltered_topic failed\n");
+//            DDS_free(params);
+//            free(expr);
+        }
+
+        if (spec[i].rd.mode != MODE_NONE) {
+            qos = new_rdqos(sub, spec[i].cftp);
+            setqos_from_args(qos, nqreader, qreader);
+            spec[i].rd.rd = new_datareader_listener(qos, rdlistener);
+            spec[i].rd.sub = sub;
+            free_qos(qos);
+        }
+
+        if (spec[i].wr.mode != WRM_NONE) {
+            qos = new_wrqos(pub, spec[i].tp);
+            setqos_from_args(qos, nqwriter, qwriter);
+            spec[i].wr.wr = new_datawriter_listener(qos, wrlistener);
+            spec[i].wr.pub = pub;
+            if (spec[i].wr.duplicate_writer_flag) {
+                spec[i].wr.dupwr = dds_create_writer(pub, spec[i].tp, qos_datawriter(qos), NULL);
+                error_abort(spec[i].wr.dupwr, "dds_writer_create failed");
+            }
+            free_qos(qos);
+        }
     }
 
-    if (spec[i].wr.mode != WRM_NONE)
-    {
-      qos = new_wrqos (pub, spec[i].tp);
-      setqos_from_args (qos, nqwriter, qwriter);
-      spec[i].wr.wr = new_datawriter_listener (qos, wrlistener);
-      spec[i].wr.pub = pub;
-      if (spec[i].wr.duplicate_writer_flag)
-      {
-          spec[i].wr.dupwr = dds_create_writer(pub, spec[i].tp, qos_datawriter(qos), NULL);
-          error_abort(spec[i].wr.dupwr, "dds_writer_create failed");
-      }
-      free_qos (qos);
-    }
-  }
-
-  if (want_writer && wait_for_matching_reader_arg)
-  {
-	  printf("Wait for matching reader: unsupported\n");
-	  // TODO Reimplement wait_for_matching_reader functionality via wait on status subscription matched
-//    struct qos *q = NULL;
-//    uint64_t tnow = nowll();
-//    uint64_t tend = tnow + (uint64_t) (wait_for_matching_reader_timeout >= 0 ? (wait_for_matching_reader_timeout * 1e9 + 0.5) : 0);
-//    DDS_InstanceHandleSeq *sh = DDS_InstanceHandleSeq__alloc();
-//    dds_instance_handle_t pphandle;
-//    DDS_ReturnCode_t ret;
-//    DDS_ParticipantBuiltinTopicData *ppdata = DDS_ParticipantBuiltinTopicData__alloc();
-//    const DDS_UserDataQosPolicy *udqos;
-//    unsigned m;
-//    if ((pphandle = DDS_DomainParticipant_get_instance_handle(dp)) == 0)
-//      error("DDS_DomainParticipant_get_instance_handle failed\n");
-//    if ((ret = DDS_DomainParticipant_get_discovered_participant_data(dp, ppdata, pphandle)) != DDS_RETCODE_OK)
-//      error("DDS_DomainParticipant_get_discovered_participant_data failed: %d (%s)\n", (int) ret, dds_err_str(ret));
-//    q = new_wrqos(pub, spec[0].tp);
-//    qos_user_data(q, wait_for_matching_reader_arg);
-//    udqos = &qos_datawriter(q)->user_data;
-//    do {
-//      for (i = 0, m = specidx + 1; i <= specidx; i++)
-//      {
-//        if (spec[i].wr.mode == WM_NONE)
-//          --m;
-//        else if ((ret = DDS_DataWriter_get_matched_subscriptions(spec[i].wr.wr, sh)) != DDS_RETCODE_OK)
-//          error("DDS_DataWriter_get_matched_subscriptions failed: %d (%s)\n", (int) ret, dds_err_str(ret));
-//        else
-//        {
-//          unsigned j;
-//          for(j = 0; j < sh->_length; j++)
-//          {
-//            DDS_SubscriptionBuiltinTopicData *d = DDS_SubscriptionBuiltinTopicData__alloc();
-//            if ((ret = DDS_DataWriter_get_matched_subscription_data(spec[i].wr.wr, d, sh->_buffer[j])) != DDS_RETCODE_OK)
-//              error("DDS_DataWriter_get_matched_subscription_data(wr %u ih %llx) failed: %d (%s)\n", specidx, sh->_buffer[j], (int) ret, dds_err_str(ret));
-//            if (memcmp(d->participant_key, ppdata->key, sizeof(ppdata->key)) != 0 &&
-//                d->user_data.value._length == udqos->value._length &&
-//                (d->user_data.value._length == 0 || memcmp(d->user_data.value._buffer, udqos->value._buffer, udqos->value._length) == 0))
-//            {
-//              --m;
-//              DDS_free(d);
-//              break;
+    if (want_writer && wait_for_matching_reader_arg) {
+        printf("Wait for matching reader: unsupported\n");
+//        TODO Reimplement wait_for_matching_reader functionality via wait on status subscription matched
+//        struct qos *q = NULL;
+//        uint64_t tnow = nowll();
+//        uint64_t tend = tnow + (uint64_t) (wait_for_matching_reader_timeout >= 0 ? (wait_for_matching_reader_timeout * 1e9 + 0.5) : 0);
+//        DDS_InstanceHandleSeq *sh = DDS_InstanceHandleSeq__alloc();
+//        dds_instance_handle_t pphandle;
+//        DDS_ReturnCode_t ret;
+//        DDS_ParticipantBuiltinTopicData *ppdata = DDS_ParticipantBuiltinTopicData__alloc();
+//        const DDS_UserDataQosPolicy *udqos;
+//        unsigned m;
+//        if ((pphandle = DDS_DomainParticipant_get_instance_handle(dp)) == 0)
+//            error("DDS_DomainParticipant_get_instance_handle failed\n");
+//        if ((ret = DDS_DomainParticipant_get_discovered_participant_data(dp, ppdata, pphandle)) != DDS_RETCODE_OK)
+//            error("DDS_DomainParticipant_get_discovered_participant_data failed: %d (%s)\n", (int) ret, dds_err_str(ret));
+//        q = new_wrqos(pub, spec[0].tp);
+//        qos_user_data(q, wait_for_matching_reader_arg);
+//        udqos = &qos_datawriter(q)->user_data;
+//        do {
+//            for (i = 0, m = specidx + 1; i <= specidx; i++) {
+//                if (spec[i].wr.mode == WM_NONE)
+//                    --m;
+//                else if ((ret = DDS_DataWriter_get_matched_subscriptions(spec[i].wr.wr, sh)) != DDS_RETCODE_OK)
+//                    error("DDS_DataWriter_get_matched_subscriptions failed: %d (%s)\n", (int) ret, dds_err_str(ret));
+//                else {
+//                    unsigned j;
+//                    for(j = 0; j < sh->_length; j++) {
+//                        DDS_SubscriptionBuiltinTopicData *d = DDS_SubscriptionBuiltinTopicData__alloc();
+//                        if ((ret = DDS_DataWriter_get_matched_subscription_data(spec[i].wr.wr, d, sh->_buffer[j])) != DDS_RETCODE_OK)
+//                            error("DDS_DataWriter_get_matched_subscription_data(wr %u ih %llx) failed: %d (%s)\n", specidx, sh->_buffer[j], (int) ret, dds_err_str(ret));
+//                        if (memcmp(d->participant_key, ppdata->key, sizeof(ppdata->key)) != 0 &&
+//                                d->user_data.value._length == udqos->value._length &&
+//                                (d->user_data.value._length == 0 || memcmp(d->user_data.value._buffer, udqos->value._buffer, udqos->value._length) == 0)) {
+//                            --m;
+//                            DDS_free(d);
+//                            break;
+//                        }
+//                        DDS_free(d);
+//                    }
+//                }
 //            }
-//            DDS_free(d);
-//          }
-//      }
-//      }
-//      tnow = nowll();
-//      if (m != 0 && tnow < tend)
-//      {
-//        uint64_t tdelta = (tend-tnow) < T_SECOND/10 ? tend-tnow : T_SECOND/10;
-//        os_time delay = { (os_timeSec) (tdelta / T_SECOND), (os_int32) (tdelta % T_SECOND)};
-//        os_nanoSleep(delay);
-//        tnow = nowll();
-//      }
-//    } while(m != 0 && tnow < tend);
-//    free_qos(q);
-//    DDS_free(ppdata);
-//    DDS_free(sh);
-//    if (m != 0)
-//      error("timed out waiting for matching subscriptions\n");
-  }
-
-  termcond = dds_create_waitset(dp); // Waitset serves as GuardCondition here.
-  error_abort(termcond, "dds_create_waitset failed");
-
-  os_threadAttr attr;
-  os_threadAttrInit(&attr);
-  os_result osres;
-
-  if (want_writer)
-  {
-    for (i = 0; i <= specidx; i++)
-    {
-      struct wrspeclist *wsl;
-      switch (spec[i].wr.mode)
-      {
-        case WRM_NONE:
-          break;
-        case WRM_AUTO:
-          osres = os_threadCreate(&spec[i].wrtid, "pubthread_auto", &attr, pubthread_auto, &spec[i].wr);
-          os_error_exit(osres, "Error: cannot create thread pubthread_auto");
-          break;
-        case WRM_INPUT:
-          wsl = os_malloc(sizeof(*wsl));
-          spec[i].wr.tpname = os_strdup(spec[i].topicname);
-          wsl->spec = &spec[i].wr;
-          if (wrspecs) {
-            wsl->next = wrspecs->next;
-            wrspecs->next = wsl;
-          } else {
-            wsl->next = wsl;
-          }
-          wrspecs = wsl;
-          break;
-      }
+//            tnow = nowll();
+//            if (m != 0 && tnow < tend) {
+//                uint64_t tdelta = (tend-tnow) < T_SECOND/10 ? tend-tnow : T_SECOND/10;
+//                os_time delay = { (os_timeSec) (tdelta / T_SECOND), (os_int32) (tdelta % T_SECOND)};
+//                os_nanoSleep(delay);
+//                tnow = nowll();
+//            }
+//        } while(m != 0 && tnow < tend);
+//        free_qos(q);
+//        DDS_free(ppdata);
+//        DDS_free(sh);
+//        if (m != 0)
+//            error("timed out waiting for matching subscriptions\n");
     }
-    if (wrspecs) /* start with first wrspec */
-    {
-      wrspecs = wrspecs->next;
-      osres = os_threadCreate(&inptid, "pubthread", &attr, pubthread, wrspecs);
-      os_error_exit(osres, "Error: cannot create thread pubthread");
-    }
-  }
-  else if (dur > 0) /* note: abusing inptid */
-  {
-      osres = os_threadCreate(&inptid, "autotermthread", &attr, autotermthread, NULL);
-      os_error_exit(osres, "Error: cannot create thread autotermthread");
-  }
-  for (i = 0; i <= specidx; i++)
-  {
-    if (spec[i].rd.mode != MODE_NONE)
-    {
-      spec[i].rd.idx = i;
-      osres = os_threadCreate(&spec[i].rdtid, "subthread", &attr, subthread, &spec[i].rd);
-      os_error_exit(osres, "Error: cannot create thread subthread");
-    }
-  }
-  if (want_writer || dur > 0)
-  {
-    int term_called = 0;
-    if (!want_writer || wrspecs)
-    {
-      (void)os_threadWaitExit(inptid, NULL);
-      term_called = 1;
-      terminate ();
-    }
-    for (i = 0; i <= specidx; i++)
-    {
-      if (spec[i].wr.mode == WRM_AUTO)
-        (void)os_threadWaitExit(spec[i].wrtid, NULL);
-    }
-    if (!term_called)
-      terminate ();
-  }
-  if (want_reader)
-  {
-	uint32_t ret;
-    exitcode = 0;
-    for (i = 0; i <= specidx; i++)
-    {
-      if (spec[i].rd.mode != MODE_NONE)
-      {
-        (void)os_threadWaitExit(spec[i].rdtid, &ret);
-        if ((uintptr_t) ret > exitcode)
-          exitcode = (uintptr_t) ret;
-      }
-    }
-  }
 
-  if (wrspecs)
-  {
-    struct wrspeclist *m;
-    m = wrspecs->next;
-    wrspecs->next = NULL;
-    wrspecs = m;
-    while ((m = wrspecs) != NULL)
-    {
-      wrspecs = wrspecs->next;
-      os_free(m);
+    termcond = dds_create_waitset(dp); // Waitset serves as GuardCondition here.
+    error_abort(termcond, "dds_create_waitset failed");
+
+    os_threadAttr attr;
+    os_threadAttrInit(&attr);
+    os_result osres;
+
+    if (want_writer) {
+        for (i = 0; i <= specidx; i++) {
+            struct wrspeclist *wsl;
+            switch (spec[i].wr.mode) {
+            case WRM_NONE:
+                break;
+            case WRM_AUTO:
+                osres = os_threadCreate(&spec[i].wrtid, "pubthread_auto", &attr, pubthread_auto, &spec[i].wr);
+                os_error_exit(osres, "Error: cannot create thread pubthread_auto");
+                break;
+            case WRM_INPUT:
+                wsl = os_malloc(sizeof(*wsl));
+                spec[i].wr.tpname = os_strdup(spec[i].topicname);
+                wsl->spec = &spec[i].wr;
+                if (wrspecs) {
+                    wsl->next = wrspecs->next;
+                    wrspecs->next = wsl;
+                } else {
+                    wsl->next = wsl;
+                }
+                wrspecs = wsl;
+                break;
+            }
+        }
+        if (wrspecs) { /* start with first wrspec */
+            wrspecs = wrspecs->next;
+            osres = os_threadCreate(&inptid, "pubthread", &attr, pubthread, wrspecs);
+            os_error_exit(osres, "Error: cannot create thread pubthread");
+        }
+    } else if (dur > 0) { /* note: abusing inptid */
+        osres = os_threadCreate(&inptid, "autotermthread", &attr, autotermthread, NULL);
+        os_error_exit(osres, "Error: cannot create thread autotermthread");
     }
-  }
 
-  dds_listener_delete(wrlistener);
-  dds_listener_delete(rdlistener);
+    for (i = 0; i <= specidx; i++) {
+        if (spec[i].rd.mode != MODE_NONE) {
+            spec[i].rd.idx = i;
+            osres = os_threadCreate(&spec[i].rdtid, "subthread", &attr, subthread, &spec[i].rd);
+            os_error_exit(osres, "Error: cannot create thread subthread");
+        }
+    }
 
-  os_free((char **) qtopic);
-  os_free((char **) qpublisher);
-  os_free((char **) qsubscriber);
-  os_free((char **) qreader);
-  os_free((char **) qwriter);
+    if (want_writer || dur > 0) {
+        int term_called = 0;
+        if (!want_writer || wrspecs) {
+            (void)os_threadWaitExit(inptid, NULL);
+            term_called = 1;
+            terminate();
+        }
+        for (i = 0; i <= specidx; i++) {
+            if (spec[i].wr.mode == WRM_AUTO)
+                (void)os_threadWaitExit(spec[i].wrtid, NULL);
+        }
+        if (!term_called)
+            terminate();
+    }
 
-  for (i = 0; i <= specidx; i++)
-  {
-	if(spec[i].topicname) os_free((char *)spec[i].topicname);
-	if(spec[i].cftp_expr) os_free((char *)spec[i].cftp_expr);
-	if(spec[i].metadata) os_free(spec[i].metadata);
-	if(spec[i].typename) os_free(spec[i].typename);
-	if(spec[i].keylist) os_free(spec[i].keylist);
-	assert(spec[i].wr.tgtp == spec[i].rd.tgtp); /* so no need to free both */
-    // TODO ARB type support
-//	if (spec[i].rd.tgtp)
-//		tgfree(spec[i].rd.tgtp);
-//	if (spec[i].wr.tgtp)
-//		tgfree(spec[i].wr.tgtp);
-	if (spec[i].wr.tpname)
-		dds_string_free(spec[i].wr.tpname);
-  }
-  os_free(spec);
+    if (want_reader) {
+        uint32_t ret;
+        exitcode = 0;
+        for (i = 0; i <= specidx; i++) {
+            if (spec[i].rd.mode != MODE_NONE) {
+                (void)os_threadWaitExit(spec[i].rdtid, &ret);
+                if ((uintptr_t) ret > exitcode)
+                    exitcode = (uintptr_t) ret;
+            }
+        }
+    }
 
-//  dds_delete(termcond);
-  common_fini ();
-  if (sleep_at_end) {
-	  dds_sleepfor(DDS_SECS(sleep_at_end));
-  }
-  return (int) exitcode;
+    if (wrspecs) {
+        struct wrspeclist *m;
+        m = wrspecs->next;
+        wrspecs->next = NULL;
+        wrspecs = m;
+        while ((m = wrspecs) != NULL) {
+            wrspecs = wrspecs->next;
+            os_free(m);
+        }
+    }
+
+    dds_listener_delete(wrlistener);
+    dds_listener_delete(rdlistener);
+
+    os_free((char **) qtopic);
+    os_free((char **) qpublisher);
+    os_free((char **) qsubscriber);
+    os_free((char **) qreader);
+    os_free((char **) qwriter);
+
+    for (i = 0; i <= specidx; i++) {
+        if(spec[i].topicname) os_free((char *)spec[i].topicname);
+        if(spec[i].cftp_expr) os_free((char *)spec[i].cftp_expr);
+        if(spec[i].metadata) os_free(spec[i].metadata);
+        if(spec[i].typename) os_free(spec[i].typename);
+        if(spec[i].keylist) os_free(spec[i].keylist);
+        assert(spec[i].wr.tgtp == spec[i].rd.tgtp); /* so no need to free both */
+//        TODO ARB type support
+//        if (spec[i].rd.tgtp)
+//            tgfree(spec[i].rd.tgtp);
+//        if (spec[i].wr.tgtp)
+//            tgfree(spec[i].wr.tgtp);
+        if (spec[i].wr.tpname)
+            dds_string_free(spec[i].wr.tpname);
+    }
+    os_free(spec);
+
+//    dds_delete(termcond);
+    common_fini ();
+    if (sleep_at_end) {
+        dds_sleepfor(DDS_SECS(sleep_at_end));
+    }
+    return (int) exitcode;
 }
