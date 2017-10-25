@@ -80,6 +80,7 @@ dds_init(void)
   const char * uri;
   char tmp[50];
 
+
   /* TODO: Proper init-once */
   if (os_atomic_inc32_nv (&dds_global.m_init_count) > 1)
   {
@@ -166,6 +167,7 @@ dds_init_impl(
                     dds_domain_default(), env_domain);
     goto fail;
   }
+
   if ( dds_domain_default() != domain &&  DDS_DOMAIN_DEFAULT != domain ) { //if a valid ID exists on configuration and not matching  the given ID
   		ret = DDS_ERRNO(DDS_RETCODE_ERROR,
   				"DDS Init failed: Inconsistent domain configuration detected: domain on configuration: %d, domain %d",
@@ -183,6 +185,8 @@ dds_init_impl(
     ret = DDS_ERRNO(DDS_RETCODE_ERROR, "RTPS configuration failed.");
     goto fail;
   }
+  dds_cfgst = NULL;
+
   ut_avlInit (&dds_domaintree_def, &dds_global.m_domains);
 
   /* Start monitoring the liveliness of all threads and renewing the
@@ -247,12 +251,19 @@ extern void dds_fini (void)
       nn_servicelease_free (gv.servicelease);
       downgrade_main_thread ();
       thread_states_fini ();
-      config_fini ();
-      os_mutexDestroy (&gv.static_logbuf_lock);
-      os_mutexDestroy (&dds_global.m_mutex);
     }
+
+    if (dds_cfgst != NULL) {
+      config_print_and_free_cfgst(dds_cfgst);
+      dds_cfgst = NULL;
+    }
+
+    config_fini ();
+    os_mutexDestroy (&gv.static_logbuf_lock);
+    os_mutexDestroy (&dds_global.m_mutex);
     os_osExit ();
     dds_string_free (dds_init_exe);
+    dds_global.m_default_domain = DDS_DOMAIN_DEFAULT;
     is_initialized=false;
   }
 }

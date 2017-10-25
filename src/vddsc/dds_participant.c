@@ -260,7 +260,7 @@ dds_lookup_participant(
                     if((size_t)ret < size) {
                         participants[ret] = iter->m_hdl;
                     }
-                    ret ++;
+                    ret++;
                 }
                 iter = iter->m_next;
             }

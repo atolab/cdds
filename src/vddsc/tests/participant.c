@@ -88,7 +88,7 @@ Test(vddsc_participant, create_and_delete) {
 
 
 /* Test for creating participant with no configuration file and with no environment variable */
-Test(vddsc_participant, create_with_no_conf_no_env, .init = os_osInit, .fini = os_osExit) {
+Test(vddsc_participant, create_with_no_conf_no_env) {
   dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
   dds_return_t status;
   dds_domainid_t domain_id;
@@ -121,7 +121,7 @@ Test(vddsc_participant, create_with_no_conf_no_env, .init = os_osInit, .fini = o
 }
 
 /* Test for creating participant with no configuration file and with valid environment variable */
-Test(vddsc_participant, create_with_no_conf_valid_env, .init = os_osInit, .fini = os_osExit) {
+Test(vddsc_participant, create_with_no_conf_valid_env) {
 
   dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
   dds_return_t status;
@@ -160,7 +160,7 @@ Test(vddsc_participant, create_with_no_conf_valid_env, .init = os_osInit, .fini 
 
 }
 
-Test(vddsc_participant, create_with_no_conf_invalid_env, .init = os_osInit, .fini = os_osExit) {
+Test(vddsc_participant, create_with_no_conf_invalid_env) {
 
 
   dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
@@ -193,7 +193,7 @@ Test(vddsc_participant, create_with_no_conf_invalid_env, .init = os_osInit, .fin
 
 }
 
-Test(vddsc_participant, create_with_no_conf_default_env, .init = os_osInit, .fini = os_osExit) {
+Test(vddsc_participant, create_with_no_conf_default_env) {
 
 
   dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
@@ -235,7 +235,7 @@ Test(vddsc_participant, create_with_no_conf_default_env, .init = os_osInit, .fin
 ////WITH CONF
 
 /* Test for creating participant with valid configuration file and with no environment variable */
-Test(vddsc_participant, create_with_conf_no_env, .init = os_osInit, .fini = os_osExit) {
+Test(vddsc_participant, create_with_conf_no_env) {
   dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
   dds_return_t status;
   dds_domainid_t domain_id;
@@ -277,10 +277,16 @@ Test(vddsc_participant, create_with_conf_no_env, .init = os_osInit, .fini = os_o
   cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_domainid(participant, domain_id)");
   cr_assert_eq(domain_id, valid_domain, "Retrieved domain ID must be valid");
 
+  dds_delete(participant2);
+  dds_delete(participant3);
+
+  os_free(env_uri_str);
+  os_free(env_mp_str);
+
 }
 
 /* Test for creating participant with valid configuration file and with valid environment variable */
-Test(vddsc_participant, create_with_conf_valid_env, .init = os_osInit, .fini = os_osExit) {
+Test(vddsc_participant, create_with_conf_valid_env) {
 
   dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
   dds_return_t status;
@@ -329,9 +335,13 @@ Test(vddsc_participant, create_with_conf_valid_env, .init = os_osInit, .fini = o
   dds_delete (participant2);
   dds_delete (participant5);
 
+  os_free(env_uri_str);
+  os_free(env_mp_str);
+
 }
 
-Test(vddsc_participant, create_with_conf_invalid_env, .init = os_osInit, .fini = os_osExit) {
+Test(vddsc_participant, create_with_conf_invalid_env)
+{
 
 
   dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
@@ -349,7 +359,6 @@ Test(vddsc_participant, create_with_conf_invalid_env, .init = os_osInit, .fini =
   env_mp_str = os_malloc(strlen("MAX_PARTICIPANTS") + strlen("=") + strlen(CONFIG_ENV_MAX_PARTICIPANTS) + 1);
   (void) sprintf(env_mp_str, "%s=%s", "MAX_PARTICIPANTS", CONFIG_ENV_MAX_PARTICIPANTS);
   os_putenv(env_mp_str);
-
   const char * env_uri = os_getenv("VORTEXDDS_URI");
   const char * env_domain = os_getenv("VORTEX_DOMAIN");
   dds_domainid_t env_domain_value = atoi (env_domain);
@@ -371,11 +380,13 @@ Test(vddsc_participant, create_with_conf_invalid_env, .init = os_osInit, .fini =
   cr_assert_lt(participant4, 0, "Invalid participant  must be received for DDS_DOMAIN_DEFAULT with invalid domain environment variable");
 
 
+  os_free(env_mp_str);
+  os_free(env_uri_str);
 
 }
 
-Test(vddsc_participant, create_with_conf_default_env, .init = os_osInit, .fini = os_osExit) {
-
+Test(vddsc_participant, create_with_conf_default_env)
+{
 
   dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
   dds_return_t status;
@@ -421,7 +432,33 @@ Test(vddsc_participant, create_with_conf_default_env, .init = os_osInit, .fini =
   dds_delete (participant2);
   dds_delete (participant4);
 
+  os_free(env_uri_str);
+  os_free(env_mp_str);
+
+
+
 }
+
+
+
+/* Test for creating participant with valid configuration file and with valid environment variable */
+Test(vddsc_participant, test_conf) {
+
+  dds_entity_t participant, participant2, participant3, participant4, participant5, participant6, participant7;
+  //invalid domain
+  participant = dds_create_participant (1, NULL, NULL);
+  cr_assert_lt(participant, 0, "Error must be received for invalid domain value");
+
+  participant2 = dds_create_participant (0, NULL, NULL);
+  cr_assert_gt(participant2, 0, "VALID?");
+
+
+
+  dds_delete(participant2);
+
+}
+
+
 
 Test(vddsc_participant_lookup, one) {
 
