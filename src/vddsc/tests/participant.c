@@ -1,6 +1,5 @@
 #include "dds.h"
 #include <criterion/criterion.h>
-#include <criterion/logging.h>
 #include "config_env.h"
 #include "os/os.h"
 
@@ -363,7 +362,7 @@ Test(vddsc_participant, create_with_conf_default_env)
 /* Test for creating participant with valid configuration file and with valid environment variable */
 Test(vddsc_participant, test_conf) {
 
-  dds_entity_t participant, participant2, participant3;
+  dds_entity_t participant, participant2;
   //invalid domain
   participant = dds_create_participant (1, NULL, NULL);
   cr_assert_lt(participant, 0, "Error must be received for invalid domain value");
@@ -423,8 +422,8 @@ Test(vddsc_participant_lookup, multiple) {
 
   num_of_found_pp = dds_lookup_participant( domain_id, participants, size);
   cr_assert_eq(num_of_found_pp, 2, "dds_lookup_participant(domain_id, participants, size)");
-  cr_assert(participants[0] == participant || participants[0] == participant2);
-  cr_assert(participants[1] == participant || participants[1] == participant2);
+  cr_assert(participants[0] == participant || participants[0] == participant2,"vddsc_participant_lookup");
+  cr_assert(participants[1] == participant || participants[1] == participant2,"vddsc_participant_lookup");
   cr_assert_neq(participants[0], participants[1], "dds_lookup_participant returned a participant twice");
 
   dds_delete (participant2);
@@ -455,8 +454,8 @@ Test(vddsc_participant_lookup, array_too_small) {
 
   num_of_found_pp = dds_lookup_participant( domain_id, participants, size);
   cr_assert_eq(num_of_found_pp, 3, "dds_lookup_participant(domain_id, participants, size)");
-  cr_assert(participants[0] == participant || participants[0] == participant2 || participants[0] == participant3);
-  cr_assert(participants[1] == participant || participants[1] == participant2 || participants[1] == participant3);
+  cr_assert(participants[0] == participant || participants[0] == participant2 || participants[0] == participant3,"vddsc_participant_lookup");
+  cr_assert(participants[1] == participant || participants[1] == participant2 || participants[1] == participant3,"vddsc_participant_lookup");
   cr_assert_neq(participants[0], participants[1], "dds_lookup_participant returned a participant twice");
 
   dds_delete (participant3);
@@ -584,7 +583,7 @@ Test(vddsc_participant_lookup, deleted) {
 
   num_of_found_pp = dds_lookup_participant( domain_id, participants, size);
   cr_assert_eq(num_of_found_pp, 1, "dds_lookup_participant did not return one participant");
-  cr_assert(participants[0] == participant);
+  cr_assert(participants[0] == participant,"vddsc_participant_lookup");
 
   dds_delete (participant);
 }
