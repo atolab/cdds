@@ -3514,7 +3514,6 @@ static struct reader * new_reader_guid
     nn_log (LC_DISCOVERY, "READER %x:%x:%x:%x ssm=%d\n", PGUID (rd->e.guid), rd->favours_ssm);
 #endif
 #endif
-  rd->in_sync = 0;
 
   ut_avlInit (&rd_writers_treedef, &rd->writers);
   ut_avlInit (&rd_local_writers_treedef, &rd->local_writers);
@@ -3523,11 +3522,9 @@ static struct reader * new_reader_guid
   match_reader_with_proxy_writers (rd, tnow);
   match_reader_with_local_writers (rd, tnow);
   sedp_write_reader (rd);
-  /* If no writers matched, must notify a wait_for_historical_data in OSPL. In Lite,
-     I would argue that wait_for_historical_data should look at the state in DDSI ...
-     but that coupling is problematic in OSPL. */
-  if (rd->xqos->durability.kind == NN_TRANSIENT_LOCAL_DURABILITY_QOS)
-    notify_wait_for_historical_data (NULL, &rd->e.guid);
+  /* Determine if the reader is synced with possible writers. */
+  if (rd->xqos->durability.kind != NN_VOLATILE_DURABILITY_QOS)
+    notify_wait_for_historical_data_impl(&rd->e.guid);
   return rd;
 }
 
