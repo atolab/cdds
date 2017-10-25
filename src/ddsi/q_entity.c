@@ -3859,6 +3859,8 @@ int delete_proxy_participant_by_guid (const struct nn_guid * guid, nn_wctime_t t
     return ERR_UNKNOWN_ENTITY;
   }
   nn_log (LC_DISCOVERY, "- deleting\n");
+  propagate_builtin_topic_cmparticipant(&(ppt->e), ppt->plist, timestamp, false);
+  propagate_builtin_topic_participant(&(ppt->e), ppt->plist, timestamp, false);
   remember_deleted_participant_guid (&ppt->e.guid);
   ephash_remove_proxy_participant_guid (ppt);
   os_mutexUnlock (&gv.lock);
