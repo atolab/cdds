@@ -34,7 +34,7 @@ set(MEMORYCHECK_SUPPRESSIONS_FILE "${CMAKE_SOURCE_DIR}/valgrind.supp" CACHE FILE
 # By default building the testing tree is enabled by including CTest, but
 # since not everybody has CUnit and/or Criterion installed, and because it is
 # not strictly required to build the product itself, switch to off by default.
-option(BUILD_TESTING "Build the testing tree." ON)
+option(BUILD_TESTING "Build the testing tree." OFF)
 include(CTest)
 
 # Build all executables and libraries into the top-level /bin and /lib folders.

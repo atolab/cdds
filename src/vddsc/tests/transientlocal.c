@@ -84,8 +84,8 @@ Test(vddsc_transient_local, late_joiner)
     ret = dds_read(rdr, samples, info, MAX_SAMPLES, MAX_SAMPLES);
     cr_log_info("Read cnt %d\n", ret);
     for(int i = 0; i < ret; i++) {
-        Space_Type1 *sample = (Space_Type1*)samples[i];
-        TRACE_SAMPLE("Read  ", (*sample));
+        Space_Type1 *s = (Space_Type1*)samples[i];
+        TRACE_SAMPLE("Read  ", (*s));
     }
     cr_assert_eq(ret, 4, "# read %d, expected 4", ret);
 

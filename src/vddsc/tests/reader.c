@@ -3215,7 +3215,9 @@ Test(vddsc_take_mask_wl, combination_of_states, .init=reader_init, .fini=reader_
 Test(vddsc_wait_for_historical_data, invalid_args, .init=reader_init, .fini=reader_fini)
 {
     dds_return_t ret;
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
     ret = dds_wait_for_historical_data(g_reader, -1);
+    OS_WARNING_MSVC_ON(28020);
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
 }
 /*************************************************************************************************/
