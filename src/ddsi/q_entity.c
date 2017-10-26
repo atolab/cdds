@@ -3307,10 +3307,29 @@ static int wait_for_reader_sync(struct reader *rd, os_time end)
 /* -1: error. 0: no sync/timeout. 1: synced. */
 static int wait_for_builtin_readers_sync(struct participant *pp, os_time end)
 {
+  os_time wait_duration;
+  os_time wait_end;
   int ret = 1;
   int i;
 
   assert(pp);
+
+  /*
+   * It could be that end is a long time in the future. It could also be that
+   * there are mis-behaving nodes within the system, causing our builtin readers
+   * to not get in sync (quickly). While in the mean time, the actual interresting
+   * reader could have become synced.
+   * To not wait too long (during this mis-behaving state), limit the wait for
+   * builtin sync to the startup mode duration.
+   */
+  /* TODO Until CHAM-142 is fixed we need to translate dds_duration to os_time */
+  wait_duration.tv_sec = (int32_t) (config.startup_mode_duration / T_SECOND);
+  wait_duration.tv_nsec = (int32_t) (config.startup_mode_duration % T_SECOND);
+  wait_end = os_timeAdd(os_timeGet(), wait_duration);
+  if (os_timeCompare(end, wait_end) > 0)
+  {
+    end = wait_end;
+  }
 
   for (i = 0; (i < (int) (sizeof (builtin_readers_tab) / sizeof (builtin_readers_tab[0]))) && (ret == 1); i++)
   {
@@ -3319,6 +3338,7 @@ static int wait_for_builtin_readers_sync(struct participant *pp, os_time end)
       ret = wait_for_reader_sync(rd, end);
     }
   }
+
   return ret;
 }
 
