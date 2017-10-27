@@ -277,7 +277,7 @@ Test(vddsc_participant, create_with_conf_invalid_env)
 {
 
 
-  dds_entity_t participant, participant2, participant3, participant4;
+  dds_entity_t participant, participant2, participant3;
   dds_domainid_t valid_domain=3;
   putenv("VORTEX_DOMAIN=-5");
 
@@ -315,7 +315,7 @@ Test(vddsc_participant, create_with_conf_invalid_env_abovemax)
 {
 
 
-  dds_entity_t participant, participant2, participant3, participant4;
+  dds_entity_t participant3;
   dds_domainid_t valid_domain=3;
   putenv("VORTEX_DOMAIN=231");
 
