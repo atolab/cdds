@@ -252,7 +252,7 @@ Use \"\" for default partition.\n",
 static void expand_append(char **dst, size_t *sz,size_t *pos, char c) {
     if (*pos == *sz) {
         *sz += 1024;
-        *dst = os_realloc(*dst, *sz);
+        *dst = dds_realloc(*dst, *sz);
     }
     (*dst)[*pos] = c;
     (*pos)++;
@@ -264,20 +264,20 @@ static char *expand_env(const char *name, char op, const char *alt) {
     const char *env = os_getenv(name);
     switch (op) {
     case 0:
-        return os_strdup(env ? env : "");
+        return dds_string_dup(env ? env : "");
     case '-':
-        return env ? os_strdup(env) : expand_envvars(alt);
+        return env ? dds_string_dup(env) : expand_envvars(alt);
     case '?':
         if (env)
-            return os_strdup(env);
+            return dds_string_dup(env);
         else {
             char *altx = expand_envvars(alt);
             error_exit("%s: %s\n", name, altx);
-            os_free(altx);
+            dds_free(altx);
             return NULL;
         }
     case '+':
-        return env ? expand_envvars(alt) : os_strdup("");
+        return env ? expand_envvars(alt) : dds_string_dup("");
     default:
         exit(2);
     }
@@ -293,13 +293,13 @@ static char *expand_envbrace(const char **src) {
     if (**src == 0)
         goto err;
 
-    name = os_malloc((size_t) (*src - start) + 1);
+    name = dds_alloc((size_t) (*src - start) + 1);
     memcpy(name, start, (size_t) (*src - start));
     name[*src - start] = 0;
     if (**src == '}') {
         (*src)++;
         x = expand_env(name, 0, NULL);
-        os_free(name);
+        dds_free(name);
         return x;
     } else {
         const char *altstart;
@@ -329,13 +329,13 @@ static char *expand_envbrace(const char **src) {
         if (**src == 0)
             goto err;
         assert(**src == '}');
-        alt = os_malloc((size_t) (*src - altstart) + 1);
+        alt = dds_alloc((size_t) (*src - altstart) + 1);
         memcpy(alt, altstart, (size_t) (*src - altstart));
         alt[*src - altstart] = 0;
         (*src)++;
         x = expand_env(name, op, alt);
-        os_free(alt);
-        os_free(name);
+        dds_free(alt);
+        dds_free(name);
         return x;
     }
 
@@ -350,11 +350,11 @@ static char *expand_envsimple(const char **src) {
     while (**src && (isalnum((unsigned char)**src) || **src == '_'))
         (*src)++;
     assert(*src > start);
-    name = os_malloc((size_t) (*src - start) + 1);
+    name = dds_alloc((size_t) (*src - start) + 1);
     memcpy(name, start, (size_t) (*src - start));
     name[*src - start] = 0;
     x = expand_env(name, 0, NULL);
-    os_free(name);
+    dds_free(name);
     return x;
 }
 
@@ -371,7 +371,7 @@ static char *expand_envvars(const char *src0) {
     /* Expands $X, ${X}, ${X:-Y}, ${X:+Y}, ${X:?Y} forms */
     const char *src = src0;
     size_t sz = strlen(src) + 1, pos = 0;
-    char *dst = os_malloc(sz);
+    char *dst = dds_alloc(sz);
     while (*src) {
         if (*src == '\\') {
             src++;
@@ -394,7 +394,7 @@ static char *expand_envvars(const char *src0) {
             xp = x;
             while (*xp)
                 expand_append(&dst, &sz, &pos, *xp++);
-            os_free(x);
+            dds_free(x);
         } else {
             expand_append(&dst, &sz, &pos, *src++);
         }
@@ -412,7 +412,7 @@ static unsigned split_partitions(const char ***p_ps, char **p_bufcopy, const cha
     for (b = buf; *b; b++) {
         nps += (*b == ',');
     }
-    ps = os_malloc(nps * sizeof(*ps));
+    ps = dds_alloc(nps * sizeof(*ps));
     bufcopy = expand_envvars(buf);
     i = 0; bc = bufcopy;
     while (1) {
@@ -436,8 +436,8 @@ static int set_pub_partition(dds_entity_t pub, const char *buf) {
     unsigned nps = split_partitions(&ps, &bufcopy, buf);
     dds_return_t rc = change_publisher_partitions(pub, nps, ps);
     error_report(rc, "set_pub_partition failed: ");
-    os_free(bufcopy);
-    os_free((char **)ps);
+    dds_free(bufcopy);
+    dds_free((char **)ps);
     return 0;
 }
 
@@ -448,8 +448,8 @@ static int set_sub_partition(dds_entity_t sub, const char *buf) {
     unsigned nps = split_partitions(&ps, &bufcopy, buf);
     dds_return_t rc = change_subscriber_partitions(sub, nps, ps);
     error_report(rc, "set_partition failed: %s (%d)\n");
-    os_free(bufcopy);
-    os_free(ps);
+    dds_free(bufcopy);
+    dds_free(ps);
     return 0;
 }
 #endif
@@ -518,7 +518,7 @@ static int read_int_w_tstamp(struct tstamp_t *tstamp, char *buf, int bufsize, in
 static int read_value(char *command, int *key, struct tstamp_t *tstamp, char **arg) {
     char buf[1024];
     int c;
-    if (*arg) { os_free(*arg); *arg = NULL; }
+    if (*arg) { dds_free(*arg); *arg = NULL; }
     tstamp->isabs = 0;
     tstamp->t = 0;
     do {
@@ -559,7 +559,7 @@ static int read_value(char *command, int *key, struct tstamp_t *tstamp, char **a
                 buf[i++] = (char) c;
             }
             buf[i] = 0;
-            *arg = os_strdup(buf);
+            *arg = dds_string_dup(buf);
             ungetc(c, stdin);
             return 1;
         }
@@ -595,10 +595,10 @@ static int read_value(char *command, int *key, struct tstamp_t *tstamp, char **a
 //
 //    line = NULL;
 //    do {
-//        if (n == sz) line = os_realloc(line, sz += 256);
+//        if (n == sz) line = dds_realloc(line, sz += 256);
 //        line[n++] = (char) c;
 //    } while ((c = getc(stdin)) != EOF && c != '\n');
-//    if (n == sz) line = os_realloc(line, sz += 256);
+//    if (n == sz) line = dds_realloc(line, sz += 256);
 //    line[n++] = 0;
 //    *count = (int) (n-1);
 //    return line;
@@ -669,7 +669,7 @@ static void getl_init_editline(struct getl_arg *arg, int fd) {
 //        fclose(arg->u.el.el_fp);
 //#endif
 //    } else {
-//        os_free(arg->u.s.lastline);
+//        dds_free(arg->u.s.lastline);
 //    }
 //}
 //
@@ -682,7 +682,7 @@ static void getl_init_editline(struct getl_arg *arg, int fd) {
 //        return NULL;
 //#endif
 //    } else {
-//        os_free(arg->u.s.lastline);
+//        dds_free(arg->u.s.lastline);
 //        return arg->u.s.lastline = getl_simple(arg->u.s.fd, count);
 //    }
 //}
@@ -784,8 +784,8 @@ static int getkeyval_K256(dds_entity_t rd, int32_t *key, dds_instance_handle_t i
 //    *localId = u.s.localId;
 //}
 
-static void print_sampleinfo(unsigned long long *tstart, unsigned long long tnow, const dds_sample_info_t *si, const char *tag) {
-    unsigned long long relt;
+static void print_sampleinfo(dds_time_t *tstart, dds_time_t tnow, const dds_sample_info_t *si, const char *tag) {
+    dds_time_t relt;
 //    uint32_t phSystemId, phLocalId, ihSystemId, ihLocalId;
     char isc = si2isc(si), ssc = si2ssc(si), vsc = si2vsc(si);
     const char *sep;
@@ -801,7 +801,7 @@ static void print_sampleinfo(unsigned long long *tstart, unsigned long long tnow
     if (print_metadata & PM_TOPIC)
         n += printf ("%s", tag);
     if (print_metadata & PM_TIME)
-        n += printf ("%s%u.%09u", n > 0 ? " " : "", (unsigned) (relt / 1000000000), (unsigned) (relt % 1000000000));
+        n += printf ("%s%"PRId64".%09"PRId64, n > 0 ? " " : "", (relt / DDS_NSECS_IN_SEC), (relt % DDS_NSECS_IN_SEC));
     sep = " : ";
     if (print_metadata & PM_PHANDLE)
         n += printf ("%s%" PRIu64, n > 0 ? sep : "", si->publication_handle), sep = " ";
@@ -827,7 +827,7 @@ static void print_sampleinfo(unsigned long long *tstart, unsigned long long tnow
         printf(" : ");
 }
 
-static void print_K(unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *si, int32_t keyval, uint32_t seq, int (*getkeyval) (dds_entity_t rd, int32_t *key, dds_instance_handle_t ih)) {
+static void print_K(dds_time_t *tstart, dds_time_t tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *si, int32_t keyval, uint32_t seq, int (*getkeyval) (dds_entity_t rd, int32_t *key, dds_instance_handle_t ih)) {
     int result;
     os_flockfile(stdout);
     print_sampleinfo(tstart, tnow, si, tag);
@@ -862,37 +862,37 @@ static void print_K(unsigned long long *tstart, unsigned long long tnow, dds_ent
     os_funlockfile(stdout);
 }
 
-static void print_seq_KS(unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, KeyedSeq **mseq, int count) {
+static void print_seq_KS(dds_time_t *tstart, dds_time_t tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, KeyedSeq **mseq, int count) {
     int i;
     for (i = 0; i < count; i++)
         print_K(tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_KS);
 }
 
-static void print_seq_K32(unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed32 **mseq, int count) {
+static void print_seq_K32(dds_time_t *tstart, dds_time_t tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed32 **mseq, int count) {
     int i;
     for (i = 0; i < count; i++)
         print_K(tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K32);
 }
 
-static void print_seq_K64(unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed64 **mseq, int count) {
+static void print_seq_K64(dds_time_t *tstart, dds_time_t tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed64 **mseq, int count) {
     int i;
     for (i = 0; i < count; i++)
         print_K(tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K64);
 }
 
-static void print_seq_K128(unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed128 **mseq, int count) {
+static void print_seq_K128(dds_time_t *tstart, dds_time_t tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed128 **mseq, int count) {
     int i;
     for (i = 0; i < count; i++)
         print_K(tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K128);
 }
 
-static void print_seq_K256(unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed256 **mseq, int count) {
+static void print_seq_K256(dds_time_t *tstart, dds_time_t tnow, dds_entity_t rd, const char *tag, const dds_sample_info_t *iseq, Keyed256 **mseq, int count) {
     int i;
     for (i = 0; i < count; i++)
         print_K(tstart, tnow, rd, tag, &iseq[i], mseq[i]->keyval, mseq[i]->seq, getkeyval_K256);
 }
 
-static void print_seq_OU(unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd __attribute__ ((unused)), const char *tag, const dds_sample_info_t *si, const OneULong **mseq, int count) {
+static void print_seq_OU(dds_time_t *tstart, dds_time_t tnow, dds_entity_t rd __attribute__ ((unused)), const char *tag, const dds_sample_info_t *si, const OneULong **mseq, int count) {
     int i;
     for (i = 0; i < count; i++)
     {
@@ -913,7 +913,7 @@ static void print_seq_OU(unsigned long long *tstart, unsigned long long tnow, dd
     }
 }
 
-static void print_seq_ARB(unsigned long long *tstart, unsigned long long tnow, dds_entity_t rd __attribute__ ((unused)), const char *tag, const dds_sample_info_t *iseq, const void **mseq, const struct tgtopic *tgtp) {
+static void print_seq_ARB(dds_time_t *tstart, dds_time_t tnow, dds_entity_t rd __attribute__ ((unused)), const char *tag, const dds_sample_info_t *iseq, const void **mseq, const struct tgtopic *tgtp) {
 // TODO ARB type support
 //    unsigned i;
 //    for (i = 0; i < mseq->_length; i++)
@@ -1116,8 +1116,8 @@ union data {
 
 static void pub_do_auto(const struct writerspec *spec) {
     int result;
-    dds_instance_handle_t *handle = (dds_instance_handle_t*) os_malloc(sizeof(dds_instance_handle_t)*nkeyvals);
-    uint64_t ntot = 0, tfirst, tlast, tprev, tfirst0, tstop;
+    dds_instance_handle_t *handle = (dds_instance_handle_t*) dds_alloc(sizeof(dds_instance_handle_t)*nkeyvals);
+    dds_time_t ntot = 0, tfirst, tlast, tprev, tfirst0, tstop;
     struct hist *hist = hist_new(30, 1000, 0);
     int k = 0;
     union data d;
@@ -1161,11 +1161,11 @@ static void pub_do_auto(const struct writerspec *spec) {
 
     dds_sleepfor(DDS_SECS(1)); // TODO is this sleep necessary?
     d.seq_keyval.keyval = 0;
-    tfirst0 = tfirst = tprev = nowll();
+    tfirst0 = tfirst = tprev = dds_time();
     if (dur != 0.0)
-        tstop = tfirst0 + (unsigned long long) (1e9 * dur);
+        tstop = tfirst0 + DDS_SECS(dur);
     else
-        tstop = UINT64_MAX;
+        tstop = INT64_MAX;
 
     if (nkeyvals == 0) {
         while (!termflag && tprev < tstop) {
@@ -1182,15 +1182,15 @@ static void pub_do_auto(const struct writerspec *spec) {
                 d.seq++;
                 ntot++;
                 if ((d.seq % 16) == 0) {
-                    unsigned long long t = nowll();
-                    hist_record(hist, (t - tprev) / 16, 16);
-                    if (t < tfirst + 4 * 1000000000ll) {
+                    dds_time_t t = dds_time();
+                    hist_record(hist, (uint64_t)((t - tprev) / 16), 16);
+                    if (t < tfirst + DDS_SECS(4)) {
                         tprev = t;
                     } else {
                         tlast = t;
                         hist_print(hist, tlast - tfirst, 1);
                         tfirst = tprev;
-                        tprev = nowll();
+                        tprev = dds_time();
                     }
                 }
             }
@@ -1205,21 +1205,21 @@ static void pub_do_auto(const struct writerspec *spec) {
             }
 
             {
-                unsigned long long t = nowll();
+                dds_time_t t = dds_time();
                 d.seq_keyval.keyval = (d.seq_keyval.keyval + 1) % (int32_t)nkeyvals;
                 d.seq++;
                 ntot++;
-                hist_record(hist, t - tprev, 1);
-                if (t >= tfirst + 4 * 1000000000ll) {
+                hist_record(hist, (uint64_t)(t - tprev), 1);
+                if (t >= tfirst + DDS_SECS(4)) {
                     tlast = t;
                     hist_print(hist, tlast - tfirst, 1);
                     tfirst = tprev;
-                    t = nowll();
+                    t = dds_time();
                 }
                 if (++bi == spec->burstsize) {
                     while (((ntot / spec->burstsize) / ((t - tfirst0) / 1e9 + 5e-3)) > spec->writerate && !termflag) {
                         dds_sleepfor(DDS_MSECS(10));
-                        t = nowll ();
+                        t = dds_time();
                     }
                     bi = 0;
                 }
@@ -1227,14 +1227,14 @@ static void pub_do_auto(const struct writerspec *spec) {
             }
         }
     }
-    tlast = nowll();
+    tlast = dds_time();
     hist_print(hist, tlast - tfirst, 0);
     hist_free(hist);
-    printf ("total writes: %" PRIu64 " (%e/s)\n", ntot, ntot * 1e9 / (tlast - tfirst0));
+    printf ("total writes: %" PRId64 " (%e/s)\n", ntot, ntot * 1e9 / (tlast - tfirst0));
     if (spec->topicsel == KS) {
         dds_free(d.ks.baggage._buffer);
     }
-    os_free(handle);
+    dds_free(handle);
 }
 
 static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq) {
@@ -1335,7 +1335,7 @@ static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq) {
     if (command == ':')
         return arg;
     else {
-        os_free(arg);
+        dds_free(arg);
         return NULL;
     }
 }
@@ -1412,7 +1412,7 @@ static char *pub_do_nonarb(const struct writerspec *spec, uint32_t *seq) {
 //            line = NULL;
 //            break;
 //        case ':':
-//            ret = os_strdup(line+1);
+//            ret = dds_string_dup(line+1);
 //            line = NULL;
 //            break;
 //        default:
@@ -1519,10 +1519,10 @@ static void init_eseq_admin(struct eseq_admin *ea, unsigned nkeys) {
 }
 
 static void fini_eseq_admin(struct eseq_admin *ea) {
-    os_free(ea->ph);
+    dds_free(ea->ph);
     for (unsigned i = 0; i < ea->nph; i++)
-        os_free(ea->eseq[i]);
-    os_free(ea->eseq);
+        dds_free(ea->eseq[i]);
+    dds_free(ea->eseq);
 }
 
 static int check_eseq(struct eseq_admin *ea, unsigned seq, unsigned keyval, const dds_instance_handle_t pubhandle) {
@@ -1539,10 +1539,10 @@ static int check_eseq(struct eseq_admin *ea, unsigned seq, unsigned keyval, cons
             ea->eseq[i][keyval] = seq + ea->nkeys;
             return seq == e;
         }
-    ea->ph = os_realloc(ea->ph, (ea->nph + 1) * sizeof(*ea->ph));
+    ea->ph = dds_realloc(ea->ph, (ea->nph + 1) * sizeof(*ea->ph));
     ea->ph[ea->nph] = pubhandle;
-    ea->eseq = os_realloc(ea->eseq, (ea->nph + 1) * sizeof(*ea->eseq));
-    ea->eseq[ea->nph] = os_malloc(ea->nkeys * sizeof(*ea->eseq[ea->nph]));
+    ea->eseq = dds_realloc(ea->eseq, (ea->nph + 1) * sizeof(*ea->eseq));
+    ea->eseq[ea->nph] = dds_alloc(ea->nkeys * sizeof(*ea->eseq[ea->nph]));
     eseq = ea->eseq[ea->nph];
 // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
     OS_WARNING_MSVC_OFF(6386);
@@ -1636,14 +1636,13 @@ static uint32_t subthread(void *vspec) {
     }
 
     {
-        void **mseq = (void **) os_malloc(sizeof(void*) * (spec->read_maxsamples));
+        void **mseq = (void **) dds_alloc(sizeof(void*) * (spec->read_maxsamples));
 
-        dds_sample_info_t *iseq = (dds_sample_info_t *) os_malloc(sizeof(dds_sample_info_t) * spec->read_maxsamples);
+        dds_sample_info_t *iseq = (dds_sample_info_t *) dds_alloc(sizeof(dds_sample_info_t) * spec->read_maxsamples);
         dds_duration_t timeout = (uint64_t)100000000;
-        dds_attach_t *xs = os_malloc(sizeof(dds_attach_t) * nxs);
-        memset(xs, 0, sizeof(dds_attach_t) * nxs);
+        dds_attach_t *xs = dds_alloc(sizeof(dds_attach_t) * nxs);
 
-        unsigned long long tstart = 0, tfirst = 0, tprint = 0;
+        dds_time_t tstart = 0, tfirst = 0, tprint = 0;
         long long out_of_seq = 0, nreceived = 0, last_nreceived = 0;
         long long nreceived_bytes = 0, last_nreceived_bytes = 0;
         struct eseq_admin eseq_admin;
@@ -1655,7 +1654,7 @@ static uint32_t subthread(void *vspec) {
         }
 
         while (!termflag && !once_mode) {
-            unsigned long long tnow;
+            dds_time_t tnow;
             unsigned gi;
 
             if (spec->polling) {
@@ -1670,7 +1669,7 @@ static uint32_t subthread(void *vspec) {
                 }
             }
 
-            tnow = nowll();
+            tnow = dds_time();
             for (gi = 0; gi < (spec->polling ? 1 : nxs); gi++) {
                 dds_entity_t cond = !spec->polling && xs[gi] != 0 ? (dds_entity_t) xs[gi] : 0;
                 int32_t i;
@@ -1781,13 +1780,13 @@ static uint32_t subthread(void *vspec) {
                         }
                         nreceived++;
                         nreceived_bytes += size;
-                        if (tnow - tprint >= 1000000000ll) {
-                            const unsigned long long tdelta_ns = tnow - tfirst;
-                            const unsigned long long tdelta_s = tdelta_ns / 1000000000;
-                            const unsigned tdelta_ms = ((tdelta_ns % 1000000000) + 500000) / 1000000;
+                        if (tnow - tprint >= DDS_SECS(1)) {
+                            const dds_time_t tdelta_ns = tnow - tfirst;
+                            const dds_time_t tdelta_s = tdelta_ns / DDS_NSECS_IN_SEC;
+                            const dds_time_t tdelta_ms = ((tdelta_ns % DDS_NSECS_IN_SEC) + 500000) / DDS_NSECS_IN_MSEC;
                             const long long ndelta = nreceived - last_nreceived;
                             const double rate_Mbps = (nreceived_bytes - last_nreceived_bytes) * 8 / 1e6;
-                            printf ("%llu.%03u ntot %lld nseq %lld ndelta %lld rate %.2f Mb/s\n",
+                            printf ("%"PRId64".%03"PRId64" ntot %lld nseq %lld ndelta %lld rate %.2f Mb/s\n",
                                     tdelta_s, tdelta_ms, nreceived, out_of_seq, ndelta, rate_Mbps);
                             last_nreceived = nreceived;
                             last_nreceived_bytes = nreceived_bytes;
@@ -1807,7 +1806,7 @@ static uint32_t subthread(void *vspec) {
                 }
             }
         }
-        os_free(xs);
+        dds_free(xs);
 
         if (spec->mode == MODE_PRINT || spec->mode == MODE_DUMP || once_mode) {
             // TODO coherency support
@@ -1836,13 +1835,13 @@ static uint32_t subthread(void *vspec) {
                 if (spec->mode == MODE_PRINT || spec->mode == MODE_DUMP) {
                     switch (spec->topicsel) {
                     case UNSPEC: assert(0);
-                    case KS:   print_seq_KS(&tstart, nowll(), rd, tag, iseq, (KeyedSeq **) mseq, rc); break;
-                    case K32:  print_seq_K32(&tstart, nowll(), rd, tag, iseq, (Keyed32 **) mseq, rc); break;
-                    case K64:  print_seq_K64(&tstart, nowll(), rd, tag, iseq, (Keyed64 **) mseq, rc); break;
-                    case K128: print_seq_K128(&tstart, nowll(), rd, tag, iseq, (Keyed128 **) mseq, rc); break;
-                    case K256: print_seq_K256(&tstart, nowll(), rd, tag, iseq, (Keyed256 **) mseq, rc); break;
-                    case OU:   print_seq_OU(&tstart, nowll(), rd, tag, iseq, (const OneULong **) mseq, rc); break;
-                    case ARB:  print_seq_ARB(&tstart, nowll(), rd, tag, iseq, (const void **) mseq, spec->tgtp); break;
+                    case KS:   print_seq_KS(&tstart, dds_time(), rd, tag, iseq, (KeyedSeq **) mseq, rc); break;
+                    case K32:  print_seq_K32(&tstart, dds_time(), rd, tag, iseq, (Keyed32 **) mseq, rc); break;
+                    case K64:  print_seq_K64(&tstart, dds_time(), rd, tag, iseq, (Keyed64 **) mseq, rc); break;
+                    case K128: print_seq_K128(&tstart, dds_time(), rd, tag, iseq, (Keyed128 **) mseq, rc); break;
+                    case K256: print_seq_K256(&tstart, dds_time(), rd, tag, iseq, (Keyed256 **) mseq, rc); break;
+                    case OU:   print_seq_OU(&tstart, dds_time(), rd, tag, iseq, (const OneULong **) mseq, rc); break;
+                    case ARB:  print_seq_ARB(&tstart, dds_time(), rd, tag, iseq, (const void **) mseq, spec->tgtp); break;
                     }
                 }
             }
@@ -1852,8 +1851,8 @@ static uint32_t subthread(void *vspec) {
             rc = dds_return_loan(rd, mseq, spec->read_maxsamples);
             error_report(rc, "dds_return_loan failed");
         }
-        os_free(iseq);
-        os_free(mseq);
+        dds_free(iseq);
+        dds_free(mseq);
         if (spec->mode == MODE_CHECK)
             printf ("received: %lld, out of seq: %lld\n", nreceived, out_of_seq);
         fini_eseq_admin(&eseq_admin);
@@ -1888,7 +1887,7 @@ static uint32_t subthread(void *vspec) {
 }
 
 static uint32_t autotermthread(void *varg __attribute__((unused))) {
-    unsigned long long tstop, tnow;
+    dds_time_t tstop, tnow;
     dds_return_t rc;
     dds_entity_t ws;
 
@@ -1897,26 +1896,26 @@ static uint32_t autotermthread(void *varg __attribute__((unused))) {
 
     assert(dur > 0);
 
-    tnow = nowll();
-    tstop = tnow + (unsigned long long) (1e9 * dur);
+    tnow = dds_time();
+    tstop = tnow + DDS_SECS(dur);
 
     ws = dds_create_waitset(dp);
     rc = dds_waitset_attach(ws, termcond, termcond);
     error_abort(rc, "dds_waitset_attach(termcomd)");
 
-    tnow = nowll();
+    tnow = dds_time();
     while (!termflag && tnow < tstop) {
-        unsigned long long dt = tstop - tnow;
+        dds_time_t dt = tstop - tnow;
         dds_duration_t timeout;
-        int64_t xsec = (int64_t) (dt / 1000000000);
-        uint64_t xnanosec = (uint64_t) (dt % 1000000000);
+        int64_t xsec = dt / DDS_NSECS_IN_SEC;
+        int64_t xnanosec = dt % DDS_NSECS_IN_SEC;
         timeout = DDS_SECS(xsec)+xnanosec;
 
         if ((rc = dds_waitset_wait(ws, wsresults, wsresultsize, timeout)) < DDS_RETCODE_OK) {
             printf ("wait: error %s\n", dds_err_str(rc));
             break;
         }
-        tnow = nowll();
+        tnow = dds_time();
     }
 
     rc = dds_waitset_detach(ws, termcond);
@@ -1940,11 +1939,11 @@ static char *read_line_from_textfile(FILE *fp) {
     size_t sz = 0, n = 0;
     int c;
     while ((c = fgetc(fp)) != EOF && c != '\n') {
-        if (n == sz) str = os_realloc(str, sz += 256);
+        if (n == sz) str = dds_realloc(str, sz += 256);
         str[n++] = (char)c;
     }
     if (c != EOF || n > 0) {
-        if (n == sz) str = os_realloc(str, sz += 1);
+        if (n == sz) str = dds_realloc(str, sz += 1);
         str[n] = 0;
     } else if (ferror(fp)) {
         error_exit("error reading file, errno = %d (%s)\n", os_getErrno(), os_strerror(os_getErrno()));
@@ -2048,7 +2047,7 @@ static void addspec(unsigned whatfor, unsigned *specsofar, unsigned *specidx, st
     {
         struct spec *s;
         (*specidx)++;
-        *spec = os_realloc(*spec, (*specidx + 1) * sizeof(**spec));
+        *spec = dds_realloc(*spec, (*specidx + 1) * sizeof(**spec));
         s = &(*spec)[*specidx];
         s->tp = 0;
         s->cftp = 0;
@@ -2072,7 +2071,7 @@ static void addspec(unsigned whatfor, unsigned *specsofar, unsigned *specidx, st
 }
 
 static void set_print_mode(const char *optarg) {
-    char *copy = os_strdup(optarg), *cursor = copy, *tok;
+    char *copy = dds_string_dup(optarg), *cursor = copy, *tok;
     while ((tok = os_strsep(&cursor, ",")) != NULL) {
         int enable;
         if (strncmp(tok, "no", 2) == 0)
@@ -2121,7 +2120,7 @@ static void set_print_mode(const char *optarg) {
             }
         }
     }
-    os_free(copy);
+    dds_free(copy);
 }
 
 int MAIN(int argc, char *argv[]) {
@@ -2131,11 +2130,11 @@ int MAIN(int argc, char *argv[]) {
     dds_listener_t *wrlistener = dds_listener_create(NULL);
 
     struct qos *qos;
-    const char **qtopic = (const char **) os_malloc(sizeof(char *) * argc);
-    const char **qreader = (const char **) os_malloc(sizeof(char *) * (2+argc));
-    const char **qwriter = (const char **) os_malloc(sizeof(char *) * (2+argc));
-    const char **qpublisher = (const char **) os_malloc(sizeof(char *) * (2+argc));
-    const char **qsubscriber = (const char **) os_malloc(sizeof(char *) * (2+argc));
+    const char **qtopic = (const char **) dds_alloc(sizeof(char *) * argc);
+    const char **qreader = (const char **) dds_alloc(sizeof(char *) * (2+argc));
+    const char **qwriter = (const char **) dds_alloc(sizeof(char *) * (2+argc));
+    const char **qpublisher = (const char **) dds_alloc(sizeof(char *) * (2+argc));
+    const char **qsubscriber = (const char **) dds_alloc(sizeof(char *) * (2+argc));
     int nqtopic = 0, nqreader = 0, nqwriter = 0;
     int nqpublisher = 0, nqsubscriber = 0;
     int opt, pos;
@@ -2231,7 +2230,7 @@ int MAIN(int argc, char *argv[]) {
         case 'T': {
             char *p;
             addspec(SPEC_TOPICNAME, &spec_sofar, &specidx, &spec, want_reader);
-            spec[specidx].topicname = (const char *) os_strdup(os_get_optarg());
+            spec[specidx].topicname = (const char *) dds_string_dup(os_get_optarg());
             if ((p = strchr(spec[specidx].topicname, ':')) != NULL) {
                 double d;
                 int dpos, have_to = 0;
@@ -2373,7 +2372,7 @@ int MAIN(int argc, char *argv[]) {
         }
         break;
         case 'S': {
-            char *copy = os_strdup(os_get_optarg()), *tok, *lasts;
+            char *copy = dds_string_dup(os_get_optarg()), *tok, *lasts;
             if (copy == NULL)
                 abort();
             tok = os_strtok_r(copy, ",", &lasts);
@@ -2410,7 +2409,7 @@ int MAIN(int argc, char *argv[]) {
                 }
                 tok = os_strtok_r(NULL, ",", &lasts);
             }
-            os_free(copy);
+            dds_free(copy);
         }
         break;
         case 'z': {
@@ -2444,12 +2443,12 @@ int MAIN(int argc, char *argv[]) {
         if (spec[i].topicname == NULL) {
             switch (spec[i].rd.topicsel) {
             case UNSPEC: assert(0);
-            case KS: spec[i].topicname = os_strdup("PubSub"); break;
-            case K32: spec[i].topicname = os_strdup("PubSub32"); break;
-            case K64: spec[i].topicname = os_strdup("PubSub64"); break;
-            case K128: spec[i].topicname = os_strdup("PubSub128"); break;
-            case K256: spec[i].topicname = os_strdup("PubSub256"); break;
-            case OU: spec[i].topicname = os_strdup("PubSubOU"); break;
+            case KS: spec[i].topicname = dds_string_dup("PubSub"); break;
+            case K32: spec[i].topicname = dds_string_dup("PubSub32"); break;
+            case K64: spec[i].topicname = dds_string_dup("PubSub64"); break;
+            case K128: spec[i].topicname = dds_string_dup("PubSub128"); break;
+            case K256: spec[i].topicname = dds_string_dup("PubSub256"); break;
+            case OU: spec[i].topicname = dds_string_dup("PubSubOU"); break;
             case ARB: error_exit("-K ARB requires specifying a topic name\n"); break;
             }
             assert(spec[i].topicname != NULL);
@@ -2500,7 +2499,7 @@ int MAIN(int argc, char *argv[]) {
     set_systemid_env();
 
     {
-        char **ps = (char **) os_malloc(sizeof(char *) * (argc - os_get_optind()));
+        char **ps = (char **) dds_alloc(sizeof(char *) * (argc - os_get_optind()));
         for (i = 0; i < (unsigned) (argc - os_get_optind()); i++)
             ps[i] = expand_envvars(argv[(unsigned) os_get_optind() + i]);
         if (want_reader) {
@@ -2516,8 +2515,8 @@ int MAIN(int argc, char *argv[]) {
             free_qos(qos);
         }
         for (i = 0; i < (unsigned) (argc - os_get_optind()); i++)
-            os_free(ps[i]);
-        os_free(ps);
+            dds_free(ps[i]);
+        dds_free(ps);
     }
 
 
@@ -2594,7 +2593,7 @@ int MAIN(int argc, char *argv[]) {
         printf("Wait for matching reader: unsupported\n");
 //        TODO Reimplement wait_for_matching_reader functionality via wait on status subscription matched
 //        struct qos *q = NULL;
-//        uint64_t tnow = nowll();
+//        uint64_t tnow = dds_time();
 //        uint64_t tend = tnow + (uint64_t) (wait_for_matching_reader_timeout >= 0 ? (wait_for_matching_reader_timeout * 1e9 + 0.5) : 0);
 //        DDS_InstanceHandleSeq *sh = DDS_InstanceHandleSeq__alloc();
 //        dds_instance_handle_t pphandle;
@@ -2632,12 +2631,12 @@ int MAIN(int argc, char *argv[]) {
 //                    }
 //                }
 //            }
-//            tnow = nowll();
+//            tnow = dds_time();
 //            if (m != 0 && tnow < tend) {
 //                uint64_t tdelta = (tend-tnow) < T_SECOND/10 ? tend-tnow : T_SECOND/10;
 //                os_time delay = { (os_timeSec) (tdelta / T_SECOND), (os_int32) (tdelta % T_SECOND)};
 //                os_nanoSleep(delay);
-//                tnow = nowll();
+//                tnow = dds_time();
 //            }
 //        } while(m != 0 && tnow < tend);
 //        free_qos(q);
@@ -2665,8 +2664,8 @@ int MAIN(int argc, char *argv[]) {
                 os_error_exit(osres, "Error: cannot create thread pubthread_auto");
                 break;
             case WRM_INPUT:
-                wsl = os_malloc(sizeof(*wsl));
-                spec[i].wr.tpname = os_strdup(spec[i].topicname);
+                wsl = dds_alloc(sizeof(*wsl));
+                spec[i].wr.tpname = dds_string_dup(spec[i].topicname);
                 wsl->spec = &spec[i].wr;
                 if (wrspecs) {
                     wsl->next = wrspecs->next;
@@ -2730,25 +2729,25 @@ int MAIN(int argc, char *argv[]) {
         wrspecs = m;
         while ((m = wrspecs) != NULL) {
             wrspecs = wrspecs->next;
-            os_free(m);
+            dds_free(m);
         }
     }
 
     dds_listener_delete(wrlistener);
     dds_listener_delete(rdlistener);
 
-    os_free((char **) qtopic);
-    os_free((char **) qpublisher);
-    os_free((char **) qsubscriber);
-    os_free((char **) qreader);
-    os_free((char **) qwriter);
+    dds_free((char **) qtopic);
+    dds_free((char **) qpublisher);
+    dds_free((char **) qsubscriber);
+    dds_free((char **) qreader);
+    dds_free((char **) qwriter);
 
     for (i = 0; i <= specidx; i++) {
-        if(spec[i].topicname) os_free((char *)spec[i].topicname);
-        if(spec[i].cftp_expr) os_free((char *)spec[i].cftp_expr);
-        if(spec[i].metadata) os_free(spec[i].metadata);
-        if(spec[i].typename) os_free(spec[i].typename);
-        if(spec[i].keylist) os_free(spec[i].keylist);
+        if(spec[i].topicname) dds_free((char *)spec[i].topicname);
+        if(spec[i].cftp_expr) dds_free((char *)spec[i].cftp_expr);
+        if(spec[i].metadata) dds_free(spec[i].metadata);
+        if(spec[i].typename) dds_free(spec[i].typename);
+        if(spec[i].keylist) dds_free(spec[i].keylist);
         assert(spec[i].wr.tgtp == spec[i].rd.tgtp); /* so no need to free both */
 //        TODO ARB type support
 //        if (spec[i].rd.tgtp)
@@ -2758,7 +2757,7 @@ int MAIN(int argc, char *argv[]) {
         if (spec[i].wr.tpname)
             dds_string_free(spec[i].wr.tpname);
     }
-    os_free(spec);
+    dds_free(spec);
 
 //    dds_delete(termcond);
     common_fini ();

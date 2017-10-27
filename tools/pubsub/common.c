@@ -55,11 +55,6 @@ const dds_topic_descriptor_t *ts_OneULong;
 
 const char *saved_argv0;
 
-unsigned long long nowll(void) {
-    os_time t = os_timeGet();
-    return (unsigned long long) (t.tv_sec * 1000000000ll + t.tv_nsec);
-}
-
 //void nowll_as_ddstime(DDS_Time_t *t) {
 //    os_time ost = os_timeGet();
 //    t->sec = ost.tv_sec;
@@ -106,7 +101,7 @@ struct hist {
 };
 
 struct hist *hist_new(unsigned nbins, uint64_t binwidth, uint64_t bin0) {
-    struct hist *h = os_malloc(sizeof(*h) + nbins * sizeof(*h->bins));
+    struct hist *h = dds_alloc(sizeof(*h) + nbins * sizeof(*h->bins));
     h->nbins = nbins;
     h->binwidth = binwidth;
     h->bin0 = bin0;
@@ -116,7 +111,7 @@ struct hist *hist_new(unsigned nbins, uint64_t binwidth, uint64_t bin0) {
 }
 
 void hist_free(struct hist *h) {
-    os_free(h);
+    dds_free(h);
 }
 
 void hist_reset_minmax(struct hist *h) {
@@ -155,11 +150,11 @@ static void xsnprintf(char *buf, size_t bufsz, size_t *p, const char *fmt, ...) 
     }
 }
 
-void hist_print(struct hist *h, uint64_t dt, int reset) {
+void hist_print(struct hist *h, dds_time_t dt, int reset) {
     const size_t l_size = sizeof(char) * h->nbins + 200;
     const size_t hist_size = sizeof(char) * h->nbins + 1;
-    char *l = (char *) os_malloc(l_size);
-    char *hist = (char *) os_malloc(hist_size);
+    char *l = (char *) dds_alloc(l_size);
+    char *hist = (char *) dds_alloc(hist_size);
     double dt_s = dt / 1e9, avg;
     uint64_t peak = 0, cnt = h->under + h->over;
     size_t p = 0;
@@ -237,8 +232,8 @@ void hist_print(struct hist *h, uint64_t dt, int reset) {
 
     (void) p;
     puts(l);
-    os_free(l);
-    os_free(hist);
+    dds_free(l);
+    dds_free(hist);
     if (reset)
         hist_reset(h);
 }
@@ -317,8 +312,8 @@ static dds_qos_t *get_topic_qos(dds_entity_t t) {
 
 struct qos *new_tqos(void) {
     struct qos *a;
-    if ((a = os_malloc(sizeof(*a))) == NULL)
-        error_exit("new_tqos: os_malloc\n");
+    if ((a = dds_alloc(sizeof(*a))) == NULL)
+        error_exit("new_tqos: dds_alloc\n");
     a->qt = QT_TOPIC;
     a->u.topic.q = dds_qos_create();
 
@@ -330,8 +325,8 @@ struct qos *new_tqos(void) {
 
 struct qos *new_pubqos(void) {
     struct qos *a;
-    if ((a = os_malloc(sizeof(*a))) == NULL)
-        error_exit("new_pubqos: os_malloc\n");
+    if ((a = dds_alloc(sizeof(*a))) == NULL)
+        error_exit("new_pubqos: dds_alloc\n");
     a->qt = QT_PUBLISHER;
     a->u.pub.q = dds_qos_create();
     return a;
@@ -339,8 +334,8 @@ struct qos *new_pubqos(void) {
 
 struct qos *new_subqos(void) {
     struct qos *a;
-    if ((a = os_malloc(sizeof(*a))) == NULL)
-        error_exit("new_subqos: os_malloc\n");
+    if ((a = dds_alloc(sizeof(*a))) == NULL)
+        error_exit("new_subqos: dds_alloc\n");
     a->qt = QT_SUBSCRIBER;
     a->u.sub.q = dds_qos_create();
     return a;
@@ -349,8 +344,8 @@ struct qos *new_subqos(void) {
 struct qos *new_rdqos(dds_entity_t s, dds_entity_t t) {
     dds_qos_t *tQos = get_topic_qos(t);
     struct qos *a;
-    if ((a = os_malloc(sizeof(*a))) == NULL)
-        error_exit("new_rdqos: os_malloc\n");
+    if ((a = dds_alloc(sizeof(*a))) == NULL)
+        error_exit("new_rdqos: dds_alloc\n");
     a->qt = QT_READER;
     a->u.rd.t = t;
     a->u.rd.s = s;
@@ -365,8 +360,8 @@ struct qos *new_rdqos(dds_entity_t s, dds_entity_t t) {
 struct qos *new_wrqos(dds_entity_t p, dds_entity_t t) {
     dds_qos_t *tQos = get_topic_qos(t);
     struct qos *a;
-    if ((a = os_malloc(sizeof(*a))) == NULL)
-        error_exit("new_wrqos: os_malloc\n");
+    if ((a = dds_alloc(sizeof(*a))) == NULL)
+        error_exit("new_wrqos: dds_alloc\n");
     a->qt = QT_WRITER;
     a->u.wr.t = t;
     a->u.wr.p = p;
@@ -388,7 +383,7 @@ void free_qos(struct qos *a) {
     case QT_READER: dds_qos_delete(a->u.rd.q); break;
     case QT_WRITER: dds_qos_delete(a->u.rd.q); break;
     }
-    os_free(a);
+    dds_free(a);
 }
 
 dds_entity_t new_topic(const char *name, const dds_topic_descriptor_t *topicDesc, const struct qos *a) {
@@ -631,7 +626,7 @@ static unsigned char getoctchar(const char **str) {
 static void *unescape(const char *str, size_t *len) {
     /* results in a blob without explicit terminator, i.e., can't get
      * any longer than strlen(str) */
-    unsigned char *x = os_malloc(strlen(str)), *p = x;
+    unsigned char *x = dds_alloc(strlen(str)), *p = x;
     while (*str) {
         if (*str != '\\')
             *p++ = (unsigned char) *str++;
@@ -680,7 +675,7 @@ void qos_user_data(struct qos *a, const char *arg) {
         dds_qset_userdata(qp, unesc, len);
     }
 
-    os_free(unesc);
+    dds_free(unesc);
 }
 
 int double_to_dds_duration(dds_duration_t *dd, double d) {
@@ -973,19 +968,19 @@ void set_qosprovider(const char *arg) {
 //        uri = arg;
 //    else {
 //        uri = p+1;
-//        profile = os_strdup(arg);
+//        profile = dds_string_dup(arg);
 //        profile[p-arg] = 0;
 //    }
 //
 //    if((result = dds_qosprovider_create(&qosprov, uri, profile)) != DDS_RETCODE_OK)
 //        error("dds_qosprovider_create(%s,%s) failed\n", uri, profile ? profile : "(null)");
-//    os_free(profile);
+//    dds_free(profile);
 }
 
 void setqos_from_args(struct qos *q, int n, const char *args[]) {
     int i;
     for (i = 0; i < n; i++) {
-        char *args_copy = os_strdup(args[i]), *cursor = args_copy;
+        char *args_copy = dds_string_dup(args[i]), *cursor = args_copy;
         const char *arg;
         while ((arg = os_strsep(&cursor, ",")) != NULL) {
             if (arg[0] && arg[1] == '=') {
@@ -1040,7 +1035,7 @@ void setqos_from_args(struct qos *q, int n, const char *args[]) {
 //                }
             }
         }
-        os_free((char *)arg);
-        os_free(args_copy);
+        dds_free((char *)arg);
+        dds_free(args_copy);
     }
 }

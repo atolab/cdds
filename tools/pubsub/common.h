@@ -51,7 +51,6 @@ struct qos;
 
 //#define BINS_LENGTH (8 * sizeof(unsigned long long) + 1)
 
-unsigned long long nowll(void);
 //void nowll_as_ddstime(DDS_Time_t *t);
 //void bindelta(unsigned long long *bins, unsigned long long d, unsigned repeat);
 //void binprint(unsigned long long *bins, unsigned long long telapsed);
@@ -62,7 +61,7 @@ void hist_free(struct hist *h);
 void hist_reset_minmax(struct hist *h);
 void hist_reset(struct hist *h);
 void hist_record(struct hist *h, uint64_t x, unsigned weight);
-void hist_print(struct hist *h, uint64_t dt, int reset);
+void hist_print(struct hist *h, dds_time_t dt, int reset);
 
 void error(const char *fmt, ...);
 #define error_abort(rc, fmt, ...) if (rc < DDS_SUCCESS) { error(fmt); DDS_ERR_CHECK(rc, DDS_CHECK_FAIL); }
