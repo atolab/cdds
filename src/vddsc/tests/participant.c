@@ -1,7 +1,8 @@
 #include "dds.h"
 #include <criterion/criterion.h>
+#include <os/os.h>
 #include "config_env.h"
-#include "os/os.h"
+
 
 #define cr_assert_status_eq(s1, s2, ...) cr_assert_eq(dds_err_nr(s1), s2, __VA_ARGS__)
 
@@ -276,7 +277,7 @@ Test(vddsc_participant, create_with_conf_invalid_env)
 {
 
 
-  dds_entity_t participant, participant2, participant3;
+  dds_entity_t participant, participant2, participant3, participant4;
   dds_domainid_t valid_domain=3;
   putenv("VORTEX_DOMAIN=-5");
 
@@ -308,7 +309,38 @@ Test(vddsc_participant, create_with_conf_invalid_env)
   participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   cr_assert_lt(participant3, 0, "Invalid participant  must be received for DDS_DOMAIN_DEFAULT with invalid domain environment variable");
 
+
 }
+Test(vddsc_participant, create_with_conf_invalid_env_abovemax)
+{
+
+
+  dds_entity_t participant, participant2, participant3, participant4;
+  dds_domainid_t valid_domain=3;
+  putenv("VORTEX_DOMAIN=231");
+
+  static char env_uri_str[1000];
+  (void) sprintf(env_uri_str, "%s=%s", "VORTEXDDS_URI", CONFIG_ENV_SIMPLE_UDP);
+  os_putenv(env_uri_str);
+
+  static char env_mp_str[100];
+  (void) sprintf(env_mp_str, "%s=%s", "MAX_PARTICIPANTS", CONFIG_ENV_MAX_PARTICIPANTS);
+  os_putenv(env_mp_str);
+
+  const char * env_uri = os_getenv("VORTEXDDS_URI");
+  const char * env_domain = os_getenv("VORTEX_DOMAIN");
+  dds_domainid_t env_domain_value = atoi (env_domain);
+
+  cr_assert_neq(env_uri, NULL, "VORTEXDDS_URI must be set");
+  cr_assert_eq(env_domain_value, 231, "VORTEX_DOMAIN must be 231");
+
+  //DDS_DOMAIN_DEFAULT with invalid domain environment variable
+  participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_lt(participant3, 0, "Invalid participant  must be received for DDS_DOMAIN_DEFAULT with invalid domain environment variable");
+
+}
+
+
 
 Test(vddsc_participant, create_with_conf_default_env)
 {
@@ -356,27 +388,6 @@ Test(vddsc_participant, create_with_conf_default_env)
   dds_delete (participant3);
 
 }
-
-
-
-/* Test for creating participant with valid configuration file and with valid environment variable */
-Test(vddsc_participant, test_conf) {
-
-  dds_entity_t participant, participant2;
-  //invalid domain
-  participant = dds_create_participant (1, NULL, NULL);
-  cr_assert_lt(participant, 0, "Error must be received for invalid domain value");
-
-  participant2 = dds_create_participant (0, NULL, NULL);
-  cr_assert_gt(participant2, 0, "VALID?");
-
-
-
-  dds_delete(participant2);
-
-}
-
-
 
 Test(vddsc_participant_lookup, one) {
 
