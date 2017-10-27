@@ -1214,24 +1214,38 @@ dds_create_reader(
         _In_opt_ const dds_listener_t *listener);
 
 /**
- * @brief Wait until reader receives all historic data
+ * @brief Waits at most for max_wait nanoseconds to deliver historical data to the reader.
  *
  * The operation blocks the calling thread until either all "historical" data is
  * received, or else the duration specified by the max_wait parameter elapses, whichever happens
- * first. A return value of 0 indicates that all the "historical" data was received; a return
- * value of TIMEOUT indicates that max_wait elapsed before all the data was received.
+ * first.
  *
  * @param[in]  reader    The reader on which to wait for historical data.
- * @param[in]  max_wait  How long to wait for historical data before time out.
+ * @param[in]  max_wait The maximum duration to wait for historical data to be delivered before time out
  *
- * @returns a status, 0 on success, TIMEOUT on timeout or a negative value to indicate error.
+ * @returns >=0 - Success.
+ * @returns <0 - Failure (use dds_err_nr() to get error value).
+ *
+ * @retval DDS_RETCODE_OK
+ *                All historical data successfully received within the specified duration.
+ * @retval DDS_RETCODE_ILLEGAL_OPERATION
+ *                The reader parameter is not a valid reader.
+ * @retval DDS_RETCODE_BAD_PARAMETER
+ *                The reader parameter is not a valid entity, or the max_wait parameter is negative
+ * @retval DDS_RETCODE_NOT_ENABLED
+ *                The reader is not enabled
+ * @retval DDS_RETCODE_TIMEOUT
+ *                Timeout expired before all available historical data was delivered.
+ * @retval DDS_RETCODE_UNSUPPORTED
+ *                Operation is not supported.
+ *
  */
 /* TODO: Complete list of error codes */
 _Pre_satisfies_((reader & DDS_ENTITY_KIND_MASK) == DDS_KIND_READER)
-DDS_EXPORT int
-dds_reader_wait_for_historical_data(
-        dds_entity_t reader,
-        dds_duration_t max_wait);
+DDS_EXPORT dds_return_t
+dds_wait_for_historical_data(
+        _In_ dds_entity_t reader,
+        _In_range_(0, DDS_INFINITY) dds_duration_t max_wait);
 
 /**
  * @brief Creates a new instance of a DDS writer.

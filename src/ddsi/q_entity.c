@@ -115,6 +115,10 @@ static int gcreq_proxy_participant (struct proxy_participant *proxypp);
 static int gcreq_proxy_writer (struct proxy_writer *pwr);
 static int gcreq_proxy_reader (struct proxy_reader *prd);
 
+static void notify_wait_for_historical_data_impl (const nn_guid_t *rd_guid);
+static void notify_wait_for_historical_data_cb (void *varg);
+
+
 static int compare_guid (const void *va, const void *vb)
 {
   return memcmp (va, vb, sizeof (nn_guid_t));
@@ -895,6 +899,16 @@ struct writer *get_builtin_writer (const struct participant *pp, unsigned entity
   return ephash_lookup_writer_guid (&bwr_guid);
 }
 
+struct reader *get_builtin_reader (const struct participant *pp, unsigned entityid)
+{
+  nn_guid_t guid;
+  guid.prefix = pp->e.guid.prefix;
+  guid.entityid.u = entityid;
+  assert (is_builtin_entityid (to_entityid (entityid), ownvendorid));
+  assert (!is_writer_entityid (guid.entityid));
+  return ephash_lookup_reader_guid(&guid);
+}
+
 /* WRITER/READER/PROXY-WRITER/PROXY-READER CONNECTION ---------------
 
    These are all located in a separate section because they are so
@@ -1345,6 +1359,8 @@ static void reader_drop_connection (const struct nn_guid *rd_guid, const struct 
       data.status = DDS_SUBSCRIPTION_MATCHED_STATUS;
       (rd->status_cb) (rd->status_cb_entity, &data);
     }
+    /* Possibly update reader sync. */
+    notify_wait_for_historical_data(NULL, &rd->e.guid);
   }
 }
 
@@ -1752,8 +1768,11 @@ static void proxy_writer_add_connection (struct proxy_writer *pwr, struct reader
     m->u.not_in_sync.end_of_out_of_sync_seq = last_deliv_seq;
     nn_log(LC_DISCOVERY, " - out-of-sync %"PRId64, m->u.not_in_sync.end_of_out_of_sync_seq);
   }
-  if (m->in_sync != PRMSS_SYNC)
+  if (m->in_sync != PRMSS_SYNC) {
+    rd->in_sync = 0;
     pwr->n_readers_out_of_sync++;
+  }
+
   m->count = init_count;
   /* Spec says we may send a pre-emptive AckNack (8.4.2.3.4), hence we
      schedule it for the configured delay * T_MILLISECOND. From then
@@ -3114,6 +3133,241 @@ static void leave_mcast_helper (const nn_locator_t *n, void * varg)
 }
 #endif /* DDSI_INCLUDE_NETWORK_PARTITIONS */
 
+static const unsigned builtin_readers_tab[] = {
+  /* NN_ENTITYID_SPDP_BUILTIN_PARTICIPANT_READER, never got a proxy writer. */
+  /* NN_ENTITYID_SEDP_BUILTIN_TOPIC_READER, not created for whatever reason. */
+  NN_ENTITYID_SEDP_BUILTIN_PUBLICATIONS_READER,
+  NN_ENTITYID_SEDP_BUILTIN_SUBSCRIPTIONS_READER,
+  NN_ENTITYID_P2P_BUILTIN_PARTICIPANT_MESSAGE_READER,
+  /* PrismTech ones: */
+  NN_ENTITYID_SEDP_BUILTIN_CM_PARTICIPANT_READER,
+  NN_ENTITYID_SEDP_BUILTIN_CM_PUBLISHER_READER,
+  NN_ENTITYID_SEDP_BUILTIN_CM_SUBSCRIBER_READER
+};
+
+static void notify_wait_for_historical_data_impl (const nn_guid_t *rd_guid)
+{
+  struct reader *rd;
+
+  if ((rd = ephash_lookup_reader_guid(rd_guid)) == NULL)
+  {
+    nn_log (LC_DISCOVERY, "wfh(%x:%x:%x:%x ddsi2-reader-gone)\n", PGUID(*rd_guid));
+    return;
+  }
+  nn_log(LC_DISCOVERY, "wfh(%x:%x:%x:%x ", PGUID(*rd_guid));
+  /* Must not actually notify the reader until in sync with all matching proxy writers.
+   * Maintaining that state in the reader is hard because of all the asynchronous events
+   * and the attendant risk of deadlocks (though not impossible), but checking it here,
+   * from the delivery queue thread is "easy". */
+  {
+    struct rd_pwr_match *rdm;
+    int all_complete = 1;
+    os_mutexLock (&rd->e.lock);
+    rdm = ut_avlFindMin (&rd_writers_treedef, &rd->writers);
+    while (rdm != NULL && all_complete)
+    {
+      nn_guid_t pwr_guid = rdm->pwr_guid;
+      struct proxy_writer *pwr;
+      if ((pwr = ephash_lookup_proxy_writer_guid (&pwr_guid)) != NULL)
+      {
+        struct pwr_rd_match *pwrm;
+        os_mutexUnlock (&rd->e.lock);
+        os_mutexLock (&pwr->e.lock);
+        if ((pwrm = ut_avlLookup (&pwr_readers_treedef, &pwr->readers, rd_guid)) != NULL && pwrm->in_sync != PRMSS_SYNC)
+        {
+          nn_log (LC_DISCOVERY, "pwr %x:%x:%x:%x incomplete)\n", PGUID(pwr_guid));
+          all_complete = 0;
+        }
+        os_mutexUnlock (&pwr->e.lock);
+        os_mutexLock (&rd->e.lock);
+      }
+      rdm = ut_avlLookupSucc (&rd_writers_treedef, &rd->writers, &pwr_guid);
+    }
+    rd->in_sync = all_complete;
+    os_mutexUnlock (&rd->e.lock);
+    if (!all_complete)
+    {
+      return;
+    }
+    /* All proxy writers associated with the reader are synced, so the reader is complete */
+    nn_log(LC_DISCOVERY,"notifying)\n");
+    os_mutexLock(&rd->complete_lock);
+    os_condBroadcast (&rd->complete_cond);
+    os_mutexUnlock(&rd->complete_lock);
+    return;
+  }
+}
+
+struct notify_wait_for_historical_data_cb_arg {
+  nn_guid_t rd_guid;
+};
+
+static void notify_wait_for_historical_data_cb (void *varg)
+{
+  struct notify_wait_for_historical_data_cb_arg *arg = varg;
+  notify_wait_for_historical_data_impl (&arg->rd_guid);
+  os_free(arg);
+}
+
+void notify_wait_for_historical_data (struct proxy_writer *pwr, const nn_guid_t *rd_guid)
+{
+  /* always trigger asynchronously via the delivery queue: data received in "out-of-sync" mode is
+   delivered asynchronously, and the overhead of the asynchronous notification is negligible */
+  struct notify_wait_for_historical_data_cb_arg *arg;
+  nn_log (LC_DISCOVERY, "msr_in_sync(%x:%x:%x:%x queue-wfh)\n", PGUID (*rd_guid));
+  arg = os_malloc(sizeof(*arg));
+  arg->rd_guid = *rd_guid;
+  nn_dqueue_enqueue_callback(pwr ? pwr->dqueue : gv.builtins_dqueue, notify_wait_for_historical_data_cb, arg);
+}
+
+/* 0: all builtin readers have proxy writer(s). 1: one or more builtin readers without proxy writers. */
+static int no_builtin_proxy_writers(struct participant *pp)
+{
+  int nowriters = 0;
+  int i;
+
+  assert(pp);
+
+  for (i = 0; (i < (int) (sizeof (builtin_readers_tab) / sizeof (builtin_readers_tab[0]))) && (nowriters == 0); i++)
+  {
+    struct reader *rd = get_builtin_reader(pp, builtin_readers_tab[i]);
+    if (rd) {
+      nowriters = ut_avlIsEmpty(&(rd->writers));
+    }
+  }
+  return nowriters;
+}
+
+/* -1: error. 0: no sync/timeout. 1: synced. */
+static int wait_for_reader_sync(struct reader *rd, os_time end)
+{
+  os_result result = os_resultSuccess;
+  os_time delay;
+  int ret;
+
+  assert(rd);
+
+  os_mutexLock (&rd->complete_lock);
+  while (!(rd->in_sync) && (result == os_resultSuccess))
+  {
+    delay  = os_timeSub(end, os_timeGet());
+    result = os_condTimedWait (&rd->complete_cond, &rd->complete_lock, &delay);
+  }
+  os_mutexUnlock (&rd->complete_lock);
+
+  if (result == os_resultSuccess)
+    ret = 1;
+  else if (result == os_resultTimeout)
+    ret = 0;
+  else
+    ret = -1;
+
+  return ret;
+}
+
+/* -1: error. 0: no sync/timeout. 1: synced. */
+static int wait_for_builtin_readers_sync(struct participant *pp, os_time end)
+{
+  os_time wait_duration;
+  os_time wait_end;
+  int ret = 1;
+  int i;
+
+  assert(pp);
+
+  /*
+   * It could be that end is a long time in the future. It could also be that
+   * there are mis-behaving nodes within the system, causing our builtin readers
+   * to not get in sync (quickly). While in the mean time, the actual interresting
+   * reader could have become synced.
+   * To not wait too long (during this mis-behaving state), limit the wait for
+   * builtin sync to the startup mode duration.
+   */
+  /* TODO Until CHAM-142 is fixed we need to translate dds_duration to os_time */
+  wait_duration.tv_sec = (int32_t) (config.startup_mode_duration / T_SECOND);
+  wait_duration.tv_nsec = (int32_t) (config.startup_mode_duration % T_SECOND);
+  wait_end = os_timeAdd(os_timeGet(), wait_duration);
+  if (os_timeCompare(end, wait_end) > 0)
+  {
+    end = wait_end;
+  }
+
+  for (i = 0; (i < (int) (sizeof (builtin_readers_tab) / sizeof (builtin_readers_tab[0]))) && (ret == 1); i++)
+  {
+    struct reader *rd = get_builtin_reader(pp, builtin_readers_tab[i]);
+    if (rd) {
+      ret = wait_for_reader_sync(rd, end);
+    }
+  }
+
+  return ret;
+}
+
+/* -1: error. 0: no sync/timeout. 1: synced. */
+static int wait_for_builtin_sync(struct participant *pp, os_time end)
+{
+  os_time shortsleep = { 0, 5 * T_MILLISECOND };
+  os_time now = os_timeGet();
+  int ret;
+
+  assert(pp);
+
+  /*
+   * This polling is not really nice.
+   * But this only happens during startup period.
+   * After that, either startup_mode is false or the builtin readers have writers
+   * and we will continue immediately.
+   */
+  while (gv.startup_mode && (!pp->builtins_deleted) && (os_timeCompare(now, end) < 0) && no_builtin_proxy_writers(pp))
+  {
+    os_nanoSleep(shortsleep);
+    now = os_timeAdd(now, shortsleep);
+  }
+
+  if (pp->builtins_deleted)
+    ret = -1;
+  else if (os_timeCompare(now, end) > 0)
+    ret = 0;
+  else
+    ret = wait_for_builtin_readers_sync(pp, end);
+
+  return ret;
+}
+
+/* -1: error. 0: no sync/timeout. 1: synced. */
+int wait_for_historical_data(struct reader *rd, os_time timeout)
+{
+  os_time end;
+  int ret;
+
+  assert(rd);
+
+  end = os_timeAdd(os_timeGet(), timeout);
+
+  /*
+   * For us to know if the reader has synced all it's historical data, it should
+   * be connected to all related proxy writers.
+   * There's no way to really know that. But assuming that this is the case
+   * when the buitin information is synced, is closest to knowing if all
+   * connections where detected.
+   *
+   * Another advantage is related to application builtin readers. These readers
+   * are only connected to local writers. There is no direct link to any DDSI
+   * builtin readers or proxy writers due to a data translation step. By making
+   * sure that the DDSI builtin readers are (very likely) synced, we automatically
+   * can assume that the application builtin readers are synced as well.
+   */
+  (void)wait_for_builtin_sync(rd->c.pp, end);
+
+  /*
+   * Now check if the reader itself is synced.
+   */
+  ret = wait_for_reader_sync(rd, end);
+
+  return ret;
+}
+
+
 static struct reader * new_reader_guid
 (
   const struct nn_guid *guid,
@@ -3165,6 +3419,8 @@ static struct reader * new_reader_guid
   rd->ddsi2direct_cb = 0;
   rd->ddsi2direct_cbarg = 0;
   rd->init_acknack_count = 0;
+  os_mutexInit (&rd->complete_lock);
+  os_condInit (&rd->complete_cond, &rd->complete_lock);
 #ifdef DDSI_INCLUDE_SSM
   rd->favours_ssm = 0;
 #endif
@@ -3247,6 +3503,9 @@ static struct reader * new_reader_guid
   match_reader_with_proxy_writers (rd, tnow);
   match_reader_with_local_writers (rd, tnow);
   sedp_write_reader (rd);
+  /* Determine if the reader is synced with possible writers. */
+  if (rd->xqos->durability.kind != NN_VOLATILE_DURABILITY_QOS)
+    notify_wait_for_historical_data_impl(&rd->e.guid);
   return rd;
 }
 
@@ -3323,6 +3582,10 @@ static void gc_delete_reader (struct gcreq *gcreq)
 #endif
 
   endpoint_common_fini (&rd->e, &rd->c);
+
+  os_condDestroy(&rd->complete_cond);
+  os_mutexDestroy(&rd->complete_lock);
+
   os_free (rd);
 }
 
@@ -3335,6 +3598,11 @@ int delete_reader (const struct nn_guid *guid)
     nn_log (LC_DISCOVERY, "delete_reader_guid(guid %x:%x:%x:%x) - unknown guid\n", PGUID (*guid));
     return ERR_UNKNOWN_ENTITY;
   }
+  /* Possibly wakeup a wait for historical data by simulating a sync. */
+  os_mutexLock(&rd->complete_lock);
+  rd->in_sync = 1;
+  os_condBroadcast (&rd->complete_cond);
+  os_mutexUnlock(&rd->complete_lock);
   if (rd->rhc)
   {
     (ddsi_plugin.rhc_fini_fn) (rd->rhc);

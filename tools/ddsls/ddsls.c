@@ -7,8 +7,6 @@
 #define DURATION_INFINITE_NSEC 0x7fffffff
 #define zero(pp,sz) _zero((void**)pp,sz)
 
-// FIXME Temporary workaround for lack of wait_for_historical implementation. Remove this on completion of CHAM-268.
-#define dds_reader_wait_for_historical_data(a,b) DDS_SUCCESS; dds_sleepfor(DDS_MSECS(200));
 
 /* Enable DEBUG for printing debug statements*/
 //#define DEBUG
@@ -402,7 +400,7 @@ void print_dcps_topic(FILE *fp){
     int i = 0;
     dcps_topic_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_DCPSTOPIC, NULL, NULL);
     PRINTD("DCPSTopic Reader Create: %s\n", dds_err_str(dcps_topic_reader));
-    reader_wait = dds_reader_wait_for_historical_data(dcps_topic_reader, DDS_SECS(5));
+    reader_wait = dds_wait_for_historical_data(dcps_topic_reader, DDS_SECS(5));
     PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
     while(true){
         zero(dcps_topic_samples, MAX_SAMPLES);
@@ -443,7 +441,7 @@ void print_dcps_participant(FILE *fp){
     int i = 0;
     dcps_participant_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_DCPSPARTICIPANT, NULL, NULL);
     PRINTD("DCPSSubscription Reader Create: %s\n", dds_err_str(dcps_participant_reader));
-    reader_wait = dds_reader_wait_for_historical_data(dcps_participant_reader, DDS_SECS(5));
+    reader_wait = dds_wait_for_historical_data(dcps_participant_reader, DDS_SECS(5));
     PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
     while(true){
         zero(dcps_participant_samples, MAX_SAMPLES);
@@ -470,7 +468,7 @@ void print_dcps_subscription(FILE *fp){
     int i = 0;
     dcps_subscription_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_DCPSSUBSCRIPTION, NULL, NULL);
     PRINTD("DCPSParticipant Reader Create: %s\n", dds_err_str(dcps_subscription_reader));
-    reader_wait = dds_reader_wait_for_historical_data(dcps_subscription_reader, DDS_SECS(5));
+    reader_wait = dds_wait_for_historical_data(dcps_subscription_reader, DDS_SECS(5));
     PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
     while(true){
         zero(dcps_subscription_samples, MAX_SAMPLES);
@@ -512,7 +510,7 @@ void print_dcps_publication(FILE *fp){
     int i = 0;
     dcps_publication_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_DCPSPUBLICATION, NULL, NULL);
     PRINTD("DCPSPublication Reader Create: %s\n", dds_err_str(dcps_publication_reader));
-    reader_wait = dds_reader_wait_for_historical_data(dcps_publication_reader, DDS_SECS(5));
+    reader_wait = dds_wait_for_historical_data(dcps_publication_reader, DDS_SECS(5));
     PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
     while(true){
         zero(dcps_publication_samples, MAX_SAMPLES);
@@ -555,7 +553,7 @@ void print_cm_participant(FILE *fp){
     int i = 0;
     cm_participant_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_CMPARTICIPANT, NULL, NULL);
     PRINTD("CMParticipant Reader Create: %s\n", dds_err_str(cm_participant_reader));
-    reader_wait = dds_reader_wait_for_historical_data(cm_participant_reader, DDS_SECS(5));
+    reader_wait = dds_wait_for_historical_data(cm_participant_reader, DDS_SECS(5));
     PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
     while(true){
         zero(cm_participant_samples, MAX_SAMPLES);
@@ -582,7 +580,7 @@ void print_cm_publisher(FILE *fp){
     int i = 0;
     cm_publisher_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_CMPUBLISHER, NULL, NULL);
     PRINTD("CMPublisher Reader Create: %s\n", dds_err_str(cm_publisher_reader));
-    reader_wait = dds_reader_wait_for_historical_data(cm_publisher_reader, DDS_SECS(5));
+    reader_wait = dds_wait_for_historical_data(cm_publisher_reader, DDS_SECS(5));
     PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
     while(true){
         zero(cm_publisher_samples, MAX_SAMPLES);
@@ -613,7 +611,7 @@ void print_cm_subscriber(FILE *fp){
     int i = 0;
     cm_subscriber_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_CMSUBSCRIBER, NULL, NULL);
     PRINTD("CMSubscriber Reader Create: %s\n", dds_err_str(cm_subscriber_reader));
-    reader_wait = dds_reader_wait_for_historical_data(cm_subscriber_reader, DDS_SECS(5));
+    reader_wait = dds_wait_for_historical_data(cm_subscriber_reader, DDS_SECS(5));
     PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
     while(true){
         zero(cm_subscriber_samples, MAX_SAMPLES);
@@ -645,7 +643,7 @@ void print_cm_datawriter(FILE *fp){
     int i = 0;
     cm_datawriter_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_CMDATAWRITER, NULL, NULL);
     PRINTD("CMDataWriter Reader Create: %s\n", dds_err_str(cm_datawriter_reader));
-    reader_wait = dds_reader_wait_for_historical_data(cm_datawriter_reader, DDS_SECS(5));
+    reader_wait = dds_wait_for_historical_data(cm_datawriter_reader, DDS_SECS(5));
     PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
     while(true){
         zero(cm_datawriter_samples, MAX_SAMPLES);
@@ -677,7 +675,7 @@ void print_cm_datareader(FILE *fp){
     int i = 0;
     cm_datareader_reader = dds_create_reader(participant, DDS_BUILTIN_TOPIC_CMDATAREADER, NULL, NULL);
     PRINTD("CMDataReader Reader Create: %s\n", dds_err_str(cm_datareader_reader));
-    reader_wait = dds_reader_wait_for_historical_data(cm_datareader_reader, DDS_SECS(5));
+    reader_wait = dds_wait_for_historical_data(cm_datareader_reader, DDS_SECS(5));
     PRINTD("reader wait status: %d, %s \n", reader_wait, dds_err_str(reader_wait));
     while(true){
         zero(cm_datareader_samples, MAX_SAMPLES);

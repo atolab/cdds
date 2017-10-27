@@ -82,6 +82,7 @@ static void maybe_set_reader_in_sync (struct proxy_writer *pwr, struct pwr_rd_ma
       {
         wn->in_sync = PRMSS_SYNC;
         pwr->n_readers_out_of_sync--;
+        notify_wait_for_historical_data (pwr, &wn->rd_guid);
       }
       break;
     case PRMSS_OUT_OF_SYNC:

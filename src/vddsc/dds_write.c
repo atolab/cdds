@@ -173,7 +173,7 @@ deliver_locally(
            samples we received from it. As writer being deleted any
            reliable samples that are rejected are simply discarded. */
         ut_avlIter_t it;
-        struct pwr_rd_match *m;
+        struct wr_rd_match *m;
         struct nn_rsample_info sampleinfo;
         os_mutexUnlock (&wr->rdary.rdary_lock);
         init_sampleinfo(&sampleinfo, wr, seq, payload);

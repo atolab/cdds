@@ -1790,7 +1790,7 @@ Test(vddsc_take, valid, .init=reader_init, .fini=reader_fini)
 
 /**************************************************************************************************
  *
- * These will check the read_wl in various ways.
+ * These will check the take_wl in various ways.
  *
  *************************************************************************************************/
 /*************************************************************************************************/
@@ -1904,7 +1904,7 @@ Test(vddsc_take_wl, valid, .init=reader_init, .fini=reader_fini)
 
 /**************************************************************************************************
  *
- * These will check the read_mask in various ways.
+ * These will check the take_mask in various ways.
  *
  *************************************************************************************************/
 /*************************************************************************************************/
@@ -2604,7 +2604,7 @@ Test(vddsc_take_mask, take_instance_last_sample)
 
 /**************************************************************************************************
  *
- * These will check the read_mask_wl in various ways.
+ * These will check the take_mask_wl in various ways.
  *
  *************************************************************************************************/
 /*************************************************************************************************/
@@ -3195,3 +3195,136 @@ Test(vddsc_take_mask_wl, combination_of_states, .init=reader_init, .fini=reader_
     cr_assert_eq(ret, MAX_SAMPLES - expected_cnt, "# samples %d, expected %d", ret,  MAX_SAMPLES - expected_cnt);
 }
 /*************************************************************************************************/
+
+
+
+
+
+
+
+
+
+
+/**************************************************************************************************
+ *
+ * These will check the wait_for_historical_data in various ways.
+ *
+ *************************************************************************************************/
+/*************************************************************************************************/
+Test(vddsc_wait_for_historical_data, invalid_args, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    OS_WARNING_MSVC_OFF(28020); /* Disable SAL warning on intentional misuse of the API */
+    ret = dds_wait_for_historical_data(g_reader, -1);
+    OS_WARNING_MSVC_ON(28020);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_wait_for_historical_data, invalid_readers) = {
+        DataPoints(dds_entity_t, -2, -1, 0, 1, 100, INT_MAX, INT_MIN),
+};
+Theory((dds_entity_t rdr), vddsc_wait_for_historical_data, invalid_readers, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    ret = dds_wait_for_historical_data(rdr, 0);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_wait_for_historical_data, non_readers) = {
+        DataPoints(dds_entity_t*, &g_participant, &g_topic, &g_writer, &g_subscriber, &g_waitset),
+};
+Theory((dds_entity_t *rdr), vddsc_wait_for_historical_data, non_readers, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    ret = dds_wait_for_historical_data(*rdr, 0);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_ILLEGAL_OPERATION, "returned %d", dds_err_nr(ret));
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+Test(vddsc_wait_for_historical_data, already_deleted, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    dds_delete(g_reader);
+    ret = dds_wait_for_historical_data(g_reader, 0);
+    cr_expect_eq(dds_err_nr(ret), DDS_RETCODE_ALREADY_DELETED);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_wait_for_historical_data, unsupported) = {
+        DataPoints(dds_durability_kind_t, DDS_DURABILITY_TRANSIENT, DDS_DURABILITY_PERSISTENT),
+};
+Theory((dds_durability_kind_t kind), vddsc_wait_for_historical_data, unsupported, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    dds_entity_t rdr;
+    dds_entity_t top;
+    dds_qset_durability(g_qos, kind);
+    top = dds_create_topic(g_participant, &Space_Type1_desc, "WaitForHistoricalDataUnsupported", g_qos, NULL);
+    cr_assert_gt(top, 0, "dds_create_topic(Roundtrip)");
+    rdr = dds_create_reader (g_participant, top, g_qos, NULL);
+    cr_assert_gt(rdr, 0, "dds_create_reader(Roundtrip)");
+    ret = dds_wait_for_historical_data(rdr, 0);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_UNSUPPORTED, "returned %d", dds_err_nr(ret));
+    dds_delete(top);
+    dds_delete(rdr);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_wait_for_historical_data, no_writer) = {
+        DataPoints(dds_durability_kind_t, DDS_DURABILITY_VOLATILE, DDS_DURABILITY_TRANSIENT_LOCAL),
+        DataPoints(dds_duration_t, DDS_INFINITY, ((dds_duration_t)DDS_SECS(1)), ((dds_duration_t)DDS_SECS(0))),
+};
+Theory((dds_durability_kind_t kind, dds_duration_t timeout), vddsc_wait_for_historical_data, no_writer, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    dds_entity_t rdr;
+    dds_entity_t top;
+    dds_qset_durability(g_qos, kind);
+    top = dds_create_topic(g_participant, &Space_Type1_desc, "WaitForHistoricalNoWriter", g_qos, NULL);
+    cr_assert_gt(top, 0, "dds_create_topic(Roundtrip)");
+    rdr = dds_create_reader (g_participant, top, g_qos, NULL);
+    cr_assert_gt(rdr, 0, "dds_create_reader(Roundtrip)");
+    ret = dds_wait_for_historical_data(rdr, timeout);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+    dds_delete(top);
+    dds_delete(rdr);
+}
+/*************************************************************************************************/
+
+/*************************************************************************************************/
+TheoryDataPoints(vddsc_wait_for_historical_data, local_writer) = {
+        DataPoints(dds_durability_kind_t, DDS_DURABILITY_VOLATILE, DDS_DURABILITY_TRANSIENT_LOCAL),
+        DataPoints(dds_duration_t, DDS_INFINITY, ((dds_duration_t)DDS_SECS(1)), ((dds_duration_t)DDS_SECS(0))),
+};
+Theory((dds_durability_kind_t kind, dds_duration_t timeout), vddsc_wait_for_historical_data, local_writer, .init=reader_init, .fini=reader_fini)
+{
+    dds_return_t ret;
+    dds_entity_t wtr;
+    dds_entity_t rdr;
+    dds_entity_t top;
+    Space_Type1 sample = { 5, 3, 1 };
+    dds_qset_durability(g_qos, kind);
+    top = dds_create_topic(g_participant, &Space_Type1_desc, "WaitForHistoricalEarlyWriterData", g_qos, NULL);
+    cr_assert_gt(top, 0, "dds_create_topic(Roundtrip)");
+    wtr = dds_create_writer (g_participant, top, g_qos, NULL);
+    cr_assert_gt(wtr, 0, "dds_create_writer(Roundtrip)");
+    ret = dds_write(g_writer, &sample);
+    cr_assert_eq(ret, DDS_RETCODE_OK, "Failed prerequisite write");
+    rdr = dds_create_reader (g_participant, top, g_qos, NULL);
+    cr_assert_gt(rdr, 0, "dds_create_reader(Roundtrip)");
+    ret = dds_wait_for_historical_data(rdr, timeout);
+    cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_OK, "returned %d", dds_err_nr(ret));
+    dds_delete(top);
+    dds_delete(rdr);
+    dds_delete(wtr);
+}
+/*************************************************************************************************/
+
+/* TODO: Test with remote writer. */

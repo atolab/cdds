@@ -265,6 +265,7 @@ struct reader
   struct nn_xqos *xqos;
   unsigned reliable: 1; /* 1 iff reader is reliable */
   unsigned handle_as_transient_local: 1; /* 1 iff reader wants historical data from proxy writers */
+  unsigned in_sync: 1;  /* 1 iff reader has all transient-local historical data */
 #ifdef DDSI_INCLUDE_SSM
   unsigned favours_ssm: 1; /* iff 1, this reader favours SSM */
 #endif
@@ -277,6 +278,8 @@ struct reader
   ut_avlTree_t local_writers; /* all matching LOCAL writers, see struct rd_wr_match */
   ddsi2direct_directread_cb_t ddsi2direct_cb;
   void *ddsi2direct_cbarg;
+  os_cond complete_cond; /* condition variable to indicate completeness */
+  os_mutex complete_lock;
 };
 
 struct proxy_participant
@@ -571,6 +574,10 @@ void delete_proxy_group (const struct nn_guid *guid, nn_wctime_t timestamp, int 
 void writer_exit_startup_mode (struct writer *wr);
 uint64_t writer_instance_id (const struct nn_guid *guid);
 
+void notify_wait_for_historical_data (struct proxy_writer *pwr, const nn_guid_t *rd_guid);
+
+/* -1: error, 0: not in sync/timeout, 1: synced. */
+int wait_for_historical_data(struct reader * rd, os_time timeout);
 
 #if defined (__cplusplus)
 }
