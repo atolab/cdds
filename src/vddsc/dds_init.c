@@ -1,6 +1,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <ddsi/q_config.h>
+#include <os/os.h>
+#include <os/os_report.h>
 #include "kernel/dds_init.h"
 #include "kernel/dds_rhc.h"
 #include "kernel/dds_tkmap.h"
@@ -9,18 +12,17 @@
 #include "kernel/dds_err.h"
 #include "kernel/dds_builtin.h"
 #include "ddsi/ddsi_ser.h"
-#include "os/os.h"
-#include "ddsi/q_config.h"
-#include "ddsi/q_globals.h"
 #include "ddsi/q_servicelease.h"
 #include "ddsi/q_entity.h"
-#include "ddsi/q_thread.h"
 #include "vddsc/vddsc_project.h"
 #include "kernel/dds_report.h"
 
 #ifdef _WRS_KERNEL
 char *os_environ[] = { NULL };
 #endif
+
+#define DOMAIN_ID_MIN 0
+#define DOMAIN_ID_MAX 230
 
 struct q_globals gv;
 
@@ -79,11 +81,12 @@ dds_init(void)
 {
   const char * uri;
   char tmp[50];
+  int default_domain;
 
 
   /* TODO: Proper init-once */
   if (os_atomic_inc32_nv (&dds_global.m_init_count) > 1)
-  {
+  { 
     return DDS_RETCODE_OK;
   }
 
@@ -109,15 +112,22 @@ dds_init(void)
     return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to parse configuration XML file %s", uri);
   }
 
-
   os_procName(tmp, sizeof(tmp));
   dds_init_exe = dds_string_dup (tmp);
 
   dds__builtin_init();
 
+  //check consistency of configuration file and environment variable. And store the default domain ID to dds_global.m_default_domain
+  default_domain = dds_domain_default();
+  if( default_domain == DDS_DOMAIN_DEFAULT) { //exact value should be a valid domain ID
+      return DDS_ERRNO(DDS_RETCODE_ERROR,
+                      "DDS Init Error: Failed to configure domain id");
+  }
+
   return DDS_RETCODE_OK;
 }
 
+//provides default domain id. calculates and stores at a global variable on first call
 dds_domainid_t dds_domain_default (void)
 {
   if(dds_global.m_default_domain == DDS_DOMAIN_DEFAULT ){
@@ -125,17 +135,26 @@ dds_domainid_t dds_domain_default (void)
     if (env_domain) //environment variable exists
     {
 
-      dds_domainid_t env_domain_value = atoi (env_domain);
+      char *env_domain_end;
+      long long env_domain_value = os_strtoll (env_domain, &env_domain_end, 10);
 
-      if(env_domain_value == DDS_DOMAIN_DEFAULT){
+      if(env_domain == env_domain_end) //VORTEX_DOMAIN is not integer
+      {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "VORTEX_DOMAIN (%s) environment variable is not integer", env_domain);
+        dds_global.m_default_domain = DDS_DOMAIN_DEFAULT ;
+      }
+      else if(env_domain_value == DDS_DOMAIN_DEFAULT){
         //then use the value from configuration
         dds_global.m_default_domain = config.domainId;
       }
-      else if (env_domain_value >=0){ //Valid value for environment variable
+      else if (env_domain_value >= DOMAIN_ID_MIN && env_domain_value <= DOMAIN_ID_MAX){ //Valid value for environment variable
         //use environment variable for the domain
-        dds_global.m_default_domain = env_domain_value;
+        dds_global.m_default_domain = (int)env_domain_value;
+        //change the configuration data
+        config.domainId = dds_global.m_default_domain;
       }
       else{ //Invalid value for environment variable
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "VORTEX_DOMAIN (%s) environment variable has invalid value", env_domain);
         dds_global.m_default_domain = DDS_DOMAIN_DEFAULT ;
       }
 
@@ -157,78 +176,72 @@ dds_init_impl(
 {
   char buff[64];
   uint32_t len;
-  dds_return_t ret=DDS_RETCODE_OK;
+  dds_return_t ret = DDS_RETCODE_OK;
 
-  if( dds_domain_default() == DDS_DOMAIN_DEFAULT) { //exact value should be a valid domain ID
-    const char * env_domain = os_getenv ("VORTEX_DOMAIN");
+  if (dds_domain_default() != domain &&
+      DDS_DOMAIN_DEFAULT != domain)
+  { //if a valid ID exists on configuration and not matching  the given ID
 
     ret = DDS_ERRNO(DDS_RETCODE_ERROR,
-                    "DDS Init failed: Inconsistent domain configuration detected: domain on configuration: %d, domain on environment %s",
-                    dds_domain_default(), env_domain);
+                    "DDS Init failed: Inconsistent domain configuration detected: domain on configuration: %d, domain %d",
+                    dds_domain_default(), domain);
     goto fail;
   }
 
-  if ( dds_domain_default() != domain &&  DDS_DOMAIN_DEFAULT != domain ) { //if a valid ID exists on configuration and not matching  the given ID
-  		ret = DDS_ERRNO(DDS_RETCODE_ERROR,
-  				"DDS Init failed: Inconsistent domain configuration detected: domain on configuration: %d, domain %d",
-                dds_domain_default(), domain);
-  	    goto fail;
-  }
-
-  if(is_initialized){ //Did RTPS initialized before?
+  if (is_initialized)
+  { //Did RTPS initialized before?
     return ret;
   }
 
-
-  if (rtps_config_prep (dds_cfgst) != 0)
+  if (rtps_config_prep(dds_cfgst) != 0)
   {
     ret = DDS_ERRNO(DDS_RETCODE_ERROR, "RTPS configuration failed.");
     goto fail;
   }
   dds_cfgst = NULL;
 
-  ut_avlInit (&dds_domaintree_def, &dds_global.m_domains);
+  ut_avlInit(&dds_domaintree_def, &dds_global.m_domains);
 
   /* Start monitoring the liveliness of all threads and renewing the
      service lease if everything seems well. */
 
-  gv.servicelease = nn_servicelease_new (0, 0);
+  gv.servicelease = nn_servicelease_new(0, 0);
   assert (gv.servicelease);
-  nn_servicelease_start_renewing (gv.servicelease);
+  nn_servicelease_start_renewing(gv.servicelease);
 
-  rtps_init ();
-  upgrade_main_thread ();
+  rtps_init();
+  upgrade_main_thread();
 
   /* Set additional default participant properties */
 
 #ifdef _WIN32
   gv.default_plist_pp.process_id = (unsigned) GetProcessId (GetCurrentProcess ());
 #else
-  gv.default_plist_pp.process_id = (unsigned) getpid ();
+  gv.default_plist_pp.process_id = (unsigned) getpid();
 #endif
   gv.default_plist_pp.present |= PP_PRISMTECH_PROCESS_ID;
   if (dds_init_exe)
   {
-    gv.default_plist_pp.exec_name = dds_string_dup (dds_init_exe);
-  }
-  else
+    gv.default_plist_pp.exec_name = dds_string_dup(dds_init_exe);
+  } else
   {
-    gv.default_plist_pp.exec_name = dds_string_alloc (32);
-    (void) snprintf (gv.default_plist_pp.exec_name, 32, "Vortex:%u", gv.default_plist_pp.process_id);
+    gv.default_plist_pp.exec_name = dds_string_alloc(32);
+    (void) snprintf(gv.default_plist_pp.exec_name, 32, "Vortex:%u", gv.default_plist_pp.process_id);
   }
-  len = (uint32_t) (13 + strlen (gv.default_plist_pp.exec_name));
+  len = (uint32_t) (13 + strlen(gv.default_plist_pp.exec_name));
   gv.default_plist_pp.present |= PP_PRISMTECH_EXEC_NAME;
-  if (os_gethostname (buff, sizeof (buff)) == os_resultSuccess)
+  if (os_gethostname(buff, sizeof(buff)) == os_resultSuccess)
   {
-    gv.default_plist_pp.node_name = dds_string_dup (buff);
+    gv.default_plist_pp.node_name = dds_string_dup(buff);
     gv.default_plist_pp.present |= PP_PRISMTECH_NODE_NAME;
   }
-  gv.default_plist_pp.entity_name = dds_alloc (len);
-  (void) snprintf (gv.default_plist_pp.entity_name, len, "%s<%u>", dds_init_exe ? dds_init_exe : "", gv.default_plist_pp.process_id);
+  gv.default_plist_pp.entity_name = dds_alloc(len);
+  (void) snprintf(gv.default_plist_pp.entity_name, len, "%s<%u>", dds_init_exe ? dds_init_exe : "",
+                  gv.default_plist_pp.process_id);
   gv.default_plist_pp.present |= PP_ENTITY_NAME;
 
 
-  is_initialized=true;
+  is_initialized = true;
   return DDS_RETCODE_OK;
 
 fail:
