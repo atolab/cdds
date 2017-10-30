@@ -1,6 +1,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <ddsi/q_config.h>
+#include <os/os.h>
+#include <os/os_report.h>
 #include "kernel/dds_init.h"
 #include "kernel/dds_rhc.h"
 #include "kernel/dds_tkmap.h"
@@ -9,12 +12,8 @@
 #include "kernel/dds_err.h"
 #include "kernel/dds_builtin.h"
 #include "ddsi/ddsi_ser.h"
-#include "os/os.h"
-#include "ddsi/q_config.h"
-#include "ddsi/q_globals.h"
 #include "ddsi/q_servicelease.h"
 #include "ddsi/q_entity.h"
-#include "ddsi/q_thread.h"
 #include "vddsc/vddsc_project.h"
 #include "kernel/dds_report.h"
 
@@ -121,11 +120,8 @@ dds_init(void)
   //check consistency of configuration file and environment variable. And store the default domain ID to dds_global.m_default_domain
   default_domain = dds_domain_default();
   if( default_domain == DDS_DOMAIN_DEFAULT) { //exact value should be a valid domain ID
-      const char * env_domain = os_getenv ("VORTEX_DOMAIN");
-
       return DDS_ERRNO(DDS_RETCODE_ERROR,
-                      "DDS Init failed: Inconsistent domain configuration detected: domain on configuration: %d, domain on environment %s",
-                      default_domain, env_domain);
+                      "DDS Init Error: Failed to configure domain id");
   }
 
   return DDS_RETCODE_OK;
@@ -139,20 +135,26 @@ dds_domainid_t dds_domain_default (void)
     if (env_domain) //environment variable exists
     {
 
-      dds_domainid_t env_domain_value = atoi (env_domain);
+      char *env_domain_end;
+      long long env_domain_value = os_strtoll (env_domain, &env_domain_end, 10);
 
-      if(env_domain_value == DDS_DOMAIN_DEFAULT){
+      if(env_domain == env_domain_end) //VORTEX_DOMAIN is not integer
+      {
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "VORTEX_DOMAIN (%s) environment variable is not integer", env_domain);
+        dds_global.m_default_domain = DDS_DOMAIN_DEFAULT ;
+      }
+      else if(env_domain_value == DDS_DOMAIN_DEFAULT){
         //then use the value from configuration
         dds_global.m_default_domain = config.domainId;
       }
       else if (env_domain_value >= DOMAIN_ID_MIN && env_domain_value <= DOMAIN_ID_MAX){ //Valid value for environment variable
         //use environment variable for the domain
-        dds_global.m_default_domain = env_domain_value;
+        dds_global.m_default_domain = (int)env_domain_value;
         //change the configuration data
         config.domainId = dds_global.m_default_domain;
       }
       else{ //Invalid value for environment variable
-        DDS_ERROR_H(DDS_RETCODE_BAD_PARAMETER, "VORTEX_DOMAIN environment variable has invalid value");
+        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "VORTEX_DOMAIN (%s) environment variable has invalid value", env_domain);
         dds_global.m_default_domain = DDS_DOMAIN_DEFAULT ;
       }
 

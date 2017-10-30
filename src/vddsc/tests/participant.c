@@ -340,6 +340,34 @@ Test(vddsc_participant, create_with_conf_invalid_env_abovemax)
 
 }
 
+Test(vddsc_participant, create_with_conf_invalid_env_notnum)
+{
+
+
+  dds_entity_t participant3;
+  dds_domainid_t valid_domain=3;
+  putenv("VORTEX_DOMAIN=abc");
+
+  static char env_uri_str[1000];
+  (void) sprintf(env_uri_str, "%s=%s", "VORTEXDDS_URI", CONFIG_ENV_SIMPLE_UDP);
+  os_putenv(env_uri_str);
+
+  static char env_mp_str[100];
+  (void) sprintf(env_mp_str, "%s=%s", "MAX_PARTICIPANTS", CONFIG_ENV_MAX_PARTICIPANTS);
+  os_putenv(env_mp_str);
+
+  const char * env_uri = os_getenv("VORTEXDDS_URI");
+  const char * env_domain = os_getenv("VORTEX_DOMAIN");
+
+  cr_assert_neq(env_uri, NULL, "VORTEXDDS_URI must be set");
+  cr_assert_str_eq(env_domain, "abc", "VORTEX_DOMAIN must be abc");
+
+  //DDS_DOMAIN_DEFAULT with invalid domain environment variable
+  participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+  cr_assert_lt(participant3, 0, "Invalid participant  must be received for DDS_DOMAIN_DEFAULT with invalid domain environment variable");
+
+}
+
 
 
 Test(vddsc_participant, create_with_conf_default_env)
