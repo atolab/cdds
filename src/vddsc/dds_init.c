@@ -82,12 +82,13 @@ dds_init(void)
   const char * uri;
   char tmp[50];
   int default_domain;
+  dds_return_t ret=DDS_RETCODE_OK;
 
 
   /* TODO: Proper init-once */
   if (os_atomic_inc32_nv (&dds_global.m_init_count) > 1)
   { 
-    return DDS_RETCODE_OK;
+    return ret;
   }
 
   os_osInit ();
@@ -117,55 +118,47 @@ dds_init(void)
 
   dds__builtin_init();
 
-  //check consistency of configuration file and environment variable. And store the default domain ID to dds_global.m_default_domain
-  default_domain = dds_domain_default();
-  if( default_domain == DDS_DOMAIN_DEFAULT) { //exact value should be a valid domain ID
-      return DDS_ERRNO(DDS_RETCODE_ERROR,
-                      "DDS Init Error: Failed to configure domain id");
-  }
+  //check consistency of configuration file and environment variable.
+  // And store the default domain ID to dds_global.m_default_domain
+  const char * env_domain = os_getenv (VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN");
+  if (env_domain) //environment variable exists
+  {
 
-  return DDS_RETCODE_OK;
-}
+    char *env_domain_end;
+    long long env_domain_value = os_strtoll (env_domain, &env_domain_end, 10);
 
-//provides default domain id. calculates and stores at a global variable on first call
-dds_domainid_t dds_domain_default (void)
-{
-  if(dds_global.m_default_domain == DDS_DOMAIN_DEFAULT ){
-    const char * env_domain = os_getenv ("VORTEX_DOMAIN");
-    if (env_domain) //environment variable exists
+    if(env_domain == env_domain_end) //VORTEX_DOMAIN is not integer
     {
-
-      char *env_domain_end;
-      long long env_domain_value = os_strtoll (env_domain, &env_domain_end, 10);
-
-      if(env_domain == env_domain_end) //VORTEX_DOMAIN is not integer
-      {
-        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "VORTEX_DOMAIN (%s) environment variable is not integer", env_domain);
-        dds_global.m_default_domain = DDS_DOMAIN_DEFAULT ;
-      }
-      else if(env_domain_value == DDS_DOMAIN_DEFAULT){
-        //then use the value from configuration
-        dds_global.m_default_domain = config.domainId;
-      }
-      else if (env_domain_value >= DOMAIN_ID_MIN && env_domain_value <= DOMAIN_ID_MAX){ //Valid value for environment variable
-        //use environment variable for the domain
-        dds_global.m_default_domain = (int)env_domain_value;
-        //change the configuration data
-        config.domainId = dds_global.m_default_domain;
-      }
-      else{ //Invalid value for environment variable
-        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "VORTEX_DOMAIN (%s) environment variable has invalid value", env_domain);
-        dds_global.m_default_domain = DDS_DOMAIN_DEFAULT ;
-      }
-
+      dds_global.m_default_domain = DDS_DOMAIN_DEFAULT ;
+      ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "DDS Init Error: Failed to configure domain id. VORTEX_DOMAIN (%s) environment variable is not integer", env_domain);
     }
-    else{ // no environment variable defined. then use the value from configuration
+    else if(env_domain_value == DDS_DOMAIN_DEFAULT){
+      //then use the value from configuration
       dds_global.m_default_domain = config.domainId;
     }
+    else if (env_domain_value >= DOMAIN_ID_MIN && env_domain_value <= DOMAIN_ID_MAX){ //Valid value for environment variable
+      //use environment variable for the domain
+      dds_global.m_default_domain = (int)env_domain_value;
+      //change the configuration data
+      config.domainId = dds_global.m_default_domain;
+    }
+    else{ //Invalid value for environment variable
+      dds_global.m_default_domain = DDS_DOMAIN_DEFAULT ;
+      ret = DDS_ERRNO(DDS_RETCODE_BAD_PARAMETER, "DDS Init Error: Failed to configure domain id. VORTEX_DOMAIN (%s) environment variable has invalid value", env_domain);
+    }
+
+  }
+  else{ // no environment variable defined. then use the value from configuration
+    dds_global.m_default_domain = config.domainId;
   }
 
-  return  dds_global.m_default_domain;
+  return ret;
+}
 
+//provides explicit default domain id.
+dds_domainid_t dds_domain_default (void)
+{
+  return  dds_global.m_default_domain;
 }
 
 /* Actual initialization called when participant created */

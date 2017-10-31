@@ -2,6 +2,7 @@
 #include <criterion/criterion.h>
 #include <os/os.h>
 #include "config_env.h"
+#include "vddsc/vddsc_project.h"
 
 
 #define cr_assert_status_eq(s1, s2, ...) cr_assert_eq(dds_err_nr(s1), s2, __VA_ARGS__)
@@ -35,10 +36,10 @@ Test(vddsc_participant, create_with_no_conf_no_env) {
   dds_domainid_t domain_id;
   dds_domainid_t valid_domain=0;
 
-  const char * env_uri = os_getenv("VORTEXDDS_URI");
-  const char * env_domain = os_getenv("VORTEX_DOMAIN");
-  cr_assert_eq(env_uri, NULL, "VORTEXDDS_URI must be NULL");
-  cr_assert_eq(env_domain, NULL, "VORTEX_DOMAIN must be NULL");
+  const char * env_uri = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
+  const char * env_domain = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN");
+  cr_assert_eq(env_uri, NULL, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI must be NULL");
+  cr_assert_eq(env_domain, NULL, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN must be NULL");
 
   //invalid domain
   participant = dds_create_participant (1, NULL, NULL);
@@ -72,13 +73,13 @@ Test(vddsc_participant, create_with_no_conf_valid_env) {
   dds_domainid_t domain_id;
   dds_domainid_t valid_domain=2;
 
-  putenv("VORTEX_DOMAIN=2");
-  const char * env_uri = os_getenv("VORTEXDDS_URI");
-  const char * env_domain = os_getenv("VORTEX_DOMAIN");
+  putenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN=2");
+  const char * env_uri = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
+  const char * env_domain = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN");
   dds_domainid_t env_domain_value = atoi (env_domain);
 
-  cr_assert_eq(env_uri, NULL, "VORTEXDDS_URI must be NULL");
-  cr_assert_eq(env_domain_value, 2, "VORTEX_DOMAIN must be 2");
+  cr_assert_eq(env_uri, NULL, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI must be NULL");
+  cr_assert_eq(env_domain_value, 2, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN must be 2");
 
   //invalid domain
   participant = dds_create_participant (0, NULL, NULL);
@@ -109,13 +110,13 @@ Test(vddsc_participant, create_with_no_conf_invalid_env) {
 
   dds_entity_t participant, participant2, participant3;
   dds_domainid_t valid_domain=0;
-  putenv("VORTEX_DOMAIN=-5");
-  const char * env_uri = os_getenv("VORTEXDDS_URI");
-  const char * env_domain = os_getenv("VORTEX_DOMAIN");
+  putenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN=-5");
+  const char * env_uri = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
+  const char * env_domain = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN");
   dds_domainid_t env_domain_value = atoi (env_domain);
 
-  cr_assert_eq(env_uri, NULL, "VORTEXDDS_URI must be NULL");
-  cr_assert_eq(env_domain_value, -5, "VORTEX_DOMAIN must be -5");
+  cr_assert_eq(env_uri, NULL, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI must be NULL");
+  cr_assert_eq(env_domain_value, -5, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN must be -5");
 
 
 
@@ -142,13 +143,13 @@ Test(vddsc_participant, create_with_no_conf_default_env) {
   dds_return_t status;
   dds_domainid_t domain_id;
   dds_domainid_t valid_domain=0;
-  putenv("VORTEX_DOMAIN=-1"); //DDS_DOMAIN_DEFAULT
-  const char * env_uri = os_getenv("VORTEXDDS_URI");
-  const char * env_domain = os_getenv("VORTEX_DOMAIN");
+  putenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN=-1"); //DDS_DOMAIN_DEFAULT
+  const char * env_uri = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
+  const char * env_domain = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN");
   dds_domainid_t env_domain_value = atoi (env_domain);
 
-  cr_assert_eq(env_uri, NULL, "VORTEXDDS_URI must be NULL");
-  cr_assert_eq(env_domain_value, -1, "VORTEX_DOMAIN must be -1");
+  cr_assert_eq(env_uri, NULL, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI must be NULL");
+  cr_assert_eq(env_domain_value, -1, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN must be -1");
 
   //invalid domain
   participant = dds_create_participant (1, NULL, NULL);
@@ -184,7 +185,7 @@ Test(vddsc_participant, create_with_conf_no_env) {
   dds_domainid_t valid_domain=3;
 
   static char env_uri_str[1000];
-  (void) sprintf(env_uri_str, "%s=%s", "VORTEXDDS_URI", CONFIG_ENV_SIMPLE_UDP);
+  (void) sprintf(env_uri_str, "%s=%s", VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI", CONFIG_ENV_SIMPLE_UDP);
   os_putenv(env_uri_str);
 
   static char env_mp_str[100];
@@ -192,11 +193,11 @@ Test(vddsc_participant, create_with_conf_no_env) {
   os_putenv(env_mp_str);
 
 
-  const char * env_uri = os_getenv("VORTEXDDS_URI");
-  const char * env_domain = os_getenv("VORTEX_DOMAIN");
+  const char * env_uri = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
+  const char * env_domain = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN");
 
-  cr_assert_neq(env_uri, NULL, "VORTEXDDS_URI must be set");
-  cr_assert_eq(env_domain, NULL, "VORTEX_DOMAIN must be NULL");
+  cr_assert_neq(env_uri, NULL, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI must be set");
+  cr_assert_eq(env_domain, NULL, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN must be NULL");
 
   //invalid domain
   participant = dds_create_participant (1, NULL, NULL);
@@ -232,21 +233,21 @@ Test(vddsc_participant, create_with_conf_valid_env) {
   dds_domainid_t valid_domain=2;
 
   static char env_uri_str[1000];
-  (void) sprintf(env_uri_str, "%s=%s", "VORTEXDDS_URI", CONFIG_ENV_SIMPLE_UDP);
+  (void) sprintf(env_uri_str, "%s=%s", VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI", CONFIG_ENV_SIMPLE_UDP);
   os_putenv(env_uri_str);
 
   static char env_mp_str[100];
   (void) sprintf(env_mp_str, "%s=%s", "MAX_PARTICIPANTS", CONFIG_ENV_MAX_PARTICIPANTS);
   os_putenv(env_mp_str);
 
-  putenv("VORTEX_DOMAIN=2");
+  putenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN=2");
 
-  const char * env_uri = os_getenv("VORTEXDDS_URI");
-  const char * env_domain = os_getenv("VORTEX_DOMAIN");
+  const char * env_uri = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
+  const char * env_domain = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN");
   dds_domainid_t env_domain_value = atoi (env_domain);
 
-  cr_assert_neq(env_uri, NULL, "VORTEXDDS_URI must be set");
-  cr_assert_eq(env_domain_value, 2, "VORTEX_DOMAIN must be 2");
+  cr_assert_neq(env_uri, NULL, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI must be set");
+  cr_assert_eq(env_domain_value, 2, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN must be 2");
 
 
   //invalid domain
@@ -279,22 +280,22 @@ Test(vddsc_participant, create_with_conf_invalid_env)
 
   dds_entity_t participant, participant2, participant3;
   dds_domainid_t valid_domain=3;
-  putenv("VORTEX_DOMAIN=-5");
+  putenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN=-5");
 
   static char env_uri_str[1000];
-  (void) sprintf(env_uri_str, "%s=%s", "VORTEXDDS_URI", CONFIG_ENV_SIMPLE_UDP);
+  (void) sprintf(env_uri_str, "%s=%s", VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI", CONFIG_ENV_SIMPLE_UDP);
   os_putenv(env_uri_str);
 
   static char env_mp_str[100];
   (void) sprintf(env_mp_str, "%s=%s", "MAX_PARTICIPANTS", CONFIG_ENV_MAX_PARTICIPANTS);
   os_putenv(env_mp_str);
 
-  const char * env_uri = os_getenv("VORTEXDDS_URI");
-  const char * env_domain = os_getenv("VORTEX_DOMAIN");
+  const char * env_uri = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
+  const char * env_domain = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN");
   dds_domainid_t env_domain_value = atoi (env_domain);
 
-  cr_assert_neq(env_uri, NULL, "VORTEXDDS_URI must be set");
-  cr_assert_eq(env_domain_value, -5, "VORTEX_DOMAIN must be -5");
+  cr_assert_neq(env_uri, NULL, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI must be set");
+  cr_assert_eq(env_domain_value, -5, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN must be -5");
 
 
   //invalid domain
@@ -317,7 +318,7 @@ Test(vddsc_participant, create_with_conf_invalid_env_abovemax)
 
   dds_entity_t participant3;
   dds_domainid_t valid_domain=3;
-  putenv("VORTEX_DOMAIN=231");
+  putenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN=231");
 
   static char env_uri_str[1000];
   (void) sprintf(env_uri_str, "%s=%s", "VORTEXDDS_URI", CONFIG_ENV_SIMPLE_UDP);
@@ -327,12 +328,12 @@ Test(vddsc_participant, create_with_conf_invalid_env_abovemax)
   (void) sprintf(env_mp_str, "%s=%s", "MAX_PARTICIPANTS", CONFIG_ENV_MAX_PARTICIPANTS);
   os_putenv(env_mp_str);
 
-  const char * env_uri = os_getenv("VORTEXDDS_URI");
-  const char * env_domain = os_getenv("VORTEX_DOMAIN");
+  const char * env_uri = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
+  const char * env_domain = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN");
   dds_domainid_t env_domain_value = atoi (env_domain);
 
-  cr_assert_neq(env_uri, NULL, "VORTEXDDS_URI must be set");
-  cr_assert_eq(env_domain_value, 231, "VORTEX_DOMAIN must be 231");
+  cr_assert_neq(env_uri, NULL, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI must be set");
+  cr_assert_eq(env_domain_value, 231, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN must be 231");
 
   //DDS_DOMAIN_DEFAULT with invalid domain environment variable
   participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
@@ -346,21 +347,21 @@ Test(vddsc_participant, create_with_conf_invalid_env_notnum)
 
   dds_entity_t participant3;
   dds_domainid_t valid_domain=3;
-  putenv("VORTEX_DOMAIN=abc");
+  putenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN=abc");
 
   static char env_uri_str[1000];
-  (void) sprintf(env_uri_str, "%s=%s", "VORTEXDDS_URI", CONFIG_ENV_SIMPLE_UDP);
+  (void) sprintf(env_uri_str, "%s=%s", VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI", CONFIG_ENV_SIMPLE_UDP);
   os_putenv(env_uri_str);
 
   static char env_mp_str[100];
   (void) sprintf(env_mp_str, "%s=%s", "MAX_PARTICIPANTS", CONFIG_ENV_MAX_PARTICIPANTS);
   os_putenv(env_mp_str);
 
-  const char * env_uri = os_getenv("VORTEXDDS_URI");
-  const char * env_domain = os_getenv("VORTEX_DOMAIN");
+  const char * env_uri = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
+  const char * env_domain = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN");
 
-  cr_assert_neq(env_uri, NULL, "VORTEXDDS_URI must be set");
-  cr_assert_str_eq(env_domain, "abc", "VORTEX_DOMAIN must be abc");
+  cr_assert_neq(env_uri, NULL, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI must be set");
+  cr_assert_str_eq(env_domain, "abc", VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN must be abc");
 
   //DDS_DOMAIN_DEFAULT with invalid domain environment variable
   participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
@@ -377,22 +378,22 @@ Test(vddsc_participant, create_with_conf_default_env)
   dds_return_t status;
   dds_domainid_t domain_id;
   dds_domainid_t valid_domain=3; //as in config file
-  putenv("VORTEX_DOMAIN=-1"); //DDS_DOMAIN_DEFAULT
+  putenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN=-1"); //DDS_DOMAIN_DEFAULT
 
   static char env_uri_str[1000];
-  (void) sprintf(env_uri_str, "%s=%s", "VORTEXDDS_URI", CONFIG_ENV_SIMPLE_UDP);
+  (void) sprintf(env_uri_str, "%s=%s", VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI", CONFIG_ENV_SIMPLE_UDP);
   os_putenv(env_uri_str);
 
   static char env_mp_str[100];
   (void) sprintf(env_mp_str, "%s=%s", "MAX_PARTICIPANTS", CONFIG_ENV_MAX_PARTICIPANTS);
   os_putenv(env_mp_str);
 
-  const char * env_uri = os_getenv("VORTEXDDS_URI");
-  const char * env_domain = os_getenv("VORTEX_DOMAIN");
+  const char * env_uri = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
+  const char * env_domain = os_getenv(VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN");
   dds_domainid_t env_domain_value = atoi (env_domain);
 
-  cr_assert_neq(env_uri, NULL, "VORTEXDDS_URI must be set");
-  cr_assert_eq(env_domain_value, -1, "VORTEX_DOMAIN must be -1");
+  cr_assert_neq(env_uri, NULL, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI must be set");
+  cr_assert_eq(env_domain_value, -1, VDDSC_PROJECT_NAME_NOSPACE_CAPS"_DOMAIN must be -1");
 
   //invalid domain
   participant = dds_create_participant (1, NULL, NULL);

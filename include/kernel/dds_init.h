@@ -35,6 +35,16 @@ dds_init(void);
 void
 dds_fini(void);
 
+
+
+/**
+ * Description : Function that provides the explicit ID of default domain
+ * It should be called after DDS initialization.
+ * @return Valid domain id. Undetermined behaviour if DDS is not initialized.
+ */
+dds_domainid_t dds_domain_default (void);
+
+
 #if defined (__cplusplus)
 }
 #endif
