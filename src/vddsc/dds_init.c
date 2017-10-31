@@ -81,7 +81,6 @@ dds_init(void)
 {
   const char * uri;
   char tmp[50];
-  int default_domain;
   dds_return_t ret=DDS_RETCODE_OK;
 
 
