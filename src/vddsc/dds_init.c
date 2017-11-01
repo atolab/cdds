@@ -32,124 +32,167 @@ dds_globals dds_global =
   NULL, NULL, NULL, NULL
 };
 
-static char * dds_init_exe = NULL;
 static struct cfgst * dds_cfgst = NULL;
-bool is_initialized=false;
 
-extern void ddsi_impl_init (void);
 
-static int dds_impl_init (void)
+
+
+static os_mutex  dds__init_mutex;
+static os_once_t dds__init_control = OS_ONCE_T_STATIC_INIT;
+
+static void
+dds__fini_once(void)
 {
-  os_mutexInit (&gv.attach_lock);
-  dds_iid_init ();
-  if (dds_global.m_dur_init) (dds_global.m_dur_init) ();
-  return 0;
-}
-
-static void dds_impl_fini (void)
-{
-  os_mutexDestroy (&gv.attach_lock);
-  if (dds_global.m_dur_fini) (dds_global.m_dur_fini) ();
-  dds_iid_fini ();
-}
-
-void ddsi_impl_init (void)
-{
-  /* Register initialization/clean functions */
-
-  ddsi_plugin.init_fn = dds_impl_init;
-  ddsi_plugin.fini_fn = dds_impl_fini;
-
-  /* Register read cache functions */
-
-  ddsi_plugin.rhc_free_fn = dds_rhc_free;
-  ddsi_plugin.rhc_fini_fn = dds_rhc_fini;
-  ddsi_plugin.rhc_store_fn = dds_rhc_store;
-  ddsi_plugin.rhc_unregister_wr_fn = dds_rhc_unregister_wr;
-  ddsi_plugin.rhc_relinquish_ownership_fn = dds_rhc_relinquish_ownership;
-  ddsi_plugin.rhc_set_qos_fn = dds_rhc_set_qos;
-  ddsi_plugin.rhc_lookup_fn = dds_tkmap_lookup_instance_ref;
-  ddsi_plugin.rhc_unref_fn = dds_tkmap_instance_unref;
-
-  /* Register iid generator */
-
-  ddsi_plugin.iidgen_fn = dds_iid_gen;
-}
-
-static os_mutex  dds_init_mutex;
-static os_once_t dds_init_control = OS_ONCE_T_STATIC_INIT;
-
-void
-dds_fini_once(void)
-{
-  os_mutexDestroy(&dds_init_mutex);
+  os_mutexDestroy(&dds__init_mutex);
   os_osExit();
 }
 
-void
-dds_init_once(void)
+static void
+dds__init_once(void)
 {
   os_osInit();
-  os_procAtExit(dds_fini_once);
-  os_mutexInit(&dds_init_mutex);
+  os_procAtExit(dds__fini_once);
+  os_mutexInit(&dds__init_mutex);
 }
+
+
+
+
 
 dds_return_t
 dds_init(void)
 {
+  dds_return_t ret = DDS_RETCODE_OK;
   const char * uri;
-  char tmp[50];
+  char progname[50];
   int default_domain;
+  char hostname[64];
+  uint32_t len;
 
-  os_once(&dds_init_control, dds_init_once);
+  os_once(&dds__init_control, dds__init_once);
 
-  os_mutexLock(&dds_init_mutex);
+  DDS_REPORT_STACK();
 
-  /* TODO: Proper init-once */
+  os_mutexLock(&dds__init_mutex);
+
   if (os_atomic_inc32_nv (&dds_global.m_init_count) > 1)
   {
-    os_mutexUnlock(&dds_init_mutex);
-    return DDS_RETCODE_OK;
+    goto skip;
+  }
+
+  if (ut_handleserver_init() != UT_HANDLE_OK)
+  {
+    ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize internal handle server");
+    goto fail_handleserver;
   }
 
   gv.tstart = now ();
   gv.exception = false;
-
   gv.static_logbuf_lock_inited = 0;
   logbuf_init (&gv.static_logbuf);
   os_mutexInit (&gv.static_logbuf_lock);
   gv.static_logbuf_lock_inited = 1;
   os_mutexInit (&dds_global.m_mutex);
 
-  if (ut_handleserver_init() != UT_HANDLE_OK)
-  {
-      os_mutexUnlock(&dds_init_mutex);
-      return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize internal handle server");
-  }
-
   uri = os_getenv (VDDSC_PROJECT_NAME_NOSPACE_CAPS"_URI");
   dds_cfgst = config_init (uri);
   if (dds_cfgst == NULL)
   {
-    os_mutexUnlock(&dds_init_mutex);
-    return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to parse configuration XML file %s", uri);
+    ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to parse configuration XML file %s", uri);
+    goto fail_config;
   }
-
-  os_procName(tmp, sizeof(tmp));
-  dds_init_exe = dds_string_dup (tmp);
-
-  dds__builtin_init();
 
   //check consistency of configuration file and environment variable. And store the default domain ID to dds_global.m_default_domain
   default_domain = dds_domain_default();
-  if( default_domain == DDS_DOMAIN_DEFAULT) { //exact value should be a valid domain ID
-      os_mutexUnlock(&dds_init_mutex);
-      return DDS_ERRNO(DDS_RETCODE_ERROR,
-                      "DDS Init Error: Failed to configure domain id");
+  if (default_domain == DDS_DOMAIN_DEFAULT)
+  { //exact value should be a valid domain ID
+      ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to configure domain id");
+      goto fail_domain;
   }
 
-  os_mutexUnlock(&dds_init_mutex);
+  dds__builtin_init();
+
+  if (rtps_config_prep(dds_cfgst) != 0)
+  {
+    ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to configure RTPS.");
+    goto fail_rtps_config;
+  }
+
+  ut_avlInit(&dds_domaintree_def, &dds_global.m_domains);
+
+  /* Start monitoring the liveliness of all threads and renewing the
+     service lease if everything seems well. */
+
+  gv.servicelease = nn_servicelease_new(0, 0);
+  if (gv.servicelease == NULL)
+  {
+    ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to a servicelease.");
+    goto fail_servicelease_new;
+  }
+  if (nn_servicelease_start_renewing(gv.servicelease) < 0)
+  {
+    ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to start the servicelease.");
+    goto fail_servicelease_start;
+  }
+
+  if (rtps_init() < 0)
+  {
+    ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize RTPS.");
+    goto fail_rtps_init;
+  }
+  upgrade_main_thread();
+
+  /* Set additional default participant properties */
+
+  gv.default_plist_pp.process_id = (unsigned)os_procIdSelf();
+  gv.default_plist_pp.present |= PP_PRISMTECH_PROCESS_ID;
+  if (os_procName(progname, sizeof(progname)) > 0)
+  {
+    gv.default_plist_pp.exec_name = dds_string_dup(progname);
+  }
+  else
+  {
+    gv.default_plist_pp.exec_name = dds_string_alloc(32);
+    (void) snprintf(gv.default_plist_pp.exec_name, 32, "Vortex:%u", gv.default_plist_pp.process_id);
+  }
+  len = (uint32_t) (13 + strlen(gv.default_plist_pp.exec_name));
+  gv.default_plist_pp.present |= PP_PRISMTECH_EXEC_NAME;
+  if (os_gethostname(hostname, sizeof(hostname)) == os_resultSuccess)
+  {
+    gv.default_plist_pp.node_name = dds_string_dup(hostname);
+    gv.default_plist_pp.present |= PP_PRISMTECH_NODE_NAME;
+  }
+  gv.default_plist_pp.entity_name = dds_alloc(len);
+  (void) snprintf(gv.default_plist_pp.entity_name, len, "%s<%u>", progname,
+                  gv.default_plist_pp.process_id);
+  gv.default_plist_pp.present |= PP_ENTITY_NAME;
+
+skip:
+  os_mutexUnlock(&dds__init_mutex);
+  DDS_REPORT_FLUSH(false);
   return DDS_RETCODE_OK;
+
+fail_rtps_init:
+fail_servicelease_start:
+  nn_servicelease_free (gv.servicelease);
+  gv.servicelease = NULL;
+fail_servicelease_new:
+  thread_states_fini();
+fail_rtps_config:
+  dds__builtin_fini();
+fail_domain:
+  config_fini (dds_cfgst);
+  dds_cfgst = NULL;
+fail_config:
+  gv.static_logbuf_lock_inited = 0;
+  os_mutexDestroy (&gv.static_logbuf_lock);
+  os_mutexDestroy (&dds_global.m_mutex);
+  ut_handleserver_fini();
+fail_handleserver:
+  os_atomic_dec32 (&dds_global.m_init_count);
+  os_mutexUnlock(&dds__init_mutex);
+  DDS_REPORT_FLUSH(true);
+  return ret;
 }
 
 //provides default domain id. calculates and stores at a global variable on first call
@@ -193,83 +236,23 @@ dds_domainid_t dds_domain_default (void)
 
 }
 
-/* Actual initialization called when participant created */
 
 dds_return_t
-dds_init_impl(
+dds__check_domain(
         _In_ dds_domainid_t domain)
 {
-  char buff[64];
-  uint32_t len;
   dds_return_t ret = DDS_RETCODE_OK;
-
-  if (dds_domain_default() != domain &&
-      DDS_DOMAIN_DEFAULT != domain)
-  { //if a valid ID exists on configuration and not matching  the given ID
-
-    ret = DDS_ERRNO(DDS_RETCODE_ERROR,
-                    "DDS Init failed: Inconsistent domain configuration detected: domain on configuration: %d, domain %d",
-                    dds_domain_default(), domain);
-    goto fail;
-  }
-
-  if (is_initialized)
-  { //Did RTPS initialized before?
-    return ret;
-  }
-
-  if (rtps_config_prep(dds_cfgst) != 0)
+  /* If domain is default: use configured id. */
+  if (domain != DDS_DOMAIN_DEFAULT)
   {
-    ret = DDS_ERRNO(DDS_RETCODE_ERROR, "RTPS configuration failed.");
-    goto fail;
+    /* Specific domain has to be the same as the configured domain. */
+    if (domain != dds_domain_default())
+    {
+      ret = DDS_ERRNO(DDS_RETCODE_ERROR,
+                      "Inconsistent domain configuration detected: domain on configuration: %d, domain %d",
+                      dds_domain_default(), domain);
+    }
   }
-
-  ut_avlInit(&dds_domaintree_def, &dds_global.m_domains);
-
-  /* Start monitoring the liveliness of all threads and renewing the
-     service lease if everything seems well. */
-
-  gv.servicelease = nn_servicelease_new(0, 0);
-  assert (gv.servicelease);
-  nn_servicelease_start_renewing(gv.servicelease);
-
-  rtps_init();
-  upgrade_main_thread();
-
-  /* Set additional default participant properties */
-
-#ifdef _WIN32
-  gv.default_plist_pp.process_id = (unsigned) GetProcessId (GetCurrentProcess ());
-#else
-  gv.default_plist_pp.process_id = (unsigned) getpid();
-#endif
-  gv.default_plist_pp.present |= PP_PRISMTECH_PROCESS_ID;
-  if (dds_init_exe)
-  {
-    gv.default_plist_pp.exec_name = dds_string_dup(dds_init_exe);
-  } else
-  {
-    gv.default_plist_pp.exec_name = dds_string_alloc(32);
-    (void) snprintf(gv.default_plist_pp.exec_name, 32, "Vortex:%u", gv.default_plist_pp.process_id);
-  }
-  len = (uint32_t) (13 + strlen(gv.default_plist_pp.exec_name));
-  gv.default_plist_pp.present |= PP_PRISMTECH_EXEC_NAME;
-  if (os_gethostname(buff, sizeof(buff)) == os_resultSuccess)
-  {
-    gv.default_plist_pp.node_name = dds_string_dup(buff);
-    gv.default_plist_pp.present |= PP_PRISMTECH_NODE_NAME;
-  }
-  gv.default_plist_pp.entity_name = dds_alloc(len);
-  (void) snprintf(gv.default_plist_pp.entity_name, len, "%s<%u>", dds_init_exe ? dds_init_exe : "",
-                  gv.default_plist_pp.process_id);
-  gv.default_plist_pp.present |= PP_ENTITY_NAME;
-
-
-  is_initialized = true;
-  return DDS_RETCODE_OK;
-
-fail:
-
   return ret;
 }
 
@@ -277,27 +260,65 @@ fail:
 
 extern void dds_fini (void)
 {
-  os_mutexLock(&dds_init_mutex);
+  os_mutexLock(&dds__init_mutex);
   if (os_atomic_dec32_nv (&dds_global.m_init_count) == 0)
   {
     dds__builtin_fini();
 
     ut_handleserver_fini();
-    if (ddsi_plugin.init_fn)
-    {
-      rtps_term ();
-      nn_servicelease_free (gv.servicelease);
-      downgrade_main_thread ();
-      thread_states_fini ();
-    }
+    rtps_term ();
+    nn_servicelease_free (gv.servicelease);
+    gv.servicelease = NULL;
+    downgrade_main_thread ();
+    thread_states_fini ();
 
     config_fini (dds_cfgst);
     dds_cfgst = NULL;
     os_mutexDestroy (&gv.static_logbuf_lock);
     os_mutexDestroy (&dds_global.m_mutex);
-    dds_string_free (dds_init_exe);
     dds_global.m_default_domain = DDS_DOMAIN_DEFAULT;
-    is_initialized=false;
   }
-  os_mutexUnlock(&dds_init_mutex);
+  os_mutexUnlock(&dds__init_mutex);
+}
+
+
+
+
+
+static int dds__init_plugin (void)
+{
+  os_mutexInit (&gv.attach_lock);
+  dds_iid_init ();
+  if (dds_global.m_dur_init) (dds_global.m_dur_init) ();
+  return 0;
+}
+
+static void dds__fini_plugin (void)
+{
+  os_mutexDestroy (&gv.attach_lock);
+  if (dds_global.m_dur_fini) (dds_global.m_dur_fini) ();
+  dds_iid_fini ();
+}
+
+void ddsi_plugin_init (void)
+{
+  /* Register initialization/clean functions */
+
+  ddsi_plugin.init_fn = dds__init_plugin;
+  ddsi_plugin.fini_fn = dds__fini_plugin;
+
+  /* Register read cache functions */
+
+  ddsi_plugin.rhc_free_fn = dds_rhc_free;
+  ddsi_plugin.rhc_fini_fn = dds_rhc_fini;
+  ddsi_plugin.rhc_store_fn = dds_rhc_store;
+  ddsi_plugin.rhc_unregister_wr_fn = dds_rhc_unregister_wr;
+  ddsi_plugin.rhc_relinquish_ownership_fn = dds_rhc_relinquish_ownership;
+  ddsi_plugin.rhc_set_qos_fn = dds_rhc_set_qos;
+  ddsi_plugin.rhc_lookup_fn = dds_tkmap_lookup_instance_ref;
+  ddsi_plugin.rhc_unref_fn = dds_tkmap_instance_unref;
+
+  /* Register iid generator */
+
+  ddsi_plugin.iidgen_fn = dds_iid_gen;
 }

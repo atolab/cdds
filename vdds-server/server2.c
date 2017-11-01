@@ -259,7 +259,7 @@ int db_writer_reader_create(struct client *cl, const struct reqhdr *req)
     }
     rep.code = VDDSREP_ENTITY;
     if (req->code == VDDSREQ_WRITER_CREATE) {
-    	ep.u.entity.e = dds_create_writer (req->u.writer_create.pp_or_pub, req->u.writer_create.topic, blob, NULL);
+        ep.u.entity.e = dds_create_writer (req->u.writer_create.pp_or_pub, req->u.writer_create.topic, blob, NULL);
     } else {
         assert(req->code == VDDSREQ_READER_CREATE);
         rep.u.entity.e = dds_create_reader(req->u.reader_create.pp_or_sub, req->u.writer_create.topic, blob, NULL);
@@ -592,7 +592,6 @@ int main(int argc, char **argv)
     evutil_make_socket_nonblocking(sock);
 
     dds_init(argc, argv);
-    dds_init_impl(DDS_DOMAIN_DEFAULT);
 
     if ((evbase = event_base_new()) == NULL) {
         goto err_event_base;

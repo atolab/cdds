@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 dds_return_t
-dds_init_impl(
+dds__check_domain(
         _In_ dds_domainid_t domain);
 
 /**

@@ -692,7 +692,7 @@ int rtps_init (void)
 
   /* Initialize implementation (Lite or OSPL) */
 
-  ddsi_impl_init ();
+  ddsi_plugin_init ();
 
   gv.tstart = now ();    /* wall clock time, used in logs */
 
