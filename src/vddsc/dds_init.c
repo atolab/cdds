@@ -76,6 +76,24 @@ void ddsi_impl_init (void)
   ddsi_plugin.iidgen_fn = dds_iid_gen;
 }
 
+static os_mutex  dds_init_mutex;
+static os_once_t dds_init_control = OS_ONCE_T_STATIC_INIT;
+
+void
+dds_fini_once(void)
+{
+  os_mutexDestroy(&dds_init_mutex);
+  os_osExit();
+}
+
+void
+dds_init_once(void)
+{
+  os_osInit();
+  os_procAtExit(dds_fini_once);
+  os_mutexInit(&dds_init_mutex);
+}
+
 dds_return_t
 dds_init(void)
 {
@@ -83,14 +101,17 @@ dds_init(void)
   char tmp[50];
   int default_domain;
 
+  os_once(&dds_init_control, dds_init_once);
+
+  os_mutexLock(&dds_init_mutex);
 
   /* TODO: Proper init-once */
   if (os_atomic_inc32_nv (&dds_global.m_init_count) > 1)
-  { 
+  {
+    os_mutexUnlock(&dds_init_mutex);
     return DDS_RETCODE_OK;
   }
 
-  os_osInit ();
   gv.tstart = now ();
   gv.exception = false;
 
@@ -102,6 +123,7 @@ dds_init(void)
 
   if (ut_handleserver_init() != UT_HANDLE_OK)
   {
+      os_mutexUnlock(&dds_init_mutex);
       return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to initialize internal handle server");
   }
 
@@ -109,6 +131,7 @@ dds_init(void)
   dds_cfgst = config_init (uri);
   if (dds_cfgst == NULL)
   {
+    os_mutexUnlock(&dds_init_mutex);
     return DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to parse configuration XML file %s", uri);
   }
 
@@ -120,10 +143,12 @@ dds_init(void)
   //check consistency of configuration file and environment variable. And store the default domain ID to dds_global.m_default_domain
   default_domain = dds_domain_default();
   if( default_domain == DDS_DOMAIN_DEFAULT) { //exact value should be a valid domain ID
+      os_mutexUnlock(&dds_init_mutex);
       return DDS_ERRNO(DDS_RETCODE_ERROR,
                       "DDS Init Error: Failed to configure domain id");
   }
 
+  os_mutexUnlock(&dds_init_mutex);
   return DDS_RETCODE_OK;
 }
 
@@ -253,6 +278,7 @@ fail:
 
 extern void dds_fini (void)
 {
+  os_mutexLock(&dds_init_mutex);
   if (os_atomic_dec32_nv (&dds_global.m_init_count) == 0)
   {
     dds__builtin_fini();
@@ -274,9 +300,9 @@ extern void dds_fini (void)
     config_fini ();
     os_mutexDestroy (&gv.static_logbuf_lock);
     os_mutexDestroy (&dds_global.m_mutex);
-    os_osExit ();
     dds_string_free (dds_init_exe);
     dds_global.m_default_domain = DDS_DOMAIN_DEFAULT;
     is_initialized=false;
   }
+  os_mutexUnlock(&dds_init_mutex);
 }
