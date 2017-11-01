@@ -2129,7 +2129,7 @@ int MAIN(int argc, char *argv[]) {
     dds_listener_t *rdlistener = dds_listener_create(NULL);
     dds_listener_t *wrlistener = dds_listener_create(NULL);
 
-    struct qos *qos;
+    dds_qos_t *qos;
     const char **qtopic = (const char **) dds_alloc(sizeof(char *) * argc);
     const char **qreader = (const char **) dds_alloc(sizeof(char *) * (2+argc));
     const char **qwriter = (const char **) dds_alloc(sizeof(char *) * (2+argc));
@@ -2503,16 +2503,16 @@ int MAIN(int argc, char *argv[]) {
         for (i = 0; i < (unsigned) (argc - os_get_optind()); i++)
             ps[i] = expand_envvars(argv[(unsigned) os_get_optind() + i]);
         if (want_reader) {
-            qos = new_subqos();
-            setqos_from_args(qos, nqsubscriber, qsubscriber);
+            qos = dds_qos_create();
+            setqos_from_args(DDS_KIND_SUBSCRIBER, qos, nqsubscriber, qsubscriber);
             sub = new_subscriber(qos, (unsigned) (argc - os_get_optind()), (const char **) ps);
-            free_qos(qos);
+            dds_qos_delete(qos);
         }
         if (want_writer) {
-            qos = new_pubqos();
-            setqos_from_args(qos, nqpublisher, qpublisher);
+            qos = dds_qos_create();
+            setqos_from_args(DDS_KIND_PUBLISHER, qos, nqpublisher, qpublisher);
             pub = new_publisher(qos, (unsigned) (argc - os_get_optind()), (const char **) ps);
-            free_qos(qos);
+            dds_qos_delete(qos);
         }
         for (i = 0; i < (unsigned) (argc - os_get_optind()); i++)
             dds_free(ps[i]);
@@ -2522,7 +2522,7 @@ int MAIN(int argc, char *argv[]) {
 
     for (i = 0; i <= specidx; i++) {
         qos = new_tqos();
-        setqos_from_args(qos, nqtopic, qtopic);
+        setqos_from_args(DDS_KIND_TOPIC, qos, nqtopic, qtopic);
         switch (spec[i].rd.topicsel) {
         case UNSPEC: assert(0); break;
         case KS:   spec[i].tp = new_topic(spec[i].topicname, ts_KeyedSeq, qos); break;
@@ -2551,7 +2551,7 @@ int MAIN(int argc, char *argv[]) {
         assert(spec[i].tp);
 //        assert(spec[i].rd.topicsel != ARB || spec[i].rd.tgtp != NULL);
 //        assert(spec[i].wr.topicsel != ARB || spec[i].wr.tgtp != NULL);
-        free_qos(qos);
+        dds_qos_delete(qos);
 
         if (spec[i].cftp_expr == NULL)
             spec[i].cftp = spec[i].tp;
@@ -2569,23 +2569,23 @@ int MAIN(int argc, char *argv[]) {
         }
 
         if (spec[i].rd.mode != MODE_NONE) {
-            qos = new_rdqos(sub, spec[i].cftp);
-            setqos_from_args(qos, nqreader, qreader);
-            spec[i].rd.rd = new_datareader_listener(qos, rdlistener);
+            qos = new_rdqos(spec[i].cftp);
+            setqos_from_args(DDS_KIND_READER, qos, nqreader, qreader);
+            spec[i].rd.rd = new_datareader_listener(sub, spec[i].cftp, qos, rdlistener);
             spec[i].rd.sub = sub;
-            free_qos(qos);
+            dds_qos_delete(qos);
         }
 
         if (spec[i].wr.mode != WRM_NONE) {
-            qos = new_wrqos(pub, spec[i].tp);
-            setqos_from_args(qos, nqwriter, qwriter);
-            spec[i].wr.wr = new_datawriter_listener(qos, wrlistener);
+            qos = new_wrqos(spec[i].tp);
+            setqos_from_args(DDS_KIND_WRITER, qos, nqwriter, qwriter);
+            spec[i].wr.wr = new_datawriter_listener(pub, spec[i].tp, qos, wrlistener);
             spec[i].wr.pub = pub;
             if (spec[i].wr.duplicate_writer_flag) {
-                spec[i].wr.dupwr = dds_create_writer(pub, spec[i].tp, qos_datawriter(qos), NULL);
+                spec[i].wr.dupwr = dds_create_writer(pub, spec[i].tp, qos, NULL);
                 error_abort(spec[i].wr.dupwr, "dds_writer_create failed");
             }
-            free_qos(qos);
+            dds_qos_delete(qos);
         }
     }
 

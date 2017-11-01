@@ -11,39 +11,6 @@
 #include "common.h"
 #include "os/os.h"
 
-enum qostype {
-    QT_TOPIC,
-    QT_PUBLISHER,
-    QT_SUBSCRIBER,
-    QT_READER,
-    QT_WRITER
-};
-
-struct qos {
-    enum qostype qt;
-    union {
-        struct {
-            dds_qos_t *q;
-        } topic;
-        struct {
-            dds_qos_t *q;
-        } pub;
-        struct {
-            dds_qos_t *q;
-        } sub;
-        struct {
-            dds_entity_t t;
-            dds_entity_t s;
-            dds_qos_t *q;
-        } rd;
-        struct {
-            dds_entity_t t;
-            dds_entity_t p;
-            dds_qos_t *q;
-        } wr;
-    } u;
-};
-
 dds_entity_t dp = 0;
 dds_entity_t qosprov = 0;
 const dds_topic_descriptor_t *ts_KeyedSeq;
@@ -303,208 +270,123 @@ int change_subscriber_partitions(dds_entity_t sub, unsigned npartitions, const c
     return rc;
 }
 
-static dds_qos_t *get_topic_qos(dds_entity_t t) {
+static dds_qos_t *get_topic_qos(dds_entity_t tp) {
     dds_qos_t *tQos = dds_qos_create();
-    dds_return_t rc = dds_get_qos(t, tQos);
+    dds_return_t rc = dds_get_qos(tp, tQos);
     error_abort(rc, "dds_qos_get_topic_qos");
     return tQos;
 }
 
-struct qos *new_tqos(void) {
-    struct qos *a;
-    if ((a = dds_alloc(sizeof(*a))) == NULL)
-        error_exit("new_tqos: dds_alloc\n");
-    a->qt = QT_TOPIC;
-    a->u.topic.q = dds_qos_create();
+dds_qos_t *new_tqos(void) {
+    dds_qos_t *q = dds_qos_create();
 
     /* Not all defaults are those of DCPS: */
-    dds_qset_reliability(a->u.topic.q, DDS_RELIABILITY_RELIABLE, DDS_SECS(1));
-    dds_qset_destination_order(a->u.topic.q, DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP);
-    return a;
+    dds_qset_reliability(q, DDS_RELIABILITY_RELIABLE, DDS_SECS(1));
+    dds_qset_destination_order(q, DDS_DESTINATIONORDER_BY_SOURCE_TIMESTAMP);
+    return q;
 }
 
-struct qos *new_pubqos(void) {
-    struct qos *a;
-    if ((a = dds_alloc(sizeof(*a))) == NULL)
-        error_exit("new_pubqos: dds_alloc\n");
-    a->qt = QT_PUBLISHER;
-    a->u.pub.q = dds_qos_create();
-    return a;
-}
+dds_qos_t *new_rdqos(dds_entity_t tp) {
+    dds_qos_t *tQos = get_topic_qos(tp);
+    dds_qos_t *qos = dds_qos_create();
 
-struct qos *new_subqos(void) {
-    struct qos *a;
-    if ((a = dds_alloc(sizeof(*a))) == NULL)
-        error_exit("new_subqos: dds_alloc\n");
-    a->qt = QT_SUBSCRIBER;
-    a->u.sub.q = dds_qos_create();
-    return a;
-}
-
-struct qos *new_rdqos(dds_entity_t s, dds_entity_t t) {
-    dds_qos_t *tQos = get_topic_qos(t);
-    struct qos *a;
-    if ((a = dds_alloc(sizeof(*a))) == NULL)
-        error_exit("new_rdqos: dds_alloc\n");
-    a->qt = QT_READER;
-    a->u.rd.t = t;
-    a->u.rd.s = s;
-    a->u.rd.q = dds_qos_create();
-
-    dds_return_t rc = dds_qos_copy(a->u.rd.q, tQos);
+    dds_return_t rc = dds_qos_copy(qos, tQos);
     error_abort(rc ,"new_rdqos: dds_qos_copy");
     dds_qos_delete(tQos);
-    return a;
+    return qos;
 }
 
-struct qos *new_wrqos(dds_entity_t p, dds_entity_t t) {
-    dds_qos_t *tQos = get_topic_qos(t);
-    struct qos *a;
-    if ((a = dds_alloc(sizeof(*a))) == NULL)
-        error_exit("new_wrqos: dds_alloc\n");
-    a->qt = QT_WRITER;
-    a->u.wr.t = t;
-    a->u.wr.p = p;
-    a->u.wr.q = dds_qos_create();
-    dds_return_t rc = dds_qos_copy(a->u.wr.q, tQos);
+dds_qos_t *new_wrqos(dds_entity_t tp) {
+    dds_qos_t *tQos = get_topic_qos(tp);
+    dds_qos_t *qos = dds_qos_create();
+
+    dds_return_t rc = dds_qos_copy(qos, tQos);
     error_abort(rc ,"new_wrqos: dds_qos_copy");
     dds_qos_delete(tQos);
 
     /* Not all defaults are those of DCPS: */
-    dds_qset_writer_data_lifecycle(a->u.wr.q, false);
-    return a;
+    dds_qset_writer_data_lifecycle(qos, false);
+    return qos;
 }
 
-void free_qos(struct qos *a) {
-    switch (a->qt) {
-    case QT_TOPIC: dds_qos_delete(a->u.topic.q); break;
-    case QT_PUBLISHER: dds_qos_delete(a->u.pub.q); break;
-    case QT_SUBSCRIBER: dds_qos_delete(a->u.sub.q); break;
-    case QT_READER: dds_qos_delete(a->u.rd.q); break;
-    case QT_WRITER: dds_qos_delete(a->u.rd.q); break;
-    }
-    dds_free(a);
-}
-
-dds_entity_t new_topic(const char *name, const dds_topic_descriptor_t *topicDesc, const struct qos *a) {
-    dds_entity_t tp;
-    if (a->qt != QT_TOPIC)
-        error_exit("new_topic called with non-topic qos\n");
-
-    tp = dds_create_topic(dp, topicDesc, name, a->u.topic.q, NULL);
+dds_entity_t new_topic(const char *name, const dds_topic_descriptor_t *topicDesc, const dds_qos_t *q) {
+    dds_entity_t tp = dds_create_topic(dp, topicDesc, name, q, NULL);
     error_abort(tp, "dds_create_topic failed");
     return tp;
 }
 
-dds_entity_t new_topic_KeyedSeq(const char *name, const struct qos *a) {
-    return new_topic(name, ts_KeyedSeq, a);
-}
-
-dds_entity_t new_topic_Keyed32(const char *name, const struct qos *a) {
-    return new_topic(name, ts_Keyed32, a);
-}
-
-dds_entity_t new_topic_Keyed64(const char *name, const struct qos *a) {
-    return new_topic(name, ts_Keyed64, a);
-}
-
-dds_entity_t new_topic_Keyed128(const char *name, const struct qos *a) {
-    return new_topic(name, ts_Keyed128, a);
-}
-
-dds_entity_t new_topic_Keyed256(const char *name, const struct qos *a) {
-    return new_topic(name, ts_Keyed256, a);
-}
-
-dds_entity_t new_topic_OneULong(const char *name, const struct qos *a) {
-    return new_topic(name, ts_OneULong, a);
-}
-
-dds_entity_t new_publisher(const struct qos *a, unsigned npartitions, const char **partitions) {
+dds_entity_t new_publisher(dds_qos_t *q, unsigned npartitions, const char **partitions) {
     dds_qos_t *pQos;
-    if (a == NULL) {
+    if (q == NULL) {
         pQos = dds_qos_create();
     } else {
-        if (a->qt != QT_PUBLISHER)
-            error_exit("new_topic called with non-publisher qos\n");
-        pQos = a->u.pub.q;
+        pQos = q;
     }
     dds_qset_partition(pQos, npartitions, partitions);
-    dds_entity_t p = dds_create_publisher(dp, pQos, NULL);
-    error_abort(p, "new_publisher: dds_create_publisher");
-    if (a == NULL)
+    dds_entity_t pub = dds_create_publisher(dp, pQos, NULL);
+    error_abort(pub, "new_publisher: dds_create_publisher");
+    if (q == NULL)
         dds_qos_delete(pQos);
-    return p;
+    return pub;
 }
 
-dds_entity_t new_subscriber(const struct qos *a, unsigned npartitions, const char **partitions) {
+dds_entity_t new_subscriber(dds_qos_t *q, unsigned npartitions, const char **partitions) {
     dds_qos_t *sQos;
-    if (a == NULL) {
+    if (q == NULL) {
         sQos = dds_qos_create();
     } else {
-        if (a->qt != QT_SUBSCRIBER)
-            error_exit("new_topic called with non-subscriber qos\n");
-        sQos = a->u.sub.q;
+        sQos = q;
     }
     dds_qset_partition(sQos, npartitions, partitions);
-    dds_entity_t s = dds_create_subscriber(dp, sQos, NULL);
-    error_abort(s, "new_subscriber: dds_create_subscriber");
-    if (a == NULL)
+    dds_entity_t sub = dds_create_subscriber(dp, sQos, NULL);
+    error_abort(sub, "new_subscriber: dds_create_subscriber");
+    if (q == NULL)
         dds_qos_delete(sQos);
-    return s;
+    return sub;
 }
 
-dds_entity_t new_datawriter_listener(const struct qos *a, const dds_listener_t *l) {
-    if (a->qt != QT_WRITER)
-        error_exit("new_datawriter called with non-writer qos\n");
-    dds_entity_t wr = dds_create_writer(a->u.wr.p, a->u.wr.t, a->u.wr.q, l);
+dds_entity_t new_datawriter_listener(const dds_entity_t pub, const dds_entity_t tp, const dds_qos_t *q, const dds_listener_t *l) {
+    dds_entity_t wr = dds_create_writer(pub, tp, q, l);
     error_abort(wr, "dds_create_writer failed");
     return wr;
 }
 
-dds_entity_t new_datawriter(const struct qos *a) {
-    return new_datawriter_listener(a, NULL);
+dds_entity_t new_datawriter(const dds_entity_t pub, const dds_entity_t tp, const dds_qos_t *q) {
+    return new_datawriter_listener(pub, tp, q, NULL);
 }
 
-dds_entity_t new_datareader_listener(const struct qos *a, const dds_listener_t *l) {
-    if (a->qt != QT_READER)
-        error_exit("new_datareader called with non-reader qos\n");
-    dds_entity_t rd = dds_create_reader(a->u.rd.s, a->u.rd.t, a->u.rd.q, l);
+dds_entity_t new_datareader_listener(const dds_entity_t sub, const dds_entity_t tp, const dds_qos_t *q, const dds_listener_t *l) {
+    dds_entity_t rd = dds_create_reader(sub, tp, q, l);
     error_abort(rd, "dds_create_reader failed");
     return rd;
 }
 
-dds_entity_t new_datareader(const struct qos *a) {
-    return new_datareader_listener(a, NULL);
+dds_entity_t new_datareader(const dds_entity_t sub, const dds_entity_t tp, const dds_qos_t *q) {
+    return new_datareader_listener(sub, tp, q, NULL);
 }
 
-static void inapplicable_qos(const struct qos *a, const char *n) {
+static void inapplicable_qos(dds_entity_kind_t qt, const char *n) {
     const char *en = "?";
-    switch (a->qt) {
-    case QT_TOPIC: en = "topic"; break;
-    case QT_PUBLISHER: en = "publisher"; break;
-    case QT_SUBSCRIBER: en = "subscriber"; break;
-    case QT_WRITER: en = "writer"; break;
-    case QT_READER: en = "reader"; break;
+    switch (qt) {
+    case DDS_KIND_TOPIC: en = "topic"; break;
+    case DDS_KIND_PUBLISHER: en = "publisher"; break;
+    case DDS_KIND_SUBSCRIBER: en = "subscriber"; break;
+    case DDS_KIND_WRITER: en = "writer"; break;
+    case DDS_KIND_READER: en = "reader"; break;
     }
     fprintf(stderr, "warning: %s entity ignoring inapplicable QoS \"%s\"\n", en, n);
 }
 
-#define   get_qos_T(a, n) (((a)->qt != QT_TOPIC)     ? (inapplicable_qos((a), n), NULL) : (a)->u.topic.q)
-#define   get_qos_R(a, n) (((a)->qt != QT_READER)    ? (inapplicable_qos((a), n), NULL) : (a)->u.rd.q)
-#define   get_qos_W(a, n) (((a)->qt != QT_WRITER)    ? (inapplicable_qos((a), n), NULL) : (a)->u.wr.q)
-#define  get_qos_TW(a, n) (((a)->qt == QT_TOPIC)     ? (a)->u.topic.q                   : ((a)->qt == QT_WRITER)     ? (a)->u.wr.q  : (inapplicable_qos((a), n), NULL))
-#define  get_qos_RW(a, n) (((a)->qt == QT_READER)    ? (a)->u.rd.q                      : ((a)->qt == QT_WRITER)     ? (a)->u.wr.q  : (inapplicable_qos((a), n), NULL))
-#define  get_qos_PS(a, n) (((a)->qt == QT_PUBLISHER) ? (a)->u.pub.q                     : ((a)->qt == QT_SUBSCRIBER) ? (a)->u.sub.q : (inapplicable_qos((a), n), NULL))
-#define get_qos_TRW(a, n) (((a)->qt == QT_TOPIC)     ? (a)->u.topic.q                   : ((a)->qt == QT_READER)     ? (a)->u.rd.q  : ((a)->qt == QT_WRITER) ? (a)->u.wr.q : (inapplicable_qos((a), n), NULL))
+#define   get_qos_T(qt, q, n) ((qt == DDS_KIND_TOPIC)                                                               ? q : (inapplicable_qos((qt), n), NULL))
+#define   get_qos_R(qt, q, n) ((qt == DDS_KIND_READER)                                                              ? q : (inapplicable_qos((qt), n), NULL))
+#define   get_qos_W(qt, q, n) ((qt == DDS_KIND_WRITER)                                                              ? q : (inapplicable_qos((qt), n), NULL))
+#define  get_qos_TW(qt, q, n) ((qt == DDS_KIND_TOPIC)     || (qt == DDS_KIND_WRITER)                                ? q : (inapplicable_qos((qt), n), NULL))
+#define  get_qos_RW(qt, q, n) ((qt == DDS_KIND_READER)    || (qt == DDS_KIND_WRITER)                                ? q : (inapplicable_qos((qt), n), NULL))
+#define  get_qos_PS(qt, q, n) ((qt == DDS_KIND_PUBLISHER) || (qt == DDS_KIND_SUBSCRIBER)                            ? q : (inapplicable_qos((qt), n), NULL))
+#define get_qos_TRW(qt, q, n) ((qt == DDS_KIND_TOPIC)     || (qt == DDS_KIND_READER)     || (qt == DDS_KIND_WRITER) ? q : (inapplicable_qos((qt), n), NULL))
 
-
-const dds_qos_t *qos_datawriter(const struct qos *a) {
-    return a->qt == QT_WRITER ? a->u.wr.q : NULL;
-}
-
-void qos_durability(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_TRW(a, "durability");
+void qos_durability(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_TRW(qt, q, "durability");
     if (qp == NULL)
         return;
     if (strcmp(arg, "v") == 0)
@@ -519,8 +401,8 @@ void qos_durability(struct qos *a, const char *arg) {
         error_exit("durability qos: %s: invalid\n", arg);
 }
 
-void qos_history(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_TRW(a, "history");
+void qos_history(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_TRW(qt, q, "history");
     int hist_depth, pos;
     if (qp == NULL)
         return;
@@ -533,8 +415,8 @@ void qos_history(struct qos *a, const char *arg) {
     }
 }
 
-void qos_destination_order(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_TRW(a, "destination_order");
+void qos_destination_order(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_TRW(qt, q, "destination_order");
     if (qp == NULL)
         return;
     if (strcmp(arg, "r") == 0) {
@@ -546,8 +428,8 @@ void qos_destination_order(struct qos *a, const char *arg) {
     }
 }
 
-void qos_ownership(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_TRW(a, "ownership");
+void qos_ownership(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_TRW(qt, q, "ownership");
     int strength, pos;
     if (qp == NULL)
         return;
@@ -556,7 +438,7 @@ void qos_ownership(struct qos *a, const char *arg) {
     } else if (strcmp(arg, "x") == 0) {
         dds_qset_ownership(qp, DDS_OWNERSHIP_EXCLUSIVE);
     } else if (sscanf(arg, "x:%d%n", &strength, &pos) == 1 && arg[pos] == 0) {
-        dds_qos_t *qps = get_qos_W(a, "ownership_strength");
+        dds_qos_t *qps = get_qos_W(qt, q, "ownership_strength");
         dds_qset_ownership(qp, DDS_OWNERSHIP_EXCLUSIVE);
         if(qps) {
             dds_qset_ownership_strength(qps, strength);
@@ -566,8 +448,8 @@ void qos_ownership(struct qos *a, const char *arg) {
     }
 }
 
-void qos_transport_priority(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_W(a, "transport_priority");
+void qos_transport_priority(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_W(qt, q, "transport_priority");
     int pos;
     int value;
     if (qp == NULL)
@@ -662,8 +544,8 @@ static void *unescape(const char *str, size_t *len) {
     return x;
 }
 
-void qos_user_data(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_RW(a, "user_data");
+void qos_user_data(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_RW(qt, q, "user_data");
     size_t len;
     if (qp == NULL)
         return;
@@ -694,8 +576,8 @@ void set_infinite_dds_duration(dds_duration_t *dd) {
     *dd = DDS_INFINITY;
 }
 
-void qos_reliability(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_TRW(a, "reliability");
+void qos_reliability(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_TRW(qt, q, "reliability");
     const char *argp = arg;
     dds_duration_t max_block_t = DDS_MSECS(100);
 
@@ -734,9 +616,9 @@ void qos_reliability(struct qos *a, const char *arg) {
     }
 }
 
-void qos_liveliness(struct qos *a, const char *arg) {
+void qos_liveliness(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
     dds_duration_t dd = 0;
-    dds_qos_t *qp = get_qos_TRW(a, "liveliness");
+    dds_qos_t *qp = get_qos_TRW(qt, q, "liveliness");
     double lease_duration;
     int pos;
 
@@ -771,8 +653,8 @@ static void qos_simple_duration(dds_duration_t *dd, const char *name, const char
     }
 }
 
-void qos_latency_budget(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_TRW(a, "latency_budget");
+void qos_latency_budget(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_TRW(qt, q, "latency_budget");
     dds_duration_t duration = 0;
     if (qp == NULL)
         return;
@@ -780,8 +662,8 @@ void qos_latency_budget(struct qos *a, const char *arg) {
     dds_qset_latency_budget(qp, duration);
 }
 
-void qos_deadline(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_TRW(a, "deadline");
+void qos_deadline(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_TRW(qt, q, "deadline");
     dds_duration_t deadline = 0;
     if (qp == NULL)
         return;
@@ -789,8 +671,8 @@ void qos_deadline(struct qos *a, const char *arg) {
     dds_qset_deadline(qp, deadline);
 }
 
-void qos_lifespan(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_TW(a, "lifespan");
+void qos_lifespan(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_TW(qt, q, "lifespan");
     dds_duration_t duration = 0;
     if (qp == NULL)
         return;
@@ -812,8 +694,8 @@ static int one_resource_limit(int32_t *val, const char **arg) {
     }
 }
 
-void qos_resource_limits(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_TRW(a, "resource_limits");
+void qos_resource_limits(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_TRW(qt, q, "resource_limits");
     const char *argp = arg;
     int32_t max_samples = 0;
     int32_t max_instances = 0;
@@ -842,8 +724,8 @@ void qos_resource_limits(struct qos *a, const char *arg) {
         error_exit("resource limits qos: %s: invalid\n", arg);
 }
 
-void qos_durability_service(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_T(a, "durability_service");
+void qos_durability_service(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_T(qt, q, "durability_service");
     const char *argp = arg;
     double service_cleanup_delay_t;
     int pos, hist_depth;
@@ -910,8 +792,8 @@ void qos_durability_service(struct qos *a, const char *arg) {
         error_exit("durability service qos: %s: invalid\n", arg);
 }
 
-void qos_presentation(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_PS(a, "presentation");
+void qos_presentation(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_PS(qt, q, "presentation");
     if (qp == NULL)
         return;
     if (strcmp(arg, "i") == 0) {
@@ -925,8 +807,8 @@ void qos_presentation(struct qos *a, const char *arg) {
     }
 }
 
-void qos_autodispose_unregistered_instances(struct qos *a, const char *arg) {
-    dds_qos_t *qp = get_qos_W(a, "writer_data_lifecycle");
+void qos_autodispose_unregistered_instances(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
+    dds_qos_t *qp = get_qos_W(qt, q, "writer_data_lifecycle");
     if (qp == NULL)
         return;
     if (strcmp(arg, "n") == 0)
@@ -977,7 +859,7 @@ void set_qosprovider(const char *arg) {
 //    dds_free(profile);
 }
 
-void setqos_from_args(struct qos *q, int n, const char *args[]) {
+void setqos_from_args(dds_entity_kind_t qt, dds_qos_t *q, int n, const char *args[]) {
     int i;
     for (i = 0; i < n; i++) {
         char *args_copy = dds_string_dup(args[i]), *cursor = args_copy;
@@ -986,21 +868,21 @@ void setqos_from_args(struct qos *q, int n, const char *args[]) {
             if (arg[0] && arg[1] == '=') {
                 const char *a = arg + 2;
                 switch (arg[0]) {
-                case 'A': qos_liveliness(q, a); break;
-                case 'd': qos_durability(q, a); break;
-                case 'D': qos_deadline(q, a); break;
-                case 'k': qos_history(q, a); break;
-                case 'l': qos_latency_budget(q, a); break;
-                case 'L': qos_lifespan(q, a); break;
-                case 'o': qos_destination_order(q, a); break;
-                case 'O': qos_ownership(q, a); break;
-                case 'p': qos_transport_priority(q, a); break;
-                case 'P': qos_presentation(q, a); break;
-                case 'r': qos_reliability(q, a); break;
-                case 'R': qos_resource_limits(q, a); break;
-                case 'S': qos_durability_service(q, a); break;
-                case 'u': qos_autodispose_unregistered_instances(q, a); break;
-                case 'U': qos_user_data(q, a); break;
+                case 'A': qos_liveliness(qt, q, a); break;
+                case 'd': qos_durability(qt, q, a); break;
+                case 'D': qos_deadline(qt, q, a); break;
+                case 'k': qos_history(qt, q, a); break;
+                case 'l': qos_latency_budget(qt, q, a); break;
+                case 'L': qos_lifespan(qt, q, a); break;
+                case 'o': qos_destination_order(qt, q, a); break;
+                case 'O': qos_ownership(qt, q, a); break;
+                case 'p': qos_transport_priority(qt, q, a); break;
+                case 'P': qos_presentation(qt, q, a); break;
+                case 'r': qos_reliability(qt, q, a); break;
+                case 'R': qos_resource_limits(qt, q, a); break;
+                case 'S': qos_durability_service(qt, q, a); break;
+                case 'u': qos_autodispose_unregistered_instances(qt, q, a); break;
+                case 'U': qos_user_data(qt, q, a); break;
                 default:
                     error_exit("%s: unknown QoS\n", arg);
                 }
