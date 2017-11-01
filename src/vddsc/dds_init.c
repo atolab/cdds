@@ -223,7 +223,6 @@ dds_init_impl(
     ret = DDS_ERRNO(DDS_RETCODE_ERROR, "RTPS configuration failed.");
     goto fail;
   }
-  dds_cfgst = NULL;
 
   ut_avlInit(&dds_domaintree_def, &dds_global.m_domains);
 
@@ -292,12 +291,8 @@ extern void dds_fini (void)
       thread_states_fini ();
     }
 
-    if (dds_cfgst != NULL) {
-      config_print_and_free_cfgst(dds_cfgst);
-      dds_cfgst = NULL;
-    }
-
-    config_fini ();
+    config_fini (dds_cfgst);
+    dds_cfgst = NULL;
     os_mutexDestroy (&gv.static_logbuf_lock);
     os_mutexDestroy (&dds_global.m_mutex);
     dds_string_free (dds_init_exe);
