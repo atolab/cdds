@@ -28,7 +28,7 @@ struct q_globals gv;
 
 dds_globals dds_global =
 {
-  DDS_DOMAIN_DEFAULT, OS_ATOMIC_UINT32_INIT (0),
+  DDS_DOMAIN_DEFAULT, 0,
   NULL, NULL, NULL, NULL
 };
 
@@ -75,7 +75,8 @@ dds_init(void)
 
   os_mutexLock(&dds__init_mutex);
 
-  if (os_atomic_inc32_nv (&dds_global.m_init_count) > 1)
+  dds_global.m_init_count++;
+  if (dds_global.m_init_count > 1)
   {
     goto skip;
   }
@@ -189,7 +190,7 @@ fail_config:
   os_mutexDestroy (&dds_global.m_mutex);
   ut_handleserver_fini();
 fail_handleserver:
-  os_atomic_dec32 (&dds_global.m_init_count);
+  dds_global.m_init_count--;
   os_mutexUnlock(&dds__init_mutex);
   DDS_REPORT_FLUSH(true);
   return ret;
@@ -261,7 +262,9 @@ dds__check_domain(
 extern void dds_fini (void)
 {
   os_mutexLock(&dds__init_mutex);
-  if (os_atomic_dec32_nv (&dds_global.m_init_count) == 0)
+  assert(dds_global.m_init_count > 0);
+  dds_global.m_init_count--;
+  if (dds_global.m_init_count == 0)
   {
     dds__builtin_fini();
 

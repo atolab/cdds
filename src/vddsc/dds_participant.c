@@ -246,7 +246,7 @@ dds_lookup_participant(
     }
 
     /* Check if dds is intialized. */
-    if (os_atomic_ld32(&dds_global.m_init_count) > 0) {
+    if (dds_global.m_init_count > 0) {
         /* Make sure that dds isn't un-initialized when we're
          * searching.
          * Or re-initialize it when un-initialized between the
