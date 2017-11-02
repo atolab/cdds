@@ -905,6 +905,11 @@ static int sedp_write_endpoint
   ps.present |= PP_ENDPOINT_GUID;
   ps.endpoint_guid = *epguid;
 
+
+  propagate_builtin_topic_publication(wr, now(), true);
+
+
+
   if (common && *common->name != 0)
   {
     ps.present |= PP_ENTITY_NAME;

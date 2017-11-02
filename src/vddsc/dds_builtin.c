@@ -427,3 +427,17 @@ forward_builtin_cmparticipant(
     ret = dds__builtin_write(DDS_BUILTIN_TOPIC_CMPARTICIPANT, data, timestamp.v, alive);
     DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
 }
+
+
+
+void
+forward_builtin_publication(
+        _In_ DDS_PublicationBuiltinTopicData *data,
+        _In_ nn_wctime_t timestamp,
+        _In_ int alive)
+{
+    dds_return_t ret;
+    DDS_REPORT_STACK();
+    ret = dds__builtin_write(DDS_BUILTIN_TOPIC_DCPSPUBLICATION, data, timestamp.v, alive);
+    DDS_REPORT_FLUSH(ret != DDS_RETCODE_OK);
+}

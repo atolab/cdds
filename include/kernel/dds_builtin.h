@@ -52,6 +52,11 @@ dds__builtin_cmparticipant_cb(
         DDS_CMParticipantBuiltinTopicData *data,
         nn_wctime_t timestamp);
 
+void
+dds_builtin_publication_cb(
+        _In_ DDS_PublicationBuiltinTopicData *data,
+        _In_ nn_wctime_t timestamp);
+
 
 #if defined (__cplusplus)
 }

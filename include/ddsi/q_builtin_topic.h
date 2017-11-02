@@ -72,4 +72,11 @@ forward_builtin_cmparticipant(
         _In_ int alive);
 
 
+extern void
+forward_builtin_publication(
+        _In_ DDS_PublicationBuiltinTopicData *data,
+        _In_ nn_wctime_t timestamp,
+        _In_ int alive);
+
+
 #endif
