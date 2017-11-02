@@ -140,8 +140,9 @@ dds_create_participant(
     if (dds_pp_head == NULL) {
         ret = dds_init();
         if (ret != DDS_RETCODE_OK) {
-            e = DDS_ERRNO(ret, "Initialization of DDS layer is failed");
-            goto finalize;
+            e = DDS_ERRNO(DDS_RETCODE_ERROR, "Initialization of DDS layer is failed");
+            dds_fini();
+            return e;
         }
     }
 
