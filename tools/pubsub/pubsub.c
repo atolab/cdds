@@ -416,10 +416,7 @@ static unsigned split_partitions(const char ***p_ps, char **p_bufcopy, const cha
     bufcopy = expand_envvars(buf);
     i = 0; bc = bufcopy;
     while (1) {
-        // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
-        OS_WARNING_MSVC_OFF(6386);
         ps[i++] = bc;
-        OS_WARNING_MSVC_ON(6386);
         while (*bc && *bc != ',') bc++;
         if (*bc == 0) break;
         *bc++ = 0;
@@ -801,7 +798,7 @@ static void print_sampleinfo(dds_time_t *tstart, dds_time_t tnow, const dds_samp
     if (print_metadata & PM_TOPIC)
         n += printf ("%s", tag);
     if (print_metadata & PM_TIME)
-        n += printf ("%s%"PRId64".%09"PRId64, n > 0 ? " " : "", (relt / DDS_NSECS_IN_SEC), (relt % DDS_NSECS_IN_SEC));
+        n += printf ("%s%lld.%09lld", n > 0 ? " " : "", (relt / DDS_NSECS_IN_SEC), (relt % DDS_NSECS_IN_SEC));
     sep = " : ";
     if (print_metadata & PM_PHANDLE)
         n += printf ("%s%" PRIu64, n > 0 ? sep : "", si->publication_handle), sep = " ";
@@ -809,9 +806,9 @@ static void print_sampleinfo(dds_time_t *tstart, dds_time_t tnow, const dds_samp
         n += printf ("%s%" PRIu64, n > 0 ? sep : "", si->instance_handle);
     sep = " : ";
     if (print_metadata & PM_STIME)
-        n += printf ("%s%"PRIu32".%09"PRIu32, n > 0 ? sep : "", (uint32_t) (si->source_timestamp/DDS_NSECS_IN_SEC), (uint32_t) (si->source_timestamp%DDS_NSECS_IN_SEC)), sep = " ";
+        n += printf ("%s%lld.%09lld", n > 0 ? sep : "", (si->source_timestamp/DDS_NSECS_IN_SEC), (si->source_timestamp%DDS_NSECS_IN_SEC)), sep = " ";
     if (print_metadata & PM_RTIME)
-        n += printf ("%s%"PRIu32".%09"PRIu32, n > 0 ? sep : "", (uint32_t) (si->reception_timestamp/DDS_NSECS_IN_SEC), (uint32_t) (si->reception_timestamp%DDS_NSECS_IN_SEC));
+        n += printf ("%s%lld.%09lld", n > 0 ? sep : "", (si->reception_timestamp/DDS_NSECS_IN_SEC), (si->reception_timestamp%DDS_NSECS_IN_SEC));
     sep = " : ";
     if (print_metadata & PM_DGEN)
         n += printf ("%s%"PRIu32, n > 0 ? sep : "", si->disposed_generation_count), sep = " ";
@@ -1152,19 +1149,18 @@ static void pub_do_auto(const struct writerspec *spec) {
     for (k = 0; (uint32_t) k < nkeyvals; k++) {
         d.seq_keyval.keyval = k;
         if(spec->register_instances) {
-            // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
-            OS_WARNING_MSVC_OFF(6386);
             dds_register_instance(spec->wr, &handle[k], &d);
-            OS_WARNING_MSVC_ON(6386);
         }
     }
 
     dds_sleepfor(DDS_SECS(1)); // TODO is this sleep necessary?
     d.seq_keyval.keyval = 0;
     tfirst0 = tfirst = tprev = dds_time();
-    if (dur != 0.0)
-        tstop = tfirst0 + DDS_SECS(dur);
-    else
+    if (dur != 0.0) {
+        dds_duration_t dds_dur = 0;
+        double_to_dds_duration(&dds_dur, dur);
+        tstop = tfirst0 + dds_dur;
+    } else
         tstop = INT64_MAX;
 
     if (nkeyvals == 0) {
@@ -1544,11 +1540,8 @@ static int check_eseq(struct eseq_admin *ea, unsigned seq, unsigned keyval, cons
     ea->eseq = dds_realloc(ea->eseq, (ea->nph + 1) * sizeof(*ea->eseq));
     ea->eseq[ea->nph] = dds_alloc(ea->nkeys * sizeof(*ea->eseq[ea->nph]));
     eseq = ea->eseq[ea->nph];
-// TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
-    OS_WARNING_MSVC_OFF(6386);
     for (unsigned i = 0; i < ea->nkeys; i++)
         eseq[i] = seq + (i - keyval) + (i <= keyval ? ea->nkeys : 0);
-    OS_WARNING_MSVC_ON(6386);
     ea->nph++;
     return 1;
 }
@@ -1814,10 +1807,7 @@ static uint32_t subthread(void *vspec) {
 //                error ("DDS_Subscriber_begin_access: %d (%s)\n", (int) result, dds_err_str (result));
 
             /* This is the final Read/Take */
-            // TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
-            OS_WARNING_MSVC_OFF(6386);
             rc = dds_take_mask(rd, mseq, iseq, spec->read_maxsamples, spec->read_maxsamples, DDS_ANY_STATE);
-            OS_WARNING_MSVC_ON(6386);
             if (rc == 0) {
                 if (!once_mode)
                     printf ("-- final take: data reader empty --\n");
@@ -1897,7 +1887,9 @@ static uint32_t autotermthread(void *varg __attribute__((unused))) {
     assert(dur > 0);
 
     tnow = dds_time();
-    tstop = tnow + DDS_SECS(dur);
+    dds_duration_t dds_dur = 0;
+    double_to_dds_duration(&dds_dur, dur);
+    tstop = tnow + dds_dur;
 
     ws = dds_create_waitset(dp);
     rc = dds_waitset_attach(ws, termcond, termcond);
@@ -2166,8 +2158,6 @@ int MAIN(int argc, char *argv[]) {
     save_argv0 (argv[0]);
     pid = (int) os_procIdSelf();
 
-//    TODO Refactor to avoid bogus claim of buffer overrun, and clear this warning suppression
-    OS_WARNING_MSVC_OFF(6386);
     qreader[0] = "k=all";
     qreader[1] = "R=10000/inf/inf";
     nqreader = 2;
@@ -2175,7 +2165,6 @@ int MAIN(int argc, char *argv[]) {
     qwriter[0] = "k=all";
     qwriter[1] = "R=100/inf/inf";
     nqwriter = 2;
-    OS_WARNING_MSVC_OFF(6386);
 
     spec_sofar = SPEC_TOPICSEL;
     specidx--;
