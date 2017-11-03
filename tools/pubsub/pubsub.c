@@ -1158,7 +1158,7 @@ static void pub_do_auto(const struct writerspec *spec) {
     tfirst0 = tfirst = tprev = dds_time();
     if (dur != 0.0) {
         dds_duration_t dds_dur = 0;
-        double_to_dds_duration(&dds_dur, dur);
+        (void) double_to_dds_duration(&dds_dur, dur);
         tstop = tfirst0 + dds_dur;
     } else
         tstop = INT64_MAX;
@@ -1888,7 +1888,7 @@ static uint32_t autotermthread(void *varg __attribute__((unused))) {
 
     tnow = dds_time();
     dds_duration_t dds_dur = 0;
-    double_to_dds_duration(&dds_dur, dur);
+    (void) double_to_dds_duration(&dds_dur, dur);
     tstop = tnow + dds_dur;
 
     ws = dds_create_waitset(dp);

@@ -570,7 +570,7 @@ void qos_user_data(dds_entity_kind_t qt, dds_qos_t *q, const char *arg) {
 int double_to_dds_duration(dds_duration_t *dd, double d) {
     if (d < 0)
         return -1;
-    double nanosec = d * 1e9;  //Todo: Changed this double to dds duration. Previously it was using floor func.
+    double nanosec = d * 1e9;
     if(nanosec > INT64_MAX) {
         *dd = DDS_INFINITY;
     } else {
