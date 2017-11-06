@@ -29,7 +29,7 @@ Test(vddsc_participant, create_and_delete) {
 }
 
 
-/* Test for creating participant with no configuration file and with no environment variable */
+/* Test for creating participant with no configuration file  */
 Test(vddsc_participant, create_with_no_conf_no_env) {
   dds_entity_t participant, participant2, participant3;
   dds_return_t status;
@@ -50,9 +50,9 @@ Test(vddsc_participant, create_with_no_conf_no_env) {
   cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_domainid(participant, domain_id)");
   cr_assert_eq(domain_id, valid_domain, "Retrieved domain ID must be valid");
 
-  //DDS_DOMAIN_DEFAULT with no domain environment variable
+  //DDS_DOMAIN_DEFAULT from user
   participant3 = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  cr_assert_gt(participant3, 0, "Valid participant must be received for DDS_DOMAIN_DEFAULT with no domain environment variable");
+  cr_assert_gt(participant3, 0, "Valid participant must be received for DDS_DOMAIN_DEFAULT");
   status = dds_get_domainid(participant3, &domain_id);
   cr_assert_status_eq(status, DDS_RETCODE_OK, "dds_get_domainid(participant, domain_id)");
   cr_assert_eq(domain_id, valid_domain, "Retrieved domain ID must be valid");
@@ -66,7 +66,7 @@ Test(vddsc_participant, create_with_no_conf_no_env) {
 
 ////WITH CONF
 
-/* Test for creating participant with valid configuration file and with no environment variable */
+/* Test for creating participant with valid configuration file  */
 Test(vddsc_participant, create_with_conf_no_env) {
   dds_entity_t participant, participant2, participant3;
   dds_return_t status;
