@@ -24,6 +24,7 @@
 #endif
 
 #include "os/os_decl_attributes.h"
+#include <limits.h>
 
 #if defined (__cplusplus)
 extern "C" {
@@ -144,6 +145,12 @@ __pragma (warning(pop))
 
 #if !defined (OS_UNUSED_ARG)
 #define OS_UNUSED_ARG(a) (void) (a)
+#endif
+
+#ifdef __GNUC__
+#define OS_UNUSED_PAR(x) x __attribute__ ((unused))
+#else
+#define OS_UNUSED_PAR(x) x
 #endif
 
     /** \brief Time structure definition

@@ -712,7 +712,7 @@ static int inst_accepts_sample
 
 static void update_inst
 (
-  const struct rhc *rhc, struct rhc_instance *inst,
+  OS_UNUSED_PAR(const struct rhc *rhc), struct rhc_instance *inst,
   const struct proxy_writer_info * __restrict pwr_info, nn_wctime_t tstamp)
 {
   if (inst->wr_iid != pwr_info->iid)
@@ -1884,7 +1884,7 @@ static int dds_rhc_take_w_qminv
 static int dds_rhc_takecdr_w_qminv
 (
  struct rhc *rhc, bool lock, struct serdata ** values, dds_sample_info_t *info_seq,
- uint32_t max_samples, unsigned qminv, dds_instance_handle_t handle, dds_readcond *cond
+ uint32_t max_samples, unsigned qminv, dds_instance_handle_t handle, OS_UNUSED_PAR(dds_readcond *cond)
  )
 {
   bool trigger_waitsets = false;

@@ -6,7 +6,7 @@
 #define cr_assert_status_eq(s1, s2, ...) cr_assert_eq(dds_err_nr(s1), s2, __VA_ARGS__)
 
 /* Dummy callback */
-static void data_available_cb(dds_entity_t reader, void* arg) {}
+static void data_available_cb(OS_UNUSED_PAR(dds_entity_t reader), OS_UNUSED_PAR(void* arg)) {}
 
 
 Test(vddsc_publisher, create)

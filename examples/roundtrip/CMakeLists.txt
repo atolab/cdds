@@ -18,5 +18,5 @@ add_executable(RoundtripPong pong.c)
 
 # Both executables need to be linked to the idl data type library and
 # the vddsc API library.
-target_link_libraries(RoundtripPing RoundTrip_lib VortexDDS::vddsc)
-target_link_libraries(RoundtripPong RoundTrip_lib VortexDDS::vddsc)
+target_link_libraries(RoundtripPing RoundTrip_lib VortexDDS::vddsc Warnings::NoUnusedParameter)
+target_link_libraries(RoundtripPong RoundTrip_lib VortexDDS::vddsc Warnings::NoUnusedParameter)

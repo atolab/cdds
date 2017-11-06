@@ -4,8 +4,8 @@
 #include <criterion/criterion.h>
 #include <criterion/logging.h>
 
-static void on_data_available(dds_entity_t reader, void* arg) {}
-static void on_publication_matched(dds_entity_t writer, const dds_publication_matched_status_t status, void* arg) {}
+static void on_data_available(OS_UNUSED_PAR(dds_entity_t reader), OS_UNUSED_PAR(void* arg)) {}
+static void on_publication_matched(OS_UNUSED_PAR(dds_entity_t writer), OS_UNUSED_PAR(const dds_publication_matched_status_t status), OS_UNUSED_PAR(void* arg)) {}
 
 Test(vddsc_subscriber, notify_readers) {
   dds_entity_t participant;

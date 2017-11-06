@@ -83,7 +83,7 @@ os_iterInsert(
     _In_opt_ void *object,
     _In_ int32_t index)
 {
-    int32_t cnt, idx = -1;
+    int32_t cnt, idx;
     os_iterNode *node, *prev;
 
     node = os_malloc_0(sizeof *node);
@@ -94,7 +94,7 @@ os_iterInsert(
     if (idx > 0) {
         assert(iter->length != 0);
         assert(iter->head != iter->tail || iter->length == 1);
-        if (idx == iter->length) {
+        if ((uint32_t)idx == iter->length) {
             prev = iter->tail;
             iter->tail = node;
         } else {
@@ -137,7 +137,7 @@ os_iterObject(
 
     idx = os__iterIndex(iter, index);
     if (idx >= 0 && (uint32_t)idx < iter->length) {
-        if (idx == (iter->length - 1)) {
+        if ((uint32_t)idx == (iter->length - 1)) {
             node = iter->tail;
         } else {
             node = iter->head;

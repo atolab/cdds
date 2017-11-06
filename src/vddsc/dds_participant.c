@@ -88,7 +88,7 @@ dds_participant_instance_hdl(
 static dds_return_t
 dds_participant_qos_validate(
         const dds_qos_t *qos,
-        bool enabled)
+        OS_UNUSED_PAR(bool enabled))
 {
     dds_return_t ret = DDS_RETCODE_OK;
     assert(qos);
@@ -106,7 +106,7 @@ dds_participant_qos_validate(
 
 static dds_return_t
 dds_participant_qos_set(
-        dds_entity *e,
+        OS_UNUSED_PAR(dds_entity *e),
         const dds_qos_t *qos,
         bool enabled)
 {

@@ -25,8 +25,8 @@ static uint32_t        sta;
 static dds_qos_t      *qos;
 static dds_attach_t wsresults[1];
 static dds_attach_t wsresults2[2];
-static size_t wsresultsize = 1U;
-static size_t wsresultsize2 = 2U;
+static dds_return_t wsresultsize = 1;
+static dds_return_t wsresultsize2 = 2;
 static dds_time_t waitTimeout = DDS_SECS (2);
 static dds_time_t shortTimeout = DDS_MSECS (10);
 static dds_publication_matched_status_t publication_matched;
@@ -188,8 +188,8 @@ Test(vddsc_entity_status, subscription_matched, .init=init_entity_status, .fini=
 Test(vddsc_entity, incompatible_qos, .init=init_entity_status, .fini=fini_entity_status)
 {
     dds_entity_t reader2;
-    dds_requested_incompatible_qos_status_t req_incompatible_qos = {0};
-    dds_offered_incompatible_qos_status_t off_incompatible_qos = {0};
+    dds_requested_incompatible_qos_status_t req_incompatible_qos = {};
+    dds_offered_incompatible_qos_status_t off_incompatible_qos = {};
     dds_qset_durability (qos, DDS_DURABILITY_PERSISTENT);
 
     /* Create a reader with persistent durability */
@@ -290,10 +290,10 @@ Test(vddsc_entity, liveliness_changed, .init=init_entity_status, .fini=fini_enti
 
 Test(vddsc_entity, sample_rejected, .init=init_entity_status, .fini=fini_entity_status)
 {
-    dds_sample_rejected_status_t sample_rejected = {0};
+    dds_sample_rejected_status_t sample_rejected = {};
 
     /* Topic instance */
-    RoundTripModule_DataType sample = { { 0 } };
+    RoundTripModule_DataType sample = {};
 
     ret = dds_set_enabled_status(wri, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_dds_return_t_eq(ret, DDS_RETCODE_OK);
@@ -376,10 +376,10 @@ Test(vddsc_entity, inconsistent_topic)
 Test(vddsc_entity, sample_lost, .init=init_entity_status, .fini=fini_entity_status)
 {
 
-    dds_sample_lost_status_t sample_lost = {0};
+    dds_sample_lost_status_t sample_lost = {};
     dds_time_t time1;
     /* Topic instance */
-    RoundTripModule_DataType sample = { { 0 } };
+    RoundTripModule_DataType sample = {};
 
     ret = dds_set_enabled_status(wri, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_dds_return_t_eq(ret, DDS_RETCODE_OK);
@@ -421,7 +421,7 @@ Test(vddsc_entity, sample_lost, .init=init_entity_status, .fini=fini_entity_stat
 
 Test(vddsc_entity, data_available, .init=init_entity_status, .fini=fini_entity_status)
 {
-    RoundTripModule_DataType sample = { { 0 } };
+    RoundTripModule_DataType sample = {};
 
     ret = dds_set_enabled_status(wri, DDS_PUBLICATION_MATCHED_STATUS);
     cr_assert_dds_return_t_eq(ret, DDS_RETCODE_OK);
@@ -466,7 +466,7 @@ Test(vddsc_entity, all_data_available, .init=init_entity_status, .fini=fini_enti
     dds_sample_info_t info;
 
     /* Topic instance */
-    RoundTripModule_DataType p_sample = { { 0 } };
+    RoundTripModule_DataType p_sample = {};
     void * s_samples[1];
     RoundTripModule_DataType s_sample;
 

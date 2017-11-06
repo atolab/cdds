@@ -25,8 +25,8 @@ struct q_globals gv;
 
 dds_globals dds_global =
 {
-  DDS_DOMAIN_DEFAULT, OS_ATOMIC_UINT32_INIT (0),
-  NULL, NULL, NULL, NULL
+  .m_default_domain = DDS_DOMAIN_DEFAULT,
+  .m_init_count = OS_ATOMIC_UINT32_INIT (0)
 };
 
 static char * dds_init_exe = NULL;

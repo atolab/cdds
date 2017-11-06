@@ -748,14 +748,14 @@ Test(vddsc_waitset_wait_until, past, .init=vddsc_waitset_attached_init, .fini=vd
 #define FOUND_WRITER        (0x0040)
 #define FOUND_ALL           (0x007F)
 
-static uint32_t NumberOfSetBits(uint32_t i)
+static dds_return_t NumberOfSetBits(uint32_t i)
 {
     /* https://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer */
     // Java: use >>> instead of >>
     // C or C++: use uint32_t
     i = i - ((i >> 1) & 0x55555555);
     i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
-    return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+    return (dds_return_t)(((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 
 /*************************************************************************************************/

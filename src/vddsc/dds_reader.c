@@ -116,7 +116,7 @@ dds_reader_qos_validate(
 
 static dds_return_t
 dds_reader_qos_set(
-        dds_entity *e,
+        OS_UNUSED_PAR(dds_entity *e),
         const dds_qos_t *qos,
         bool enabled)
 {

@@ -18,8 +18,8 @@ add_executable(HelloworldSubscriber subscriber.c)
 
 # Both executables need to be linked to the idl data type library and
 # the vddsc API library.
-target_link_libraries(HelloworldPublisher HelloWorldData_lib VortexDDS::vddsc)
-target_link_libraries(HelloworldSubscriber HelloWorldData_lib VortexDDS::vddsc)
+target_link_libraries(HelloworldPublisher HelloWorldData_lib VortexDDS::vddsc Warnings::NoUnusedParameter)
+target_link_libraries(HelloworldSubscriber HelloWorldData_lib VortexDDS::vddsc Warnings::NoUnusedParameter)
 
 
 

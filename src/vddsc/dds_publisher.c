@@ -49,7 +49,7 @@ dds_publisher_qos_validate(
 
 static dds_return_t
 dds_publisher_qos_set(
-        dds_entity *e,
+        OS_UNUSED_PAR(dds_entity *e),
         const dds_qos_t *qos,
         bool enabled)
 {
@@ -195,6 +195,7 @@ dds_publisher_begin_coherent(
         _In_ dds_entity_t e)
 {
     /* TODO: CHAM-124 Currently unsupported. */
+    OS_UNUSED_ARG(e);
     return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Using coherency to get a coherent data set is not being supported yet");
 }
 
@@ -203,6 +204,7 @@ dds_publisher_end_coherent(
         _In_ dds_entity_t e)
 {
     /* TODO: CHAM-124 Currently unsupported. */
+    OS_UNUSED_ARG(e);
     return DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "Using coherency to get a coherent data set is not being supported yet");
 }
 

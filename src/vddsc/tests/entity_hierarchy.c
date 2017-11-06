@@ -27,7 +27,7 @@ static dds_entity_t g_querycond   = 0;
 
 /* Dummy query condition callback. */
 static bool
-accept_all(const void * sample)
+accept_all(OS_UNUSED_PAR(const void * sample))
 {
     return true;
 }

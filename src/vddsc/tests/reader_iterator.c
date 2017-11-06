@@ -113,7 +113,7 @@ filter_mod2(const void * sample)
 static void
 reader_iterator_init(void)
 {
-    Space_Type1 sample = { 0 };
+    Space_Type1 sample;
     dds_attach_t triggered;
     dds_return_t ret;
     char name[100];

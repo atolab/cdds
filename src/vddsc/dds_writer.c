@@ -171,6 +171,7 @@ get_bandwidth_limit(
   struct config_channel_listelem *channel = find_channel (transport_priority);
   return channel->data_bandwidth_limit;
 #else
+  OS_UNUSED_ARG(transport_priority);
   return 0;
 #endif
 }

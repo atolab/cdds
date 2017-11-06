@@ -397,9 +397,9 @@ main(int argc, char *argv[])
                 }
 
                 sz = snprintf(runfn, sizeof(runfn), runfmt, pfx);
-                assert(sz > 0 && sz < sizeof(runfn));
+                assert(sz > 0 && (unsigned) sz < sizeof(runfn));
                 sz = snprintf(listfn, sizeof(listfn), listfmt, pfx);
-                assert(sz > 0 && sz < sizeof(listfn));
+                assert(sz > 0 && (unsigned) sz < sizeof(listfn));
                 now = time(NULL);
                 sz = (int)strftime(
                     stamp, sizeof(stamp), stampfmt, localtime(&now));

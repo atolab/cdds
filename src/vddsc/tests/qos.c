@@ -224,7 +224,7 @@ qos_fini(void)
  ****************************************************************************/
 Test(vddsc_qos, userdata, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_userdata p = { 0 };
+    struct pol_userdata p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -244,7 +244,7 @@ Test(vddsc_qos, userdata, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, topicdata, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_topicdata p = { 0 };
+    struct pol_topicdata p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -264,7 +264,7 @@ Test(vddsc_qos, topicdata, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, groupdata, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_groupdata p = { 0 };
+    struct pol_groupdata p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -284,7 +284,7 @@ Test(vddsc_qos, groupdata, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, durability, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_durability p = { 0 };
+    struct pol_durability p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -301,7 +301,7 @@ Test(vddsc_qos, durability, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, history, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_history p = { 0 };
+    struct pol_history p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -319,7 +319,7 @@ Test(vddsc_qos, history, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, resource_limits, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_resource_limits p = { 0 };
+    struct pol_resource_limits p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -338,7 +338,7 @@ Test(vddsc_qos, resource_limits, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, presentation, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_presentation p = { 0 };
+    struct pol_presentation p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -357,7 +357,7 @@ Test(vddsc_qos, presentation, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, lifespan, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_lifespan p = { 0 };
+    struct pol_lifespan p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -374,7 +374,7 @@ Test(vddsc_qos, lifespan, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, deadline, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_deadline p = { 0 };
+    struct pol_deadline p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -391,7 +391,7 @@ Test(vddsc_qos, deadline, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, latency_budget, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_latency_budget p = { 0 };
+    struct pol_latency_budget p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -408,7 +408,7 @@ Test(vddsc_qos, latency_budget, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, ownership, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_ownership p = { 0 };
+    struct pol_ownership p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -425,7 +425,7 @@ Test(vddsc_qos, ownership, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, ownership_strength, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_ownership_strength p = { 0 };
+    struct pol_ownership_strength p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -442,7 +442,7 @@ Test(vddsc_qos, ownership_strength, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, liveliness, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_liveliness p = { 0 };
+    struct pol_liveliness p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -460,7 +460,7 @@ Test(vddsc_qos, liveliness, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, time_base_filter, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_time_based_filter p = { 0 };
+    struct pol_time_based_filter p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -477,7 +477,7 @@ Test(vddsc_qos, time_base_filter, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, partition, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_partition p = { 0 };
+    struct pol_partition p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -501,7 +501,7 @@ Test(vddsc_qos, partition, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, reliability, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_reliability p = { 0 };
+    struct pol_reliability p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -519,7 +519,7 @@ Test(vddsc_qos, reliability, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, transport_priority, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_transport_priority p = { 0 };
+    struct pol_transport_priority p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -536,7 +536,7 @@ Test(vddsc_qos, transport_priority, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, destination_order, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_destination_order p = { 0 };
+    struct pol_destination_order p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -553,7 +553,7 @@ Test(vddsc_qos, destination_order, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, writer_data_lifecycle, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_writer_data_lifecycle p = { 0 };
+    struct pol_writer_data_lifecycle p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -570,7 +570,7 @@ Test(vddsc_qos, writer_data_lifecycle, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, reader_data_lifecycle, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_reader_data_lifecycle p = { 0 };
+    struct pol_reader_data_lifecycle p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
@@ -588,7 +588,7 @@ Test(vddsc_qos, reader_data_lifecycle, .init=qos_init, .fini=qos_fini)
 
 Test(vddsc_qos, durability_service, .init=qos_init, .fini=qos_fini)
 {
-    struct pol_durability_service p = { 0 };
+    struct pol_durability_service p = {};
 
     /* NULLs shouldn't crash and be a noops. */
     OS_WARNING_MSVC_OFF(6387); /* Disable warning on intentional misuse of the API */
