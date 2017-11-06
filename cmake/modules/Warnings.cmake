@@ -18,7 +18,7 @@ add_compile_options(
 #   $<$<C_COMPILER_ID:Clang>:-Weverything> # If you're ready for the madhouse or want to become ready
     $<$<C_COMPILER_ID:GNU>:-Wall>
     $<$<C_COMPILER_ID:GNU>:-Wextra>
-    $<$<C_COMPILER_ID:GNU>:-Wpedantic>
+    $<$<C_COMPILER_ID:GNU>:-Wno-missing-field-initializers>
 #   $<$<C_COMPILER_ID:GNU>:-Wpedantic>
 )
 
