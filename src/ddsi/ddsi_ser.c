@@ -123,7 +123,7 @@ void ddsi_serstate_append_blob (serstate_t st, size_t align, size_t sz, const vo
 void ddsi_serstate_set_msginfo
 (
   serstate_t st, unsigned statusinfo, nn_wctime_t timestamp,
-  void * dummy
+  OS_UNUSED_PAR(void * dummy)
 )
 {
   serdata_t d = st->data;

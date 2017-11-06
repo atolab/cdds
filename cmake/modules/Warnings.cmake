@@ -13,9 +13,12 @@ add_compile_options(
     # CMake does /W3 for MSVC by default, which is what we want.
     $<$<C_COMPILER_ID:Clang>:-Wall>
     $<$<C_COMPILER_ID:Clang>:-Wextra>
+    # We don't want initializers like {0} to cause a warning (and {} is C++ unfortunately, and not accepted by MSVC)
+    $<$<C_COMPILER_ID:Clang>:-Wno-missing-field-initializers>
 #   $<$<C_COMPILER_ID:Clang>:-Weverything> # If you're ready for the madhouse or want to become ready
     $<$<C_COMPILER_ID:GNU>:-Wall>
     $<$<C_COMPILER_ID:GNU>:-Wextra>
+    $<$<C_COMPILER_ID:GNU>:-Wpedantic>
 #   $<$<C_COMPILER_ID:GNU>:-Wpedantic>
 )
 

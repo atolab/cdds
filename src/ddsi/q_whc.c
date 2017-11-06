@@ -260,7 +260,7 @@ struct whc *whc_new (int is_transient_local, unsigned hdepth, unsigned tldepth, 
   return whc;
 }
 
-static void free_whc_node_contents (struct whc *whc, struct whc_node *whcn)
+static void free_whc_node_contents (OS_UNUSED_PAR(struct whc *whc), struct whc_node *whcn)
 {
   ddsi_serdata_unref (whcn->serdata);
   if (whcn->plist) {

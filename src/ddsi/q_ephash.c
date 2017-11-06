@@ -116,7 +116,7 @@ static void ephash_guid_remove (struct entity_common *e)
   assert (x);
 }
 
-static void *ephash_lookup_guid_int (const struct ephash *ephash, const struct nn_guid *guid, enum entity_kind kind)
+static void *ephash_lookup_guid_int (OS_UNUSED_PAR(const struct ephash *ephash), const struct nn_guid *guid, enum entity_kind kind)
 {
   /* FIXME: could (now) require guid to be first in entity_common; entity_common already is first in entity */
   struct entity_common e;

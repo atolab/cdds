@@ -2438,7 +2438,7 @@ int nn_plist_init_frommsg
   return ERR_INVALID;
 }
 
-unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, const struct nn_rmsg *rmsg, const nn_plist_src_t *src)
+unsigned char *nn_plist_quickscan (struct nn_rsample_info *dest, OS_UNUSED_PAR(const struct nn_rmsg *rmsg), const nn_plist_src_t *src)
 {
   /* Sets a few fields in dest, returns address of first byte
      following parameter list, or NULL on error.  Most errors will go

@@ -96,7 +96,7 @@ void thread_states_fini (void)
 
 static void
 cleanup_thread_state(
-    _In_opt_ void *data)
+    _In_opt_ OS_UNUSED_PAR(void *data))
 {
     struct thread_state1 *ts = get_thread_state(os_threadIdSelf());
 

@@ -185,7 +185,7 @@ _Check_return_ bool nn_freelist_push (_Inout_ struct nn_freelist *fl, _Inout_ _W
   }
 }
 
-_Check_return_ _Ret_maybenull_ void *nn_freelist_pushmany (_Inout_ struct nn_freelist *fl, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *first, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *last, OS_UNUSED_PAR(uint32_t n))
+_Check_return_ _Ret_maybenull_ void *nn_freelist_pushmany (_Inout_ struct nn_freelist *fl, _Inout_opt_ _When_ (return != 0, _Post_invalid_) void *first, _Inout_opt_ _When_ (return != 0, _Post_invalid_) OS_UNUSED_PAR(void *last), OS_UNUSED_PAR(uint32_t n))
 {
   void *m = first;
   while (m)

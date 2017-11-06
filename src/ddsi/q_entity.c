@@ -1953,7 +1953,7 @@ static void connect_proxy_writer_with_reader (struct proxy_writer *pwr, struct r
   proxy_writer_add_connection (pwr, rd, tnow, init_count);
 }
 
-static void connect_writer_with_reader (struct writer *wr, struct reader *rd, nn_mtime_t tnow)
+static void connect_writer_with_reader (struct writer *wr, struct reader *rd, OS_UNUSED_PAR(nn_mtime_t tnow))
 {
   int32_t reason;
   if (is_builtin_entityid (wr->e.guid.entityid, ownvendorid) || is_builtin_entityid (rd->e.guid.entityid, ownvendorid))
@@ -3561,7 +3561,7 @@ void new_proxy_participant
   os_mutexUnlock (&proxypp->e.lock);
 }
 
-int update_proxy_participant_plist_locked (struct proxy_participant *proxypp, const struct nn_plist *datap, enum update_proxy_participant_source source, nn_wctime_t timestamp)
+int update_proxy_participant_plist_locked (struct proxy_participant *proxypp, const struct nn_plist *datap, OS_UNUSED_PAR(enum update_proxy_participant_source source), OS_UNUSED_PAR(nn_wctime_t timestamp))
 {
   /* Currently, built-in processing is single-threaded, and it is only through this function and the proxy participant deletion (which necessarily happens when no-one else potentially references the proxy participant anymore).  So at the moment, the lock is superfluous. */
   nn_plist_t *new_plist;
@@ -3836,7 +3836,7 @@ uint64_t participant_instance_id (const struct nn_guid *guid)
 
 /* PROXY-GROUP --------------------------------------------------- */
 
-int new_proxy_group (const struct nn_guid *guid, const struct v_gid_s *gid, const char *name, const struct nn_xqos *xqos, nn_wctime_t timestamp)
+int new_proxy_group (const struct nn_guid *guid, OS_UNUSED_PAR(const struct v_gid_s *gid), const char *name, const struct nn_xqos *xqos, OS_UNUSED_PAR(nn_wctime_t timestamp))
 {
   struct proxy_participant *proxypp;
   nn_guid_t ppguid;
@@ -3899,7 +3899,7 @@ int new_proxy_group (const struct nn_guid *guid, const struct v_gid_s *gid, cons
   }
 }
 
-static void delete_proxy_group_locked (struct proxy_group *pgroup, nn_wctime_t timestamp, int isimplicit)
+static void delete_proxy_group_locked (struct proxy_group *pgroup, OS_UNUSED_PAR(nn_wctime_t timestamp), OS_UNUSED_PAR(int isimplicit))
 {
   struct proxy_participant *proxypp = pgroup->proxypp;
   assert ((pgroup->xqos != NULL) == (pgroup->name != NULL));
@@ -3980,7 +3980,7 @@ static void proxy_endpoint_common_fini (struct entity_common *e, struct proxy_en
 
 /* PROXY-WRITER ----------------------------------------------------- */
 
-int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, struct addrset *as, const nn_plist_t *plist, struct nn_dqueue *dqueue, struct xeventq *evq, nn_wctime_t timestamp)
+int new_proxy_writer (const struct nn_guid *ppguid, const struct nn_guid *guid, struct addrset *as, const nn_plist_t *plist, struct nn_dqueue *dqueue, struct xeventq *evq, OS_UNUSED_PAR(nn_wctime_t timestamp))
 {
   struct proxy_participant *proxypp;
   struct proxy_writer *pwr;
@@ -4175,7 +4175,7 @@ static void gc_delete_proxy_writer (struct gcreq *gcreq)
   os_free (pwr);
 }
 
-int delete_proxy_writer (const struct nn_guid *guid, nn_wctime_t timestamp, int isimplicit)
+int delete_proxy_writer (const struct nn_guid *guid, OS_UNUSED_PAR(nn_wctime_t timestamp), OS_UNUSED_PAR(int isimplicit))
 {
   struct proxy_writer *pwr;
   nn_log (LC_DISCOVERY, "delete_proxy_writer (%x:%x:%x:%x) ", PGUID (*guid));
@@ -4200,7 +4200,7 @@ int delete_proxy_writer (const struct nn_guid *guid, nn_wctime_t timestamp, int 
 
 /* PROXY-READER ----------------------------------------------------- */
 
-int new_proxy_reader (const struct nn_guid *ppguid, const struct nn_guid *guid, struct addrset *as, const nn_plist_t *plist, nn_wctime_t timestamp
+int new_proxy_reader (const struct nn_guid *ppguid, const struct nn_guid *guid, struct addrset *as, const nn_plist_t *plist, OS_UNUSED_PAR(nn_wctime_t timestamp)
 #ifdef DDSI_INCLUDE_SSM
                       , int favours_ssm
 #endif
@@ -4300,7 +4300,7 @@ static void gc_delete_proxy_reader (struct gcreq *gcreq)
   os_free (prd);
 }
 
-int delete_proxy_reader (const struct nn_guid *guid, nn_wctime_t timestamp, int isimplicit)
+int delete_proxy_reader (const struct nn_guid *guid, OS_UNUSED_PAR(nn_wctime_t timestamp), OS_UNUSED_PAR(int isimplicit))
 {
   struct proxy_reader *prd;
   nn_log (LC_DISCOVERY, "delete_proxy_reader (%x:%x:%x:%x) ", PGUID (*guid));

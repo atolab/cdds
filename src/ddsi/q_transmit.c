@@ -443,7 +443,7 @@ static int create_fragment_message_simple (struct writer *wr, seqno_t seq, struc
   return 0;
 }
 
-int create_fragment_message (struct writer *wr, seqno_t seq, const struct nn_plist *plist, struct serdata *serdata, unsigned fragnum, struct proxy_reader *prd, struct nn_xmsg **pmsg, int isnew)
+int create_fragment_message (struct writer *wr, seqno_t seq, OS_UNUSED_PAR(const struct nn_plist *plist), struct serdata *serdata, unsigned fragnum, struct proxy_reader *prd, struct nn_xmsg **pmsg, int isnew)
 {
   /* We always fragment into FRAGMENT_SIZEd fragments, which are near
      the smallest allowed fragment size & can't be bothered (yet) to
