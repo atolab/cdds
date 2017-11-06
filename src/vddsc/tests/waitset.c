@@ -656,7 +656,7 @@ Theory((dds_attach_t *a, size_t size, int msec), vddsc_waitset_wait, invalid_par
     dds_return_t ret;
 
     /* Only test when the combination of parameters is actually invalid. */
-    cr_assume(((a == NULL) && (size != 0)) || ((a != NULL) && (size == 0)) || (size < 0) || (msec < 0));
+    cr_assume(((a == NULL) && (size != 0)) || ((a != NULL) && (size == 0)) || (msec < 0));
 
     ret = dds_waitset_wait(waitset, a, size, DDS_MSECS(msec));
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d != expected %d", dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER);
@@ -713,7 +713,7 @@ Theory((dds_attach_t *a, size_t size), vddsc_waitset_wait_until, invalid_params,
     dds_return_t ret;
 
     /* Only test when the combination of parameters is actually invalid. */
-    cr_assume(((a == NULL) && (size != 0)) || ((a != NULL) && (size == 0)) || (size < 0));
+    cr_assume(((a == NULL) && (size != 0)) || ((a != NULL) && (size == 0)));
 
     ret = dds_waitset_wait_until(waitset, a, size, dds_time());
     cr_assert_eq(dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER, "returned %d != expected %d", dds_err_nr(ret), DDS_RETCODE_BAD_PARAMETER);

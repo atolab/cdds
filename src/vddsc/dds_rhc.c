@@ -396,7 +396,8 @@ void dds_rhc_set_qos (struct rhc * rhc, const nn_xqos_t * qos)
   rhc->by_source_ordering = (qos->destination_order.kind == NN_BY_SOURCE_TIMESTAMP_DESTINATIONORDER_QOS);
   rhc->exclusive_ownership = (qos->ownership.kind == NN_EXCLUSIVE_OWNERSHIP_QOS);
   rhc->reliable = (qos->reliability.kind == NN_RELIABLE_RELIABILITY_QOS);
-  rhc->history_depth = (qos->history.kind == NN_KEEP_LAST_HISTORY_QOS) ? qos->history.depth : ~0u;
+  assert(qos->history.kind != NN_KEEP_LAST_HISTORY_QOS || qos->history.depth > 0);
+  rhc->history_depth = (qos->history.kind == NN_KEEP_LAST_HISTORY_QOS) ? (unsigned)qos->history.depth : ~0u;
 }
 
 static struct rhc_sample * alloc_sample (struct rhc_instance *inst)

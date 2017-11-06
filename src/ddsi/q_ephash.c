@@ -287,7 +287,7 @@ void *ephash_enum_next (struct ephash_enum *st)
   if (st->cur)
   {
     st->cur = ut_chhIterNext (&st->it);
-    while (st->cur && (int)st->cur->kind != st->kind)
+    while (st->cur && (st->cur->kind != st->kind))
       st->cur = ut_chhIterNext (&st->it);
   }
   return res;

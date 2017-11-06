@@ -97,8 +97,9 @@ dds_subscriber_status_propagate(
 }
 
 _Requires_exclusive_lock_held_(participant)
-_Check_return_ dds_entity_t
-static dds__create_subscriber_l(
+_Check_return_
+static dds_entity_t
+dds__create_subscriber_l(
         _Inout_  dds_entity *participant, /* entity-lock must be held */
         _In_opt_ const dds_qos_t *qos,
         _In_opt_ const dds_listener_t *listener)
