@@ -102,14 +102,9 @@ dds_init(void)
     ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to parse configuration XML file %s", uri);
     goto fail_config;
   }
-
-  //check consistency of configuration file and environment variable. And store the default domain ID to dds_global.m_default_domain
-  default_domain = dds_domain_default();
-  if (default_domain == DDS_DOMAIN_DEFAULT)
-  { //exact value should be a valid domain ID
-      ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to configure domain id");
-      goto fail_domain;
-  }
+  /* The config.domainId can change internally in DDSI. So, remember what the
+   * main configured domain id is. */
+  dds_global.m_default_domain = config.domainId;
 
   dds__builtin_init();
 
@@ -181,7 +176,7 @@ fail_servicelease_new:
   thread_states_fini();
 fail_rtps_config:
   dds__builtin_fini();
-fail_domain:
+  dds_global.m_default_domain = DDS_DOMAIN_DEFAULT;
   config_fini (dds_cfgst);
   dds_cfgst = NULL;
 fail_config:
@@ -193,67 +188,6 @@ fail_handleserver:
   dds_global.m_init_count--;
   os_mutexUnlock(&dds__init_mutex);
   DDS_REPORT_FLUSH(true);
-  return ret;
-}
-
-//provides default domain id. calculates and stores at a global variable on first call
-dds_domainid_t dds_domain_default (void)
-{
-  if(dds_global.m_default_domain == DDS_DOMAIN_DEFAULT ){
-    const char * env_domain = os_getenv ("VORTEX_DOMAIN");
-    if (env_domain) //environment variable exists
-    {
-
-      char *env_domain_end;
-      long long env_domain_value = os_strtoll (env_domain, &env_domain_end, 10);
-
-      if(env_domain == env_domain_end) //VORTEX_DOMAIN is not integer
-      {
-        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "VORTEX_DOMAIN (%s) environment variable is not integer", env_domain);
-        dds_global.m_default_domain = DDS_DOMAIN_DEFAULT ;
-      }
-      else if(env_domain_value == DDS_DOMAIN_DEFAULT){
-        //then use the value from configuration
-        dds_global.m_default_domain = config.domainId;
-      }
-      else if (env_domain_value >= DOMAIN_ID_MIN && env_domain_value <= DOMAIN_ID_MAX){ //Valid value for environment variable
-        //use environment variable for the domain
-        dds_global.m_default_domain = (int)env_domain_value;
-        //change the configuration data
-        config.domainId = dds_global.m_default_domain;
-      }
-      else{ //Invalid value for environment variable
-        DDS_ERROR(DDS_RETCODE_BAD_PARAMETER, "VORTEX_DOMAIN (%s) environment variable has invalid value", env_domain);
-        dds_global.m_default_domain = DDS_DOMAIN_DEFAULT ;
-      }
-
-    }
-    else{ // no environment variable defined. then use the value from configuration
-      dds_global.m_default_domain = config.domainId;
-    }
-  }
-
-  return  dds_global.m_default_domain;
-
-}
-
-
-dds_return_t
-dds__check_domain(
-        _In_ dds_domainid_t domain)
-{
-  dds_return_t ret = DDS_RETCODE_OK;
-  /* If domain is default: use configured id. */
-  if (domain != DDS_DOMAIN_DEFAULT)
-  {
-    /* Specific domain has to be the same as the configured domain. */
-    if (domain != dds_domain_default())
-    {
-      ret = DDS_ERRNO(DDS_RETCODE_ERROR,
-                      "Inconsistent domain configuration detected: domain on configuration: %d, domain %d",
-                      dds_domain_default(), domain);
-    }
-  }
   return ret;
 }
 
@@ -324,4 +258,32 @@ void ddsi_plugin_init (void)
   /* Register iid generator */
 
   ddsi_plugin.iidgen_fn = dds_iid_gen;
+}
+
+
+
+//provides explicit default domain id.
+dds_domainid_t dds_domain_default (void)
+{
+  return  dds_global.m_default_domain;
+}
+
+
+dds_return_t
+dds__check_domain(
+        _In_ dds_domainid_t domain)
+{
+  dds_return_t ret = DDS_RETCODE_OK;
+  /* If domain is default: use configured id. */
+  if (domain != DDS_DOMAIN_DEFAULT)
+  {
+    /* Specific domain has to be the same as the configured domain. */
+    if (domain != dds_global.m_default_domain)
+    {
+      ret = DDS_ERRNO(DDS_RETCODE_ERROR,
+                      "Inconsistent domain configuration detected: domain on configuration: %d, domain %d",
+                      dds_global.m_default_domain, domain);
+    }
+  }
+  return ret;
 }

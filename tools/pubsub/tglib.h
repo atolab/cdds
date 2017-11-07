@@ -6,24 +6,24 @@
 struct tgtype;
 
 struct tgtopic_key {
-  char *name; /* field name */
-  size_t off; /* from start of data */
-  const struct tgtype *type; /* aliases tgtopic::type */
+    char *name; /* field name */
+    size_t off; /* from start of data */
+    const struct tgtype *type; /* aliases tgtopic::type */
 };
 
 struct tgtopic {
-  char *name;
-  size_t size;
-  struct tgtype *type;
-  unsigned nkeys;
-  struct tgtopic_key *keys;
+    char *name;
+    size_t size;
+    struct tgtype *type;
+    unsigned nkeys;
+    struct tgtopic_key *keys;
 };
 
 enum tgprint_mode {
-  TGPM_DENSE,
-  TGPM_SPACE,
-  TGPM_FIELDS,
-  TGPM_MULTILINE
+    TGPM_DENSE,
+    TGPM_SPACE,
+    TGPM_FIELDS,
+    TGPM_MULTILINE
 };
 
 struct tgtopic *tgnew(dds_entity_t tp, int printtype);

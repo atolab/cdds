@@ -4,6 +4,8 @@ idlc_generate(RoundTrip RoundTrip.idl)
 idlc_generate(Space Space.idl)
 idlc_generate(TypesArrayKey TypesArrayKey.idl)
 add_criterion_executable(criterion_vddsc .)
+target_include_directories(criterion_vddsc PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/src/include/>")
 target_link_libraries(criterion_vddsc RoundTrip Space TypesArrayKey vddsc OSAPI)
 
 # Setup environment for config-tests

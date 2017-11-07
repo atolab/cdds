@@ -730,10 +730,8 @@ dds_set_listener(
  *
  * If domain is set (not DDS_DOMAIN_DEFAULT) then it must match if the domain has also
  * been configured or an error status will be returned.
- * Currently only a single domain can be configured by providing configuration file and
- * by  setting the environment variable VORTEX_DOMAIN.
- * VORTEX_DOMAIN environment variable overwrites the configuration file value.
- * If nothing is set, the default domain is 0.
+ * Currently only a single domain can be configured by providing configuration file.
+ * If no configuration file exists, the default domain is configured as 0.
  *
  *
  * @param[in]  domain The domain in which to create the participant (can be DDS_DOMAIN_DEFAULT). Valid values for domain id are between 0 and 230. DDS_DOMAIN_DEFAULT is for using the domain in the configuration.
