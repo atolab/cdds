@@ -12,6 +12,8 @@
 #include <assert.h>
 #include <string.h>
 #include <ddsi/q_error.h>
+#include <os/os.h>
+#include <os/os_stdlib.h>
 
 #include "ddsi/q_misc.h"
 #include "ddsi/q_config.h"
@@ -20,21 +22,76 @@
 
 #include "dds_builtinTopics.h"
 
-static void generate_user_data (_Out_ DDS_UserDataQosPolicy *a, _In_ const nn_xqos_t *xqos)
+const DDS_Duration_t DDS_Duration_TIME_ZERO         = {0, 0};
+const DDS_Duration_t DDS_Duration_INFINITE     = {0x7fffffff, 0x7fffffffU};
+const DDS_Duration_t DDS_Duration_MIN_INFINITE = {-0x7fffffff,  0x7fffffffU};
+const DDS_Duration_t DDS_Duration_TIME_INVALID      = {-1,  0xffffffffU};
+
+static void generate_user_data (_Out_ DDS_UserDataQosPolicy *target, _In_ const nn_xqos_t *xqos)
 {
   if (!(xqos->present & QP_USER_DATA) || (xqos->user_data.length == 0))
   {
-    a->value._maximum = 0;
-    a->value._length  = 0;
-    a->value._buffer  = NULL;
-    a->value._release = false;
+    target->value._maximum = 0;
+    target->value._length  = 0;
+    target->value._buffer  = NULL;
+    target->value._release = false;
   } else {
-    a->value._maximum = xqos->user_data.length;
-    a->value._length  = xqos->user_data.length;
-    a->value._buffer  = xqos->user_data.value;
-    a->value._release = false;
+    target->value._maximum = xqos->user_data.length;
+    target->value._length  = xqos->user_data.length;
+    target->value._buffer  = xqos->user_data.value;
+    target->value._release = false;
   }
 }
+
+static void generate_group_data (_Out_ DDS_GroupDataQosPolicy *target, _In_ const nn_xqos_t *xqos)
+{
+  if (!(xqos->present & QP_GROUP_DATA) || (xqos->group_data.length == 0))
+  {
+    target->value._maximum = 0;
+    target->value._length  = 0;
+    target->value._buffer  = NULL;
+    target->value._release = false;
+  } else {
+    target->value._maximum = xqos->group_data.length;
+    target->value._length  = xqos->group_data.length;
+    target->value._buffer  = xqos->group_data.value;
+    target->value._release = false;
+  }
+}
+
+static void generate_topic_data (_Out_ DDS_TopicDataQosPolicy *target, _In_ const nn_xqos_t *xqos)
+{
+  if (!(xqos->present & QP_TOPIC_DATA) || (xqos->topic_data.length == 0))
+  {
+    target->value._maximum = 0;
+    target->value._length  = 0;
+    target->value._buffer  = NULL;
+    target->value._release = false;
+  } else {
+    target->value._maximum = xqos->topic_data.length;
+    target->value._length  = xqos->topic_data.length;
+    target->value._buffer  = xqos->topic_data.value;
+    target->value._release = false;
+  }
+}
+
+
+static void generate_partition_data (_Out_ DDS_PartitionQosPolicy *target, _In_ const nn_xqos_t *xqos)
+{
+  if (!(xqos->present & QP_PARTITION) || (xqos->topic_data.length == 0))
+  {
+    target->name._maximum = 0;
+    target->name._length  = 0;
+    target->name._buffer  = NULL;
+    target->name._release = false;
+  } else {
+    target->name._maximum = xqos->partition.n;
+    target->name._length  = xqos->partition.n;
+    target->name._buffer  = xqos->partition.strs;
+    target->name._release = false;
+  }
+}
+
 
 static void
 generate_product_data(
@@ -185,264 +242,249 @@ propagate_builtin_topic_cmparticipant(
 
 
 
-static int qpc_topic_name (char *a, const nn_xqos_t *xqos)
+
+static int copy_topic_name (_Out_ char **target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_TOPIC_NAME);
-  //*a = c_stringNew_s (gv.ospl_base, xqos->topic_name);
-  return (*a == NULL) ? ERR_OUT_OF_MEMORY : 0;
+  printf("QP_TOPIC_NAME: %lu",xqos->present & QP_TOPIC_NAME);
+  *target = os_strdup(xqos->topic_name);
+  return (*target == NULL) ? ERR_OUT_OF_MEMORY : 0;
 }
 
-/*
-static int qpc_type_name (c_string *a, const nn_xqos_t *xqos)
+static int copy_type_name (_Out_ char **target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_TYPE_NAME);
-  *a = c_stringNew_s (gv.ospl_base, xqos->type_name);
-  return (*a == NULL) ? ERR_OUT_OF_MEMORY : 0;
+  printf("QP_TYPE_NAME: %lu",xqos->present & QP_TYPE_NAME);
+  *target = os_strdup(xqos->type_name);
+  return (*target == NULL) ? ERR_OUT_OF_MEMORY : 0;
 }
 
-static int qpc_entity_name (c_string *a, const char *name)
+static int copy_entity_name (_Out_ char **target, const char *name)
 {
-  *a = c_stringNew_s (gv.ospl_base, name);
-  return (*a == NULL) ? ERR_OUT_OF_MEMORY : 0;
+  *target = os_strdup (name);
+  return (*target == NULL) ? ERR_OUT_OF_MEMORY : 0;
 }
 
-static int qpc_share_policy (struct v_sharePolicy *a, const nn_xqos_t *xqos)
+
+static DDS_Duration_t ddsi_duration_to_dds_duration (nn_duration_t ddsi_time)
 {
-  assert (xqos->present & QP_PRISMTECH_SHARE);
-  a->enable = xqos->share.enable;
-  a->name = c_stringNew_s (gv.ospl_base, xqos->share.name);
-  return (a->name == NULL) ? ERR_OUT_OF_MEMORY : 0;
+  const DDS_Duration_t inf = DDS_Duration_INFINITE;
+  int64_t dds_duration = nn_from_ddsi_duration (ddsi_time);
+  if (dds_duration == T_NEVER)
+    return inf;
+  else
+  {
+    DDS_Duration_t builtin_topic_duration;
+    builtin_topic_duration.sec = (long) (dds_duration / T_SECOND);
+    builtin_topic_duration.nanosec = (ulong) (dds_duration % T_SECOND);
+    return builtin_topic_duration;
+  }
 }
 
-static void qpc_entity_factory (struct v_entityFactoryPolicy *a, const nn_xqos_t *xqos)
+static int copy_share_policy (_Out_ struct DDS_ShareQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_PRISMTECH_ENTITY_FACTORY);
-  a->autoenable_created_entities = xqos->entity_factory.autoenable_created_entities;
+  //printf("QP_PR: %lu",xqos->present & QP_PR);
+  target->enable = xqos->share.enable;
+  target->name = os_strdup( xqos->share.name);
+  return (target->name == NULL) ? ERR_OUT_OF_MEMORY : 0;
 }
 
-static void qpc_durability_policy (struct v_durabilityPolicy *a, const nn_xqos_t *xqos)
+static void copy_entity_factory (_Out_ struct DDS_EntityFactoryQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_DURABILITY);
+  printf("QP_PRISMTECH_ENTITY_FACTORY: %lu",xqos->present & QP_PRISMTECH_ENTITY_FACTORY);
+  target->autoenable_created_entities = xqos->entity_factory.autoenable_created_entities;
+}
+
+static void copy_durability_policy (_Out_ struct DDS_DurabilityQosPolicy *target, const nn_xqos_t *xqos)
+{
+  printf("QP_DURABILITY: %lu",xqos->present & QP_DURABILITY);
   switch (xqos->durability.kind)
   {
     case NN_VOLATILE_DURABILITY_QOS:
-      a->kind = V_DURABILITY_VOLATILE;
+      target->kind = DDS_VOLATILE_DURABILITY_QOS;
       break;
     case NN_TRANSIENT_LOCAL_DURABILITY_QOS:
-      a->kind = V_DURABILITY_TRANSIENT_LOCAL;
+      target->kind = DDS_TRANSIENT_LOCAL_DURABILITY_QOS;
       break;
     case NN_TRANSIENT_DURABILITY_QOS:
-      a->kind = V_DURABILITY_TRANSIENT;
+      target->kind = DDS_TRANSIENT_DURABILITY_QOS;
       break;
     case NN_PERSISTENT_DURABILITY_QOS:
-      a->kind = V_DURABILITY_PERSISTENT;
+      target->kind = DDS_PERSISTENT_DURABILITY_QOS;
       break;
   }
 }
 
-static void qpc_durability_service_policy (struct v_durabilityServicePolicy *a, const nn_xqos_t *xqos)
+static void copy_durability_service_policy (_Out_ struct DDS_DurabilityServiceQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_DURABILITY_SERVICE);
+  printf("QP_DURABILITY_SERVICE: %lu",xqos->present & QP_DURABILITY_SERVICE);
   switch (xqos->durability_service.history.kind)
   {
     case NN_KEEP_LAST_HISTORY_QOS:
-      a->history_kind = V_HISTORY_KEEPLAST;
+      target->history_kind = DDS_KEEP_LAST_HISTORY_QOS;
       break;
     case NN_KEEP_ALL_HISTORY_QOS:
-      a->history_kind = V_HISTORY_KEEPALL;
+      target->history_kind = DDS_KEEP_ALL_HISTORY_QOS;
       break;
   }
-  a->history_depth = xqos->durability_service.history.depth;
-  a->max_instances = xqos->durability_service.resource_limits.max_instances;
-  a->max_samples = xqos->durability_service.resource_limits.max_samples;
-  a->max_samples_per_instance = xqos->durability_service.resource_limits.max_samples_per_instance;
-  a->service_cleanup_delay = ddsi_duration_to_v_duration (xqos->durability_service.service_cleanup_delay);
+  target->history_depth = xqos->durability_service.history.depth;
+  target->max_instances = xqos->durability_service.resource_limits.max_instances;
+  target->max_samples = xqos->durability_service.resource_limits.max_samples;
+  target->max_samples_per_instance = xqos->durability_service.resource_limits.max_samples_per_instance;
+  target->service_cleanup_delay = ddsi_duration_to_dds_duration (xqos->durability_service.service_cleanup_delay);
 }
 
-static void qpc_deadline_policy (struct v_deadlinePolicy *a, const nn_xqos_t *xqos)
+static void copy_deadline_policy (_Out_ struct DDS_DeadlineQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_DEADLINE);
-  a->period = ddsi_duration_to_v_duration (xqos->deadline.deadline);
+  printf("QP_DEADLINE: %lu",xqos->present & QP_DEADLINE);
+  target->period = ddsi_duration_to_dds_duration (xqos->deadline.deadline);
 }
 
-static void qpc_latency_budget_policy (struct v_latencyPolicy *a, const nn_xqos_t *xqos)
+static void copy_latency_budget_policy (_Out_ struct DDS_LatencyBudgetQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_LATENCY_BUDGET);
-  a->duration = ddsi_duration_to_v_duration (xqos->latency_budget.duration);
+  printf("QP_LATENCY_BUDGET: %lu",xqos->present & QP_LATENCY_BUDGET);
+  target->duration = ddsi_duration_to_dds_duration (xqos->latency_budget.duration);
 }
 
-static void qpc_liveliness_policy (struct v_livelinessPolicy *a, const nn_xqos_t *xqos)
+static void copy_liveliness_policy (_Out_ struct DDS_LivelinessQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_LIVELINESS);
+  printf("QP_LIVELINESS: %lu",xqos->present & QP_LIVELINESS);
   switch (xqos->liveliness.kind)
   {
     case NN_AUTOMATIC_LIVELINESS_QOS:
-      a->kind = V_LIVELINESS_AUTOMATIC;
+      target->kind = DDS_AUTOMATIC_LIVELINESS_QOS;
       break;
     case NN_MANUAL_BY_PARTICIPANT_LIVELINESS_QOS:
-      a->kind = V_LIVELINESS_PARTICIPANT;
+      target->kind = DDS_MANUAL_BY_PARTICIPANT_LIVELINESS_QOS;
       break;
     case NN_MANUAL_BY_TOPIC_LIVELINESS_QOS:
-      a->kind = V_LIVELINESS_TOPIC;
+      target->kind = DDS_MANUAL_BY_TOPIC_LIVELINESS_QOS;
       break;
   }
-  a->lease_duration = ddsi_duration_to_v_duration (xqos->liveliness.lease_duration);
+  target->lease_duration = ddsi_duration_to_dds_duration (xqos->liveliness.lease_duration);
 }
 
-static void qpc_reliability_policy (struct v_reliabilityPolicy *a, const nn_xqos_t *xqos)
+static void copy_reliability_policy (_Out_ struct DDS_ReliabilityQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_RELIABILITY);
-  assert (xqos->present & QP_PRISMTECH_SYNCHRONOUS_ENDPOINT);
+  printf("QP_RELIABILITY: %lu",xqos->present & QP_RELIABILITY);
+  printf("QP_PRISMTECH_SYNCHRONOUS_ENDPOINT: %lu",xqos->present & QP_PRISMTECH_SYNCHRONOUS_ENDPOINT);
   switch (xqos->reliability.kind)
   {
     case NN_BEST_EFFORT_RELIABILITY_QOS:
-      a->kind = V_RELIABILITY_BESTEFFORT;
+      target->kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
       break;
     case NN_RELIABLE_RELIABILITY_QOS:
-      a->kind = V_RELIABILITY_RELIABLE;
+      target->kind = DDS_RELIABLE_RELIABILITY_QOS;
       break;
   }
-  a->max_blocking_time = ddsi_duration_to_v_duration (xqos->reliability.max_blocking_time);
-  a->synchronous = xqos->synchronous_endpoint.value;
+  target->max_blocking_time = ddsi_duration_to_dds_duration (xqos->reliability.max_blocking_time);
+  target->synchronous = xqos->synchronous_endpoint.value;
 }
 
-static void qpc_transport_priority_policy (struct v_transportPolicy *a, const nn_xqos_t *xqos)
+static void copy_transport_priority_policy (_Out_ struct DDS_TransportPriorityQosPolicy *target, const nn_xqos_t *xqos)
 {
-  a->value = xqos->transport_priority.value;
+  target->value = xqos->transport_priority.value;
 }
 
-static void qpc_lifespan_policy (struct v_lifespanPolicy *a, const nn_xqos_t *xqos)
+static void copy_lifespan_policy (_Out_ struct DDS_LifespanQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_LIFESPAN);
-  a->duration = ddsi_duration_to_v_duration (xqos->lifespan.duration);
+  printf("QP_LIFESPAN: %lu",xqos->present & QP_LIFESPAN);
+    target->duration = ddsi_duration_to_dds_duration (xqos->lifespan.duration);
 }
 
-static void qpc_destination_order_policy (struct v_orderbyPolicy *a, const nn_xqos_t *xqos)
+static void copy_destination_order_policy (_Out_ struct DDS_DestinationOrderQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_DESTINATION_ORDER);
+  printf("QP_DESTINATION_ORDER: %lu",xqos->present & QP_DESTINATION_ORDER);
   switch (xqos->destination_order.kind)
   {
     case NN_BY_RECEPTION_TIMESTAMP_DESTINATIONORDER_QOS:
-      a->kind = V_ORDERBY_RECEPTIONTIME;
+      target->kind = DDS_BY_RECEPTION_TIMESTAMP_DESTINATIONORDER_QOS;
       break;
     case NN_BY_SOURCE_TIMESTAMP_DESTINATIONORDER_QOS:
-      a->kind = V_ORDERBY_SOURCETIME;
+      target->kind = DDS_BY_SOURCE_TIMESTAMP_DESTINATIONORDER_QOS;
       break;
   }
 }
 
-static void qpc_history_policy (struct v_historyPolicy *a, const nn_xqos_t *xqos)
+static void copy_history_policy (_Out_ struct DDS_HistoryQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_HISTORY);
+  printf("QP_HISTORY: %lu",xqos->present & QP_HISTORY);
   switch (xqos->history.kind)
   {
     case NN_KEEP_LAST_HISTORY_QOS:
-      a->kind = V_HISTORY_KEEPLAST;
+      target->kind = DDS_KEEP_LAST_HISTORY_QOS;
       break;
     case NN_KEEP_ALL_HISTORY_QOS:
-      a->kind = V_HISTORY_KEEPALL;
+      target->kind = DDS_KEEP_ALL_HISTORY_QOS;
       break;
   }
-  a->depth = xqos->history.depth;
+  target->depth = xqos->history.depth;
 }
 
-static void qpc_resource_limits_policy (struct v_resourcePolicy *a, const nn_xqos_t *xqos)
+static void copy_resource_limits_policy (_Out_ struct DDS_ResourceLimitsQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_RESOURCE_LIMITS);
-  a->max_instances = xqos->resource_limits.max_instances;
-  a->max_samples = xqos->resource_limits.max_samples;
-  a->max_samples_per_instance = xqos->resource_limits.max_samples_per_instance;
+  printf("QP_RESOURCE_LIMITS: %lu",xqos->present & QP_RESOURCE_LIMITS);
+  target->max_instances = xqos->resource_limits.max_instances;
+  target->max_samples = xqos->resource_limits.max_samples;
+  target->max_samples_per_instance = xqos->resource_limits.max_samples_per_instance;
 }
 
-
-static int qpc_user_data_policy (struct v_builtinUserDataPolicy *a, const nn_xqos_t *xqos)
+static void copy_ownership_policy (_Out_ struct DDS_OwnershipQosPolicy *target, const nn_xqos_t *xqos)
 {
-  if (!(xqos->present & QP_USER_DATA) || xqos->user_data.length == 0)
-    a->value = NULL;
-  else if ((a->value = c_arrayNew_s (c_octet_t (gv.ospl_base), xqos->user_data.length)) == NULL)
-    return ERR_OUT_OF_MEMORY;
-  else
-    memcpy (a->value, xqos->user_data.value, xqos->user_data.length);
-  return 0;
-}
-
-static void qpc_ownership_policy (struct v_ownershipPolicy *a, const nn_xqos_t *xqos)
-{
-  assert (xqos->present & QP_OWNERSHIP);
+  printf("QP_OWNERSHIP: %lu",xqos->present & QP_OWNERSHIP);
   switch (xqos->ownership.kind)
   {
     case NN_SHARED_OWNERSHIP_QOS:
-      a->kind = V_OWNERSHIP_SHARED;
+      target->kind = DDS_SHARED_OWNERSHIP_QOS;
       break;
     case NN_EXCLUSIVE_OWNERSHIP_QOS:
-      a->kind = V_OWNERSHIP_EXCLUSIVE;
+      target->kind = DDS_EXCLUSIVE_OWNERSHIP_QOS;
       break;
   }
 }
 
-static void qpc_ownership_strength_policy (struct v_strengthPolicy *a, const nn_xqos_t *xqos)
+static void copy_ownership_strength_policy (_Out_ struct DDS_OwnershipStrengthQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_OWNERSHIP_STRENGTH);
-  a->value = xqos->ownership_strength.value;
+  printf("QP_OWNERSHIP_STRENGTH: %lu",xqos->present & QP_OWNERSHIP_STRENGTH);
+  target->value = xqos->ownership_strength.value;
 }
 
-static void qpc_time_based_filter_policy (struct v_pacingPolicy *a, const nn_xqos_t *xqos)
+/*
+static void copy_time_based_filter_policy (struct v_pacingPolicy *a, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_TIME_BASED_FILTER);
-  a->minSeperation = ddsi_duration_to_v_duration (xqos->time_based_filter.minimum_separation);
+  printf("QP_TIME_BASED_FILTER: %lu",xqos->present & QP_TIME_BASED_FILTER);
+  a->minSeperation = ddsi_duration_to_dds_duration (xqos->time_based_filter.minimum_separation);
 }
-
-static void qpc_presentation_policy (struct v_presentationPolicy *a, const nn_xqos_t *xqos)
+*/
+static void copy_presentation_policy (_Out_ struct DDS_PresentationQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_PRESENTATION);
+  printf("QP_PRESENTATION: %lu",xqos->present & QP_PRESENTATION);
   switch (xqos->presentation.access_scope)
   {
     case NN_INSTANCE_PRESENTATION_QOS:
-      a->access_scope = V_PRESENTATION_INSTANCE;
+      target->access_scope = DDS_INSTANCE_PRESENTATION_QOS;
       break;
     case NN_TOPIC_PRESENTATION_QOS:
-      a->access_scope = V_PRESENTATION_TOPIC;
+      target->access_scope = DDS_TOPIC_PRESENTATION_QOS;
       break;
     case NN_GROUP_PRESENTATION_QOS:
-      a->access_scope = V_PRESENTATION_GROUP;
+      target->access_scope = DDS_GROUP_PRESENTATION_QOS;
       break;
   }
-  a->coherent_access = xqos->presentation.coherent_access;
-  a->ordered_access = xqos->presentation.ordered_access;
+  target->coherent_access = xqos->presentation.coherent_access;
+  target->ordered_access = xqos->presentation.ordered_access;
 }
 
-static int qpc_group_data_policy (struct v_builtinGroupDataPolicy *a, const nn_xqos_t *xqos)
-{
-  if (!(xqos->present & QP_GROUP_DATA) || xqos->group_data.length == 0)
-    a->value = NULL;
-  else if ((a->value = c_arrayNew_s (c_octet_t (gv.ospl_base), xqos->group_data.length)) == NULL)
-    return ERR_OUT_OF_MEMORY;
-  else
-    memcpy (a->value, xqos->group_data.value, xqos->group_data.length);
-  return 0;
-}
 
-static int qpc_topic_data_policy (struct v_builtinTopicDataPolicy *a, const nn_xqos_t *xqos)
-{
-  if (!(xqos->present & QP_TOPIC_DATA) || xqos->topic_data.length == 0)
-    a->value = NULL;
-  else if ((a->value = c_arrayNew_s (c_octet_t (gv.ospl_base), xqos->topic_data.length)) == NULL)
-    return ERR_OUT_OF_MEMORY;
-  else
-    memcpy (a->value, xqos->topic_data.value, xqos->topic_data.length);
-  return 0;
-}
-
-static int qpc_partition_policy (struct v_builtinPartitionPolicy *a, const nn_xqos_t *xqos)
+/*
+static int copy_partition_policy (_Out_ struct DDS_PartitionQosPolicy *target, const nn_xqos_t *xqos)
 {
   const int present = (xqos->present & QP_PARTITION) != 0;
   c_type type = c_string_t (gv.ospl_base);
-  a->name = c_arrayNew_s (type, (!present || xqos->partition.n == 0) ? 1 : xqos->partition.n);
-  if (a->name == NULL)
+  target->name = c_arrayNew_s (type, (!present || xqos->partition.n == 0) ? 1 : xqos->partition.n);
+  if (target->name == NULL)
     return ERR_OUT_OF_MEMORY;
   else
   {
-    c_string *ns = (c_string *) a->name;
+    c_string *ns = (c_string *) target->name;
     if (!present || xqos->partition.n == 0)
     {
       if ((ns[0] = c_stringNew_s (gv.ospl_base, "")) == NULL)
@@ -460,46 +502,47 @@ static int qpc_partition_policy (struct v_builtinPartitionPolicy *a, const nn_xq
   }
   return 0;
 }
-
-static void qpc_writer_data_lifecycle_policy (struct v_writerLifecyclePolicy *a, const nn_xqos_t *xqos)
+*/
+static void copy_writer_data_lifecycle_policy (_Out_ struct DDS_WriterDataLifecycleQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_PRISMTECH_WRITER_DATA_LIFECYCLE);
-  a->autodispose_unregistered_instances = xqos->writer_data_lifecycle.autodispose_unregistered_instances;
-  a->autopurge_suspended_samples_delay = ddsi_duration_to_v_duration (xqos->writer_data_lifecycle.autopurge_suspended_samples_delay);
-  a->autounregister_instance_delay = ddsi_duration_to_v_duration (xqos->writer_data_lifecycle.autounregister_instance_delay);
+  printf("QP_PRISMTECH_WRITER_DATA_LIFECYCLE: %lu",xqos->present & QP_PRISMTECH_WRITER_DATA_LIFECYCLE);
+  target->autodispose_unregistered_instances = xqos->writer_data_lifecycle.autodispose_unregistered_instances;
+  target->autopurge_suspended_samples_delay = ddsi_duration_to_dds_duration (xqos->writer_data_lifecycle.autopurge_suspended_samples_delay);
+  target->autounregister_instance_delay = ddsi_duration_to_dds_duration (xqos->writer_data_lifecycle.autounregister_instance_delay);
 }
 
-static void qpc_reader_data_lifecycle_policy (struct v_readerLifecyclePolicy *a, const nn_xqos_t *xqos)
+static void copy_reader_data_lifecycle_policy (_Out_ struct DDS_ReaderDataLifecycleQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_PRISMTECH_READER_DATA_LIFECYCLE);
-  a->autopurge_nowriter_samples_delay = ddsi_duration_to_v_duration (xqos->reader_data_lifecycle.autopurge_nowriter_samples_delay);
-  a->autopurge_disposed_samples_delay = ddsi_duration_to_v_duration (xqos->reader_data_lifecycle.autopurge_disposed_samples_delay);
-  a->autopurge_dispose_all = xqos->reader_data_lifecycle.autopurge_dispose_all;
-  a->enable_invalid_samples = xqos->reader_data_lifecycle.enable_invalid_samples;
+  printf("QP_PRISMTECH_READER_DATA_LIFECYCLE: %lu",xqos->present & QP_PRISMTECH_READER_DATA_LIFECYCLE);
+  target->autopurge_nowriter_samples_delay = ddsi_duration_to_dds_duration (xqos->reader_data_lifecycle.autopurge_nowriter_samples_delay);
+  target->autopurge_disposed_samples_delay = ddsi_duration_to_dds_duration (xqos->reader_data_lifecycle.autopurge_disposed_samples_delay);
+  target->autopurge_dispose_all = xqos->reader_data_lifecycle.autopurge_dispose_all;
+  target->enable_invalid_samples = xqos->reader_data_lifecycle.enable_invalid_samples;
   switch (xqos->reader_data_lifecycle.invalid_sample_visibility)
   {
     case NN_NO_INVALID_SAMPLE_VISIBILITY_QOS:
-      a->invalid_sample_visibility = V_VISIBILITY_NO_INVALID_SAMPLES;
+      target->invalid_sample_visibility.kind = DDS_NO_INVALID_SAMPLES;
       break;
     case NN_MINIMUM_INVALID_SAMPLE_VISIBILITY_QOS:
-      a->invalid_sample_visibility = V_VISIBILITY_MINIMUM_INVALID_SAMPLES;
+      target->invalid_sample_visibility.kind = DDS_MINIMUM_INVALID_SAMPLES;
       break;
     case NN_ALL_INVALID_SAMPLE_VISIBILITY_QOS:
-      a->invalid_sample_visibility = V_VISIBILITY_ALL_INVALID_SAMPLES;
+      target->invalid_sample_visibility.kind = DDS_ALL_INVALID_SAMPLES;
       break;
   }
+  //TODO: test this function!
 }
 
-static void qpc_reader_lifespan_policy (struct v_readerLifespanPolicy *a, const nn_xqos_t *xqos)
+static void copy_reader_lifespan_policy (_Out_ struct DDS_ReaderLifespanQosPolicy *target, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_PRISMTECH_READER_LIFESPAN);
-  a->used = xqos->reader_lifespan.use_lifespan;
-  a->duration = ddsi_duration_to_v_duration (xqos->reader_lifespan.duration);
+  printf("QP_PRISMTECH_READER_LIFESPAN: %lu",xqos->present & QP_PRISMTECH_READER_LIFESPAN);
+  target->use_lifespan = xqos->reader_lifespan.use_lifespan;
+  target->duration = ddsi_duration_to_dds_duration (xqos->reader_lifespan.duration);
 }
-
-static int qpc_subscription_keys_policy (struct v_userKeyPolicy *a, const nn_xqos_t *xqos)
+/*
+static int copy_subscription_keys_policy (struct v_userKeyPolicy *a, const nn_xqos_t *xqos)
 {
-  assert (xqos->present & QP_PRISMTECH_SUBSCRIPTION_KEYS);
+  printf("QP_PRISMTECH_SUBSCRIPTION_KEYS: %lu",xqos->present & QP_PRISMTECH_SUBSCRIPTION_KEYS);
   if (!xqos->subscription_keys.use_key_list || xqos->subscription_keys.key_list.n == 0)
   {
     a->enable = 0;
@@ -532,58 +575,73 @@ static int qpc_subscription_keys_policy (struct v_userKeyPolicy *a, const nn_xqo
   }
   return 0;
 }
-
-
 */
-void
+
+int
 propagate_builtin_topic_publication(
         _In_ const struct writer *writer,
         _In_ nn_wctime_t timestamp,
         _In_ int alive
-  )
+)
 {
-
-
 
 // never called for DDSI built-in writers /
   const nn_xqos_t *xqos = writer->xqos;
 
+  int return_value;
 
   DDS_PublicationBuiltinTopicData data;
   generate_key(&(data.key), &(writer->e.guid.prefix));
+  generate_partition_data(&data.partition, xqos);
   //data.participant_key = writer->c.pp->e.guid.entityid; //TODO: Assign correct values
 
+    printf("QP_TOPIC_NAME: %lu\n",xqos->present & QP_TOPIC_NAME);
+    printf("QP_TYPE_NAME: %lu\n",xqos->present & QP_TYPE_NAME);
+    printf("QP_PRISMTECH_ENTITY_FACTORY: %lu\n",xqos->present & QP_PRISMTECH_ENTITY_FACTORY);
+    printf("QP_DURABILITY_SERVICE: %lu\n",xqos->present & QP_DURABILITY_SERVICE);
+    printf("QP_DEADLINE: %lu\n",xqos->present & QP_DEADLINE);
+    printf("QP_LATENCY_BUDGET: %lu\n",xqos->present & QP_LATENCY_BUDGET);
+    printf("QP_LIVELINESS: %lu\n",xqos->present & QP_LIVELINESS);
+    printf("QP_RELIABILITY: %lu\n",xqos->present & QP_RELIABILITY);
+    printf("QP_PRISMTECH_SYNCHRONOUS_ENDPOINT: %lu\n",xqos->present & QP_PRISMTECH_SYNCHRONOUS_ENDPOINT);
+    printf("QP_LIFESPAN: %lu\n",xqos->present & QP_LIFESPAN);
+    printf("QP_DESTINATION_ORDER: %lu\n",xqos->present & QP_DESTINATION_ORDER);
+    printf("QP_RESOURCE_LIMITS: %lu\n",xqos->present & QP_RESOURCE_LIMITS);
+    printf("QP_OWNERSHIP: %lu\n\n",xqos->present & QP_OWNERSHIP);
 
+/*
 //  Note: topic gets set lazily, so may still be NULL, but the topic name is in the QoS
-  /*
-  if (qpc_topic_name(data.topic_name,xqos) < 0)
-    return V_COPYIN_RESULT_OUT_OF_MEMORY;
-  if (qpc_type_name(&to->type_name, xqos) < 0)
-    return V_COPYIN_RESULT_OUT_OF_MEMORY;
-  qpc_durability_policy(&to->durability, xqos);
-  qpc_deadline_policy(&to->deadline, xqos);
-  qpc_latency_budget_policy(&to->latency_budget, xqos);
-  qpc_liveliness_policy(&to->liveliness, xqos);
-  qpc_reliability_policy(&to->reliability, xqos);
-  qpc_lifespan_policy(&to->lifespan, xqos);
-  qpc_destination_order_policy(&to->destination_order, xqos);
-  if (qpc_user_data_policy(&to->user_data, xqos) < 0)
-    return V_COPYIN_RESULT_OUT_OF_MEMORY;
-  qpc_ownership_policy(&to->ownership, xqos);
-  qpc_ownership_strength_policy(&to->ownership_strength, xqos);
-  qpc_presentation_policy(&to->presentation, xqos);
-  if (qpc_partition_policy(&to->partition, xqos) < 0)
-    return V_COPYIN_RESULT_OUT_OF_MEMORY;
-  if (qpc_topic_data_policy(&to->topic_data, xqos) < 0)
-    return V_COPYIN_RESULT_OUT_OF_MEMORY;
-  if (qpc_group_data_policy(&to->group_data, xqos) < 0)
-    return V_COPYIN_RESULT_OUT_OF_MEMORY;
-  qpc_writer_data_lifecycle_policy(&to->lifecycle, xqos);
-  to->alive = 1; //  FIXME -- depends on full implementation of liveliness
+  if (copy_topic_name(&data.topic_name, xqos) < 0)
+  {
+    return_value = ERR_OUT_OF_MEMORY;
+  } else if (copy_type_name(&data.type_name, xqos) < 0)
+  {
+    return_value = ERR_OUT_OF_MEMORY;
+  } else
+  {
 
 
-  forward_builtin_publication(&data, timestamp, alive);
-   */
+    copy_durability_policy(&data.durability, xqos);
+    copy_deadline_policy(&data.deadline, xqos);
+    copy_latency_budget_policy(&data.latency_budget, xqos);
+    copy_liveliness_policy(&data.liveliness, xqos);
+    copy_reliability_policy(&data.reliability, xqos);
+    copy_lifespan_policy(&data.lifespan, xqos);
+    copy_destination_order_policy(&data.destination_order, xqos);
+
+    generate_user_data(&data.user_data, xqos);
+    generate_group_data(&data.group_data, xqos);
+    generate_topic_data(&data.topic_data, xqos);
+
+    copy_ownership_policy(&data.ownership, xqos);
+    copy_ownership_strength_policy(&data.ownership_strength, xqos);
+    copy_presentation_policy(&data.presentation, xqos);
+
+    forward_builtin_publication(&data, timestamp, alive);
+  }
+
+    */
+  return return_value;
 }
 /*
 void propagate_builtin_topic_cmdatawriter(
@@ -621,21 +679,21 @@ base64_length(xqos
 product_string_needed = 1;
 }
 
-to->
+data.
 key = pwr->c.gid;
 if (product_string_needed == 0)
-to->product.
+data.product.
 value = c_stringNew(gv.ospl_base, "");
 else
 {
 char *p;
 int n;
-if ((to->product.
+if ((data.product.
 value = c_stringMalloc_s(gv.ospl_base, len)
 ) == NULL)
 return
 V_COPYIN_RESULT_OUT_OF_MEMORY;
-p = to->product.value;
+p = data.product.value;
 n = snprintf(p, len, "<%s>", product_tag); assert (n >= 0 && (size_t) n < len); p +=
 n;
 len -= (size_t)
@@ -674,14 +732,14 @@ assert (n >= 0 && (os_size_t) n == len - 1);
 (void)
 n;
 }
-to->
+data.
 publisher_key = pwr->c.group_gid;
-if (qpc_entity_name (&to->name, pwr->e.name) < 0)
+if (copy_entity_name (&data.name, pwr->e.name) < 0)
 return
 V_COPYIN_RESULT_OUT_OF_MEMORY;
-qpc_history_policy (&to->history, xqos);
-qpc_resource_limits_policy (&to->resource_limits, xqos);
-qpc_writer_data_lifecycle_policy (&to->writer_data_lifecycle, xqos);
+copy_history_policy (&data.history, xqos);
+copy_resource_limits_policy (&data.resource_limits, xqos);
+copy_writer_data_lifecycle_policy (&data.writer_data_lifecycle, xqos);
 return
 V_COPYIN_RESULT_OK;
 }

@@ -43,6 +43,13 @@ propagate_builtin_topic_cmparticipant(
         _In_ const nn_plist_t *plist,
         _In_ nn_wctime_t timestamp,
         _In_ int alive);
+
+int
+propagate_builtin_topic_publication(
+        _In_ const struct writer *writer,
+        _In_ nn_wctime_t timestamp,
+        _In_ int alive);
+
 #if 0
 void dispose_builtin_topic_proxy_participant (const struct proxy_participant *proxypp, nn_wctime_t timestamp, int isimplicit);
 void write_builtin_topic_proxy_writer (const struct proxy_writer *pwr, nn_wctime_t timestamp);
