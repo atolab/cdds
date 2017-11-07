@@ -104,6 +104,8 @@ struct whc_node *whc_findseq (const struct whc *whc, seqno_t seq);
 struct whc_node *whc_findmax (const struct whc *whc);
 struct whc_node *whc_findkey (const struct whc *whc, const struct serdata *serdata_key);
 
+struct whc_node *whc_next_node (const struct whc *whc, seqno_t seq);
+
 /* min_seq is lowest sequence number that must be retained because of
    reliable readers that have not acknowledged all data */
 /* max_drop_seq must go soon, it's way too ugly. */
