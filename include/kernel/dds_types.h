@@ -244,7 +244,7 @@ dds_iid;
 typedef struct dds_globals
 {
   dds_domainid_t m_default_domain;
-  os_atomic_uint32_t m_init_count;
+  int32_t m_init_count;
   void (*m_dur_reader) (struct dds_reader * reader, struct rhc * rhc);
   int (*m_dur_wait) (struct dds_reader * reader, dds_duration_t timeout);
   void (*m_dur_init) (void);

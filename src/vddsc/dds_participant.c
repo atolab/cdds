@@ -66,10 +66,8 @@ dds_participant_delete(
       thread_state_asleep(thr);
     }
 
-    /* Finalize the dds layer when this was the last participant. */
-    if(dds_pp_head == NULL){
-        dds_fini();
-    }
+    /* Every dds_init needs a dds_fini. */
+    dds_fini();
 
     return DDS_RETCODE_OK;
 }
@@ -136,27 +134,21 @@ dds_create_participant(
     struct thread_state1 * thr;
     bool asleep;
 
-    /* Initialize the dds layer when this is the first participant. */
-    if (dds_pp_head == NULL) {
-        ret = dds_init();
-        if (ret != DDS_RETCODE_OK) {
-            e = DDS_ERRNO(DDS_RETCODE_ERROR, "Initialization of DDS layer is failed");
-            dds_fini();
-            return e;
-        }
+    /* Make sure dds is initialized. */
+    ret = dds_init();
+    if (ret != DDS_RETCODE_OK) {
+        e = (dds_entity_t)ret;
+        goto fail_dds_init;
     }
-
 
     /* Report stack is only useful after dds (and thus os) init. */
     DDS_REPORT_STACK();
 
-    nn_plist_init_empty (&plist);
-
     /* Check domain id */
-    ret = dds_init_impl (domain);
+    ret = dds__check_domain (domain);
     if (ret != DDS_RETCODE_OK) {
         e = (dds_entity_t)ret;
-        goto finalize;
+        goto fail_domain_check;
     }
 
     /* Validate qos */
@@ -164,17 +156,20 @@ dds_create_participant(
         ret = dds_participant_qos_validate (qos, false);
         if (ret != DDS_RETCODE_OK) {
             e = (dds_entity_t)ret;
-            goto finalize;
+            goto fail_qos_validation;
         }
         new_qos = dds_qos_create ();
         /* Only returns failure when one of the qos args is NULL, which
          * is not the case here. */
         (void)dds_qos_copy(new_qos, qos);
-        dds_qos_merge (&plist.qos, new_qos);
     } else {
         /* Use default qos. */
         new_qos = dds_qos_create ();
     }
+
+    /* Translate qos */
+    nn_plist_init_empty(&plist);
+    dds_qos_merge (&plist.qos, new_qos);
 
     thr = lookup_thread_state ();
     asleep = !vtime_awake_p (thr->vtime);
@@ -185,18 +180,16 @@ dds_create_participant(
     if (asleep) {
         thread_state_asleep (thr);
     }
-
+    nn_plist_fini (&plist);
     if (q_rc != 0) {
-        dds_qos_delete(new_qos);
         e = DDS_ERRNO(DDS_RETCODE_ERROR, "Internal error");
-        goto finalize;
+        goto fail_new_participant;
     }
 
     pp = dds_alloc (sizeof (*pp));
     e = dds_entity_init (&pp->m_entity, NULL, DDS_KIND_PARTICIPANT, new_qos, listener, DDS_PARTICIPANT_STATUS_MASK);
     if (e < 0) {
-        dds_qos_delete(new_qos);
-        goto finalize;
+        goto fail_entity_init;
     }
 
     pp->m_entity.m_guid = guid;
@@ -214,12 +207,18 @@ dds_create_participant(
     dds_pp_head = &pp->m_entity;
     os_mutexUnlock (&dds_global.m_mutex);
 
-finalize:
-    nn_plist_fini (&plist);
-    if (dds_pp_head == NULL) {
-        dds_fini();
-    }
-    DDS_REPORT_FLUSH( e <= 0);
+    DDS_REPORT_FLUSH(false);
+    return e;
+
+fail_entity_init:
+    dds_free(pp);
+fail_new_participant:
+    dds_qos_delete(new_qos);
+fail_qos_validation:
+fail_domain_check:
+    DDS_REPORT_FLUSH(true);
+    dds_fini();
+fail_dds_init:
     return e;
 }
 
@@ -247,7 +246,7 @@ dds_lookup_participant(
     }
 
     /* Check if dds is intialized. */
-    if (os_atomic_ld32(&dds_global.m_init_count) > 0) {
+    if (dds_global.m_init_count > 0) {
         /* Make sure that dds isn't un-initialized when we're
          * searching.
          * Or re-initialize it when un-initialized between the

@@ -684,7 +684,6 @@ int main(int argc, char **argv)
     signal(SIGTERM, sigh);
 
     dds_init(argc, argv);
-    dds_init_impl(DDS_DOMAIN_DEFAULT);
     os_mutexInit(&clients_lock);
     os_condInit(&clients_cond, &clients_lock);
 

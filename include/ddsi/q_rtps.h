@@ -79,7 +79,7 @@ struct cfgst;
 int rtps_config_prep (struct cfgst *cfgst);
 int rtps_config_open (void);
 int rtps_init (void);
-void ddsi_impl_init (void);
+void ddsi_plugin_init (void);
 void rtps_term_prep (void);
 void rtps_term (void);
 

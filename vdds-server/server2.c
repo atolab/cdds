@@ -592,7 +592,6 @@ int main(int argc, char **argv)
     evutil_make_socket_nonblocking(sock);
 
     dds_init(argc, argv);
-    dds_init_impl(DDS_DOMAIN_DEFAULT);
 
     if ((evbase = event_base_new()) == NULL) {
         goto err_event_base;

@@ -28,7 +28,6 @@ int main (int argc, char **argv)
 {
   pthread_t a, b;
   (void)dds_init (argc, argv);
-  (void)dds_init_impl(DDS_DOMAIN_DEFAULT);
   (void)pthread_create(&a, NULL, wa, NULL);
   (void)pthread_create(&b, NULL, wb, NULL);
   (void)pthread_join(a, NULL);

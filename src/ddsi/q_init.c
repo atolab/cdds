@@ -611,7 +611,7 @@ int rtps_config_prep (struct cfgst *cfgst)
   }
 
   /* Now the per-thread-log-buffers are set up, so print the configuration */
-  config_print_and_free_cfgst (cfgst);
+  config_print_cfgst (cfgst);
 
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
   /* Convert address sets in partition mappings from string to address sets */
@@ -692,7 +692,7 @@ int rtps_init (void)
 
   /* Initialize implementation (Lite or OSPL) */
 
-  ddsi_impl_init ();
+  ddsi_plugin_init ();
 
   gv.tstart = now ();    /* wall clock time, used in logs */
 
