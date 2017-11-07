@@ -65,7 +65,6 @@ dds_init(void)
   dds_return_t ret = DDS_RETCODE_OK;
   const char * uri;
   char progname[50];
-  int default_domain;
   char hostname[64];
   uint32_t len;
 
