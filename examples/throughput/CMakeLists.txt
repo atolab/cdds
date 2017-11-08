@@ -18,5 +18,5 @@ add_executable(ThroughputSubscriber subscriber.c)
 
 # Both executables need to be linked to the idl data type library and
 # the vddsc API library.
-target_link_libraries(ThroughputPublisher PRIVATE Throughput_lib VortexDDS::vddsc Warnings::NoUnusedParameter)
-target_link_libraries(ThroughputSubscriber PRIVATE Throughput_lib VortexDDS::vddsc Warnings::NoUnusedParameter)
+target_link_libraries(ThroughputPublisher Throughput_lib VortexDDS::vddsc)
+target_link_libraries(ThroughputSubscriber Throughput_lib VortexDDS::vddsc)

@@ -1,6 +1,7 @@
 find_package(Abstraction REQUIRED)
 
 include (GenerateExportHeader)
+include(Warnings)
 
 FUNCTION(PREPEND var prefix)
    SET(listVar "")

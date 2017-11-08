@@ -101,6 +101,7 @@ int main (int argc, char **argv)
   /* Cleanup */
   finalize_dds(participant, writer, sample);
 
+  return EXIT_SUCCESS;
 }
 
 static int parse_args(
