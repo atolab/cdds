@@ -426,9 +426,9 @@ extern struct ddsi_plugin ddsi_plugin;
 
 struct cfgst;
 
-struct cfgst *config_init (const char *configfile);
-void config_print_cfgst (struct cfgst *cfgst);
-void config_fini (struct cfgst *cfgst);
+struct cfgst *config_init (_In_opt_ const char *configfile);
+void config_print_cfgst (_In_ struct cfgst *cfgst);
+void config_fini (_In_ struct cfgst *cfgst);
 
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS
 struct config_partitionmapping_listelem *find_partitionmapping (const char *partition, const char *topic);

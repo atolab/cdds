@@ -2554,7 +2554,7 @@ static int sort_channels_check_nodups(struct config *cfg)
 
 struct cfgst * config_init
 (
-    const char *configfile
+    _In_opt_ const char *configfile
 )
 {
     int ok = 1;
@@ -2734,14 +2734,14 @@ struct cfgst * config_init
     }
 }
 
-void config_print_cfgst(struct cfgst *cfgst)
+void config_print_cfgst(_In_ struct cfgst *cfgst)
 {
     if ( cfgst == NULL )
         return;
     print_configitems(cfgst, cfgst->cfg, 0, root_cfgelems, 0);
 }
 
-void config_fini(struct cfgst *cfgst)
+void config_fini(_In_ struct cfgst *cfgst)
 {
     assert(cfgst);
     assert(cfgst->cfg == &config);

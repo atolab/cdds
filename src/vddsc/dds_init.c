@@ -51,8 +51,8 @@ static void
 dds__init_once(void)
 {
   os_osInit();
-  os_procAtExit(dds__fini_once);
   os_mutexInit(&dds__init_mutex);
+  os_procAtExit(dds__fini_once);
 }
 
 
@@ -121,7 +121,7 @@ dds_init(void)
   gv.servicelease = nn_servicelease_new(0, 0);
   if (gv.servicelease == NULL)
   {
-    ret = DDS_ERRNO(DDS_RETCODE_ERROR, "Failed to a servicelease.");
+    ret = DDS_ERRNO(DDS_RETCODE_OUT_OF_RESOURCES, "Failed to create a servicelease.");
     goto fail_servicelease_new;
   }
   if (nn_servicelease_start_renewing(gv.servicelease) < 0)
