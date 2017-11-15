@@ -142,32 +142,3 @@ os_procName(
     return snprintf(procName, procNameSize, "%s", process_name);
 }
 #undef _OS_PROC_PROCES_NAME_LEN
-
-/** \brief Register an process exit handler
- *
- * \b os_procAtExit registers an process exit
- * handler by calling \b atexit passing the \b function
- * to be called when the process exits.
- * The standard implementation guarantees the
- * required order of execution of the exit handlers.
- */
-os_result
-os_procAtExit(
-    void (*function)(void))
-{
-    int result;
-    os_result osResult;
-
-    assert (function != NULL);
-
-    result = atexit (function);
-    if(!result)
-    {
-        osResult = os_resultSuccess;
-    } else
-    {
-        osResult = os_resultFail;
-    }
-    return osResult;
-}
-
