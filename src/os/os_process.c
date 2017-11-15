@@ -12,7 +12,7 @@
  */
 os_result
 os_procAtExit(
-    void (*function)(void))
+    _In_ void (*function)(void))
 {
     int result;
     os_result osResult;

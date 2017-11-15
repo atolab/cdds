@@ -80,11 +80,13 @@ os_procName(
  * registration.
  *
  * Possible Results:
+ * - os_resultSuccess: function registered
+ * - os_resultFail: function could not be registered
  * - assertion failure: function = NULL
  */
 OSAPI_EXPORT os_result
 os_procAtExit(
-    void (*function)(void));
+    _In_ void (*function)(void));
 
 #if defined (__cplusplus)
 }
