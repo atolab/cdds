@@ -37,8 +37,7 @@ static struct cfgst * dds_cfgst = NULL;
 
 
 
-static os_mutex  dds__init_mutex;
-static os_once_t dds__init_control = OS_ONCE_T_STATIC_INIT;
+os_mutex dds__init_mutex;
 
 static void
 dds__fini_once(void)
@@ -57,6 +56,12 @@ dds__init_once(void)
 
 
 
+void
+dds__startup(void)
+{
+    static os_once_t dds__init_control = OS_ONCE_T_STATIC_INIT;
+    os_once(&dds__init_control, dds__init_once);
+}
 
 
 dds_return_t
@@ -68,7 +73,8 @@ dds_init(void)
   char hostname[64];
   uint32_t len;
 
-  os_once(&dds__init_control, dds__init_once);
+  /* Be sure the DDS lifecycle resources are initialized. */
+  dds__startup();
 
   DDS_REPORT_STACK();
 
