@@ -1,7 +1,7 @@
 find_package(Abstraction REQUIRED)
 
 add_executable(ddsls ddsls.c)
-target_link_libraries(ddsls vddsc OSAPI)
+target_link_libraries(ddsls ddsc OSAPI)
 
 install(
   TARGETS ddsls

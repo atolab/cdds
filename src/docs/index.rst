@@ -8,7 +8,7 @@ Welcome to VortexDDS's documentation!
    :caption: Contents
 
    GettingStartedGuide/index
-   vddsc
+   ddsc
 
 Indices and tables
 ==================

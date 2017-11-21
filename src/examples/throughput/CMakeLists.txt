@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-if (NOT TARGET VortexDDS::vddsc)
+if (NOT TARGET VortexDDS::ddsc)
     # Find the VortexDDS package. If it is not in a default location, try
     # finding it relative to the example where it most likely resides.
     find_package(VortexDDS REQUIRED PATHS "${CMAKE_SOURCE_DIR}/../../")
@@ -17,6 +17,6 @@ add_executable(ThroughputPublisher publisher.c)
 add_executable(ThroughputSubscriber subscriber.c)
 
 # Both executables need to be linked to the idl data type library and
-# the vddsc API library.
-target_link_libraries(ThroughputPublisher Throughput_lib VortexDDS::vddsc)
-target_link_libraries(ThroughputSubscriber Throughput_lib VortexDDS::vddsc)
+# the ddsc API library.
+target_link_libraries(ThroughputPublisher Throughput_lib VortexDDS::ddsc)
+target_link_libraries(ThroughputSubscriber Throughput_lib VortexDDS::ddsc)

@@ -2,7 +2,7 @@
 # these are examples of generators we'll need as a minimum.
 # Perhaps we should also consider options for building subset of all docs.
 # When a certain doc is related to a target, no option is needed; you can simply check if the target exists
-# (i.e. if a target 'vddsc' exists, build vddsc api docs). And possibly make the target definition dependent on an option.
+# (i.e. if a target 'ddsc' exists, build ddsc api docs). And possibly make the target definition dependent on an option.
 
 option(BUILD_DOCS, "Enable generation of docs." OFF)
 # Above option should only be set when building master on a designated Jenkins job; every other
@@ -40,16 +40,16 @@ if (BUILD_DOCS)
 endif()
 
 if (BUILD_DOCS)
-  # Generate vddsc API docs in XML format using Doxygen
+  # Generate ddsc API docs in XML format using Doxygen
   # The XML will serve as input for sphinx' breathe plugin
-  if (TARGET ${CMAKE_PROJECT_NAME}::vddsc)
-    # Process doxygen configuration file, for vddsc
+  if (TARGET ${CMAKE_PROJECT_NAME}::ddsc)
+    # Process doxygen configuration file, for ddsc
     set(doxy_conf_project "${CMAKE_PROJECT_NAME_FULL} C API Documentation")
-    set(doxy_conf_outputdir "vddsc_api")
-    set(doxy_conf_input "${PROJECT_SOURCE_DIR}/vddsc/vddsc/include/vddsc/dds.h ${PROJECT_SOURCE_DIR}/vddsc/vddsc/include/vddsc")
+    set(doxy_conf_outputdir "ddsc_api")
+    set(doxy_conf_input "${PROJECT_SOURCE_DIR}/core/ddsc/include/ddsc/dds.h ${PROJECT_SOURCE_DIR}/core/ddsc/include/ddsc")
     configure_file(Doxyfile.in Doxyfile @ONLY)
 
-    add_custom_target(vddsc_docs
+    add_custom_target(ddsc_docs
       ${DOXYGEN_EXECUTABLE} Doxyfile
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Running Doxygen for API docs generation"
@@ -59,15 +59,15 @@ if (BUILD_DOCS)
     # Remove generated files when cleaning the build tree
     set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES ${doxy_conf_outputdir})
 
-    # Add vddsc api docs to sphinx' breathe projects
-    set(sph_conf_breathe_projs "\"vddsc_api\": \"${doxy_conf_outputdir}/xml\"")
+    # Add ddsc api docs to sphinx' breathe projects
+    set(sph_conf_breathe_projs "\"ddsc_api\": \"${doxy_conf_outputdir}/xml\"")
 
     add_custom_command(
-      TARGET vddsc_docs
+      TARGET ddsc_docs
       POST_BUILD
       WORKING_DIRECTORY "${doxy_conf_outputdir}"
       COMMAND ${CMAKE_COMMAND}
-        -E tar "zcf" "${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}_C_HTML.tar.gz" "vddsc"
+        -E tar "zcf" "${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}_C_HTML.tar.gz" "ddsc"
     )
   endif()
 
@@ -152,7 +152,7 @@ if (BUILD_DOCS)
   # Remove generated files when cleaning the build tree
   set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf)
 
-  add_custom_target(docs ALL DEPENDS vddsc_docs ${docs_outputs})
+  add_custom_target(docs ALL DEPENDS ddsc_docs ${docs_outputs})
 else()
   add_custom_target(docs ALL)
   find_program(WGET_EXECUTABLE NAMES wget DOC "wget")

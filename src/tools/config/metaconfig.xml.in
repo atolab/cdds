@@ -1046,7 +1046,7 @@ When an application is run without Administrative priveleges then only the diffs
           ]]>
         </comment>
         <maxLength>0</maxLength>
-        <default>VDDSC_PROJECTNAME_SMALL"-trace.log"</default>
+        <default>DDSC_PROJECTNAME_SMALL"-trace.log"</default>
       </leafString>
       <leafString name="PacketCaptureFile" minOccurrences="0" maxOccurrences="1" version="VLITE">
         <comment>

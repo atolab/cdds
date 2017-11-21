@@ -1,4 +1,4 @@
-#include "vddsc/dds.h"
+#include "ddsc/dds.h"
 #include "HelloWorldData.h"
 #include <stdio.h>
 #include <stdlib.h>

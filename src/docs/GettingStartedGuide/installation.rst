@@ -95,7 +95,7 @@ Paths
 =====
 
 To be able to run VortexDDS executables, the required libraries (like
-libvddsc.so) need to be available to the executables.
+libddsc.so) need to be available to the executables.
 Normally, these are installed in system default locations and it works
 out-of-the-box. However, if they are not installed in those locations,
 it is possible that the library search path has to be changed.
@@ -140,7 +140,7 @@ Paths
 ~~~~~
 
 To be able to run VortexDDS executables, the required libraries (like
-vddsc.dll) need to be available to the executables.
+ddsc.dll) need to be available to the executables.
 Normally, these are installed in system default locations and it works
 out-of-the-box. However, if they are not installed on those locations,
 it is possible that the library search path has to be changed.

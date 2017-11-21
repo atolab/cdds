@@ -1,5 +1,5 @@
 #include "os/os.h"
-#include "vddsc/dds.h"
+#include "ddsc/dds.h"
 #include "dds_builtinTopics.h"
 
 

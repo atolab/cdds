@@ -1,4 +1,4 @@
-#include "vddsc/dds.h"
+#include "ddsc/dds.h"
 #include "Throughput.h"
 #include <stdio.h>
 #include <stdlib.h>

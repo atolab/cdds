@@ -92,7 +92,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(VortexDDS_lib_dir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vddsc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ddsc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -100,7 +100,7 @@
       <AdditionalIncludeDirectories>$(VortexDDS_inc_dir);..\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>vddsc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ddsc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(VortexDDS_lib_dir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -110,7 +110,7 @@
       <AdditionalIncludeDirectories>$(VortexDDS_inc_dir);..\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>vddsc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ddsc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(VortexDDS_lib_dir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
     </Link>

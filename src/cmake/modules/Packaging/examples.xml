@@ -165,7 +165,7 @@
       <File Id="CM_FP_usr.usr.VortexDDS.examples.throughput.subscriber.c" Source="$(sys.SOURCEFILEDIR)/$(var.CPACK_PACKAGE_NAME)-$(var.CPACK_PACKAGE_VERSION)-win64/dev/share/VortexDDS/examples/throughput/subscriber.c" KeyPath="no"/>
     </Component>
 
-    <!-- Add the location of the vddsc.dll to the system path -->
+    <!-- Add the location of the ddsc.dll to the system path -->
     <Component Id="CM_CP_dev.usr.VortexDDS.examples.environment" Directory="VORTEXUSERDIR" Guid="">
       <!-- CreateFolder and RegistryValue are needed to keep Wix happy -->
       <CreateFolder Directory="VORTEXUSERDIR"/>

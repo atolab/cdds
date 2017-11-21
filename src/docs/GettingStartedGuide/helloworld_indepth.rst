@@ -201,7 +201,7 @@ to receive data. For that, we need to include the
 appropriate header files.
 ::
 
-    #include "vddsc/dds.h"
+    #include "ddsc/dds.h"
     #include "HelloWorldData.h"
 
 The main starts with defining a few variables that will be used for
@@ -330,7 +330,7 @@ to sent data. For that, we need to include the
 appropriate header files.
 ::
 
-    #include "vddsc/dds.h"
+    #include "ddsc/dds.h"
     #include "HelloWorldData.h"
 
 Just like with the

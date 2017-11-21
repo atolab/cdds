@@ -8,7 +8,7 @@
 
 *****************************************************************/
 
-#include "vddsc/dds.h"
+#include "ddsc/dds.h"
 
 #ifndef _DDSL_TESTTYPE_H_
 #define _DDSL_TESTTYPE_H_

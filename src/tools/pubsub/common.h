@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "vddsc/dds.h"
+#include "ddsc/dds.h"
 #include <assert.h>
 
 #define DDS_USERDATA_QOS_POLICY_NAME                            "UserData"

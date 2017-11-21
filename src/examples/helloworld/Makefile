@@ -11,13 +11,13 @@ subscriber_OBJS := ${subscriber_SRCS:.c=.o}
 # it can be introduced by adding it to the CFLAGS, like:
 #CFLAGS += -I../../../../include
 
-# Make sure that the location where libvddsc.so is installed is known
+# Make sure that the location where libddsc.so is installed is known
 # to the compiler. If the lib is not installed in a system default
 # location, then it can be introduced by adding it to the LDFLAGS:
 #LDFLAGS += -L../../../../lib
 
 CFLAGS += -Igenerated
-LDFLAGS += -lvddsc
+LDFLAGS += -lddsc
 
 .PHONY: all clean distclean
 
