@@ -2554,7 +2554,7 @@ static int sort_channels_check_nodups(struct config *cfg)
 
 struct cfgst * config_init
 (
-    const char *configfile
+    _In_opt_ const char *configfile
 )
 {
     int ok = 1;
@@ -2734,26 +2734,28 @@ struct cfgst * config_init
     }
 }
 
-void config_print_and_free_cfgst(struct cfgst *cfgst)
+void config_print_cfgst(_In_ struct cfgst *cfgst)
 {
     if ( cfgst == NULL )
         return;
     print_configitems(cfgst, cfgst->cfg, 0, root_cfgelems, 0);
-    ut_avlFree(&cfgst_found_treedef, &cfgst->found, os_free);
-    os_free(cfgst);
 }
 
-void config_fini(void)
+void config_fini(_In_ struct cfgst *cfgst)
 {
-    if ( config.valid ) {
-        struct cfgst cfgst;
-        cfgst.cfg = &config;
-        free_all_elements(&cfgst, cfgst.cfg, root_cfgelems);
-        if ( config.tracingOutputFile ) {
-            fclose(config.tracingOutputFile);
-        }
-        memset(&config, 0, sizeof(config));
+    assert(cfgst);
+    assert(cfgst->cfg == &config);
+    assert(config.valid);
+
+    free_all_elements(cfgst, cfgst->cfg, root_cfgelems);
+    if ( config.tracingOutputFile ) {
+        fclose(config.tracingOutputFile);
     }
+    memset(&config, 0, sizeof(config));
+    config.valid = 0;
+
+    ut_avlFree(&cfgst_found_treedef, &cfgst->found, os_free);
+    os_free(cfgst);
 }
 
 #ifdef DDSI_INCLUDE_NETWORK_PARTITIONS

@@ -1,5 +1,6 @@
 #include "os/os.h"
 #include <unistd.h>
+#include <stdlib.h>
 
 #ifdef __APPLE__
 #include <mach-o/dyld.h>

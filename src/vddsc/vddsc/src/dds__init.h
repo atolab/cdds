@@ -8,8 +8,18 @@ extern "C" {
 #endif
 
 dds_return_t
-dds_init_impl(
+dds__check_domain(
         _In_ dds_domainid_t domain);
+
+/**
+ *Description : Initialization function. This operation initializes all the
+ *required resources that are needed for the DDSC API process lifecycle
+ *(like the init mutex and os layer).
+ *A function will be registered that is called at the end of the process
+ *lifecycle and will destroy the resources initialized in this function.
+ **/
+void
+dds__startup(void);
 
 /**
  *Description : Initialization function, called from main. This operation
@@ -34,6 +44,22 @@ dds_init(void);
  **/
 void
 dds_fini(void);
+
+
+
+/**
+ * Description : Function that provides the explicit ID of default domain
+ * It should be called after DDS initialization.
+ * @return Valid domain id. Undetermined behaviour if DDS is not initialized.
+ */
+dds_domainid_t dds_domain_default (void);
+
+
+/**
+ * Description : Mutex used for initialization synchronization.
+ */
+extern os_mutex dds__init_mutex;
+
 
 #if defined (__cplusplus)
 }

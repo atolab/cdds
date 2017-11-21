@@ -47,76 +47,59 @@ extern const dds_topic_descriptor_t *ts_Keyed256;
 extern const dds_topic_descriptor_t *ts_OneULong;
 extern const char *saved_argv0;
 extern const char *qos_arg_usagestr;
-struct qos;
-//
-////#define BINS_LENGTH (8 * sizeof (unsigned long long) + 1)
-//
-unsigned long long nowll (void);
-//void nowll_as_ddstime (DDS_Time_t *t);
-//
-//void bindelta (unsigned long long *bins, unsigned long long d, unsigned repeat);
-//void binprint (unsigned long long *bins, unsigned long long telapsed);
-//
-struct hist;
-struct hist *hist_new (unsigned nbins, uint64_t binwidth, uint64_t bin0);
-void hist_free (struct hist *h);
-void hist_reset_minmax (struct hist *h);
-void hist_reset (struct hist *h);
-void hist_record (struct hist *h, uint64_t x, unsigned weight);
-void hist_print (struct hist *h, uint64_t dt, int reset);
 
-void error (const char *fmt, ...);
+//#define BINS_LENGTH (8 * sizeof(unsigned long long) + 1)
+
+//void nowll_as_ddstime(DDS_Time_t *t);
+//void bindelta(unsigned long long *bins, unsigned long long d, unsigned repeat);
+//void binprint(unsigned long long *bins, unsigned long long telapsed);
+
+struct hist;
+struct hist *hist_new(unsigned nbins, uint64_t binwidth, uint64_t bin0);
+void hist_free(struct hist *h);
+void hist_reset_minmax(struct hist *h);
+void hist_reset(struct hist *h);
+void hist_record(struct hist *h, uint64_t x, unsigned weight);
+void hist_print(struct hist *h, dds_time_t dt, int reset);
+
+void error(const char *fmt, ...);
 #define error_abort(rc, fmt, ...) if (rc < DDS_SUCCESS) { error(fmt); DDS_ERR_CHECK(rc, DDS_CHECK_FAIL); }
 #define error_report(rc, fmt, ...) if (rc < DDS_SUCCESS) { error(fmt); DDS_ERR_CHECK(rc, DDS_CHECK_REPORT); }
 #define error_return(rc, fmt, ...) if (rc < DDS_SUCCESS) { error_report(rc, fmt); return; }
 #define error_exit(fmt, ...) { error(fmt); exit(2); }
 #define os_error_exit(osres, fmt, ...) if (osres != os_resultSuccess) { error(fmt); exit(2); }
 
-void save_argv0 (const char *argv0);
-int common_init (const char *argv0);
-void common_fini (void);
-int change_publisher_partitions (dds_entity_t pub, unsigned npartitions, const char *partitions[]);
-int change_subscriber_partitions (dds_entity_t sub, unsigned npartitions, const char *partitions[]);
-dds_entity_t new_publisher (const struct qos *a, unsigned npartitions, const char **partitions);
-dds_entity_t new_subscriberNew (dds_qos_t *a, unsigned npartitions, const char **partitions);
-dds_entity_t new_subscriber (const struct qos *a, unsigned npartitions, const char **partitions);
-struct qos *new_tqos (void);
-struct qos *new_pubqos (void);
-struct qos *new_subqos (void);
-struct qos *new_rdqos (dds_entity_t s, dds_entity_t t);
-struct qos *new_wrqos (dds_entity_t p, dds_entity_t t);
-void free_qos (struct qos *a);
-void set_infinite_dds_duration (dds_duration_t *dd);
-int double_to_dds_duration (dds_duration_t *dd, double d);
-dds_entity_t new_topic (const char *name, const dds_topic_descriptor_t *topicDesc, const struct qos *a);
-dds_entity_t new_topic_KeyedSeq (const char *name, const struct qos *a);
-dds_entity_t new_topic_Keyed32 (const char *name, const struct qos *a);
-dds_entity_t new_topic_Keyed64 (const char *name, const struct qos *a);
-dds_entity_t new_topic_Keyed128 (const char *name, const struct qos *a);
-dds_entity_t new_topic_Keyed256 (const char *name, const struct qos *a);
-dds_entity_t new_topic_OneULong (const char *name, const struct qos *a);
-dds_entity_t new_datawriter (const struct qos *a);
-dds_entity_t new_datareader (const struct qos *a);
-dds_entity_t new_datawriter_listener (const struct qos *a, const dds_listener_t *l);
-dds_entity_t new_datareader_listener (const struct qos *a, const dds_listener_t *l);
-const dds_qos_t *qos_datawriter(const struct qos *a);
-void qos_livelinessNew (dds_qos_t *a, const char *arg);
-void qos_liveliness (struct qos *a, const char *arg);
-void qos_deadline (struct qos *a, const char *arg);
-void qos_durability (struct qos *a, const char *arg);
-void qos_history (struct qos *a, const char *arg);
-void qos_destination_order (struct qos *a, const char *arg);
-void qos_ownership (struct qos *a, const char *arg);
-void qos_transport_priority (struct qos *a, const char *arg);
-void qos_reliability (struct qos *a, const char *arg);
-void qos_resource_limits (struct qos *a, const char *arg);
-void qos_user_data (struct qos *a, const char *arg);
-void qos_latency_budget (struct qos *a, const char *arg);
-void qos_lifespan (struct qos *a, const char *arg);
-void qos_autodispose_unregistered_instances (struct qos *a, const char *arg);
-void qos_subscription_keys (struct qos *a, const char *arg);
-void set_qosprovider (const char *arg);
-void setqos_from_args (struct qos *q, int n, const char *args[]);
-void setqos_from_argsNew (dds_qos_t *q, int n, const char *args[]);
+void save_argv0(const char *argv0);
+int common_init(const char *argv0);
+void common_fini(void);
+int change_publisher_partitions(dds_entity_t pub, unsigned npartitions, const char *partitions[]);
+int change_subscriber_partitions(dds_entity_t sub, unsigned npartitions, const char *partitions[]);
+dds_entity_t new_publisher(dds_qos_t *q, unsigned npartitions, const char **partitions);
+dds_entity_t new_subscriber(dds_qos_t *q, unsigned npartitions, const char **partitions);
+dds_qos_t *new_tqos(void);
+dds_qos_t *new_rdqos(dds_entity_t tp);
+dds_qos_t *new_wrqos(dds_entity_t tp);
+void set_infinite_dds_duration(dds_duration_t *dd);
+int double_to_dds_duration(dds_duration_t *dd, double d);
+dds_entity_t new_topic(const char *name, const dds_topic_descriptor_t *topicDesc, const dds_qos_t *q);
+dds_entity_t new_datawriter(const dds_entity_t pub, const dds_entity_t tp, const dds_qos_t *q);
+dds_entity_t new_datareader(const dds_entity_t sub, const dds_entity_t tp, const dds_qos_t *q);
+dds_entity_t new_datawriter_listener(const dds_entity_t pub, const dds_entity_t tp, const dds_qos_t *q, const dds_listener_t *l);
+dds_entity_t new_datareader_listener(const dds_entity_t sub, const dds_entity_t tp, const dds_qos_t *q, const dds_listener_t *l);
+void qos_liveliness(dds_entity_kind_t qt, dds_qos_t *q, const char *arg);
+void qos_deadline(dds_entity_kind_t qt, dds_qos_t *q, const char *arg);
+void qos_durability(dds_entity_kind_t qt, dds_qos_t *q, const char *arg);
+void qos_history(dds_entity_kind_t qt, dds_qos_t *q, const char *arg);
+void qos_destination_order(dds_entity_kind_t qt, dds_qos_t *q, const char *arg);
+void qos_ownership(dds_entity_kind_t qt, dds_qos_t *q, const char *arg);
+void qos_transport_priority(dds_entity_kind_t qt, dds_qos_t *q, const char *arg);
+void qos_reliability(dds_entity_kind_t qt, dds_qos_t *q, const char *arg);
+void qos_resource_limits(dds_entity_kind_t qt, dds_qos_t *q, const char *arg);
+void qos_user_data(dds_entity_kind_t qt, dds_qos_t *q, const char *arg);
+void qos_latency_budget(dds_entity_kind_t qt, dds_qos_t *q, const char *arg);
+void qos_lifespan(dds_entity_kind_t qt, dds_qos_t *q, const char *arg);
+void qos_autodispose_unregistered_instances(dds_entity_kind_t qt, dds_qos_t *q, const char *arg);
+void set_qosprovider(const char *arg);
+void setqos_from_args(dds_entity_kind_t qt, dds_qos_t *q, int n, const char *args[]);
 
 #endif

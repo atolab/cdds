@@ -18,6 +18,7 @@
 
 #include <process.h>
 #include <assert.h>
+#include <stdlib.h>
 
 /* #642 fix : define mapping between scheduling abstraction and windows
  * Windows provides 6 scheduling classes for the process
@@ -141,4 +142,3 @@ os_procName(
     return snprintf(procName, procNameSize, "%s", process_name);
 }
 #undef _OS_PROC_PROCES_NAME_LEN
-
