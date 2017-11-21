@@ -7,6 +7,7 @@ add_subdirectory(ddsls)
 #
 # TODO Instead of making inclusion dependent on platform name, the condition should instead be on the
 #      jdk vendor (Oracle JDK, not OpenJDK). Find a way to make CMake aware of jdk vendor.
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "VxWorks")
+option(BUILD_LAUNCHER "Enable building of launcher." ON)
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "VxWorks" AND BUILD_LAUNCHER)
   add_subdirectory(launcher)
 endif()
