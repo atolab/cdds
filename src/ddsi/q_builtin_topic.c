@@ -579,22 +579,24 @@ static int copy_subscription_keys_policy (struct v_userKeyPolicy *a, const nn_xq
 
 int
 propagate_builtin_topic_publication(
-        _In_ const struct writer *writer,
+        _In_ const struct entity_common *entity,
+        _In_ const struct endpoint_common *endpoint,
+        _In_ const nn_xqos_t *xqos,
         _In_ nn_wctime_t timestamp,
         _In_ int alive
 )
 {
 
 // never called for DDSI built-in writers /
-  const nn_xqos_t *xqos = writer->xqos;
+  //const nn_xqos_t *xqos = writer->xqos;
 
   int return_value;
 
   DDS_PublicationBuiltinTopicData data;
-  generate_key(&(data.key), &(writer->e.guid.prefix));
-  generate_partition_data(&data.partition, xqos);
-  //data.participant_key = writer->c.pp->e.guid.entityid; //TODO: Assign correct values
+  generate_key(&(data.key), &(entity->guid.prefix));
+  //generate_key(&(data.participant_key), &(endpoint->pp->e.guid.prefix)); //TODO: Assign correct values
 
+  /*
     printf("QP_TOPIC_NAME: %lu\n",xqos->present & QP_TOPIC_NAME);
     printf("QP_TYPE_NAME: %lu\n",xqos->present & QP_TYPE_NAME);
     printf("QP_PRISMTECH_ENTITY_FACTORY: %lu\n",xqos->present & QP_PRISMTECH_ENTITY_FACTORY);
@@ -608,7 +610,7 @@ propagate_builtin_topic_publication(
     printf("QP_DESTINATION_ORDER: %lu\n",xqos->present & QP_DESTINATION_ORDER);
     printf("QP_RESOURCE_LIMITS: %lu\n",xqos->present & QP_RESOURCE_LIMITS);
     printf("QP_OWNERSHIP: %lu\n\n",xqos->present & QP_OWNERSHIP);
-
+*/
 /*
 //  Note: topic gets set lazily, so may still be NULL, but the topic name is in the QoS
   if (copy_topic_name(&data.topic_name, xqos) < 0)
@@ -621,6 +623,7 @@ propagate_builtin_topic_publication(
   {
 
 
+    generate_partition_data(&data.partition, xqos);
     copy_durability_policy(&data.durability, xqos);
     copy_deadline_policy(&data.deadline, xqos);
     copy_latency_budget_policy(&data.latency_budget, xqos);

@@ -46,7 +46,9 @@ propagate_builtin_topic_cmparticipant(
 
 int
 propagate_builtin_topic_publication(
-        _In_ const struct writer *writer,
+        _In_ const struct entity_common *entity,
+        _In_ const struct endpoint_common *endpoint,
+        _In_ const nn_xqos_t *xqos,
         _In_ nn_wctime_t timestamp,
         _In_ int alive);
 

@@ -884,8 +884,8 @@ static void add_sockaddr_to_ps (const nn_locator_t *loc, void *arg)
 
 static int sedp_write_endpoint
 (
-   struct writer *wr, int end_of_life, const nn_guid_t *epguid,
-   const struct entity_common *common, const struct endpoint_common *epcommon,
+   struct writer *sedp_writer, int end_of_life, const nn_guid_t *epguid,
+   const struct entity_common *entity, const struct endpoint_common *endpoint,
    const nn_xqos_t *xqos, struct addrset *as)
 {
   const nn_xqos_t *defqos = is_writer_entityid (epguid->entityid) ? &gv.default_xqos_wr : &gv.default_xqos_rd;
@@ -906,36 +906,36 @@ static int sedp_write_endpoint
   ps.endpoint_guid = *epguid;
 
 
-  propagate_builtin_topic_publication(wr, now(), true);
+  propagate_builtin_topic_publication(entity, endpoint, xqos, now(), true);
 
 
 
-  if (common && *common->name != 0)
+  if (entity && *entity->name != 0)
   {
     ps.present |= PP_ENTITY_NAME;
     ps.aliased |= PP_ENTITY_NAME;
-    ps.entity_name = common->name;
+    ps.entity_name = entity->name;
   }
 
   if (end_of_life)
   {
     assert (xqos == NULL);
-    assert (epcommon == NULL);
+    assert (endpoint == NULL);
     qosdiff = 0;
   }
   else
   {
     assert (xqos != NULL);
-    assert (epcommon != NULL);
+    assert (endpoint != NULL);
     ps.present |= PP_PROTOCOL_VERSION | PP_VENDORID;
     ps.protocol_version.major = RTPS_MAJOR;
     ps.protocol_version.minor = RTPS_MINOR;
     ps.vendorid = my_vendor_id;
 
-    if (epcommon->group_guid.entityid.u != 0)
+    if (endpoint->group_guid.entityid.u != 0)
     {
       ps.present |= PP_GROUP_GUID;
-      ps.group_guid = epcommon->group_guid;
+      ps.group_guid = endpoint->group_guid;
     }
 
 #ifdef DDSI_INCLUDE_SSM
@@ -969,7 +969,7 @@ static int sedp_write_endpoint
      the QoS and other settings. So the header fields aren't really
      important, except that they need to be set to reasonable things
      or it'll crash */
-  mpayload = nn_xmsg_new (gv.xmsgpool, &wr->e.guid.prefix, 0, NN_XMSG_KIND_DATA);
+  mpayload = nn_xmsg_new (gv.xmsgpool, &sedp_writer->e.guid.prefix, 0, NN_XMSG_KIND_DATA);
   nn_plist_addtomsg (mpayload, &ps, ~(uint64_t)0, ~(uint64_t)0);
   if (xqos) nn_xqos_addtomsg (mpayload, xqos, qosdiff);
   nn_xmsg_addpar_sentinel (mpayload);
@@ -990,8 +990,8 @@ static int sedp_write_endpoint
   serdata = ddsi_serstate_fix (serstate);
   nn_xmsg_free (mpayload);
 
-  TRACE (("sedp: write for %x:%x:%x:%x via %x:%x:%x:%x\n", PGUID (*epguid), PGUID (wr->e.guid)));
-  return write_sample_nogc_notk (NULL, wr, serdata);
+  TRACE (("sedp: write for %x:%x:%x:%x via %x:%x:%x:%x\n", PGUID (*epguid), PGUID (sedp_writer->e.guid)));
+  return write_sample_nogc_notk (NULL, sedp_writer, serdata);
 }
 
 static struct writer *get_sedp_writer (const struct participant *pp, unsigned entityid)
