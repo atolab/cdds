@@ -33,6 +33,33 @@ typedef nn_octetseq_t nn_userdata_qospolicy_t;
 typedef nn_octetseq_t nn_topicdata_qospolicy_t;
 typedef nn_octetseq_t nn_groupdata_qospolicy_t;
 
+typedef struct nn_property {
+  char *name;
+  char *value;
+  bool propagate;
+} nn_property_t;
+
+typedef struct nn_propertyseq {
+  unsigned n;
+  nn_property_t *props;
+} nn_propertyseq_t;
+
+typedef struct nn_binaryproperty {
+  char *name;
+  nn_octetseq_t value;
+  bool propagate;
+} nn_binaryproperty_t;
+
+typedef struct nn_binarypropertyseq {
+  unsigned n;
+  nn_binaryproperty_t *props;
+} nn_binarypropertyseq_t;
+
+typedef struct nn_property_qospolicy {
+  nn_propertyseq_t value;
+  nn_binarypropertyseq_t binary_value;
+} nn_property_qospolicy_t;
+
 typedef enum nn_durability_kind {
   NN_VOLATILE_DURABILITY_QOS,
   NN_TRANSIENT_LOCAL_DURABILITY_QOS,
@@ -237,6 +264,7 @@ typedef struct nn_share_qospolicy {
 #define QP_PRISMTECH_ENTITY_FACTORY          ((uint64_t)1 << 27)
 #define QP_PRISMTECH_SYNCHRONOUS_ENDPOINT    ((uint64_t)1 << 28)
 #define QP_RTI_TYPECODE                      ((uint64_t)1 << 29)
+#define QP_PROPERTY                          ((uint64_t)1 << 30)
 
 /* Partition QoS is not RxO according to the specification (DDS 1.2,
    section 7.1.3), but communication will not take place unless it
@@ -290,6 +318,8 @@ typedef struct nn_xqos {
   /*x xR*/nn_reader_lifespan_qospolicy_t reader_lifespan;
   /*x xR*/nn_share_qospolicy_t share;
   /*xxx */nn_synchronous_endpoint_qospolicy_t synchronous_endpoint;
+
+  /*xxx */nn_property_qospolicy_t property;
 
   /*   X*/nn_octetseq_t rti_typecode;
 } nn_xqos_t;

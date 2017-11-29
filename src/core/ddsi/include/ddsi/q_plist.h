@@ -20,16 +20,6 @@
 extern "C" {
 #endif
 
-typedef struct nn_property {
-  char *name;
-  char *value;
-} nn_property_t;
-
-typedef struct nn_property_set {
-  int length;
-  nn_property_t *properties;
-} nn_propertyset_t;
-
 typedef struct nn_original_writer_info {
   nn_guid_t original_writer_guid;
   nn_sequence_number_t original_writer_sn;
@@ -174,7 +164,6 @@ typedef struct nn_plist {
 #endif
   unsigned builtin_endpoint_set;
   unsigned prismtech_builtin_endpoint_set;
-  /* nn_propertyset_t properties; */
   /* int type_max_size_serialized; */
   char *entity_name;
   nn_keyhash_t keyhash;

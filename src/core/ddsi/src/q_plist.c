@@ -357,6 +357,223 @@ assert (dest->strs == NULL);
   }
 }
 
+static int validate_property (_In_ const struct dd *dd, _Out_ unsigned *len)
+{
+  /* TODO (CHAM-533): Add CDR property check. */
+  return 0;
+}
+
+static int alias_property (_Out_ nn_property_t *prop, _In_ const struct dd *dd)
+{
+  unsigned len;
+  int rc;
+  if ((rc = validate_property (dd, &len)) < 0)
+    return rc;
+  else
+  {
+    /* TODO (CHAM-533): Add CDR property extraction. */
+    prop->name  = NULL;
+    prop->value = NULL;
+    prop->propagate = false;
+    return 0;
+  }
+}
+
+static void free_property (_Inout_ nn_property_t *prop)
+{
+  if (prop->name)
+    os_free(prop->name);
+  if (prop->value)
+    os_free(prop->value);
+}
+
+static void unalias_property (_Inout_ nn_property_t *prop, _In_ int bswap)
+{
+  unalias_string(&prop->name,  bswap);
+  unalias_string(&prop->value, bswap);
+}
+
+static void duplicate_property (_Out_ nn_property_t *dest, _In_ const nn_property_t *src)
+{
+    nn_property_t tmp = *src;
+    unalias_property(&tmp, -1);
+    *dest = tmp;
+}
+
+static int validate_propertyseq (_In_ const struct dd *dd, _Out_ unsigned *len)
+{
+  /* TODO (CHAM-533): Add CDR propertyseq check. */
+  return 0;
+}
+
+static int alias_propertyseq (_Out_ nn_propertyseq_t *pseq, _In_ const struct dd *dd)
+{
+  unsigned len;
+  int rc;
+  if ((rc = validate_propertyseq (dd, &len)) < 0)
+    return rc;
+  else
+  {
+    /* TODO (CHAM-533): Add CDR property extraction. */
+    pseq->n = 0;
+    pseq->props = NULL;
+    return 0;
+  }
+}
+
+static void free_propertyseq (_Inout_ nn_propertyseq_t *pseq)
+{
+  unsigned i;
+  for (i = 0; i < pseq->n; i++)
+  {
+    free_property(&(pseq->props[i]));
+  }
+  os_free (pseq->props);
+}
+
+static void unalias_propertyseq (_Inout_ nn_propertyseq_t *pseq, _In_ int bswap)
+{
+  unsigned i;
+  nn_property_t *props;
+  if (pseq->n != 0)
+  {
+    props = os_malloc (pseq->n * sizeof (*pseq->props));
+    for (i = 0; i < pseq->n; i++)
+    {
+      props[i] = pseq->props[i];
+      unalias_property (&props[i], bswap);
+    }
+    os_free (pseq->props);
+    pseq->props = props;
+  }
+}
+
+static void duplicate_propertyseq (_Out_ nn_propertyseq_t *dest, _In_ const nn_propertyseq_t *src)
+{
+  unsigned i;
+  dest->n = src->n;
+  assert (dest->props == NULL);
+  if (dest->n == 0)
+  {
+    dest->props = NULL;
+    return;
+  }
+  dest->props = os_malloc (dest->n * sizeof (*dest->props));
+  for (i = 0; i < dest->n; i++)
+  {
+    duplicate_property(&(dest->props[i]), &(src->props[i]));
+  }
+}
+
+static int validate_binaryproperty (_In_ const struct dd *dd, _Out_ unsigned *len)
+{
+  /* TODO (CHAM-533): Add CDR binaryproperty check. */
+  return 0;
+}
+
+static int alias_binaryproperty (_Out_ nn_binaryproperty_t *prop, _In_ const struct dd *dd)
+{
+  unsigned len;
+  int rc;
+  if ((rc = validate_binaryproperty (dd, &len)) < 0)
+    return rc;
+  else
+  {
+    /* TODO (CHAM-533): Add CDR binaryproperty extraction. */
+    prop->name  = NULL;
+    prop->value.length = 0;
+    prop->value.value  = NULL;
+    prop->propagate = false;
+    return 0;
+  }
+}
+
+static void free_binaryproperty (_Inout_ nn_binaryproperty_t *prop)
+{
+  if (prop->name)
+    os_free(prop->name);
+  if (prop->value.value)
+    os_free(prop->value.value);
+}
+
+static void unalias_binaryproperty (_Inout_ nn_binaryproperty_t *prop, _In_ int bswap)
+{
+  unalias_string  (&prop->name,  bswap);
+  unalias_octetseq(&prop->value, bswap);
+}
+
+static void duplicate_binaryproperty (_Out_ nn_binaryproperty_t *dest, _In_ const nn_binaryproperty_t *src)
+{
+    nn_binaryproperty_t tmp = *src;
+    unalias_binaryproperty(&tmp, -1);
+    *dest = tmp;
+}
+
+static int validate_binarypropertyseq (_In_ const struct dd *dd, _Out_ unsigned *len)
+{
+  /* TODO (CHAM-533): Add CDR binarypropertyseq check. */
+  return 0;
+}
+
+static int alias_binarypropertyseq (_Out_ nn_binarypropertyseq_t *pseq, _In_ const struct dd *dd)
+{
+  unsigned len;
+  int rc;
+  if ((rc = validate_binarypropertyseq (dd, &len)) < 0)
+    return rc;
+  else
+  {
+    /* TODO (CHAM-533): Add CDR property extraction. */
+    pseq->n = 0;
+    pseq->props = NULL;
+    return 0;
+  }
+}
+
+static void free_binarypropertyseq (_Inout_ nn_binarypropertyseq_t *pseq)
+{
+  unsigned i;
+  for (i = 0; i < pseq->n; i++)
+  {
+    free_binaryproperty(&(pseq->props[i]));
+  }
+  os_free (pseq->props);
+}
+
+static void unalias_binarypropertyseq (_Inout_ nn_binarypropertyseq_t *pseq, _In_ int bswap)
+{
+  unsigned i;
+  nn_binaryproperty_t *props;
+  if (pseq->n != 0)
+  {
+    props = os_malloc (pseq->n * sizeof (*pseq->props));
+    for (i = 0; i < pseq->n; i++)
+    {
+      props[i] = pseq->props[i];
+      unalias_binaryproperty (&props[i], bswap);
+    }
+    os_free (pseq->props);
+    pseq->props = props;
+  }
+}
+
+static void duplicate_binarypropertyseq (_Out_ nn_binarypropertyseq_t *dest, _In_ const nn_binarypropertyseq_t *src)
+{
+  unsigned i;
+  dest->n = src->n;
+  assert (dest->props == NULL);
+  if (dest->n == 0)
+  {
+    dest->props = NULL;
+    return;
+  }
+  dest->props = os_malloc (dest->n * sizeof (*dest->props));
+  for (i = 0; i < dest->n; i++)
+  {
+    duplicate_binaryproperty(&(dest->props[i]), &(src->props[i]));
+  }
+}
+
 static void free_locators (nn_locators_t *locs)
 {
   while (locs->first)
@@ -400,6 +617,12 @@ static void unalias_eotinfo (nn_prismtech_eotinfo_t *txnid, UNUSED_ARG (int bswa
     memcpy (vs, txnid->tids, txnid->n * sizeof (*vs));
     txnid->tids = vs;
   }
+}
+
+static void duplicate_property_qospolicy (_Out_ nn_property_qospolicy_t *dest, _In_ const nn_property_qospolicy_t *src)
+{
+  duplicate_propertyseq(&(dest->value), &(src->value));
+  duplicate_binarypropertyseq(&(dest->binary_value), &(src->binary_value));
 }
 
 void nn_plist_fini (nn_plist_t *ps)
@@ -2792,6 +3015,11 @@ void nn_xqos_mergein_missing (nn_xqos_t *a, const nn_xqos_t *b)
     duplicate_stringseq (&a->partition, &b->partition);
     a->present |= QP_PARTITION;
   }
+  if (!(a->present & QP_PROPERTY) && (b->present & QP_PROPERTY))
+  {
+    duplicate_property_qospolicy (&a->property, &b->property);
+    a->present |= QP_PROPERTY;
+  }
 }
 
 void nn_xqos_copy (nn_xqos_t *dst, const nn_xqos_t *src)
@@ -2865,6 +3093,14 @@ void nn_xqos_fini (nn_xqos_t *xqos)
       /* until proper message buffers arrive */
       TRACE_PLIST (("NN_XQOS_FINI free %p\n", xqos->subscription_keys.key_list.strs));
       os_free (xqos->subscription_keys.key_list.strs);
+    }
+  }
+  if (xqos->present & QP_PROPERTY)
+  {
+    if (!(xqos->aliased & QP_PROPERTY))
+    {
+      free_propertyseq(&xqos->property.value);
+      free_binarypropertyseq(&xqos->property.binary_value);
     }
   }
   xqos->present = 0;
@@ -3420,6 +3656,25 @@ void nn_log_xqos (logcat_t cat, const nn_xqos_t *xqos)
   });
   DO (PRISMTECH_ENTITY_FACTORY, { LOGB1 ("entity_factory=%u", xqos->entity_factory.autoenable_created_entities); });
   DO (PRISMTECH_SYNCHRONOUS_ENDPOINT, { LOGB1 ("synchronous_endpoint=%u", xqos->synchronous_endpoint.value); });
+  DO (PROPERTY, {
+    unsigned i;
+    LOGB0 ("property={{");
+    for (i = 0; i < xqos->property.value.n; i++) {
+      nn_log (cat, "(\"%s\",\"%s\",%d)",
+              xqos->property.value.props[i].name  ? xqos->property.value.props[i].name : "nil",
+              xqos->property.value.props[i].value ? xqos->property.value.props[i].name : "nil",
+              (int)xqos->property.value.props[i].propagate);
+    }
+    nn_log (cat, "},{");
+    for (i = 0; i < xqos->property.binary_value.n; i++) {
+      nn_log (cat, "(\"%s\",<",
+              xqos->property.binary_value.props[i].name  ? xqos->property.binary_value.props[i].name : "nil");
+      log_octetseq (cat, xqos->property.binary_value.props[i].value.length, xqos->property.binary_value.props[i].value.value);
+      nn_log (cat, ">,%d)",
+              (int)xqos->property.binary_value.props[i].propagate);
+    }
+    nn_log (cat, "}}");
+  });
   DO (RTI_TYPECODE, {
     LOGB1 ("rti_typecode=%u<", xqos->rti_typecode.length);
     log_octetseq (cat, xqos->rti_typecode.length, xqos->rti_typecode.value);
