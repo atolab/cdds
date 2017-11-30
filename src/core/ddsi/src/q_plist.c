@@ -383,10 +383,14 @@ static int alias_property (_Out_ nn_property_t *prop, _In_ const struct dd *dd)
 
 static void free_property (_Inout_ nn_property_t *prop)
 {
-  if (prop->name)
+  if (prop->name) {
     os_free(prop->name);
-  if (prop->value)
+    prop->name = NULL;
+  }
+  if (prop->value) {
     os_free(prop->value);
+    prop->value = NULL;
+  }
 }
 
 static void unalias_property (_Inout_ nn_property_t *prop, _In_ int bswap)
@@ -433,6 +437,8 @@ static void free_propertyseq (_Inout_ nn_propertyseq_t *pseq)
     free_property(&(pseq->props[i]));
   }
   os_free (pseq->props);
+  pseq->props = NULL;
+  pseq->n = 0;
 }
 
 static void unalias_propertyseq (_Inout_ nn_propertyseq_t *pseq, _In_ int bswap)
@@ -496,10 +502,15 @@ static int alias_binaryproperty (_Out_ nn_binaryproperty_t *prop, _In_ const str
 
 static void free_binaryproperty (_Inout_ nn_binaryproperty_t *prop)
 {
-  if (prop->name)
+  if (prop->name) {
     os_free(prop->name);
-  if (prop->value.value)
+    prop->name = NULL;
+  }
+  if (prop->value.value) {
     os_free(prop->value.value);
+    prop->value.value = NULL;
+    prop->value.length = 0;
+  }
 }
 
 static void unalias_binaryproperty (_Inout_ nn_binaryproperty_t *prop, _In_ int bswap)
@@ -546,6 +557,8 @@ static void free_binarypropertyseq (_Inout_ nn_binarypropertyseq_t *pseq)
     free_binaryproperty(&(pseq->props[i]));
   }
   os_free (pseq->props);
+  pseq->props = NULL;
+  pseq->n = 0;
 }
 
 static void unalias_binarypropertyseq (_Inout_ nn_binarypropertyseq_t *pseq, _In_ int bswap)
