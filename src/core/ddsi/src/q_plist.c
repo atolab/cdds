@@ -357,12 +357,14 @@ assert (dest->strs == NULL);
   }
 }
 
+_Success_(return == 0)
 static int validate_property (_In_ const struct dd *dd, _Out_ unsigned *len)
 {
   /* TODO (CHAM-533): Add CDR property check. */
-  return 0;
+  return ERR_UNSPECIFIED;
 }
 
+_Success_(return == 0)
 static int alias_property (_Out_ nn_property_t *prop, _In_ const struct dd *dd)
 {
   unsigned len;
@@ -400,12 +402,14 @@ static void duplicate_property (_Out_ nn_property_t *dest, _In_ const nn_propert
     *dest = tmp;
 }
 
+_Success_(return == 0)
 static int validate_propertyseq (_In_ const struct dd *dd, _Out_ unsigned *len)
 {
   /* TODO (CHAM-533): Add CDR propertyseq check. */
-  return 0;
+  return ERR_UNSPECIFIED;
 }
 
+_Success_(return == 0)
 static int alias_propertyseq (_Out_ nn_propertyseq_t *pseq, _In_ const struct dd *dd)
 {
   unsigned len;
@@ -465,12 +469,14 @@ static void duplicate_propertyseq (_Out_ nn_propertyseq_t *dest, _In_ const nn_p
   }
 }
 
+_Success_(return == 0)
 static int validate_binaryproperty (_In_ const struct dd *dd, _Out_ unsigned *len)
 {
   /* TODO (CHAM-533): Add CDR binaryproperty check. */
-  return 0;
+  return ERR_UNSPECIFIED;
 }
 
+_Success_(return == 0)
 static int alias_binaryproperty (_Out_ nn_binaryproperty_t *prop, _In_ const struct dd *dd)
 {
   unsigned len;
@@ -509,12 +515,14 @@ static void duplicate_binaryproperty (_Out_ nn_binaryproperty_t *dest, _In_ cons
     *dest = tmp;
 }
 
+_Success_(return == 0)
 static int validate_binarypropertyseq (_In_ const struct dd *dd, _Out_ unsigned *len)
 {
   /* TODO (CHAM-533): Add CDR binarypropertyseq check. */
-  return 0;
+  return ERR_UNSPECIFIED;
 }
 
+_Success_(return == 0)
 static int alias_binarypropertyseq (_Out_ nn_binarypropertyseq_t *pseq, _In_ const struct dd *dd)
 {
   unsigned len;
