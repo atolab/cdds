@@ -17,6 +17,13 @@ set_tests_properties(
 	PROPERTIES
 		REQUIRED_FILES ${Criterion_ddsc_config_simple_udp_file}
 		ENVIRONMENT "VORTEXDDS_URI=${Criterion_ddsc_config_simple_udp_uri};MAX_PARTICIPANTS=${Criterion_ddsc_config_simple_udp_max_participants}"
-
+)
+set(Criterion_ddsc_config_invalid_file "${CMAKE_CURRENT_LIST_DIR}/config_invalid.xml")
+set(Criterion_ddsc_config_invalid_uri "file://${Criterion_ddsc_config_invalid_file}")
+set_tests_properties(
+	Criterion_ddsc_config_invalid
+	PROPERTIES
+		REQUIRED_FILES ${Criterion_ddsc_config_invalid_file}
+		ENVIRONMENT "VORTEXDDS_URI=${Criterion_ddsc_config_invalid_uri}"
 )
 configure_file("config_env.h.in" "config_env.h")
