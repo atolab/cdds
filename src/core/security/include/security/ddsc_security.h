@@ -1,997 +1,1335 @@
 //
 // Created by kurtulus on 29-11-17.
 //
+//#include "os/os_public.h"
+//#include "os/os_decl_attributes_sal.h"
+
+#include "dds_builtinTopics.h"
 
 #ifndef DDSC_SECURITY_H
 #define DDSC_SECURITY_H
 
-
+int64_t DDS_Security_DynamicData; //native=int64_t assumption
+//Note – It is recommended that native types be mapped to equivalent type
+// names in each programming language, subject to the normal mapping rules for type names in that language
 
 /*
- * DDS_Security_rtf2_dcps.idl needed for the declarations
- * of DDS Entities and DDS Entity Qos
+ * NOTE: ReturnCode_t is from DDS spec
  */
+typedef long DDS_ReturnCode_t;
+typedef long DDS_Security_DomainId_t;
+
+#ifndef _DDS_Security_OctetSeq_defined
+#define _DDS_Security_OctetSeq_defined
+typedef struct
+{
+  uint32_t _maximum;
+  uint32_t _length;
+  uint8_t *_buffer; //octet : uint8_t
+  bool _release;
+} DDS_Security_OctetSeq;
+
+DDS_Security_OctetSeq *DDS_Security_OctetSeq__alloc(void);
+
+uint8_t *DDS_Security_OctetSeq__allocbuf(uint32_t len);
+
+#endif /* _DDS_Security_OctetSeq_defined */
+
+
+#ifndef _DDS_Security_LongLongSeq_defined
+#define _DDS_Security_LongLongSeq_defined
+typedef struct
+{
+  uint32_t _maximum;
+  uint32_t _length;
+  int64_t *_buffer;
+  bool _release;
+} DDS_Security_LongLongSeq;
+
+DDS_Security_LongLongSeq *DDS_Security_LongLongSeq__alloc(void);
+
+int64_t *DDS_Security_LongLongSeq__allocbuf(uint32_t len);
+
+#endif /* _DDS_Security_LongLongSeq_defined */
+
+typedef struct DDS_Security_Property_t
+{
+  char *name;
+  char *value;
+  bool propagate;
+} DDS_Security_Property_t;
+
+#ifndef _DDS_Security_PropertySeq_defined
+typedef struct
+{
+  uint32_t _maximum;
+  uint32_t _length;
+  DDS_Security_Property_t *_buffer;
+  bool _release;
+} DDS_Security_PropertySeq;
+
+DDS_Security_PropertySeq *DDS_Security_PropertySeq__alloc(void);
+
+DDS_Security_Property_t *DDS_Security_PropertySeq__allocbuf(uint32_t len);
+
+#endif /* _DDS_Security_PropertySeq_defined */
+
+
+typedef struct DDS_Security_BinaryProperty_t
+{
+  char *name;
+  DDS_Security_OctetSeq value;
+  bool propagate;
+} DDS_Security_BinaryProperty_t;
+
+#ifndef _DDS_Security_BinaryPropertySeq_defined
+#define _DDS_Security_BinaryPropertySeq_defined
+typedef struct
+{
+  uint32_t _maximum;
+  uint32_t _length;
+  DDS_Security_BinaryProperty_t *_buffer;
+  bool _release;
+} DDS_Security_BinaryPropertySeq;
+
+DDS_Security_BinaryPropertySeq *DDS_Security_BinaryPropertySeq__alloc(void);
+
+DDS_Security_BinaryProperty_t *DDS_Security_BinaryPropertySeq__allocbuf(uint32_t len);
+
+#endif /* _DDS_Security_BinaryPropertySeq_defined */
+
 // DDSSEC11-96
-#include "dds-xtypes_discovery.idl"  /* http://www.omg.org/spec/DDS-XTypes/20170301/dds-xtypes_discovery.idl */
+typedef struct DDS_Security_DataHolder
+{
+  char *class_id;
+  DDS_Security_PropertySeq properties;
+  DDS_Security_BinaryPropertySeq binary_properties;
+} DDS_Security_DataHolder;
+#ifndef _DDS_Security_DataHolderSeq_defined
+#define _DDS_Security_DataHolderSeq_defined
+typedef struct
+{
+  uint32_t _maximum;
+  uint32_t _length;
+  DDS_Security_DataHolder *_buffer;
+  bool _release;
+} DDS_Security_DataHolderSeq;
 
-// The types in this file shall be serialized with XCDR encoding version 1
-module DDS {
-  module Security {
+DDS_Security_DataHolderSeq *DDS_Security_DataHolderSeq__alloc(void);
 
-    // DynamicData is in DDS-XTYPES but including the XTYPES IDL
-    // Would make the file not compilable by legacy IDL compilers
-    // that do not understand the new anotation syntax
-    int64_t DynamicData; //native=int64_t assumption
+DDS_Security_DataHolder *DDS_Security_DataHolderSeq__allocbuf(uint32_t len);
 
-#define _DDS_Security_Security_LongLongSeq_defined
-          typedef struct {
-            uint32_t _maximum;
-            uint32_t _length;
-            int64_t *_buffer;
-            bool _release;
-          } DDS_Security_Security_LongLongSeq;
-          DDS_Security_Security_LongLongSeq *DDS_Security_Security_LongLongSeq__alloc (void);
-          int64_t *DDS_Security_Security_LongLongSeq__allocbuf (uint32_t len);
-#endif /* _DDS_Security_Security_LongLongSeq_defined */
+#endif /* _DDS_Security_DataHolderSeq_defined */
 
-    typedef struct Property_t {
-      string name;
-      string value;
-      boolean propagate;
-    } Property_t;
+typedef DDS_Security_DataHolder DDS_Security_Token;
 
-#define _DDS_Security_Security_PropertySeq_defined
-  typedef struct {
-    uint32_t _maximum;
-    uint32_t _length;
-    Property_t *_buffer;
-    bool _release;
-  } DDS_Security_Security_PropertySeq;
-  DDS_Security_Security_PropertySeq *DDS_Security_Security_PropertySeq__alloc (void);
-  Property_t *DDS_Security_Security_PropertySeq__allocbuf (uint32_t len);
-#endif /* _DDS_Security_Security_PropertySeq_defined */
+// DDSSEC11-43
+typedef DDS_Security_Token DDS_Security_MessageToken;
+typedef DDS_Security_MessageToken DDS_Security_AuthRequestMessageToken;
+typedef DDS_Security_MessageToken DDS_Security_HandshakeMessageToken;
 
+// DDSSEC11-82
+typedef DDS_Security_Token DDS_Security_IdentityStatusToken;
+#ifndef _DDS_Security_HandshakeMessageTokenSeq_defined
+#define _DDS_Security_HandshakeMessageTokenSeq_defined
+typedef struct
+{
+  uint32_t _maximum;
+  uint32_t _length;
+  DDS_Security_HandshakeMessageToken *_buffer;
+  bool _release;
+} DDS_Security_HandshakeMessageTokenSeq;
 
-    typedef struct BinaryProperty_t {
-      string name;
-      OctetSeq value;
-      boolean propagate;
-    } BinaryProperty_t;
+DDS_Security_HandshakeMessageTokenSeq *DDS_Security_HandshakeMessageTokenSeq__alloc(void);
 
-    #define _DDS_Security_Security_BinaryPropertySeq_defined
-          typedef struct {
-            uint32_t _maximum;
-            uint32_t _length;
-            BinaryProperty_t  *_buffer;
-            bool _release;
-          } DDS_Security_Security_BinaryPropertySeq;
-          DDS_Security_Security_BinaryPropertySeq *DDS_Security_Security_BinaryPropertySeq__alloc (void);
-          BinaryProperty_t  *DDS_Security_Security_BinaryPropertySeq__allocbuf (uint32_t len);
-#endif /* _DDS_Security_Security_BinaryPropertySeq_defined */
+DDS_Security_HandshakeMessageToken *DDS_Security_HandshakeMessageTokenSeq__allocbuf(uint32_t len);
 
-    // DDSSEC11-96
-    typedef struct DataHolder {
-      string             class_id;
-      PropertySeq        properties;
-      BinaryPropertySeq  binary_properties;
-    } DataHolder;
-    #define _DDS_Security_Security_DataHolderSeq_defined
-          typedef struct {
-            uint32_t _maximum;
-            uint32_t _length;
-            DataHolder *_buffer;
-            bool _release;
-          } DDS_Security_Security_DataHolderSeq;
-          DDS_Security_Security_DataHolderSeq *DDS_Security_Security_DataHolderSeq__alloc (void);
-          DataHolder *DDS_Security_Security_DataHolderSeq__allocbuf (uint32_t len);
-#endif /* _DDS_Security_Security_DataHolderSeq_defined */
-
-    typedef DataHolder Token;
-
-    // DDSSEC11-43
-    typedef Token MessageToken;
-    typedef MessageToken AuthRequestMessageToken;
-    typedef MessageToken HandshakeMessageToken;
-
-    // DDSSEC11-82
-    typedef Token IdentityStatusToken;
-    #define _DDS_Security_HandshakeMessageTokenSeq_defined
-          typedef struct {
-            uint32_t _maximum;
-            uint32_t _length;
-            HandshakeMessageToken *_buffer;
-            bool _release;
-          } DDS_Security_HandshakeMessageTokenSeq;
-          DDS_Security_HandshakeMessageTokenSeq *DDS_Security_HandshakeMessageTokenSeq__alloc (void);
-          HandshakeMessageToken *DDS_Security_HandshakeMessageTokenSeq__allocbuf (uint32_t len);
 #endif /* _DDS_Security_HandshakeMessageTokenSeq_defined */
 
-    typedef Token  IdentityToken;
-    typedef Token  PermissionsToken;
-    typedef Token  AuthenticatedPeerCredentialToken;
-    typedef Token  PermissionsCredentialToken;
+typedef DDS_Security_Token DDS_Security_IdentityToken;
+typedef DDS_Security_Token DDS_Security_PermissionsToken;
+typedef DDS_Security_Token DDS_Security_AuthenticatedPeerCredentialToken;
+typedef DDS_Security_Token DDS_Security_PermissionsCredentialToken;
 
-    typedef Token  CryptoToken;
-    #define _DDS_Security_CryptoTokenSeq_defined
-          typedef struct {
-            uint32_t _maximum;
-            uint32_t _length;
-            CryptoToken *_buffer;
-            bool _release;
-          } DDS_Security_CryptoTokenSeq;
-          DDS_Security_CryptoTokenSeq *DDS_Security_CryptoTokenSeq__alloc (void);
-          CryptoToken *DDS_Security_CryptoTokenSeq__allocbuf (uint32_t len);
+typedef DDS_Security_Token DDS_Security_CryptoToken;
+#ifndef _DDS_Security_CryptoTokenSeq_defined
+#define _DDS_Security_CryptoTokenSeq_defined
+typedef struct
+{
+  uint32_t _maximum;
+  uint32_t _length;
+  DDS_Security_CryptoToken *_buffer;
+  bool _release;
+} DDS_Security_CryptoTokenSeq;
+
+DDS_Security_CryptoTokenSeq *DDS_Security_CryptoTokenSeq__alloc(void);
+
+DDS_Security_CryptoToken *DDS_Security_CryptoTokenSeq__allocbuf(uint32_t len);
+
 #endif /* _DDS_Security_CryptoTokenSeq_defined */
 
-    typedef Token  ParticipantCryptoToken;
-    typedef Token  DatawriterCryptoToken;
-    typedef Token  DatareaderCryptoToken;
+typedef DDS_Security_Token DDS_Security_ParticipantCryptoToken;
+typedef DDS_Security_Token DDS_Security_DatawriterCryptoToken;
+typedef DDS_Security_Token DDS_Security_DatareaderCryptoToken;
 
-    typedef CryptoTokenSeq  ParticipantCryptoTokenSeq;
-    typedef CryptoTokenSeq  DatawriterCryptoTokenSeq;
-    typedef CryptoTokenSeq  DatareaderCryptoTokenSeq;
+typedef DDS_Security_CryptoTokenSeq DDS_Security_ParticipantCryptoTokenSeq;
+typedef DDS_Security_CryptoTokenSeq DDS_Security_DatawriterCryptoTokenSeq;
+typedef DDS_Security_CryptoTokenSeq DDS_Security_DatareaderCryptoTokenSeq;
 
-    // DDSSEC11-88
-    // From DDS-RTPS [2] clauses 8.4.2.1 and 9.3.1
-    typedef octet GuidPrefix_t[12];
-    typedef struct EntityId_t {
-      octet entityKey[3];
-      octet entityKind;
-    } EntityId_t;
+// DDSSEC11-88
+// From DDS-RTPS [2] clauses 8.4.2.1 and 9.3.1
+typedef uint8_t DDS_Security_GuidPrefix_t[12]; //octet:int8
+typedef struct DDS_Security_EntityId_t
+{
+  uint8_t entityKey[3];  //octet:uint8_t
+  uint8_t entityKind;    //octet:uint8_t
+} DDS_Security_EntityId_t;
 
-    // DDSSEC11-88
-    typedef struct GUID_t {
-      GuidPrefix_t prefix;
-      EntityId_t   entityId;
-    } GUID_t;
+// DDSSEC11-88
+typedef struct DDS_Security_GUID_t
+{
+  DDS_Security_GuidPrefix_t prefix;
+  DDS_Security_EntityId_t entityId;
+} DDS_Security_GUID_t;
 
-    // DDSSEC11-88
-    typedef struct MessageIdentity {
-      GUID_t     source_guid;
-      long long  sequence_number;
-    } MessageIdentity;
+// DDSSEC11-88
+typedef struct DDS_Security_MessageIdentity
+{
+  DDS_Security_GUID_t source_guid;
+  long long sequence_number;
+} DDS_Security_MessageIdentity;
 
-    // DDSSEC11-24
-    const ReturnCode_t RETCODE_NOT_ALLOWED_BY_SECURITY = 1000;
+// DDSSEC11-24
+const DDS_ReturnCode_t RETCODE_NOT_ALLOWED_BY_SECURITY = 1000;
 
-    // DDSSEC11-96
+// DDSSEC11-96
 
-    typedef struct PropertyQosPolicy {
-      PropertySeq        value;
-      BinaryPropertySeq  binary_value;
-    } PropertyQosPolicy;
+typedef struct DDS_Security_PropertyQosPolicy
+{
+  DDS_Security_PropertySeq value;
+  DDS_Security_BinaryPropertySeq binary_value;
+} DDS_Security_PropertyQosPolicy;
 
-    // DDSSEC11-96
-    // See http://www.omg.org/spec/DDS-XTypes/20170301/dds-xtypes_discovery.idl
-    struct DDS_Security_Security_DomainParticipantQos :  DDS::DomainParticipantQos {
-      PropertyQosPolicy  property;
-    };
+// DDSSEC11-96
+typedef struct DDS_Security_DomainParticipantQos
+{
+  DDS_UserDataQosPolicy user_data;
+  DDS_EntityFactoryQosPolicy entity_factory;
+  //DDS_SchedulingQosPolicy watchdog_scheduling;
+  //DDS_SchedulingQosPolicy listener_scheduling;
+  DDS_Security_PropertyQosPolicy property;
+} DDS_Security_DomainParticipantQos;
 
-    struct Tag {
-      string name;
-      string value;
-    };
+typedef struct DDS_Security_Tag
+{
+  char *name;
+  char *value;
+} DDS_Security_Tag;
 
-    #define _DDS_Security_TagSeq_defined
-          typedef struct {
-            uint32_t _maximum;
-            uint32_t _length;
-             Tag  *_buffer;
-            bool _release;
-          } DDS_Security_TagSeq;
-          DDS_Security_TagSeq *DDS_Security_TagSeq__alloc (void);
-           Tag  *DDS_Security_TagSeq__allocbuf (uint32_t len);
+#ifndef _DDS_Security_TagSeq_defined
+#define _DDS_Security_TagSeq_defined
+typedef struct
+{
+  uint32_t _maximum;
+  uint32_t _length;
+  DDS_Security_Tag *_buffer;
+  bool _release;
+} DDS_Security_TagSeq;
+
+DDS_Security_TagSeq *DDS_Security_TagSeq__alloc(void);
+
+DDS_Security_Tag *DDS_Security_TagSeq__allocbuf(uint32_t len);
+
 #endif /* _DDS_Security_TagSeq_defined */
-    struct DataTags {
-      TagSeq tags;
-    };
-
-    // DDSSEC11-34
-    typedef DataTags DataTagQosPolicy;
-
-    // DDSSEC11-96
-    // See http://www.omg.org/spec/DDS-XTypes/20170301/dds-xtypes_discovery.idl
-    // DDSSEC11-34
-
-    struct DataWriterQos  :  DDS::DataWriterQos {
-      PropertyQosPolicy  property;
-      DataTagQosPolicy   data_tags;
-    };
-
-    // DDSSEC11-96
-    // See http://www.omg.org/spec/DDS-XTypes/20170301/dds-xtypes_discovery.idl
-    // DDSSEC11-34
-    struct DataReaderQos  :  DDS::DataReaderQos {
-      PropertyQosPolicy  property;
-      DataTagQosPolicy   data_tags;
-    };
-
-    // DDSSEC11-137
-    typedef unsigned long ParticipantSecurityAttributesMask;
-    typedef unsigned long PluginParticipantSecurityAttributesMask;
-
-    @extensibility(APPENDABLE)
-    struct ParticipantSecurityInfo {
-      ParticipantSecurityAttributesMask        participant_security_attributes;
-      PluginParticipantSecurityAttributesMask  plugin_participant_security_attributes;
-    };
-
-    // DDSSEC11-106
-    typedef unsigned long EndpointSecurityAttributesMask;
-    typedef unsigned long PluginEndpointSecurityAttributesMask;
-    @extensibility(APPENDABLE)
-    struct EndpointSecurityInfo {
-      EndpointSecurityAttributesMask        endpoint_security_mask;
-      PluginEndpointSecurityAttributesMask  plugin_endpoint_security_mask;
-    };
-
-    // DDSSEC11-96
-    // See http://www.omg.org/spec/DDS-XTypes/20170301/dds-xtypes_discovery.idl
-    // DDSSEC11-137
-    @extensibility(MUTABLE)
-    struct ParticipantBuiltinTopicData  :  DDS::ParticipantBuiltinTopicData {
-      @id(0x1001)  IdentityToken     identity_token;
-      @id(0x1002)  PermissionsToken  permissions_token;
-      @id(0x0059)  PropertyQosPolicy property;
-      @id(0x1005)  ParticipantSecurityInfo  security_info;
-    };
-
-    // DDSSEC11-82
-    @extensibility(MUTABLE)
-    struct ParticipantBuiltinTopicDataSecure  :  ParticipantBuiltinTopicData {
-      @id(0x1006) @optional IdentityStatusToken identity_status_token;
-    };
-
-    // DDSSEC11-85
-    @extensibility(MUTABLE)
-    struct PublicationBuiltinTopicData: DDS::PublicationBuiltinTopicData {
-      @id(0x1004) EndpointSecurityInfo  security_info;
-    };
-
-    // DDSSEC11-85
-    @extensibility(MUTABLE)
-    struct SubscriptionBuiltinTopicData: DDS::SubscriptionBuiltinTopicData {
-      @id(0x1004) EndpointSecurityInfo  security_info;
-    };
-
-    // DDSSEC11-96
-    // See http://www.omg.org/spec/DDS-XTypes/20170301/dds-xtypes_discovery.idl
-    @extensibility(MUTABLE)
-    struct PublicationBuiltinTopicDataSecure  :  PublicationBuiltinTopicData {
-      @id(0x1003)  DataTags data_tags;
-    };
-
-    // DDSSEC11-96
-    // See http://www.omg.org/spec/DDS-XTypes/20170301/dds-xtypes_discovery.idl
-    @extensibility(MUTABLE)
-    struct SubscriptionBuiltinTopicDataSecure  :  DDS::SubscriptionBuiltinTopicData {
-      @id(0x1003)  DataTags data_tags;
-    };
-
-    // DDSSEC11-15 typedef long SecurityExceptionCode;
-    typedef long SecurityExceptionCode;
-
-    struct SecurityException {
-      string  message;
-      long    code;      // DDSSEC11-15
-      long    minor_code;
-    };
-
-    enum ValidationResult_t {
-      VALIDATION_OK,
-      VALIDATION_FAILED,
-      VALIDATION_PENDING_RETRY,
-      VALIDATION_PENDING_HANDSHAKE_REQUEST,
-      VALIDATION_PENDING_HANDSHAKE_MESSAGE,
-      VALIDATION_OK_FINAL_MESSAGE
-    };
-
-    native IdentityHandle;
-    native HandshakeHandle;
-    native SharedSecretHandle;
-    native PermissionsHandle;
-    native ParticipantCryptoHandle;
-    native ParticipantCryptoHandleSeq;
-    native DatawriterCryptoHandle;
-    native DatawriterCryptoHandleSeq;
-    native DatareaderCryptoHandle;
-    native DatareaderCryptoHandleSeq;
-
-    // DDSSEC11-96
-    interface Authentication;
-
-    // DDSSEC11-82
-    enum AuthStatusKind {
-      @value(1) IDENTITY_STATUS
-    };
-
-    // DDSSEC11-96
-    interface AuthenticationListener {
-      boolean
-      on_revoke_identity(
-              in    Authentication     plugin,
-              in    IdentityHandle     handle,
-              inout SecurityException  ex);
-
-      // DDSSEC11-82
-      boolean
-      on_status_changed(
-              in    Authentication     plugin,
-              in    IdentityHandle     handle,
-              in    AuthStatusKind     status_kind,
-              inout SecurityException  ex);
-    };
-
-    // DDSSEC11-96
-    interface Authentication {
-      // DDSSEC11-88
-      ValidationResult_t
-      validate_local_identity(
-              inout IdentityHandle        local_identity_handle,
-              inout GUID_t                adjusted_participant_guid,
-              in    DomainId_t            domain_id,
-              in    DomainParticipantQos  participant_qos,
-              in    GUID_t                candidate_participant_guid,
-              inout SecurityException     ex );
-
-      boolean
-      get_identity_token(
-              inout IdentityToken      identity_token,
-              in    IdentityHandle     handle,
-              inout SecurityException  ex );
-
-      // DDSSEC11-82
-      boolean
-      get_identity_status_token(
-              inout IdentityStatusToken      identity_status_token,
-              in    IdentityHandle           handle,
-              inout SecurityException        ex );
-
-      boolean
-      set_permissions_credential_and_token(
-              in    IdentityHandle         handle,
-              in    PermissionsCredential  permissions_credential,
-              in    PermissionsToken       permissions_token,
-              inout SecurityException      ex );
-
-      // DDSSEC11-21
-      // DDSSEC11-88
-      // DDSSEC11-85
-      ValidationResult_t
-      validate_remote_identity(
-              inout  IdentityHandle           remote_identity_handle,
-              inout  AuthRequestMessageToken  local_auth_request_token,
-              in     AuthRequestMessageToken  remote_auth_request_token,
-              in     IdentityHandle           local_identity_handle,
-              in     IdentityToken            remote_identity_token,
-              in     GUID_t                   remote_participant_guid,
-              inout  SecurityException        ex );
-
-      // DDSSEC11-46
-      // DDSSEC11-118
-      ValidationResult_t
-      begin_handshake_request(
-              inout HandshakeHandle        handshake_handle,
-              inout HandshakeMessageToken  handshake_message,
-              in    HandshakeMessageToken  handshake_message_in,
-              in    IdentityHandle         initiator_identity_handle,
-              in    IdentityHandle         replier_identity_handle,
-              in    OctetSeq               serialized_local_participant_data,
-              inout SecurityException      ex );
-
-      // DDSSEC11-46
-      ValidationResult_t
-      begin_handshake_reply(
-              inout HandshakeHandle        handshake_handle,
-              inout HandshakeMessageToken  handshake_message_out,
-              in    HandshakeMessageToken  handshake_message_in,
-              in    IdentityHandle         initiator_identity_handle,
-              in    IdentityHandle         replier_identity_handle,
-              in    OctetSeq               serialized_local_participant_data,
-              inout SecurityException      ex );
-
-      ValidationResult_t
-      process_handshake(
-              inout HandshakeMessageToken  handshake_message_out,
-              in    HandshakeMessageToken  handshake_message_in,
-              in    HandshakeHandle        handshake_handle,
-              inout SecurityException      ex );
-
-      SharedSecretHandle
-      get_shared_secret(
-              in    HandshakeHandle    handshake_handle,
-              inout SecurityException  ex );
-
-      boolean
-      get_authenticated_peer_credential_token(
-              inout AuthenticatedPeerCredentialToken  peer_credential_token,
-              in    HandshakeHandle                   handshake_handle,
-              inout SecurityException                 ex );
-
-      boolean
-      set_listener(
-              in   AuthenticationListener  listener,
-              inout SecurityException   ex );
-
-      boolean
-      return_identity_token(
-              in    IdentityToken      token,
-              inout SecurityException  ex);
-
-      // DDSSEC11-82
-      boolean
-      return_identity_status_token(
-              in    IdentityStatusToken  token,
-              inout SecurityException    ex);
-
-      boolean
-      return_authenticated_peer_credential_token(
-              in   AuthenticatedPeerCredentialToken peer_credential_token,
-              inout SecurityException  ex);
-
-      boolean
-      return_handshake_handle(
-              in    HandshakeHandle    handshake_handle,
-              inout SecurityException  ex);
-
-      boolean
-      return_identity_handle(
-              in   IdentityHandle      identity_handle,
-              inout SecurityException  ex);
-
-      boolean
-      return_sharedsecret_handle(
-              in    SharedSecretHandle  sharedsecret_handle,
-              inout SecurityException   ex);
-    };
-
-    // DDSSEC11-137 DDSEC11-85
-    struct ParticipantSecurityAttributes {
-      boolean     allow_unauthenticated_participants;
-      boolean     is_access_protected;
-      boolean     is_rtps_protected;
-      boolean     is_discovery_protected;
-      boolean     is_liveliness_protected;
-      ParticipantSecurityAttributesMask plugin_participant_attributes;
-      PropertySeq ac_endpoint_properties;
-    };
-
-    // DDSSEC11-16
-    struct TopicSecurityAttributes {
-      boolean  is_read_protected;
-      boolean  is_write_protected;
-      boolean  is_discovery_protected;
-      boolean  is_liveliness_protected;
-    };
-
-    // DDSSEC11-16 DDSSEC11-106 DDSEC11-85
-    struct EndpointSecurityAttributes : TopicSecurityAttributes {
-      boolean     is_submessage_protected;
-      boolean     is_payload_protected;
-      boolean     is_key_protected;
-      PluginEndpointSecurityAttributesMask  plugin_endpoint_attributes;
-      PropertySeq ac_endpoint_properties;
-    };
-
-    // DDSSEC11-106
-    struct PluginEndpointSecurityAttributes {
-      boolean     is_submessage_encrypted;
-      boolean     is_payload_encrypted;
-      boolean     is_submessage_origin_authenticated;
-    };
-
-    // DDSSEC11-96
-    interface AccessControl;
-    typedef long  DomainId_t;
-
-    // DDSSEC11-96
-    interface AccessControlListener {
-      boolean on_revoke_permissions(
-              in   AccessControl plugin,
-              in   PermissionsHandle handle);
-    };
-
-    // DDSSEC11-96
-    interface AccessControl {
-      PermissionsHandle
-      validate_local_permissions(
-              in    Authentication         auth_plugin,
-              in    IdentityHandle         identity,
-              in    DomainId_t             domain_id,
-              in    DomainParticipantQos   participant_qos,
-              inout SecurityException      ex );
-
-      PermissionsHandle
-      validate_remote_permissions(
-              in    Authentication                    auth_plugin,
-              in    IdentityHandle                    local_identity_handle,
-              in    IdentityHandle                    remote_identity_handle,
-              in    PermissionsToken                  remote_permissions_token,
-              in    AuthenticatedPeerCredentialToken  remote_credential_token,
-              inout SecurityException                 ex );
-
-      boolean
-      check_create_participant(
-              in    PermissionsHandle     permissions_handle,
-              in    DomainId_t            domain_id,
-              in    DomainParticipantQos  qos,
-              inout SecurityException     ex );
-
-      boolean
-      check_create_datawriter(
-              in    PermissionsHandle   permissions_handle,
-              in    DomainId_t          domain_id,
-              in    string              topic_name,
-              in    DataWriterQos       qos,
-              in    PartitionQosPolicy  partition,
-              in    DataTags            data_tag,
-              inout SecurityException   ex);
-
-      boolean
-      check_create_datareader(
-              in    PermissionsHandle   permissions_handle,
-              in    DomainId_t          domain_id,
-              in    string              topic_name,
-              in    DataReaderQos       qos,
-              in    PartitionQosPolicy  partition,
-              in    DataTags            data_tag,
-              inout SecurityException   ex);
-
-      // DDSSEC11-33
-      boolean
-      check_create_topic(
-              in    PermissionsHandle permissions_handle,
-              in    DomainId_t         domain_id,
-              in    string             topic_name,
-              in    TopicQos           qos,
-              inout SecurityException  ex);
-
-      boolean
-      check_local_datawriter_register_instance(
-              in    PermissionsHandle  permissions_handle,
-              in    DataWriter         writer,
-              in    DynamicData        key,
-              inout SecurityException  ex);
-
-      boolean
-      check_local_datawriter_dispose_instance(
-              in    PermissionsHandle  permissions_handle,
-              in    DataWriter         writer,
-              in    DynamicData        key,
-              inout SecurityException  ex);
-
-      boolean
-      check_remote_participant(
-              in    PermissionsHandle                  permissions_handle,
-              in    DomainId_t                         domain_id,
-              in    ParticipantBuiltinTopicDataSecure  participant_data,
-              inout SecurityException                  ex);
-
-      boolean
-      check_remote_datawriter(
-              in   PermissionsHandle                  permissions_handle,
-              in   DomainId_t                         domain_id,
-              in   PublicationBuiltinTopicDataSecure  publication_data,
-              inout SecurityException                 ex);
-
-      boolean
-      check_remote_datareader(
-              in    PermissionsHandle                   permissions_handle,
-              in    DomainId_t                          domain_id,
-              in    SubscriptionBuiltinTopicDataSecure  subscription_data,
-              inout boolean                             relay_only,
-              inout SecurityException                   ex);
-
-      boolean
-      check_remote_topic(
-              in    PermissionsHandle      permissions_handle,
-              in    DomainId_t             domain_id,
-              in    TopicBuiltinTopicData  topic_data,
-              inout SecurityException      ex);
-
-      // DDSSEC11-34
-      boolean
-      check_local_datawriter_match(
-              in    PermissionsHandle  writer_permissions_handle,
-              in    PermissionsHandle  reader_permissions_handle,
-              in    PublicationBuiltinTopicDataSecure  publication_data,
-              in    SubscriptionBuiltinTopicDataSecure subscription_data,
-              inout SecurityException  ex);
-
-      // DDSSEC11-34
-      boolean
-      check_local_datareader_match(
-              in    PermissionsHandle  reader_permissions_handle,
-              in    PermissionsHandle  writer_permissions_handle,
-              in    SubscriptionBuiltinTopicDataSecure subscription_data,
-              in    PublicationBuiltinTopicDataSecure  publication_data,
-              inout SecurityException  ex);
-
-      boolean
-      check_remote_datawriter_register_instance(
-              in    PermissionsHandle   permissions_handle,
-              in    DataReader          reader,
-              in    InstanceHandle_t    publication_handle,
-              in    DynamicData         key,
-              in    InstanceHandle_t    instance_handle,
-              inout SecurityException   ex);
-
-      boolean
-      check_remote_datawriter_dispose_instance(
-              in    PermissionsHandle  permissions_handle,
-              in    DataReader         reader,
-              in    InstanceHandle_t   publication_handle,
-              in    DynamicData        key,
-              inout SecurityException  ex);
-
-      boolean
-      get_permissions_token(
-              inout PermissionsToken   permissions_token,
-              in    PermissionsHandle  handle,
-              inout SecurityException  ex);
-
-      boolean
-      get_permissions_credential_token(
-              inout PermissionsCredentialToken permissions_credential_token,
-              in    PermissionsHandle  handle,
-              inout SecurityException  ex);
-
-      boolean
-      set_listener(
-              in    AccessControlListener  listener,
-              inout SecurityException      ex);
-
-      boolean
-      return_permissions_token(
-              in    PermissionsToken   token,
-              inout SecurityException  ex);
-
-      boolean
-      return_permissions_credential_token(
-              in    PermissionsCredentialToken  permissions_credential_token,
-              inout SecurityException           ex);
-
-      boolean
-      get_participant_sec_attributes(
-              in    PermissionsHandle              permissions_handle,
-              inout ParticipantSecurityAttributes  attributes,
-              inout SecurityException              ex);
-
-      // DDSSEC11-16
-      boolean
-      get_topic_sec_attributes (
-              in    PermissionsHandle           permissions_handle,
-              in    String                      topic_name,
-              inout TopicSecurityAttributes     attributes,
-              inout SecurityException           ex);
-
-      // DDSSEC11-16
-      boolean
-      get_datawriter_sec_attributes(
-              in    PermissionsHandle           permissions_handle,
-              in    PartitionQosPolicy          partition,
-              in    DataTagQosPolicy            data_tag,
-              inout EndpointSecurityAttributes  attributes,
-              inout SecurityException           ex);
-
-      // DDSSEC11-16
-      boolean
-      get_datareader_sec_attributes(
-              in    PermissionsHandle           permissions_handle,
-              in    PartitionQosPolicy          partition,
-              in    DataTagQosPolicy            data_tag,
-              inout EndpointSecurityAttributes  attributes,
-              inout SecurityException           ex);
-
-      // DDSSEC11-112
-      boolean
-      return_participant_sec_attributes(
-              in ParticipantSecurityAttributes  attributes,
-              inout SecurityException           ex);
-
-      // DDSSEC11-112
-      boolean
-      return_datawriter_sec_attributes(
-              in EndpointSecurityAttributes  attributes,
-              inout SecurityException        ex);
-
-      // DDSSEC11-112
-      boolean
-      return_datareader_sec_attributes(
-              in EndpointSecurityAttributes  attributes,
-              inout SecurityException        ex);
-    };
-
-    // DDSSEC11-96
-    interface CryptoKeyFactory {
-
-      // DDSSEC11-3 DDSSEC11-85
-      ParticipantCryptoHandle
-      register_local_participant(
-              in    IdentityHandle                 participant_identity,
-              in    PermissionsHandle              participant_permissions,
-              in    PropertySeq                    participant_properties,
-              in    ParticipantSecurityAttributes  participant_security_attributes,
-              inout SecurityException              ex  );
-
-      ParticipantCryptoHandle
-      register_matched_remote_participant(
-              in    ParticipantCryptoHandle  local_participant_crypto_handle,
-              in    IdentityHandle           remote_participant_identity,
-              in    PermissionsHandle        remote_participant_permissions,
-              in    SharedSecretHandle       shared_secret,
-              inout SecurityException        ex);
-
-      // DDSSEC11-3 DDSSEC11-85
-      DatawriterCryptoHandle
-      register_local_datawriter(
-              in    ParticipantCryptoHandle  participant_crypto,
-              in    PropertySeq              datawriter_properties,
-              in    EndpointSecurityAttributes datawriter_security_attributes,
-              inout SecurityException        ex);
-
-      DatareaderCryptoHandle
-      register_matched_remote_datareader(
-              in    DatawriterCryptoHandle   local_datawritert_crypto_handle,
-              in    ParticipantCryptoHandle  remote_participant_crypto,
-              in    SharedSecretHandle       shared_secret,
-              in    boolean                  relay_only,
-              inout SecurityException        ex);
-
-      // DDSSEC11-3 DDSSEC11-85
-      DatareaderCryptoHandle
-      register_local_datareader(
-              in    ParticipantCryptoHandle     participant_crypto,
-              in    PropertySeq                 datareader_properties,
-              in    EndpointSecurityAttributes  datareader_security_attributes,
-              inout SecurityException           ex);
-
-      DatawriterCryptoHandle
-      register_matched_remote_datawriter(
-              in    DatareaderCryptoHandle   local_datareader_crypto_handle,
-              in    ParticipantCryptoHandle  remote_participant_crypt,
-              in    SharedSecretHandle       shared_secret,
-              inout SecurityException        ex );
-
-      boolean
-      unregister_participant(
-              in    ParticipantCryptoHandle  participant_crypto_handle,
-              inout SecurityException        ex);
-
-      boolean
-      unregister_datawriter(
-              in    DatawriterCryptoHandle  datawriter_crypto_handle,
-              inout SecurityException       ex  );
-
-      boolean
-      unregister_datareader(
-              in    DatareaderCryptoHandle  datareader_crypto_handle,
-              inout SecurityException       ex  );
-    };
-
-
-    // DDSSEC11-96
-    interface CryptoKeyExchange {
-      boolean
-      create_local_participant_crypto_tokens(
-              inout ParticipantCryptoTokenSeq  local_participant_crypto_tokens,
-              in    ParticipantCryptoHandle    local_participant_crypto,
-              in    ParticipantCryptoHandle    remote_participant_crypto,
-              inout SecurityException          ex);
-
-      boolean
-      set_remote_participant_crypto_tokens(
-              in    ParticipantCryptoHandle    local_participant_crypto,
-              in    ParticipantCryptoHandle    remote_participant_crypto,
-              in    ParticipantCryptoTokenSeq  remote_participant_tokens,
-              inout SecurityException          ex);
-
-      boolean
-      create_local_datawriter_crypto_tokens(
-              inout DatawriterCryptoTokenSeq  local_datawriter_crypto_tokens,
-              in    DatawriterCryptoHandle    local_datawriter_crypto,
-              in    DatareaderCryptoHandle    remote_datareader_crypto,
-              inout SecurityException         ex);
-
-      boolean
-      set_remote_datawriter_crypto_tokens(
-              in    DatareaderCryptoHandle    local_datareader_crypto,
-              in    DatawriterCryptoHandle    remote_datawriter_crypto,
-              in    DatawriterCryptoTokenSeq  remote_datawriter_tokens,
-              inout SecurityException         ex);
-
-      boolean
-      create_local_datareader_crypto_tokens(
-              inout DatareaderCryptoTokenSeq  local_datareader_cryto_tokens,
-              in    DatareaderCryptoHandle    local_datareader_crypto,
-              in    DatawriterCryptoHandle    remote_datawriter_crypto,
-              inout SecurityException         ex);
-
-      boolean
-      set_remote_datareader_crypto_tokens(
-              in    DatawriterCryptoHandle    local_datawriter_crypto,
-              in    DatareaderCryptoHandle    remote_datareader_crypto,
-              in    DatareaderCryptoTokenSeq  remote_datareader_tokens,
-              inout SecurityException         ex);
-
-      boolean
-      return_crypto_tokens(
-              in    CryptoTokenSeq     crypto_tokens,
-              inout SecurityException  ex);
-    };
-
-    enum SecureSumessageCategory_t {
-      INFO_SUBMESSAGE,
-      DATAWRITER_SUBMESSAGE,
-      DATAREADER_SUBMESSAGE
-    };
-
-    // DDSSEC11-96
-    // DDSSEC11-123
-    interface CryptoTransform {
-      boolean
-      encode_serialized_payload(
-              inout OctetSeq                encoded_buffer,
-              inout OctetSeq                extra_inline_qos,
-              in    OctetSeq                plain_buffer,
-              in    DatawriterCryptoHandle  sending_datawriter_crypto,
-              inout SecurityException       ex);
-
-      // DDSSEC11-66
-      boolean
-      encode_datawriter_submessage(
-              inout OctetSeq                   encoded_rtps_submessage,
-              in    OctetSeq                   plain_rtps_submessage,
-              in    DatawriterCryptoHandle     sending_datawriter_crypto,
-              in    DatareaderCryptoHandleSeq  receiving_datareader_crypto_list,
-              inout long                       receiving_datareader_crypto_list_index,
-              inout SecurityException          ex);
-
-      boolean
-      encode_datareader_submessage(
-              inout OctetSeq                   encoded_rtps_submessage,
-              in    OctetSeq                   plain_rtps_submessage,
-              in    DatareaderCryptoHandle     sending_datareader_crypto,
-              in    DatawriterCryptoHandleSeq  receiving_datawriter_crypto_list,
-              inout SecurityException          ex);
-
-      // DDSSEC11-66
-      boolean
-      encode_rtps_message(
-              inout OctetSeq encoded_rtps_message,
-              in    OctetSeq plain_rtps_message,
-              in    ParticipantCryptoHandle sending_participant_crypto,
-              in    ParticipantCryptoHandleSeq receiving_participant_crypto_list,
-              inout long                       receiving_participant_crypto_list_index,
-              inout SecurityException ex);
-
-      boolean
-      decode_rtps_message(
-              inout OctetSeq                 plain_buffer,
-              in    OctetSeq                 encoded_buffer,
-              in    ParticipantCryptoHandle  receiving_participant_crypto,
-              in    ParticipantCryptoHandle  sending_participant_crypto,
-              inout SecurityException        ex);
-
-      boolean
-      preprocess_secure_submsg(
-              inout DatawriterCryptoHandle         datawriter_crypto,
-              inout DatareaderCryptoHandle         datareader_crypto,
-              inout SecureSumessageCategory_t      secure_submessage_category,
-              in    OctetSeq                       encoded_rtps_submessage,
-              in    ParticipantCryptoHandle        receiving_participant_crypto,
-              in    ParticipantCryptoHandle        sending_participant_crypto,
-              inout SecurityException              ex);
-
-      boolean
-      decode_datawriter_submessage(
-              inout OctetSeq                plain_rtps_submessage,
-              in    OctetSeq                encoded_rtps_submessage,
-              in    DatareaderCryptoHandle  receiving_datareader_crypto,
-              in    DatawriterCryptoHandle  sending_datawriter_crypto,
-              in    SecurityException       ex);
-
-      boolean
-      decode_datareader_submessage(
-              inout OctetSeq                plain_rtps_message,
-              in    OctetSeq                encoded_rtps_message,
-              in    DatawriterCryptoHandle  receiving_datawriter_crypto,
-              in    DatareaderCryptoHandle  sending_datareader_crypto,
-              inout SecurityException       ex );
-
-      // DDSSEC11-123
-      boolean
-      decode_serialized_payload(
-              inout OctetSeq                plain_buffer,
-              in    OctetSeq                encoded_buffer,
-              in    OctetSeq                inline_qos,
-              in    DatareaderCryptoHandle  receiving_datareader_crypto,
-              in    DatawriterCryptoHandle  sending_datawriter_crypto,
-              inout SecurityException       ex);
-    };
-
-    enum LoggingLevel {
-      EMERGENCY_LEVEL, // System is unusable. Should not continue use.
-      ALERT_LEVEL,     // Should be corrected immediately
-      CRITICAL_LEVEL,  // A failure in primary application.
-      ERROR_LEVEL,     // General error conditions
-      WARNING_LEVEL,   // May indicate future error if action not taken.
-      NOTICE_LEVEL,    // Unusual, but nor erroneous event or condition.
-      INFORMATIONAL_LEVEL, // Normal operational. Requires no action.
-      DEBUG_LEVEL
-    };
-
-    // DDSSEC11-96
-    @extensibility(FINAL)
-    struct NameValuePair {
-      string name;
-      string value;
-    };
-
-    // DDSSEC11-85
-    #define _DDS_Security_NameValuePairSeq_defined
-          typedef struct {
-            uint32_t _maximum;
-            uint32_t _length;
-            NameValuePair *_buffer;
-            bool _release;
-          } DDS_Security_NameValuePairSeq;
-          DDS_Security_NameValuePairSeq *DDS_Security_NameValuePairSeq__alloc (void);
-          NameValuePair *DDS_Security_NameValuePairSeq__allocbuf (uint32_t len);
-#endif /* _DDS_Security_NameValuePairSeq_defined */
-
-    // DDSSEC11-96
-    @extensibility(FINAL)
-    struct BuiltinLoggingType {
-      octet  facility;  // Set to 0x10. Indicates sec/auth msgs
-      LoggingLevel severity;
-      DDS::Time_t timestamp; // Since epoch 1970-01-01 00:00:00 +0000 (UTC)
-      string hostname;  // IP host name of originator
-      string hostip;    // IP address of originator
-      string appname;   // Identify the device or application
-      string procid;    // Process name/ID for syslog system
-      string msgid;     // Identify the type of message
-      string message;   // Free-form message
-
-      // Note that certain string keys (SD-IDs) are reserved by IANA
-      map<string, NameValuePairSeq>  structured_data;
-    };
-
-    // DDSSEC11-85
-    struct LogOptions {
-      LoggingLevel logging_level;
-      string       log_file;
-      boolean      distribute;
-    };
-
-    // DDSSEC11-96
-    interface LoggerListener {
-      boolean on_log_message(in BuiltinLoggingType msg);
-    };
-
-    // DDSSEC11-96
-    interface Logging {
-      boolean set_log_options(
-              in    LogOptions options,
-              inout SecurityException ex);
-
-      boolean log(
-              in    BuiltinLoggingType msg,
-              inout SecurityException ex);
-
-      boolean enable_logging(
-              inout SecurityException ex);
-
-      boolean set_listener(
-              in LoggerListener listener,
-              inout SecurityException ex);
-
-    };
-  };
+typedef struct DDS_Security_DataTags
+{
+  DDS_Security_TagSeq DDS_Security_tags;
+} DDS_Security_DataTags;
+
+// DDSSEC11-34
+typedef DDS_Security_DataTags DDS_Security_DataTagQosPolicy;
+
+// DDSSEC11-96
+// See http://www.omg.org/spec/DDS-XTypes/20170301/dds-xtypes_discovery.idl
+// DDSSEC11-34
+
+typedef struct DDS_Security_DataWriterQos
+{
+  DDS_DurabilityQosPolicy durability;
+  DDS_DeadlineQosPolicy deadline;
+  DDS_LatencyBudgetQosPolicy latency_budget;
+  DDS_LivelinessQosPolicy liveliness;
+  DDS_ReliabilityQosPolicy reliability;
+  DDS_DestinationOrderQosPolicy destination_order;
+  DDS_HistoryQosPolicy history;
+  DDS_ResourceLimitsQosPolicy resource_limits;
+  DDS_TransportPriorityQosPolicy transport_priority;
+  DDS_LifespanQosPolicy lifespan;
+  DDS_UserDataQosPolicy user_data;
+  DDS_OwnershipQosPolicy ownership;
+  DDS_OwnershipStrengthQosPolicy ownership_strength;
+  DDS_WriterDataLifecycleQosPolicy writer_data_lifecycle;
+  DDS_Security_PropertyQosPolicy property;
+  DDS_Security_DataTagQosPolicy data_tags;
+} DDS_Security_DataWriterQos;
+
+// DDSSEC11-96
+// See http://www.omg.org/spec/DDS-XTypes/20170301/dds-xtypes_discovery.idl
+// DDSSEC11-34
+typedef struct DDS_Security_DataReaderQos
+{
+  DDS_DurabilityQosPolicy durability;
+  DDS_DeadlineQosPolicy deadline;
+  DDS_LatencyBudgetQosPolicy latency_budget;
+  DDS_LivelinessQosPolicy liveliness;
+  DDS_ReliabilityQosPolicy reliability;
+  DDS_DestinationOrderQosPolicy destination_order;
+  DDS_HistoryQosPolicy history;
+  DDS_ResourceLimitsQosPolicy resource_limits;
+  DDS_UserDataQosPolicy user_data;
+  DDS_OwnershipQosPolicy ownership;
+  DDS_TimeBasedFilterQosPolicy time_based_filter;
+  DDS_ReaderDataLifecycleQosPolicy reader_data_lifecycle;
+  DDS_SubscriptionKeyQosPolicy subscription_keys;
+  DDS_ReaderLifespanQosPolicy reader_lifespan;
+  DDS_ShareQosPolicy share;
+  DDS_Security_PropertyQosPolicy property;
+  DDS_Security_DataTagQosPolicy data_tags;
+} DDS_Security_DataReaderQos;
+
+// DDSSEC11-137
+typedef unsigned long DDS_Security_ParticipantSecurityAttributesMask;
+typedef unsigned long DDS_Security_PluginParticipantSecurityAttributesMask;
+
+typedef struct DDS_Security_ParticipantSecurityInfo
+{
+  DDS_Security_ParticipantSecurityAttributesMask participant_security_attributes;
+  DDS_Security_PluginParticipantSecurityAttributesMask plugin_participant_security_attributes;
+} DDS_Security_ParticipantSecurityInfo;
+
+// DDSSEC11-106
+typedef unsigned long DDS_Security_EndpointSecurityAttributesMask;
+typedef unsigned long DDS_Security_PluginEndpointSecurityAttributesMask;
+
+typedef struct DDS_Security_EndpointSecurityInfo
+{
+  DDS_Security_EndpointSecurityAttributesMask endpoint_security_mask;
+  DDS_Security_PluginEndpointSecurityAttributesMask plugin_endpoint_security_mask;
+}DDS_Security_EndpointSecurityInfo;
+
+
+typedef struct DDS_Security_ParticipantBuiltinTopicData
+{
+  DDS_BuiltinTopicKey_t key;
+  DDS_UserDataQosPolicy user_data;
+  DDS_Security_IdentityToken identity_token;
+  DDS_Security_PermissionsToken permissions_token;
+  DDS_Security_PropertyQosPolicy property;
+  DDS_Security_ParticipantSecurityInfo security_info;
+} DDS_Security_ParticipantBuiltinTopicData;
+
+typedef struct DDS_Security_ParticipantBuiltinTopicDataSecure
+{
+  DDS_BuiltinTopicKey_t key;
+  DDS_UserDataQosPolicy user_data;
+  DDS_Security_IdentityToken identity_token;
+  DDS_Security_PermissionsToken permissions_token;
+  DDS_Security_PropertyQosPolicy property;
+  DDS_Security_ParticipantSecurityInfo security_info;
+  DDS_Security_IdentityStatusToken identity_status_token;
+} DDS_Security_ParticipantBuiltinTopicDataSecure;
+
+typedef struct DDS_Security_PublicationBuiltinTopicData
+{
+  DDS_BuiltinTopicKey_t key;
+  DDS_BuiltinTopicKey_t participant_key;
+  char *topic_name;
+  char *type_name;
+  DDS_DurabilityQosPolicy durability;
+  DDS_DeadlineQosPolicy deadline;
+  DDS_LatencyBudgetQosPolicy latency_budget;
+  DDS_LivelinessQosPolicy liveliness;
+  DDS_ReliabilityQosPolicy reliability;
+  DDS_LifespanQosPolicy lifespan;
+  DDS_DestinationOrderQosPolicy destination_order;
+  DDS_UserDataQosPolicy user_data;
+  DDS_OwnershipQosPolicy ownership;
+  DDS_OwnershipStrengthQosPolicy ownership_strength;
+  DDS_PresentationQosPolicy presentation;
+  DDS_PartitionQosPolicy partition;
+  DDS_TopicDataQosPolicy topic_data;
+  DDS_GroupDataQosPolicy group_data;
+  DDS_Security_EndpointSecurityInfo security_info;
+} DDS_Security_PublicationBuiltinTopicData;
+
+typedef struct DDS_Security_PublicationBuiltinTopicDataSecure
+{
+  DDS_BuiltinTopicKey_t key;
+  DDS_BuiltinTopicKey_t participant_key;
+  char *topic_name;
+  char *type_name;
+  DDS_DurabilityQosPolicy durability;
+  DDS_DeadlineQosPolicy deadline;
+  DDS_LatencyBudgetQosPolicy latency_budget;
+  DDS_LivelinessQosPolicy liveliness;
+  DDS_ReliabilityQosPolicy reliability;
+  DDS_LifespanQosPolicy lifespan;
+  DDS_DestinationOrderQosPolicy destination_order;
+  DDS_UserDataQosPolicy user_data;
+  DDS_OwnershipQosPolicy ownership;
+  DDS_OwnershipStrengthQosPolicy ownership_strength;
+  DDS_PresentationQosPolicy presentation;
+  DDS_PartitionQosPolicy partition;
+  DDS_TopicDataQosPolicy topic_data;
+  DDS_GroupDataQosPolicy group_data;
+  DDS_Security_EndpointSecurityInfo security_info;
+  DDS_Security_DataTags data_tags;
+} DDS_Security_PublicationBuiltinTopicDataSecure;
+
+typedef struct DDS_Security_SubscriptionBuiltinTopicData
+{
+  DDS_BuiltinTopicKey_t key;
+  DDS_BuiltinTopicKey_t participant_key;
+  char *topic_name;
+  char *type_name;
+  DDS_DurabilityQosPolicy durability;
+  DDS_DeadlineQosPolicy deadline;
+  DDS_LatencyBudgetQosPolicy latency_budget;
+  DDS_LivelinessQosPolicy liveliness;
+  DDS_ReliabilityQosPolicy reliability;
+  DDS_OwnershipQosPolicy ownership;
+  DDS_DestinationOrderQosPolicy destination_order;
+  DDS_UserDataQosPolicy user_data;
+  DDS_TimeBasedFilterQosPolicy time_based_filter;
+  DDS_PresentationQosPolicy presentation;
+  DDS_PartitionQosPolicy partition;
+  DDS_TopicDataQosPolicy topic_data;
+  DDS_GroupDataQosPolicy group_data;
+  DDS_Security_EndpointSecurityInfo security_info;
+} DDS_Security_SubscriptionBuiltinTopicData;
+
+typedef struct DDS_Security_SubscriptionBuiltinTopicDataSecure
+{
+  DDS_BuiltinTopicKey_t key;
+  DDS_BuiltinTopicKey_t participant_key;
+  char *topic_name;
+  char *type_name;
+  DDS_DurabilityQosPolicy durability;
+  DDS_DeadlineQosPolicy deadline;
+  DDS_LatencyBudgetQosPolicy latency_budget;
+  DDS_LivelinessQosPolicy liveliness;
+  DDS_ReliabilityQosPolicy reliability;
+  DDS_OwnershipQosPolicy ownership;
+  DDS_DestinationOrderQosPolicy destination_order;
+  DDS_UserDataQosPolicy user_data;
+  DDS_TimeBasedFilterQosPolicy time_based_filter;
+  DDS_PresentationQosPolicy presentation;
+  DDS_PartitionQosPolicy partition;
+  DDS_TopicDataQosPolicy topic_data;
+  DDS_GroupDataQosPolicy group_data;
+  DDS_Security_EndpointSecurityInfo security_info;
+  DDS_Security_DataTags data_tags;
+} DDS_Security_SubscriptionBuiltinTopicDataSecure;
+
+// DDSSEC11-15 typedef long SecurityExceptionCode;
+typedef long DDS_Security_SecurityExceptionCode;
+
+typedef struct DDS_Security_SecurityException
+{
+  char *message;
+  long code;      // DDSSEC11-15
+  long minor_code;
+} DDS_Security_SecurityException;
+
+typedef enum
+{
+  VALIDATION_OK,
+  VALIDATION_FAILED,
+  VALIDATION_PENDING_RETRY,
+  VALIDATION_PENDING_HANDSHAKE_REQUEST,
+  VALIDATION_PENDING_HANDSHAKE_MESSAGE,
+  VALIDATION_OK_FINAL_MESSAGE
+} DDS_Security_ValidationResult_t;
+
+typedef int64_t DDS_Security_IdentityHandle;
+typedef int64_t DDS_Security_HandshakeHandle;
+typedef int64_t DDS_Security_SharedSecretHandle;
+typedef int64_t DDS_Security_PermissionsHandle;
+typedef int64_t DDS_Security_ParticipantCryptoHandle;
+typedef int64_t DDS_Security_ParticipantCryptoHandleSeq;
+typedef int64_t DDS_Security_DatawriterCryptoHandle;
+typedef int64_t DDS_Security_DatawriterCryptoHandleSeq;
+typedef int64_t DDS_Security_DatareaderCryptoHandle;
+typedef int64_t DDS_Security_DatareaderCryptoHandleSeq;
+
+// DDSSEC11-96
+typedef struct DDS_Security_Authentication DDS_Security_Authentication;
+
+// DDSSEC11-82
+typedef enum
+{
+  IDENTITY_STATUS = 1
+} DDS_Security_AuthStatusKind;
+
+// DDSSEC11-96
+/**
+ * interface AuthenticationListener
+ */
+typedef bool
+(*DDS_Security_AuthenticationListener_OnRevokeIdentityListener)
+        (void *listener_data,
+         _In_ DDS_Security_Authentication *plugin,
+         _In_ DDS_Security_IdentityHandle handle,
+         _Inout_ DDS_Security_SecurityException *ex
+        );
+
+typedef bool
+(*DDS_Security_AuthenticationListener_OnStatusChangedListener)
+        (void *listener_data,
+         _In_ DDS_Security_Authentication *plugin,
+         _In_ DDS_Security_IdentityHandle handle,
+         _In_ DDS_Security_AuthStatusKind status_kind,
+         _Inout_ DDS_Security_SecurityException *ex
+        );
+
+
+typedef struct DDS_Security_AuthenticationListener
+{
+  void *listener_data;
+
+  DDS_Security_AuthenticationListener_OnRevokeIdentityListener on_revoke_identity;
+
+  DDS_Security_AuthenticationListener_OnStatusChangedListener on_status_changed;
+} DDS_Security_AuthenticationListener;
+struct DDS_Security_AuthenticationListener *DDS_Security_AuthenticationListener__alloc (void);
+
+
+
+typedef DDS_Security_ValidationResult_t
+(*DDS_Security_Authentication_ValidateLocalIdentity)
+      (void *listener_data,
+      _Inout_ DDS_Security_IdentityHandle local_identity_handle,
+      _Inout_ DDS_Security_GUID_t *adjusted_participant_guid,
+      _In_ DDS_Security_DomainId_t domain_id,
+      _In_ DDS_Security_DomainParticipantQos *participant_qos,
+      _In_ DDS_Security_GUID_t *candidate_participant_guid,
+      _Inout_ DDS_Security_SecurityException *ex
+      );
+
+
+typedef bool
+(*DDS_Security_Authentication_get_identity_token)
+      (void *listener_data,
+        _Inout_ DDS_Security_IdentityToken identity_token,
+        _In_ DDS_Security_IdentityHandle handle,
+        _Inout_ DDS_Security_SecurityException ex);
+
+// DDSSEC11-82
+typedef bool
+(*DDS_Security_Authentication_get_identity_status_token)
+      (void *listener_data,
+        _Inout_ DDS_Security_IdentityStatusToken identity_status_token,
+        _In_ DDS_Security_IdentityHandle handle,
+        _Inout_ DDS_Security_SecurityException ex);
+
+typedef bool
+(*DDS_Security_Authentication_set_permissions_credential_and_token)
+      (void *listener_data,
+        _In_ DDS_Security_IdentityHandle handle,
+        _In_ DDS_Security_PermissionsCredentialToken permissions_credential,
+        _In_ DDS_Security_PermissionsToken permissions_token,
+        _Inout_ DDS_Security_SecurityException ex );
+
+// DDSSEC11-21
+// DDSSEC11-88
+// DDSSEC11-85
+typedef DDS_Security_ValidationResult_t
+(*DDS_Security_Authentication_validate_remote_identity)
+      (void *listener_data,
+        _Inout_ DDS_Security_IdentityHandle remote_identity_handle,
+        _Inout_ DDS_Security_AuthRequestMessageToken local_auth_request_token,
+        _In_ DDS_Security_AuthRequestMessageToken remote_auth_request_token,
+        _In_ DDS_Security_IdentityHandle local_identity_handle,
+        _In_ DDS_Security_IdentityToken remote_identity_token,
+        _In_ DDS_Security_GUID_t remote_participant_guid,
+        _Inout_ DDS_Security_SecurityException ex );
+
+// DDSSEC11-46
+// DDSSEC11-118
+typedef DDS_Security_ValidationResult_t
+(*DDS_Security_Authentication_begin_handshake_request)
+      (void *listener_data,
+        _Inout_ DDS_Security_HandshakeHandle handshake_handle,
+        _Inout_ DDS_Security_HandshakeMessageToken handshake_message,
+        _In_ DDS_Security_HandshakeMessageToken handshake_message_in,
+        _In_ DDS_Security_IdentityHandle initiator_identity_handle,
+        _In_ DDS_Security_IdentityHandle replier_identity_handle,
+        _In_ DDS_Security_OctetSeq serialized_local_participant_data,
+        _Inout_ DDS_Security_SecurityException ex );
+
+// DDSSEC11-46
+typedef DDS_Security_ValidationResult_t
+(*DDS_Security_Authentication_begin_handshake_reply)
+      (void *listener_data,
+        _Inout_ DDS_Security_HandshakeHandle handshake_handle,
+        _Inout_ DDS_Security_HandshakeMessageToken handshake_message_out,
+        _In_ DDS_Security_HandshakeMessageToken handshake_message_in,
+        _In_ DDS_Security_IdentityHandle initiator_identity_handle,
+        _In_ DDS_Security_IdentityHandle replier_identity_handle,
+        _In_ DDS_Security_OctetSeq serialized_local_participant_data,
+        _Inout_ DDS_Security_SecurityException ex );
+
+typedef DDS_Security_ValidationResult_t
+(*DDS_Security_Authentication_process_handshake)
+      (void *listener_data,
+        _Inout_ DDS_Security_HandshakeMessageToken handshake_message_out,
+        _In_ DDS_Security_HandshakeMessageToken handshake_message_in,
+        _In_ DDS_Security_HandshakeHandle handshake_handle,
+        _Inout_ DDS_Security_SecurityException ex);
+
+typedef DDS_Security_SharedSecretHandle
+(*DDS_Security_Authentication_get_shared_secret)
+      (void *listener_data,
+        _In_ DDS_Security_HandshakeHandle handshake_handle,
+        _Inout_ DDS_Security_SecurityException ex );
+
+typedef bool
+(*DDS_Security_Authentication_get_authenticated_peer_credential_token)
+      (void *listener_data,
+        _Inout_ DDS_Security_AuthenticatedPeerCredentialToken peer_credential_token,
+        _In_ DDS_Security_HandshakeHandle handshake_handle,
+        _Inout_ DDS_Security_SecurityException ex);
+
+typedef bool
+(*DDS_Security_Authentication_set_listener)
+      (void *listener_data,
+        _In_ DDS_Security_AuthenticationListener listener,
+        _Inout_ DDS_Security_SecurityException ex);
+
+typedef bool
+(*DDS_Security_Authentication_return_identity_token)
+      (void *listener_data,
+        _In_ DDS_Security_IdentityToken token,
+        _Inout_ DDS_Security_SecurityException ex);
+
+// DDSSEC11-82
+typedef bool
+(*DDS_Security_Authentication_return_identity_status_token)
+      (void *listener_data,
+        _In_ DDS_Security_IdentityStatusToken token,
+        _Inout_ DDS_Security_SecurityException ex);
+
+typedef bool
+(*DDS_Security_Authentication_return_authenticated_peer_credential_token)
+      (void *listener_data,
+        _In_ DDS_Security_AuthenticatedPeerCredentialToken peer_credential_token,
+        _Inout_ DDS_Security_SecurityException ex);
+
+typedef bool
+(*DDS_Security_Authentication_return_handshake_handle)
+      (void *listener_data,
+        _In_ DDS_Security_HandshakeHandle handshake_handle,
+        _Inout_ DDS_Security_SecurityException ex);
+
+typedef bool
+(*DDS_Security_Authentication_return_identity_handle)
+      (void *listener_data,
+        _In_ DDS_Security_IdentityHandle identity_handle,
+        _Inout_ DDS_Security_SecurityException ex);
+
+typedef bool
+(*DDS_Security_Authentication_return_sharedsecret_handle)
+      (void *listener_data,
+        _In_ DDS_Security_SharedSecretHandle sharedsecret_handle,
+        _Inout_ DDS_Security_SecurityException ex);
+
+
+
+
+
+// DDSSEC11-96
+struct DDS_Security_Authentication
+{
+  // DDSSEC11-88
+  DDS_Security_Authentication_ValidateLocalIdentity validate_local_identity;
+
+
+
+  bool
+  get_identity_token(
+          _Inout_ DDS_Security_IdentityToken identity_token,
+          _In_ DDS_Security_IdentityHandle handle,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-82
+  bool
+  get_identity_status_token(
+          _Inout_ DDS_Security_IdentityStatusToken identity_status_token,
+          _In_ DDS_Security_IdentityHandle handle,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          set_permissions_credential_and_token(
+  _In_ DDS_Security_IdentityHandle handle,
+  _In_ DDS_Security_PermissionsCredentialToken permissions_credential,
+  _In_ DDS_Security_PermissionsToken permissions_token,
+  _Inout_ DDS_Security_SecurityException ex );
+
+  // DDSSEC11-21
+  // DDSSEC11-88
+  // DDSSEC11-85
+  DDS_Security_ValidationResult_t
+          validate_remote_identity(
+  _Inout_ DDS_Security_IdentityHandle remote_identity_handle,
+  _Inout_ DDS_Security_AuthRequestMessageToken local_auth_request_token,
+  _In_ DDS_Security_AuthRequestMessageToken remote_auth_request_token,
+  _In_ DDS_Security_IdentityHandle local_identity_handle,
+  _In_ DDS_Security_IdentityToken remote_identity_token,
+  _In_ DDS_Security_GUID_t remote_participant_guid,
+  _Inout_ DDS_Security_SecurityException ex );
+
+  // DDSSEC11-46
+  // DDSSEC11-118
+  DDS_Security_ValidationResult_t
+          begin_handshake_request(
+  _Inout_ DDS_Security_HandshakeHandle handshake_handle,
+  _Inout_ DDS_Security_HandshakeMessageToken handshake_message,
+  _In_ DDS_Security_HandshakeMessageToken handshake_message_in,
+  _In_ DDS_Security_IdentityHandle initiator_identity_handle,
+  _In_ DDS_Security_IdentityHandle replier_identity_handle,
+  _In_ DDS_Security_OctetSeq serialized_local_participant_data,
+  _Inout_ DDS_Security_SecurityException ex );
+
+  // DDSSEC11-46
+  DDS_Security_ValidationResult_t
+          begin_handshake_reply(
+  _Inout_ DDS_Security_HandshakeHandle handshake_handle,
+  _Inout_ DDS_Security_HandshakeMessageToken handshake_message_out,
+  _In_ DDS_Security_HandshakeMessageToken handshake_message_in,
+  _In_ DDS_Security_IdentityHandle initiator_identity_handle,
+  _In_ DDS_Security_IdentityHandle replier_identity_handle,
+  _In_ DDS_Security_OctetSeq serialized_local_participant_data,
+  _Inout_ DDS_Security_SecurityException ex );
+
+  DDS_Security_ValidationResult_t
+  process_handshake(
+          _Inout_ DDS_Security_HandshakeMessageToken handshake_message_out,
+          _In_ DDS_Security_HandshakeMessageToken handshake_message_in,
+          _In_ DDS_Security_HandshakeHandle handshake_handle,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  DDS_Security_SharedSecretHandle
+          get_shared_secret(
+  _In_ DDS_Security_HandshakeHandle handshake_handle,
+  _Inout_ DDS_Security_SecurityException ex );
+
+  bool
+  get_authenticated_peer_credential_token(
+          _Inout_ DDS_Security_AuthenticatedPeerCredentialToken peer_credential_token,
+          _In_ DDS_Security_HandshakeHandle handshake_handle,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  set_listener(
+          _In_ DDS_Security_AuthenticationListener listener,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  return_identity_token(
+          _In_ DDS_Security_IdentityToken token,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-82
+  bool
+  return_identity_status_token(
+          _In_ DDS_Security_IdentityStatusToken token,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  return_authenticated_peer_credential_token(
+          _In_ DDS_Security_AuthenticatedPeerCredentialToken peer_credential_token,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          return_handshake_handle(
+  _In_ DDS_Security_HandshakeHandle handshake_handle,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          return_identity_handle(
+  _In_ DDS_Security_IdentityHandle identity_handle,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          return_sharedsecret_handle(
+  _In_ DDS_Security_SharedSecretHandle sharedsecret_handle,
+  _Inout_ DDS_Security_SecurityException ex);
+};
+
+struct DDS_Security_Authentication *DDS_Security_Authentication__alloc (void);
+
+// DDSSEC11-137 DDSEC11-85
+typedef struct DDS_Security_ParticipantSecurityAttributes
+{
+  bool allow_unauthenticated_participants;
+  bool is_access_protected;
+  bool is_rtps_protected;
+  bool is_discovery_protected;
+  bool is_liveliness_protected;
+  ParticipantSecurityAttributesMask plugin_participant_attributes;
+  PropertySeq ac_endpoint_properties;
+};
+
+// DDSSEC11-16
+typedef struct DDS_Security_TopicSecurityAttributes
+{
+  bool is_read_protected;
+  bool is_write_protected;
+  bool is_discovery_protected;
+  bool is_liveliness_protected;
+};
+
+// DDSSEC11-16 DDSSEC11-106 DDSEC11-85
+typedef struct DDS_Security_EndpointSecurityAttributes : TopicSecurityAttributes
+{
+  bool is_submessage_protected;
+  bool is_payload_protected;
+  bool is_key_protected;
+  PluginEndpointSecurityAttributesMask plugin_endpoint_attributes;
+  PropertySeq ac_endpoint_properties;
+};
+
+// DDSSEC11-106
+typedef struct DDS_Security_PluginEndpointSecurityAttributes
+{
+  bool is_submessage_encrypted;
+  bool is_payload_encrypted;
+  bool is_submessage_origin_authenticated;
+};
+
+// DDSSEC11-96
+interface AccessControl;
+
+
+// DDSSEC11-96
+interface AccessControlListener
+{
+  bool on_revoke_permissions(
+          _In_ DDS_Security_AccessControl plugin,
+          _In_ DDS_Security_PermissionsHandle handle);
+};
+
+// DDSSEC11-96
+interface AccessControl
+{
+  PermissionsHandle
+  validate_local_permissions(
+          _In_ DDS_Security_Authentication auth_plugin,
+          _In_ DDS_Security_IdentityHandle identity,
+          _In_ DDS_Security_DomainId_t domain_id,
+          _In_ DDS_Security_DomainParticipantQos participant_qos,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  PermissionsHandle
+  validate_remote_permissions(
+          _In_ DDS_Security_Authentication auth_plugin,
+          _In_ DDS_Security_IdentityHandle local_identity_handle,
+          _In_ DDS_Security_IdentityHandle remote_identity_handle,
+          _In_ DDS_Security_PermissionsToken remote_permissions_token,
+          _In_ DDS_Security_AuthenticatedPeerCredentialToken remote_credential_token,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          check_create_participant(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_DomainId_t domain_id,
+  _In_ DDS_Security_DomainParticipantQos qos,
+  _Inout_ DDS_Security_SecurityException ex );
+
+  bool
+          check_create_datawriter(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_DomainId_t domain_id,
+  in char *topic_name,
+  _In_ DDS_Security_DataWriterQos qos,
+  _In_ DDS_Security_PartitionQosPolicy partition,
+  _In_ DDS_Security_DataTags data_tag,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          check_create_datareader(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_DomainId_t domain_id,
+  _In_ DDS_Security_char *topic_name,
+  _In_ DDS_Security_DataReaderQos qos,
+  _In_ DDS_Security_PartitionQosPolicy partition,
+  _In_ DDS_Security_DataTags data_tag,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-33
+  bool
+          check_create_topic(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_DomainId_t domain_id,
+  _In_ DDS_Security_char *topic_name,
+  _In_ DDS_Security_TopicQos qos,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          check_local_datawriter_register_instance(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_DataWriter writer,
+  _In_ DDS_Security_DynamicData key,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          check_local_datawriter_dispose_instance(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_DataWriter writer,
+  _In_ DDS_Security_DynamicData key,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          check_remote_participant(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_DomainId_t domain_id,
+  _In_ DDS_Security_ParticipantBuiltinTopicDataSecure participant_data,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          check_remote_datawriter(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_DomainId_t domain_id,
+  _In_ DDS_Security_PublicationBuiltinTopicDataSecure publication_data,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          check_remote_datareader(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_DomainId_t domain_id,
+  _In_ DDS_Security_SubscriptionBuiltinTopicDataSecure subscription_data,
+  _Inout_ DDS_Security_bool relay_only,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          check_remote_topic(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_DomainId_t domain_id,
+  _In_ DDS_Security_TopicBuiltinTopicData topic_data,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-34
+  bool
+          check_local_datawriter_match(
+  _In_ DDS_Security_PermissionsHandle writer_permissions_handle,
+  _In_ DDS_Security_PermissionsHandle reader_permissions_handle,
+  _In_ DDS_Security_PublicationBuiltinTopicDataSecure publication_data,
+  _In_ DDS_Security_SubscriptionBuiltinTopicDataSecure subscription_data,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-34
+  bool
+          check_local_datareader_match(
+  _In_ DDS_Security_PermissionsHandle reader_permissions_handle,
+  _In_ DDS_Security_PermissionsHandle writer_permissions_handle,
+  _In_ DDS_Security_SubscriptionBuiltinTopicDataSecure subscription_data,
+  _In_ DDS_Security_PublicationBuiltinTopicDataSecure publication_data,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          check_remote_datawriter_register_instance(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_DataReader reader,
+  _In_ DDS_Security_InstanceHandle_t publication_handle,
+  _In_ DDS_Security_DynamicData key,
+  _In_ DDS_Security_InstanceHandle_t instance_handle,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          check_remote_datawriter_dispose_instance(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_DataReader reader,
+  _In_ DDS_Security_InstanceHandle_t publication_handle,
+  _In_ DDS_Security_DynamicData key,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  get_permissions_token(
+          _Inout_ DDS_Security_PermissionsToken permissions_token,
+          _In_ DDS_Security_PermissionsHandle handle,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  get_permissions_credential_token(
+          _Inout_ DDS_Security_PermissionsCredentialToken permissions_credential_token,
+          _In_ DDS_Security_PermissionsHandle handle,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  set_listener(
+          _In_ DDS_Security_AccessControlListener listener,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  return_permissions_token(
+          _In_ DDS_Security_PermissionsToken token,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  return_permissions_credential_token(
+          _In_ DDS_Security_PermissionsCredentialToken permissions_credential_token,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          get_participant_sec_attributes(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _Inout_ DDS_Security_ParticipantSecurityAttributes attributes,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-16
+  bool
+          get_topic_sec_attributes(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_char *topic_name,
+  _Inout_ DDS_Security_TopicSecurityAttributes attributes,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-16
+  bool
+          get_datawriter_sec_attributes(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_PartitionQosPolicy partition,
+  _In_ DDS_Security_DataTagQosPolicy data_tag,
+  _Inout_ DDS_Security_EndpointSecurityAttributes attributes,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-16
+  bool
+          get_datareader_sec_attributes(
+  _In_ DDS_Security_PermissionsHandle permissions_handle,
+  _In_ DDS_Security_PartitionQosPolicy partition,
+  _In_ DDS_Security_DataTagQosPolicy data_tag,
+  _Inout_ DDS_Security_EndpointSecurityAttributes attributes,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-112
+  bool
+  return_participant_sec_attributes(
+          _In_ DDS_Security_ParticipantSecurityAttributes attributes,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-112
+  bool
+  return_datawriter_sec_attributes(
+          _In_ DDS_Security_EndpointSecurityAttributes attributes,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-112
+  bool
+  return_datareader_sec_attributes(
+          _In_ DDS_Security_EndpointSecurityAttributes attributes,
+          _Inout_ DDS_Security_SecurityException ex);
+};
+
+// DDSSEC11-96
+interface CryptoKeyFactory
+{
+
+  // DDSSEC11-3 DDSSEC11-85
+  ParticipantCryptoHandle
+          register_local_participant(
+  _In_ DDS_Security_IdentityHandle participant_identity,
+  _In_ DDS_Security_PermissionsHandle participant_permissions,
+  _In_ DDS_Security_PropertySeq participant_properties,
+  _In_ DDS_Security_ParticipantSecurityAttributes participant_security_attributes,
+  _Inout_ DDS_Security_SecurityException ex  );
+
+  ParticipantCryptoHandle
+          register_matched_remote_participant(
+  _In_ DDS_Security_ParticipantCryptoHandle local_participant_crypto_handle,
+  _In_ DDS_Security_IdentityHandle remote_participant_identity,
+  _In_ DDS_Security_PermissionsHandle remote_participant_permissions,
+  _In_ DDS_Security_SharedSecretHandle shared_secret,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-3 DDSSEC11-85
+  DatawriterCryptoHandle
+          register_local_datawriter(
+  _In_ DDS_Security_ParticipantCryptoHandle participant_crypto,
+  _In_ DDS_Security_PropertySeq datawriter_properties,
+  _In_ DDS_Security_EndpointSecurityAttributes datawriter_security_attributes,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  DatareaderCryptoHandle
+          register_matched_remote_datareader(
+  _In_ DDS_Security_DatawriterCryptoHandle local_datawritert_crypto_handle,
+  _In_ DDS_Security_ParticipantCryptoHandle remote_participant_crypto,
+  _In_ DDS_Security_SharedSecretHandle shared_secret,
+  _In_ DDS_Security_bool relay_only,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-3 DDSSEC11-85
+  DatareaderCryptoHandle
+          register_local_datareader(
+  _In_ DDS_Security_ParticipantCryptoHandle participant_crypto,
+  _In_ DDS_Security_PropertySeq datareader_properties,
+  _In_ DDS_Security_EndpointSecurityAttributes datareader_security_attributes,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  DatawriterCryptoHandle
+          register_matched_remote_datawriter(
+  _In_ DDS_Security_DatareaderCryptoHandle local_datareader_crypto_handle,
+  _In_ DDS_Security_ParticipantCryptoHandle remote_participant_crypt,
+  _In_ DDS_Security_SharedSecretHandle shared_secret,
+  _Inout_ DDS_Security_SecurityException ex );
+
+  bool
+          unregister_participant(
+  _In_ DDS_Security_ParticipantCryptoHandle participant_crypto_handle,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          unregister_datawriter(
+  _In_ DDS_Security_DatawriterCryptoHandle datawriter_crypto_handle,
+  _Inout_ DDS_Security_SecurityException ex  );
+
+  bool
+          unregister_datareader(
+  _In_ DDS_Security_DatareaderCryptoHandle datareader_crypto_handle,
+  _Inout_ DDS_Security_SecurityException ex  );
 };
 
 
+// DDSSEC11-96
+interface CryptoKeyExchange
+{
+  bool
+  create_local_participant_crypto_tokens(
+          _Inout_ DDS_Security_ParticipantCryptoTokenSeq local_participant_crypto_tokens,
+          _In_ DDS_Security_ParticipantCryptoHandle local_participant_crypto,
+          _In_ DDS_Security_ParticipantCryptoHandle remote_participant_crypto,
+          _Inout_ DDS_Security_SecurityException ex);
 
+  bool
+          set_remote_participant_crypto_tokens(
+  _In_ DDS_Security_ParticipantCryptoHandle local_participant_crypto,
+  _In_ DDS_Security_ParticipantCryptoHandle remote_participant_crypto,
+  _In_ DDS_Security_ParticipantCryptoTokenSeq remote_participant_tokens,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  create_local_datawriter_crypto_tokens(
+          _Inout_ DDS_Security_DatawriterCryptoTokenSeq local_datawriter_crypto_tokens,
+          _In_ DDS_Security_DatawriterCryptoHandle local_datawriter_crypto,
+          _In_ DDS_Security_DatareaderCryptoHandle remote_datareader_crypto,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          set_remote_datawriter_crypto_tokens(
+  _In_ DDS_Security_DatareaderCryptoHandle local_datareader_crypto,
+  _In_ DDS_Security_DatawriterCryptoHandle remote_datawriter_crypto,
+  _In_ DDS_Security_DatawriterCryptoTokenSeq remote_datawriter_tokens,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  create_local_datareader_crypto_tokens(
+          _Inout_ DDS_Security_DatareaderCryptoTokenSeq local_datareader_cryto_tokens,
+          _In_ DDS_Security_DatareaderCryptoHandle local_datareader_crypto,
+          _In_ DDS_Security_DatawriterCryptoHandle remote_datawriter_crypto,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          set_remote_datareader_crypto_tokens(
+  _In_ DDS_Security_DatawriterCryptoHandle local_datawriter_crypto,
+  _In_ DDS_Security_DatareaderCryptoHandle remote_datareader_crypto,
+  _In_ DDS_Security_DatareaderCryptoTokenSeq remote_datareader_tokens,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  return_crypto_tokens(
+          _In_ DDS_Security_CryptoTokenSeq crypto_tokens,
+          _Inout_ DDS_Security_SecurityException ex);
+};
+
+typedef enum
+{
+  INFO_SUBMESSAGE,
+  DATAWRITER_SUBMESSAGE,
+  DATAREADER_SUBMESSAGE
+} SecureSumessageCategory_t;
+
+// DDSSEC11-96
+// DDSSEC11-123
+interface CryptoTransform
+{
+  bool
+  encode_serialized_payload(
+          _Inout_ DDS_Security_OctetSeq encoded_buffer,
+          _Inout_ DDS_Security_OctetSeq extra_inline_qos,
+          _In_ DDS_Security_OctetSeq plain_buffer,
+          _In_ DDS_Security_DatawriterCryptoHandle sending_datawriter_crypto,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-66
+  bool
+  encode_datawriter_submessage(
+          _Inout_ DDS_Security_OctetSeq encoded_rtps_submessage,
+          _In_ DDS_Security_OctetSeq plain_rtps_submessage,
+          _In_ DDS_Security_DatawriterCryptoHandle sending_datawriter_crypto,
+          _In_ DDS_Security_DatareaderCryptoHandleSeq receiving_datareader_crypto_list,
+          _Inout_ DDS_Security_long receiving_datareader_crypto_list_index,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  encode_datareader_submessage(
+          _Inout_ DDS_Security_OctetSeq encoded_rtps_submessage,
+          _In_ DDS_Security_OctetSeq plain_rtps_submessage,
+          _In_ DDS_Security_DatareaderCryptoHandle sending_datareader_crypto,
+          _In_ DDS_Security_DatawriterCryptoHandleSeq receiving_datawriter_crypto_list,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-66
+  bool
+  encode_rtps_message(
+          _Inout_ DDS_Security_OctetSeq encoded_rtps_message,
+          _In_ DDS_Security_OctetSeq plain_rtps_message,
+          _In_ DDS_Security_ParticipantCryptoHandle sending_participant_crypto,
+          _In_ DDS_Security_ParticipantCryptoHandleSeq receiving_participant_crypto_list,
+          _Inout_ DDS_Security_long receiving_participant_crypto_list_index,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  decode_rtps_message(
+          _Inout_ DDS_Security_OctetSeq plain_buffer,
+          _In_ DDS_Security_OctetSeq encoded_buffer,
+          _In_ DDS_Security_ParticipantCryptoHandle receiving_participant_crypto,
+          _In_ DDS_Security_ParticipantCryptoHandle sending_participant_crypto,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+          preprocess_secure_submsg(
+  _Inout_ DDS_Security_DatawriterCryptoHandle datawriter_crypto,
+  _Inout_ DDS_Security_DatareaderCryptoHandle datareader_crypto,
+  _Inout_ DDS_Security_SecureSumessageCategory_t secure_submessage_category,
+  _In_ DDS_Security_OctetSeq encoded_rtps_submessage,
+  _In_ DDS_Security_ParticipantCryptoHandle receiving_participant_crypto,
+  _In_ DDS_Security_ParticipantCryptoHandle sending_participant_crypto,
+  _Inout_ DDS_Security_SecurityException ex);
+
+  bool
+  decode_datawriter_submessage(
+          _Inout_ DDS_Security_OctetSeq plain_rtps_submessage,
+          _In_ DDS_Security_OctetSeq encoded_rtps_submessage,
+          _In_ DDS_Security_DatareaderCryptoHandle receiving_datareader_crypto,
+          _In_ DDS_Security_DatawriterCryptoHandle sending_datawriter_crypto,
+          _In_ DDS_Security_SecurityException ex);
+
+  bool
+  decode_datareader_submessage(
+          _Inout_ DDS_Security_OctetSeq plain_rtps_message,
+          _In_ DDS_Security_OctetSeq encoded_rtps_message,
+          _In_ DDS_Security_DatawriterCryptoHandle receiving_datawriter_crypto,
+          _In_ DDS_Security_DatareaderCryptoHandle sending_datareader_crypto,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  // DDSSEC11-123
+  bool
+  decode_serialized_payload(
+          _Inout_ DDS_Security_OctetSeq plain_buffer,
+          _In_ DDS_Security_OctetSeq encoded_buffer,
+          _In_ DDS_Security_OctetSeq inline_qos,
+          _In_ DDS_Security_DatareaderCryptoHandle receiving_datareader_crypto,
+          _In_ DDS_Security_DatawriterCryptoHandle sending_datawriter_crypto,
+          _Inout_ DDS_Security_SecurityException ex);
+};
+
+typedef enum
+{
+  EMERGENCY_LEVEL, // System is unusable. Should not continue use.
+  ALERT_LEVEL,     // Should be corrected immediately
+  CRITICAL_LEVEL,  // A failure _In_ DDS_Security_primary application.
+  ERROR_LEVEL,     // General error conditions
+  WARNING_LEVEL,   // May indicate future error if action not taken.
+  NOTICE_LEVEL,    // Unusual, but nor erroneous event or condition.
+  INFORMATIONAL_LEVEL, // Normal operational. Requires no action.
+  DEBUG_LEVEL
+}LoggingLevel;
+
+// DDSSEC11-96
+@
+extensibility(FINAL)
+        typedef struct DDS_Security_NameValuePair
+        {
+          char *name;
+          char *value;
+        };
+
+                // DDSSEC11-85
+#ifndef _DDS_Security_NameValuePairSeq_defined
+#define _DDS_Security_NameValuePairSeq_defined
+        typedef struct
+        {
+          uint32_t _maximum;
+          uint32_t _length;
+          NameValuePair *_buffer;
+          bool _release;
+        } DDS_Security_NameValuePairSeq;
+        DDS_Security_NameValuePairSeq *DDS_Security_NameValuePairSeq__alloc(void);
+        NameValuePair *DDS_Security_NameValuePairSeq__allocbuf(uint32_t len);
+#endif /* _DDS_Security_NameValuePairSeq_defined */
+
+        // DDSSEC11-96
+@extensibility(FINAL)
+        struct DDS_Security_BuiltinLoggingType
+        {
+          uint8_t facility;  // Set to 0x10. Indicates sec/auth msgs  //octet:int8_t
+          LoggingLevel severity;
+          DDS::Time_t timestamp; // Since epoch 1970-01-01 00:00:00 +0000 (UTC)
+          char *hostname;  // IP host name of originator
+          char *hostip;    // IP address of originator
+          char *appname;   // Identify the device or application
+          char *procid;    // Process name/ID for syslog system
+          char *msgid;     // Identify the type of message
+          char *message;   // Free-form message
+
+          // Note that certa_In_ DDS_Security_char * keys (SD-IDs) are reserved by IANA
+          map<char *, NameValuePairSeq> structured_data;
+        };
+
+                // DDSSEC11-85
+        struct DDS_Security_LogOptions
+        {
+          LoggingLevel logging_level;
+          char *log_file;
+          bool distribute;
+        };
+
+                // DDSSEC11-96
+        interface LoggerListener {
+  bool on_log_message(_In_ DDS_Security_BuiltinLoggingType msg);
+};
+
+// DDSSEC11-96
+interface Logging
+{
+  bool set_log_options(
+          _In_ DDS_Security_LogOptions options,
+          _Inout_ DDS_Security_DDS_Security_SecurityException ex);
+
+  bool log(
+          _In_ DDS_Security_BuiltinLoggingType msg,
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool enable_logging(
+          _Inout_ DDS_Security_SecurityException ex);
+
+  bool set_listener(
+          _In_ DDS_Security_LoggerListener listener,
+          _Inout_ DDS_Security_SecurityException ex);
+
+};
+};
+};
 
 
 #endif //DDSC_SECURITY_H

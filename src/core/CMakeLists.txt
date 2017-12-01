@@ -23,6 +23,7 @@ else()
   add_library(ddsc "")
 endif()
 
+include(security/CMakeLists.txt)
 include(ddsi/CMakeLists.txt)
 include(ddsc/CMakeLists.txt)
 
@@ -44,6 +45,7 @@ set_target_file_ids(ddsc)
 # on and can also be provided as import-target by a package-file when building
 # those targets outside the regular Vortex build-tree (i.e. the installed tree)
 add_library(${CMAKE_PROJECT_NAME}::ddsc ALIAS ddsc)
+#add_library(${CMAKE_PROJECT_NAME}::ddsc ALIAS ddsc security/include/security/ddsc_security.h)
 
 install(
   TARGETS ddsc
