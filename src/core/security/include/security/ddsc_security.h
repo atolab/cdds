@@ -73,7 +73,7 @@ typedef bool
          _In_ DDS_Security_IdentityHandle handle,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-82
+
 typedef bool
 (*dds_security_authentication_get_identity_status_token)
         (void *listener_data,
@@ -89,9 +89,9 @@ typedef bool
          _In_ DDS_Security_PermissionsToken permissions_token,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-21
-// DDSSEC11-88
-// DDSSEC11-85
+
+
+
 typedef DDS_Security_ValidationResult_t
 (*dds_security_authentication_validate_remote_identity)
         (void *listener_data,
@@ -103,8 +103,8 @@ typedef DDS_Security_ValidationResult_t
          _In_ DDS_Security_GUID_t remote_participant_guid,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-46
-// DDSSEC11-118
+
+
 typedef DDS_Security_ValidationResult_t
 (*dds_security_authentication_begin_handshake_request)
         (void *listener_data,
@@ -116,7 +116,7 @@ typedef DDS_Security_ValidationResult_t
          _In_ DDS_OctetSeq serialized_local_participant_data,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-46
+
 typedef DDS_Security_ValidationResult_t
 (*dds_security_authentication_begin_handshake_reply)
         (void *listener_data,
@@ -161,7 +161,7 @@ typedef bool
          _In_ DDS_Security_IdentityToken token,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-82
+
 typedef bool
 (*dds_security_authentication_return_identity_status_token)
         (void *listener_data,
@@ -193,10 +193,10 @@ typedef bool
          _Inout_ DDS_Security_SecurityException ex);
 
 
-// DDSSEC11-96
+
 struct dds_security_authentication
 {
-  // DDSSEC11-88
+
   dds_security_authentication_ValidateLocalIdentity validate_local_identity;
 
   dds_security_authentication_get_identity_token get_identity_token;
@@ -246,7 +246,7 @@ typedef struct dds_security_access_control dds_security_access_control;
  * */
 
 
-typedef bool// DDSSEC11-96
+
 (*dds_security_access_control_listener_on_revoke_permissions)
         (void *listener_data,
          _In_ dds_security_access_control plugin,
@@ -311,7 +311,7 @@ typedef bool
          _In_ DDS_Security_DataTags data_tag,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-33
+
 typedef bool
 (*dds_security_access_control_check_create_topic)
         (void *listener_data,
@@ -370,7 +370,7 @@ typedef bool
          _In_ DDS_TopicBuiltinTopicData topic_data,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-34
+
 typedef bool
 (*dds_security_access_control_check_local_datawriter_match)
         (void *listener_data,
@@ -380,7 +380,7 @@ typedef bool
          _In_ DDS_Security_SubscriptionBuiltinTopicDataSecure subscription_data,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-34
+
 typedef bool
 (*dds_security_access_control_check_local_datareader_match)
         (void *listener_data,
@@ -448,7 +448,7 @@ typedef bool
          _Inout_ DDS_Security_ParticipantSecurityAttributes attributes,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-16
+
 typedef bool
 (*dds_security_access_control_get_topic_sec_attributes)
         (void *listener_data,
@@ -457,7 +457,7 @@ typedef bool
          _Inout_ DDS_Security_TopicSecurityAttributes attributes,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-16
+
 typedef bool
 (*dds_security_access_control_get_datawriter_sec_attributes)
         (void *listener_data,
@@ -467,7 +467,7 @@ typedef bool
          _Inout_ DDS_Security_EndpointSecurityAttributes attributes,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-16
+
 typedef bool
 (*dds_security_access_control_get_datareader_sec_attributes)
         (void *listener_data,
@@ -477,21 +477,21 @@ typedef bool
          _Inout_ DDS_Security_EndpointSecurityAttributes attributes,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-112
+
 typedef bool
 (*dds_security_access_control_return_participant_sec_attributes)
         (void *listener_data,
          _In_ DDS_Security_ParticipantSecurityAttributes attributes,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-112
+
 typedef bool
 (*dds_security_access_control_return_datawriter_sec_attributes)
         (void *listener_data,
          _In_ DDS_Security_EndpointSecurityAttributes attributes,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-112
+
 typedef bool
 (*dds_security_access_control_return_datareader_sec_attributes)
         (void *listener_data,
@@ -499,7 +499,7 @@ typedef bool
          _Inout_ DDS_Security_SecurityException ex);
 
 
-// DDSSEC11-96
+
 struct dds_security_access_control
 {
   dds_security_access_control_validate_local_permissions validate_local_permissions;
@@ -588,7 +588,7 @@ typedef DDS_Security_ParticipantCryptoHandle
          _In_ DDS_Security_SharedSecretHandle shared_secret,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-3 DDSSEC11-85
+
 typedef DDS_Security_DatawriterCryptoHandle
 (*dds_security_crypto_key_factory_register_local_datawriter)
         (void *listener_data,
@@ -606,7 +606,7 @@ typedef DDS_Security_DatareaderCryptoHandle
          _In_ bool relay_only,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-3 DDSSEC11-85
+
 typedef DDS_Security_DatareaderCryptoHandle
 (*dds_security_crypto_key_factory_register_local_datareader)
         (void *listener_data,
@@ -773,7 +773,7 @@ typedef bool
          _In_ DDS_Security_DatawriterCryptoHandleSeq receiving_datawriter_crypto_list,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-66
+
 typedef bool
 (*dds_security_crypto_transform_encode_rtps_message)
         (void *listener_data,
@@ -822,7 +822,7 @@ typedef bool
          _In_ DDS_Security_DatareaderCryptoHandle sending_datareader_crypto,
          _Inout_ DDS_Security_SecurityException ex);
 
-// DDSSEC11-123
+
 typedef bool
 (*dds_security_crypto_transform_decode_serialized_payload)
         (void *listener_data,
