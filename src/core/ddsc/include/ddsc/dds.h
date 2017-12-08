@@ -12,7 +12,6 @@
 
 #include "os/os_public.h"
 #include "ddsc/dds_export.h"
-#include "security/ddsc_security.h"
 
 /* TODO: Move to appropriate location */
 /**
