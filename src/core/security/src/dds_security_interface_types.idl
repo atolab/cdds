@@ -12,30 +12,13 @@ module DDS {
     /**
     * DDs types that should be defined for security. These can be moved to another DDS idl other than builtin types idl
     */
-    typedef long ReturnCode_t;
-    typedef HANDLE_TYPE_NATIVE InstanceHandle_t;
-    typedef DOMAINID_TYPE_NATIVE DomainId_t;
-    typedef sequence<InstanceHandle_t> InstanceHandleSeq;
-    
-    typedef sequence<boolean> BooleanSeq;
-    typedef sequence<octet> ByteSeq;
-
 
     module Security {
 
         typedef long DynamicData;
 
-        typedef sequence<long long>  LongLongSeq;
-
-
-
-
         typedef MessageToken AuthRequestMessageToken;
         typedef MessageToken HandshakeMessageToken;
-
-
-
-        typedef sequence<HandshakeMessageToken> HandshakeMessageTokenSeq;
 
         typedef Token  AuthenticatedPeerCredentialToken;
         typedef Token  PermissionsCredentialToken;
@@ -71,9 +54,6 @@ module DDS {
             GUID_t     source_guid;
             long long  sequence_number;
         };
-
-
-        const ReturnCode_t RETCODE_NOT_ALLOWED_BY_SECURITY = 1000;
 
 
         typedef long SecurityExceptionCode;

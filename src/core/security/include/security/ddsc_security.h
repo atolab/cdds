@@ -59,7 +59,7 @@ typedef DDS_Security_ValidationResult_t
         (void *listener_data,
          _Inout_ DDS_Security_IdentityHandle local_identity_handle,
          _Inout_ DDS_Security_GUID_t *adjusted_participant_guid,
-         _In_ DDS_DomainId_t domain_id,
+         _In_ dds_domainid_t domain_id,
          _In_ DDS_Security_DomainParticipantQos *participant_qos,
          _In_ DDS_Security_GUID_t *candidate_participant_guid,
          _Inout_ DDS_Security_SecurityException *ex
@@ -268,7 +268,7 @@ typedef DDS_Security_PermissionsHandle
         (void *listener_data,
          _In_ dds_security_authentication auth_plugin,
          _In_ DDS_Security_IdentityHandle identity,
-         _In_ DDS_DomainId_t domain_id,
+         _In_ dds_domainid_t domain_id,
          _In_ DDS_Security_DomainParticipantQos participant_qos,
          _Inout_ DDS_Security_SecurityException ex);
 
@@ -286,17 +286,17 @@ typedef bool
 (*dds_security_access_control_check_create_participant)
         (void *listener_data,
          _In_ DDS_Security_PermissionsHandle permissions_handle,
-         _In_ DDS_DomainId_t domain_id,
-         _In_ DDS_Security_DomainParticipantQos qos,
+         _In_ dds_domainid_t domain_id,
+         _In_ dds_qos_t *participant_qos,
          _Inout_ DDS_Security_SecurityException ex);
 
 typedef bool
 (*dds_security_access_control_check_create_datawriter)
         (void *listener_data,
          _In_ DDS_Security_PermissionsHandle permissions_handle,
-         _In_ DDS_DomainId_t domain_id,
+         _In_ dds_domainid_t domain_id,
          _In_ char *topic_name,
-         _In_ DDS_Security_DataWriterQos qos,
+         _In_ dds_qos_t *writer_qos,
          _In_ DDS_PartitionQosPolicy partition,
          _In_ DDS_Security_DataTags data_tag,
          _Inout_ DDS_Security_SecurityException ex);
@@ -305,9 +305,9 @@ typedef bool
 (*dds_security_access_control_check_create_datareader)
         (void *listener_data,
          _In_ DDS_Security_PermissionsHandle permissions_handle,
-         _In_ DDS_DomainId_t domain_id,
+         _In_ dds_domainid_t domain_id,
          _In_ char *topic_name,
-         _In_ DDS_Security_DataReaderQos qos,
+         _In_ dds_qos_t *reader_qos,
          _In_ DDS_PartitionQosPolicy partition,
          _In_ DDS_Security_DataTags data_tag,
          _Inout_ DDS_Security_SecurityException ex);
@@ -317,7 +317,7 @@ typedef bool
 (*dds_security_access_control_check_create_topic)
         (void *listener_data,
          _In_ DDS_Security_PermissionsHandle permissions_handle,
-         _In_ DDS_DomainId_t domain_id,
+         _In_ dds_domainid_t domain_id,
          _In_ char *topic_name,
          _In_ DDS_TopicQos qos,
          _Inout_ DDS_Security_SecurityException ex);
@@ -342,7 +342,7 @@ typedef bool
 (*dds_security_access_control_check_remote_participant)
         (void *listener_data,
          _In_ DDS_Security_PermissionsHandle permissions_handle,
-         _In_ DDS_DomainId_t domain_id,
+         _In_ dds_domainid_t domain_id,
          _In_ DDS_Security_ParticipantBuiltinTopicDataSecure participant_data,
          _Inout_ DDS_Security_SecurityException ex);
 
@@ -350,7 +350,7 @@ typedef bool
 (*dds_security_access_control_check_remote_datawriter)
         (void *listener_data,
          _In_ DDS_Security_PermissionsHandle permissions_handle,
-         _In_ DDS_DomainId_t domain_id,
+         _In_ dds_domainid_t domain_id,
          _In_ DDS_Security_PublicationBuiltinTopicDataSecure publication_data,
          _Inout_ DDS_Security_SecurityException ex);
 
@@ -358,7 +358,7 @@ typedef bool
 (*dds_security_access_control_check_remote_datareader)
         (void *listener_data,
          _In_ DDS_Security_PermissionsHandle permissions_handle,
-         _In_ DDS_DomainId_t domain_id,
+         _In_ dds_domainid_t domain_id,
          _In_ DDS_Security_SubscriptionBuiltinTopicDataSecure subscription_data,
          _Inout_ bool relay_only,
          _Inout_ DDS_Security_SecurityException ex);
@@ -367,7 +367,7 @@ typedef bool
 (*dds_security_access_control_check_remote_topic)
         (void *listener_data,
          _In_ DDS_Security_PermissionsHandle permissions_handle,
-         _In_ DDS_DomainId_t domain_id,
+         _In_ dds_domainid_t domain_id,
          _In_ DDS_TopicBuiltinTopicData topic_data,
          _Inout_ DDS_Security_SecurityException ex);
 
@@ -396,9 +396,9 @@ typedef bool
         (void *listener_data,
          _In_ DDS_Security_PermissionsHandle permissions_handle,
          _In_ dds_entity_t reader,
-         _In_ DDS_InstanceHandle_t publication_handle,
+         _In_ dds_instance_handle_t publication_handle,
          _In_ DDS_Security_DynamicData key,
-         _In_ DDS_InstanceHandle_t instance_handle,
+         _In_ dds_instance_handle_t instance_handle,
          _Inout_ DDS_Security_SecurityException ex);
 
 typedef bool
@@ -406,7 +406,7 @@ typedef bool
         (void *listener_data,
          _In_ DDS_Security_PermissionsHandle permissions_handle,
          _In_ dds_entity_t reader,
-         _In_ DDS_InstanceHandle_t publication_handle,
+         _In_ dds_instance_handle_t publication_handle,
          _In_ DDS_Security_DynamicData key,
          _Inout_ DDS_Security_SecurityException ex);
 
