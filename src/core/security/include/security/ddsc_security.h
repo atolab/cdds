@@ -247,6 +247,7 @@ typedef struct dds_security_access_control dds_security_access_control;
 
 
 
+typedef bool
 (*dds_security_access_control_listener_on_revoke_permissions)
         (void *listener_data,
          _In_ dds_security_access_control plugin,
