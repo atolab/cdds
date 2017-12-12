@@ -59,7 +59,7 @@ module DDS {
 
         typedef Token IdentityStatusToken;
 
-	    struct DomainParticipantQos  {
+        struct DomainParticipantQos  {
             UserDataQosPolicy user_data;
             EntityFactoryQosPolicy entity_factory;
             SchedulingQosPolicy watchdog_scheduling;
@@ -138,11 +138,11 @@ module DDS {
 
 
         struct ParticipantBuiltinTopicData  {
-		    BuiltinTopicKey_t key;
+            BuiltinTopicKey_t key;
             UserDataQosPolicy user_data;
             IdentityToken     identity_token;
             PermissionsToken  permissions_token;
-	        PropertyQosPolicy property;
+            PropertyQosPolicy property;
             ParticipantSecurityInfo  security_info;
         };
 
@@ -152,9 +152,9 @@ module DDS {
             UserDataQosPolicy user_data;
             IdentityToken     identity_token;
             PermissionsToken  permissions_token;
-	        PropertyQosPolicy property;
-	        ParticipantSecurityInfo  security_info;
-	        IdentityStatusToken identity_status_token;
+            PropertyQosPolicy property;
+            ParticipantSecurityInfo  security_info;
+            IdentityStatusToken identity_status_token;
         };
 
 
@@ -177,7 +177,7 @@ module DDS {
             PartitionQosPolicy partition;
             TopicDataQosPolicy topic_data;
             GroupDataQosPolicy group_data;
-	        EndpointSecurityInfo  security_info;
+            EndpointSecurityInfo  security_info;
         };
 
 
@@ -199,7 +199,7 @@ module DDS {
             PartitionQosPolicy partition;
             TopicDataQosPolicy topic_data;
             GroupDataQosPolicy group_data;
-	        EndpointSecurityInfo  security_info;
+            EndpointSecurityInfo  security_info;
         };
 
 
@@ -223,7 +223,7 @@ module DDS {
             TopicDataQosPolicy topic_data;
             GroupDataQosPolicy group_data;
             EndpointSecurityInfo  security_info;
-	        DataTags data_tags;
+            DataTags data_tags;
         };
 
 
@@ -245,8 +245,8 @@ module DDS {
             PartitionQosPolicy partition;
             TopicDataQosPolicy topic_data;
             GroupDataQosPolicy group_data;
-	        EndpointSecurityInfo  security_info;
-	        DataTags data_tags;
+            EndpointSecurityInfo  security_info;
+            DataTags data_tags;
         };
 
 
@@ -264,7 +264,7 @@ module DDS {
 
 
         struct EndpointSecurityAttributes {
-	        boolean  is_read_protected;
+            boolean  is_read_protected;
             boolean  is_write_protected;
             boolean  is_discovery_protected;
             boolean  is_liveliness_protected;

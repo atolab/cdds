@@ -109,7 +109,7 @@ module DDS {
         };
 
 
-        enum SecureSumessageCategory_t {
+        enum SecureSubmessageCategory_t {
             INFO_SUBMESSAGE,
             DATAWRITER_SUBMESSAGE,
             DATAREADER_SUBMESSAGE
