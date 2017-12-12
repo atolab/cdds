@@ -791,31 +791,38 @@ unsigned nn_xmsg_add_octseq_padded(_Inout_opt_ unsigned char *buf, _In_ nn_octet
 
 unsigned nn_xmsg_add_dataholder_padded (_Inout_opt_ unsigned char *buf, const struct nn_dataholder *dh)
 {
-  unsigned i, len;
+  unsigned i, len, dummy;
+  unsigned *cnt = &dummy;
 
   len = nn_xmsg_add_string_padded(buf, dh->class_id);
 
   if (buf) {
-    *((unsigned *)&(buf[len])) = dh->properties.n;
+    cnt = ((unsigned *)&(buf[len]));
+    *cnt = 0;
   }
   len += sizeof(int);
   for (i = 0; i < dh->properties.n; i++) {
-    char *dst = buf ? &(buf[len]) : NULL;
     nn_property_t *p = &(dh->properties.props[i]);
-    len += nn_xmsg_add_string_padded(dst, p->name);
-    len += nn_xmsg_add_string_padded(dst, p->value);
+    if (p->propagate) {
+      len += nn_xmsg_add_string_padded(buf ? &(buf[len]) : NULL, p->name);
+      len += nn_xmsg_add_string_padded(buf ? &(buf[len]) : NULL, p->value);
+      (*cnt)++;
+    }
     /* p->propagate is not propagated over the wire. */
   }
 
   if (buf) {
-    *((unsigned *)&(buf[len])) = dh->binary_properties.n;
+    cnt = ((unsigned *)&(buf[len]));
+    *cnt = 0;
   }
   len += sizeof(int);
   for (i = 0; i < dh->binary_properties.n; i++) {
-    char *dst = buf ? &(buf[len]) : NULL;
     nn_binaryproperty_t *p = &(dh->binary_properties.props[i]);
-    len += nn_xmsg_add_string_padded(dst,   p->name  );
-    len += nn_xmsg_add_octseq_padded(dst, &(p->value));
+    if (p->propagate) {
+      len += nn_xmsg_add_string_padded(buf ? &(buf[len]) : NULL,   p->name  );
+      len += nn_xmsg_add_octseq_padded(buf ? &(buf[len]) : NULL, &(p->value));
+      (*cnt)++;
+    }
     /* p->propagate is not propagated over the wire. */
   }
 

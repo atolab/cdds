@@ -423,6 +423,9 @@ static int alias_property (_Out_ nn_property_t *prop, _In_ const struct dd *dd, 
   lenV = sizeof(unsigned) + /* cdr string len arg + */
          align4u (lenV);    /* strlen + possible padding */
 
+  /* We got this from the wire; so it has been propagated. */
+  prop->propagate = true;
+
   *len = lenN + lenV;
 
   return 0;
@@ -668,6 +671,9 @@ static int alias_binaryproperty (_Out_ nn_binaryproperty_t *prop, _In_ const str
   }
   lenV = sizeof(unsigned) +           /* cdr sequence len arg + */
          align4u(prop->value.length); /* seqlen + possible padding */
+
+  /* We got this from the wire; so it has been propagated. */
+  prop->propagate = true;
 
   *len = lenN + lenV;
 
@@ -3939,6 +3945,7 @@ static unsigned isprint_runlen (unsigned n, const unsigned char *xs)
   return m;
 }
 
+
 static void log_octetseq (logcat_t cat, unsigned n, const unsigned char *xs)
 {
   unsigned i = 0;
@@ -4052,8 +4059,8 @@ void nn_log_xqos (logcat_t cat, const nn_xqos_t *xqos)
     LOGB0 ("property={{");
     for (i = 0; i < xqos->property.value.n; i++) {
       nn_log (cat, "(\"%s\",\"%s\",%d)",
-              xqos->property.value.props[i].name  ? xqos->property.value.props[i].name : "nil",
-              xqos->property.value.props[i].value ? xqos->property.value.props[i].name : "nil",
+              xqos->property.value.props[i].name  ? xqos->property.value.props[i].name  : "nil",
+              xqos->property.value.props[i].value ? xqos->property.value.props[i].value : "nil",
               (int)xqos->property.value.props[i].propagate);
     }
     nn_log (cat, "},{");
