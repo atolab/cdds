@@ -752,6 +752,77 @@ void nn_xmsg_setwriterseq_fragid (struct nn_xmsg *msg, const nn_guid_t *wrguid, 
   msg->kindspecific.data.wrfragid = wrfragid;
 }
 
+unsigned nn_xmsg_add_string_padded(_Inout_opt_ unsigned char *buf, _In_ char *str)
+{
+  unsigned len = (unsigned) strlen (str) + 1;
+  if (buf) {
+    /* Add cdr string */
+    struct cdrstring *p = (struct cdrstring *) buf;
+    p->length = len;
+    memcpy (p->contents, str, len);
+    /* clear padding */
+    if (len < align4u (len)) {
+      memset (p->contents + len, 0, align4u (len) - len);
+    }
+  }
+  len = 4 +           /* cdr string len arg + */
+        align4u(len); /* strlen + possible padding */
+  return len;
+}
+
+unsigned nn_xmsg_add_octseq_padded(_Inout_opt_ unsigned char *buf, _In_ nn_octetseq_t *seq)
+{
+  unsigned len = seq->length;
+  if (buf) {
+    /* Add cdr octet seq */
+    *((unsigned *)buf) = len;
+    buf += sizeof (int);
+    memcpy (buf, seq->value, len);
+    /* clear padding */
+    if (len < align4u (len)) {
+      memset (buf + len, 0, align4u (len) - len);
+    }
+  }
+  len = 4 +           /* cdr sequence len arg + */
+        align4u(len); /* seqlen + possible padding */
+  return len;
+}
+
+
+unsigned nn_xmsg_add_dataholder_padded (_Inout_opt_ unsigned char *buf, const struct nn_dataholder *dh)
+{
+  unsigned i, len;
+
+  len = nn_xmsg_add_string_padded(buf, dh->class_id);
+
+  if (buf) {
+    *((unsigned *)&(buf[len])) = dh->properties.n;
+  }
+  len += sizeof(int);
+  for (i = 0; i < dh->properties.n; i++) {
+    char *dst = buf ? &(buf[len]) : NULL;
+    nn_property_t *p = &(dh->properties.props[i]);
+    len += nn_xmsg_add_string_padded(dst, p->name);
+    len += nn_xmsg_add_string_padded(dst, p->value);
+    /* p->propagate is not propagated over the wire. */
+  }
+
+  if (buf) {
+    *((unsigned *)&(buf[len])) = dh->binary_properties.n;
+  }
+  len += sizeof(int);
+  for (i = 0; i < dh->binary_properties.n; i++) {
+    char *dst = buf ? &(buf[len]) : NULL;
+    nn_binaryproperty_t *p = &(dh->binary_properties.props[i]);
+    len += nn_xmsg_add_string_padded(dst,   p->name  );
+    len += nn_xmsg_add_octseq_padded(dst, &(p->value));
+    /* p->propagate is not propagated over the wire. */
+  }
+
+  return len;
+}
+
+
 void * nn_xmsg_addpar (struct nn_xmsg *m, unsigned pid, size_t len)
 {
   const size_t len4 = (len + 3) & (size_t)-4; /* must alloc a multiple of 4 */
@@ -795,8 +866,7 @@ void nn_xmsg_addpar_stringseq (struct nn_xmsg *m, unsigned pid, const nn_strings
 
   for (i = 0; i < sseq->n; i++)
   {
-    unsigned len1 = (unsigned) strlen (sseq->strs[i]) + 1;
-    len += 4 + align4u (len1);
+    len += nn_xmsg_add_string_padded(NULL, sseq->strs[i]);
   }
 
   tmp = nn_xmsg_addpar (m, pid, 4 + len);
@@ -805,13 +875,7 @@ void nn_xmsg_addpar_stringseq (struct nn_xmsg *m, unsigned pid, const nn_strings
   tmp += sizeof (int);
   for (i = 0; i < sseq->n; i++)
   {
-    struct cdrstring *p = (struct cdrstring *) tmp;
-    unsigned len1 = (unsigned) strlen (sseq->strs[i]) + 1;
-    p->length = len1;
-    memcpy (p->contents, sseq->strs[i], len1);
-    if (len1 < align4u (len1))
-      memset (p->contents + len1, 0, align4u (len1) - len1);
-    tmp += 4 + align4u (len1);
+    tmp += nn_xmsg_add_string_padded(tmp, sseq->strs[i]);
   }
 }
 
@@ -1000,6 +1064,21 @@ void nn_xmsg_addpar_eotinfo (struct nn_xmsg *m, unsigned pid, const struct nn_pr
     pu[2*i + 2] = toBE4u (txnid->tids[i].writer_entityid.u);
     pu[2*i + 3] = txnid->tids[i].transactionId;
   }
+}
+
+void nn_xmsg_addpar_dataholder (_In_ struct nn_xmsg *m, _In_ unsigned pid, _In_ const struct nn_dataholder *dh)
+{
+    unsigned char *tmp;
+    unsigned len;
+
+    /* Get total payload length. */
+    len = nn_xmsg_add_dataholder_padded(NULL, dh);
+
+    /* Prepare parameter header and get payload pointer. */
+    tmp = nn_xmsg_addpar (m, pid, 4 + len);
+
+    /* Insert dataholder. */
+    nn_xmsg_add_dataholder_padded(tmp, dh);
 }
 
 /* XMSG_CHAIN ----------------------------------------------------------
