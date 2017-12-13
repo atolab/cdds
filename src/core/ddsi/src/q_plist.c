@@ -948,6 +948,9 @@ void nn_plist_fini (nn_plist_t *ps)
   };
   int i;
   nn_xqos_fini (&ps->qos);
+
+/* The compiler doesn't understand how offsetof is used in the arrays. */
+OS_WARNING_MSVC_OFF(6001);
   for (i = 0; i < (int) (sizeof (simple) / sizeof (*simple)); i++)
   {
     if ((ps->present & simple[i].fl) && !(ps->aliased & simple[i].fl))
@@ -966,6 +969,8 @@ void nn_plist_fini (nn_plist_t *ps)
     if ((ps->present & tokens[i].fl) && !(ps->aliased & tokens[i].fl))
       free_dataholder ((nn_token_t *) ((char *) ps + tokens[i].off));
   }
+OS_WARNING_MSVC_ON(6001);
+
   ps->present = 0;
 }
 
