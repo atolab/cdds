@@ -367,7 +367,7 @@ static int validate_property (_In_ const struct dd *dd, _Out_ unsigned *len)
 
   /* Check name. */
   rc = validate_string(dd, &lenN);
-  if (rc < 0)
+  if (rc != 0)
   {
     TRACE (("plist/validate_property: name validation failed\n"));
     return rc;
@@ -380,7 +380,7 @@ static int validate_property (_In_ const struct dd *dd, _Out_ unsigned *len)
   ddV.buf = dd->buf + lenN;
   ddV.bufsz = dd->bufsz - lenN;
   rc = validate_string(&ddV, &lenV);
-  if (rc < 0)
+  if (rc != 0)
   {
     TRACE (("plist/validate_property: value validation failed\n"));
     return rc;
@@ -403,7 +403,7 @@ static int alias_property (_Out_ nn_property_t *prop, _In_ const struct dd *dd, 
 
   /* Get name */
   rc = alias_string((const unsigned char **)&(prop->name), dd, &lenN);
-  if (rc < 0)
+  if (rc != 0)
   {
     TRACE (("plist/alias_property: invalid name buffer\n"));
     return rc;
@@ -415,7 +415,7 @@ static int alias_property (_Out_ nn_property_t *prop, _In_ const struct dd *dd, 
   ddV.buf = dd->buf + lenN;
   ddV.bufsz = dd->bufsz - lenN;
   rc = alias_string((const unsigned char **)&(prop->value), &ddV, &lenV);
-  if (rc < 0)
+  if (rc != 0)
   {
     TRACE (("plist/validate_property: invalid value buffer\n"));
     return rc;
@@ -485,7 +485,7 @@ static int validate_propertyseq (_In_ const struct dd *dd, _Out_ unsigned *len)
       int rc;
       dd1.buf = seq;
       dd1.bufsz = (unsigned) (seqend - seq);
-      if ((rc = validate_property (&dd1, &len1)) < 0)
+      if ((rc = validate_property (&dd1, &len1)) != 0)
       {
         TRACE (("plist/validate_propertyseq: invalid property\n"));
         return rc;
@@ -498,7 +498,7 @@ static int validate_propertyseq (_In_ const struct dd *dd, _Out_ unsigned *len)
       return ERR_INVALID;
     }
   }
-  *len = align4u(seq - dd->buf);
+  *len = align4u((unsigned)(seq - dd->buf));
   return 0;
 }
 
@@ -540,7 +540,7 @@ static int alias_propertyseq (_Out_ nn_propertyseq_t *pseq, _In_ const struct dd
       unsigned len1;
       dd1.buf = seq;
       dd1.bufsz = (unsigned) (seqend - seq);
-      if ((result = alias_property (&props[i], &dd1, &len1)) < 0)
+      if ((result = alias_property (&props[i], &dd1, &len1)) != 0)
       {
         TRACE (("plist/alias_propertyseq: invalid property\n"));
         goto fail;
@@ -555,7 +555,7 @@ static int alias_propertyseq (_Out_ nn_propertyseq_t *pseq, _In_ const struct dd
     }
     pseq->props = props;
   }
-  *len = align4u(seq - dd->buf);
+  *len = align4u((unsigned)(seq - dd->buf));
   return 0;
  fail:
   os_free (props);
@@ -617,7 +617,7 @@ static int validate_binaryproperty (_In_ const struct dd *dd, _Out_ unsigned *le
 
   /* Check name. */
   rc = validate_string(dd, &lenN);
-  if (rc < 0)
+  if (rc != 0)
   {
     TRACE (("plist/validate_property: name validation failed\n"));
     return rc;
@@ -629,7 +629,7 @@ static int validate_binaryproperty (_In_ const struct dd *dd, _Out_ unsigned *le
   ddV.buf = dd->buf + lenN;
   ddV.bufsz = dd->bufsz - lenN;
   rc = validate_octetseq(&ddV, &lenV);
-  if (rc < 0)
+  if (rc != 0)
   {
     TRACE (("plist/validate_property: value validation failed\n"));
     return rc;
@@ -652,7 +652,7 @@ static int alias_binaryproperty (_Out_ nn_binaryproperty_t *prop, _In_ const str
 
   /* Get name */
   rc = alias_string((const unsigned char **)&(prop->name), dd, &lenN);
-  if (rc < 0)
+  if (rc != 0)
   {
     TRACE (("plist/alias_property: invalid name buffer\n"));
     return rc;
@@ -664,7 +664,7 @@ static int alias_binaryproperty (_Out_ nn_binaryproperty_t *prop, _In_ const str
   ddV.buf = dd->buf + lenN;
   ddV.bufsz = dd->bufsz - lenN;
   rc = alias_octetseq(&(prop->value), &ddV);
-  if (rc < 0)
+  if (rc != 0)
   {
     TRACE (("plist/validate_property: invalid value buffer\n"));
     return rc;
@@ -735,7 +735,7 @@ static int validate_binarypropertyseq (_In_ const struct dd *dd, _Out_ unsigned 
       int rc;
       dd1.buf = seq;
       dd1.bufsz = (unsigned) (seqend - seq);
-      if ((rc = validate_binaryproperty (&dd1, &len1)) < 0)
+      if ((rc = validate_binaryproperty (&dd1, &len1)) != 0)
       {
         TRACE (("plist/validate_binarypropertyseq: invalid property\n"));
         return rc;
@@ -748,7 +748,7 @@ static int validate_binarypropertyseq (_In_ const struct dd *dd, _Out_ unsigned 
       return ERR_INVALID;
     }
   }
-  *len = align4u(seq - dd->buf);
+  *len = align4u((unsigned)(seq - dd->buf));
   return 0;
 }
 
@@ -790,7 +790,7 @@ static int alias_binarypropertyseq (_Out_ nn_binarypropertyseq_t *pseq, _In_ con
       unsigned len1;
       dd1.buf = seq;
       dd1.bufsz = (unsigned) (seqend - seq);
-      if ((result = alias_binaryproperty (&props[i], &dd1, &len1)) < 0)
+      if ((result = alias_binaryproperty (&props[i], &dd1, &len1)) != 0)
       {
         TRACE (("plist/alias_binarypropertyseq: invalid property\n"));
         goto fail;
@@ -805,7 +805,7 @@ static int alias_binarypropertyseq (_Out_ nn_binarypropertyseq_t *pseq, _In_ con
     }
     pseq->props = props;
   }
-  *len = align4u(seq - dd->buf);
+  *len = align4u((unsigned)(seq - dd->buf));
   return 0;
  fail:
   os_free (props);
@@ -2060,11 +2060,14 @@ static int do_reader_data_lifecycle_v1 (nn_reader_data_lifecycle_qospolicy_t *q,
   return validate_reader_data_lifecycle (q);
 }
 
+_Success_(return == 0)
 static int do_dataholder (_Out_ nn_dataholder_t *dh, _Inout_ uint64_t *present, _Inout_ uint64_t *aliased, _In_ uint64_t wanted, _In_ uint64_t fl, _In_ const struct dd *dd)
 {
   struct dd ddtmp = *dd;
   unsigned len;
   int res;
+
+  memset(dh, 0, sizeof(nn_dataholder_t));
 
   if (!(wanted & fl))
   {
@@ -2104,7 +2107,7 @@ static int do_dataholder (_Out_ nn_dataholder_t *dh, _Inout_ uint64_t *present, 
 
   /* get class_id */
   res = alias_string((const unsigned char **)&(dh->class_id), dd, &len /* strlen */);
-  if (res < 0)
+  if (res != 0)
   {
     TRACE (("plist/do_dataholder: invalid class_id\n"));
     return res;
@@ -2116,7 +2119,7 @@ static int do_dataholder (_Out_ nn_dataholder_t *dh, _Inout_ uint64_t *present, 
   ddtmp.buf = &(dd->buf[len]);
   ddtmp.bufsz = dd->bufsz - len;
   res = alias_propertyseq(&(dh->properties), &ddtmp, &len /* complete length */);
-  if (res < 0)
+  if (res != 0)
   {
     TRACE (("plist/do_dataholder: invalid property_seq\n"));
     return res;
@@ -2126,7 +2129,7 @@ static int do_dataholder (_Out_ nn_dataholder_t *dh, _Inout_ uint64_t *present, 
   ddtmp.buf = &(ddtmp.buf[len]);
   ddtmp.bufsz = ddtmp.bufsz - len;
   res = alias_binarypropertyseq(&(dh->binary_properties), &ddtmp, &len /* complete length */);
-  if (res < 0)
+  if (res != 0)
   {
     TRACE (("plist/do_dataholder: invalid binary_property_seq\n"));
     return res;

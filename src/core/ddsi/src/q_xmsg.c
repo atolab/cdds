@@ -791,7 +791,8 @@ unsigned nn_xmsg_add_octseq_padded(_Inout_opt_ unsigned char *buf, _In_ nn_octet
 
 unsigned nn_xmsg_add_dataholder_padded (_Inout_opt_ unsigned char *buf, const struct nn_dataholder *dh)
 {
-  unsigned i, len, dummy;
+  unsigned i, len;
+  unsigned dummy = 0;
   unsigned *cnt = &dummy;
 
   len = nn_xmsg_add_string_padded(buf, dh->class_id);
