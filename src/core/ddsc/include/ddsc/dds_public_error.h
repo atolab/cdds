@@ -51,6 +51,9 @@ extern "C" {
 #define DDS_RETCODE_TIMEOUT              10 /**< When a timeout has occurred */
 #define DDS_RETCODE_NO_DATA              11 /**< When expected data is not provided */
 #define DDS_RETCODE_ILLEGAL_OPERATION    12 /**< When a function is called when it should not be */
+#define DDS_RETCODE_NOT_ALLOWED_BY_SECURITY 13 /**< When credentials are not enough to use the function */
+
+
 /** @}*/
 
 /* For backwards compatability */
