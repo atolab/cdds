@@ -20,11 +20,6 @@
 extern "C" {
 #endif
 
-typedef struct nn_original_writer_info {
-  nn_guid_t original_writer_guid;
-  nn_sequence_number_t original_writer_sn;
-  nn_xqos_t *original_writer_qos;
-} original_writer_info_t;
 
 #define PP_PROTOCOL_VERSION                     ((uint64_t)1 <<  0)
 #define PP_VENDORID                             ((uint64_t)1 <<  1)
@@ -67,6 +62,9 @@ typedef struct nn_original_writer_info {
 #define PP_READER_FAVOURS_SSM                   ((uint64_t)1 << 39)
 #endif
 #define PP_RTI_TYPECODE                         ((uint64_t)1 << 40)
+/* Security extensions. */
+#define PP_IDENTITY_TOKEN                       ((uint64_t)1 << 41)
+#define PP_PERMISSIONS_TOKEN                    ((uint64_t)1 << 42)
 /* Set for unrecognized parameters that are in the reserved space or
    in our own vendor-specific space that have the
    PID_UNRECOGNIZED_INCOMPATIBLE_FLAG set (see DDSI 2.1 9.6.2.2.1) */
@@ -114,6 +112,16 @@ typedef struct nn_reader_favours_ssm {
   unsigned state; /* default is false */
 } nn_reader_favours_ssm_t;
 #endif
+
+typedef struct nn_dataholder
+{
+  char *class_id;
+  nn_propertyseq_t properties;
+  nn_binarypropertyseq_t binary_properties;
+} nn_dataholder_t;
+
+typedef nn_dataholder_t nn_token_t;
+
 
 typedef struct nn_prismtech_participant_version_info
 {
@@ -177,6 +185,8 @@ typedef struct nn_plist {
   char *type_description;
   nn_sequence_number_t coherent_set_seqno;
   nn_prismtech_eotinfo_t eotinfo;
+  nn_token_t identity_token;
+  nn_token_t permissions_token;
 #ifdef DDSI_INCLUDE_SSM
   nn_reader_favours_ssm_t reader_favours_ssm;
 #endif

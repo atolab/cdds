@@ -133,6 +133,7 @@ void nn_xmsg_addpar_subscription_keys (struct nn_xmsg *m, unsigned pid, const st
 
 void nn_xmsg_addpar_parvinfo (struct nn_xmsg *m, unsigned pid, const struct nn_prismtech_participant_version_info *pvi);
 void nn_xmsg_addpar_eotinfo (struct nn_xmsg *m, unsigned pid, const struct nn_prismtech_eotinfo *txnid);
+void nn_xmsg_addpar_dataholder (_In_ struct nn_xmsg *m, _In_ unsigned pid, _In_ const struct nn_dataholder *dh);
 void nn_xmsg_addpar_sentinel (struct nn_xmsg *m);
 int nn_xmsg_addpar_sentinel_ifparam (struct nn_xmsg *m);
 

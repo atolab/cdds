@@ -408,6 +408,10 @@ typedef struct ParticipantMessageData {
 #define PID_ORIGINAL_WRITER_INFO                0x61u
 #define PID_ENDPOINT_GUID                       0x5au /* !SPEC <=> PRISMTECH_ENDPOINT_GUID */
 
+/* Security related PID values. */
+#define PID_IDENTITY_TOKEN                      0x1001u
+#define PID_PERMISSIONS_TOKEN                   0x1002u
+
 #define PID_RTI_TYPECODE                        (PID_VENDORSPECIFIC_FLAG | 0x4u)
 
 #ifdef DDSI_INCLUDE_SSM
