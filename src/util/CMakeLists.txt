@@ -1,3 +1,14 @@
+#
+# Copyright(c) 2006 to 2018 ADLINK Technology Limited and others
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License v. 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0, or the Eclipse Distribution License
+# v. 1.0 which is available at
+# http://www.eclipse.org/org/documents/edl-v10.php.
+#
+# SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
+#
 include (GenerateExportHeader)
 
 #PREPEND(srcs_platform ${platform} os_platform_errno.c os_platform_heap.c os_platform_init.c os_platform_process.c os_platform_socket.c os_platform_stdlib.c os_platform_sync.c os_platform_thread.c os_platform_time.c)

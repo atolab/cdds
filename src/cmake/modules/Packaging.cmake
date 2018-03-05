@@ -1,3 +1,14 @@
+#
+# Copyright(c) 2006 to 2018 ADLINK Technology Limited and others
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License v. 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0, or the Eclipse Distribution License
+# v. 1.0 which is available at
+# http://www.eclipse.org/org/documents/edl-v10.php.
+#
+# SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
+#
 if(PACKAGING_INCLUDED)
   return()
 endif()
@@ -49,7 +60,10 @@ set(CPACK_PACKAGE_VENDOR "ADLINK Technology Inc.")
 set(CPACK_PACKAGE_CONTACT "${CMAKE_PROJECT_NAME} core developers <info@adlinktech.com>")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Leading OMG DDS implementation from ADLINK Technology")
 set(CPACK_PACKAGE_ICON "${PACKAGING_MODULE_DIR}/vortex.ico")
-set(CPACK_RESOURCE_FILE_LICENSE "${PACKAGING_MODULE_DIR}/license.txt")
+
+# WiX requires a .txt file extension for CPACK_RESOURCE_FILE_LICENSE
+file(COPY "${PROJECT_SOURCE_DIR}/../LICENSE" DESTINATION "${CMAKE_BINARY_DIR}/license.txt")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_BINARY_DIR}/license.txt")
 
 # Packages could be generated on alien systems. e.g. Debian packages could be
 # created on Red Hat Enterprise Linux, but since packages also need to be
