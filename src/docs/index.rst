@@ -9,9 +9,9 @@
 
    SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 
-.. VortexDDS documentation master file
+.. CycloneDDS documentation master file
 
-Welcome to VortexDDS's documentation!
+Welcome to CycloneDDS's documentation!
 =====================================
 
 .. toctree::

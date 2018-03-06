@@ -12,7 +12,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.prismtech.vortex</groupId>
+    <groupId>org.eclipse.cyclonedds</groupId>
     <artifactId>idlc</artifactId>
     <version>@PROJECT_VERSION@</version>
     <packaging>jar</packaging>
@@ -60,7 +60,7 @@
             <resource>
                 <directory>${basedir}</directory>
                 <includes>
-                    <include>com/prismtech/vortex/templates/**</include>
+                    <include>org/eclipse/cyclonedds/templates/**</include>
                 </includes>
             </resource>
         </resources>
@@ -78,7 +78,7 @@
                 <artifactId>antlr4-maven-plugin</artifactId>
                 <version>4.5</version>
                 <configuration>
-                    <sourceDirectory>${basedir}/com/prismtech/vortex/parser/grammar</sourceDirectory>
+                    <sourceDirectory>${basedir}/org/eclipse/cyclonedds/parser/grammar</sourceDirectory>
                     <visitor>true</visitor>
                     <listener>false</listener>
                 </configuration>
@@ -108,8 +108,8 @@
                             <goal>copy</goal>
                         </goals>
                         <configuration>
-                            <sourceFile>${CMAKE_CURRENT_BINARY_DIR}/com/prismtech/vortex/Project.java</sourceFile>
-                            <destinationFile>target/generated-sources/idlc/com/prismtech/vortex/Project.java</destinationFile>
+                            <sourceFile>${CMAKE_CURRENT_BINARY_DIR}/org/eclipse/cyclonedds/Project.java</sourceFile>
+                            <destinationFile>target/generated-sources/idlc/org/eclipse/cyclonedds/Project.java</destinationFile>
                         </configuration>
                     </execution>
                     <execution>
@@ -119,8 +119,8 @@
                             <goal>copy</goal>
                         </goals>
                         <configuration>
-                            <sourceFile>${basedir}/com/prismtech/vortex/LicenseMgr.java.dummy</sourceFile>
-                            <destinationFile>target/generated-sources/idlc/com/prismtech/vortex/LicenseMgr.java</destinationFile>
+                            <sourceFile>${basedir}/org/eclipse/cyclonedds/LicenseMgr.java.dummy</sourceFile>
+                            <destinationFile>target/generated-sources/idlc/org/eclipse/cyclonedds/LicenseMgr.java</destinationFile>
                         </configuration>
                     </execution>
                 </executions>

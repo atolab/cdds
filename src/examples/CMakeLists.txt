@@ -22,6 +22,7 @@ set(EXAMPLES_HTML_URI "http://jenkins.prismtech.com:8080/job/BuildChameleonLinux
 if (BUILD_DOCS)
   find_program(SPHINX_EXECUTABLE NAMES sphinx-build DOC "Sphinx documentation builder")
   if (NOT SPHINX_EXECUTABLE)
+    message(STATUS "Unable to find sphinx-build executable, downloading examples docs...")
     set(BUILD_DOCS off)
   endif()
 endif()
@@ -91,7 +92,6 @@ if (BUILD_DOCS)
     )
 else()
     # Download example html docs
-    message(STATUS "Unable to find sphinx-build executable, downloading examples docs...")
 
     file(DOWNLOAD "${EXAMPLES_HTML_URI}" "${CMAKE_CURRENT_BINARY_DIR}/Downloaded${EXAMPLES_HTML_ARCHIVE}"
         TIMEOUT 10

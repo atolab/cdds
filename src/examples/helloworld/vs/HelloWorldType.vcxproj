@@ -75,7 +75,7 @@
   <PropertyGroup />
   <ItemGroup>
     <CustomBuild Include="..\HelloWorldData.idl">
-      <Command>java -classpath "$(VortexDDS_idlc_dir)\idlc-jar-with-dependencies.jar" com.prismtech.vortex.compilers.Idlc -d "$(SolutionDir)generated" "%(FullPath)"</Command>
+      <Command>java -classpath "$(CycloneDDS_idlc_dir)\idlc-jar-with-dependencies.jar" com.prismtech.vortex.compilers.Idlc -d "$(SolutionDir)generated" "%(FullPath)"</Command>
       <Message>Generating source files from IDL into "$(SolutionDir)generated"</Message>
       <Outputs>HelloWorldData.h;HelloWorldData.c</Outputs>
     </CustomBuild>

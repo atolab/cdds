@@ -165,7 +165,7 @@ dds_init(void)
   else
   {
     gv.default_plist_pp.exec_name = dds_string_alloc(32);
-    (void) snprintf(gv.default_plist_pp.exec_name, 32, "Vortex:%u", gv.default_plist_pp.process_id);
+    (void) snprintf(gv.default_plist_pp.exec_name, 32, "%s: %u", DDSC_PROJECT_NAME, gv.default_plist_pp.process_id);
   }
   len = (uint32_t) (13 + strlen(gv.default_plist_pp.exec_name));
   gv.default_plist_pp.present |= PP_PRISMTECH_EXEC_NAME;

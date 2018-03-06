@@ -10,4 +10,4 @@
 #
 # SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 #
-java -classpath "@IDLC_JAR@" com.prismtech.vortex.compilers.Idlcpp "$@"
+java -classpath "@IDLC_JAR@" org.eclipse.cyclonedds.compilers.Idlcpp "$@"

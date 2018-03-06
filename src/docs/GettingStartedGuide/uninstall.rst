@@ -16,41 +16,41 @@
     \newpage
 
 ######################
-Uninstalling VortexDDS
+Uninstalling CycloneDDS
 ######################
 
 *****
 Linux
 *****
 
-Uninstalling VortexDDS on Linux can be established by invoking
+Uninstalling CycloneDDS on Linux can be established by invoking
 the following two commands (of which the first is optional):
 ::
 
-    sudo dpkg --remove vortex-dds-dev
-    sudo dpkg --remove vortex-dds
+    sudo dpkg --remove cyclonedds-dev
+    sudo dpkg --remove cyclonedds
 
 .. note::
     Mind the order in which these commands are run. The development
-    package (:code:`vortex-dds-dev`) need to be removed first since
-    it depends on the library version (:code:`vortex-dds`).
+    package (:code:`cyclonedds-dev`) need to be removed first since
+    it depends on the library version (:code:`cyclonedds`).
 
 *******
 Windows
 *******
 
-There are two ways to uninstall VortexDDS from Windows
+There are two ways to uninstall CycloneDDS from Windows
 
-1. By using the original VortexDDS :ref:`MSI <WindowsInstallMSI>` file
+1. By using the original CycloneDDS :ref:`MSI <WindowsInstallMSI>` file
 2. By using Windows "Apps & features"
 
 Original MSI
 ============
 
-Locate the original VortexDDS MSI file on your system and start it.
+Locate the original CycloneDDS MSI file on your system and start it.
 After clicking :code:`Next`, an overview of options appears, amongst which
 is the remove option. By clicking :code:`Remove`, all files and folders are
-removed, except the VortexDDS examples (if installed).
+removed, except the CycloneDDS examples (if installed).
 
 Apps & features
 ===============
@@ -58,9 +58,9 @@ Apps & features
 Go to :code:`Windows Settings` by clicking the :code:`Settings`-icon ( |settings_icon| )
 in the Windows Start Menu. Choose :code:`Apps` in the
 :code:`Windows Settings` screen. A list of all installed apps
-and programs pops up. Select :code:`VortexDDS` and choose :code:`Uninstall`.
+and programs pops up. Select :code:`CycloneDDS` and choose :code:`Uninstall`.
 All installed files and folders will be removed, except the
-VortexDDS examples (if installed).
+CycloneDDS examples (if installed).
 
 .. |settings_icon| image:: ../_static/pictures/settings-icon.png
   :height: 9

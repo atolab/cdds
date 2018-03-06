@@ -9,7 +9,7 @@
 
    SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 
-Vortex DDS C API Reference
+Cyclone DDS C API Reference
 ==========================
 
 .. doxygenindex::

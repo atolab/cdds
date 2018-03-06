@@ -16,7 +16,7 @@
  * @brief DDS C Logging API
  *
  * This header file defines the public API for logging in the
- * VortexDDS C language binding.
+ * CycloneDDS C language binding.
  */
 #ifndef DDS_LOG_H
 #define DDS_LOG_H

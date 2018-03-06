@@ -2,26 +2,26 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
-    <VortexDDS_lib_dir>C:/Program Files/ADLINK/Vortex DDS/lib</VortexDDS_lib_dir>
-    <VortexDDS_inc_dir>C:/Program Files/ADLINK/Vortex DDS/include</VortexDDS_inc_dir>
-    <VortexDDS_idlc_dir>C:/Program Files/ADLINK/Vortex DDS/share/VortexDDS/idlc</VortexDDS_idlc_dir>
+    <CycloneDDS_lib_dir>C:/Program Files/ADLINK/Cyclone DDS/lib</CycloneDDS_lib_dir>
+    <CycloneDDS_inc_dir>C:/Program Files/ADLINK/Cyclone DDS/include</CycloneDDS_inc_dir>
+    <CycloneDDS_idlc_dir>C:/Program Files/ADLINK/Cyclone DDS/share/CycloneDDS/idlc</CycloneDDS_idlc_dir>
   </PropertyGroup>
   <PropertyGroup />
   <ItemGroup>
-    <BuildMacro Include="VortexDDS_lib_dir">
-      <Value>$(VortexDDS_lib_dir)</Value>
+    <BuildMacro Include="CycloneDDS_lib_dir">
+      <Value>$(CycloneDDS_lib_dir)</Value>
     </BuildMacro>
-    <BuildMacro Include="VortexDDS_inc_dir">
-      <Value>$(VortexDDS_inc_dir)</Value>
+    <BuildMacro Include="CycloneDDS_inc_dir">
+      <Value>$(CycloneDDS_inc_dir)</Value>
     </BuildMacro>
-    <BuildMacro Include="VortexDDS_idlc_dir">
-      <Value>$(VortexDDS_idlc_dir)</Value>
+    <BuildMacro Include="CycloneDDS_idlc_dir">
+      <Value>$(CycloneDDS_idlc_dir)</Value>
     </BuildMacro>
   </ItemGroup>
   <PropertyGroup Label="Configuration">
     <!-->
           User macros are not expanded when starting the build applications in VS.
-          The path is extended with a possible Vortex DLL location when they are not
+          The path is extended with a possible Cyclone DLL location when they are not
           installed in a system default location.
     <-->
     <LocalDebuggerEnvironment>PATH=../../../../../bin;%PATH%

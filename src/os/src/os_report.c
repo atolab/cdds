@@ -14,6 +14,7 @@
 #endif
 
 #include "os/os.h"
+#include "os/os_project.h"
 
 #include <assert.h>
 #include <stdarg.h>
@@ -129,13 +130,13 @@ enum os_report_logType {
     OS_REPORT_ERROR_LOG
 };
 
-static char * os_report_defaultInfoFileName = "vortex-info.log";
-static char * os_report_defaultErrorFileName = "vortex-error.log";
-static const char os_env_logdir[] = "VORTEX_LOGPATH";
-static const char os_env_infofile[] = "VORTEX_INFOFILE";
-static const char os_env_errorfile[] = "VORTEX_ERRORFILE";
-static const char os_env_verbosity[] = "VORTEX_VERBOSITY";
-static const char os_env_append[] = "VORTEX_LOGAPPEND";
+static char * os_report_defaultInfoFileName = OS_PROJECT_NAME_NOSPACE_SMALL"-info.log";
+static char * os_report_defaultErrorFileName = OS_PROJECT_NAME_NOSPACE_SMALL"-error.log";
+static const char os_env_logdir[] = OS_PROJECT_NAME_NOSPACE_CAPS"_LOGPATH";
+static const char os_env_infofile[] = OS_PROJECT_NAME_NOSPACE_CAPS"_INFOFILE";
+static const char os_env_errorfile[] = OS_PROJECT_NAME_NOSPACE_CAPS"_ERRORFILE";
+static const char os_env_verbosity[] = OS_PROJECT_NAME_NOSPACE_CAPS"_VERBOSITY";
+static const char os_env_append[] = OS_PROJECT_NAME_NOSPACE_CAPS"_LOGAPPEND";
 #if defined _WRS_KERNEL
 static const char os_default_logdir[] = "/tgtsvr";
 #else
@@ -213,7 +214,8 @@ static char *os__report_createFileNormalize(
  * @param override_variable An environment variable name that may hold a filename
  * or pseudo filename. If this var is set, and is not a pseudo filename,
  * the value of this var will be added to the value of env variable
- * VORTEX_LOGPATH (if set or './' if not) to create the log file path.
+ * {OS_PROJECT_NAME_NOSPACE_CAPS}_LOGPATH (if set or './' if not) to create the
+ * log file path.
  * @param default_file If override_variable is not defined in the environment
  * this is the filename used.
  */
@@ -323,10 +325,10 @@ void os__set_verbosity(void)
 }
 
 /**
- * Get the destination for logging error reports. Env property VORTEX_INFOFILE and
- * VORTEX_LOGPATH controls this value.
- * If VORTEX_INFOFILE is not set & this process is an OpenSplice service default
- * to logging to a file named votex-info.log, otherwise
+ * Get the destination for logging error reports. Env property {OS_PROJECT_NAME_NOSPACE_CAPS}_INFOFILE and
+ * {OS_PROJECT_NAME_NOSPACE_CAPS}_LOGPATH controls this value.
+ * If {OS_PROJECT_NAME_NOSPACE_CAPS}_INFOFILE is not set & this process is a service, default
+ * to logging to a file named {OS_PROJECT_NAME_NOSPACE_SMALL}-info.log, otherwise
  * use standard out.
  * @see os_report_file_path
  */
@@ -343,10 +345,10 @@ os__get_info_file_name(void)
 }
 
 /**
- * Get the destination for logging error reports. Env property VORTEX_ERRORFILE and
- * VORTEX_LOGPATH controls this value.
- * If VORTEX_ERRORFILE is not set & this process is an OpenSplice service default
- * to logging to a file named votex-error.log, otherwise
+ * Get the destination for logging error reports. Env property {OS_PROJECT_NAME_NOSPACE_CAPS}_ERRORFILE and
+ * {OS_PROJECT_NAME_NOSPACE_CAPS}_LOGPATH controls this value.
+ * If {OS_PROJECT_NAME_NOSPACE_CAPS}_ERRORFILE is not set & this process is a service, default
+ * to logging to a file named {OS_PROJECT_NAME_NOSPACE_SMALL}-error.log, otherwise
  * use standard error.
  * @see os_report_file_path
  */

@@ -59,7 +59,7 @@ extern "C" {
  * @brief Returns the default domain identifier.
  *
  * The default domain identifier can be configured in the configuration file
- * or be set through an evironment variable (VORTEX_DOMAIN).
+ * or be set through an evironment variable ({DDSC_PROJECT_NAME_NOSPACE_CAPS}_DOMAIN).
  *
  * @returns Default domain identifier
  */

@@ -15,5 +15,5 @@ if "%CLASSPATH%"=="" (
     set "CLASSPATH=@IDLC_JAR@;%CLASSPATH%"
 )
 
-java com.prismtech.vortex.compilers.Idlc %*
+java org.eclipse.cyclonedds.compilers.Idlc %*
 

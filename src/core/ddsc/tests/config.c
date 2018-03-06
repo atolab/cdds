@@ -14,10 +14,11 @@
 #include <criterion/logging.h>
 #include "os/os.h"
 #include "config_env.h"
+#include "ddsc/ddsc_project.h"
 
 #define FORCE_ENV
 
-#define URI_VARIABLE "VORTEXDDS_URI"
+#define URI_VARIABLE DDSC_PROJECT_NAME_NOSPACE_CAPS"_URI"
 #define MAX_PARTICIPANTS_VARIABLE "MAX_PARTICIPANTS"
 
 static void config__check_env(

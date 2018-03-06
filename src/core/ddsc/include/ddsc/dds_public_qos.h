@@ -15,7 +15,7 @@
  * @brief DDS C QoS API
  *
  * This header file defines the public API of QoS and Policies in the
- * VortexDDS C language binding.
+ * CycloneDDS C language binding.
  */
 #ifndef DDS_QOS_H
 #define DDS_QOS_H

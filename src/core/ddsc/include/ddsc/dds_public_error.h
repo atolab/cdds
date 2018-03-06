@@ -15,7 +15,7 @@
  * @brief DDS C Error API
  *
  * This header file defines the public API of error values and convenience
- * functions in the VortexDDS C language binding.
+ * functions in the CycloneDDS C language binding.
  */
 #ifndef DDS_ERROR_H
 #define DDS_ERROR_H

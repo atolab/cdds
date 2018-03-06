@@ -22,6 +22,7 @@
 #include "dds__init.h"
 #include "dds__tkmap.h"
 #include "dds__report.h"
+#include "ddsc/ddsc_project.h"
 
 #define DDS_WRITER_STATUS_MASK                                   \
                         DDS_LIVELINESS_LOST_STATUS              |\
@@ -330,7 +331,7 @@ dds_writer_qos_set(
             }
         } else {
             if (enabled) {
-                ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "VortexDDS does not support changing QoS policies yet");
+                ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDSC_PROJECT_NAME" does not support changing QoS policies yet");
             }
         }
     }

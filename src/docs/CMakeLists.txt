@@ -21,8 +21,8 @@ option(BUILD_DOCS, "Enable generation of docs." OFF)
 
 set(JENKINS_BASE_URI "http://jenkins.prismtech.com:8080/")
 set(JENKINS_DOCS_JOB_NAME "BuildChameleonLinux64bit")
-set(VORTEXDDS_PDF_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}.pdf")
-set(VORTEXDDS_HTML_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}HTML.tar.gz")
+set(PROJECT_PDF_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}.pdf")
+set(PROJECT_HTML_URI "${JENKINS_BASE_URI}/job/${JENKINS_DOCS_JOB_NAME}/lastSuccessfulBuild/artifact/cham/builds/${CMAKE_PROJECT_NAME}HTML.tar.gz")
 set(DOCS_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/..")
 
 if (BUILD_DOCS)
@@ -179,8 +179,8 @@ else()
       TARGET docs
       COMMAND ${WGET_EXECUTABLE}
         -q
-        ${VORTEXDDS_HTML_URI}
-        ${VORTEXDDS_PDF_URI}
+        ${PROJECT_HTML_URI}
+        ${PROJECT_PDF_URI}
       COMMENT "Downloading documentation from target."
       VERBATIM
     )
@@ -197,10 +197,10 @@ else()
     message("-- Unable to find wget. Download docs now.")
     # Just try to download the docs straight away.
     file(DOWNLOAD
-      ${VORTEXDDS_HTML_URI}
+      ${PROJECT_HTML_URI}
       ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}HTML.tar.gz)
     file(DOWNLOAD
-      ${VORTEXDDS_PDF_URI}
+      ${PROJECT_PDF_URI}
       ${DOCS_OUTPUT_DIR}/${CMAKE_PROJECT_NAME}.pdf)
   endif()
 

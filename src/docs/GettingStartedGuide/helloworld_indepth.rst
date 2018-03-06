@@ -131,7 +131,7 @@ starting that java application with an IDL file. In the case of
 the *Hello World!* example, that IDL file is HelloWorldData.idl.
 ::
 
-    java -classpath "<install_dir>/share/VortexDDS/idlc/idlc-jar-with-dependencies.jar" com.prismtech.vortex.compilers.Idlc HelloWorldData.idl
+    java -classpath "<install_dir>/share/CycloneDDS/idlc/idlc-jar-with-dependencies.jar" com.prismtech.vortex.compilers.Idlc HelloWorldData.idl
 
 :Windows: The :code:`HelloWorldType` project within the HelloWorld solution.
 :Linux: The :code:`make datatype` command.

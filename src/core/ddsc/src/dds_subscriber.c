@@ -15,6 +15,7 @@
 #include "dds__err.h"
 #include "ddsi/q_entity.h"
 #include "dds__report.h"
+#include "ddsc/ddsc_project.h"
 
 #define DDS_SUBSCRIBER_STATUS_MASK                               \
                         DDS_DATA_ON_READERS_STATUS
@@ -69,7 +70,7 @@ dds_subscriber_qos_set(
     if (ret == DDS_RETCODE_OK) {
         if (enabled) {
             /* TODO: CHAM-95: DDSI does not support changing QoS policies. */
-            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, "VortexDDS does not support changing QoS policies yet");
+            ret = DDS_ERRNO(DDS_RETCODE_UNSUPPORTED, DDSC_PROJECT_NAME" does not support changing QoS policies yet");
         }
     }
     return ret;

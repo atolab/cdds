@@ -46,7 +46,7 @@ extern "C" {
 
 /**
  * Description : Returns the default DDS domain id. This can be configured
- * in xml or set as an evironment variable (VORTEX_DOMAIN).
+ * in xml or set as an evironment variable ({DDSC_PROJECT_NAME_NOSPACE_CAPS}_DOMAIN).
  *
  * Arguments :
  *   -# None
@@ -675,14 +675,14 @@ dds_set_listener(
  *
  * If domain is set (not DDS_DOMAIN_DEFAULT) then it must match if the domain has also
  * been configured or an error status will be returned. Currently only a single domain
- * can be configured by setting the environment variable VORTEX_DOMAIN, if this is not set
- * the the default domain is 0. Valid values for domain id are between 0 and 230.
+ * can be configured by setting the environment variable {DDSC_PROJECT_NAME_NOSPACE_CAPS}_DOMAIN,
+ * if this is not set the the default domain is 0. Valid values for domain id are between 0 and 230.
  *
  *
  * @param[in]  domain - The domain in which to create the participant (can be DDS_DOMAIN_DEFAULT)
  * @param[in]  qos - The QoS to set on the new participant (can be NULL)
  * @param[in]  listener - Any listener functions associated with the new participant (can be NULL)
-
+ *
  * @returns >0 - Success (valid handle of a participant entity).
  * @returns <0 - Failure (use dds_err_nr() to get error value).
  *

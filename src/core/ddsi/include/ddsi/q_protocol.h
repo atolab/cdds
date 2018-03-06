@@ -139,9 +139,9 @@ struct cdrstring {
 #define NN_VENDORID_TECHNICOLOR            {{ 0x01, 0x0e }}
 #define NN_VENDORID_EPROSIMA               {{ 0x01, 0x0f }}
 #define NN_VENDORID_PRISMTECH_CLOUD        {{ 0x01, 0x20 }}
-#define NN_VENDORID_PRISMTECH_VORTEXDDS    {{ 0x01, 0x0d }} // Since VORTEXDDS has no owner yet, it uses the same VENDORID as LITE
+#define NN_VENDORID_ECLIPSE_CYCLONEDDS     {{ 0x01, 0x0d }} // Since CYCLONEDDS has no owner yet, it uses the same VENDORID as LITE
 
-#define MY_VENDOR_ID NN_VENDORID_PRISMTECH_VORTEXDDS
+#define MY_VENDOR_ID NN_VENDORID_ECLIPSE_CYCLONEDDS
 
 /* Only one specific version is grokked */
 #define RTPS_MAJOR 2

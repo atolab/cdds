@@ -853,14 +853,14 @@ static const struct cfgelem root_cfgelems[] = {
     END_MARKER
 };
 
-static const struct cfgelem vortex_root_cfgelems[] =
+static const struct cfgelem cyclonedds_root_cfgelems[] =
 {
     { DDSC_PROJECT_NAME_NOSPACE, root_cfgelems, NULL, NODATA, NULL },
     END_MARKER
 };
 
 static const struct cfgelem root_cfgelem =
-{ "root", vortex_root_cfgelems, NULL, NODATA, NULL };
+{ "root", cyclonedds_root_cfgelems, NULL, NODATA, NULL };
 
 
 #undef ATTR

@@ -19,6 +19,7 @@
 #include "dds__err.h"
 #include "os/os_report.h"
 #include "dds__report.h"
+#include "ddsc/ddsc_project.h"
 
 /* Sanity check. */
 #if DDS_ENTITY_KIND_MASK != UT_HANDLE_KIND_MASK
@@ -266,7 +267,7 @@ dds_entity_init(
         if (e->m_hdl == UT_HANDLE_OUT_OF_RESOURCES) {
             e->m_hdl = DDS_ERRNO(DDS_RETCODE_OUT_OF_RESOURCES, "Can not create new entity; too many where created previously.");
         } else if (e->m_hdl == UT_HANDLE_NOT_INITALIZED) {
-            e->m_hdl = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, "VortexDDS is not yet initialized. Please create a participant before executing an other method.");
+            e->m_hdl = DDS_ERRNO(DDS_RETCODE_PRECONDITION_NOT_MET, DDSC_PROJECT_NAME" is not yet initialized. Please create a participant before executing an other method.");
         } else {
             e->m_hdl = DDS_ERRNO(DDS_RETCODE_ERROR, "An internal error has occurred.");
         }

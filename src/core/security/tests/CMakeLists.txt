@@ -24,7 +24,7 @@ target_link_libraries(criterion_security ddsc OSAPI)
 #	Criterion_security_config_simple_udp
 #	PROPERTIES
 #		REQUIRED_FILES ${Criterion_ddsc_config_simple_udp_file}
-#		ENVIRONMENT "VORTEXDDS_URI=${Criterion_ddsc_config_simple_udp_uri};MAX_PARTICIPANTS=${Criterion_ddsc_config_simple_udp_max_participants}"
+#		ENVIRONMENT "${CMAKE_PROJECT_NAME_CAPS}_URI=${Criterion_ddsc_config_simple_udp_uri};MAX_PARTICIPANTS=${Criterion_ddsc_config_simple_udp_max_participants}"
 #
 #)
 #configure_file("config_env.h.in" "config_env.h")

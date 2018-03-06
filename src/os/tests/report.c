@@ -11,22 +11,23 @@
  */
 #include "CUnit/Runner.h"
 #include "os/os.h"
+#include "os/os_project.h"
 
 #include <stdio.h>
 
 CUnit_Suite_Initialize(os_report)
 {
-  os_putenv("VORTEX_ERRORFILE=vdds_test_error");
-  os_putenv("VORTEX_INFOFILE=vdds_test_info");
-  os_putenv("VORTEX_LOGAPPEND=TRUE");
+  os_putenv(OS_PROJECT_NAME_NOSPACE_CAPS"_ERRORFILE=vdds_test_error");
+  os_putenv(OS_PROJECT_NAME_NOSPACE_CAPS"_INFOFILE=vdds_test_info");
+  os_putenv(OS_PROJECT_NAME_NOSPACE_CAPS"_LOGAPPEND=TRUE");
 
   return 0;
 }
 
 void remove_logs()
 {
-  const char * error_file_name = os_getenv("VORTEX_ERRORFILE");
-  const char * info_file_name = os_getenv("VORTEX_INFOFILE");
+  const char * error_file_name = os_getenv(OS_PROJECT_NAME_NOSPACE_CAPS"_ERRORFILE");
+  const char * info_file_name = os_getenv(OS_PROJECT_NAME_NOSPACE_CAPS"_INFOFILE");
 
   os_remove(error_file_name);
   os_remove(info_file_name);
@@ -34,8 +35,8 @@ void remove_logs()
 
 void check_existence(os_result error_log_existence, os_result info_log_existence)
 {
-  const char * error_file_name = os_getenv("VORTEX_ERRORFILE");
-  const char * info_file_name = os_getenv("VORTEX_INFOFILE");
+  const char * error_file_name = os_getenv(OS_PROJECT_NAME_NOSPACE_CAPS"_ERRORFILE");
+  const char * info_file_name = os_getenv(OS_PROJECT_NAME_NOSPACE_CAPS"_INFOFILE");
 
   CU_ASSERT(os_access(error_file_name, OS_ROK) == error_log_existence);
   CU_ASSERT(os_access(info_file_name, OS_ROK) == info_log_existence);
@@ -291,7 +292,7 @@ CUnit_Test(os_report, no_log_append)
 
   os_reportExit();
 
-  os_putenv("VORTEX_LOGAPPEND=FALSE");
+  os_putenv(OS_PROJECT_NAME_NOSPACE_CAPS"_LOGAPPEND=FALSE");
 
   os_reportInit(true);
 
@@ -306,7 +307,7 @@ CUnit_Test(os_report, no_log_append)
 
 CUnit_Test(os_report, log_dir)
 {
-  os_putenv("VORTEX_LOGPATH=.");
+  os_putenv(OS_PROJECT_NAME_NOSPACE_CAPS"_LOGPATH=.");
 
   os_reportInit(true);
 
@@ -325,7 +326,7 @@ CUnit_Test(os_report, log_dir)
 
 CUnit_Test(os_report, verbosity_env_value_info)
 {
-  os_putenv("VORTEX_VERBOSITY=0");
+  os_putenv(OS_PROJECT_NAME_NOSPACE_CAPS"_VERBOSITY=0");
   os_reportInit(true);
   check_existence(os_resultFail, os_resultFail);
 
@@ -339,13 +340,13 @@ CUnit_Test(os_report, verbosity_env_value_info)
   remove_logs();
 
   //reset for other tests.
-  os_putenv("VORTEX_VERBOSITY=");
+  os_putenv(OS_PROJECT_NAME_NOSPACE_CAPS"_VERBOSITY=");
 }
 
 
 CUnit_Test(os_report, verbosity_env_value_error)
 {
-  os_putenv("VORTEX_VERBOSITY=3");
+  os_putenv(OS_PROJECT_NAME_NOSPACE_CAPS"_VERBOSITY=3");
   os_reportInit(true);
   check_existence(os_resultFail, os_resultFail);
 
@@ -359,13 +360,13 @@ CUnit_Test(os_report, verbosity_env_value_error)
   remove_logs();
 
   //reset for other tests.
-  os_putenv("VORTEX_VERBOSITY=");
+  os_putenv(OS_PROJECT_NAME_NOSPACE_CAPS"_VERBOSITY=");
 }
 
 
 CUnit_Test(os_report, verbosity_env_value_error_as_string)
 {
-  os_putenv("VORTEX_VERBOSITY=ERROR");
+  os_putenv(OS_PROJECT_NAME_NOSPACE_CAPS"_VERBOSITY=ERROR");
   os_reportInit(true);
   check_existence(os_resultFail, os_resultFail);
 
@@ -379,13 +380,13 @@ CUnit_Test(os_report, verbosity_env_value_error_as_string)
   remove_logs();
 
   //reset for other tests.
-  os_putenv("VORTEX_VERBOSITY=");
+  os_putenv(OS_PROJECT_NAME_NOSPACE_CAPS"_VERBOSITY=");
 }
 
 
 CUnit_Test(os_report, verbosity_wrong_env_value)
 {
-  os_putenv("VORTEX_VERBOSITY=WRONG");
+  os_putenv(OS_PROJECT_NAME_NOSPACE_CAPS"_VERBOSITY=WRONG");
   os_reportInit(true);
   check_existence(os_resultFail, os_resultFail);
 
@@ -399,5 +400,5 @@ CUnit_Test(os_report, verbosity_wrong_env_value)
   remove_logs();
 
   //reset for other tests.
-  os_putenv("VORTEX_VERBOSITY=");
+  os_putenv(OS_PROJECT_NAME_NOSPACE_CAPS"_VERBOSITY=");
 }

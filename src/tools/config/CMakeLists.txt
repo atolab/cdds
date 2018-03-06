@@ -22,7 +22,7 @@ configure_file("metaconfig.xml.in" "${CMAKE_CURRENT_LIST_DIR}/metaconfig.xml" @O
 file(GLOB_RECURSE JAVA_SOURCES LIST_DIRECTORIES true *.java)
 
 set(RESOURCES metaconfig.xml metaconfig.xsd resources/ptlogoc16.png resources/ptlogoc24.png resources/ptlogoc32.png resources/ptlogoc48.png)
-add_jar(${CONFJAR_TARGET} ${JAVA_SOURCES} ${RESOURCES} ENTRY_POINT org.opensplice.config.SpliceConfig)
+add_jar(${CONFJAR_TARGET} ${JAVA_SOURCES} ${RESOURCES} ENTRY_POINT org.eclipse.cyclonedds.config.SpliceConfig)
 
 #add_test(NAME TestHelloWorld COMMAND ${Java_JAVA_EXECUTABLE} -cp ${_jarFile} HelloWorld)
 

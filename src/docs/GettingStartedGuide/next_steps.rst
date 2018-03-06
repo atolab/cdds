@@ -19,7 +19,7 @@
 What's next?
 ############
 
-Want to know more about VortexDDS? Please consider following a tutorial or
+Want to know more about CycloneDDS? Please consider following a tutorial or
 visit some of the pages listed below. The Vortex DDS Launcher (provided with
 this installation) is also a good starting point.
 

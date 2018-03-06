@@ -30,7 +30,7 @@ mark_as_advanced(IDLC_JAR)
 set(basedir "${CMAKE_CURRENT_SOURCE_DIR}/src")
 mark_as_advanced(basedir)
 configure_file("src/pom.xml" "pom.xml")
-configure_file("src/com/prismtech/vortex/Project.java.in" "com/prismtech/vortex/Project.java")
+configure_file("src/org/eclipse/cyclonedds/Project.java.in" "org/eclipse/cyclonedds/Project.java")
 
 add_custom_command(
     OUTPUT  "${IDLC_JAR}"

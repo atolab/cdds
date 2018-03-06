@@ -15,7 +15,7 @@
  * @brief DDS C Stream API
  *
  * This header file defines the public API of the Streams in the
- * VortexDDS C language binding.
+ * CycloneDDS C language binding.
  */
 #ifndef DDS_STREAM_H
 #define DDS_STREAM_H
