@@ -8,7 +8,7 @@ Beside, Cyclone DDS is developed completely in the open and is undergoing the ac
 # Getting Started
 ## Building Cyclone DDS
 
-In order to build cyclone DDS you need to have installed on your host [cmake](https://cmake.org) **v3.8.0** or higher and either the [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) or simply the [Java 8 RE](http://www.oracle.com/technetwork/java/javase/downloads/server-jre8-downloads-2133154.html).
+In order to build cyclone DDS you need to have installed on your host [cmake](https://cmake.org) **v3.5.0** or higher and either the [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) or simply the [Java 8 RE](http://www.oracle.com/technetwork/java/javase/downloads/server-jre8-downloads-2133154.html).
 
 Assuming that **git** is also available on your machine then, simply do:
 
