@@ -59,3 +59,5 @@ On another terminal, start the application that will be sending the ping.
 
 The number above were measure on a 13' MacBook pro running a 3,1 GHz Intel Core i5. From these number you can see how the roundtrip is incredibly stable and the minimal latency is slightly over 30 micro-seconds (on this HW).
 
+## Documentation
+The Cyclone DDS documentation is available [here](http://cdds.io/docs).
