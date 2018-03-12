@@ -11,10 +11,10 @@
 #
 cmake_minimum_required(VERSION 3.5)
 
-if (NOT TARGET VortexDDS::ddsc)
+if (NOT TARGET CycloneDDS::ddsc)
     # Find the VortexDDS package. If it is not in a default location, try
     # finding it relative to the example where it most likely resides.
-    find_package(VortexDDS REQUIRED PATHS "${CMAKE_SOURCE_DIR}/../../")
+    find_package(CycloneDDS REQUIRED PATHS "${CMAKE_SOURCE_DIR}/../../")
 endif()
 
 # This is a convenience function, provided by the VortexDDS package,
@@ -29,5 +29,5 @@ add_executable(RoundtripPong pong.c)
 
 # Both executables need to be linked to the idl data type library and
 # the ddsc API library.
-target_link_libraries(RoundtripPing RoundTrip_lib VortexDDS::ddsc)
-target_link_libraries(RoundtripPong RoundTrip_lib VortexDDS::ddsc)
+target_link_libraries(RoundtripPing RoundTrip_lib CycloneDDS::ddsc)
+target_link_libraries(RoundtripPong RoundTrip_lib CycloneDDS::ddsc)

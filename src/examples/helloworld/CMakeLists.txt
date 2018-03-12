@@ -11,13 +11,13 @@
 #
 cmake_minimum_required(VERSION 3.5)
 
-if (NOT TARGET VortexDDS::ddsc)
-    # Find the VortexDDS package. If it is not in a default location, try
+if (NOT TARGET CycloneDDS::ddsc)
+    # Find the CycloneDDS package. If it is not in a default location, try
     # finding it relative to the example where it most likely resides.
-    find_package(VortexDDS REQUIRED PATHS ../../)
+    find_package(CycloneDDS REQUIRED PATHS ../../)
 endif()
 
-# This is a convenience function, provided by the VortexDDS package,
+# This is a convenience function, provided by the CycloneDDS package,
 # that will supply a library target related the the given idl file.
 # In short, it takes the idl file, generates the source files with
 # the proper data types and compiles them into a library.
@@ -29,8 +29,8 @@ add_executable(HelloworldSubscriber subscriber.c)
 
 # Both executables need to be linked to the idl data type library and
 # the ddsc API library.
-target_link_libraries(HelloworldPublisher HelloWorldData_lib VortexDDS::ddsc)
-target_link_libraries(HelloworldSubscriber HelloWorldData_lib VortexDDS::ddsc)
+target_link_libraries(HelloworldPublisher HelloWorldData_lib CycloneDDS::ddsc)
+target_link_libraries(HelloworldSubscriber HelloWorldData_lib CycloneDDS::ddsc)
 
 #
 # The helloworld example is the only example to have a different CMakeLists.txt
