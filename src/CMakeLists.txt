@@ -19,15 +19,16 @@ FUNCTION(PREPEND var prefix)
    SET(${var} "${listVar}" PARENT_SCOPE)
 ENDFUNCTION(PREPEND)
 
+# AC: Commented as it has still references to our internal repos
 # Update the git submodules
-execute_process(COMMAND git submodule init
-                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-execute_process(COMMAND git submodule update
-                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+# execute_process(COMMAND git submodule init
+#                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+# execute_process(COMMAND git submodule update
+#                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 # Set module path before defining project so platform files will work.
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules")
-set(CMAKE_PROJECT_NAME_FULL "Vortex DDS")
+set(CMAKE_PROJECT_NAME_FULL "Cyclone DDS")
 string(REPLACE " " "" PROJECT_NAME "${CMAKE_PROJECT_NAME_FULL}")
 project(${PROJECT_NAME} VERSION 0.1.0)
 
@@ -58,6 +59,9 @@ set(MEMORYCHECK_SUPPRESSIONS_FILE "${CMAKE_CURRENT_LIST_DIR}/valgrind.supp" CACH
 option(BUILD_TESTING "Build the testing tree." OFF)
 include(CTest)
 
+# By default don't build the launcher
+option(BUILD_LAUNCHER "do not build the launcher by default" OFF)
+
 # Build all executables and libraries into the top-level /bin and /lib folders.
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
@@ -70,8 +74,9 @@ add_subdirectory(util)
 add_subdirectory(core)
 add_subdirectory(tools)
 add_subdirectory(scripts)
-add_subdirectory(examples)
-add_subdirectory(docs)
+# AC: Commented as it has still references to our internal repos
+#add_subdirectory(examples)
+#add_subdirectory(docs)
 
 # Pull-in CPack and support for generating <Package>Config.cmake and packages.
 include(Packaging)
