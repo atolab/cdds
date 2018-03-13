@@ -15,6 +15,7 @@ Assuming that **git** is also available on your machine then, simply do:
     $ git clone git@github.com:atolab/cdds.git
     $ cd cdds
     $ mkdir build
+    $ cd build
     $ cmake ../src
     $ make
     $ make install
