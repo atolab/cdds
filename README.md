@@ -12,7 +12,7 @@ In order to build cyclone DDS you need to have installed on your host [cmake](ht
 
 Assuming that **git** is also available on your machine then, simply do:
 
-    $ git clone git@github.com:atolab/cdds.git
+    $ git clone https://github.com/atolab/cdds.git
     $ cd cdds
     $ mkdir build
     $ cd build
